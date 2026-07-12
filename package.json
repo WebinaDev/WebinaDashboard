@@ -1,0 +1,7 @@
+{
+  "name": "webino-dashboard",
+  "private": true,
+  "scripts": {
+    "build:dashboard": "cd client && npm install && npm run build"
+  }
+}

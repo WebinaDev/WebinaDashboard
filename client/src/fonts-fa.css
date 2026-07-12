@@ -1,0 +1,15 @@
+@font-face {
+  font-family: 'Yekan Bakh';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/yekan-bakh/woff2/YekanBakh-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Yekan Bakh';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/yekan-bakh/woff2/YekanBakh-SemiBold.woff2') format('woff2');
+}

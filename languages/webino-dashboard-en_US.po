@@ -1,0 +1,818 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webino Dashboard\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "A build pipeline is already running."
+msgstr "A build pipeline is already running."
+
+msgid "A core update is already in progress."
+msgstr "A core update is already in progress."
+
+msgid "Activation request failed."
+msgstr "Activation request failed."
+
+msgid "Address"
+msgstr "Address"
+
+msgid "Address book is not available."
+msgstr "Address book is not available."
+
+msgid "Address not found."
+msgstr "Address not found."
+
+msgid "All"
+msgstr "All"
+
+msgid "All posts"
+msgstr "All posts"
+
+msgid "An active license is required to update the dashboard core."
+msgstr "An active license is required to update the dashboard core."
+
+msgid "Another install for this module is already running."
+msgstr "Another install for this module is already running."
+
+msgid "At least one channel is required."
+msgstr "At least one channel is required."
+
+msgid "Attachment not found."
+msgstr "Attachment not found."
+
+msgid "Attribute not found."
+msgstr "Attribute not found."
+
+msgid "Attribute slug missing."
+msgstr "Attribute slug missing."
+
+msgid "Attributes"
+msgstr "Attributes"
+
+msgid "Bale bot"
+msgstr "Bale bot"
+
+msgid "Barcode"
+msgstr "Barcode"
+
+msgid "Birth date must be YYYY-MM-DD."
+msgstr "Birth date must be YYYY-MM-DD."
+
+msgid "Bot engine is not loaded."
+msgstr "Bot engine is not loaded."
+
+msgid "Bot module is not available."
+msgstr "Bot module is not available."
+
+msgid "Bot token is not set."
+msgstr "Bot token is not set."
+
+msgid "Bots"
+msgstr "Bots"
+
+msgid "Brand"
+msgstr "Brand"
+
+msgid "Brand not found."
+msgstr "Brand not found."
+
+msgid "Brand taxonomy missing."
+msgstr "Brand taxonomy missing."
+
+msgid "Brands"
+msgstr "Brands"
+
+msgid "Build cancelled by user (running process may still finish on server)."
+msgstr "Build cancelled by user (running process may still finish on server)."
+
+msgid "Build dashboard client"
+msgstr "Build dashboard client"
+
+msgid "Build scripts are missing from WebinoDashboard/scripts."
+msgstr "Build scripts are missing from WebinoDashboard/scripts."
+
+msgid "Buyer"
+msgstr "Buyer"
+
+msgid "CRM request failed."
+msgstr "CRM request failed."
+
+msgid "CSV file was not uploaded."
+msgstr "CSV file was not uploaded."
+
+msgid "Campaign name is required."
+msgstr "Campaign name is required."
+
+msgid "Cannot delete this zone."
+msgstr "Cannot delete this zone."
+
+msgid "Cannot delete yourself."
+msgstr "Cannot delete yourself."
+
+msgid "Cannot edit this zone."
+msgstr "Cannot edit this zone."
+
+msgid "Categories"
+msgstr "Categories"
+
+msgid "Category not found."
+msgstr "Category not found."
+
+msgid "City"
+msgstr "City"
+
+msgid "Comment content is required."
+msgstr "Comment content is required."
+
+msgid "Comment not found."
+msgstr "Comment not found."
+
+msgid "Comments"
+msgstr "Comments"
+
+msgid "Could not copy module backup files."
+msgstr "Could not copy module backup files."
+
+msgid "Could not create directory from ZIP entry."
+msgstr "Could not create directory from ZIP entry."
+
+msgid "Could not create extraction directory."
+msgstr "Could not create extraction directory."
+
+msgid "Could not create marketplace directory."
+msgstr "Could not create marketplace directory."
+
+msgid "Could not create parent directory for ZIP entry."
+msgstr "Could not create parent directory for ZIP entry."
+
+msgid "Could not delete comment."
+msgstr "Could not delete comment."
+
+msgid "Could not delete note."
+msgstr "Could not delete note."
+
+msgid "Could not delete term."
+msgstr "Could not delete term."
+
+msgid "Could not delete user."
+msgstr "Could not delete user."
+
+msgid "Could not delete variation."
+msgstr "Could not delete variation."
+
+msgid "Could not disconnect bot."
+msgstr "Could not disconnect bot."
+
+msgid "Could not duplicate product."
+msgstr "Could not duplicate product."
+
+msgid "Could not obtain download URL."
+msgstr "Could not obtain download URL."
+
+msgid "Could not open package ZIP."
+msgstr "Could not open package ZIP."
+
+msgid "Could not read the uploaded file."
+msgstr "Could not read the uploaded file."
+
+msgid "Could not read version from the update package."
+msgstr "Could not read version from the update package."
+
+msgid "Could not save license record."
+msgstr "Could not save license record."
+
+msgid "Could not schedule background install."
+msgstr "Could not schedule background install."
+
+msgid "Could not start background build worker."
+msgstr "Could not start background build worker."
+
+msgid "Could not update comment status."
+msgstr "Could not update comment status."
+
+msgid "Could not update comment."
+msgstr "Could not update comment."
+
+msgid "Could not update license record."
+msgstr "Could not update license record."
+
+msgid "Could not write ZIP entry to disk."
+msgstr "Could not write ZIP entry to disk."
+
+msgid "Coupons"
+msgstr "Coupons"
+
+msgid "Create release ZIP"
+msgstr "Create release ZIP"
+
+msgid "Credit"
+msgstr "Credit"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Dashboard build files are missing on the server."
+msgstr "Dashboard build files are missing on the server."
+
+msgid "Dashboard client directory is missing."
+msgstr "Dashboard client directory is missing."
+
+msgid "Dashboard client package.json is missing."
+msgstr "Dashboard client package.json is missing."
+
+msgid "Dashboard core package is missing required paths: %s"
+msgstr "Dashboard core package is missing required paths: %s"
+
+msgid "Dashboard license is inactive or expired."
+msgstr "Dashboard license is inactive or expired."
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Delete failed."
+msgstr "Delete failed."
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Domain is required."
+msgstr "Domain is required."
+
+msgid "Domain mismatch."
+msgstr "Domain mismatch."
+
+msgid "Downgrading module from %1$s to %2$s is not allowed."
+msgstr "Downgrading module from %1$s to %2$s is not allowed."
+
+msgid "Downgrading the dashboard core is not allowed."
+msgstr "Downgrading the dashboard core is not allowed."
+
+msgid "Download URL is not allowed."
+msgstr "Download URL is not allowed."
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Email could not be sent."
+msgstr "Email could not be sent."
+
+msgid "Email not found."
+msgstr "Email not found."
+
+msgid "Every 12 hours (Webino license)"
+msgstr "Every 12 hours (Webino license)"
+
+msgid "Failed to copy update files."
+msgstr "Failed to copy update files."
+
+msgid "Folders"
+msgstr "Folders"
+
+msgid "Forbidden"
+msgstr "Forbidden"
+
+msgid "Forbidden."
+msgstr "Forbidden."
+
+msgid "Gateway not found."
+msgstr "Gateway not found."
+
+msgid "Guest"
+msgstr "Guest"
+
+msgid "Heatmap (day x hour)"
+msgstr "Heatmap (day x hour)"
+
+msgid "Image"
+msgstr "Image"
+
+msgid "Install dashboard client dependencies"
+msgstr "Install dashboard client dependencies"
+
+msgid "Install job not found."
+msgstr "Install job not found."
+
+msgid "Install not allowed."
+msgstr "Install not allowed."
+
+msgid "Install required modules first: %s"
+msgstr "Install required modules first: %s"
+
+msgid "Installment"
+msgstr "Installment"
+
+msgid "Invalid channel provider."
+msgstr "Invalid channel provider."
+
+msgid "Invalid comment status."
+msgstr "Invalid comment status."
+
+msgid "Invalid credentials."
+msgstr "Invalid credentials."
+
+msgid "Invalid document type."
+msgstr "Invalid document type."
+
+msgid "Invalid extraction directory."
+msgstr "Invalid extraction directory."
+
+msgid "Invalid login token. Refresh the page and try again."
+msgstr "Invalid login token. Refresh the page and try again."
+
+msgid "Invalid message channel."
+msgstr "Invalid message channel."
+
+msgid "Invalid module slug."
+msgstr "Invalid module slug."
+
+msgid "Invalid request body."
+msgstr "Invalid request body."
+
+msgid "Invalid response from license server."
+msgstr "Invalid response from license server."
+
+msgid "Invalid user data."
+msgstr "Invalid user data."
+
+msgid "Invoice"
+msgstr "Invoice"
+
+msgid "Invoice #%s"
+msgstr "Invoice #%s"
+
+msgid "Item"
+msgstr "Item"
+
+msgid "Items"
+msgstr "Items"
+
+msgid "License is not active."
+msgstr "License is not active."
+
+msgid "License key mismatch."
+msgstr "License key mismatch."
+
+msgid "License not confirmed by CRM."
+msgstr "License not confirmed by CRM."
+
+msgid "License request exceeded time limit."
+msgstr "License request exceeded time limit."
+
+msgid "License server closed the connection without a response. Please try again shortly."
+msgstr "License server closed the connection without a response. Please try again shortly."
+
+msgid "License server did not respond in time. Please try again shortly."
+msgstr "License server did not respond in time. Please try again shortly."
+
+msgid "License server did not respond within %1$d seconds. Last raw error: %2$s"
+msgstr "License server did not respond within %1$d seconds. Last raw error: %2$s"
+
+msgid "License server error."
+msgstr "License server error."
+
+msgid "License server hostname could not be resolved."
+msgstr "License server hostname could not be resolved."
+
+msgid "License server is unavailable."
+msgstr "License server is unavailable."
+
+msgid "License server rejected the request."
+msgstr "License server rejected the request."
+
+msgid "License server returned HTTP %d."
+msgstr "License server returned HTTP %d."
+
+msgid "License server temporarily unreachable."
+msgstr "License server temporarily unreachable."
+
+msgid "Line total"
+msgstr "Line total"
+
+msgid "Magazine"
+msgstr "Magazine"
+
+msgid "Manifest bootstrap file is missing."
+msgstr "Manifest bootstrap file is missing."
+
+msgid "Manifest slug does not match requested module slug."
+msgstr "Manifest slug does not match requested module slug."
+
+msgid "Marketing"
+msgstr "Marketing"
+
+msgid "Marketplace"
+msgstr "Marketplace"
+
+msgid "Media"
+msgstr "Media"
+
+msgid "Media broadcast is only available on the advanced plan."
+msgstr "Media broadcast is only available on the advanced plan."
+
+msgid "Media categories"
+msgstr "Media categories"
+
+msgid "Media category"
+msgstr "Media category"
+
+msgid "Media folder"
+msgstr "Media folder"
+
+msgid "Media folders"
+msgstr "Media folders"
+
+msgid "Media library"
+msgstr "Media library"
+
+msgid "Media tag"
+msgstr "Media tag"
+
+msgid "Media tags"
+msgstr "Media tags"
+
+msgid "Message from %s"
+msgstr "Message from %s"
+
+msgid "Message is required."
+msgstr "Message is required."
+
+msgid "Metric"
+msgstr "Metric"
+
+msgid "Missing credentials."
+msgstr "Missing credentials."
+
+msgid "Module backup is missing."
+msgstr "Module backup is missing."
+
+msgid "Module directory is missing."
+msgstr "Module directory is missing."
+
+msgid "Module is not installed."
+msgstr "Module is not installed."
+
+msgid "Module manifest is missing."
+msgstr "Module manifest is missing."
+
+msgid "Module not found in catalog."
+msgstr "Module not found in catalog."
+
+msgid "Module not found."
+msgstr "Module not found."
+
+msgid "Module package is incomplete. Reinstall from the marketplace."
+msgstr "Module package is incomplete. Reinstall from the marketplace."
+
+msgid "Module package is incomplete. Required files are missing."
+msgstr "Module package is incomplete. Required files are missing."
+
+msgid "My modules"
+msgstr "My modules"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Name required."
+msgstr "Name required."
+
+msgid "National ID must be 10 digits."
+msgstr "National ID must be 10 digits."
+
+msgid "National Post"
+msgstr "National Post"
+
+msgid "No coupons selected."
+msgstr "No coupons selected."
+
+msgid "No file uploaded."
+msgstr "No file uploaded."
+
+msgid "No license entitlement for this module."
+msgstr "No license entitlement for this module."
+
+msgid "No license servers configured."
+msgstr "No license servers configured."
+
+msgid "No orders selected."
+msgstr "No orders selected."
+
+msgid "Not a variable product."
+msgstr "Not a variable product."
+
+msgid "Not found."
+msgstr "Not found."
+
+msgid "Note content required."
+msgstr "Note content required."
+
+msgid "Order #%s"
+msgstr "Order #%s"
+
+msgid "Order date: %s"
+msgstr "Order date: %s"
+
+msgid "Order total"
+msgstr "Order total"
+
+msgid "Orders"
+msgstr "Orders"
+
+msgid "Overview"
+msgstr "Overview"
+
+msgid "Package ZIP is empty."
+msgstr "Package ZIP is empty."
+
+msgid "Package ZIP must include manifest.json and bootstrap.php."
+msgstr "Package ZIP must include manifest.json and bootstrap.php."
+
+msgid "Parent comment not found."
+msgstr "Parent comment not found."
+
+msgid "Payment method"
+msgstr "Payment method"
+
+msgid "Phone"
+msgstr "Phone"
+
+msgid "Place for postal label"
+msgstr "Place for postal label"
+
+msgid "Post not found."
+msgstr "Post not found."
+
+msgid "Postal label"
+msgstr "Postal label"
+
+msgid "Postal label #%s"
+msgstr "Postal label #%s"
+
+msgid "Postcode"
+msgstr "Postcode"
+
+msgid "Pricing (WFCP)"
+msgstr "Pricing (WFCP)"
+
+msgid "Print invoice"
+msgstr "Print invoice"
+
+msgid "Print postal label"
+msgstr "Print postal label"
+
+msgid "Print receipt"
+msgstr "Print receipt"
+
+msgid "Product categories"
+msgstr "Product categories"
+
+msgid "Product not found."
+msgstr "Product not found."
+
+msgid "Products"
+msgstr "Products"
+
+msgid "Profit"
+msgstr "Profit"
+
+msgid "Purchase init failed."
+msgstr "Purchase init failed."
+
+msgid "Qty"
+msgstr "Qty"
+
+msgid "Quantity"
+msgstr "Quantity"
+
+msgid "Quantity:Quantity"
+msgstr "Quantity:Quantity"
+
+msgid "Receipt #%1$s — Date: %2$s"
+msgstr "Receipt #%1$s — Date: %2$s"
+
+msgid "Receipt #%s"
+msgstr "Receipt #%s"
+
+msgid "Recipient"
+msgstr "Recipient"
+
+msgid "Release build pipeline is only available in development environments (WP_DEBUG, local host, or WEBINO_DASHBOARD_ALLOW_BUILD_PIPELINE)."
+msgstr "Release build pipeline is only available in development environments (WP_DEBUG, local host, or WEBINO_DASHBOARD_ALLOW_BUILD_PIPELINE)."
+
+msgid "Remove dependent modules first: %s"
+msgstr "Remove dependent modules first: %s"
+
+msgid "Reports"
+msgstr "Reports"
+
+msgid "Retail"
+msgstr "Retail"
+
+msgid "Revenue"
+msgstr "Revenue"
+
+msgid "Role is not allowed."
+msgstr "Role is not allowed."
+
+msgid "Row"
+msgstr "Row"
+
+msgid "SKU"
+msgstr "SKU"
+
+msgid "SMS panel module is not available."
+msgstr "SMS panel module is not available."
+
+msgid "SMS wallet balance is low."
+msgstr "SMS wallet balance is low."
+
+msgid "Secure connection to the license server failed."
+msgstr "Secure connection to the license server failed."
+
+msgid "Seller"
+msgstr "Seller"
+
+msgid "Send failed."
+msgstr "Send failed."
+
+msgid "Sender"
+msgstr "Sender"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Settings page not found."
+msgstr "Settings page not found."
+
+msgid "Sheba must be IR followed by 24 digits."
+msgstr "Sheba must be IR followed by 24 digits."
+
+msgid "Shipping"
+msgstr "Shipping"
+
+msgid "Shipping method"
+msgstr "Shipping method"
+
+msgid "Shop management"
+msgstr "Shop management"
+
+msgid "Site management"
+msgstr "Site management"
+
+msgid "Site pages"
+msgstr "Site pages"
+
+msgid "Smoke test module structure"
+msgstr "Smoke test module structure"
+
+msgid "Source directory is missing."
+msgstr "Source directory is missing."
+
+msgid "State"
+msgstr "State"
+
+msgid "State: %1$s, City: %2$s, Postcode: %3$s"
+msgstr "State: %1$s, City: %2$s, Postcode: %3$s"
+
+msgid "Status: %s"
+msgstr "Status: %s"
+
+msgid "Step \"%1$s\" failed with exit code %2$d."
+msgstr "Step \"%1$s\" failed with exit code %2$d."
+
+msgid "Store"
+msgstr "Store"
+
+msgid "Store module is not available."
+msgstr "Store module is not available."
+
+msgid "Subtotal"
+msgstr "Subtotal"
+
+msgid "Taxonomy missing."
+msgstr "Taxonomy missing."
+
+msgid "Telegram bot"
+msgstr "Telegram bot"
+
+msgid "Term not found."
+msgstr "Term not found."
+
+msgid "Thank you for your trust"
+msgstr "Thank you for your trust"
+
+msgid "The post officer will attach the official label here"
+msgstr "The post officer will attach the official label here"
+
+msgid "This dashboard module is disabled."
+msgstr "This dashboard module is disabled."
+
+msgid "This feature is only available on the advanced plan."
+msgstr "This feature is only available on the advanced plan."
+
+msgid "This server cannot run shell commands (proc_open/exec disabled)."
+msgstr "This server cannot run shell commands (proc_open/exec disabled)."
+
+msgid "Too many attempts."
+msgstr "Too many attempts."
+
+msgid "Top products"
+msgstr "Top products"
+
+msgid "Top products by profit"
+msgstr "Top products by profit"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Unit"
+msgstr "Unit"
+
+msgid "Unit price"
+msgstr "Unit price"
+
+msgid "Unknown"
+msgstr "Unknown"
+
+msgid "Unsafe path in ZIP archive."
+msgstr "Unsafe path in ZIP archive."
+
+msgid "Update ZIP does not contain WebinoDashboard/webino-dashboard.php."
+msgstr "Update ZIP does not contain WebinoDashboard/webino-dashboard.php."
+
+msgid "Upload assets/dashboard-build from: cd client && npm run build"
+msgstr "Upload assets/dashboard-build from: cd client && npm run build"
+
+msgid "User has no email address."
+msgstr "User has no email address."
+
+msgid "User has no mobile number."
+msgstr "User has no mobile number."
+
+msgid "User not found."
+msgstr "User not found."
+
+msgid "Users"
+msgstr "Users"
+
+msgid "Value"
+msgstr "Value"
+
+msgid "Variation not found."
+msgstr "Variation not found."
+
+msgid "Verification failed."
+msgstr "Verification failed."
+
+msgid "Verify dashboard build"
+msgstr "Verify dashboard build"
+
+msgid "Webino Dashboard core files are missing or incomplete. Re-upload the full plugin package."
+msgstr "Webino Dashboard core files are missing or incomplete. Re-upload the full plugin package."
+
+msgid "Wholesale"
+msgstr "Wholesale"
+
+msgid "You cannot assign this role."
+msgstr "You cannot assign this role."
+
+msgid "You do not have permission to access this dashboard."
+msgstr "You do not have permission to access this dashboard."
+
+msgid "You do not have permission to update the dashboard."
+msgstr "You do not have permission to update the dashboard."
+
+msgid "ZIP entry escapes destination directory."
+msgstr "ZIP entry escapes destination directory."
+
+msgid "ZIP helper is not available."
+msgstr "ZIP helper is not available."
+
+msgid "ZipArchive is not available on this server."
+msgstr "ZipArchive is not available on this server."
+
+msgid "ZipArchive is not available."
+msgstr "ZipArchive is not available."
+
+msgid "Zone name is required."
+msgstr "Zone name is required."
+
+msgid "Zone not found."
+msgstr "Zone not found."
+
+msgid "bootstrap.php is missing in the module package."
+msgstr "bootstrap.php is missing in the module package."
+
+msgid "kind must be folder, category, or tag."
+msgstr "kind must be folder, category, or tag."
+
+msgid "manifest.json is invalid."
+msgstr "manifest.json is invalid."
+
+msgid "manifest.json is missing in the module package."
+msgstr "manifest.json is missing in the module package."
+
+msgid "no transport error captured"
+msgstr "no transport error captured"
+

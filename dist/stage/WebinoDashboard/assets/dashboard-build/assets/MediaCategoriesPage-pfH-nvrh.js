@@ -1,0 +1,1 @@
+import{B as e,Nr as t,yr as n}from"./dashboard-shell-BZE_67Tv.js";import{t as r}from"./MediaTermManager-C6dnrRK8.js";var i=n();function a(){let{t:n}=t();return(0,i.jsx)(e,{title:n(`media.categoriesTitle`),description:n(`media.description`),children:(0,i.jsx)(r,{kind:`category`})})}export{a as default};
