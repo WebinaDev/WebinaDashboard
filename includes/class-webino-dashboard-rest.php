@@ -21,6 +21,39 @@ class Webino_Dashboard_REST {
 	 */
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+		// Bypass WCDN/REST blocks: same payload via admin-ajax.php (same-origin cookies).
+		add_action( 'wp_ajax_webino_dashboard_bootstrap', array( __CLASS__, 'ajax_bootstrap' ) );
+		add_action( 'wp_ajax_webino_dashboard_auth_session', array( __CLASS__, 'ajax_auth_session' ) );
+		add_action( 'wp_ajax_webino_dashboard_api', array( __CLASS__, 'ajax_api_proxy' ) );
+	}
+
+	/**
+	 * admin-ajax fallback for GET /bootstrap when /wp-json is blocked by CDN.
+	 *
+	 * @return void
+	 */
+	public static function ajax_bootstrap() {
+		if ( ! Webino_Dashboard_Rest_Base::can_read() ) {
+			wp_send_json_error( array( 'message' => 'Forbidden' ), 403 );
+		}
+		check_ajax_referer( 'wp_rest', 'nonce' );
+		$response = self::bootstrap();
+		$data     = $response instanceof WP_REST_Response ? $response->get_data() : array();
+		wp_send_json_success( $data );
+	}
+
+	/**
+	 * admin-ajax fallback for auth/session.
+	 *
+	 * @return void
+	 */
+	public static function ajax_auth_session() {
+		check_ajax_referer( 'wp_rest', 'nonce' );
+		wp_send_json_success(
+			array(
+				'logged_in' => is_user_logged_in(),
+			)
+		);
 	}
 
 	/**
@@ -1806,6 +1839,9 @@ class Webino_Dashboard_REST {
 		if ( isset( $wfcp['purchase_price'] ) ) {
 			$pp = class_exists( 'WFCP_Helper' ) ? WFCP_Helper::sanitize_price( $wfcp['purchase_price'] ) : (float) $wfcp['purchase_price'];
 			update_post_meta( $id, '_wfcp_purchase_price', $pp );
+			if ( class_exists( 'WFCP_Helper', false ) ) {
+				WFCP_Helper::sync_retail_price_from_purchase( $id, $pp );
+			}
 		}
 		if ( isset( $wfcp['lock_price'] ) ) {
 			update_post_meta( $id, '_wfcp_lock_price', ! empty( $wfcp['lock_price'] ) ? '1' : '0' );

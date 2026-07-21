@@ -14,42 +14,68 @@ type Props = {
 
 export function ModuleDynamicRoute({ slug, routePath }: Props) {
   const { t } = useTranslation()
-  const { data } = useBootstrapQuery()
+  const { data, isPending, isError } = useBootstrapQuery()
   const [Page, setPage] = useState<ComponentType | null>(null)
   const [failed, setFailed] = useState(false)
+  const [failDetail, setFailDetail] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+
+  const clients = data?.activeModuleClients
+  const bootstrapReady = data !== undefined
 
   const retry = useCallback(() => {
     setFailed(false)
+    setFailDetail(null)
     setPage(null)
     setReloadKey((k) => k + 1)
   }, [])
 
   useEffect(() => {
+    if (!bootstrapReady) {
+      if (!isPending && isError) {
+        setFailDetail('bootstrap unavailable')
+        setFailed(true)
+      }
+      return
+    }
     let cancelled = false
     setPage(null)
     setFailed(false)
-    void getModuleRouteComponent(data?.activeModuleClients, slug, routePath)
+    setFailDetail(null)
+    void getModuleRouteComponent(clients, slug, routePath)
       .then((comp) => {
         if (cancelled) return
         if (!comp) {
+          const reason = !clients?.some((c) => c.slug === slug)
+            ? `module "${slug}" missing from activeModuleClients`
+            : `route "${routePath}" not exported by "${slug}"`
+          console.error('[Webino] ModuleDynamicRoute load failed:', reason)
+          setFailDetail(reason)
           setFailed(true)
           return
         }
         setPage(() => comp)
       })
-      .catch(() => {
-        if (!cancelled) setFailed(true)
+      .catch((err: unknown) => {
+        if (cancelled) return
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('[Webino] ModuleDynamicRoute import failed:', slug, routePath, err)
+        setFailDetail(msg)
+        setFailed(true)
       })
     return () => {
       cancelled = true
     }
-  }, [data?.activeModuleClients, slug, routePath, reloadKey])
+  }, [bootstrapReady, isPending, isError, clients, slug, routePath, reloadKey])
 
   if (failed) {
-    return <QueryErrorState message={t('modules.loadFailed')} onRetry={retry} />
+    const message =
+      import.meta.env.DEV && failDetail
+        ? `${t('modules.loadFailed')} (${failDetail})`
+        : t('modules.loadFailed')
+    return <QueryErrorState message={message} onRetry={retry} />
   }
-  if (!Page) {
+  if (!bootstrapReady || !Page) {
     return <RoutePageSkeleton />
   }
   return (

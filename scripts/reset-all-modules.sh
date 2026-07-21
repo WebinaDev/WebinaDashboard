@@ -8,14 +8,15 @@ if [[ -z "$WP_ROOT" ]]; then
   echo "Usage: $0 /path/to/wordpress/public_html" >&2
   echo "" >&2
   echo "Manual steps if WP-CLI unavailable:" >&2
-  echo "  1. rm -rf wp-content/plugins/Modules/*" >&2
-  echo "  2. touch wp-content/plugins/Modules/.gitkeep" >&2
+  echo "  1. rm -rf wp-content/plugins/WebinaDashboard/Modules/*" >&2
+  echo "  2. touch wp-content/plugins/WebinaDashboard/Modules/.gitkeep" >&2
   echo "  3. Delete options matching webino_dashboard_marketplace_% in wp_options" >&2
   exit 1
 fi
 
-MODULES="${WP_ROOT}/wp-content/plugins/Modules"
-WD="${WP_ROOT}/wp-content/plugins/WebinoDashboard"
+WD="${WP_ROOT}/wp-content/plugins/WebinaDashboard"
+MODULES="${WD}/Modules"
+LEGACY_SIBLING="${WP_ROOT}/wp-content/plugins/Modules"
 
 echo "== Webino Dashboard: reset all marketplace modules =="
 echo "WP_ROOT: ${WP_ROOT}"
@@ -40,6 +41,11 @@ else
   echo "Modules dir missing — creating empty ${MODULES}"
   mkdir -p "$MODULES"
   touch "$MODULES/.gitkeep"
+fi
+
+if [[ -d "$LEGACY_SIBLING" ]]; then
+  echo "Removing obsolete sibling Modules at ${LEGACY_SIBLING}..."
+  rm -rf "$LEGACY_SIBLING"
 fi
 
 echo ""

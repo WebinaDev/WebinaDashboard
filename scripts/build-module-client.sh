@@ -10,7 +10,7 @@ if [[ -z "$SLUG" ]]; then
   exit 1
 fi
 
-ENTRY="$ROOT/../Modules/$SLUG/client/module-entry.tsx"
+ENTRY="$ROOT/Modules/$SLUG/client/module-entry.tsx"
 if [[ ! -f "$ENTRY" ]]; then
   echo "FAIL: missing $ENTRY" >&2
   exit 1
@@ -24,9 +24,9 @@ fi
 echo "== Building module client: $SLUG =="
 (cd "$ROOT/client" && MODULE_SLUG="$SLUG" npx vite build --config "$ROOT/scripts/module-client-vite.config.mjs")
 
-OUT="$ROOT/../Modules/$SLUG/client/dist/module.js"
+OUT="$ROOT/Modules/$SLUG/client/dist/module.js"
 if [[ -s "$OUT" ]]; then
-  rm -f "$ROOT/../Modules/$SLUG/client/dist/dashboard-sw.js"
+  rm -f "$ROOT/Modules/$SLUG/client/dist/dashboard-sw.js"
 fi
 if [[ ! -s "$OUT" ]]; then
   echo "FAIL: empty or missing $OUT" >&2

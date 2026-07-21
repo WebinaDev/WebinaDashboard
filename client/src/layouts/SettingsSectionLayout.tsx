@@ -37,11 +37,15 @@ export function SettingsSectionLayout({ titleKey, descriptionKey, navItems, chil
           className="flex shrink-0 flex-wrap gap-1 border-b border-border pb-2 lg:w-56 lg:flex-col lg:border-b-0 lg:border-e lg:pb-0 lg:pe-4"
           aria-label={t('settings.sectionNav')}
         >
-          {navItems.map((item) => (
-            <NavLink key={item.id} to={item.to} className={linkCls} end={item.end ?? false}>
-              {item.label ?? t(item.labelKey)}
-            </NavLink>
-          ))}
+          {navItems.map((item) => {
+            const translated = t(item.labelKey, { defaultValue: '' })
+            const label = translated || item.label || t(item.labelKey)
+            return (
+              <NavLink key={item.id} to={item.to} className={linkCls} end={item.end ?? false}>
+                {label}
+              </NavLink>
+            )
+          })}
         </nav>
         <div className="min-w-0 flex-1">{children}</div>
       </div>

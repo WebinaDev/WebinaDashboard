@@ -21,7 +21,10 @@ type AuthGateMode = 'protected' | 'guest'
 export function AuthGate({ mode, children }: { mode: AuthGateMode; children?: ReactNode }) {
   const session = useAuthSession()
 
-  if (!session.isFetched) {
+  // Block only while we have no session data at all. With a server-embedded
+  // snapshot (initialData), react-query skips the initial fetch, so `isFetched`
+  // stays false forever — using it here would pin the skeleton permanently.
+  if (session.isPending || session.data === undefined) {
     return <AuthLoading />
   }
 

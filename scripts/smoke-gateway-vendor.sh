@@ -3,8 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO_ROOT="$(cd "$ROOT/.." && pwd)"
-MODULES="$REPO_ROOT/Modules"
+MODULES="$ROOT/Modules"
 FAIL=0
 
 echo "== Gateway vendor smoke =="

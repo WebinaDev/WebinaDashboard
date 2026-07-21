@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { isSafeModuleRoutePath, normalizeModuleRoutePath } from './moduleRoute'
-import { normalizeModuleBundle } from './moduleRuntime'
+import { normalizeModuleBundle, normalizeModuleEntryUrl } from './moduleRuntime'
 
 describe('moduleRoute', () => {
   it('accepts manifest-style paths', () => {
@@ -18,6 +18,26 @@ describe('moduleRoute', () => {
   it('rejects unsafe paths', () => {
     expect(isSafeModuleRoutePath('../evil')).toBe(false)
     expect(isSafeModuleRoutePath('shop//evil')).toBe(false)
+  })
+})
+
+describe('normalizeModuleEntryUrl', () => {
+  it('rewrites legacy sibling Modules path to in-plugin path', () => {
+    const input =
+      'https://parisma.ir/wp-content/plugins/Modules/bale-bot-module/client/dist/module.js'
+    const out = normalizeModuleEntryUrl(input)
+    expect(out).toBe(
+      `${window.location.origin}/wp-content/plugins/WebinaDashboard/Modules/bale-bot-module/client/dist/module.js`,
+    )
+  })
+
+  it('forces same-origin for in-plugin module URLs', () => {
+    const input =
+      'http://other.example/wp-content/plugins/WebinaDashboard/Modules/wfcp-module/client/dist/module.js'
+    const out = normalizeModuleEntryUrl(input)
+    expect(out).toBe(
+      `${window.location.origin}/wp-content/plugins/WebinaDashboard/Modules/wfcp-module/client/dist/module.js`,
+    )
   })
 })
 

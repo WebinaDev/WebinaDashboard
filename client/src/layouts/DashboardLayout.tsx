@@ -110,8 +110,8 @@ export function DashboardLayout() {
   const navLabels = useMemo(() => flattenNavLabels(navSections), [navSections])
 
   const headerTitle = useMemo(() => {
-    return resolveSiteHeaderTitle(loc.pathname, navLabels, t)
-  }, [loc.pathname, navLabels, t])
+    return resolveSiteHeaderTitle(loc.pathname, navLabels, t, bq.data?.activeModuleClients)
+  }, [loc.pathname, navLabels, t, bq.data?.activeModuleClients])
 
   const siteName = bq.data?.site?.name ?? t('app.title')
 

@@ -4,6 +4,7 @@ import { Navigate, useParams } from 'react-router-dom'
 
 import { ModuleDynamicRoute } from '@/components/ModuleDynamicRoute'
 import { QueryErrorState } from '@/components/QueryErrorState'
+import { RoutePageSkeleton } from '@/components/skeletons'
 import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { SettingsSectionLayout } from '@/layouts/SettingsSectionLayout'
 import { marketplaceSettingsSectionsFromBootstrap } from '@/lib/marketplace-api'
@@ -13,18 +14,20 @@ import { shopNavItemsWithModules } from '@/pages/settings/shop/settings-shop-nav
 export default function ModuleSettingsShell() {
   const { t } = useTranslation()
   const { moduleSlug } = useParams<{ moduleSlug: string }>()
-  const { data } = useBootstrapQuery()
+  const { data, isPending, isError } = useBootstrapQuery()
+
+  const bootstrapReady = data !== undefined
 
   const section = useMemo(() => {
     return marketplaceSettingsSectionsFromBootstrap().find((s) => s.slug === moduleSlug)
   }, [moduleSlug])
 
   const routePath = useMemo(() => {
-    if (!moduleSlug) {
+    if (!moduleSlug || !bootstrapReady) {
       return null
     }
     return resolveModuleSettingsRoutePath(data?.activeModuleClients, moduleSlug, section?.route)
-  }, [data?.activeModuleClients, moduleSlug, section?.route])
+  }, [bootstrapReady, data?.activeModuleClients, moduleSlug, section?.route])
 
   if (!moduleSlug) {
     return <Navigate to="/settings/shop/general" replace />
@@ -40,7 +43,13 @@ export default function ModuleSettingsShell() {
       descriptionKey="marketplace.moduleSettingsDesc"
       navItems={shopNavItemsWithModules()}
     >
-      {routePath ? (
+      {!bootstrapReady ? (
+        isPending || !isError ? (
+          <RoutePageSkeleton />
+        ) : (
+          <QueryErrorState message={t('modules.loadFailed')} />
+        )
+      ) : routePath ? (
         <ModuleDynamicRoute slug={moduleSlug} routePath={routePath} />
       ) : (
         <QueryErrorState message={t('modules.loadFailed')} />

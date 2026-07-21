@@ -25,7 +25,10 @@ export function LicenseGate({ children }: { children?: ReactNode }) {
     return children ? <>{children}</> : <Outlet />
   }
 
-  if (!bq.isFetched) {
+  // Block only until bootstrap data exists. A server-embedded snapshot supplies
+  // initialData, which suppresses the initial fetch, so `isFetched` never flips
+  // true and would otherwise leave the skeleton stuck forever.
+  if (bq.isPending || bq.data === undefined) {
     return <LicenseLoading />
   }
 

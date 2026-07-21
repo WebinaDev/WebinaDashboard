@@ -8,7 +8,7 @@
 
 define( 'ABSPATH', __DIR__ . '/' );
 define( 'WEBINO_DASHBOARD_DIR', dirname( __DIR__ ) . '/' );
-define( 'WEBINO_MODULES_DIR', dirname( WEBINO_DASHBOARD_DIR ) . '/Modules/' );
+define( 'WEBINO_MODULES_DIR', WEBINO_DASHBOARD_DIR . 'Modules/' );
 
 if ( ! function_exists( 'apply_filters' ) ) {
 	/**

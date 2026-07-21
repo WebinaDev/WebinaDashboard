@@ -88,13 +88,43 @@ function assertAllowedModuleEntry(entry: string): void {
   }
 }
 
+/**
+ * Rewrite legacy sibling Modules URLs and force same-origin absolute URLs
+ * so dynamic import works after Modules moved inside WebinaDashboard.
+ */
+export function normalizeModuleEntryUrl(entry: string): string {
+  const trimmed = entry.trim()
+  if (!trimmed) {
+    return trimmed
+  }
+  try {
+    const parsed = new URL(trimmed, window.location.origin)
+    let path = parsed.pathname
+    // Legacy: wp-content/plugins/Modules/{slug}/... → WebinaDashboard/Modules/{slug}/...
+    if (path.includes('/wp-content/plugins/Modules/')) {
+      path = path.replace('/wp-content/plugins/Modules/', '/wp-content/plugins/WebinaDashboard/Modules/')
+    }
+    if (path.includes('/WebinaDashboard/Modules/') || path.includes('/plugins/WebinaDashboard/Modules/')) {
+      return `${window.location.origin}${path}${parsed.search}`
+    }
+    // Same-origin absolute for any allowed absolute URL (avoids http/https host drift).
+    if (parsed.origin === window.location.origin) {
+      return `${window.location.origin}${path}${parsed.search}`
+    }
+    return parsed.href
+  } catch {
+    return trimmed
+  }
+}
+
 export async function loadModuleBundle(slug: string, entry: string): Promise<ModuleBundle> {
   const cached = bundleCache.get(slug)
   if (cached) {
     return cached
   }
-  assertAllowedModuleEntry(entry)
-  const mod = await import(/* @vite-ignore */ entry)
+  const resolved = normalizeModuleEntryUrl(entry)
+  assertAllowedModuleEntry(resolved)
+  const mod = await import(/* @vite-ignore */ resolved)
   const bundle = normalizeModuleBundle(mod as Record<string, unknown>)
   bundleCache.set(slug, bundle)
   return bundle

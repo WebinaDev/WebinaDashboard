@@ -1,6 +1,6 @@
 <?php
 /**
- * Unified loader for dashboard extension modules in ../Modules/{slug}/.
+ * Unified loader for dashboard extension modules in Modules/{slug}/ (inside the plugin).
  *
  * @package WebinoDashboard
  */
@@ -21,6 +21,8 @@ final class Webino_Dashboard_Module_Registry {
 	const MIGRATION_OPTION = 'webino_dashboard_modules_migrated_v1';
 	const MIGRATION_SLUG_OPTION = 'webino_dashboard_modules_slug_migrated_v1';
 	const TOGGLE_SYNC_OPTION   = 'webino_dashboard_module_toggle_synced_v1';
+	/** One-time: re-activate complete on-disk modules after Modules path move. */
+	const DISK_REACTIVATE_OPTION = 'webino_dashboard_disk_modules_reactivated_1';
 
 	/**
 	 * @return void
@@ -34,7 +36,8 @@ final class Webino_Dashboard_Module_Registry {
 
 		self::maybe_migrate_legacy_paths();
 		self::maybe_migrate_legacy_slug_options();
-		self::heal_orphan_module_options();
+		self::ensure_disk_modules_registered();
+		self::maybe_reactivate_disk_modules();
 		self::maybe_sync_sidebar_toggles_from_marketplace();
 
 		add_action( 'init', array( __CLASS__, 'load_active_modules' ), 10 );
@@ -50,10 +53,10 @@ final class Webino_Dashboard_Module_Registry {
 		if ( defined( 'WEBINO_MODULES_DIR' ) ) {
 			$dir = (string) WEBINO_MODULES_DIR;
 		} else {
-			$dir = trailingslashit( dirname( WEBINO_DASHBOARD_DIR ) ) . 'Modules/';
+			$dir = trailingslashit( WEBINO_DASHBOARD_DIR ) . 'Modules/';
 		}
 		/**
-		 * Filter absolute path to the Modules directory (sibling of WebinoDashboard).
+		 * Filter absolute path to the Modules directory (inside WebinaDashboard).
 		 *
 		 * @param string $dir Path with trailing slash.
 		 */
@@ -158,15 +161,14 @@ final class Webino_Dashboard_Module_Registry {
 	}
 
 	/**
+	 * Disk presence + complete package. CRM install markers are not required.
+	 *
 	 * @param string $slug Module slug.
 	 * @return bool
 	 */
 	public static function is_installed( $slug ) {
 		$slug = sanitize_key( $slug );
-		if ( ! get_option( self::OPTION_PREFIX . $slug . '_installed', false ) ) {
-			return false;
-		}
-		if ( self::INSTALLED_VIA_VALUE !== (string) get_option( self::OPTION_PREFIX . $slug . '_installed_via', '' ) ) {
+		if ( '' === $slug ) {
 			return false;
 		}
 		$manifest = self::get_manifest( $slug );
@@ -174,6 +176,92 @@ final class Webino_Dashboard_Module_Registry {
 			return false;
 		}
 		return self::module_package_is_complete( $slug, $manifest );
+	}
+
+	/**
+	 * Register every complete module on disk as installed + active.
+	 *
+	 * @return void
+	 */
+	public static function ensure_disk_modules_registered() {
+		static $done = false;
+		if ( $done ) {
+			return;
+		}
+		$done = true;
+
+		foreach ( self::scan_manifests() as $manifest ) {
+			$slug = sanitize_key( (string) ( $manifest['slug'] ?? '' ) );
+			if ( '' === $slug ) {
+				continue;
+			}
+			if ( ! self::module_package_is_complete( $slug, $manifest ) ) {
+				continue;
+			}
+			$version = (string) ( $manifest['version'] ?? '' );
+			if ( ! get_option( self::OPTION_PREFIX . $slug . '_installed', false ) ) {
+				self::mark_installed( $slug, $version );
+				continue;
+			}
+			if ( '' === (string) get_option( self::OPTION_PREFIX . $slug . '_installed_via', '' ) ) {
+				update_option( self::OPTION_PREFIX . $slug . '_installed_via', self::INSTALLED_VIA_VALUE, false );
+			}
+			$active = get_option( self::OPTION_PREFIX . $slug . '_active', null );
+			if ( null === $active ) {
+				self::set_active( $slug, true );
+			}
+			if ( $version && '' === (string) get_option( self::OPTION_PREFIX . $slug . '_version', '' ) ) {
+				update_option( self::OPTION_PREFIX . $slug . '_version', sanitize_text_field( $version ), false );
+			}
+		}
+	}
+
+	/**
+	 * One-time: force-activate every complete module on disk.
+	 * Fixes modules left inactive after the Modules/ path move / unsafe-bootstrap deactivation.
+	 *
+	 * @return void
+	 */
+	public static function maybe_reactivate_disk_modules() {
+		if ( '1' === (string) get_option( self::DISK_REACTIVATE_OPTION, '' ) ) {
+			return;
+		}
+		foreach ( self::scan_manifests() as $manifest ) {
+			$slug = sanitize_key( (string) ( $manifest['slug'] ?? '' ) );
+			if ( '' === $slug || ! self::module_package_is_complete( $slug, $manifest ) ) {
+				continue;
+			}
+			if ( ! get_option( self::OPTION_PREFIX . $slug . '_installed', false ) ) {
+				self::mark_installed( $slug, (string) ( $manifest['version'] ?? '' ) );
+				continue;
+			}
+			self::set_active( $slug, true );
+		}
+		update_option( self::DISK_REACTIVATE_OPTION, '1', false );
+	}
+
+	/**
+	 * True when at least one complete module on disk has a readable client entry.
+	 *
+	 * @return bool
+	 */
+	public static function disk_has_readable_module_clients() {
+		foreach ( self::scan_manifests() as $manifest ) {
+			$slug = sanitize_key( (string) ( $manifest['slug'] ?? '' ) );
+			if ( '' === $slug ) {
+				continue;
+			}
+			$client = isset( $manifest['client'] ) && is_array( $manifest['client'] ) ? $manifest['client'] : array();
+			if ( empty( $client ) ) {
+				continue;
+			}
+			$entry_rel = (string) ( $client['entry'] ?? 'client/dist/module.js' );
+			$entry_abs = self::module_dir( $slug ) . ltrim( $entry_rel, '/' );
+			if ( is_readable( $entry_abs ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -467,32 +555,9 @@ final class Webino_Dashboard_Module_Registry {
 	 * @return array<int,string>
 	 */
 	public static function list_installed_module_slugs() {
-		global $wpdb;
-		$prefix = self::OPTION_PREFIX;
-		$like   = $wpdb->esc_like( $prefix ) . '%_installed';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
-				$like
-			),
-			ARRAY_A
-		);
 		$slugs = array();
-		if ( ! is_array( $rows ) ) {
-			return $slugs;
-		}
-		$suffix = '_installed';
-		$plen   = strlen( $prefix );
-		foreach ( $rows as $row ) {
-			if ( empty( $row['option_value'] ) || '1' !== (string) $row['option_value'] ) {
-				continue;
-			}
-			$name = (string) ( $row['option_name'] ?? '' );
-			if ( strncmp( $name, $prefix, $plen ) !== 0 || substr( $name, -strlen( $suffix ) ) !== $suffix ) {
-				continue;
-			}
-			$slug = sanitize_key( substr( $name, $plen, -strlen( $suffix ) ) );
+		foreach ( self::scan_manifests() as $manifest ) {
+			$slug = sanitize_key( (string) ( $manifest['slug'] ?? '' ) );
 			if ( '' !== $slug && self::is_installed( $slug ) ) {
 				$slugs[] = $slug;
 			}
@@ -501,56 +566,12 @@ final class Webino_Dashboard_Module_Registry {
 	}
 
 	/**
-	 * Clear marketplace options when module files were removed outside the dashboard.
+	 * Disabled: never auto-uninstall modules or strip options.
 	 *
 	 * @return void
 	 */
 	public static function heal_orphan_module_options() {
-		global $wpdb;
-
-		$prefix = self::OPTION_PREFIX;
-		$like   = $wpdb->esc_like( $prefix ) . '%_installed';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
-				$like
-			),
-			ARRAY_A
-		);
-		if ( ! is_array( $rows ) ) {
-			return;
-		}
-
-		$suffix = '_installed';
-		$plen   = strlen( $prefix );
-		foreach ( $rows as $row ) {
-			if ( empty( $row['option_value'] ) || '1' !== (string) $row['option_value'] ) {
-				continue;
-			}
-			$name = (string) ( $row['option_name'] ?? '' );
-			if ( strncmp( $name, $prefix, $plen ) !== 0 || substr( $name, -strlen( $suffix ) ) !== $suffix ) {
-				continue;
-			}
-			$slug = sanitize_key( substr( $name, $plen, -strlen( $suffix ) ) );
-			if ( '' === $slug ) {
-				continue;
-			}
-			$via = (string) get_option( self::OPTION_PREFIX . $slug . '_installed_via', '' );
-			if ( self::INSTALLED_VIA_VALUE !== $via ) {
-				self::mark_uninstalled( $slug );
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( '[Webino Dashboard] Healed module without CRM install marker: ' . $slug );
-				continue;
-			}
-			$manifest = self::get_manifest( $slug );
-			if ( ! is_array( $manifest ) || ! self::module_package_is_complete( $slug, $manifest ) ) {
-				self::mark_uninstalled( $slug );
-				self::set_active( $slug, false );
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( '[Webino Dashboard] Healed incomplete/orphan module package: ' . $slug );
-			}
-		}
+		// Intentionally no-op — disk modules must remain available without CRM markers.
 	}
 
 	/**
@@ -847,33 +868,12 @@ final class Webino_Dashboard_Module_Registry {
 	}
 
 	/**
-	 * Remove module directories that have no CRM install marker (opt-out via filter).
+	 * Disabled: never delete module directories automatically.
 	 *
 	 * @return void
 	 */
 	public static function prune_unregistered_module_dirs() {
-		if ( ! apply_filters( 'webino_dashboard_prune_stray_modules', true ) ) {
-			return;
-		}
-		$dir = self::modules_dir();
-		if ( ! is_dir( $dir ) ) {
-			return;
-		}
-		foreach ( glob( $dir . '*', GLOB_ONLYDIR ) ?: array() as $module_dir ) {
-			$slug = basename( $module_dir );
-			if ( '' === $slug || str_starts_with( $slug, '.' ) ) {
-				continue;
-			}
-			if ( self::is_installed( $slug ) ) {
-				continue;
-			}
-			if ( get_option( self::OPTION_PREFIX . sanitize_key( $slug ) . '_installed', false ) ) {
-				continue;
-			}
-			self::remove_module_dir( $slug );
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( '[Webino Dashboard] Pruned unregistered module directory: ' . $slug );
-		}
+		// Intentionally no-op — uploaded Modules/ packages must not be removed.
 	}
 
 	/**
@@ -949,9 +949,7 @@ final class Webino_Dashboard_Module_Registry {
 		$manifest = '' !== $slug ? self::get_manifest( $slug ) : null;
 		if ( '' !== $slug && ( ! is_array( $manifest ) || ! self::module_package_is_complete( $slug, $manifest ) ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( '[Webino Dashboard] Incomplete module package blocked: ' . $slug );
-			self::mark_uninstalled( $slug );
-			self::set_active( $slug, false );
+			error_log( '[Webino Dashboard] Incomplete module package blocked (not uninstalled): ' . $slug );
 			return false;
 		}
 		require_once $file;
@@ -962,8 +960,7 @@ final class Webino_Dashboard_Module_Registry {
 	 * @return void
 	 */
 	public static function load_active_modules() {
-		self::heal_orphan_module_options();
-		self::prune_unregistered_module_dirs();
+		self::ensure_disk_modules_registered();
 
 		foreach ( self::list_installed_module_slugs() as $slug ) {
 			if ( ! self::is_active( $slug ) ) {
@@ -971,7 +968,6 @@ final class Webino_Dashboard_Module_Registry {
 			}
 			$manifest = self::get_manifest( $slug );
 			if ( ! is_array( $manifest ) ) {
-				self::mark_uninstalled( $slug );
 				continue;
 			}
 			if ( ! self::can_load_module_bootstrap( $slug, $manifest ) ) {
@@ -1239,8 +1235,7 @@ final class Webino_Dashboard_Module_Registry {
 				continue;
 			}
 			$client = isset( $manifest['client'] ) && is_array( $manifest['client'] ) ? $manifest['client'] : array();
-			$routes = isset( $client['routes'] ) && is_array( $client['routes'] ) ? $client['routes'] : array();
-			if ( empty( $routes ) ) {
+			if ( empty( $client ) ) {
 				continue;
 			}
 			$entry_rel = (string) ( $client['entry'] ?? 'client/dist/module.js' );
@@ -1249,9 +1244,10 @@ final class Webino_Dashboard_Module_Registry {
 				continue;
 			}
 			$entry_url = plugins_url(
-				'../Modules/' . $slug . '/' . ltrim( $entry_rel, '/' ),
+				'Modules/' . $slug . '/' . ltrim( $entry_rel, '/' ),
 				WEBINO_DASHBOARD_FILE
 			);
+			$routes = isset( $client['routes'] ) && is_array( $client['routes'] ) ? $client['routes'] : array();
 			$normalized_routes = array();
 			foreach ( $routes as $route ) {
 				if ( ! is_array( $route ) || empty( $route['path'] ) ) {
@@ -1264,9 +1260,8 @@ final class Webino_Dashboard_Module_Registry {
 					'headerParamKeys'=> isset( $route['headerParamKeys'] ) && is_array( $route['headerParamKeys'] ) ? $route['headerParamKeys'] : array(),
 				);
 			}
-			if ( empty( $normalized_routes ) ) {
-				continue;
-			}
+			// Include modules with a readable entry even when routes are empty —
+			// settings panels load named components from the same bundle.
 			$out[] = array(
 				'slug'   => $slug,
 				'entry'  => $entry_url,

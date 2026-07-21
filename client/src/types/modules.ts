@@ -15,7 +15,7 @@ export type ActiveModuleRoute = {
   path: string
   capability: string
   headerTitleKey?: string
-  headerParamKeys?: string[]
+  headerParamKeys?: Record<string, string> | string[]
 }
 
 export type ActiveModuleClient = {

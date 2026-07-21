@@ -8,7 +8,7 @@
 
 define( 'ABSPATH', __DIR__ . '/' );
 define( 'WEBINO_DASHBOARD_DIR', dirname( __DIR__ ) . '/' );
-define( 'WEBINO_MODULES_DIR', dirname( WEBINO_DASHBOARD_DIR ) . '/Modules/' );
+define( 'WEBINO_MODULES_DIR', WEBINO_DASHBOARD_DIR . 'Modules/' );
 
 if ( ! function_exists( 'apply_filters' ) ) {
 	/**
@@ -45,7 +45,7 @@ if ( ! function_exists( 'trailingslashit' ) ) {
 require dirname( __DIR__ ) . '/includes/class-webino-dashboard-module-registry.php';
 
 $fixture = __DIR__ . '/fixtures/legacy-telegram-bootstrap.php';
-$current = dirname( __DIR__, 2 ) . '/Modules/telegram-bot-module/bootstrap.php';
+$current = dirname( __DIR__ ) . '/Modules/telegram-bot-module/bootstrap.php';
 
 if ( ! is_readable( $fixture ) ) {
 	fwrite( STDERR, "FAIL: missing fixture {$fixture}\n" );

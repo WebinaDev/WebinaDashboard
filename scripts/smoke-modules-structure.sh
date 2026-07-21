@@ -3,8 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO_ROOT="$(cd "$ROOT/.." && pwd)"
-MODULES="$REPO_ROOT/Modules"
+MODULES="$ROOT/Modules"
 FAIL=0
 
 echo "== Modules structure smoke =="
@@ -73,11 +72,21 @@ else
   echo "OK: marketplace install always uses ZIP flow"
 fi
 
-if grep -q 'cp -a "$MODULES_SRC" "$STAGE/Modules"' "$ROOT/scripts/build-release-zip.sh"; then
-  echo "FAIL: release zip still copies built-in Modules/"
+if ! grep -q 'for dir in includes templates assets Modules languages' "$ROOT/scripts/build-release-zip.sh"; then
+  echo "FAIL: release zip must ship Modules/ inside WebinaDashboard"
+  FAIL=1
+elif grep -q 'mkdir -p "$STAGE/WebinoDashboard" "$STAGE/Modules"' "$ROOT/scripts/build-release-zip.sh"; then
+  echo "FAIL: release zip still stages sibling Modules/"
   FAIL=1
 else
-  echo "OK: release zip ships empty Modules/"
+  echo "OK: release zip ships Modules/ inside WebinaDashboard"
+fi
+
+if ! grep -q "WEBINO_DASHBOARD_DIR ) ) . 'Modules/'" "$ROOT/webino-dashboard.php" && ! grep -q "WEBINO_DASHBOARD_DIR ) . 'Modules/'" "$ROOT/webino-dashboard.php"; then
+  echo "FAIL: WEBINO_MODULES_DIR must point inside WebinaDashboard"
+  FAIL=1
+else
+  echo "OK: WEBINO_MODULES_DIR is inside the plugin"
 fi
 
 if grep -R --include='*.php' -E "Modules/(bale-bot|telegram-bot|wfcp)/" "$MODULES" 2>/dev/null | grep -v 'bale-bot-module' | grep -v 'telegram-bot-module' | grep -v 'wfcp-module' | head -1 | grep -q .; then
@@ -203,7 +212,8 @@ fi
 echo "== smoke PASSED (static) =="
 echo ""
 echo "Manual checks on a WordPress site:"
-echo "  A) Rename wp-content/plugins/Modules -> Modules.off — /dashboard home + shop must load (200)."
+echo "  A) Confirm modules live at wp-content/plugins/WebinaDashboard/Modules/ — /dashboard home + shop must load (200)."
 echo "  B) Disable each module in Settings — no PHP fatal on home-overview REST."
 echo "  C) Enable each module — sidebar + one REST route per slug."
 echo "  D) Marketplace install ZIP with manifest.json at archive root."
+echo "  E) Remove obsolete sibling wp-content/plugins/Modules/ if it still exists."

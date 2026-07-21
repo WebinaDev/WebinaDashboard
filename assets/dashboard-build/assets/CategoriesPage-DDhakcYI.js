@@ -1,0 +1,1 @@
+import{B as e,Nr as t,yr as n}from"./dashboard-shell-C9612KzZ.js";import{t as r}from"./CategoryManager-DT9bQCzh.js";var i=n();function a(){let{t:n}=t();return(0,i.jsx)(e,{title:n(`categories.title`),children:(0,i.jsx)(r,{selectable:!1,compact:!1})})}export{a as default};

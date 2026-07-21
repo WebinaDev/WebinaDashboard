@@ -45,7 +45,7 @@ function LegacyModuleRedirect({
 }) {
   const bootstrap = useBootstrapQuery()
   const installed = bootstrap.data?.installedModuleSlugs ?? []
-  if (!bootstrap.isFetched) {
+  if (bootstrap.isPending || bootstrap.data === undefined) {
     return <RoutePageSkeleton />
   }
   if (!installed.includes(requiredSlug)) {

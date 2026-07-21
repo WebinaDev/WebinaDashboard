@@ -23,7 +23,7 @@ define( 'WEBINO_DASHBOARD_FILE', __FILE__ );
 define( 'WEBINO_DASHBOARD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_URL', plugin_dir_url( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_BASENAME', plugin_basename( __FILE__ ) );
-define( 'WEBINO_MODULES_DIR', trailingslashit( dirname( WEBINO_DASHBOARD_DIR ) ) . 'Modules/' );
+define( 'WEBINO_MODULES_DIR', trailingslashit( WEBINO_DASHBOARD_DIR ) . 'Modules/' );
 if ( ! defined( 'WEBINO_DASHBOARD_VENDOR_HOST' ) ) {
 	define( 'WEBINO_DASHBOARD_VENDOR_HOST', 'webina.dev' );
 }

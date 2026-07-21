@@ -152,7 +152,7 @@ final class Webino_Dashboard_Core_Updater {
 				throw new Exception( $backup_dir->get_error_message() );
 			}
 
-			$copied = self::copy_tree( $core_src, trailingslashit( WEBINO_DASHBOARD_DIR ) );
+			$copied = self::copy_tree( $core_src, trailingslashit( WEBINO_DASHBOARD_DIR ), array( 'Modules' ) );
 			if ( is_wp_error( $copied ) ) {
 				$restore = self::restore_backup( $backup_dir );
 				if ( is_wp_error( $restore ) ) {
@@ -317,6 +317,8 @@ final class Webino_Dashboard_Core_Updater {
 	}
 
 	/**
+	 * Ensure in-plugin Modules/ exists after core update (never wipe installed slugs).
+	 *
 	 * @param string $staging Staging extract root.
 	 * @return void
 	 */
@@ -324,11 +326,22 @@ final class Webino_Dashboard_Core_Updater {
 		if ( ! defined( 'WEBINO_MODULES_DIR' ) ) {
 			return;
 		}
-		$modules_staging = trailingslashit( $staging ) . 'Modules';
-		if ( ! is_dir( $modules_staging ) ) {
+		wp_mkdir_p( WEBINO_MODULES_DIR );
+
+		$candidates = array(
+			trailingslashit( $staging ) . 'WebinaDashboard/Modules',
+			trailingslashit( $staging ) . 'Modules',
+		);
+		$modules_staging = '';
+		foreach ( $candidates as $candidate ) {
+			if ( is_dir( $candidate ) ) {
+				$modules_staging = $candidate;
+				break;
+			}
+		}
+		if ( '' === $modules_staging ) {
 			return;
 		}
-		wp_mkdir_p( WEBINO_MODULES_DIR );
 		$keep = trailingslashit( $modules_staging ) . '.gitkeep';
 		if ( is_readable( $keep ) && ! file_exists( trailingslashit( WEBINO_MODULES_DIR ) . '.gitkeep' ) ) {
 			copy( $keep, trailingslashit( WEBINO_MODULES_DIR ) . '.gitkeep' );
@@ -382,21 +395,37 @@ final class Webino_Dashboard_Core_Updater {
 	}
 
 	/**
-	 * @param string $src Source directory (trailing slash).
-	 * @param string $dest Destination directory (trailing slash).
+	 * @param string        $src            Source directory (trailing slash).
+	 * @param string        $dest           Destination directory (trailing slash).
+	 * @param array<int,string> $skip_top_level Top-level names under $src to skip (e.g. Modules).
 	 * @return true|WP_Error
 	 */
-	private static function copy_tree( $src, $dest ) {
+	private static function copy_tree( $src, $dest, $skip_top_level = array() ) {
 		if ( ! is_dir( $src ) ) {
 			return new WP_Error( 'copy', __( 'Source directory is missing.', 'webino-dashboard' ), array( 'status' => 500 ) );
 		}
 		wp_mkdir_p( $dest );
+		$skip = array();
+		foreach ( $skip_top_level as $name ) {
+			$name = trim( (string) $name, "/\\ \t\n\r\0\x0B" );
+			if ( '' !== $name ) {
+				$skip[ $name ] = true;
+			}
+		}
 		$iterator = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator( $src, RecursiveDirectoryIterator::SKIP_DOTS ),
 			RecursiveIteratorIterator::SELF_FIRST
 		);
 		foreach ( $iterator as $item ) {
-			$rel  = substr( $item->getPathname(), strlen( $src ) );
+			$rel = substr( $item->getPathname(), strlen( $src ) );
+			$rel = ltrim( str_replace( '\\', '/', $rel ), '/' );
+			if ( '' === $rel ) {
+				continue;
+			}
+			$top = strtok( $rel, '/' );
+			if ( isset( $skip[ $top ] ) ) {
+				continue;
+			}
 			$target = $dest . $rel;
 			if ( $item->isDir() ) {
 				wp_mkdir_p( $target );

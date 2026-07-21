@@ -20,12 +20,39 @@ function stableModuleId(m: DashboardModule): string {
   return raw
 }
 
+/** Map current sidebar/manifest IDs to legacy nav.module.* keys when present. */
+const NAV_MODULE_ID_ALIASES: Record<string, string> = {
+  'wfcp-module-quick': 'wfcp-quick',
+  'wfcp-module-bulk': 'wfcp-bulk',
+  'wfcp-module-price': 'wfcp-price',
+  'analytics-module': 'analytics',
+  'analytics-module-overview': 'analytics-overview',
+  'analytics-module-visitors': 'analytics-visitors',
+  'analytics-module-pages': 'analytics-pages',
+  'analytics-module-referrals': 'analytics-referrals',
+  'analytics-module-geo': 'analytics-geo',
+  'analytics-module-devices': 'analytics-devices',
+  'analytics-module-bots': 'analytics-bots',
+  'sms-panel-module': 'sms-panel',
+  'bale-bot-module': 'bale-bot',
+  'telegram-bot-module': 'telegram-bot',
+  'bots-bale': 'bale-bot',
+  'bots-telegram': 'telegram-bot',
+}
+
 export function moduleNavTitle(t: TFunction, id: string, fallback: string): string {
   if (id === 'settings-app') {
     const settings = t('nav.module.settings', { defaultValue: '' })
     if (settings) return settings
   }
-  return t(`nav.module.${id}`, { defaultValue: fallback })
+  const primary = t(`nav.module.${id}`, { defaultValue: '' })
+  if (primary) return primary
+  const alias = NAV_MODULE_ID_ALIASES[id]
+  if (alias) {
+    const aliased = t(`nav.module.${alias}`, { defaultValue: '' })
+    if (aliased) return aliased
+  }
+  return fallback
 }
 
 export const NAV_GROUP_ORDER: DashboardNavGroup[] = ['content', 'shop', 'tools', 'reports', 'admin']

@@ -11,6 +11,18 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 
+/** Radix forbids SelectItem value=""; WC often uses "" as a placeholder option. */
+const WC_EMPTY_SELECT_VALUE = '__wc_empty__'
+
+function toSelectValue(raw: unknown): string {
+  const s = String(raw ?? '')
+  return s === '' ? WC_EMPTY_SELECT_VALUE : s
+}
+
+function fromSelectValue(v: string): string {
+  return v === WC_EMPTY_SELECT_VALUE ? '' : v
+}
+
 type WcSettingsFormRendererProps = {
   fields: WcSettingsField[]
   values: Record<string, unknown>
@@ -74,16 +86,23 @@ export function WcSettingsFormRenderer({ fields, values, onChange, disabled }: W
           return (
             <div key={id} className="space-y-2">
               <Label htmlFor={id}>{field.title || id}</Label>
-              <Select value={String(value ?? '')} disabled={disabled} onValueChange={(v) => onChange(id, v)}>
+              <Select
+                value={toSelectValue(value)}
+                disabled={disabled}
+                onValueChange={(v) => onChange(id, fromSelectValue(v))}
+              >
                 <SelectTrigger id={id} className="max-w-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(opts).map(([k, label]) => (
-                    <SelectItem key={k} value={k}>
-                      {label}
-                    </SelectItem>
-                  ))}
+                  {Object.entries(opts).map(([k, label]) => {
+                    const itemValue = k === '' ? WC_EMPTY_SELECT_VALUE : k
+                    return (
+                      <SelectItem key={itemValue} value={itemValue}>
+                        {label}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
               {field.desc ? <p className="text-muted-foreground text-xs">{field.desc}</p> : null}

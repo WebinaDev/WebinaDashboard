@@ -3,8 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO_ROOT="$(cd "$ROOT/.." && pwd)"
-MODULES="$REPO_ROOT/Modules"
+MODULES="$ROOT/Modules"
 FAIL=0
 
 SAFE_MODULE_ROUTE='^[a-z0-9][a-z0-9/_:-]*$'

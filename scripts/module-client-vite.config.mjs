@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const dashboardRoot = path.resolve(__dirname, '..')
 const clientDir = path.join(dashboardRoot, 'client')
-const modulesDir = path.resolve(dashboardRoot, '..', 'Modules')
+const modulesDir = path.resolve(dashboardRoot, 'Modules')
 const clientNodeModules = path.join(clientDir, 'node_modules')
 const requireFromClient = createRequire(path.join(clientNodeModules, 'package.json'))
 

@@ -25,6 +25,10 @@ const NAV: SettingsNavItem[] = [
   { id: 'sms', to: '/settings/site/sms', labelKey: 'settings.site.sections.sms' },
 ]
 
+function botModuleSlug(provider: string): string {
+  return provider === 'telegram' ? 'telegram-bot-module' : 'bale-bot-module'
+}
+
 function BotSettingsSection() {
   const { provider, setProvider } = useBotProvider('bale')
   return (
@@ -34,7 +38,11 @@ function BotSettingsSection() {
           <BotProviderSwitcher provider={provider} onChange={setProvider} />
         </CardContent>
       </Card>
-      <ModulePanel slug="bale-bot-module" component="BotSettingsPanel" componentProps={{ provider }} />
+      <ModulePanel
+        slug={botModuleSlug(provider)}
+        component="BotSettingsPanel"
+        componentProps={{ provider }}
+      />
     </div>
   )
 }
@@ -48,7 +56,7 @@ function BotLogsSection() {
           <BotProviderSwitcher provider={provider} onChange={setProvider} />
         </CardContent>
       </Card>
-      <ModulePanel slug="bale-bot-module" component="BotLogsPanel" componentProps={{ provider }} />
+      <ModulePanel slug={botModuleSlug(provider)} component="BotLogsPanel" componentProps={{ provider }} />
     </div>
   )
 }

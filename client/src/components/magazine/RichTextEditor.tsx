@@ -72,32 +72,36 @@ export function RichTextEditor({ value, onChange, disabled, placeholder }: RichT
     ],
     content: value,
     editable: !disabled,
+    immediatelyRender: false,
     onUpdate: ({ editor: ed }) => {
+      if (ed.isDestroyed) return
       const html = ed.getHTML()
       onChange(html)
       setCodeValue(html)
     },
   })
 
-  useEffect(() => {
-    if (!editor) return
-    editor.setEditable(!disabled)
-  }, [disabled, editor])
+  const editorReady = Boolean(editor && !editor.isDestroyed)
 
   useEffect(() => {
-    if (!editor) return
+    if (!editorReady || !editor) return
+    editor.setEditable(!disabled)
+  }, [disabled, editor, editorReady])
+
+  useEffect(() => {
+    if (!editorReady || !editor) return
     const current = editor.getHTML()
     if (value !== current) {
       editor.commands.setContent(value, { emitUpdate: false })
       setCodeValue(value)
     }
-  }, [value, editor])
+  }, [value, editor, editorReady])
 
   function switchTab(next: string) {
-    if (next === 'code' && editor) {
+    if (next === 'code' && editorReady && editor) {
       setCodeValue(editor.getHTML())
     }
-    if (next === 'visual' && editor) {
+    if (next === 'visual' && editorReady && editor) {
       const safe = sanitizeEditorHtml(codeValue)
       editor.commands.setContent(safe, { emitUpdate: false })
       onChange(safe)
@@ -110,13 +114,13 @@ export function RichTextEditor({ value, onChange, disabled, placeholder }: RichT
     const safe = sanitizeEditorHtml(html)
     setCodeValue(safe)
     onChange(safe)
-    if (editor) {
+    if (editorReady && editor) {
       editor.commands.setContent(safe, { emitUpdate: false })
     }
   }
 
   function setLink() {
-    if (!editor) return
+    if (!editorReady || !editor) return
     const prev = editor.getAttributes('link').href as string | undefined
     const url = window.prompt(t('posts.linkPrompt'), prev ?? '')
     if (url === null) return
@@ -131,7 +135,7 @@ export function RichTextEditor({ value, onChange, disabled, placeholder }: RichT
   }
 
   function addImage() {
-    if (!editor) return
+    if (!editorReady || !editor) return
     const url = window.prompt(t('posts.imageUrlPrompt'))
     if (!url || !isSafeContentUrl(url)) return
     editor.chain().focus().setImage({ src: url }).run()
@@ -148,7 +152,7 @@ export function RichTextEditor({ value, onChange, disabled, placeholder }: RichT
             {t('posts.editorCode')}
           </TabsTrigger>
         </TabsList>
-        {tab === 'visual' && editor ? (
+        {tab === 'visual' && editorReady && editor ? (
           <div className="flex flex-wrap items-center gap-0.5">
             <ToolbarButton
               active={editor.isActive('bold')}

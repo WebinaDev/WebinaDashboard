@@ -73,8 +73,10 @@ echo "OK: embedded module settings shell"
 
 grep -q 'woocommerce_required' "$ROOT/includes/class-webino-dashboard-module-registry.php" \
   || { echo "FAIL: WC check missing in validate_installed_package" >&2; exit 1; }
-grep -q "apply_filters( 'webino_dashboard_prune_stray_modules', true )" "$ROOT/includes/class-webino-dashboard-module-registry.php" \
-  || { echo "FAIL: prune filter default must be true" >&2; exit 1; }
+grep -q 'function prune_unregistered_module_dirs' "$ROOT/includes/class-webino-dashboard-module-registry.php" \
+  || { echo "FAIL: prune_unregistered_module_dirs missing" >&2; exit 1; }
+grep -A5 'function prune_unregistered_module_dirs' "$ROOT/includes/class-webino-dashboard-module-registry.php" | grep -q 'Intentionally no-op' \
+  || { echo "FAIL: prune_unregistered_module_dirs must remain a no-op (do not auto-delete Modules/)" >&2; exit 1; }
 grep -q 'function install_error' "$ROOT/includes/class-webino-dashboard-rest-marketplace.php" \
   && { echo "FAIL: install_error() should be removed" >&2; exit 1; } || true
 echo "OK: module registry/marketplace hygiene"
@@ -89,22 +91,72 @@ if grep -q 'compile-languages.sh.*2>/dev/null' "$ROOT/scripts/build-release-zip.
 fi
 echo "OK: release zip requires .mo compile"
 
-python3 - "$ROOT/../Modules" "$EN" <<'PY' || { echo "FAIL: manifest headerTitleKey not in en.json" >&2; exit 1; }
+python3 - "$ROOT/Modules" "$EN" "$FA" <<'PY' || { echo "FAIL: module menu/header i18n keys incomplete" >&2; exit 1; }
 import json, sys, glob, os
-modules_dir, en_path = sys.argv[1], sys.argv[2]
-keys = set(json.load(open(en_path)).keys())
+
+modules_dir, en_path, fa_path = sys.argv[1], sys.argv[2], sys.argv[3]
+en_keys = set(json.load(open(en_path)).keys())
+fa_keys = set(json.load(open(fa_path)).keys())
 failed = []
-for manifest_path in glob.glob(os.path.join(modules_dir, '*/manifest.json')):
+
+def need(key: str, where: str) -> None:
+    if key not in en_keys:
+        failed.append(f"en missing {key} ({where})")
+    if key not in fa_keys:
+        failed.append(f"fa missing {key} ({where})")
+
+def collect_sidebar_ids(sidebar, out: set) -> None:
+    if isinstance(sidebar, dict):
+        mid = sidebar.get("module_id")
+        if mid:
+            out.add(str(mid))
+        for c in sidebar.get("children") or []:
+            if isinstance(c, dict) and c.get("id"):
+                out.add(str(c["id"]))
+    elif isinstance(sidebar, list):
+        for block in sidebar:
+            if not isinstance(block, dict):
+                continue
+            for n in block.get("nodes") or []:
+                if isinstance(n, dict) and n.get("id"):
+                    out.add(str(n["id"]))
+
+for manifest_path in glob.glob(os.path.join(modules_dir, "*/manifest.json")):
     m = json.load(open(manifest_path))
-    slug = m.get('slug', os.path.basename(os.path.dirname(manifest_path)))
-    for route in m.get('client', {}).get('routes', []):
-        hk = route.get('headerTitleKey')
-        if hk and hk not in keys:
-            failed.append(f"{slug}: {hk}")
+    slug = m.get("slug", os.path.basename(os.path.dirname(manifest_path)))
+
+    for route in m.get("client", {}).get("routes", []):
+        hk = route.get("headerTitleKey")
+        if hk:
+            need(hk, f"{slug} headerTitleKey")
+
+    nav_ids = set()
+    collect_sidebar_ids(m.get("sidebar"), nav_ids)
+    for nid in sorted(nav_ids):
+        need(f"nav.module.{nid}", f"{slug} sidebar id")
+
+    settings = m.get("settings") or {}
+    sections = settings.get("sections") or []
+    if sections:
+        for sec in sections:
+            if not isinstance(sec, dict):
+                continue
+            sid = sec.get("id") or ""
+            section_slug = f"{slug}-{sid}" if sid else slug
+            need(f"marketplace.module.{section_slug}", f"{slug} settings section")
+    else:
+        need(f"marketplace.module.{slug}", f"{slug} settings")
+
+# Core bots sidebar children from class-webino-dashboard-modules.php
+for nid in ("bots-bale", "bots-telegram", "bots"):
+    need(f"nav.module.{nid}", "core bots nav")
+
 if failed:
-    print("Missing keys:", ", ".join(failed), file=sys.stderr)
+    print("Missing keys:", file=sys.stderr)
+    for line in failed:
+        print(f"  {line}", file=sys.stderr)
     sys.exit(1)
-print("OK: all module headerTitleKey values exist in en.json")
+print("OK: module headerTitleKey, nav.module.*, and marketplace.module.* keys in fa/en")
 PY
 
 echo "== smoke PASSED =="

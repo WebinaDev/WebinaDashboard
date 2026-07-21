@@ -34,6 +34,13 @@ class Webino_Dashboard_Assets {
 	private static $entry_tags_printed = false;
 
 	/**
+	 * Stashed runtime config for head inline print (module script runs before footer localize).
+	 *
+	 * @var array<string,mixed>|null
+	 */
+	private static $runtime_config_snapshot = null;
+
+	/**
 	 * @return bool
 	 */
 	public static function is_build_missing() {
@@ -313,6 +320,9 @@ class Webino_Dashboard_Assets {
 
 		$href = esc_url( rest_url( 'webino-dashboard/v1/manifest.webmanifest' ) );
 		echo '<link rel="manifest" href="' . $href . '" />' . "\n";
+
+		// Config MUST precede the module entry — modules are deferred but must not race footer localize.
+		self::print_runtime_config_script();
 
 		if ( is_readable( $entry_js ) ) {
 			$ver = (string) filemtime( $entry_js );
@@ -738,41 +748,156 @@ class Webino_Dashboard_Assets {
 			$locale = determine_locale();
 		}
 
-		// Only embed bootstrap when already cached — avoids blocking TTFB on cold load.
-		$bootstrap = is_user_logged_in() ? self::get_cached_bootstrap( $uid ) : null;
+		$config = self::build_runtime_config( $uid, $locale, $base, $build_url, (string) max( 1, $asset_version ) );
 
-		wp_localize_script(
-			'webino-dashboard-app',
-			'webinoDashboard',
-			array(
-				'version'      => WEBINO_DASHBOARD_VERSION,
-				// Bumps when entry CSS/JS changes — used for service worker cache namespace (?v=).
-				'assetVersion' => (string) max( 1, $asset_version ),
-				'baseUrl'      => $base,
-				'assetBase'    => $build_url,
-				'homeUrl'      => home_url( '/' ),
-				'restUrl'   => esc_url_raw( rest_url( 'webino-dashboard/v1/' ) ),
-				'nonce'       => wp_create_nonce( 'wp_rest' ),
-				'loginNonce'  => wp_create_nonce( Webino_Dashboard_Rest_Base::login_nonce_action() ),
-				'locale'    => $locale,
-				'isLogged'  => is_user_logged_in(),
-				'userId'    => $uid,
-				'siteName'    => get_bloginfo( 'name' ),
-				'siteIconUrl' => Webino_Dashboard_REST::site_icon_url(),
-				'license'     => Webino_Dashboard_License::instance()->get_bootstrap_payload(),
-				'bootstrap'   => $bootstrap,
-				'marketplaceSettingsSections' => apply_filters( 'webino_dashboard_marketplace_settings_sections', array() ),
-				'allowedRemoteHosts' => class_exists( 'Webino_Dashboard_Remote_Url', false ) ? Webino_Dashboard_Remote_Url::allowed_hosts() : array(),
-				'flags'       => array(
-					'woocommerce'          => class_exists( 'WooCommerce', false ),
-					'wfcp'                   => class_exists( 'WFCP_Helper', false ),
-					'baleBot'                => Webino_Dashboard_REST::bot_ui_ready( 'bale' ),
-					'telegramBot'            => Webino_Dashboard_REST::bot_ui_ready( 'telegram' ),
-					'elementor'              => defined( 'ELEMENTOR_VERSION' ),
-					'disableServiceWorker'   => true,
-				),
-			)
+		wp_localize_script( 'webino-dashboard-app', 'webinoDashboard', $config );
+
+		// Also stash for head print (module script runs before footer localize).
+		self::$runtime_config_snapshot = $config;
+	}
+
+	/**
+	 * Build window.webinoDashboard payload (shared by localize + head inline).
+	 *
+	 * @param int    $uid           User ID.
+	 * @param string $locale        Locale.
+	 * @param string $base          Dashboard base URL.
+	 * @param string $build_url     Asset base URL.
+	 * @param string $asset_version Asset version string.
+	 * @return array<string,mixed>
+	 */
+	public static function build_runtime_config( $uid, $locale, $base, $build_url, $asset_version ) {
+		// Always embed bootstrap for logged-in users. Cold REST via WCDN often returns
+		// 503/Unauthorized HTML → SPA stuck on LicenseGate skeleton forever.
+		$bootstrap = null;
+		if ( $uid > 0 && is_user_logged_in() ) {
+			$bootstrap = self::get_or_build_bootstrap( $uid );
+		}
+
+		return array(
+			'version'      => WEBINO_DASHBOARD_VERSION,
+			'assetVersion' => $asset_version,
+			'baseUrl'      => $base,
+			'assetBase'    => $build_url,
+			'homeUrl'      => home_url( '/' ),
+			'restUrl'      => esc_url_raw( rest_url( 'webino-dashboard/v1/' ) ),
+			'ajaxUrl'      => esc_url_raw( admin_url( 'admin-ajax.php' ) ),
+			'nonce'        => wp_create_nonce( 'wp_rest' ),
+			'loginNonce'   => wp_create_nonce( Webino_Dashboard_Rest_Base::login_nonce_action() ),
+			'locale'       => $locale,
+			'isLogged'     => is_user_logged_in(),
+			'userId'       => $uid,
+			'siteName'     => get_bloginfo( 'name' ),
+			'siteIconUrl'  => Webino_Dashboard_REST::site_icon_url(),
+			'license'      => Webino_Dashboard_License::instance()->get_bootstrap_payload(),
+			'bootstrap'    => $bootstrap,
+			'marketplaceSettingsSections' => apply_filters( 'webino_dashboard_marketplace_settings_sections', array() ),
+			'allowedRemoteHosts' => class_exists( 'Webino_Dashboard_Remote_Url', false ) ? Webino_Dashboard_Remote_Url::allowed_hosts() : array(),
+			'flags'        => array(
+				'woocommerce'            => class_exists( 'WooCommerce', false ),
+				'wfcp'                   => class_exists( 'Webino_Dashboard_Module_Registry', false )
+					? Webino_Dashboard_Module_Registry::wfcp_ready()
+					: class_exists( 'WFCP_Helper', false ),
+				'baleBot'                => Webino_Dashboard_REST::bot_ui_ready( 'bale' ),
+				'telegramBot'            => Webino_Dashboard_REST::bot_ui_ready( 'telegram' ),
+				'elementor'              => defined( 'ELEMENTOR_VERSION' ),
+				'disableServiceWorker'   => true,
+			),
 		);
+	}
+
+	/**
+	 * True when cached bootstrap still points at the legacy sibling Modules path,
+	 * or clients are empty while readable module bundles exist on disk.
+	 *
+	 * @param array<string,mixed> $cached Bootstrap payload.
+	 * @return bool
+	 */
+	private static function bootstrap_has_stale_module_entries( $cached ) {
+		$clients = isset( $cached['activeModuleClients'] ) && is_array( $cached['activeModuleClients'] )
+			? $cached['activeModuleClients']
+			: array();
+		foreach ( $clients as $client ) {
+			if ( ! is_array( $client ) ) {
+				continue;
+			}
+			$entry = (string) ( $client['entry'] ?? '' );
+			// Legacy path: wp-content/plugins/Modules/... (sibling of WebinaDashboard).
+			if ( $entry && false !== strpos( $entry, '/plugins/Modules/' ) ) {
+				return true;
+			}
+		}
+		if ( empty( $clients ) && class_exists( 'Webino_Dashboard_Module_Registry', false )
+			&& Webino_Dashboard_Module_Registry::disk_has_readable_module_clients() ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Cached bootstrap or freshly built payload for SPA embed.
+	 *
+	 * @param int $user_id User ID.
+	 * @return array<string,mixed>|null
+	 */
+	public static function get_or_build_bootstrap( $user_id ) {
+		$cached = self::get_cached_bootstrap( $user_id );
+		$stale  = is_array( $cached ) && self::bootstrap_has_stale_module_entries( $cached );
+		if ( is_array( $cached ) && ! empty( $cached['modules'] ) && ! $stale ) {
+			return $cached;
+		}
+
+		if ( $stale ) {
+			delete_transient( 'webino_dashboard_boot_' . (int) $user_id );
+			$cached = null;
+		}
+
+		if ( ! class_exists( 'Webino_Dashboard_REST', false ) ) {
+			return is_array( $cached ) ? $cached : null;
+		}
+
+		try {
+			$response = Webino_Dashboard_REST::bootstrap();
+		} catch ( Throwable $e ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[Webino Dashboard] bootstrap embed failed: ' . $e->getMessage() );
+			return is_array( $cached ) ? $cached : null;
+		}
+
+		if ( $response instanceof WP_REST_Response ) {
+			$data = $response->get_data();
+			return is_array( $data ) ? $data : null;
+		}
+
+		return is_array( $cached ) ? $cached : null;
+	}
+
+	/**
+	 * Print runtime config in document head before the ES module entry.
+	 *
+	 * @return void
+	 */
+	public static function print_runtime_config_script() {
+		$config = self::$runtime_config_snapshot;
+		if ( ! is_array( $config ) ) {
+			$uid    = get_current_user_id();
+			$locale = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_locale', true ) : '';
+			if ( '' === $locale ) {
+				$locale = determine_locale();
+			}
+			$build_url = WEBINO_DASHBOARD_URL . 'assets/dashboard-build/';
+			$ver       = self::get_deploy_asset_version();
+			$config    = self::build_runtime_config(
+				$uid,
+				$locale,
+				trailingslashit( home_url( '/dashboard' ) ),
+				$build_url,
+				(string) max( 1, (int) $ver )
+			);
+			self::$runtime_config_snapshot = $config;
+		}
+
+		echo '<script id="webino-dashboard-config">window.webinoDashboard=' . wp_json_encode( $config ) . ';</script>' . "\n";
 	}
 
 	/**

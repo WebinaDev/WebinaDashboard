@@ -14,43 +14,69 @@ type Props = {
 
 export function ModulePanel({ slug, component, componentProps }: Props) {
   const { t } = useTranslation()
-  const { data } = useBootstrapQuery()
+  const { data, isPending, isError } = useBootstrapQuery()
   const [Panel, setPanel] = useState<ComponentType<Record<string, unknown>> | null>(null)
   const [failed, setFailed] = useState(false)
+  const [failDetail, setFailDetail] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+
+  const clients = data?.activeModuleClients
+  const bootstrapReady = data !== undefined
 
   const retry = useCallback(() => {
     setFailed(false)
+    setFailDetail(null)
     setPanel(null)
     setReloadKey((k) => k + 1)
   }, [])
 
   useEffect(() => {
+    if (!bootstrapReady) {
+      if (!isPending && isError) {
+        setFailDetail('bootstrap unavailable')
+        setFailed(true)
+      }
+      return
+    }
     let cancelled = false
     setPanel(null)
     setFailed(false)
-    void getModuleComponent(data?.activeModuleClients, slug, component)
+    setFailDetail(null)
+    void getModuleComponent(clients, slug, component)
       .then((comp) => {
         if (cancelled) return
         if (!comp) {
+          const reason = !clients?.some((c) => c.slug === slug)
+            ? `module "${slug}" missing from activeModuleClients`
+            : `component "${component}" not exported by "${slug}"`
+          console.error('[Webino] ModulePanel load failed:', reason)
+          setFailDetail(reason)
           setFailed(true)
           return
         }
         setPanel(() => comp as ComponentType<Record<string, unknown>>)
       })
-      .catch(() => {
-        if (!cancelled) setFailed(true)
+      .catch((err: unknown) => {
+        if (cancelled) return
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('[Webino] ModulePanel import failed:', slug, component, err)
+        setFailDetail(msg)
+        setFailed(true)
       })
     return () => {
       cancelled = true
     }
-  }, [data?.activeModuleClients, slug, component, reloadKey])
+  }, [bootstrapReady, isPending, isError, clients, slug, component, reloadKey])
 
   if (failed) {
-    return <QueryErrorState message={t('modules.loadFailed')} onRetry={retry} />
+    const message =
+      import.meta.env.DEV && failDetail
+        ? `${t('modules.loadFailed')} (${failDetail})`
+        : t('modules.loadFailed')
+    return <QueryErrorState message={message} onRetry={retry} />
   }
 
-  if (!Panel) {
+  if (!bootstrapReady || !Panel) {
     return <RoutePageSkeleton />
   }
   return <Panel {...(componentProps ?? {})} />

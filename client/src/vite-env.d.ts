@@ -10,6 +10,8 @@ export interface WebinoDashboardConfig {
   assetBase?: string
   homeUrl: string
   restUrl: string
+  /** admin-ajax.php URL — fallback when /wp-json is blocked by CDN/WAF. */
+  ajaxUrl?: string
   nonce: string
   /** CSRF token for POST /auth/login (guest-safe). */
   loginNonce: string

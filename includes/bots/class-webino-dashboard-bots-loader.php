@@ -44,7 +44,7 @@ final class Webino_Dashboard_Bots_Loader {
 		if ( class_exists( 'Webino_Dashboard_Module_Registry', false ) ) {
 			return Webino_Dashboard_Module_Registry::module_dir( 'bale-bot-module' ) . 'engine/';
 		}
-		return trailingslashit( dirname( WEBINO_DASHBOARD_DIR ) ) . 'Modules/bale-bot-module/engine/';
+		return trailingslashit( WEBINO_DASHBOARD_DIR ) . 'Modules/bale-bot-module/engine/';
 	}
 
 	/**
@@ -54,7 +54,7 @@ final class Webino_Dashboard_Bots_Loader {
 		if ( class_exists( 'Webino_Dashboard_Module_Registry', false ) ) {
 			return Webino_Dashboard_Module_Registry::module_dir( 'telegram-bot-module' ) . 'engine/';
 		}
-		return trailingslashit( dirname( WEBINO_DASHBOARD_DIR ) ) . 'Modules/telegram-bot-module/engine/';
+		return trailingslashit( WEBINO_DASHBOARD_DIR ) . 'Modules/telegram-bot-module/engine/';
 	}
 
 	/**
