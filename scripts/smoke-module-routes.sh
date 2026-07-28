@@ -52,6 +52,12 @@ PY
       FAIL=1
       continue
     fi
+    # Public SPA URLs must not include "-module" as a path segment (package slug stays internal).
+    if [[ "$path" == *"-module/"* || "$path" == *"-module:"* || "$path" == *"-module" ]]; then
+      echo "FAIL: $slug public path still contains -module: $path"
+      FAIL=1
+      continue
+    fi
     if ! [[ "$path" =~ $SAFE_MODULE_ROUTE ]]; then
       echo "FAIL: $slug path fails SAFE_MODULE_ROUTE: $path"
       FAIL=1

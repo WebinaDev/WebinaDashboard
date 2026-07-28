@@ -69,10 +69,9 @@ export function ModuleDynamicRoute({ slug, routePath }: Props) {
   }, [bootstrapReady, isPending, isError, clients, slug, routePath, reloadKey])
 
   if (failed) {
-    const message =
-      import.meta.env.DEV && failDetail
-        ? `${t('modules.loadFailed')} (${failDetail})`
-        : t('modules.loadFailed')
+    const message = failDetail
+      ? `${t('modules.loadFailed')} (${failDetail})`
+      : t('modules.loadFailed')
     return <QueryErrorState message={message} onRetry={retry} />
   }
   if (!bootstrapReady || !Page) {

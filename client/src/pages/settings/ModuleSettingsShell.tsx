@@ -33,8 +33,9 @@ export default function ModuleSettingsShell() {
     return <Navigate to="/settings/shop/general" replace />
   }
 
-  if (section?.route && section.route !== `/settings/shop/module/${moduleSlug}`) {
-    return <Navigate to={section.route.replace(/^\//, '')} replace />
+  if (section?.route && section.route !== `/settings/shop/ext/${moduleSlug}`) {
+    const target = section.route.startsWith('/') ? section.route : `/${section.route}`
+    return <Navigate to={target} replace />
   }
 
   return (

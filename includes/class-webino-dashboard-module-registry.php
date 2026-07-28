@@ -22,7 +22,7 @@ final class Webino_Dashboard_Module_Registry {
 	const MIGRATION_SLUG_OPTION = 'webino_dashboard_modules_slug_migrated_v1';
 	const TOGGLE_SYNC_OPTION   = 'webino_dashboard_module_toggle_synced_v1';
 	/** One-time: re-activate complete on-disk modules after Modules path move. */
-	const DISK_REACTIVATE_OPTION = 'webino_dashboard_disk_modules_reactivated_1';
+	const DISK_REACTIVATE_OPTION = 'webino_dashboard_disk_modules_reactivated_2';
 
 	/**
 	 * @return void
@@ -1093,9 +1093,14 @@ final class Webino_Dashboard_Module_Registry {
 	 * @return array<int,array<string,mixed>>
 	 */
 	private static function upsert_child( array $children, array $node ) {
-		$id = (string) ( $node['id'] ?? '' );
+		$id   = (string) ( $node['id'] ?? '' );
+		$path = (string) ( $node['path'] ?? '' );
 		foreach ( $children as $i => $child ) {
-			if ( (string) ( $child['id'] ?? '' ) === $id ) {
+			$child_id   = (string) ( $child['id'] ?? '' );
+			$child_path = (string) ( $child['path'] ?? '' );
+			$same_id    = '' !== $id && $child_id === $id;
+			$same_path  = '' !== $path && $child_path === $path;
+			if ( $same_id || $same_path ) {
 				$children[ $i ] = $node;
 				return $children;
 			}
@@ -1211,7 +1216,7 @@ final class Webino_Dashboard_Module_Registry {
 
 		$route = (string) ( $settings['route'] ?? '' );
 		if ( '' === $route ) {
-			$route = '/settings/' . $area . '/module/' . $slug;
+			$route = '/settings/' . $area . '/ext/' . $slug;
 		}
 		$out[] = array(
 			'slug'  => $slug,
@@ -1247,6 +1252,11 @@ final class Webino_Dashboard_Module_Registry {
 				'Modules/' . $slug . '/' . ltrim( $entry_rel, '/' ),
 				WEBINO_DASHBOARD_FILE
 			);
+			// Bust long-lived CDN/browser caches of unhashed module.js after rebuilds.
+			$mtime = @filemtime( $entry_abs ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			if ( $mtime ) {
+				$entry_url = add_query_arg( 'ver', (string) $mtime, $entry_url );
+			}
 			$routes = isset( $client['routes'] ) && is_array( $client['routes'] ) ? $client['routes'] : array();
 			$normalized_routes = array();
 			foreach ( $routes as $route ) {

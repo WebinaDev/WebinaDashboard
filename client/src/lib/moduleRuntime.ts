@@ -17,10 +17,49 @@ type RouteArrayEntry = {
 
 const bundleCache = new Map<string, ModuleBundle>()
 
+/** Strip legacy `-module` path segments for tolerant route lookup after URL cleanup. */
+export function stripModulePathSegment(path: string): string {
+  return normalizeModuleRoutePath(path).replace(/-module(?=\/|$)/g, '')
+}
+
+/**
+ * Resolve a route component with exact match first, then legacy `-module` aliases.
+ * Prevents loadFailed when cached/old bundles and new manifests disagree on path schema.
+ */
+export function resolveBundleRoute(
+  routes: Record<string, ComponentType> | undefined,
+  routePath: string,
+): ComponentType | null {
+  if (!routes) {
+    return null
+  }
+  const normalized = normalizeModuleRoutePath(routePath)
+  if (routes[normalized]) {
+    return routes[normalized]
+  }
+  if (routes[routePath]) {
+    return routes[routePath]
+  }
+  const stripped = stripModulePathSegment(normalized)
+  for (const [key, comp] of Object.entries(routes)) {
+    if (normalizeModuleRoutePath(key) === normalized) {
+      return comp
+    }
+    if (stripModulePathSegment(key) === stripped) {
+      return comp
+    }
+  }
+  return null
+}
+
 /** Clear cached module bundles after install, toggle, or version change. */
 export function invalidateModuleBundleCache(slug?: string): void {
   if (slug) {
-    bundleCache.delete(slug)
+    for (const key of [...bundleCache.keys()]) {
+      if (key === slug || key.startsWith(`${slug}::`)) {
+        bundleCache.delete(key)
+      }
+    }
     return
   }
   bundleCache.clear()
@@ -100,11 +139,16 @@ export function normalizeModuleEntryUrl(entry: string): string {
   try {
     const parsed = new URL(trimmed, window.location.origin)
     let path = parsed.pathname
-    // Legacy: wp-content/plugins/Modules/{slug}/... → WebinaDashboard/Modules/{slug}/...
+    // Legacy: wp-content/plugins/Modules/{slug}/... → {plugin}/Modules/{slug}/...
     if (path.includes('/wp-content/plugins/Modules/')) {
-      path = path.replace('/wp-content/plugins/Modules/', '/wp-content/plugins/WebinaDashboard/Modules/')
+      const pluginMatch = window.location.pathname.match(/\/wp-content\/plugins\/([^/]+)\//)
+      const pluginFolder = pluginMatch?.[1] || 'WebinaDashboard'
+      path = path.replace(
+        '/wp-content/plugins/Modules/',
+        `/wp-content/plugins/${pluginFolder}/Modules/`,
+      )
     }
-    if (path.includes('/WebinaDashboard/Modules/') || path.includes('/plugins/WebinaDashboard/Modules/')) {
+    if (path.includes('/Modules/') && path.includes('/wp-content/plugins/')) {
       return `${window.location.origin}${path}${parsed.search}`
     }
     // Same-origin absolute for any allowed absolute URL (avoids http/https host drift).
@@ -118,14 +162,17 @@ export function normalizeModuleEntryUrl(entry: string): string {
 }
 
 export async function loadModuleBundle(slug: string, entry: string): Promise<ModuleBundle> {
-  const cached = bundleCache.get(slug)
+  const resolved = normalizeModuleEntryUrl(entry)
+  const cacheKey = `${slug}::${resolved}`
+  const cached = bundleCache.get(cacheKey) ?? bundleCache.get(slug)
   if (cached) {
+    bundleCache.set(cacheKey, cached)
     return cached
   }
-  const resolved = normalizeModuleEntryUrl(entry)
   assertAllowedModuleEntry(resolved)
   const mod = await import(/* @vite-ignore */ resolved)
   const bundle = normalizeModuleBundle(mod as Record<string, unknown>)
+  bundleCache.set(cacheKey, bundle)
   bundleCache.set(slug, bundle)
   return bundle
 }
@@ -154,6 +201,11 @@ export function resolveModuleSettingsRoutePath(
     if (exact) {
       return exact
     }
+    const stripped = stripModulePathSegment(normalized)
+    const aliased = paths.find((p) => stripModulePathSegment(p) === stripped)
+    if (aliased) {
+      return aliased
+    }
   }
   const settingsRoute = paths.find((p) => p.startsWith('settings/'))
   if (settingsRoute) {
@@ -172,7 +224,7 @@ export async function getModuleRouteComponent(
     return null
   }
   const bundle = await loadModuleBundle(slug, client.entry)
-  return bundle.routes?.[routePath] ?? null
+  return resolveBundleRoute(bundle.routes, routePath)
 }
 
 export async function getModuleComponent(

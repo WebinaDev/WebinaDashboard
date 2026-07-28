@@ -91,6 +91,41 @@ const fromFn = normalizeModuleBundle({
 })
 assert('function export unwrap', fromFn.routes?.['bots/bale'] === Page)
 
+function stripModulePathSegment(path) {
+  return normalizeModuleRoutePath(path).replace(/-module(?=\/|$)/g, '')
+}
+
+function resolveBundleRoute(routes, routePath) {
+  if (!routes) return null
+  const normalized = normalizeModuleRoutePath(routePath)
+  if (routes[normalized]) return routes[normalized]
+  if (routes[routePath]) return routes[routePath]
+  const stripped = stripModulePathSegment(normalized)
+  for (const [key, comp] of Object.entries(routes)) {
+    if (normalizeModuleRoutePath(key) === normalized) return comp
+    if (stripModulePathSegment(key) === stripped) return comp
+  }
+  return null
+}
+
+const legacyRoutes = {
+  'analytics-module/:section': Page,
+  'shop/wfcp-module/quick-add': Page,
+}
+assert(
+  'legacy analytics alias',
+  resolveBundleRoute(legacyRoutes, 'analytics/:section') === Page,
+)
+assert(
+  'legacy wfcp alias',
+  resolveBundleRoute(legacyRoutes, 'shop/wfcp/quick-add') === Page,
+)
+assert(
+  'clean path exact',
+  resolveBundleRoute({ 'settings/shop/snapppay': Page }, 'settings/shop/snapppay') === Page,
+)
+assert('strip module segment', stripModulePathSegment('shop/wfcp-module/quick-add') === 'shop/wfcp/quick-add')
+
 if (failed) {
   process.exit(1)
 }

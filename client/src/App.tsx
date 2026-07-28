@@ -1,6 +1,6 @@
 import { Suspense, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { PermissionGate } from '@/components/PermissionGate'
@@ -54,6 +54,17 @@ function LegacyModuleRedirect({
   return <Navigate to={to} replace />
 }
 
+function LegacyAnalyticsSectionRedirect() {
+  const { section } = useParams()
+  const safe = section && /^[a-z0-9-]+$/.test(section) ? section : 'overview'
+  return (
+    <LegacyModuleRedirect
+      requiredSlug="analytics-module"
+      to={`/analytics/${safe}`}
+    />
+  )
+}
+
 function LegacyWfcpSettingsRedirect() {
   const { tab } = useParams()
   const safe = tab && /^[a-z0-9-]+$/.test(tab) ? tab : 'dashboard'
@@ -65,15 +76,23 @@ function LegacyWfcpSettingsRedirect() {
   )
 }
 
-function LegacyAnalyticsSectionRedirect() {
-  const { section } = useParams()
-  const safe = section && /^[a-z0-9-]+$/.test(section) ? section : 'overview'
-  return (
-    <LegacyModuleRedirect
-      requiredSlug="analytics-module"
-      to={`/analytics-module/${safe}`}
-    />
-  )
+function LegacyBasalamRedirect() {
+  const loc = useLocation()
+  const suffix = loc.pathname.replace(/^.*?\/basalam-module\/?/, '')
+  const to = suffix ? `/settings/shop/basalam/${suffix}` : '/settings/shop/basalam'
+  return <Navigate to={to} replace />
+}
+
+function LegacyExtSettingsRedirect() {
+  const { moduleSlug } = useParams<{ moduleSlug: string }>()
+  const loc = useLocation()
+  if (!moduleSlug) {
+    return <Navigate to="/settings/shop/general" replace />
+  }
+  const marker = `/module/${moduleSlug}`
+  const idx = loc.pathname.indexOf(marker)
+  const rest = idx >= 0 ? loc.pathname.slice(idx + marker.length) : ''
+  return <Navigate to={`/settings/shop/ext/${moduleSlug}${rest}`} replace />
 }
 
 function RuntimeErrorToasts() {
@@ -171,22 +190,29 @@ export default function App() {
               <Route path="orders" element={<Navigate to="list" replace relative="path" />} />
               <Route path="marketing" element={<Navigate to="coupons" replace relative="path" />} />
               <Route path="users" element={<Navigate to="list" replace relative="path" />} />
-              <Route path="analytics" element={<Navigate to="/analytics-module/overview" replace />} />
-              <Route path="analytics/:section" element={<LegacyAnalyticsSectionRedirect />} />
+              <Route path="analytics" element={<Navigate to="/analytics/overview" replace />} />
               <Route path="analytics/bots" element={<LegacyModuleRedirect requiredSlug="bale-bot-module" to="/bots/bale" />} />
+              <Route path="analytics-module" element={<Navigate to="/analytics/overview" replace />} />
+              <Route path="analytics-module/:section" element={<LegacyAnalyticsSectionRedirect />} />
               <Route path="wfcp/settings/:tab" element={<LegacyWfcpSettingsRedirect />} />
-              <Route path="wfcp/bulk-editor" element={<Navigate to="/shop/products" replace />} />
-              <Route path="wfcp/quick-add" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp-module/quick-add" />} />
-              <Route path="wfcp/price-changer" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp-module/price-changer" />} />
-              <Route path="shop/wfcp/quick-add" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp-module/quick-add" />} />
-              <Route path="shop/wfcp/price-changer" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp-module/price-changer" />} />
-              <Route path="shop/wfcp/bulk-editor" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp-module/bulk-editor" />} />
+              <Route path="wfcp/bulk-editor" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp/bulk-editor" />} />
+              <Route path="wfcp/quick-add" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp/quick-add" />} />
+              <Route path="wfcp/price-changer" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp/price-changer" />} />
+              <Route path="shop/wfcp-module/quick-add" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp/quick-add" />} />
+              <Route path="shop/wfcp-module/price-changer" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp/price-changer" />} />
+              <Route path="shop/wfcp-module/bulk-editor" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/shop/wfcp/bulk-editor" />} />
+              <Route path="settings/wfcp-module/:tab" element={<LegacyWfcpSettingsRedirect />} />
               <Route path="settings/wfcp/:tab" element={<LegacyWfcpSettingsRedirect />} />
               <Route path="wfcp" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/settings/shop/pricing/dashboard" />} />
+              <Route path="settings/shop/basalam-module/*" element={<LegacyBasalamRedirect />} />
+              <Route path="settings/shop/basalam-module" element={<Navigate to="/settings/shop/basalam" replace />} />
+              <Route path="settings/site/analytics-module" element={<Navigate to="/settings/site/analytics" replace />} />
               <Route path="shop/bots/bale" element={<LegacyModuleRedirect requiredSlug="bale-bot-module" to="/bots/bale" />} />
               <Route path="shop/bots/telegram" element={<LegacyModuleRedirect requiredSlug="telegram-bot-module" to="/bots/telegram" />} />
               <Route path="shop/bots/:provider/:tab" element={<LegacyShopBotRedirect />} />
               <Route path="shop/bots/:provider" element={<LegacyShopBotRedirect />} />
+              <Route path="settings/shop/module/:moduleSlug/*" element={<LegacyExtSettingsRedirect />} />
+              <Route path="settings/shop/module/:moduleSlug" element={<LegacyExtSettingsRedirect />} />
               {dashboardRoutes.map(({ path, capability, Component }) => (
                 <Route
                   key={path}

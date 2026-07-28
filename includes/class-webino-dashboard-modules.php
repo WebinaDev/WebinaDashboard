@@ -155,22 +155,9 @@ class Webino_Dashboard_Modules {
 				'capability'           => 'manage_woocommerce',
 				'icon'                 => 'bot',
 				'requires_woocommerce' => true,
-				'children'             => array(
-					array(
-						'id'                   => 'bots-bale',
-						'title'                => __( 'Bale bot', 'webino-dashboard' ),
-						'path'                 => '/bots/bale',
-						'capability'           => 'manage_woocommerce',
-						'requires_woocommerce' => true,
-					),
-					array(
-						'id'                   => 'bots-telegram',
-						'title'                => __( 'Telegram bot', 'webino-dashboard' ),
-						'path'                 => '/bots/telegram',
-						'capability'           => 'manage_woocommerce',
-						'requires_woocommerce' => true,
-					),
-				),
+				// Children come from bale-bot-module / telegram-bot-module manifests.
+				// Hardcoded bots-bale / bots-telegram caused duplicate sidebar entries.
+				'children'             => array(),
 			),
 			array(
 				'id'         => 'marketplace',

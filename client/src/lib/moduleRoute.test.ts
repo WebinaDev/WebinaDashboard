@@ -4,15 +4,16 @@ import { isSafeModuleRoutePath, normalizeModuleRoutePath } from './moduleRoute'
 import { normalizeModuleBundle, normalizeModuleEntryUrl } from './moduleRuntime'
 
 describe('moduleRoute', () => {
-  it('accepts manifest-style paths', () => {
-    expect(isSafeModuleRoutePath('shop/wfcp-module/quick-add')).toBe(true)
-    expect(isSafeModuleRoutePath('analytics-module/:section')).toBe(true)
-    expect(isSafeModuleRoutePath('settings/wfcp-module/:tab')).toBe(true)
+  it('accepts clean public paths without -module segments', () => {
+    expect(isSafeModuleRoutePath('shop/wfcp/quick-add')).toBe(true)
+    expect(isSafeModuleRoutePath('analytics/:section')).toBe(true)
+    expect(isSafeModuleRoutePath('settings/shop/pricing/:tab')).toBe(true)
+    expect(isSafeModuleRoutePath('settings/shop/basalam')).toBe(true)
   })
 
   it('normalizes leading slashes', () => {
-    expect(normalizeModuleRoutePath('/shop/wfcp-module/quick-add')).toBe('shop/wfcp-module/quick-add')
-    expect(isSafeModuleRoutePath('/shop/wfcp-module/quick-add')).toBe(true)
+    expect(normalizeModuleRoutePath('/shop/wfcp/quick-add')).toBe('shop/wfcp/quick-add')
+    expect(isSafeModuleRoutePath('/shop/wfcp/quick-add')).toBe(true)
   })
 
   it('rejects unsafe paths', () => {
@@ -47,12 +48,12 @@ describe('normalizeModuleBundle', () => {
   it('converts array routes to record', () => {
     const bundle = normalizeModuleBundle({
       routes: [
-        { path: 'settings/shop/basalam-module', element: Page },
-        { path: 'settings/shop/basalam-module/payments', element: Page },
+        { path: 'settings/shop/basalam', element: Page },
+        { path: 'settings/shop/basalam/payments', element: Page },
       ],
     })
-    expect(bundle.routes?.['settings/shop/basalam-module']).toBe(Page)
-    expect(bundle.routes?.['settings/shop/basalam-module/payments']).toBe(Page)
+    expect(bundle.routes?.['settings/shop/basalam']).toBe(Page)
+    expect(bundle.routes?.['settings/shop/basalam/payments']).toBe(Page)
   })
 
   it('unwraps function default export', () => {

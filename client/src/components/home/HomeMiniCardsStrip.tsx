@@ -141,7 +141,7 @@ export function HomeMiniCardsStrip({ panels, products, locale, smsRefetch }: Hom
         title={t('home.sections.traffic')}
         value={panels?.analytics.active ? formatNumber(panels.analytics.online, locale) : t('home.panels.inactive')}
         hint={panels?.analytics.active ? t('home.traffic.onlineNow') : '\u00a0'}
-        href="/analytics-module/overview"
+        href="/analytics/overview"
         icon={Activity}
         variant={panels?.analytics.active ? 'default' : 'error'}
       />

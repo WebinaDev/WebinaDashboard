@@ -22,7 +22,7 @@ export function shopNavItemsWithModules(): SettingsNavItem[] {
   }
   for (const sec of marketplaceSettingsSectionsFromBootstrap()) {
     if (sec.area !== 'shop') continue
-    const to = sec.route.startsWith('/') ? sec.route : `/settings/shop/module/${sec.slug}`
+    const to = sec.route.startsWith('/') ? sec.route : `/settings/shop/ext/${sec.slug}`
     if (items.some((i) => i.id === sec.slug || i.to === to)) continue
     items.push({ id: sec.slug, to, labelKey: `marketplace.module.${sec.slug}`, label: sec.title })
   }

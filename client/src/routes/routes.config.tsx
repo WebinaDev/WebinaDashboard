@@ -250,7 +250,7 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     Component: lazyPage(() => import('@/pages/settings/shop/SettingsShopShell')),
   },
   {
-    path: 'settings/shop/module/:moduleSlug',
+    path: 'settings/shop/ext/:moduleSlug',
     capability: 'manage_woocommerce',
     headerTitleKey: 'marketplace.moduleSettingsTitle',
     Component: lazyPage(() => import('@/pages/settings/ModuleSettingsShell')),

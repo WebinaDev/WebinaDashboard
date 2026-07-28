@@ -826,6 +826,17 @@ class Webino_Dashboard_Assets {
 			if ( $entry && false !== strpos( $entry, '/plugins/Modules/' ) ) {
 				return true;
 			}
+			// Pre-cache-bust entries (unhashed module.js was cached for a year by hosts).
+			if ( $entry && false !== strpos( $entry, '/Modules/' ) && false === strpos( $entry, 'ver=' ) ) {
+				return true;
+			}
+			$routes = isset( $client['routes'] ) && is_array( $client['routes'] ) ? $client['routes'] : array();
+			foreach ( $routes as $route ) {
+				$path = is_array( $route ) ? (string) ( $route['path'] ?? '' ) : '';
+				if ( $path && false !== strpos( $path, '-module/' ) ) {
+					return true;
+				}
+			}
 		}
 		if ( empty( $clients ) && class_exists( 'Webino_Dashboard_Module_Registry', false )
 			&& Webino_Dashboard_Module_Registry::disk_has_readable_module_clients() ) {

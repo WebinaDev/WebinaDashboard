@@ -24,7 +24,7 @@ export function HomeTrafficStatCard({ traffic, locale }: HomeTrafficStatCardProp
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{t('home.sections.traffic')}</CardTitle>
         <Button asChild variant="outline" size="sm" className="h-7 text-xs">
-          <Link to="/analytics-module/overview">{t('home.traffic.viewDetails')}</Link>
+          <Link to="/analytics/overview">{t('home.traffic.viewDetails')}</Link>
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">

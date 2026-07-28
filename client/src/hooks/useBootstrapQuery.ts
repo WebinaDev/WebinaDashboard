@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { apiFetch } from '@/lib/api'
@@ -9,7 +10,9 @@ import {
 import type { BootstrapPayload } from '@/types/modules'
 
 export function useBootstrapQuery() {
-  const initial = getBootstrapSnapshot()
+  // Snapshot must be stable across renders — recreating it every render with
+  // Date.now() as initialDataUpdatedAt caused query churn and cancelled module loads.
+  const initial = useMemo(() => getBootstrapSnapshot(), [])
 
   return useQuery({
     queryKey: BOOTSTRAP_QUERY_KEY,
@@ -18,10 +21,10 @@ export function useBootstrapQuery() {
       return normalizeBootstrapPayload(data)
     },
     initialData: initial,
-    initialDataUpdatedAt: initial ? Date.now() : undefined,
+    initialDataUpdatedAt: initial ? 1 : undefined,
     staleTime: 60_000,
     gcTime: 600_000,
     placeholderData: (prev) => prev ?? initial,
-    refetchOnMount: initial ? false : true,
+    refetchOnMount: initial ? 'always' : true,
   })
 }

@@ -62,7 +62,7 @@ export default function MyModulesPage() {
   }
 
   const openSettings = (mod: MarketplaceModule) => {
-    const route = mod.settings_route?.startsWith('/') ? mod.settings_route : `/settings/shop/module/${mod.slug}`
+    const route = mod.settings_route?.startsWith('/') ? mod.settings_route : `/settings/shop/ext/${mod.slug}`
     navigate(route)
   }
 

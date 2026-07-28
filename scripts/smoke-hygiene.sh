@@ -139,7 +139,9 @@ echo "OK: IMP-M07 uninstall revoke hook"
 
 grep -q 'assertAllowedModuleEntry' "$CLIENT/lib/moduleRuntime.ts" \
   && grep -q 'normalizeModuleRoutePath' "$CLIENT/lib/moduleRuntime.ts" \
-  || { echo "FAIL: moduleRuntime must validate entry URL before import" >&2; exit 1; }
+  && grep -q 'resolveBundleRoute' "$CLIENT/lib/moduleRuntime.ts" \
+  && grep -q 'stripModulePathSegment' "$CLIENT/lib/moduleRuntime.ts" \
+  || { echo "FAIL: moduleRuntime must validate entry URL and tolerate legacy route keys" >&2; exit 1; }
 grep -q 'isAllowedRemoteUrl' "$CLIENT/lib/api.ts" \
   || { echo "FAIL: api.ts missing isAllowedRemoteUrl" >&2; exit 1; }
 grep -q 'remote_activate' "$INC/class-webino-dashboard-license.php" \
