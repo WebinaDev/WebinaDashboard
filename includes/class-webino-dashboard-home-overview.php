@@ -28,7 +28,7 @@ class Webino_Dashboard_Home_Overview {
 	public static function rest_get() {
 		$user_id = get_current_user_id();
 		$locale  = self::dashboard_locale();
-		$key     = 'webino_dashboard_overview_' . (int) $user_id . '_' . md5( $locale );
+		$key     = 'webino_dashboard_overview_v3_' . (int) $user_id . '_' . md5( $locale );
 
 		if ( $user_id > 0 ) {
 			$cached = get_transient( $key );
@@ -37,8 +37,18 @@ class Webino_Dashboard_Home_Overview {
 			}
 		}
 
-		$payload = self::build_payload( $locale );
-		if ( $user_id > 0 ) {
+		try {
+			$payload = self::build_payload( $locale );
+		} catch ( Throwable $e ) {
+			$payload = array(
+				'generated_at' => time(),
+				'locale'       => $locale,
+				'sections'     => array(),
+				'error'        => $e->getMessage() ? $e->getMessage() : 'Overview build failed',
+			);
+		}
+
+		if ( $user_id > 0 && empty( $payload['error'] ) ) {
 			set_transient( $key, $payload, self::CACHE_TTL );
 		}
 
@@ -55,47 +65,107 @@ class Webino_Dashboard_Home_Overview {
 			'generated_at' => time(),
 			'locale'       => $locale,
 		);
+		$panels   = array();
 
 		if ( self::can_products() ) {
-			$payload['products'] = self::products_section();
-			$sections[]          = 'products';
-		}
-
-		$panels = self::panels_section();
-		if ( ! empty( $panels ) ) {
-			$payload['panels'] = $panels;
-			$sections[]        = 'panels';
-		}
-
-		if ( self::can_sales() ) {
-			$payload['sales'] = self::sales_section_cached( $locale );
-			$sections[]       = 'sales';
-		}
-
-		if ( self::can_traffic() ) {
-			$payload['traffic'] = self::traffic_section_cached();
-			$sections[]         = 'traffic';
-		}
-
-		$tasks = self::tasks_section();
-		if ( ! empty( $tasks ) ) {
-			$payload['tasks'] = $tasks;
-			$sections[]     = 'tasks';
-		}
-
-		if ( Webino_Dashboard_Rest_Base::can( 'moderate_comments' ) ) {
-			$comments = self::comments_section();
-			if ( ! empty( $comments ) ) {
-				$payload['comments'] = $comments;
-				$sections[]          = 'comments';
+			try {
+				$payload['products'] = self::products_section();
+				$sections[]          = 'products';
+			} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			}
 		}
 
-		$sms_for_alerts = isset( $panels['sms'] ) ? $panels['sms'] : null;
-		$alerts         = self::alerts_section( $sms_for_alerts );
-		if ( ! empty( $alerts ) ) {
-			$payload['alerts'] = $alerts;
-			$sections[]        = 'alerts';
+		try {
+			$panels = self::panels_section();
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			$panels = array(
+				'license'      => array(
+					'active' => false,
+					'demo'   => false,
+					'status' => '',
+				),
+				'woocommerce'  => array(
+					'active' => Webino_Dashboard_Orders::wc_active(),
+				),
+				'analytics'    => array(
+					'active' => false,
+					'online' => 0,
+				),
+			);
+		}
+
+		if ( self::can_sales() ) {
+			try {
+				$payload['sales'] = self::sales_section_cached( $locale );
+				$sections[]       = 'sales';
+			} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			}
+		} elseif ( Webino_Dashboard_Rest_Base::is_portal_only() && Webino_Dashboard_Orders::wc_active() ) {
+			try {
+				$payload['account'] = self::account_portal_section();
+				$payload['partner'] = $payload['account'];
+				$sections[]         = 'account';
+			} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			}
+		}
+
+		try {
+			$payload['traffic'] = self::traffic_section_cached();
+			$sections[]         = 'traffic';
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		}
+
+		// Keep mini-card analytics in sync with the traffic panel (cached traffic may be active
+		// even if a partial panels build previously left analytics inactive).
+		if ( ! empty( $payload['traffic']['active'] ) ) {
+			if ( ! isset( $panels['analytics'] ) || ! is_array( $panels['analytics'] ) ) {
+				$panels['analytics'] = array(
+					'active' => true,
+					'online' => 0,
+				);
+			} else {
+				$panels['analytics']['active'] = true;
+				if ( ! isset( $panels['analytics']['online'] ) ) {
+					$panels['analytics']['online'] = 0;
+				}
+			}
+		}
+
+		if ( ! empty( $panels ) ) {
+			$payload['panels'] = $panels;
+			if ( ! in_array( 'panels', $sections, true ) ) {
+				$sections[] = 'panels';
+			}
+		}
+
+		try {
+			$tasks = self::tasks_section();
+			if ( ! empty( $tasks ) ) {
+				$payload['tasks'] = $tasks;
+				$sections[]       = 'tasks';
+			}
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		}
+
+		if ( Webino_Dashboard_Rest_Base::can( 'moderate_comments' ) ) {
+			try {
+				$comments = self::comments_section();
+				if ( ! empty( $comments ) ) {
+					$payload['comments'] = $comments;
+					$sections[]          = 'comments';
+				}
+			} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			}
+		}
+
+		try {
+			$sms_for_alerts = isset( $panels['sms'] ) ? $panels['sms'] : null;
+			$alerts         = self::alerts_section( $sms_for_alerts );
+			if ( ! empty( $alerts ) ) {
+				$payload['alerts'] = $alerts;
+				$sections[]        = 'alerts';
+			}
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 		}
 
 		$payload['sections'] = $sections;
@@ -123,6 +193,72 @@ class Webino_Dashboard_Home_Overview {
 	private static function can_sales() {
 		return Webino_Dashboard_Orders::wc_active()
 			&& ( Webino_Dashboard_Rest_Base::can( 'view_woocommerce_reports' ) || Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' ) );
+	}
+
+	/**
+	 * Own-order summary for account portal users.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function account_portal_section() {
+		$uid   = get_current_user_id();
+		$items = array();
+		$count = 0;
+		$last  = '';
+		if ( $uid > 0 && function_exists( 'wc_get_orders' ) ) {
+			$result = wc_get_orders(
+				array(
+					'customer_id' => $uid,
+					'limit'       => 8,
+					'orderby'     => 'date',
+					'order'       => 'DESC',
+					'paginate'    => true,
+					'type'        => 'shop_order',
+					'status'      => 'any',
+				)
+			);
+			$orders = array();
+			if ( is_object( $result ) && isset( $result->orders ) ) {
+				$orders = is_array( $result->orders ) ? $result->orders : array();
+				$count  = (int) $result->total;
+			} elseif ( is_array( $result ) ) {
+				$orders = $result;
+				$count  = count( $result );
+			}
+			foreach ( $orders as $o ) {
+				if ( ! $o instanceof WC_Order ) {
+					continue;
+				}
+				$items[] = self::order_row( $o );
+			}
+			if ( ! empty( $items[0]['date'] ) ) {
+				$last = (string) $items[0]['date'];
+			}
+		}
+		$wishlist = class_exists( 'Webino_Dashboard_Users', false )
+			? Webino_Dashboard_Users::get_wishlist_summary( $uid )
+			: array();
+		return array(
+			'order_count'          => $count,
+			'last_order_at'        => $last,
+			'recent_orders'        => $items,
+			'wallet_balance'       => ( class_exists( 'Webino_Dashboard_Modules', false ) && Webino_Dashboard_Modules::is_wallet_module_active() && class_exists( 'Webino_Dashboard_Wallet', false ) )
+				? Webino_Dashboard_Wallet::get_balance( $uid )
+				: 0,
+			'wallet_enabled'       => class_exists( 'Webino_Dashboard_Modules', false ) && Webino_Dashboard_Modules::is_wallet_module_active(),
+			'wishlist_count'       => count( $wishlist ),
+			'notifications_unread' => class_exists( 'Webino_Dashboard_Notifications', false ) ? Webino_Dashboard_Notifications::unread_count( $uid ) : 0,
+			'tickets_open'         => class_exists( 'Webino_Dashboard_Support_Tickets', false ) ? Webino_Dashboard_Support_Tickets::open_count_for_user( $uid ) : 0,
+			'order_groups'         => Webino_Dashboard_Orders::get_portal_status_groups( $uid ),
+		);
+	}
+
+	/**
+	 * @deprecated Use account_portal_section().
+	 * @return array<string,mixed>
+	 */
+	private static function partner_section() {
+		return self::account_portal_section();
 	}
 
 	/**
@@ -266,7 +402,7 @@ class Webino_Dashboard_Home_Overview {
 	 */
 	private static function sales_section_cached( $locale ) {
 		$user_id = get_current_user_id();
-		$key     = 'webino_dashboard_sales_' . (int) $user_id . '_' . md5( $locale );
+		$key     = 'webino_dashboard_sales_v2_' . (int) $user_id . '_' . md5( $locale );
 		if ( $user_id > 0 ) {
 			$cached = get_transient( $key );
 			if ( is_array( $cached ) ) {
@@ -285,17 +421,21 @@ class Webino_Dashboard_Home_Overview {
 	 */
 	private static function traffic_section_cached() {
 		$user_id = get_current_user_id();
-		$key     = 'webino_dashboard_traffic_' . (int) $user_id;
+		$key     = 'webino_dashboard_traffic_v2_' . (int) $user_id;
 		if ( $user_id > 0 ) {
 			$cached = get_transient( $key );
 			if ( is_array( $cached ) ) {
 				return $cached;
 			}
 		}
-		if ( ! class_exists( 'Webino_Dashboard_Analytics_Query', false ) ) {
-			return array();
+		if ( ! self::can_traffic() || ! class_exists( 'Webino_Dashboard_Analytics_Query', false ) ) {
+			$data = self::traffic_inactive_payload();
+		} else {
+			$data = Webino_Dashboard_Analytics_Query::traffic_periods();
+			if ( ! isset( $data['active'] ) ) {
+				$data['active'] = true;
+			}
 		}
-		$data = Webino_Dashboard_Analytics_Query::traffic_periods();
 		if ( $user_id > 0 ) {
 			set_transient( $key, $data, self::CACHE_TTL );
 		}
@@ -303,14 +443,62 @@ class Webino_Dashboard_Home_Overview {
 	}
 
 	/**
+	 * Placeholder traffic payload when analytics is off — keeps the home card visible.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function traffic_inactive_payload() {
+		$today = current_time( 'Y-m-d' );
+		$from  = gmdate( 'Y-m-d', strtotime( $today . ' -29 days' ) );
+		$series = class_exists( 'Webino_Dashboard_Analytics_Query', false )
+			? Webino_Dashboard_Analytics_Query::fill_daily_series( $from, $today, array() )
+			: array();
+		$empty_period = array(
+			'id'                   => 'inactive',
+			'from'                 => $from,
+			'to'                   => $today,
+			'visitors'             => 0,
+			'views'                => 0,
+			'visitors_change_pct'  => null,
+			'views_change_pct'     => null,
+		);
+		return array(
+			'active'    => false,
+			'source'    => 'native',
+			'online'    => 0,
+			'highlight' => array(
+				'visitors'            => 0,
+				'views'               => 0,
+				'visitors_change_pct' => null,
+				'views_change_pct'    => null,
+			),
+			'periods'   => array(),
+			'all_time'  => $empty_period,
+			'chart'     => array(
+				'series' => $series,
+			),
+		);
+	}
+
+	/**
 	 * @param string $locale User locale.
 	 * @return array<string,mixed>
 	 */
 	private static function sales_section( $locale ) {
-		$to_ts    = time();
-		$from_ts  = Webino_Dashboard_Locale::calendar_month_start_ts( $locale );
-		$statuses = Webino_Dashboard_Order_Reports::default_statuses();
-		$current  = Webino_Dashboard_Order_Reports::build_report( $from_ts, $to_ts, 'day', $statuses );
+		$to_ts       = time();
+		$from_ts     = Webino_Dashboard_Locale::calendar_month_start_ts( $locale );
+		$range       = 'month';
+		$month_label = Webino_Dashboard_Locale::calendar_month_label( $locale );
+		$statuses    = Webino_Dashboard_Order_Reports::default_statuses();
+		$current     = Webino_Dashboard_Order_Reports::build_report( $from_ts, $to_ts, 'day', $statuses );
+
+		if ( (int) ( $current['summary']['order_count'] ?? 0 ) === 0 ) {
+			$from_ts     = $to_ts - 30 * DAY_IN_SECONDS;
+			$range       = 'last30';
+			$month_label = __( 'Last 30 days', 'webino-dashboard' );
+			$current     = Webino_Dashboard_Order_Reports::build_report( $from_ts, $to_ts, 'day', $statuses );
+		}
+
 		list( $cmp_from, $cmp_to ) = Webino_Dashboard_Order_Reports::compare_range( $from_ts, $to_ts );
 		$prev = Webino_Dashboard_Order_Reports::build_report( $cmp_from, $cmp_to, 'day', $statuses );
 
@@ -321,7 +509,9 @@ class Webino_Dashboard_Home_Overview {
 					'limit'        => 20,
 					'orderby'      => 'date',
 					'order'        => 'DESC',
-					'date_created' => wp_date( 'Y-m-d H:i:s', $from_ts ) . '...' . wp_date( 'Y-m-d H:i:s', $to_ts ),
+					'type'         => 'shop_order',
+					'status'       => Webino_Dashboard_Order_Reports::active_statuses(),
+					'date_created' => (int) $from_ts . '...' . (int) $to_ts,
 				)
 			);
 			foreach ( $month_orders as $o ) {
@@ -352,41 +542,24 @@ class Webino_Dashboard_Home_Overview {
 			}
 		}
 
-		$top_by_views = array();
-		$q            = new WP_Query(
-			array(
-				'post_type'      => 'product',
-				'posts_per_page' => 5,
-				'post_status'    => array( 'publish' ),
-				'meta_key'       => 'post_views_count',
-				'orderby'        => 'meta_value_num',
-				'order'          => 'DESC',
-				'fields'         => 'ids',
-			)
-		);
-		foreach ( (array) $q->posts as $pid ) {
-			$p = wc_get_product( (int) $pid );
-			if ( ! $p ) {
-				continue;
-			}
-			$top_by_views[] = array(
-				'product_id' => (int) $pid,
-				'name'       => $p->get_name(),
-				'views'      => (int) get_post_meta( (int) $pid, 'post_views_count', true ),
-				'image_url'  => self::product_image_url( $p ),
-			);
+		$top_by_views = self::top_products_by_views();
+		if ( ! $top_by_views ) {
+			$top_by_views = self::enrich_product_report_rows( array_slice( (array) ( $current['top_products'] ?? array() ), 0, 5 ) );
 		}
-		wp_reset_postdata();
 
 		return array(
 			'currency'              => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '',
 			'from'                  => $from_ts,
 			'to'                    => $to_ts,
-			'month_label'           => Webino_Dashboard_Locale::calendar_month_label( $locale ),
+			'range'                 => $range,
+			'month_label'           => $month_label,
 			'summary'               => $current['summary'],
 			'compare_summary'       => $prev['summary'],
 			'series'                => $current['series'],
 			'compare_series'        => $prev['series'],
+			'by_status'             => $current['by_status'] ?? array(),
+			'by_payment'            => $current['by_payment'] ?? array(),
+			'by_hour'               => $current['by_hour'] ?? array(),
 			'recent_orders'         => $recent_orders,
 			'recent_products'       => $recent_products,
 			'top_products'          => self::enrich_product_report_rows( array_slice( (array) ( $current['top_products'] ?? array() ), 0, 5 ) ),
@@ -397,45 +570,110 @@ class Webino_Dashboard_Home_Overview {
 	}
 
 	/**
+	 * Product page views from analytics, falling back to top sellers.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function top_products_by_views() {
+		if ( ! class_exists( 'Webino_Dashboard_Analytics_Query', false ) ) {
+			return array();
+		}
+		$to    = gmdate( 'Y-m-d' );
+		$from  = gmdate( 'Y-m-d', time() - 30 * DAY_IN_SECONDS );
+		$pages = Webino_Dashboard_Analytics_Query::top_pages( $from, $to, 1, 80, '' );
+		$out   = array();
+		foreach ( (array) ( $pages['items'] ?? array() ) as $item ) {
+			$pid = (int) ( $item['post_id'] ?? 0 );
+			if ( $pid <= 0 ) {
+				continue;
+			}
+			$p = function_exists( 'wc_get_product' ) ? wc_get_product( $pid ) : null;
+			if ( ! $p ) {
+				continue;
+			}
+			$out[] = array(
+				'product_id' => $pid,
+				'name'       => $p->get_name(),
+				'views'      => (int) ( $item['views'] ?? 0 ),
+				'image_url'  => self::product_image_url( $p ),
+			);
+			if ( count( $out ) >= 5 ) {
+				break;
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * @return array<string,mixed>
 	 */
 	private static function panels_section() {
 		$panels = array();
 
-		if ( self::can_sms() ) {
-			$panels['sms'] = self::sms_panel_for_overview();
+		try {
+			if ( self::can_sms() ) {
+				$panels['sms'] = self::sms_panel_for_overview();
+			}
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 		}
 
-		$license = Webino_Dashboard_License::instance();
-		$panels['license'] = array(
-			'active' => $license->is_license_active( false ) || $license->is_demo_mode(),
-			'demo'   => $license->is_demo_mode(),
-			'status' => (string) get_option( 'webino_dashboard_license_status', '' ),
-		);
-
-		$panels['woocommerce'] = array(
-			'active' => Webino_Dashboard_Orders::wc_active(),
-		);
-
-		$panels['analytics'] = array(
-			'active' => Webino_Dashboard_Module_Registry::analytics_ready(),
-			'online' => self::can_traffic() && class_exists( 'Webino_Dashboard_Analytics_Query', false )
-				? Webino_Dashboard_Analytics_Query::online_count()
-				: 0,
-		);
-
-		$bots = array();
-		foreach ( array( 'bale' => 'bale-bot-module', 'telegram' => 'telegram-bot-module' ) as $which => $mod ) {
-			if ( ! Webino_Dashboard_Modules::is_module_enabled( $mod ) ) {
-				continue;
-			}
-			$bot = self::bot_panel_row( $which );
-			if ( ! empty( $bot ) ) {
-				$bots[] = $bot;
-			}
+		try {
+			$license = Webino_Dashboard_License::instance();
+			$panels['license'] = array(
+				'active' => $license->is_license_active( false ) || $license->is_demo_mode(),
+				'demo'   => $license->is_demo_mode(),
+				'status' => (string) get_option( 'webino_dashboard_license_status', '' ),
+			);
+		} catch ( Throwable $e ) {
+			$panels['license'] = array(
+				'active' => false,
+				'demo'   => false,
+				'status' => '',
+			);
 		}
-		if ( ! empty( $bots ) ) {
-			$panels['bots'] = $bots;
+
+		try {
+			$panels['woocommerce'] = array(
+				'active' => Webino_Dashboard_Orders::wc_active(),
+			);
+		} catch ( Throwable $e ) {
+			$panels['woocommerce'] = array(
+				'active' => function_exists( 'wc_get_order' ),
+			);
+		}
+
+		try {
+			$panels['analytics'] = array(
+				'active' => Webino_Dashboard_Module_Registry::analytics_ready(),
+				'online' => self::can_traffic() && class_exists( 'Webino_Dashboard_Analytics_Query', false )
+					? Webino_Dashboard_Analytics_Query::online_count()
+					: 0,
+			);
+		} catch ( Throwable $e ) {
+			$panels['analytics'] = array(
+				'active' => false,
+				'online' => 0,
+			);
+		}
+
+		try {
+			$bots = array();
+			foreach ( array( 'bale' => 'bale-bot-module', 'telegram' => 'telegram-bot-module' ) as $which => $mod ) {
+				if ( ! Webino_Dashboard_Modules::is_module_enabled( $mod ) ) {
+					continue;
+				}
+				try {
+					$bot = self::bot_panel_row( $which );
+					if ( ! empty( $bot ) ) {
+						$bots[] = $bot;
+					}
+				} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+				}
+			}
+			if ( ! empty( $bots ) ) {
+				$panels['bots'] = $bots;
+			}
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 		}
 
 		return $panels;

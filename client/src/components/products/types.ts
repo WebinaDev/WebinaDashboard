@@ -31,6 +31,7 @@ export type ProductListRow = {
   categories: ProductTaxTerm[]
   tags: ProductTaxTerm[]
   wfcp?: ProductWfcp
+  marketplace_badges?: string[]
 }
 
 export type ProductLookup = {
@@ -59,6 +60,7 @@ export type ProductColumnId =
   | 'views'
   | 'status'
   | 'type'
+  | 'marketplaces'
 
 export type ProductColumnVisibility = Record<ProductColumnId, boolean>
 

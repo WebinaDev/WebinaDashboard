@@ -48,21 +48,88 @@ class Webino_Dashboard_Assets {
 	}
 
 	/**
-	 * Cache-bust token for shell / service worker (max filemtime of entry assets).
+	 * Cache-bust token for shell / service worker (plugin version + build-entry fingerprint).
 	 *
 	 * @return string
 	 */
 	public static function get_deploy_asset_version() {
 		$build_dir = WEBINO_DASHBOARD_DIR . 'assets/dashboard-build/';
-		$resolved  = self::resolve_entry_assets( $build_dir );
-		if ( null === $resolved ) {
-			return WEBINO_DASHBOARD_VERSION;
+		$entry     = $build_dir . 'build-entry.json';
+		$fp        = '';
+		if ( is_readable( $entry ) ) {
+			$raw = file_get_contents( $entry );
+			if ( is_string( $raw ) && '' !== $raw ) {
+				$fp = substr( md5( $raw ), 0, 8 );
+			}
 		}
-		$version = is_readable( $resolved['js_path'] ) ? (int) filemtime( $resolved['js_path'] ) : 0;
-		if ( '' !== $resolved['css_path'] && is_readable( $resolved['css_path'] ) ) {
-			$version = max( $version, (int) filemtime( $resolved['css_path'] ) );
+		if ( '' === $fp ) {
+			$resolved = self::resolve_entry_assets( $build_dir );
+			if ( null !== $resolved ) {
+				$version = is_readable( $resolved['js_path'] ) ? (int) filemtime( $resolved['js_path'] ) : 0;
+				if ( '' !== $resolved['css_path'] && is_readable( $resolved['css_path'] ) ) {
+					$version = max( $version, (int) filemtime( $resolved['css_path'] ) );
+				}
+				$fp = (string) max( 1, $version );
+			}
 		}
-		return (string) max( 1, $version );
+		return WEBINO_DASHBOARD_VERSION . ( '' !== $fp ? '-' . $fp : '' );
+	}
+
+	/**
+	 * Delete hashed entry/shell leftovers that are not listed in build-entry.json.
+	 *
+	 * @return int Number of files removed.
+	 */
+	public static function purge_stale_build_assets() {
+		$build_dir = WEBINO_DASHBOARD_DIR . 'assets/dashboard-build/';
+		$assets    = $build_dir . 'assets/';
+		if ( ! is_dir( $assets ) ) {
+			return 0;
+		}
+
+		$keep = array();
+		$path = $build_dir . 'build-entry.json';
+		if ( is_readable( $path ) ) {
+			$data = json_decode( (string) file_get_contents( $path ), true );
+			if ( is_array( $data ) ) {
+				foreach ( array( 'js', 'css', 'shared' ) as $key ) {
+					if ( empty( $data[ $key ] ) || ! is_string( $data[ $key ] ) ) {
+						continue;
+					}
+					$rel = ltrim( $data[ $key ], '/' );
+					if ( 0 === strpos( $rel, 'assets/' ) ) {
+						$keep[ basename( $rel ) ] = true;
+					}
+				}
+			}
+		}
+		if ( empty( $keep ) ) {
+			return 0;
+		}
+
+		$removed = 0;
+		$patterns = array(
+			$assets . 'index-*.js',
+			$assets . 'index-*.css',
+			$assets . 'dashboard-shell-*.js',
+			$assets . 'dashboard-shared-*.js',
+		);
+		foreach ( $patterns as $pattern ) {
+			$files = glob( $pattern );
+			if ( ! is_array( $files ) ) {
+				continue;
+			}
+			foreach ( $files as $file ) {
+				$base = basename( $file );
+				if ( isset( $keep[ $base ] ) ) {
+					continue;
+				}
+				if ( is_file( $file ) && @unlink( $file ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+					++$removed;
+				}
+			}
+		}
+		return $removed;
 	}
 
 	/**
@@ -297,9 +364,8 @@ class Webino_Dashboard_Assets {
 			return;
 		}
 
-		self::$resolved_snapshot = $resolved;
+		self::$resolved_snapshot  = $resolved;
 		self::$entry_tags_printed = true;
-		self::$build_missing     = false;
 
 		$entry_js      = $resolved['js_path'];
 		$entry_css     = $resolved['css_path'];
@@ -310,12 +376,8 @@ class Webino_Dashboard_Assets {
 
 		if ( '' !== $entry_css_url && is_readable( $entry_css ) ) {
 			$ver = (string) filemtime( $entry_css );
+			echo '<link rel="preload" as="style" href="' . esc_url( $entry_css_url ) . '?ver=' . esc_attr( $ver ) . '" />' . "\n";
 			echo '<link rel="stylesheet" id="webino-dashboard-app-css" href="' . esc_url( $entry_css_url ) . '?ver=' . esc_attr( $ver ) . '" media="all" />' . "\n";
-		}
-
-		$shared_rel = self::resolve_shared_chunk_rel( $build_dir, $resolved );
-		if ( null !== $shared_rel ) {
-			echo '<link rel="modulepreload" href="' . esc_url( $build_url . $shared_rel ) . '" crossorigin />' . "\n";
 		}
 
 		$href = esc_url( rest_url( 'webino-dashboard/v1/manifest.webmanifest' ) );
@@ -324,10 +386,83 @@ class Webino_Dashboard_Assets {
 		// Config MUST precede the module entry — modules are deferred but must not race footer localize.
 		self::print_runtime_config_script();
 
+		// Import map MUST be registered before any modulepreload / type=module (bare "react" imports).
+		$imports = self::print_shared_runtime_import_map( $build_dir, $build_url, $resolved );
+		if ( empty( $imports['react'] ) ) {
+			self::$build_missing = true;
+			return;
+		}
+		self::$build_missing = false;
+
+		$shared_rel = self::resolve_shared_chunk_rel( $build_dir, $resolved );
+		if ( null !== $shared_rel ) {
+			echo '<link rel="modulepreload" href="' . esc_url( $build_url . $shared_rel ) . '" crossorigin />' . "\n";
+		}
+		foreach ( array( 'react', 'react-dom', 'react-dom/client' ) as $spec ) {
+			if ( isset( $imports[ $spec ] ) ) {
+				echo '<link rel="modulepreload" href="' . esc_url( $imports[ $spec ] ) . '" crossorigin />' . "\n";
+			}
+		}
+
 		if ( is_readable( $entry_js ) ) {
 			$ver = (string) filemtime( $entry_js );
+			echo '<link rel="modulepreload" href="' . esc_url( $entry_js_url ) . '?ver=' . esc_attr( $ver ) . '" crossorigin />' . "\n";
 			echo '<script type="module" id="webino-dashboard-app-js" src="' . esc_url( $entry_js_url ) . '?ver=' . esc_attr( $ver ) . '"></script>' . "\n";
 		}
+	}
+
+	/**
+	 * Emit <script type="importmap"> so host SPA and dynamic module.js share one React/Query/i18n.
+	 *
+	 * @param string               $build_dir Absolute dashboard-build path (trailing slash).
+	 * @param string               $build_url  URL to dashboard-build (trailing slash).
+	 * @param array<string,mixed>  $resolved   Entry resolution payload.
+	 * @return array<string,string> Absolute import URLs keyed by bare specifier (empty on failure).
+	 */
+	private static function print_shared_runtime_import_map( $build_dir, $build_url, $resolved ) {
+		$packages = array();
+		if ( isset( $resolved['importMap'] ) && is_array( $resolved['importMap'] ) ) {
+			$packages = $resolved['importMap'];
+		}
+		if ( empty( $packages ) ) {
+			$map_file = $build_dir . 'shared/import-map.json';
+			if ( is_readable( $map_file ) ) {
+				$raw = file_get_contents( $map_file );
+				$data = is_string( $raw ) ? json_decode( $raw, true ) : null;
+				if ( is_array( $data ) && isset( $data['packages'] ) && is_array( $data['packages'] ) ) {
+					$packages = $data['packages'];
+				}
+			}
+		}
+		if ( empty( $packages ) ) {
+			return array();
+		}
+
+		$imports = array();
+		foreach ( $packages as $specifier => $rel ) {
+			$specifier = (string) $specifier;
+			$rel       = ltrim( (string) $rel, '/' );
+			if ( '' === $specifier || '' === $rel ) {
+				continue;
+			}
+			$abs = $build_dir . $rel;
+			if ( ! is_readable( $abs ) ) {
+				continue;
+			}
+			$ver                   = (string) filemtime( $abs );
+			$imports[ $specifier ] = $build_url . $rel . '?ver=' . rawurlencode( $ver );
+		}
+		if ( empty( $imports ) || empty( $imports['react'] ) ) {
+			return array();
+		}
+
+		$payload = wp_json_encode( array( 'imports' => $imports ) );
+		if ( ! is_string( $payload ) || '' === $payload ) {
+			return array();
+		}
+		echo '<script type="importmap" id="webino-dashboard-importmap">' . $payload . '</script>' . "\n";
+
+		return $imports;
 	}
 
 	/**
@@ -381,10 +516,11 @@ class Webino_Dashboard_Assets {
 			}
 		}
 		return array(
-			'js'       => $js_rel,
-			'css'      => $css_rel,
-			'js_path'  => $js_path,
-			'css_path' => $css_path,
+			'js'        => $js_rel,
+			'css'       => $css_rel,
+			'js_path'   => $js_path,
+			'css_path'  => $css_path,
+			'importMap' => isset( $data['importMap'] ) && is_array( $data['importMap'] ) ? $data['importMap'] : array(),
 		);
 	}
 
@@ -593,7 +729,15 @@ class Webino_Dashboard_Assets {
 		if ( ! is_array( $matches ) || empty( $matches[0] ) ) {
 			$matches = glob( $build_dir . 'assets/dashboard-shared-*.js' );
 		}
-		if ( is_array( $matches ) && ! empty( $matches[0] ) ) {
+		if ( is_array( $matches ) && ! empty( $matches ) ) {
+			if ( count( $matches ) > 1 ) {
+				usort(
+					$matches,
+					static function ( $a, $b ) {
+						return filemtime( $b ) <=> filemtime( $a );
+					}
+				);
+			}
 			return 'assets/' . basename( $matches[0] );
 		}
 
@@ -774,6 +918,11 @@ class Webino_Dashboard_Assets {
 			$bootstrap = self::get_or_build_bootstrap( $uid );
 		}
 
+		$page = null;
+		if ( $uid > 0 && is_user_logged_in() && class_exists( 'Webino_Dashboard_SSR', false ) ) {
+			$page = Webino_Dashboard_SSR::build_page_payload();
+		}
+
 		return array(
 			'version'      => WEBINO_DASHBOARD_VERSION,
 			'assetVersion' => $asset_version,
@@ -791,6 +940,7 @@ class Webino_Dashboard_Assets {
 			'siteIconUrl'  => Webino_Dashboard_REST::site_icon_url(),
 			'license'      => Webino_Dashboard_License::instance()->get_bootstrap_payload(),
 			'bootstrap'    => $bootstrap,
+			'page'         => $page,
 			'marketplaceSettingsSections' => apply_filters( 'webino_dashboard_marketplace_settings_sections', array() ),
 			'allowedRemoteHosts' => class_exists( 'Webino_Dashboard_Remote_Url', false ) ? Webino_Dashboard_Remote_Url::allowed_hosts() : array(),
 			'flags'        => array(
@@ -841,6 +991,20 @@ class Webino_Dashboard_Assets {
 		if ( empty( $clients ) && class_exists( 'Webino_Dashboard_Module_Registry', false )
 			&& Webino_Dashboard_Module_Registry::disk_has_readable_module_clients() ) {
 			return true;
+		}
+		if ( class_exists( 'Webino_Dashboard_Module_Registry', false ) ) {
+			$cached_slugs = array();
+			foreach ( $clients as $client ) {
+				if ( is_array( $client ) && ! empty( $client['slug'] ) ) {
+					$cached_slugs[ (string) $client['slug'] ] = true;
+				}
+			}
+			foreach ( Webino_Dashboard_Module_Registry::get_active_module_clients() as $live ) {
+				$slug = (string) ( $live['slug'] ?? '' );
+				if ( '' !== $slug && empty( $cached_slugs[ $slug ] ) ) {
+					return true;
+				}
+			}
 		}
 		return false;
 	}
@@ -925,23 +1089,42 @@ class Webino_Dashboard_Assets {
 
 		global $wp_styles;
 		if ( $wp_styles instanceof WP_Styles ) {
-			foreach ( $wp_styles->queue as $handle ) {
-				if ( in_array( $handle, $keep, true ) ) {
+			$handles = array_unique( array_merge( $wp_styles->queue, array_keys( $wp_styles->registered ) ) );
+			foreach ( $handles as $handle ) {
+				if ( $this->should_keep_dashboard_asset_handle( $handle, $keep ) ) {
 					continue;
 				}
 				wp_dequeue_style( $handle );
+				wp_deregister_style( $handle );
 			}
 		}
 
 		global $wp_scripts;
 		if ( $wp_scripts instanceof WP_Scripts ) {
-			foreach ( $wp_scripts->queue as $handle ) {
-				if ( in_array( $handle, $keep, true ) ) {
+			$handles = array_unique( array_merge( $wp_scripts->queue, array_keys( $wp_scripts->registered ) ) );
+			foreach ( $handles as $handle ) {
+				if ( $this->should_keep_dashboard_asset_handle( $handle, $keep ) ) {
 					continue;
 				}
 				wp_dequeue_script( $handle );
+				wp_deregister_script( $handle );
 			}
 		}
+	}
+
+	/**
+	 * @param string        $handle Asset handle.
+	 * @param array<string> $keep   Handles to preserve.
+	 * @return bool
+	 */
+	private function should_keep_dashboard_asset_handle( $handle, array $keep ) {
+		if ( in_array( $handle, $keep, true ) ) {
+			return true;
+		}
+		if ( 0 === strpos( $handle, 'webino-dashboard' ) ) {
+			return true;
+		}
+		return false;
 	}
 
 }

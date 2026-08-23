@@ -24,8 +24,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { apiFetch } from '@/lib/api'
 
 export type BotConnectionInfo = {
-  telegram?: { connected?: boolean; chat_id?: string }
-  bale?: { connected?: boolean; chat_id?: string }
+  telegram?: { connected?: boolean; chat_id?: string; username?: string }
+  bale?: { connected?: boolean; chat_id?: string; username?: string }
+  loyalty_points?: number
+  blocked?: boolean
 }
 
 type SendMessageDialogProps = {

@@ -1,0 +1,1 @@
+import{t as e}from"./SettingsModulesChrome-D7nMCwnz.js";import{t}from"./WncPlatformPanel-DMvuZfi5.js";import{jsx as n}from"react/jsx-runtime";function r(){return n(e,{children:n(t,{platform:`zarehbin`,titleKey:`wnc.modules.zarehbin.title`,subtitleKey:`wnc.modules.zarehbin.subtitle`,feedPlatform:!0,embedded:!0})})}export{r as default};

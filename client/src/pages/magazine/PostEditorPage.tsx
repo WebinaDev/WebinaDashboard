@@ -6,6 +6,7 @@ import { useMatch, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { AiGenerateButton } from '@/components/AiGenerateButton'
 import { PostCategoriesPanel } from '@/components/magazine/PostCategoriesPanel'
 import { QueryErrorState } from '@/components/QueryErrorState'
 import { PostFeaturedImagePanel } from '@/components/magazine/PostFeaturedImagePanel'
@@ -13,10 +14,13 @@ import { PostPublishPanel, type PostVisibility } from '@/components/magazine/Pos
 import { PostTagsPanel } from '@/components/magazine/PostTagsPanel'
 import { RichTextEditor } from '@/components/magazine/LazyRichTextEditor'
 import { PageShell } from '@/components/PageShell'
+import { SimpleSeoFields, type SimpleSeo } from '@/components/seo/SimpleSeoFields'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Textarea } from '@/components/ui/textarea'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 
@@ -26,6 +30,7 @@ type Post = {
   id: number
   title: string
   content: string
+  excerpt?: string
   status: string
   categories: number[]
   tags: PostTag[]
@@ -35,6 +40,7 @@ type Post = {
   visibility: PostVisibility
   password: string
   date: string
+  seo?: SimpleSeo
 }
 
 function toDateTimeLocal(value?: string) {
@@ -46,6 +52,7 @@ function toDateTimeLocal(value?: string) {
 function buildPostPayload(input: {
   title: string
   content: string
+  excerpt: string
   status: string
   categories: number[]
   tags: string[]
@@ -55,16 +62,19 @@ function buildPostPayload(input: {
   password: string
   publishImmediately: boolean
   publishDate: string
+  seo: SimpleSeo
 }) {
   const body: Record<string, unknown> = {
     title: input.title,
     content: input.content,
+    excerpt: input.excerpt,
     status: input.status,
     categories: input.categories,
     tags: input.tags,
     featured_image_id: input.featuredImageId,
     comment_status: input.commentStatus,
     visibility: input.visibility,
+    seo: input.seo,
   }
 
   if (input.visibility === 'password' && input.password.trim()) {
@@ -97,6 +107,8 @@ export default function PostEditorPage() {
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [excerpt, setExcerpt] = useState('')
+  const [seo, setSeo] = useState<SimpleSeo>({})
   const [status, setStatus] = useState('draft')
   const [categories, setCategories] = useState<number[]>([])
   const [tags, setTags] = useState<string[]>([])
@@ -120,6 +132,8 @@ export default function PostEditorPage() {
     const p = postQ.data
     setTitle(p.title)
     setContent(p.content)
+    setExcerpt(p.excerpt ?? '')
+    setSeo(p.seo ?? {})
     setStatus(p.status)
     setCategories(p.categories ?? [])
     setTags((p.tags ?? []).map((tag) => tag.name))
@@ -139,6 +153,7 @@ export default function PostEditorPage() {
       const payload = buildPostPayload({
         title,
         content,
+        excerpt,
         status,
         categories,
         tags,
@@ -148,6 +163,7 @@ export default function PostEditorPage() {
         password,
         publishImmediately,
         publishDate,
+        seo,
       })
 
       if (id) {
@@ -187,7 +203,8 @@ export default function PostEditorPage() {
 
   return (
     <PageShell title={id ? t('posts.editTitle') : t('posts.newTitle')}>
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        {id ? <AiGenerateButton type="post" id={id} onDone={() => void postQ.refetch()} /> : null}
         <Button type="button" variant="outline" size="sm" disabled={save.isPending || loading || loadFailed} onClick={() => void save.mutateAsync()}>
           {t('common.save')}
         </Button>
@@ -216,6 +233,16 @@ export default function PostEditorPage() {
 
           <Card className="gap-4 py-4 shadow-sm">
             <CardHeader className="px-4 pb-0">
+              <CardTitle className="text-sm font-semibold">{t('aiContent.excerpt')}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 space-y-1">
+              <Label className="sr-only">{t('aiContent.excerpt')}</Label>
+              <Textarea rows={3} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} disabled={loading || save.isPending} />
+            </CardContent>
+          </Card>
+
+          <Card className="gap-4 py-4 shadow-sm">
+            <CardHeader className="px-4 pb-0">
               <CardTitle className="text-sm font-semibold">{t('posts.fieldContent')}</CardTitle>
             </CardHeader>
             <CardContent className="px-4">
@@ -231,6 +258,8 @@ export default function PostEditorPage() {
               )}
             </CardContent>
           </Card>
+
+          {!loading ? <SimpleSeoFields seo={seo} onChange={setSeo} /> : null}
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">

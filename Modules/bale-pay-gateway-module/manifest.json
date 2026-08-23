@@ -1,0 +1,32 @@
+{
+  "slug": "bale-pay-gateway-module",
+  "name": "Bale Pay Gateway",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "parent_slug": "payment-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Bale Pay",
+    "sections": [
+      {
+        "id": "gateway",
+        "route": "/settings/shop/bale-pay",
+        "title": "Bale Pay",
+        "titleKey": "balePay.title"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/bale-pay",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "balePay.title"
+      }
+    ]
+  }
+}

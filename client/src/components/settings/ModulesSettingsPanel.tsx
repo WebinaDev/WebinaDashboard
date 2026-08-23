@@ -1,14 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Puzzle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { Card, CardContent } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
 import { apiFetch } from '@/lib/api'
 import { moduleNavTitle } from '@/lib/nav-modules'
 import { invalidateModuleBundleCache } from '@/lib/moduleRuntime'
 import { toastApiError } from '@/lib/apiError'
+import { cn } from '@/lib/utils'
 
 type ModuleRow = { id: string; title: string; active: boolean }
 
@@ -44,28 +45,44 @@ export function ModulesSettingsPanel() {
   if (!modules.length) return null
 
   return (
-    <Card className="max-w-lg shadow-sm">
-      <CardContent className="space-y-4 pt-6">
-        <Label className="text-base">{t('settings.modulesTitle')}</Label>
-        <p className="text-muted-foreground text-xs">{t('settings.modulesHint')}</p>
-        <ul className="space-y-2">
-          {modules.map((mod) => (
-            <li key={mod.id} className="flex items-center justify-between gap-2 text-sm">
-              <span>{moduleNavTitle(t, mod.id, mod.title)}</span>
-              <Checkbox
-                checked={mod.active}
-                onCheckedChange={(checked) => {
-                  const rows = q.data?.dashboard_modules
-                  if (!rows?.length) return
-                  const map: Record<string, boolean> = {}
-                  for (const m of rows) map[m.id] = m.id === mod.id ? checked === true : m.active
-                  void save.mutateAsync({ modules: map })
-                }}
-              />
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-base font-semibold">{t('settings.modulesTitle')}</h2>
+        <p className="text-muted-foreground mt-1 text-sm">{t('settings.modulesHint')}</p>
+      </div>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {modules.map((mod) => (
+          <li key={mod.id}>
+            <Card
+              variant="glass"
+              className={cn('py-4 transition-colors', mod.active ? 'border-primary/25' : 'opacity-90')}
+            >
+              <CardHeader className="flex flex-row items-center gap-3 space-y-0 px-4">
+                <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+                  <Puzzle className="size-4" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="truncate text-sm">{moduleNavTitle(t, mod.id, mod.title)}</CardTitle>
+                  <CardDescription className="text-xs">
+                    {mod.active ? t('settings.moduleOn') : t('settings.moduleOff')}
+                  </CardDescription>
+                </div>
+                <Switch
+                  checked={mod.active}
+                  disabled={save.isPending}
+                  onCheckedChange={(checked) => {
+                    const rows = q.data?.dashboard_modules
+                    if (!rows?.length) return
+                    const map: Record<string, boolean> = {}
+                    for (const m of rows) map[m.id] = m.id === mod.id ? checked === true : m.active
+                    void save.mutateAsync({ modules: map })
+                  }}
+                />
+              </CardHeader>
+            </Card>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
+import { MarketplaceBadge } from '@/components/data/MarketplaceBadge'
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { ProductRowActions } from '@/components/products/ProductRowActions'
 import type { ProductColumnVisibility, ProductListRow } from '@/components/products/types'
@@ -61,6 +62,7 @@ export function ProductsTable({
         <TableRow>
           {columns.image ? <TableHead className="w-14">{t('products.colImage')}</TableHead> : null}
           {columns.name ? <TableHead>{t('products.colName')}</TableHead> : null}
+          {columns.marketplaces ? <TableHead>{t('products.colMarketplaces')}</TableHead> : null}
           {columns.sku ? <TableHead>{t('products.colSku')}</TableHead> : null}
           {columns.purchase_price ? <TableHead>{t('products.colPurchase')}</TableHead> : null}
           {columns.retail ? <TableHead>{t('products.colRetail')}</TableHead> : null}
@@ -78,7 +80,7 @@ export function ProductsTable({
           {columns.views ? <TableHead>{t('products.colViews')}</TableHead> : null}
           {columns.status ? <TableHead>{t('products.colStatus')}</TableHead> : null}
           {columns.type ? <TableHead>{t('products.colType')}</TableHead> : null}
-          <TableHead className="w-44">{t('products.colActions')}</TableHead>
+          <TableHead className="w-52 min-w-52">{t('products.colActions')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -109,6 +111,15 @@ export function ProductsTable({
                     <Link to={`/shop/products/${row.id}`} className="hover:underline">
                       {row.name}
                     </Link>
+                  </TableCell>
+                ) : null}
+                {columns.marketplaces ? (
+                  <TableCell>
+                    {row.marketplace_badges && row.marketplace_badges.length > 0 ? (
+                      <MarketplaceBadge slugs={row.marketplace_badges} />
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
                   </TableCell>
                 ) : null}
                 {columns.sku ? <TableCell className="text-xs">{row.sku || '—'}</TableCell> : null}
@@ -190,7 +201,7 @@ export function ProductsTable({
                 {columns.type ? (
                   <TableCell className="text-sm">{translateEnum(t, 'products.productType', row.type)}</TableCell>
                 ) : null}
-                <TableCell>
+                <TableCell className="w-52 min-w-52">
                   <ProductRowActions
                     row={row}
                     busy={busyId === row.id}

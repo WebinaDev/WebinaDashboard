@@ -1,0 +1,43 @@
+<?php
+
+namespace WncBasalam\Services\Products;
+
+use WncBasalam\Config\Endpoints;
+use WncBasalam\Services\ApiServiceManager;
+
+defined('ABSPATH') || exit;
+class FetchCommission
+{
+    public static function fetchCategoryCommission($categoryIds)
+    {
+        $apiservice = wncBasalamContainer()->get(ApiServiceManager::class);
+        $queryParams = [];
+
+        if (isset($categoryIds[0]) && is_numeric($categoryIds[0])) {
+            $queryParams[] = "product.category.level1=" . intval($categoryIds[0]);
+        }
+        if (isset($categoryIds[1]) && is_numeric($categoryIds[1])) {
+            $queryParams[] = "product.category.level2=" . intval($categoryIds[1]);
+        }
+        if (isset($categoryIds[2]) && is_numeric($categoryIds[2])) {
+            $queryParams[] = "product.category.level3=" . intval($categoryIds[2]);
+        }
+
+        if (empty($queryParams)) return false;
+
+        $url = Endpoints::COMMISSION . '?' . implode("&", $queryParams);
+
+        try {
+            $result = $apiservice->get($url);
+        } catch (\Exception $e) {
+            return 0;
+        }
+
+        $decodedBody = json_decode($result['body'], true);
+
+        $commissionPercent = $decodedBody['commission_data']['commission_percent'];
+
+        if ($commissionPercent) return $commissionPercent;
+        return 0;
+    }
+}

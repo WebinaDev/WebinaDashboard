@@ -19,24 +19,34 @@
     utm_campaign: param('utm_campaign'),
   });
 
+  var url = cfg.endpoint + (cfg.endpoint.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(cfg.token);
+
+  // Prefer fetch without cookies so logged-in admins are not silently skipped server-side.
   try {
-    if (navigator.sendBeacon) {
-      var blob = new Blob([body], { type: 'application/json' });
-      navigator.sendBeacon(cfg.endpoint + '?token=' + encodeURIComponent(cfg.token), blob);
+    if (typeof fetch === 'function') {
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webino-Analytics-Token': cfg.token,
+        },
+        body: body,
+        keepalive: true,
+        credentials: 'omit',
+        mode: 'cors',
+      }).catch(function () {});
       return;
     }
   } catch (e) {
     /* fall through */
   }
 
-  fetch(cfg.endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Webino-Analytics-Token': cfg.token,
-    },
-    body: body,
-    keepalive: true,
-    credentials: 'omit',
-  }).catch(function () {});
+  try {
+    if (navigator.sendBeacon) {
+      var blob = new Blob([body], { type: 'application/json' });
+      navigator.sendBeacon(url, blob);
+    }
+  } catch (e2) {
+    /* ignore */
+  }
 })();

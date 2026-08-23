@@ -10,6 +10,14 @@ export type ProductCategoryRow = {
   thumbnail_url: string
   views: number | null
   url: string
+  seo?: {
+    title?: string
+    description?: string
+    focus_keyword?: string
+    facebook_title?: string
+    facebook_description?: string
+    schema_type?: string
+  }
 }
 
 export type ProductCategoryColumnId = 'image' | 'name' | 'slug' | 'parent' | 'count' | 'views'
@@ -23,4 +31,9 @@ export type ProductCategoryFormState = {
   description: string
   thumbnail_id: number
   thumbnail_url: string
+  seo: {
+    title: string
+    description: string
+    focus_keyword: string
+  }
 }

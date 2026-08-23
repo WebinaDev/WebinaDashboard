@@ -1,5 +1,6 @@
+/* webino-dashboard 0.1.31 — force fresh entry hashes after importmap fix */
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 
 import App from '@/App.tsx'
 import { i18nReady } from '@/i18n'
@@ -10,6 +11,16 @@ import '@/index.css'
 
 const queryClient = createQueryClient()
 
+function appTree() {
+  return (
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </StrictMode>
+  )
+}
+
 function mountApp() {
   const el = document.getElementById('root')
   if (!el) {
@@ -17,13 +28,21 @@ function mountApp() {
     return
   }
 
-  createRoot(el).render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </StrictMode>,
-  )
+  const tree = appTree()
+  const ssrChrome = el.querySelector('[data-wd-ssr]')
+  // PHP first-paint chrome is intentionally not isomorphic with React.
+  // createRoot replaces it after paint; embedded page/bootstrap data avoids REST waterfalls.
+  if (ssrChrome) {
+    createRoot(el).render(tree)
+    return
+  }
+
+  if (el.getAttribute('data-wd-hydrate') === '1' && el.childElementCount === 0) {
+    hydrateRoot(el, tree)
+    return
+  }
+
+  createRoot(el).render(tree)
 }
 
 function boot() {
@@ -43,12 +62,32 @@ function boot() {
     })
 }
 
+/** True once React has replaced the PHP shell loader (or shown a boot error). */
+function isDashboardBooted(): boolean {
+  const root = document.getElementById('root')
+  if (!root) {
+    return false
+  }
+  // PHP shell leaves #wd-shell-loader until createRoot mounts — do not treat it as "booted".
+  if (document.getElementById('wd-shell-loader')) {
+    return false
+  }
+  // SSR chrome is transitional until React takes over.
+  if (root.querySelector('[data-wd-ssr]')) {
+    return false
+  }
+  // Boot error UI replaces children with role=alert.
+  if (root.querySelector('[role="alert"]')) {
+    return true
+  }
+  return root.childElementCount > 0
+}
+
 window.addEventListener('error', (event) => {
   if (event.defaultPrevented) {
     return
   }
-  const root = document.getElementById('root')
-  if (!root || root.childElementCount > 0) {
+  if (isDashboardBooted()) {
     return
   }
   const msg = event.error instanceof Error ? event.error.message : event.message
@@ -60,8 +99,7 @@ window.addEventListener('error', (event) => {
 })
 
 window.addEventListener('unhandledrejection', (event) => {
-  const root = document.getElementById('root')
-  if (!root || root.childElementCount > 0) {
+  if (isDashboardBooted()) {
     return
   }
   const reason = event.reason

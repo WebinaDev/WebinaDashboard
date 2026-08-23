@@ -1,0 +1,58 @@
+{
+  "slug": "coffee-profile-module",
+  "name": "Coffee Profile",
+  "version": "1.1.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "default_active": true,
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Coffee profile",
+    "sections": [
+      {
+        "id": "settings",
+        "route": "/settings/shop/coffee-profile",
+        "title": "Coffee profile",
+        "titleKey": "coffeeProfile.settingsTitle"
+      }
+    ]
+  },
+  "sidebar": {
+    "parent_id": "shop",
+    "nodes": [
+      {
+        "id": "coffee-profile-origins",
+        "title": "Coffee origins",
+        "path": "/shop/coffee-origins",
+        "capability": "manage_product_terms"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "shop/coffee-origins",
+        "capability": "manage_product_terms",
+        "headerTitleKey": "coffeeProfile.originsTitle"
+      },
+      {
+        "path": "shop/coffee-origins/new",
+        "capability": "manage_product_terms",
+        "headerTitleKey": "coffeeProfile.originNewTitle"
+      },
+      {
+        "path": "shop/coffee-origins/:originId",
+        "capability": "manage_product_terms",
+        "headerTitleKey": "coffeeProfile.originEditTitle"
+      },
+      {
+        "path": "settings/shop/coffee-profile",
+        "capability": "edit_products",
+        "headerTitleKey": "coffeeProfile.settingsTitle"
+      }
+    ]
+  }
+}

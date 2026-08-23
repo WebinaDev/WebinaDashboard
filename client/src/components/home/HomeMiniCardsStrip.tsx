@@ -16,6 +16,11 @@ type HomeMiniCardsStripProps = {
   products?: DashboardOverviewProductStats
   locale: string
   smsRefetch?: SmsRefetchState
+  /** Resolved status flags (panels + boot/traffic/sales fallbacks). */
+  licenseActive?: boolean
+  trafficActive?: boolean
+  trafficOnline?: number
+  shopActive?: boolean
 }
 
 function MiniCard({
@@ -40,12 +45,14 @@ function MiniCard({
   const isError = variant === 'error'
   const inner = (
     <div
-      className={`flex min-h-[5.25rem] min-w-[10rem] shrink-0 flex-col justify-between rounded-lg border px-3 py-2 shadow-sm ${
-        isError ? 'border-destructive/60 bg-destructive/5' : 'border-border bg-card'
+      className={`wd-mini-tint flex min-h-[5.25rem] min-w-[10rem] shrink-0 flex-col justify-between rounded-xl border px-3 py-2 ${
+        isError ? 'border-destructive/60 bg-destructive/5' : ''
       }`}
     >
       <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-        <Icon className={`size-3.5 shrink-0 ${isError ? 'text-destructive' : ''}`} />
+        <span className={`wd-icon-chip ${isError ? 'bg-destructive/15 text-destructive' : ''}`}>
+          <Icon className="size-3.5 shrink-0" />
+        </span>
         <span className="truncate">{title}</span>
       </div>
       <p className={`text-base font-semibold leading-tight ${isError ? 'text-destructive' : ''}`}>{value}</p>
@@ -73,10 +80,26 @@ function MiniCard({
   return inner
 }
 
-export function HomeMiniCardsStrip({ panels, products, locale, smsRefetch }: HomeMiniCardsStripProps) {
+export function HomeMiniCardsStrip({
+  panels,
+  products,
+  locale,
+  smsRefetch,
+  licenseActive: licenseActiveProp,
+  trafficActive: trafficActiveProp,
+  trafficOnline = 0,
+  shopActive: shopActiveProp,
+}: HomeMiniCardsStripProps) {
   const { t } = useTranslation()
 
-  if (!panels && !products) return null
+  if (!panels && !products && licenseActiveProp === undefined && trafficActiveProp === undefined && shopActiveProp === undefined) {
+    return null
+  }
+
+  const licenseActive = licenseActiveProp ?? panels?.license?.active ?? false
+  const trafficActive = trafficActiveProp ?? panels?.analytics?.active ?? false
+  const onlineCount = trafficActive ? (panels?.analytics?.online ?? trafficOnline) : 0
+  const shopActive = shopActiveProp ?? panels?.woocommerce?.active ?? false
 
   const smsError =
     panels?.sms &&
@@ -130,29 +153,29 @@ export function HomeMiniCardsStrip({ panels, products, locale, smsRefetch }: Hom
 
       <MiniCard
         title={t('home.panels.license')}
-        value={panels?.license.active ? t('home.panels.active') : t('home.panels.inactive')}
-        hint={panels?.license.active ? t('home.panels.active') : t('home.panels.inactive')}
+        value={licenseActive ? t('home.panels.active') : t('home.panels.inactive')}
+        hint={licenseActive ? t('home.panels.active') : t('home.panels.inactive')}
         href="/settings/site"
         icon={Shield}
-        variant={panels?.license.active ? 'default' : 'error'}
+        variant={licenseActive ? 'default' : 'error'}
       />
 
       <MiniCard
         title={t('home.sections.traffic')}
-        value={panels?.analytics.active ? formatNumber(panels.analytics.online, locale) : t('home.panels.inactive')}
-        hint={panels?.analytics.active ? t('home.traffic.onlineNow') : '\u00a0'}
+        value={trafficActive ? formatNumber(onlineCount, locale) : t('home.panels.inactive')}
+        hint={trafficActive ? t('home.traffic.onlineNow') : '\u00a0'}
         href="/analytics/overview"
         icon={Activity}
-        variant={panels?.analytics.active ? 'default' : 'error'}
+        variant={trafficActive ? 'default' : 'error'}
       />
 
       <MiniCard
         title={t('home.storeModule')}
-        value={panels?.woocommerce.active ? t('home.panels.active') : t('home.panels.inactive')}
-        hint={panels?.woocommerce.active ? t('home.panels.active') : t('home.panels.inactive')}
+        value={shopActive ? t('home.panels.active') : t('home.panels.inactive')}
+        hint={shopActive ? t('home.panels.active') : t('home.panels.inactive')}
         href="/settings/shop"
         icon={ShoppingCart}
-        variant={panels?.woocommerce.active ? 'default' : 'error'}
+        variant={shopActive ? 'default' : 'error'}
       />
 
       {panels?.bots?.map((bot) => {

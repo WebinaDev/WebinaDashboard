@@ -6,12 +6,63 @@ import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
 import { apiFetch } from '@/lib/api'
-import type { AttributeRow, GalleryImage, Product, ProductLookup } from '@/types/product'
+import type {
+  AttributeRow,
+  GalleryImage,
+  Product,
+  ProductIshop,
+  ProductLookup,
+  ProductSeo,
+  WholesaleRule,
+  WholesaleRuleForm,
+} from '@/types/product'
+import { emptyProductIshop, emptyProductSeo } from '@/types/product'
 
-function emptyAttributeRow(): AttributeRow {
-  return { name: '', options: '', variation: false, visible: true }
+function emptyWholesaleRule(): WholesaleRuleForm {
+  return {
+    custom: false,
+    wholesale_enabled: true,
+    discount_percent: '',
+    sell_by: 'unit',
+    min_qty: '',
+    min_weight: '',
+    qty_step: '',
+  }
 }
 
+function hydrateWholesaleRule(raw: unknown): WholesaleRuleForm {
+  if (!raw || typeof raw !== 'object') return emptyWholesaleRule()
+  const rule = raw as WholesaleRule
+  const hasOverride =
+    rule.discount_percent != null ||
+    rule.min_qty != null ||
+    rule.min_weight != null ||
+    rule.qty_step != null ||
+    rule.sell_by != null ||
+    rule.wholesale_enabled != null
+  if (!hasOverride) return emptyWholesaleRule()
+  return {
+    custom: true,
+    wholesale_enabled: rule.wholesale_enabled !== false,
+    discount_percent: rule.discount_percent != null ? String(rule.discount_percent) : '',
+    sell_by: rule.sell_by === 'weight' ? 'weight' : 'unit',
+    min_qty: rule.min_qty != null ? String(rule.min_qty) : '',
+    min_weight: rule.min_weight != null ? String(rule.min_weight) : '',
+    qty_step: rule.qty_step != null ? String(rule.qty_step) : '',
+  }
+}
+
+function wholesaleRulePayload(rule: WholesaleRuleForm): WholesaleRule | null {
+  if (!rule.custom) return null
+  return {
+    discount_percent: parseFloat(rule.discount_percent) || 0,
+    min_qty: parseFloat(rule.min_qty) || 0,
+    min_weight: parseFloat(rule.min_weight) || 0,
+    qty_step: parseFloat(rule.qty_step) || 0,
+    sell_by: rule.sell_by,
+    wholesale_enabled: rule.wholesale_enabled,
+  }
+}
 function slugifyName(name: string) {
   return name
     .trim()
@@ -48,13 +99,20 @@ export function useProductEditorForm() {
   const [purchase, setPurchase] = useState('')
   const [lockPrice, setLockPrice] = useState(false)
   const [wfcpPrices, setWfcpPrices] = useState<Product['wfcp_prices']>()
+  const [platformLocks, setPlatformLocks] = useState<Record<string, boolean>>({})
+  const [platformPrices, setPlatformPrices] = useState<Record<string, string>>({})
+  const [wholesaleDiscount, setWholesaleDiscount] = useState('')
+  const [wholesaleRule, setWholesaleRule] = useState<WholesaleRuleForm>(() => emptyWholesaleRule())
+  const [referenceUrl, setReferenceUrl] = useState('')
+  const [referenceSource, setReferenceSource] = useState('')
+  const [referenceLastSync, setReferenceLastSync] = useState('')
   const [imageId, setImageId] = useState(0)
   const [imageUrl, setImageUrl] = useState('')
   const [gallery, setGallery] = useState<GalleryImage[]>([])
   const [categoryIds, setCategoryIds] = useState<number[]>([])
   const [brandIds, setBrandIds] = useState<number[]>([])
   const [tagIds, setTagIds] = useState<number[]>([])
-  const [attributes, setAttributes] = useState<AttributeRow[]>([emptyAttributeRow()])
+  const [attributes, setAttributes] = useState<AttributeRow[]>([])
   const [weight, setWeight] = useState('')
   const [length, setLength] = useState('')
   const [width, setWidth] = useState('')
@@ -62,6 +120,10 @@ export function useProductEditorForm() {
   const [upsellIds, setUpsellIds] = useState<number[]>([])
   const [crossSellIds, setCrossSellIds] = useState<number[]>([])
   const [variationCount, setVariationCount] = useState(0)
+  const [seo, setSeo] = useState<ProductSeo>(() => emptyProductSeo())
+  const [ishop, setIshop] = useState<ProductIshop>(() => emptyProductIshop())
+  const [permalink, setPermalink] = useState('')
+  const [permalinkBase, setPermalinkBase] = useState('')
 
   const productQ = useQuery({
     queryKey: ['product', id],
@@ -93,6 +155,30 @@ export function useProductEditorForm() {
     setPurchase(String(p.wfcp?.purchase_price ?? p.wfcp_prices?.purchase_price ?? ''))
     setLockPrice(Boolean(p.wfcp?.lock_price ?? p.wfcp_prices?.lock_price))
     setWfcpPrices(p.wfcp_prices)
+    const platforms = p.wfcp_prices?.platforms ?? {}
+    const locks: Record<string, boolean> = {}
+    const prices: Record<string, string> = {}
+    Object.entries(platforms).forEach(([slug, row]) => {
+      locks[slug] = Boolean(row?.lock)
+      prices[slug] = row?.manual_price != null && row.manual_price !== '' ? String(row.manual_price) : ''
+    })
+    setPlatformLocks(locks)
+    setPlatformPrices(prices)
+    const rule = p.wfcp?.wholesale_rule ?? p.wfcp_prices?.wholesale_rule
+    setWholesaleRule(hydrateWholesaleRule(rule))
+    setWholesaleDiscount(
+      rule && typeof rule === 'object' && 'discount_percent' in rule && rule.discount_percent != null
+        ? String(rule.discount_percent)
+        : '',
+    )
+    setReferenceUrl(String(p.wfcp?.reference_url ?? ''))
+    setReferenceSource(String(p.wfcp?.reference_source ?? ''))
+    const last = p.wfcp?.reference_last_sync
+    if (last && typeof last === 'object') {
+      setReferenceLastSync(String(last.time ?? last.message ?? last.status ?? ''))
+    } else {
+      setReferenceLastSync(typeof last === 'string' ? last : '')
+    }
     setImageId(p.image_id ?? 0)
     setImageUrl(p.image_url ?? '')
     const urls = p.gallery_urls ?? []
@@ -116,7 +202,7 @@ export function useProductEditorForm() {
             attribute_id: a.attribute_id,
             taxonomy: a.taxonomy,
           }))
-        : [emptyAttributeRow()],
+        : [],
     )
     setWeight(p.weight ?? '')
     setLength(p.length ?? '')
@@ -125,6 +211,16 @@ export function useProductEditorForm() {
     setUpsellIds([...(p.upsell_ids ?? [])])
     setCrossSellIds([...(p.cross_sell_ids ?? [])])
     setVariationCount((p.variation_ids ?? []).length)
+    setSeo({ ...emptyProductSeo(), ...(p.seo ?? {}) })
+    setIshop({
+      ...emptyProductIshop(),
+      ...(p.ishop ?? {}),
+      labels: { ...(p.ishop?.labels ?? {}) },
+      custom_labels: [...(p.ishop?.custom_labels ?? [])],
+      faqs: [...(p.ishop?.faqs ?? [])],
+    })
+    setPermalink(p.permalink ?? '')
+    setPermalinkBase(p.permalink_base ?? '')
   }, [])
 
   useEffect(() => {
@@ -136,6 +232,12 @@ export function useProductEditorForm() {
       setSlug(slugifyName(name))
     }
   }, [name, slugTouched, isNew])
+
+  useEffect(() => {
+    if (lookupQ.data?.permalink_base && !permalinkBase) {
+      setPermalinkBase(lookupQ.data.permalink_base)
+    }
+  }, [lookupQ.data?.permalink_base, permalinkBase])
 
   const productAttributesPayload = attributes
     .filter((row) => row.name.trim() && row.options.trim())
@@ -173,9 +275,22 @@ export function useProductEditorForm() {
       upsell_ids: upsellIds,
       cross_sell_ids: crossSellIds,
       backorders,
+      seo,
+      ishop,
       wfcp: {
         purchase_price: purchase,
         lock_price: lockPrice,
+        reference_url: referenceUrl,
+        wholesale_rule: wholesaleRulePayload(wholesaleRule),
+        platforms: Object.fromEntries(
+          Object.keys({ ...platformLocks, ...platformPrices }).map((slug) => [
+            slug,
+            {
+              lock: Boolean(platformLocks[slug]),
+              manual_price: platformPrices[slug] ?? '',
+            },
+          ]),
+        ),
       },
     }
 
@@ -235,16 +350,61 @@ export function useProductEditorForm() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          wfcp: { purchase_price: purchase, lock_price: lockPrice },
+          wfcp: {
+            purchase_price: purchase,
+            lock_price: lockPrice,
+            reference_url: referenceUrl,
+            wholesale_rule: wholesaleRulePayload(wholesaleRule),
+            platforms: Object.fromEntries(
+              ['digikala', 'basalam', 'technolife', 'snappshop', 'tapsishop', 'zarehbin', 'emalls', 'snapppay-search', 'torob'].map(
+                (slug) => [
+                  slug,
+                  {
+                    lock: Boolean(platformLocks[slug]),
+                    manual_price: platformPrices[slug] ?? '',
+                  },
+                ],
+              ),
+            ),
+          },
         }),
       })
       return apiFetch<Product>(`shop/products/${id}`)
     },
     onSuccess: (p) => {
       if (p) {
-        setWfcpPrices(p.wfcp_prices)
-        setPurchase(String(p.wfcp?.purchase_price ?? p.wfcp_prices?.purchase_price ?? ''))
-        setLockPrice(Boolean(p.wfcp?.lock_price ?? p.wfcp_prices?.lock_price))
+        hydrate(p)
+      }
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const fetchReference = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error('missing product')
+      return apiFetch<{
+        purchase_price?: number
+        last_sync?: { time?: string; message?: string; status?: string }
+        source?: string
+        url?: string
+      }>(`wfcp/products/${id}/reference-fetch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: referenceUrl }),
+      })
+    },
+    onSuccess: async (r) => {
+      if (r.url) setReferenceUrl(r.url)
+      if (r.source) setReferenceSource(r.source)
+      const last = r.last_sync
+      if (last && typeof last === 'object') {
+        setReferenceLastSync(String(last.time ?? last.message ?? last.status ?? ''))
+      }
+      if (r.purchase_price != null) setPurchase(String(r.purchase_price))
+      toast.success(t('common.saved'))
+      if (id) {
+        const p = await apiFetch<Product>(`shop/products/${id}`)
+        hydrate(p)
       }
     },
     onError: (e: Error) => toastApiError(t, e),
@@ -295,6 +455,18 @@ export function useProductEditorForm() {
     lockPrice,
     setLockPrice,
     wfcpPrices,
+    platformLocks,
+    setPlatformLocks,
+    platformPrices,
+    setPlatformPrices,
+    wholesaleDiscount,
+    setWholesaleDiscount,
+    wholesaleRule,
+    setWholesaleRule,
+    referenceUrl,
+    setReferenceUrl,
+    referenceSource,
+    referenceLastSync,
     imageId,
     imageUrl,
     setCover: (item: { id: number; url: string }) => {
@@ -327,7 +499,14 @@ export function useProductEditorForm() {
     setUpsellIds,
     crossSellIds,
     setCrossSellIds,
+    seo,
+    setSeo,
+    ishop,
+    setIshop,
+    permalink,
+    permalinkBase,
     save,
     patchWfcp,
+    fetchReference,
   }
 }

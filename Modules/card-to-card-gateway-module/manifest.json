@@ -1,0 +1,49 @@
+{
+  "slug": "card-to-card-gateway-module",
+  "name": "Card to Card Gateway",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "parent_slug": "payment-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Card to card",
+    "sections": [
+      {
+        "id": "gateway",
+        "route": "/settings/shop/c2c",
+        "title": "Card to card",
+        "titleKey": "c2c.title"
+      }
+    ]
+  },
+  "sidebar": {
+    "parent_id": "shop",
+    "nodes": [
+      {
+        "id": "c2c-receipts",
+        "title": "C2C receipts",
+        "path": "/shop/c2c-receipts",
+        "capability": "manage_woocommerce",
+        "titleKey": "c2c.receiptsTitle"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/c2c",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "c2c.title"
+      },
+      {
+        "path": "shop/c2c-receipts",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "c2c.receiptsTitle"
+      }
+    ]
+  }
+}

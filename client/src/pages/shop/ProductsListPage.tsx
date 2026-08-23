@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { ListStatsStrip } from '@/components/ListStatsStrip'
 import { ProductFiltersBar } from '@/components/products/ProductFiltersBar'
 import { ProductsTable } from '@/components/products/ProductsTable'
 import type {
@@ -30,6 +31,7 @@ import {
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { formatNumber } from '@/lib/formatNumber'
+import type { DashboardOverviewResponse } from '@/types/dashboardOverview'
 
 const COLUMNS_STORAGE_KEY = 'webino-products-list-columns'
 
@@ -66,6 +68,7 @@ const DEFAULT_COLUMNS: ProductColumnVisibility = {
   views: false,
   status: false,
   type: false,
+  marketplaces: true,
 }
 
 const COLUMN_LABELS: Record<ProductColumnId, string> = {
@@ -88,6 +91,7 @@ const COLUMN_LABELS: Record<ProductColumnId, string> = {
   views: 'products.colViews',
   status: 'products.colStatus',
   type: 'products.colType',
+  marketplaces: 'products.colMarketplaces',
 }
 
 function loadColumnVisibility(): ProductColumnVisibility {
@@ -160,8 +164,28 @@ export default function ProductsListPage() {
   })
   useQueryErrorToast(q)
 
+  const statsQ = useQuery({
+    queryKey: ['dashboard', 'overview', 'products-stats'],
+    queryFn: () => apiFetch<DashboardOverviewResponse>('dashboard/overview'),
+    staleTime: 60_000,
+  })
+
   const items = q.data?.items ?? []
   const found = q.data?.found ?? 0
+  const productStats = statsQ.data?.products
+
+  const productStatItems = useMemo(() => {
+    if (!productStats) {
+      return [{ id: 'found', label: t('products.stats.total'), value: found }]
+    }
+    return [
+      { id: 'total', label: t('products.stats.total'), value: productStats.total },
+      { id: 'publish', label: t('products.stats.publish'), value: productStats.by_status?.publish ?? 0 },
+      { id: 'draft', label: t('products.stats.draft'), value: productStats.by_status?.draft ?? 0 },
+      { id: 'outofstock', label: t('products.stats.outofstock'), value: productStats.by_stock?.outofstock ?? 0 },
+      { id: 'instock', label: t('products.stats.instock'), value: productStats.by_stock?.instock ?? 0 },
+    ]
+  }, [found, productStats, t])
 
   const visibleColumnCount = useMemo(() => Object.values(columns).filter(Boolean).length + 1, [columns])
 
@@ -231,6 +255,9 @@ export default function ProductsListPage() {
 
   return (
     <PageShell title={t('products.title')} description={t('products.listDescription')}>
+      <div className="mb-4">
+        <ListStatsStrip items={productStatItems} locale={locale} />
+      </div>
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <Button asChild size="sm">
           <Link to="/shop/products/new">{t('products.add')}</Link>

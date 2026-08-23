@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { PostsPagination } from '@/components/magazine/PostsPagination'
+import { ListStatsStrip } from '@/components/ListStatsStrip'
 import { PageShell } from '@/components/PageShell'
 import { TableListSkeleton } from '@/components/TableListSkeleton'
 import { Button } from '@/components/ui/button'
@@ -24,9 +25,17 @@ import { translatePostStatus } from '@/lib/enumLabels'
 import { formatNumber } from '@/lib/formatNumber'
 import { cn } from '@/lib/utils'
 
-type Row = { id: number; title: string; status: string; date: string; excerpt?: string }
+type Row = {
+  id: number
+  title: string
+  status: string
+  date: string
+  excerpt?: string
+  seo_score?: number | null
+  focus_keyword?: string
+}
 
-type ColumnId = 'title' | 'status' | 'date' | 'excerpt'
+type ColumnId = 'title' | 'status' | 'date' | 'excerpt' | 'seo'
 
 type ColumnVisibility = Record<ColumnId, boolean>
 
@@ -37,6 +46,7 @@ const DEFAULT_COLUMNS: ColumnVisibility = {
   status: true,
   date: true,
   excerpt: false,
+  seo: true,
 }
 
 function loadColumnVisibility(): ColumnVisibility {
@@ -67,15 +77,29 @@ export default function PostsListPage() {
   const q = useQuery({
     queryKey: ['posts', 'list', page, perPage],
     queryFn: () =>
-      apiFetch<{ items: Row[]; page: number; found: number }>(
-        `content/posts?page=${page}&per_page=${perPage}`,
-      ),
+      apiFetch<{
+        items: Row[]
+        page: number
+        found: number
+        stats?: { total: number; publish: number; draft: number; pending: number }
+      }>(`content/posts?page=${page}&per_page=${perPage}`),
   })
   useQueryErrorToast(q)
 
   const items = q.data?.items ?? []
   const found = q.data?.found ?? 0
+  const stats = q.data?.stats
   const locale = i18n.language
+
+  const statItems = useMemo(() => {
+    if (!stats) return []
+    return [
+      { id: 'total', label: t('posts.stats.total'), value: stats.total },
+      { id: 'publish', label: t('posts.stats.publish'), value: stats.publish },
+      { id: 'draft', label: t('posts.stats.draft'), value: stats.draft },
+      { id: 'pending', label: t('posts.stats.pending'), value: stats.pending },
+    ]
+  }, [stats, t, i18n.language])
 
   const visibleColumnCount = useMemo(() => {
     let count = Object.values(columns).filter(Boolean).length
@@ -98,6 +122,11 @@ export default function PostsListPage() {
 
   return (
     <PageShell title={t('posts.title')} description={t('posts.listDescription')}>
+      {statItems.length ? (
+        <div className="mb-4">
+          <ListStatsStrip items={statItems} locale={locale} />
+        </div>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {t('posts.totalCount', { count: formatNumber(found, locale) })}
@@ -136,6 +165,12 @@ export default function PostsListPage() {
               >
                 {t('posts.colExcerpt')}
               </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={columns.seo}
+                onCheckedChange={(v) => toggleColumn('seo', v === true)}
+              >
+                {t('posts.colSeo')}
+              </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button asChild size="sm">
@@ -157,6 +192,7 @@ export default function PostsListPage() {
                     {columns.status ? <TableHead>{t('posts.colStatus')}</TableHead> : null}
                     {columns.date ? <TableHead>{t('posts.colDate')}</TableHead> : null}
                     {columns.excerpt ? <TableHead>{t('posts.colExcerpt')}</TableHead> : null}
+                    {columns.seo ? <TableHead>{t('posts.colSeo')}</TableHead> : null}
                     <TableHead className="w-28">{t('posts.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -195,6 +231,18 @@ export default function PostsListPage() {
                             )}
                           >
                             {row.excerpt?.trim() || t('common.emptyValue')}
+                          </TableCell>
+                        ) : null}
+                        {columns.seo ? (
+                          <TableCell className="text-sm text-muted-foreground">
+                            {row.seo_score != null ? (
+                              <span className="text-foreground font-medium">{formatNumber(row.seo_score, locale)}</span>
+                            ) : (
+                              '—'
+                            )}
+                            {row.focus_keyword?.trim() ? (
+                              <span className="mt-0.5 block text-xs">{row.focus_keyword}</span>
+                            ) : null}
                           </TableCell>
                         ) : null}
                         <TableCell>

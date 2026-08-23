@@ -41,6 +41,13 @@ type Coupon = {
   brand_ids?: number[]
   excluded_brand_ids?: number[]
   email_restrictions?: string[]
+  allowed_user_ids?: number[]
+  allowed_states?: string[]
+  allowed_cities?: string[]
+  allowed_payment_methods?: string[]
+  allowed_purchase_types?: string[]
+  allowed_shipping_methods?: string[]
+  allowed_channels?: string[]
   status?: string
   date?: string
   visibility?: CouponVisibility
@@ -83,6 +90,13 @@ function buildCouponPayload(input: {
   brandIds: number[]
   excludedBrandIds: number[]
   emailsText: string
+  allowedUserIds: number[]
+  allowedStates: string[]
+  allowedCities: string[]
+  allowedPaymentMethods: string[]
+  allowedPurchaseTypes: string[]
+  allowedShippingMethods: string[]
+  allowedChannels: string[]
   status: string
   visibility: CouponVisibility
   password: string
@@ -109,6 +123,13 @@ function buildCouponPayload(input: {
     brand_ids: input.brandIds,
     excluded_brand_ids: input.excludedBrandIds,
     email_restrictions: parseEmailsText(input.emailsText),
+    allowed_user_ids: input.allowedUserIds,
+    allowed_states: input.allowedStates,
+    allowed_cities: input.allowedCities,
+    allowed_payment_methods: input.allowedPaymentMethods,
+    allowed_purchase_types: input.allowedPurchaseTypes,
+    allowed_shipping_methods: input.allowedShippingMethods,
+    allowed_channels: input.allowedChannels,
     status: input.status,
     visibility: input.visibility,
     date_expires: input.expires.trim() === '' ? '' : input.expires.trim(),
@@ -154,6 +175,13 @@ export default function CouponEditorPage() {
   const [brandIds, setBrandIds] = useState<number[]>([])
   const [excludedBrandIds, setExcludedBrandIds] = useState<number[]>([])
   const [emailsText, setEmailsText] = useState('')
+  const [allowedUserIds, setAllowedUserIds] = useState<number[]>([])
+  const [allowedStates, setAllowedStates] = useState<string[]>([])
+  const [allowedCities, setAllowedCities] = useState<string[]>([])
+  const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>([])
+  const [allowedPurchaseTypes, setAllowedPurchaseTypes] = useState<string[]>([])
+  const [allowedShippingMethods, setAllowedShippingMethods] = useState<string[]>([])
+  const [allowedChannels, setAllowedChannels] = useState<string[]>([])
   const [status, setStatus] = useState('draft')
   const [visibility, setVisibility] = useState<CouponVisibility>('public')
   const [password, setPassword] = useState('')
@@ -191,6 +219,13 @@ export default function CouponEditorPage() {
     setBrandIds([...(c.brand_ids ?? [])])
     setExcludedBrandIds([...(c.excluded_brand_ids ?? [])])
     setEmailsText(formatEmailsText(c.email_restrictions))
+    setAllowedUserIds([...(c.allowed_user_ids ?? [])])
+    setAllowedStates([...(c.allowed_states ?? []).map(String)])
+    setAllowedCities([...(c.allowed_cities ?? []).map(String)])
+    setAllowedPaymentMethods([...(c.allowed_payment_methods ?? []).map(String)])
+    setAllowedPurchaseTypes([...(c.allowed_purchase_types ?? []).map(String)])
+    setAllowedShippingMethods([...(c.allowed_shipping_methods ?? []).map(String)])
+    setAllowedChannels([...(c.allowed_channels ?? []).map(String)])
     setStatus(c.status === 'private' ? 'draft' : c.status ?? 'draft')
     setVisibility(c.visibility ?? 'public')
     setPassword('')
@@ -228,6 +263,13 @@ export default function CouponEditorPage() {
         brandIds,
         excludedBrandIds,
         emailsText,
+        allowedUserIds,
+        allowedStates,
+        allowedCities,
+        allowedPaymentMethods,
+        allowedPurchaseTypes,
+        allowedShippingMethods,
+        allowedChannels,
         status,
         visibility,
         password,
@@ -375,6 +417,20 @@ export default function CouponEditorPage() {
                   onExcludedBrandIdsChange={setExcludedBrandIds}
                   emailsText={emailsText}
                   onEmailsTextChange={setEmailsText}
+                  allowedUserIds={allowedUserIds}
+                  onAllowedUserIdsChange={setAllowedUserIds}
+                  allowedStates={allowedStates}
+                  onAllowedStatesChange={setAllowedStates}
+                  allowedCities={allowedCities}
+                  onAllowedCitiesChange={setAllowedCities}
+                  allowedPaymentMethods={allowedPaymentMethods}
+                  onAllowedPaymentMethodsChange={setAllowedPaymentMethods}
+                  allowedPurchaseTypes={allowedPurchaseTypes}
+                  onAllowedPurchaseTypesChange={setAllowedPurchaseTypes}
+                  allowedShippingMethods={allowedShippingMethods}
+                  onAllowedShippingMethodsChange={setAllowedShippingMethods}
+                  allowedChannels={allowedChannels}
+                  onAllowedChannelsChange={setAllowedChannels}
                 />
               )}
             </CardContent>

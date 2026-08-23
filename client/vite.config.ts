@@ -6,11 +6,26 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 
+/** Keep in sync with scripts/shared-runtime-packages.mjs */
+const SHARED_RUNTIME_PACKAGES = [
+  'react',
+  'react/jsx-runtime',
+  'react/jsx-dev-runtime',
+  'react-dom',
+  'react-dom/client',
+  'react-router-dom',
+  '@tanstack/query-core',
+  '@tanstack/react-query',
+  'i18next',
+  'react-i18next',
+  'sonner',
+] as const
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const clientNodeModules = path.resolve(__dirname, 'node_modules')
 const requireFromClient = createRequire(path.join(clientNodeModules, 'package.json'))
 
-/** Bare imports from Modules client trees resolve against dashboard client node_modules. */
+/** Prefer ESM resolves for Modules trees (avoid CJS → Rolldown helper shadowing). */
 function modulesNodeModulesResolver(): Plugin {
   return {
     name: 'webino-modules-node-modules-resolver',
@@ -26,6 +41,15 @@ function modulesNodeModulesResolver(): Plugin {
         source.startsWith('@/')
       ) {
         return null
+      }
+      if ((SHARED_RUNTIME_PACKAGES as readonly string[]).includes(source)) {
+        return { id: source, external: true }
+      }
+      const esmAliases: Record<string, string> = {
+        recharts: path.join(clientNodeModules, 'recharts/es6/index.js'),
+      }
+      if (esmAliases[source]) {
+        return esmAliases[source]
       }
       try {
         return requireFromClient.resolve(source)
@@ -85,6 +109,8 @@ function isDashboardShellSrc(id: string): boolean {
   )
 }
 
+const sharedExternals = [...SHARED_RUNTIME_PACKAGES]
+
 export default defineConfig({
   plugins: [modulesNodeModulesResolver(), react(), tailwindcss()],
   resolve: {
@@ -98,13 +124,14 @@ export default defineConfig({
       'prosemirror-commands',
       'prosemirror-keymap',
     ],
+    conditions: ['import', 'module', 'browser', 'default'],
     alias: {
       '@': path.resolve(__dirname, './src'),
-      react: path.join(clientNodeModules, 'react'),
-      'react-dom': path.join(clientNodeModules, 'react-dom'),
-      'react/jsx-runtime': path.join(clientNodeModules, 'react/jsx-runtime'),
+      recharts: path.join(clientNodeModules, 'recharts/es6/index.js'),
+      'react-remove-scroll': path.resolve(__dirname, './src/lib/react-remove-scroll-shim.tsx'),
       '@module-wfcp': path.resolve(__dirname, '../Modules/wfcp-module/client'),
       '@module-sms-panel': path.resolve(__dirname, '../Modules/sms-panel-module/client'),
+      '@module-ai-content': path.resolve(__dirname, '../Modules/ai-content-module/client'),
       '@module-analytics': path.resolve(__dirname, '../Modules/analytics-module/client'),
       '@module-bale-bot': path.resolve(__dirname, '../Modules/bale-bot-module/client'),
       '@module-telegram-bot': path.resolve(__dirname, '../Modules/telegram-bot-module/client'),
@@ -123,19 +150,21 @@ export default defineConfig({
     emptyOutDir: true,
     manifest: true,
     rollupOptions: {
+      external: sharedExternals,
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-dom')) return 'vendor-react-dom'
-            if (id.includes('/react/') || id.endsWith('node_modules/react/index.js')) {
-              return 'vendor-react'
+            // Shared runtime packages are external — never chunk them here.
+            if (
+              sharedExternals.some(
+                (pkg) => id.includes(`/node_modules/${pkg}/`) || id.includes(`/node_modules/${pkg}\\`),
+              )
+            ) {
+              return undefined
             }
-            if (id.includes('react-router')) return 'vendor-react-router'
-            if (id.includes('i18next') || id.includes('react-i18next')) return 'vendor-i18n'
-            if (id.includes('@tanstack/react-query')) return 'vendor-tanstack-query'
             if (id.includes('@tanstack/react-table')) return 'vendor-tanstack-table'
             if (id.includes('@dnd-kit')) return 'vendor-dnd-kit'
             if (id.includes('recharts')) return 'vendor-recharts'
@@ -144,7 +173,6 @@ export default defineConfig({
             if (id.includes('@radix-ui') || id.includes('/radix-ui/')) return 'vendor-radix'
             if (id.includes('zod')) return 'vendor-zod'
             if (id.includes('dayjs') || id.includes('jalaliday')) return 'vendor-dayjs'
-            if (id.includes('sonner')) return 'vendor-sonner'
             if (id.includes('vaul')) return 'vendor-vaul'
             return 'vendor'
           }

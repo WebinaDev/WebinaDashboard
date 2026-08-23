@@ -1,5 +1,11 @@
 import type { CommentCounts, CommentRow } from '@/components/comments/types'
-import type { OrderReportSeriesPoint, OrderReportSummary } from '@/types/orderReports'
+import type {
+  OrderReportHourRow,
+  OrderReportPaymentRow,
+  OrderReportSeriesPoint,
+  OrderReportStatusRow,
+  OrderReportSummary,
+} from '@/types/orderReports'
 
 export type DashboardOverviewProductStats = {
   total: number
@@ -35,11 +41,15 @@ export type DashboardOverviewSales = {
   currency: string
   from: number
   to: number
+  range?: 'month' | 'last30'
   month_label: string
   summary: OrderReportSummary
   compare_summary: OrderReportSummary
   series: OrderReportSeriesPoint[]
   compare_series: OrderReportSeriesPoint[]
+  by_status?: OrderReportStatusRow[]
+  by_payment?: OrderReportPaymentRow[]
+  by_hour?: OrderReportHourRow[]
   recent_orders: DashboardOverviewOrderRow[]
   recent_products: DashboardOverviewProductRow[]
   top_products: DashboardOverviewProductRow[]
@@ -59,6 +69,8 @@ export type DashboardTrafficPeriod = {
 }
 
 export type DashboardOverviewTraffic = {
+  active?: boolean
+  source?: 'native' | 'wp-statistics'
   online: number
   highlight: {
     visitors: number
@@ -68,7 +80,7 @@ export type DashboardOverviewTraffic = {
   }
   periods: DashboardTrafficPeriod[]
   all_time: DashboardTrafficPeriod
-  chart: { series: Array<{ day: string; visitors: number; views: number }> }
+  chart?: { series: Array<{ day: string; visitors: number; views: number }> }
 }
 
 export type DashboardOverviewSmsPanel = {
@@ -129,4 +141,19 @@ export type DashboardOverviewResponse = {
   tasks?: DashboardOverviewTasks
   comments?: { items: CommentRow[]; counts: CommentCounts }
   alerts?: DashboardOverviewAlert[]
+  partner?: {
+    order_count: number
+    last_order_at?: string
+    recent_orders: DashboardOverviewOrderRow[]
+  }
+  account?: {
+    order_count: number
+    last_order_at?: string
+    recent_orders: DashboardOverviewOrderRow[]
+    wallet_balance?: number
+    wallet_enabled?: boolean
+    wishlist_count?: number
+    notifications_unread?: number
+    tickets_open?: number
+  }
 }

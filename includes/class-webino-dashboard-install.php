@@ -65,6 +65,9 @@ class Webino_Dashboard_Install {
 			self::sql_core_licenses( $p, $charset_collate ),
 			self::sql_dashboard_license( $p, $charset_collate ),
 			self::sql_dashboard_bot_sessions( $p, $charset_collate ),
+			self::sql_notifications( $p, $charset_collate ),
+			self::sql_wallet_ledger( $p, $charset_collate ),
+			self::sql_wallet_withdrawals( $p, $charset_collate ),
 		);
 
 		foreach ( $tables as $sql ) {
@@ -74,15 +77,11 @@ class Webino_Dashboard_Install {
 		self::ensure_analytics_tables();
 
 		update_option( 'webino_dashboard_db_version', WEBINO_DASHBOARD_VERSION );
+		if ( class_exists( 'Webino_Dashboard_Assets', false ) && method_exists( 'Webino_Dashboard_Assets', 'purge_stale_build_assets' ) ) {
+			Webino_Dashboard_Assets::purge_stale_build_assets();
+		}
 	}
 
-	/**
-	 * Bale / Telegram bot sessions (shared table, scoped by provider).
-	 *
-	 * @param string $p               Table prefix.
-	 * @param string $charset_collate Charset.
-	 * @return string
-	 */
 	private static function sql_dashboard_bot_sessions( $p, $charset_collate ) {
 		return "CREATE TABLE {$p}webino_dashboard_bot_sessions (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -543,6 +542,70 @@ class Webino_Dashboard_Install {
 			PRIMARY KEY  (id),
 			UNIQUE KEY license_key (license_key),
 			KEY domain_key (domain(191), license_key(100))
+		) $charset_collate;";
+	}
+
+	/**
+	 * @param string $p Prefix.
+	 * @param string $charset_collate Charset.
+	 * @return string
+	 */
+	private static function sql_notifications( $p, $charset_collate ) {
+		return "CREATE TABLE {$p}webino_notifications (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			type varchar(50) NOT NULL DEFAULT 'info',
+			title varchar(255) NOT NULL DEFAULT '',
+			body text NULL,
+			link varchar(500) NULL,
+			read_at datetime NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY user_id (user_id),
+			KEY read_at (read_at)
+		) $charset_collate;";
+	}
+
+	/**
+	 * @param string $p Prefix.
+	 * @param string $charset_collate Charset.
+	 * @return string
+	 */
+	private static function sql_wallet_ledger( $p, $charset_collate ) {
+		return "CREATE TABLE {$p}webino_wallet_ledger (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			direction varchar(10) NOT NULL DEFAULT 'credit',
+			amount decimal(18,2) NOT NULL DEFAULT 0,
+			balance_after decimal(18,2) NOT NULL DEFAULT 0,
+			reason varchar(100) NOT NULL DEFAULT '',
+			ref_type varchar(50) NULL,
+			ref_id bigint(20) unsigned NULL,
+			note text NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY user_id (user_id)
+		) $charset_collate;";
+	}
+
+	/**
+	 * @param string $p Prefix.
+	 * @param string $charset_collate Charset.
+	 * @return string
+	 */
+	private static function sql_wallet_withdrawals( $p, $charset_collate ) {
+		return "CREATE TABLE {$p}webino_wallet_withdrawals (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			amount decimal(18,2) NOT NULL DEFAULT 0,
+			sheba varchar(30) NOT NULL DEFAULT '',
+			status varchar(20) NOT NULL DEFAULT 'pending',
+			admin_note text NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY user_id (user_id),
+			KEY status (status)
 		) $charset_collate;";
 	}
 }

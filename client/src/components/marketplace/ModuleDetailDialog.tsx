@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
+import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
@@ -20,9 +21,7 @@ import {
   type MarketplaceModule,
 } from '@/lib/marketplace-api'
 import { sanitizeMarkdownUrl, isAllowedRemoteUrl } from '@/lib/safeUrl'
-import { formatMarketplaceCurrency } from '@/lib/currency'
 import { formatDisplayDateTime } from '@/lib/date'
-import { formatNumber } from '@/lib/formatNumber'
 import { moduleLatestVersion, moduleVersionLabel } from '@/components/marketplace/module-version'
 
 type Props = {
@@ -56,13 +55,11 @@ export function ModuleDetailDialog({
   const module = data?.module ?? null
 
   const priceLabel = useMemo(() => {
-    if (!module) return ''
-    return module.is_free
-      ? t('marketplace.free')
-      : t('marketplace.priceValue', {
-          price: formatNumber(module.price ?? 0, i18n.language),
-          currency: formatMarketplaceCurrency(module.currency, t),
-        })
+    if (!module) return null
+    if (module.is_free) return t('marketplace.free')
+    return (
+      <MoneyDisplay amount={module.price ?? 0} currency={module.currency || 'IRT'} locale={i18n.language} />
+    )
   }, [module, t, i18n.language])
 
   const versionLabel = module ? moduleVersionLabel(module, t) : null

@@ -14,7 +14,7 @@ export function resolveSkeletonVariant(pathname: string): SkeletonVariant {
 
   if (p === '/' || p === '') return 'dashboard'
 
-  if (p.startsWith('/orders/reports') || p.startsWith('/analytics')) return 'reports'
+  if (p.startsWith('/orders/reports') || p.startsWith('/reports') || p.startsWith('/analytics')) return 'reports'
 
   if (p.startsWith('/marketplace')) return 'cardGrid'
 

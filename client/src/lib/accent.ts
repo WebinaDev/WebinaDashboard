@@ -1,4 +1,5 @@
 export const ACCENT_PRESETS = [
+  'colorful',
   'default',
   'red',
   'rose',
@@ -12,6 +13,7 @@ export const ACCENT_PRESETS = [
 export type AccentPreset = (typeof ACCENT_PRESETS)[number]
 
 export const ACCENT_MENU_ITEMS = [
+  { value: 'colorful', labelKey: 'settings.accentColorful' },
   { value: 'default', labelKey: 'settings.accentDefault' },
   { value: 'red', labelKey: 'settings.accentRed' },
   { value: 'rose', labelKey: 'settings.accentRose' },
@@ -24,6 +26,7 @@ export const ACCENT_MENU_ITEMS = [
 
 /** Light-mode preview swatches (matches index.css accent presets). */
 export const ACCENT_SWATCH: Record<AccentPreset, string> = {
+  colorful: 'oklch(52% 0.14 195)',
   default: 'oklch(20.5% 0 0)',
   red: 'oklch(57% 0.22 27)',
   rose: 'oklch(52% 0.2 12)',
@@ -34,10 +37,10 @@ export const ACCENT_SWATCH: Record<AccentPreset, string> = {
   violet: 'oklch(48% 0.22 292)',
 }
 
-/** Maps legacy stored values to the current shadcn accent palette. */
+/** Maps legacy stored values to the current accent palette. Empty → colorful. */
 export function normalizeAccent(accent?: string | null): AccentPreset {
-  if (!accent || accent === 'default') {
-    return 'default'
+  if (!accent) {
+    return 'colorful'
   }
   if (accent === 'amber') {
     return 'orange'
@@ -45,5 +48,5 @@ export function normalizeAccent(accent?: string | null): AccentPreset {
   if ((ACCENT_PRESETS as readonly string[]).includes(accent)) {
     return accent as AccentPreset
   }
-  return 'default'
+  return 'colorful'
 }

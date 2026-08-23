@@ -25,6 +25,7 @@ import { apiFetch } from '@/lib/api'
 const ROLES = [
   { value: 'subscriber', key: 'users.roleSubscriber' },
   { value: 'customer', key: 'users.roleCustomer' },
+  { value: 'webino_partner', key: 'users.rolePartner' },
   { value: 'author', key: 'users.roleAuthor' },
   { value: 'editor', key: 'users.roleEditor' },
   { value: 'shop_manager', key: 'users.roleShopManager' },

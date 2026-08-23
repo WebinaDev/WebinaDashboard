@@ -202,6 +202,21 @@ class Webino_Dashboard_Locale {
 	}
 
 	/**
+	 * Jalali day + month (no year), e.g. ۳۰ شهریور.
+	 *
+	 * @param int $gy Gregorian year.
+	 * @param int $gm Gregorian month.
+	 * @param int $gd Gregorian day.
+	 * @return string
+	 */
+	public static function format_jalali_day_month( $gy, $gm, $gd ) {
+		list( $jy, $jm, $jd ) = self::gregorian_to_jalali( (int) $gy, (int) $gm, (int) $gd );
+		unset( $jy );
+		$month = isset( self::$jalali_months[ $jm ] ) ? self::$jalali_months[ $jm ] : '';
+		return trim( self::to_persian_digits( (string) $jd ) . ' ' . $month );
+	}
+
+	/**
 	 * Short Jalali date YYYY/MM/DD with Persian digits.
 	 *
 	 * @param int $gy Gregorian year.

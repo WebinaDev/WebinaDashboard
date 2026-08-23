@@ -17,6 +17,11 @@ export class ApiError extends Error {
 
 const CODE_KEYS: Record<string, string> = {
   invalid: 'errors.api.invalid',
+  ai_disabled: 'aiContent.errDisabled',
+  ai_entity_off: 'aiContent.errEntityOff',
+  ai_no_key: 'aiContent.errNoKey',
+  ai_job_failed: 'aiContent.generateFailed',
+  ai_job: 'aiContent.errJobNotFound',
   forbidden: 'errors.api.forbidden',
   not_found: 'errors.api.notFound',
   invalid_role: 'errors.api.invalidRole',
@@ -133,8 +138,12 @@ export function apiErrorMessage(t: TFunction, err: unknown): string {
     if (messageLooksLikeEmptyReply(msg)) {
       return t('errors.api.emptyReply')
     }
-    if (/^(invalid|forbidden|not found)/i.test(msg)) {
+    if (/^(invalid|forbidden|not found)$/i.test(msg)) {
       return t('errors.api.generic')
+    }
+    // Prefer the real API/server message over a generic "unknown" toast.
+    if (msg && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(msg)) {
+      return msg
     }
     return t('errors.api.unknown')
   }

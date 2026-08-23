@@ -32,12 +32,23 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-remote-url.php',
 			'includes/class-webino-dashboard-rest.php',
 			'includes/class-webino-dashboard-rest-crud.php',
+			'includes/class-webino-dashboard-attribute-groups.php',
+			'includes/class-webino-dashboard-variation-swatches.php',
 			'includes/class-webino-dashboard-home-overview.php',
+			'includes/class-webino-dashboard-marketplace.php',
 			'includes/class-webino-dashboard-orders.php',
 			'includes/class-webino-dashboard-order-reports.php',
+			'includes/class-webino-dashboard-inventory-reports.php',
 			'includes/class-webino-dashboard-order-aggregates.php',
 			'includes/class-webino-dashboard-coupons.php',
+			'includes/class-webino-dashboard-coupon-restrictions.php',
 			'includes/class-webino-dashboard-users.php',
+			'includes/class-webino-dashboard-addresses.php',
+			'includes/class-webino-dashboard-account-portal.php',
+			'includes/class-webino-dashboard-notifications.php',
+			'includes/class-webino-dashboard-support-tickets.php',
+			'includes/class-webino-dashboard-wallet.php',
+			'includes/class-webino-dashboard-rest-account.php',
 			'includes/class-webino-dashboard-barcode.php',
 			'includes/class-webino-dashboard-order-documents.php',
 			'includes/class-webino-dashboard-order-document-settings.php',
@@ -45,6 +56,7 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-currency.php',
 			'includes/class-webino-dashboard-rest-site-settings.php',
 			'includes/class-webino-dashboard-rest-wc-settings.php',
+			'includes/class-webino-dashboard-ssr.php',
 			'includes/class-webino-dashboard-rewrite.php',
 			'includes/class-webino-dashboard-assets.php',
 			'includes/class-webino-dashboard-plugin.php',
@@ -153,6 +165,26 @@ final class Webino_Dashboard_Bootstrap {
 		}
 		if ( class_exists( 'Webino_Dashboard_REST_Build_Pipeline', false ) ) {
 			Webino_Dashboard_REST_Build_Pipeline::init();
+		}
+		if ( class_exists( 'Webino_Dashboard_Account_Portal', false ) ) {
+			Webino_Dashboard_Account_Portal::init();
+		}
+		if ( class_exists( 'Webino_Dashboard_Notifications', false ) ) {
+			Webino_Dashboard_Notifications::init_hooks();
+		}
+		if ( class_exists( 'Webino_Dashboard_Wallet', false ) ) {
+			Webino_Dashboard_Wallet::init_hooks();
+			Webino_Dashboard_Wallet::ensure_tables();
+		}
+		if ( class_exists( 'Webino_Dashboard_Notifications', false ) ) {
+			Webino_Dashboard_Notifications::ensure_table();
+		}
+		if ( class_exists( 'Webino_Dashboard_Support_Tickets', false ) ) {
+			Webino_Dashboard_Support_Tickets::ensure_tables();
+			Webino_Dashboard_Support_Tickets::init();
+		}
+		if ( class_exists( 'Webino_Dashboard_REST_Account', false ) ) {
+			Webino_Dashboard_REST_Account::init();
 		}
 	}
 }

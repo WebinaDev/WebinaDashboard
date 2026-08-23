@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { LazyImage } from '@/components/ui/lazy-image'
 import { cn } from '@/lib/utils'
 import { isAllowedRemoteUrl } from '@/lib/safeUrl'
-import { formatMarketplaceCurrency } from '@/lib/currency'
-import { formatNumber } from '@/lib/formatNumber'
 import type { MarketplaceModule } from '@/lib/marketplace-api'
 import { installStepLabelKey } from '@/lib/marketplace-api'
 import { moduleLatestVersion, moduleVersionLabel } from '@/components/marketplace/module-version'
@@ -42,12 +41,11 @@ export function ModuleCard({
       ? t(installStepLabelKey(installStep), { defaultValue: t('marketplace.installing') })
       : t('marketplace.installing')
     : null
-  const priceLabel = module.is_free
-    ? t('marketplace.free')
-    : t('marketplace.priceValue', {
-        price: formatNumber(module.price ?? 0, i18n.language),
-        currency: formatMarketplaceCurrency(module.currency, t),
-      })
+  const priceLabel = module.is_free ? (
+    t('marketplace.free')
+  ) : (
+    <MoneyDisplay amount={module.price ?? 0} currency={module.currency || 'IRT'} locale={i18n.language} />
+  )
 
   const installable = module.package_available !== false
   const showInstall =
@@ -65,12 +63,13 @@ export function ModuleCard({
   const iconSrc =
     module.icon_url && isAllowedRemoteUrl(module.icon_url) ? module.icon_url : ''
   const showIcon = Boolean(iconSrc) && !iconFailed
+  const displayName = t(`marketplace.module.${module.slug}`, { defaultValue: module.name || module.slug })
 
   return (
     <article className="border-border bg-card flex flex-col overflow-hidden rounded-xl border shadow-sm">
       <div className="flex flex-1 flex-row gap-4 p-4">
         <div className="min-w-0 flex-1 space-y-2">
-          <h3 className="text-lg font-semibold leading-tight">{module.name}</h3>
+          <h3 className="text-lg font-semibold leading-tight">{displayName}</h3>
           {module.parent_name ? (
             <p className="text-muted-foreground text-xs">
               {t('marketplace.submoduleOf', { name: module.parent_name })}
@@ -88,7 +87,7 @@ export function ModuleCard({
         {showIcon ? (
           <LazyImage
             src={iconSrc}
-            alt={module.name || t('a11y.moduleIcon')}
+            alt={displayName || t('a11y.moduleIcon')}
             className="h-20 w-20 shrink-0 rounded-lg object-cover"
             onError={() => setIconFailed(true)}
           />

@@ -1,7 +1,20 @@
 {
-  "js": "assets/index-Q-vYKpEt.js",
-  "css": "assets/index-DZF65KtB.css",
-  "shared": "assets/dashboard-shell-D73vc2lR.js",
-  "builtAt": "2026-07-28T16:30:02.528Z",
-  "pluginVersion": "0.1.8"
+  "js": "assets/index-Bbigypl4.js",
+  "css": "assets/index-Rvi7d80X.css",
+  "shared": "assets/dashboard-shell-DdNb1PCw.js",
+  "importMap": {
+    "react": "shared/react.js",
+    "react/jsx-runtime": "shared/react_jsx-runtime.js",
+    "react/jsx-dev-runtime": "shared/react_jsx-dev-runtime.js",
+    "react-dom": "shared/react-dom.js",
+    "react-dom/client": "shared/react-dom_client.js",
+    "react-router-dom": "shared/react-router-dom.js",
+    "@tanstack/query-core": "shared/_tanstack_query-core.js",
+    "@tanstack/react-query": "shared/_tanstack_react-query.js",
+    "i18next": "shared/i18next.js",
+    "react-i18next": "shared/react-i18next.js",
+    "sonner": "shared/sonner.js"
+  },
+  "builtAt": "2026-08-22T23:44:12.869Z",
+  "pluginVersion": "0.1.84"
 }

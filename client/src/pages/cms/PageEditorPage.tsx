@@ -12,6 +12,7 @@ import { PostFeaturedImagePanel } from '@/components/magazine/PostFeaturedImageP
 import { PostPublishPanel, type PostVisibility } from '@/components/magazine/PostPublishPanel'
 import { RichTextEditor } from '@/components/magazine/LazyRichTextEditor'
 import { PageShell } from '@/components/PageShell'
+import { SimpleSeoFields, type SimpleSeo } from '@/components/seo/SimpleSeoFields'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,7 @@ type Page = {
   visibility: PostVisibility
   password: string
   date: string
+  seo?: SimpleSeo
 }
 
 function toDateTimeLocal(value?: string) {
@@ -53,6 +55,7 @@ function buildPagePayload(input: {
   password: string
   publishImmediately: boolean
   publishDate: string
+  seo: SimpleSeo
 }) {
   const body: Record<string, unknown> = {
     title: input.title,
@@ -63,6 +66,7 @@ function buildPagePayload(input: {
     featured_image_id: input.featuredImageId,
     comment_status: input.commentStatus,
     visibility: input.visibility,
+    seo: input.seo,
   }
 
   if (input.visibility === 'password' && input.password.trim()) {
@@ -99,6 +103,7 @@ export default function PageEditorPage() {
   const [password, setPassword] = useState('')
   const [publishImmediately, setPublishImmediately] = useState(true)
   const [publishDate, setPublishDate] = useState(() => dayjs().format('YYYY-MM-DDTHH:mm'))
+  const [seo, setSeo] = useState<SimpleSeo>({})
 
   const pageQ = useQuery({
     queryKey: ['page', id],
@@ -120,6 +125,7 @@ export default function PageEditorPage() {
     setCommentStatus(p.comment_status === 'open' ? 'open' : 'closed')
     setVisibility(p.visibility ?? 'public')
     setPassword('')
+    setSeo(p.seo ?? {})
     const dateLocal = toDateTimeLocal(p.date)
     setPublishDate(dateLocal)
     const isFuture = dayjs(p.date).isAfter(dayjs())
@@ -140,6 +146,7 @@ export default function PageEditorPage() {
         password,
         publishImmediately,
         publishDate,
+        seo,
       })
 
       if (id) {
@@ -242,6 +249,8 @@ export default function PageEditorPage() {
               )}
             </CardContent>
           </Card>
+
+          {!loading ? <SimpleSeoFields seo={seo} onChange={setSeo} /> : null}
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">

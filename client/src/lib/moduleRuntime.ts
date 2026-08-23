@@ -161,6 +161,31 @@ export function normalizeModuleEntryUrl(entry: string): string {
   }
 }
 
+/**
+ * Enrich dynamic-import failures when the shared ESM import map was never printed
+ * (partial deploy: new externalized module.js without assets/dashboard-build/shared).
+ */
+export function enrichModuleImportError(err: unknown): Error {
+  const msg = err instanceof Error ? err.message : String(err)
+  const hasImportMap =
+    typeof document !== 'undefined' &&
+    document.getElementById('webino-dashboard-importmap') !== null
+
+  const looksLikeSharedOrResolveIssue =
+    /h is not a function/i.test(msg) ||
+    /Failed to resolve|Failed to fetch dynamically imported module|Importing a module script failed|Cannot find module|resolving module specifier/i.test(
+      msg,
+    )
+
+  if (!hasImportMap && looksLikeSharedOrResolveIssue) {
+    return new Error(
+      `${msg}; shared runtime / import map missing — redeploy assets/dashboard-build/shared`,
+    )
+  }
+
+  return err instanceof Error ? err : new Error(msg)
+}
+
 export async function loadModuleBundle(slug: string, entry: string): Promise<ModuleBundle> {
   const resolved = normalizeModuleEntryUrl(entry)
   const cacheKey = `${slug}::${resolved}`
@@ -170,11 +195,15 @@ export async function loadModuleBundle(slug: string, entry: string): Promise<Mod
     return cached
   }
   assertAllowedModuleEntry(resolved)
-  const mod = await import(/* @vite-ignore */ resolved)
-  const bundle = normalizeModuleBundle(mod as Record<string, unknown>)
-  bundleCache.set(cacheKey, bundle)
-  bundleCache.set(slug, bundle)
-  return bundle
+  try {
+    const mod = await import(/* @vite-ignore */ resolved)
+    const bundle = normalizeModuleBundle(mod as Record<string, unknown>)
+    bundleCache.set(cacheKey, bundle)
+    bundleCache.set(slug, bundle)
+    return bundle
+  } catch (err) {
+    throw enrichModuleImportError(err)
+  }
 }
 
 export function findModuleClient(

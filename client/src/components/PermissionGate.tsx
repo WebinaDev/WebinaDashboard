@@ -9,7 +9,7 @@ import { normalizeCapabilities } from '@/lib/bootstrapQuery'
  * Client-side capability gate for navigation UX only.
  * REST endpoints enforce permissions server-side.
  */
-export function PermissionGate({ capability, children }: { capability: string; children: ReactNode }) {
+export function PermissionGate({ capability, children }: { capability: string | string[]; children: ReactNode }) {
   const { t } = useTranslation()
   const q = useBootstrapQuery()
 
@@ -32,7 +32,9 @@ export function PermissionGate({ capability, children }: { capability: string; c
 
   // Client-side capability gate for UX only; REST enforces permissions server-side.
   const caps = normalizeCapabilities(q.data?.capabilities)
-  if (!caps.length || !caps.includes(capability)) {
+  const needed = Array.isArray(capability) ? capability : [capability]
+  const allowed = needed.some((c) => caps.includes(c))
+  if (!caps.length || !allowed) {
     return (
       <div className="p-6">
         <h1 className="text-lg font-semibold">{t('errors.forbiddenTitle')}</h1>

@@ -1,1 +1,0 @@
-import{B as e,Pr as t,yr as n}from"./dashboard-shell-D73vc2lR.js";import{t as r}from"./MediaTermManager-jXgkpB7v.js";var i=n();function a(){let{t:n}=t();return(0,i.jsx)(e,{title:n(`media.categoriesTitle`),description:n(`media.description`),children:(0,i.jsx)(r,{kind:`category`})})}export{a as default};

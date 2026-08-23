@@ -1,0 +1,1 @@
+// stub — build module torob-connector-module\nexport const routes = {};\nexport default { routes };\n

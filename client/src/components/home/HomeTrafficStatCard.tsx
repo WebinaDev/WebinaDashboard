@@ -17,7 +17,7 @@ type HomeTrafficStatCardProps = {
 
 export function HomeTrafficStatCard({ traffic, locale }: HomeTrafficStatCardProps) {
   const { t, i18n } = useTranslation()
-  const chartData = traffic.chart.series.slice(-14)
+  const chartData = (traffic.chart?.series ?? []).slice(-14)
 
   return (
     <Card className="shadow-sm">

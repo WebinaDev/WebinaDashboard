@@ -5,9 +5,13 @@ import { useMatch, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { OrderCustomerContactBar } from '@/components/orders/OrderCustomerContactBar'
+import { OrderCustomerHistoryPanel } from '@/components/orders/OrderCustomerHistoryPanel'
 import { OrderSidebarPanel } from '@/components/orders/OrderSidebarPanel'
+import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { PageShell } from '@/components/PageShell'
 import { UserAddressesPanel, type UserAddress } from '@/components/users/UserAddressesPanel'
+import { UserCommentsPanel, UserNotesPanel } from '@/components/users/UserActivityPanels'
 import { UserBotConnectionsPanel } from '@/components/users/UserBotConnectionsPanel'
 import type { BotConnectionInfo } from '@/components/users/SendMessageDialog'
 import { UserCommunicationPanel } from '@/components/users/UserCommunicationPanel'
@@ -25,14 +29,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
+import { normalizeCapabilities } from '@/lib/bootstrapQuery'
 
 type UserProfile = {
   job: string
   national_id: string
   birth_date: string
   landline: string
+  refund_method?: string
 }
 
 type UserBank = {
@@ -57,11 +64,19 @@ type UserDetail = {
   default_address_id?: string
   wishlist: WishlistItem[]
   bots: BotConnectionInfo
+  order_history?: {
+    order_count: number
+    total_spent: number
+    avg_order_value: number
+  }
+  notes?: Array<{ id: string; content: string; author: string; created_at: string }>
+  wallet_balance?: number
 }
 
 const ROLES = [
   { value: 'subscriber', key: 'users.roleSubscriber' },
   { value: 'customer', key: 'users.roleCustomer' },
+  { value: 'webino_partner', key: 'users.rolePartner' },
   { value: 'author', key: 'users.roleAuthor' },
   { value: 'editor', key: 'users.roleEditor' },
   { value: 'shop_manager', key: 'users.roleShopManager' },
@@ -72,8 +87,14 @@ export default function UserDetailPage() {
   const nav = useNavigate()
   const qc = useQueryClient()
   const isNew = Boolean(useMatch('/users/new'))
+  const isAccount = Boolean(useMatch('/account/profile'))
   const params = useParams()
-  const userId = isNew ? null : Number(params.userId)
+  const userId = isNew || isAccount ? null : Number(params.userId)
+  const boot = useBootstrapQuery()
+  const caps = normalizeCapabilities(boot.data?.capabilities)
+  const canEditRole = caps.includes('promote_users') || caps.includes('list_users')
+  const isPortalOnly =
+    isAccount || (caps.includes('webino_partner_portal') && !caps.includes('edit_users'))
   const isRtl = i18n.dir() === 'rtl'
 
   const [login, setLogin] = useState('')
@@ -83,13 +104,21 @@ export default function UserDetailPage() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [role, setRole] = useState('customer')
-  const [profile, setProfile] = useState<UserProfile>({ job: '', national_id: '', birth_date: '', landline: '' })
+  const [profile, setProfile] = useState<UserProfile>({
+    job: '',
+    national_id: '',
+    birth_date: '',
+    landline: '',
+    refund_method: 'wallet',
+  })
   const [bank, setBank] = useState<UserBank>({ bank_name: '', account_number: '', card_number: '', sheba: '' })
+  const [walletAmt, setWalletAmt] = useState('')
+  const [walletDir, setWalletDir] = useState<'credit' | 'debit'>('credit')
 
   const q = useQuery({
-    queryKey: ['user', userId],
-    queryFn: () => apiFetch<UserDetail>(`users/${userId}`),
-    enabled: !isNew && userId != null && !Number.isNaN(userId),
+    queryKey: ['user', isAccount ? 'me' : userId],
+    queryFn: () => apiFetch<UserDetail>(isAccount ? 'users/me' : `users/${userId}`),
+    enabled: isAccount || (!isNew && userId != null && !Number.isNaN(userId)),
   })
   useQueryErrorToast(q)
 
@@ -100,7 +129,7 @@ export default function UserDetailPage() {
     setEmail(q.data.email)
     setPhone(q.data.phone ?? '')
     setRole(q.data.role ?? 'customer')
-    setProfile(q.data.profile ?? { job: '', national_id: '', birth_date: '', landline: '' })
+    setProfile(q.data.profile ?? { job: '', national_id: '', birth_date: '', landline: '', refund_method: 'wallet' })
     setBank(q.data.bank ?? { bank_name: '', account_number: '', card_number: '', sheba: '' })
   }, [q.data])
 
@@ -127,21 +156,56 @@ export default function UserDetailPage() {
   })
 
   const save = useMutation({
-    mutationFn: () =>
-      apiFetch(`users/${userId}`, {
+    mutationFn: async () => {
+      await apiFetch(isAccount ? 'users/me' : `users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName, user_email: email, phone, role, profile, bank }),
-      }),
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          user_email: email,
+          phone,
+          ...(canEditRole ? { role } : {}),
+          profile,
+          bank,
+        }),
+      })
+      if (isAccount && profile.refund_method) {
+        await apiFetch('account/wallet/prefs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refund_method: profile.refund_method }),
+        })
+      }
+    },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['user', userId] })
+      void qc.invalidateQueries({ queryKey: ['user', isAccount ? 'me' : userId] })
       void qc.invalidateQueries({ queryKey: ['users'] })
       toast.success(t('common.saved'))
     },
     onError: (e: Error) => toastApiError(t, e),
   })
 
-  const title = isNew ? t('users.createTitle') : t('users.editTitle', { login: q.data?.login ?? '' })
+  const walletAdjust = useMutation({
+    mutationFn: async () =>
+      apiFetch<{ balance: number }>(`wallet/users/${userId}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction: walletDir, amount: Number(walletAmt) }),
+      }),
+    onSuccess: async () => {
+      toast.success(t('common.saved'))
+      setWalletAmt('')
+      await qc.invalidateQueries({ queryKey: ['user', userId] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const title = isNew
+    ? t('users.createTitle')
+    : isAccount
+      ? t('users.myAccountTitle')
+      : t('users.editTitle', { login: q.data?.login ?? '' })
 
   if (!isNew && q.isLoading) {
     return (
@@ -155,6 +219,7 @@ export default function UserDetailPage() {
   const addresses = data?.addresses ?? []
   const wishlist = data?.wishlist ?? []
   const bots = data?.bots ?? {}
+  const resolvedUserId = isAccount ? data?.id ?? 0 : userId
 
   return (
     <PageShell title={title}>
@@ -163,6 +228,28 @@ export default function UserDetailPage() {
           <Card className="shadow-sm">
             <CardContent className="space-y-3 pt-6">
               <h2 className="text-sm font-semibold">{t('users.sectionAccount')}</h2>
+              {!isNew && resolvedUserId && !isPortalOnly ? (
+                <div className="space-y-2">
+                  <OrderCustomerContactBar
+                    phone={phone}
+                    email={email}
+                    customerId={resolvedUserId}
+                    bots={bots}
+                    onSms={() => {
+                      const el = document.getElementById('user-communication-panel')
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }}
+                  />
+                  {profile.landline.trim() && profile.landline.trim() !== phone.trim() ? (
+                    <a
+                      href={`tel:${profile.landline.replace(/\s/g, '')}`}
+                      className="text-muted-foreground text-xs underline underline-offset-2"
+                    >
+                      {t('users.contactLandline')}: {profile.landline}
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
               {isNew ? (
                 <div>
                   <Label>{t('users.fieldLogin')}</Label>
@@ -191,6 +278,22 @@ export default function UserDetailPage() {
                   <Label>{t('users.colEmail')}</Label>
                   <Input className="mt-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
+                {isAccount ? (
+                  <>
+                    <div>
+                      <Label>{t('users.fieldJob')}</Label>
+                      <Input className="mt-1" value={profile.job} onChange={(e) => setProfile((p) => ({ ...p, job: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>{t('users.fieldNationalId')}</Label>
+                      <Input
+                        className="mt-1"
+                        value={profile.national_id}
+                        onChange={(e) => setProfile((p) => ({ ...p, national_id: e.target.value }))}
+                      />
+                    </div>
+                  </>
+                ) : null}
               </div>
               {isNew ? (
                 <div>
@@ -198,6 +301,7 @@ export default function UserDetailPage() {
                   <Input className="mt-1" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
               ) : null}
+              {canEditRole ? (
               <div>
                 <Label className={isRtl ? 'block text-end' : undefined}>{t('users.fieldRole')}</Label>
                 <Select value={role} onValueChange={setRole}>
@@ -213,6 +317,7 @@ export default function UserDetailPage() {
                   </SelectContent>
                 </Select>
               </div>
+              ) : null}
               <Button
                 type="button"
                 disabled={create.isPending || save.isPending}
@@ -223,27 +328,51 @@ export default function UserDetailPage() {
             </CardContent>
           </Card>
 
-          {!isNew && userId ? (
+          {!isNew && resolvedUserId ? (
             <>
-              <UserCommunicationPanel userId={userId} email={email} phone={phone} bots={bots} />
-              <UserAddressesPanel
-                userId={userId}
-                addresses={addresses}
-                defaultAddressId={data?.default_address_id}
-                onChanged={() => void q.refetch()}
-              />
+              {!isPortalOnly ? (
+                <div id="user-communication-panel">
+                  <UserCommunicationPanel userId={resolvedUserId} email={email} phone={phone} bots={bots} />
+                </div>
+              ) : null}
+              {!isAccount ? (
+                <OrderCustomerHistoryPanel
+                  history={data?.order_history}
+                  currency=""
+                  locale={i18n.language}
+                  customerId={resolvedUserId}
+                  customerEmail={email}
+                  customerPhone={phone}
+                />
+              ) : null}
+              {!isPortalOnly ? <UserCommentsPanel userId={resolvedUserId} locale={i18n.language} /> : null}
+              {!isPortalOnly ? (
+                <UserNotesPanel userId={resolvedUserId} locale={i18n.language} initialNotes={data?.notes} />
+              ) : null}
+              {!isAccount ? (
+                <UserAddressesPanel
+                  userId={resolvedUserId}
+                  addresses={addresses}
+                  defaultAddressId={data?.default_address_id}
+                  onChanged={() => void q.refetch()}
+                />
+              ) : null}
             </>
           ) : null}
         </div>
 
         <aside className="space-y-4">
-          {!isNew && userId ? (
+          {!isNew && resolvedUserId ? (
             <>
-              <UserWishlistPanel items={wishlist} locale={i18n.language} />
-              <UserBotConnectionsPanel userId={userId} bots={bots} onChanged={() => void q.refetch()} />
+              {!isAccount ? <UserWishlistPanel items={wishlist} locale={i18n.language} /> : null}
+              {!isPortalOnly ? (
+                <UserBotConnectionsPanel userId={resolvedUserId} bots={bots} onChanged={() => void q.refetch()} />
+              ) : null}
 
               <OrderSidebarPanel title={t('users.sectionProfile')}>
                 <div className="space-y-2 text-start">
+                  {!isAccount ? (
+                    <>
                   <div>
                     <Label className="text-xs">{t('users.fieldJob')}</Label>
                     <Input className="mt-1" value={profile.job} onChange={(e) => setProfile((p) => ({ ...p, job: e.target.value }))} />
@@ -252,6 +381,8 @@ export default function UserDetailPage() {
                     <Label className="text-xs">{t('users.fieldNationalId')}</Label>
                     <Input className="mt-1" value={profile.national_id} onChange={(e) => setProfile((p) => ({ ...p, national_id: e.target.value }))} />
                   </div>
+                    </>
+                  ) : null}
                   <div>
                     <Label className="text-xs">{t('users.fieldBirthDate')}</Label>
                     <DatePicker className="mt-1" value={profile.birth_date} onChange={(v) => setProfile((p) => ({ ...p, birth_date: v }))} />
@@ -281,8 +412,59 @@ export default function UserDetailPage() {
                     <Label className="text-xs">{t('users.fieldBankSheba')}</Label>
                     <Input className="mt-1" value={bank.sheba} onChange={(e) => setBank((b) => ({ ...b, sheba: e.target.value }))} />
                   </div>
+                  {isAccount ? (
+                    <div>
+                      <Label className="text-xs">{t('wallet.refundMethod')}</Label>
+                      <Select
+                        value={profile.refund_method || 'wallet'}
+                        onValueChange={(v) => setProfile((p) => ({ ...p, refund_method: v }))}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="wallet">{t('wallet.refundWallet')}</SelectItem>
+                          <SelectItem value="bank">{t('wallet.refundBank')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
                 </div>
               </OrderSidebarPanel>
+
+              {!isAccount && userId ? (
+                <OrderSidebarPanel title={t('wallet.title')}>
+                  <div className="space-y-2 text-start">
+                    <p className="text-sm">
+                      {t('wallet.balance')}:{' '}
+                      <MoneyDisplay amount={q.data?.wallet_balance ?? 0} currency="IRT" locale={i18n.language} />
+                    </p>
+                    <Select value={walletDir} onValueChange={(v) => setWalletDir(v === 'debit' ? 'debit' : 'credit')}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="credit">{t('wallet.credit')}</SelectItem>
+                        <SelectItem value="debit">{t('wallet.debit')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={walletAmt}
+                      onChange={(e) => setWalletAmt(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={walletAdjust.isPending || !walletAmt}
+                      onClick={() => void walletAdjust.mutateAsync()}
+                    >
+                      {t('wallet.adjust')}
+                    </Button>
+                  </div>
+                </OrderSidebarPanel>
+              ) : null}
             </>
           ) : null}
         </aside>

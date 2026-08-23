@@ -60,13 +60,53 @@ export function buildOrderReportsExportQuery(filters: OrderReportFilters): strin
   return `${buildOrderReportsQuery(filters)}&format=csv`.replace('shop/reports/orders?', 'shop/reports/orders/export?')
 }
 
+export function buildShopReportQuery(
+  path: string,
+  filters: OrderReportFilters,
+  extra?: Record<string, string | number | undefined>,
+): string {
+  const p = new URLSearchParams()
+  p.set('from', String(Math.floor(filters.from.getTime() / 1000)))
+  p.set('to', String(Math.floor(filters.to.getTime() / 1000)))
+  p.set('interval', filters.interval)
+  p.set('compare', filters.compare ? '1' : '0')
+  if (filters.statuses.length) {
+    p.set('status', filters.statuses.join(','))
+  }
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) {
+      if (v !== undefined && v !== '') p.set(k, String(v))
+    }
+  }
+  return `${path}?${p.toString()}`
+}
+
+export function buildShopReportExportPath(section: string, filters: OrderReportFilters): string {
+  return buildShopReportQuery(`shop/reports/${section}/export`, filters)
+}
+
+export async function downloadReportCsv(path: string, filename: string) {
+  const c = window.webinoDashboard
+  const url = path.startsWith('http') ? path : c.restUrl + path.replace(/^\//, '')
+  const headers: Record<string, string> = {}
+  if (c.nonce) headers['X-WP-Nonce'] = c.nonce
+  const res = await fetch(url, { credentials: 'same-origin', headers })
+  if (!res.ok) throw new Error(res.statusText)
+  const blob = await res.blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
 export function useOrderReportsFilters() {
   const initial = presetToRange('last30')
   const [preset, setPreset] = useState<ReportPreset>('last30')
   const [from, setFrom] = useState(initial.from)
   const [to, setTo] = useState(initial.to)
   const [interval, setInterval] = useState<ReportInterval>('day')
-  const [compare, setCompare] = useState(true)
+  const [compare, setCompare] = useState(false)
   const [statuses, setStatuses] = useState<string[]>(['completed', 'processing'])
 
   const filters = useMemo<OrderReportFilters>(

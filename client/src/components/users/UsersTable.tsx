@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { UserRowActions } from '@/components/users/UserRowActions'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { localizeDigits } from '@/lib/digits'
 import { cn } from '@/lib/utils'
@@ -22,17 +23,41 @@ type UsersTableProps = {
   canDelete?: boolean
   canEdit?: boolean
   canPromote?: boolean
+  selectedIds?: number[]
+  onToggleSelect?: (id: number, on: boolean) => void
+  onToggleAll?: (on: boolean) => void
   onDelete: (id: number) => Promise<void>
   deletingId?: number | null
 }
 
-export function UsersTable({ items, canDelete, canEdit, canPromote, onDelete, deletingId }: UsersTableProps) {
+export function UsersTable({
+  items,
+  canDelete,
+  canEdit,
+  canPromote,
+  selectedIds,
+  onToggleSelect,
+  onToggleAll,
+  onDelete,
+  deletingId,
+}: UsersTableProps) {
   const { t, i18n } = useTranslation()
+  const selectable = Boolean(canPromote && onToggleSelect)
+  const allSelected = selectable && items.length > 0 && items.every((r) => selectedIds?.includes(r.id))
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          {selectable ? (
+            <TableHead className="w-10">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={(v) => onToggleAll?.(v === true)}
+                aria-label={t('users.selectAll')}
+              />
+            </TableHead>
+          ) : null}
           <TableHead className="w-14">{t('users.colAvatar')}</TableHead>
           <TableHead>{t('users.colLogin')}</TableHead>
           <TableHead>{t('users.colName')}</TableHead>
@@ -45,13 +70,22 @@ export function UsersTable({ items, canDelete, canEdit, canPromote, onDelete, de
       <TableBody>
         {items.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={7} className="p-8 text-center text-sm text-muted-foreground">
+            <TableCell colSpan={selectable ? 8 : 7} className="p-8 text-center text-sm text-muted-foreground">
               {t('users.emptyListHint')}
             </TableCell>
           </TableRow>
         ) : (
           items.map((row) => (
             <TableRow key={row.id}>
+              {selectable ? (
+                <TableCell>
+                  <Checkbox
+                    checked={Boolean(selectedIds?.includes(row.id))}
+                    onCheckedChange={(v) => onToggleSelect?.(row.id, v === true)}
+                    aria-label={t('users.selectUser')}
+                  />
+                </TableCell>
+              ) : null}
               <TableCell>
                 <Avatar className="size-9">
                   {row.avatar_url ? <AvatarImage src={row.avatar_url} alt={row.name || row.login || t('a11y.thumbnail')} /> : null}

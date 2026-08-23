@@ -54,10 +54,83 @@ function ajaxActionForPath(path: string): string | null {
   if (clean === 'auth/session') {
     return 'webino_dashboard_auth_session'
   }
+  if (clean === 'dashboard/overview') {
+    return 'webino_dashboard_overview'
+  }
+  if (clean === 'dashboard/sms-panel') {
+    return 'webino_dashboard_sms_panel'
+  }
+  if (clean === 'digikala/keys/generate') {
+    return 'webino_dashboard_digikala_keys_generate'
+  }
+  if (clean === 'digikala/keys') {
+    return 'webino_dashboard_digikala_keys'
+  }
+  if (clean === 'digikala/token/issue') {
+    return 'webino_dashboard_digikala_token_issue'
+  }
+  if (clean === 'digikala/auth/status') {
+    return 'webino_dashboard_digikala_auth_status'
+  }
+  if (clean === 'digikala/settings') {
+    return 'webino_dashboard_digikala_settings'
+  }
+  if (clean === 'digikala/products/mapped') {
+    return 'webino_dashboard_digikala_products_mapped'
+  }
+  if (clean === 'digikala/webhook/subscribe') {
+    return 'webino_dashboard_digikala_webhook_subscribe'
+  }
+  if (/^digikala\/products\/\d+\/map$/.test(clean)) {
+    return 'webino_dashboard_digikala_product_map'
+  }
+  if (/^digikala\/products\/\d+\/sync$/.test(clean)) {
+    return 'webino_dashboard_digikala_product_sync'
+  }
+  if (/^digikala\/products\/\d+\/maps$/.test(clean)) {
+    return 'webino_dashboard_digikala_product_maps'
+  }
+  if (/^digikala\/orders\/\d+\/cancel$/.test(clean)) {
+    return 'webino_dashboard_digikala_order_cancel'
+  }
+  if (/^digikala\/orders\/\d+\/sbs-status$/.test(clean)) {
+    return 'webino_dashboard_digikala_order_sbs'
+  }
+  if (clean === 'basalam/oauth/start') {
+    return 'webino_dashboard_basalam_oauth_start'
+  }
+  if (clean === 'basalam/oauth/complete') {
+    return 'webino_dashboard_basalam_oauth_complete'
+  }
+  // Bot SPA pages — single ajax proxy for all bots/* management routes.
+  if (
+    clean.startsWith('bots/bale/') ||
+    clean.startsWith('bots/telegram/') ||
+    clean.startsWith('bots/parity/')
+  ) {
+    // Never route public webhook/health through ajax (not used by SPA anyway).
+    if (!/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(clean)) {
+      return 'webino_dashboard_bots_rest'
+    }
+  }
   return null
 }
 
-async function apiFetchViaAjax<T>(path: string, timeoutMs: number): Promise<T> {
+function ajaxNonJsonMessage(rawText: string, status: number): string {
+  const lower = rawText.toLowerCase()
+  if (rawText.includes('Upstream Error') || rawText.includes('Forbidden') || status === 403) {
+    return 'admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry'
+  }
+  if (lower.includes('timed out') || lower.includes('timeout') || status === 504 || status === 524) {
+    return 'Request timed out — RSA-4096 generation can take over a minute on weak hosts'
+  }
+  if (rawText.trim().startsWith('<') || rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+    return `Invalid AJAX response (HTML, HTTP ${status || 0})`
+  }
+  return `Invalid AJAX response (HTTP ${status || 0})`
+}
+
+async function apiFetchViaAjax<T>(path: string, timeoutMs: number, init: RequestInit = {}): Promise<T> {
   const action = ajaxActionForPath(path)
   const c = cfg()
   if (!action || !c.ajaxUrl) {
@@ -69,6 +142,21 @@ async function apiFetchViaAjax<T>(path: string, timeoutMs: number): Promise<T> {
   if (c.nonce) {
     body.set('nonce', c.nonce)
   }
+  const pathNoQuery = path.replace(/^\//, '').split('?')[0]
+  const queryPart = path.includes('?') ? path.slice(path.indexOf('?') + 1) : ''
+  body.set('rest_path', pathNoQuery)
+
+  const method = (init.method || 'GET').toUpperCase()
+  body.set('rest_method', method)
+  if (queryPart) {
+    body.set('rest_query', queryPart)
+  }
+  if (method !== 'GET' && method !== 'HEAD' && init.body != null) {
+    const raw = typeof init.body === 'string' ? init.body : ''
+    if (raw) {
+      body.set('payload', raw)
+    }
+  }
 
   const { signal, clear } = fetchTimeoutSignal({}, timeoutMs)
   try {
@@ -79,14 +167,27 @@ async function apiFetchViaAjax<T>(path: string, timeoutMs: number): Promise<T> {
       body,
       signal,
     })
-    const json = (await res.json().catch(() => ({}))) as {
+    const rawText = await res.text()
+    let json: {
       success?: boolean
-      data?: T
+      data?: T & { message?: string; code?: string }
       message?: string
     }
-    if (!res.ok || !json.success) {
-      throw new ApiError(json.message || res.statusText || 'AJAX failed', {
-        code: 'ajax_fallback_failed',
+    try {
+      json = JSON.parse(rawText) as typeof json
+    } catch {
+      throw new ApiError(ajaxNonJsonMessage(rawText, res.status), {
+        code: 'invalid_json',
+        status: res.status,
+      })
+    }
+    if (!json.success) {
+      const msg =
+        (typeof json.data?.message === 'string' && json.data.message) ||
+        json.message ||
+        'Request failed'
+      throw new ApiError(msg, {
+        code: (typeof json.data?.code === 'string' && json.data.code) || 'ajax_fallback_failed',
         status: res.status,
       })
     }
@@ -101,6 +202,11 @@ export async function apiFetch<T>(
   init: RequestInit = {},
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<T> {
+  // Mapped paths: prefer admin-ajax first (CDN often blocks /wp-json/).
+  if (ajaxActionForPath(path) && cfg().ajaxUrl) {
+    return apiFetchViaAjax<T>(path, timeoutMs, init)
+  }
+
   const url = resolveApiUrl(path)
   const c = cfg()
   const headers: Record<string, string> = {
@@ -125,10 +231,6 @@ export async function apiFetch<T>(
     try {
       data = JSON.parse(rawText) as T & { message?: string; error?: string; code?: string }
     } catch {
-      // WCDN often returns HTML "Upstream Error - Unauthorized/503" for /wp-json/*
-      if (ajaxActionForPath(path)) {
-        return apiFetchViaAjax<T>(path, timeoutMs)
-      }
       throw new ApiError(
         rawText.includes('Upstream Error') || rawText.includes('Forbidden')
           ? 'REST blocked by CDN/WAF — use admin-ajax fallback or whitelist /wp-json/'
@@ -144,32 +246,15 @@ export async function apiFetch<T>(
           : typeof errBody.error === 'string'
             ? errBody.error
             : errBody.code || res.statusText
-      if (ajaxActionForPath(path) && (res.status === 401 || res.status === 403 || res.status === 503)) {
-        return apiFetchViaAjax<T>(path, timeoutMs)
-      }
       throw new ApiError(msg, { code: errBody.code, status: res.status })
     }
     return data as T
   } catch (err) {
     if (err instanceof ApiError) {
-      if (ajaxActionForPath(path) && (err.status === 0 || err.status >= 500 || err.code === 'invalid_json')) {
-        try {
-          return await apiFetchViaAjax<T>(path, timeoutMs)
-        } catch {
-          throw err
-        }
-      }
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {
       throw new ApiError('Request timed out', { code: 'timeout', status: 0 })
-    }
-    if (ajaxActionForPath(path)) {
-      try {
-        return await apiFetchViaAjax<T>(path, timeoutMs)
-      } catch {
-        throw err
-      }
     }
     throw err
   } finally {

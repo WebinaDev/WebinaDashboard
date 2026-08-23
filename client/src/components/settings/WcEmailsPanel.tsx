@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { Mail } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { WcSettingsFormRenderer } from '@/components/settings/WcSettingsFormRenderer'
 import type { EmailSettingsRow, WcSettingsField } from '@/components/settings/wc-settings-types'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -12,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
+import { getSsrPage } from '@/lib/ssrPage'
 import { cn } from '@/lib/utils'
 
 type EmailsResponse = {
@@ -26,10 +29,14 @@ export function WcEmailsPanel() {
   const [draft, setDraft] = useState<Record<string, unknown>>({})
   const [enabled, setEnabled] = useState(false)
   const [globalDraft, setGlobalDraft] = useState<Record<string, unknown>>({})
+  const initial = useMemo(() => getSsrPage()?.wcEmails as EmailsResponse | undefined, [])
 
   const q = useQuery({
     queryKey: ['email-settings'],
     queryFn: () => apiFetch<EmailsResponse>('shop/email-settings'),
+    initialData: initial,
+    staleTime: initial ? 90_000 : undefined,
+    refetchOnMount: initial ? false : true,
   })
   useQueryErrorToast(q)
 
@@ -81,29 +88,43 @@ export function WcEmailsPanel() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 lg:flex-row">
-        <div className="flex flex-wrap gap-1 lg:w-48 lg:flex-col">
+        <div className="bg-muted/30 divide-border max-h-[28rem] overflow-y-auto rounded-xl border divide-y lg:w-64">
           {emails.map((e) => (
             <button
               key={e.id}
               type="button"
               className={cn(
-                'rounded-md px-3 py-2 text-start text-sm',
-                e.id === active?.id ? 'bg-muted font-medium' : 'text-muted-foreground hover:bg-muted/60',
+                'flex w-full items-start gap-3 px-3 py-3 text-start transition-colors',
+                e.id === active?.id ? 'bg-primary/10' : 'hover:bg-muted/60',
               )}
               onClick={() => setActiveId(e.id)}
             >
-              {e.title}
+              <div className="bg-background text-muted-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border">
+                <Mail className="size-3.5" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{e.title}</p>
+                <div className="mt-1">
+                  {e.enabled ? (
+                    <Badge className="text-[10px]">{t('settings.enabled')}</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px]">
+                      {t('settings.disabled')}
+                    </Badge>
+                  )}
+                </div>
+              </div>
             </button>
           ))}
         </div>
         {active ? (
-          <Card className="min-w-0 flex-1 shadow-sm">
+          <Card className="min-w-0 flex-1" variant="glass">
             <CardHeader>
               <CardTitle className="text-base">{active.title}</CardTitle>
               {active.description ? <p className="text-muted-foreground text-sm">{active.description}</p> : null}
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="bg-background/50 flex items-center gap-2 rounded-xl border px-3 py-3">
                 <Checkbox id="email-enabled" checked={enabled} onCheckedChange={(v) => setEnabled(v === true)} />
                 <Label htmlFor="email-enabled" className="cursor-pointer font-normal">
                   {t('settings.shop.emailEnabled')}
@@ -118,7 +139,7 @@ export function WcEmailsPanel() {
         ) : null}
       </div>
       {q.data?.global ? (
-        <Card className="shadow-sm">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">{t('settings.shop.emailGlobal')}</CardTitle>
           </CardHeader>

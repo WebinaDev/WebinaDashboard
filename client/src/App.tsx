@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { PermissionGate } from '@/components/PermissionGate'
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary'
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister'
+import { DashboardPrefetch } from '@/components/DashboardPrefetch'
 import { RoutePageSkeleton } from '@/components/skeletons'
 import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
@@ -15,6 +16,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { lazyPage } from '@/routes/lazyPage'
 import { useModuleDynamicRoutes } from '@/routes/ModuleDynamicRoutes'
 import { dashboardRoutes } from '@/routes/routes.config'
+import { resolveWfcpPricingTab } from '@/pages/settings/shop/wfcpPricingTabs'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 
 const HomePage = lazyPage(() =>
@@ -67,11 +69,10 @@ function LegacyAnalyticsSectionRedirect() {
 
 function LegacyWfcpSettingsRedirect() {
   const { tab } = useParams()
-  const safe = tab && /^[a-z0-9-]+$/.test(tab) ? tab : 'dashboard'
   return (
     <LegacyModuleRedirect
       requiredSlug="wfcp-module"
-      to={`/settings/shop/pricing/${safe}`}
+      to={`/settings/shop/pricing/${resolveWfcpPricingTab(tab)}`}
     />
   )
 }
@@ -150,6 +151,7 @@ export default function App() {
     <ThemeProvider>
       <RuntimeErrorToasts />
       <ServiceWorkerRegister />
+      <DashboardPrefetch />
       <BrowserRouter basename={base}>
         <Routes>
           <Route
@@ -191,6 +193,7 @@ export default function App() {
               <Route path="marketing" element={<Navigate to="coupons" replace relative="path" />} />
               <Route path="users" element={<Navigate to="list" replace relative="path" />} />
               <Route path="analytics" element={<Navigate to="/analytics/overview" replace />} />
+              <Route path="reports" element={<Navigate to="/reports/overview" replace />} />
               <Route path="analytics/bots" element={<LegacyModuleRedirect requiredSlug="bale-bot-module" to="/bots/bale" />} />
               <Route path="analytics-module" element={<Navigate to="/analytics/overview" replace />} />
               <Route path="analytics-module/:section" element={<LegacyAnalyticsSectionRedirect />} />
@@ -204,6 +207,7 @@ export default function App() {
               <Route path="settings/wfcp-module/:tab" element={<LegacyWfcpSettingsRedirect />} />
               <Route path="settings/wfcp/:tab" element={<LegacyWfcpSettingsRedirect />} />
               <Route path="wfcp" element={<LegacyModuleRedirect requiredSlug="wfcp-module" to="/settings/shop/pricing/dashboard" />} />
+              <Route path="settings/shop/pricing" element={<Navigate to="/settings/shop/pricing/dashboard" replace />} />
               <Route path="settings/shop/basalam-module/*" element={<LegacyBasalamRedirect />} />
               <Route path="settings/shop/basalam-module" element={<Navigate to="/settings/shop/basalam" replace />} />
               <Route path="settings/site/analytics-module" element={<Navigate to="/settings/site/analytics" replace />} />

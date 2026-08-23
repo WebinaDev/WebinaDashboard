@@ -34,7 +34,7 @@ export function BrandRowActions({ row, busy, onDelete }: BrandRowActionsProps) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-0.5">
+      <div className="flex flex-nowrap items-center gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button asChild size="icon" variant="ghost" className="size-8" disabled={busy}>

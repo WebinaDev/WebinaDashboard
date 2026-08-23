@@ -14,6 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Webino_Dashboard_Coupons {
 
+	const META_ALLOWED_USER_IDS         = '_webino_coupon_allowed_user_ids';
+	const META_ALLOWED_STATES           = '_webino_coupon_allowed_states';
+	const META_ALLOWED_CITIES           = '_webino_coupon_allowed_cities';
+	const META_ALLOWED_PAYMENT_METHODS  = '_webino_coupon_allowed_payment_methods';
+	const META_ALLOWED_PURCHASE_TYPES   = '_webino_coupon_allowed_purchase_types';
+	const META_ALLOWED_SHIPPING_METHODS = '_webino_coupon_allowed_shipping_methods';
+	const META_ALLOWED_CHANNELS         = '_webino_coupon_allowed_channels';
+
 	/**
 	 * @return bool
 	 */
@@ -94,6 +102,84 @@ class Webino_Dashboard_Coupons {
 	}
 
 	/**
+	 * @param int    $coupon_id Coupon post ID.
+	 * @param string $meta_key  Meta key.
+	 * @return array<int|string>
+	 */
+	public static function get_string_list_meta( $coupon_id, $meta_key ) {
+		$raw = get_post_meta( (int) $coupon_id, $meta_key, true );
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $raw as $v ) {
+			$v = sanitize_text_field( (string) $v );
+			if ( '' !== $v ) {
+				$out[] = $v;
+			}
+		}
+		return array_values( array_unique( $out ) );
+	}
+
+	/**
+	 * @param int    $coupon_id Coupon post ID.
+	 * @param string $meta_key  Meta key.
+	 * @param mixed  $values    Values.
+	 * @return void
+	 */
+	public static function set_string_list_meta( $coupon_id, $meta_key, $values ) {
+		$list = array();
+		foreach ( (array) $values as $v ) {
+			$v = sanitize_text_field( (string) $v );
+			if ( '' !== $v ) {
+				$list[] = $v;
+			}
+		}
+		update_post_meta( (int) $coupon_id, $meta_key, array_values( array_unique( $list ) ) );
+	}
+
+	/**
+	 * @param int $coupon_id Coupon post ID.
+	 * @return array<int>
+	 */
+	public static function get_allowed_user_ids( $coupon_id ) {
+		$raw = get_post_meta( (int) $coupon_id, self::META_ALLOWED_USER_IDS, true );
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		return array_values( array_filter( array_map( 'intval', $raw ) ) );
+	}
+
+	/**
+	 * @param int   $coupon_id Coupon post ID.
+	 * @param array $ids User IDs.
+	 * @return void
+	 */
+	public static function set_allowed_user_ids( $coupon_id, $ids ) {
+		$ids = array_values( array_filter( array_map( 'intval', (array) $ids ) ) );
+		update_post_meta( (int) $coupon_id, self::META_ALLOWED_USER_IDS, $ids );
+	}
+
+	/**
+	 * Restriction fields for REST map/apply.
+	 *
+	 * @param int $coupon_id Coupon ID.
+	 * @return array<string, mixed>
+	 */
+	public static function get_restriction_fields( $coupon_id ) {
+		$coupon_id = (int) $coupon_id;
+		return array(
+			'allowed_user_ids'         => self::get_allowed_user_ids( $coupon_id ),
+			'allowed_states'           => self::get_string_list_meta( $coupon_id, self::META_ALLOWED_STATES ),
+			'allowed_cities'           => self::get_string_list_meta( $coupon_id, self::META_ALLOWED_CITIES ),
+			'allowed_payment_methods'  => self::get_string_list_meta( $coupon_id, self::META_ALLOWED_PAYMENT_METHODS ),
+			'allowed_purchase_types'   => self::get_string_list_meta( $coupon_id, self::META_ALLOWED_PURCHASE_TYPES ),
+			'allowed_shipping_methods' => self::get_string_list_meta( $coupon_id, self::META_ALLOWED_SHIPPING_METHODS ),
+			'allowed_channels'         => self::get_string_list_meta( $coupon_id, self::META_ALLOWED_CHANNELS ),
+		);
+	}
+
+	/**
 	 * @param WC_Coupon $c Coupon.
 	 * @return array<string, mixed>
 	 */
@@ -102,32 +188,35 @@ class Webino_Dashboard_Coupons {
 		$post = get_post( $c->get_id() );
 		$urls = self::action_urls( $c->get_id() );
 
-		return array(
-			'id'                         => $c->get_id(),
-			'code'                       => $c->get_code(),
-			'amount'                     => $c->get_amount(),
-			'type'                       => $c->get_discount_type(),
-			'description'                => $c->get_description(),
-			'date_expires'               => $exp ? $exp->format( 'c' ) : null,
-			'minimum_amount'             => $c->get_minimum_amount(),
-			'maximum_amount'             => $c->get_maximum_amount(),
-			'usage_limit'                => $c->get_usage_limit(),
-			'usage_limit_per_user'       => $c->get_usage_limit_per_user(),
-			'usage_count'                => $c->get_usage_count(),
-			'individual_use'             => $c->get_individual_use(),
-			'free_shipping'              => $c->get_free_shipping(),
-			'exclude_sale_items'         => $c->get_exclude_sale_items(),
-			'product_ids'                => array_map( 'intval', $c->get_product_ids() ),
-			'excluded_product_ids'       => array_map( 'intval', $c->get_excluded_product_ids() ),
-			'product_categories'         => array_map( 'intval', $c->get_product_categories() ),
-			'excluded_product_categories' => array_map( 'intval', $c->get_excluded_product_categories() ),
-			'email_restrictions'         => array_values( array_filter( array_map( 'strval', $c->get_email_restrictions() ) ) ),
-			'brand_ids'                  => self::get_brand_ids( $c->get_id() ),
-			'excluded_brand_ids'         => self::get_excluded_brand_ids( $c->get_id() ),
-			'status'                     => $post ? $post->post_status : 'publish',
-			'date'                       => $post ? mysql2date( 'c', $post->post_date, false ) : null,
-			'visibility'                 => $post ? self::post_visibility_from_post( $post ) : 'public',
-			'trash_url'                  => $urls['trash_url'],
+		return array_merge(
+			array(
+				'id'                          => $c->get_id(),
+				'code'                        => $c->get_code(),
+				'amount'                      => $c->get_amount(),
+				'type'                        => $c->get_discount_type(),
+				'description'                 => $c->get_description(),
+				'date_expires'                => $exp ? $exp->format( 'c' ) : null,
+				'minimum_amount'              => $c->get_minimum_amount(),
+				'maximum_amount'              => $c->get_maximum_amount(),
+				'usage_limit'                 => $c->get_usage_limit(),
+				'usage_limit_per_user'        => $c->get_usage_limit_per_user(),
+				'usage_count'                 => $c->get_usage_count(),
+				'individual_use'              => $c->get_individual_use(),
+				'free_shipping'               => $c->get_free_shipping(),
+				'exclude_sale_items'          => $c->get_exclude_sale_items(),
+				'product_ids'                 => array_map( 'intval', $c->get_product_ids() ),
+				'excluded_product_ids'        => array_map( 'intval', $c->get_excluded_product_ids() ),
+				'product_categories'          => array_map( 'intval', $c->get_product_categories() ),
+				'excluded_product_categories' => array_map( 'intval', $c->get_excluded_product_categories() ),
+				'email_restrictions'          => array_values( array_filter( array_map( 'strval', $c->get_email_restrictions() ) ) ),
+				'brand_ids'                   => self::get_brand_ids( $c->get_id() ),
+				'excluded_brand_ids'          => self::get_excluded_brand_ids( $c->get_id() ),
+				'status'                      => $post ? $post->post_status : 'publish',
+				'date'                        => $post ? mysql2date( 'c', $post->post_date, false ) : null,
+				'visibility'                  => $post ? self::post_visibility_from_post( $post ) : 'public',
+				'trash_url'                   => $urls['trash_url'],
+			),
+			self::get_restriction_fields( $c->get_id() )
 		);
 	}
 
@@ -345,6 +434,41 @@ class Webino_Dashboard_Coupons {
 		}
 		if ( null !== $request->get_param( 'excluded_brand_ids' ) && is_array( $request->get_param( 'excluded_brand_ids' ) ) ) {
 			self::set_excluded_brand_ids( $coupon_id, $request->get_param( 'excluded_brand_ids' ) );
+		}
+		if ( null !== $request->get_param( 'allowed_user_ids' ) && is_array( $request->get_param( 'allowed_user_ids' ) ) ) {
+			self::set_allowed_user_ids( $coupon_id, $request->get_param( 'allowed_user_ids' ) );
+		}
+		if ( null !== $request->get_param( 'allowed_states' ) && is_array( $request->get_param( 'allowed_states' ) ) ) {
+			self::set_string_list_meta( $coupon_id, self::META_ALLOWED_STATES, $request->get_param( 'allowed_states' ) );
+		}
+		if ( null !== $request->get_param( 'allowed_cities' ) && is_array( $request->get_param( 'allowed_cities' ) ) ) {
+			self::set_string_list_meta( $coupon_id, self::META_ALLOWED_CITIES, $request->get_param( 'allowed_cities' ) );
+		}
+		if ( null !== $request->get_param( 'allowed_payment_methods' ) && is_array( $request->get_param( 'allowed_payment_methods' ) ) ) {
+			self::set_string_list_meta( $coupon_id, self::META_ALLOWED_PAYMENT_METHODS, $request->get_param( 'allowed_payment_methods' ) );
+		}
+		if ( null !== $request->get_param( 'allowed_purchase_types' ) && is_array( $request->get_param( 'allowed_purchase_types' ) ) ) {
+			$types = array();
+			foreach ( $request->get_param( 'allowed_purchase_types' ) as $t ) {
+				$t = sanitize_key( (string) $t );
+				if ( in_array( $t, array( 'cash', 'credit', 'installment', 'wholesale' ), true ) ) {
+					$types[] = $t;
+				}
+			}
+			self::set_string_list_meta( $coupon_id, self::META_ALLOWED_PURCHASE_TYPES, $types );
+		}
+		if ( null !== $request->get_param( 'allowed_shipping_methods' ) && is_array( $request->get_param( 'allowed_shipping_methods' ) ) ) {
+			self::set_string_list_meta( $coupon_id, self::META_ALLOWED_SHIPPING_METHODS, $request->get_param( 'allowed_shipping_methods' ) );
+		}
+		if ( null !== $request->get_param( 'allowed_channels' ) && is_array( $request->get_param( 'allowed_channels' ) ) ) {
+			$channels = array();
+			foreach ( $request->get_param( 'allowed_channels' ) as $ch ) {
+				$ch = sanitize_key( (string) $ch );
+				if ( in_array( $ch, array( 'site', 'bale', 'telegram' ), true ) ) {
+					$channels[] = $ch;
+				}
+			}
+			self::set_string_list_meta( $coupon_id, self::META_ALLOWED_CHANNELS, $channels );
 		}
 		return true;
 	}

@@ -38,12 +38,12 @@ export function ProductInventoryPanel({
   const { t } = useTranslation()
 
   return (
-    <Card className="gap-4 py-4 shadow-sm">
-      <CardHeader className="px-4 pb-0">
+    <Card className="gap-2 py-3 shadow-sm">
+      <CardHeader className="px-3 pb-0">
         <CardTitle className="text-sm font-semibold">{t('products.editor.inventoryPanel')}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 px-4">
-        <div className="space-y-2">
+      <CardContent className="space-y-3 px-3">
+        <div className="space-y-1.5">
           <Label htmlFor="product-sku">{t('products.fieldSku')}</Label>
           <Input id="product-sku" value={sku} onChange={(e) => onSkuChange(e.target.value)} />
         </div>
@@ -53,11 +53,11 @@ export function ProductInventoryPanel({
               <Checkbox checked={manageStock} onCheckedChange={(v) => onManageStockChange(v === true)} />
               <span className="text-sm">{t('products.fieldManageStock')}</span>
             </label>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="product-stock">{t('products.fieldStock')}</Label>
               <Input id="product-stock" value={stock} onChange={(e) => onStockChange(e.target.value)} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>{t('products.editor.backorders')}</Label>
               <Select value={backorders} onValueChange={onBackordersChange}>
                 <SelectTrigger className="w-full">

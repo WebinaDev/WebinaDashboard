@@ -47,7 +47,7 @@ final class Webino_Dashboard_Plugin {
 		register_deactivation_hook( WEBINO_DASHBOARD_FILE, array( $this, 'deactivate' ) );
 
 		add_action( 'init', array( $this->rewrite, 'register_rewrites' ), 1 );
-		add_action( 'init', array( $this, 'maybe_flush_rewrites' ), 20 );
+		add_action( 'init', array( $this, 'maybe_flush_rewrites' ), 2 );
 		add_action( 'parse_request', array( $this->rewrite, 'parse_dashboard_request' ), 1 );
 		add_action( 'init', array( 'Webino_Dashboard_Taxonomies', 'register' ), 2 );
 		add_action( 'init', array( 'Webino_Dashboard_I18n', 'load_textdomain' ) );
@@ -62,9 +62,40 @@ final class Webino_Dashboard_Plugin {
 		add_action( 'wp_enqueue_scripts', array( $this->assets, 'enqueue' ), 5 );
 		add_action( 'wp_enqueue_scripts', array( $this->assets, 'dequeue_theme_on_dashboard' ), 999 );
 		add_filter( 'litespeed_control_cacheable', array( $this, 'litespeed_dashboard_not_cacheable' ) );
+		add_filter( 'litespeed_optimize_js_excludes', array( $this, 'litespeed_exclude_dashboard_assets' ) );
+		add_filter( 'litespeed_optm_js_defer_exc', array( $this, 'litespeed_exclude_dashboard_assets' ) );
+		add_filter( 'litespeed_optm_gm_js_exc', array( $this, 'litespeed_exclude_dashboard_assets' ) );
+		add_filter( 'litespeed_optimize_css_excludes', array( $this, 'litespeed_exclude_dashboard_assets' ) );
+		add_filter( 'litespeed_optm_css_exc', array( $this, 'litespeed_exclude_dashboard_assets' ) );
+		add_filter( 'litespeed_optm_uri_exc', array( $this, 'litespeed_exclude_dashboard_uri' ) );
+		add_filter( 'litespeed_ucss_exc', array( $this, 'litespeed_exclude_dashboard_uri' ) );
+		add_filter( 'litespeed_can_optm', array( $this, 'litespeed_can_optm_dashboard' ) );
 
 		Webino_Dashboard_REST::init();
 		Webino_Dashboard_REST_Crud::init();
+		if ( class_exists( 'Webino_Dashboard_Coupon_Restrictions', false ) ) {
+			Webino_Dashboard_Coupon_Restrictions::init();
+		}
+		if ( class_exists( 'Webino_Dashboard_Variation_Swatches', false ) ) {
+			Webino_Dashboard_Variation_Swatches::init();
+		}
+
+		add_action( 'woocommerce_new_order', array( __CLASS__, 'invalidate_dashboard_caches' ) );
+		add_action( 'woocommerce_update_order', array( __CLASS__, 'invalidate_dashboard_caches' ) );
+		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'invalidate_dashboard_caches' ) );
+		add_action( 'save_post_product', array( __CLASS__, 'invalidate_dashboard_caches' ) );
+		add_action( 'deleted_post', array( __CLASS__, 'invalidate_dashboard_caches' ) );
+	}
+
+	/**
+	 * Drop overview/bootstrap transients when shop data changes.
+	 *
+	 * @return void
+	 */
+	public static function invalidate_dashboard_caches() {
+		if ( class_exists( 'Webino_Dashboard_SSR', false ) ) {
+			Webino_Dashboard_SSR::invalidate_user_caches();
+		}
 	}
 
 	/**
@@ -110,6 +141,81 @@ final class Webino_Dashboard_Plugin {
 			return false;
 		}
 		return $cacheable;
+	}
+
+	/**
+	 * Keep Vite module bundles out of LiteSpeed minify/combine/push.
+	 *
+	 * @param mixed $excludes Existing excludes (array or newline string).
+	 * @return mixed
+	 */
+	public function litespeed_exclude_dashboard_assets( $excludes ) {
+		$add = array(
+			'dashboard-build',
+			'dashboard-shell',
+			'WebinaDashboard/assets/dashboard-build',
+		);
+		if ( is_string( $excludes ) ) {
+			$lines = preg_split( '/\r\n|\r|\n/', $excludes );
+			$lines = is_array( $lines ) ? $lines : array();
+			foreach ( $add as $item ) {
+				if ( ! in_array( $item, $lines, true ) ) {
+					$lines[] = $item;
+				}
+			}
+			return implode( "\n", $lines );
+		}
+		if ( ! is_array( $excludes ) ) {
+			$excludes = array();
+		}
+		foreach ( $add as $item ) {
+			if ( ! in_array( $item, $excludes, true ) ) {
+				$excludes[] = $item;
+			}
+		}
+		return $excludes;
+	}
+
+	/**
+	 * Skip page optimization on /dashboard SPA routes.
+	 *
+	 * @param mixed $list URI exclude list.
+	 * @return mixed
+	 */
+	public function litespeed_exclude_dashboard_uri( $list ) {
+		$add = array( '/dashboard', 'dashboard' );
+		if ( is_string( $list ) ) {
+			$lines = preg_split( '/\r\n|\r|\n/', $list );
+			$lines = is_array( $lines ) ? $lines : array();
+			foreach ( $add as $item ) {
+				if ( ! in_array( $item, $lines, true ) ) {
+					$lines[] = $item;
+				}
+			}
+			return implode( "\n", $lines );
+		}
+		if ( ! is_array( $list ) ) {
+			$list = array();
+		}
+		foreach ( $add as $item ) {
+			if ( ! in_array( $item, $list, true ) ) {
+				$list[] = $item;
+			}
+		}
+		return $list;
+	}
+
+	/**
+	 * Disable LiteSpeed page optimization entirely on dashboard requests.
+	 *
+	 * @param bool $can Whether optimization may run.
+	 * @return bool
+	 */
+	public function litespeed_can_optm_dashboard( $can ) {
+		if ( $this->rewrite->is_dashboard_request() ) {
+			return false;
+		}
+		return $can;
 	}
 
 	/**
@@ -159,6 +265,9 @@ final class Webino_Dashboard_Plugin {
 			header( 'X-Webino-Dashboard-Version: ' . WEBINO_DASHBOARD_VERSION );
 			header( 'X-LiteSpeed-Cache-Control: no-cache' );
 			header( 'CDN-Cache-Control: no-store' );
+		}
+		if ( has_action( 'litespeed_control_set_nocache' ) ) {
+			do_action( 'litespeed_control_set_nocache', 'webino-dashboard' );
 		}
 	}
 

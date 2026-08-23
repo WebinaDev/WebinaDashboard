@@ -34,6 +34,21 @@ export interface WebinoDashboardConfig {
   allowedRemoteHosts?: string[]
   /** Optional server-injected bootstrap snapshot for first paint / placeholderData. */
   bootstrap?: BootstrapPayload
+  /** Route-scoped SSR page payload (overview / settings) for zero round-trip first paint. */
+  page?: {
+    path?: string
+    route?: string
+    generated?: number
+    overview?: import('./types/dashboardOverview').DashboardOverviewResponse
+    siteGeneral?: Record<string, unknown>
+    siteSms?: Record<string, unknown>
+    shopInvoices?: Record<string, unknown>
+    shopSms?: Record<string, unknown>
+    wcSettings?: Record<string, unknown>
+    paymentGateways?: { gateways?: unknown[] }
+    shippingZones?: Record<string, unknown>
+    wcEmails?: Record<string, unknown>
+  }
   marketplaceSettingsSections?: BootstrapPayload['marketplaceSettingsSections']
   /** Mirrors bootstrap `flags` (WooCommerce / WFCP loaded). */
   flags?: {

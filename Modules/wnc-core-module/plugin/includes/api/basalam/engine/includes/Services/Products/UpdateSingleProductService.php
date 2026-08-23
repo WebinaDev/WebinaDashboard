@@ -1,0 +1,248 @@
+<?php
+
+namespace WncBasalam\Services\Products;
+
+use WncBasalam\Config\Endpoints;
+use WncBasalam\Services\ApiServiceManager;
+use WncBasalam\Jobs\Exceptions\RetryableException;
+use WncBasalam\Jobs\Exceptions\NonRetryableException;
+use WncBasalam\Utilities\ProductMetaKey;
+
+defined('ABSPATH') || exit;
+
+class UpdateSingleProductService
+{
+    private $apiservice;
+    private $variationsService;
+
+    public function __construct()
+    {
+        $this->apiservice = wncBasalamContainer()->get(ApiServiceManager::class);
+        $this->variationsService = wncBasalamContainer()->get(UpdateProductVariationsService::class);
+    }
+
+    public function updateProductInBasalam($productData, $productId)
+    {
+        if (!get_post_type($productId) === 'product') throw NonRetryableException::invalidData('نوع post محصول نیست.');
+
+        $productData = apply_filters('wnc_basalam_product_data_before_update', $productData, $productId);
+
+        do_action('wnc_basalam_before_update_product_api', $productId, $productData);
+
+        $syncBasalamProductId = get_post_meta($productId, ProductMetaKey::basalamProductId(), true);
+        ProductConnection::assertUnique($productId, $syncBasalamProductId);
+
+        // Variable products whose variations are all connected to Basalam are updated with one
+        // request per variation, so price and stock must not be part of the product payload.
+        if ($this->shouldUpdateVariationsSeparately($productId, $productData)) {
+            $this->variationsService->updateVariations($syncBasalamProductId, $productData['variants'], $productId);
+
+            unset($productData['variants'], $productData['primary_price'], $productData['stock']);
+
+            if (!$this->hasProductFieldsToUpdate($productData)) {
+                return $this->finishUpdate($productId, [], 'متغیرهای محصول با موفقیت بروزرسانی شدند.');
+            }
+        }
+        $url = sprintf(Endpoints::PRODUCT_UPDATE, $syncBasalamProductId);
+
+        $maxDescriptionRetries = 3;
+        $descriptionRetry = 0;
+
+        while (true) {
+            try {
+                $request = $this->apiservice->patch($url, $productData);
+                break;
+            } catch (RetryableException $e) {
+                throw $e;
+            } catch (NonRetryableException $e) {
+                if ($descriptionRetry < $maxDescriptionRetries && $this->stripForbiddenDescription($e, $productData, $productId, $descriptionRetry)) {
+                    $descriptionRetry++;
+                    continue;
+                }
+                throw $e;
+            } catch (\Exception $e) {
+                throw new \Exception(esc_html('خطا در ارتباط با API باسلام: ' . $e->getMessage()));
+            }
+        }
+
+        $body = $request['body'] ?? '';
+
+        if (is_string($body)) $body = json_decode($body, true);
+
+        if ($request['status_code'] != 200) {
+            if ($request['status_code'] == 403) throw NonRetryableException::unauthorized("این محصول متعلق به غرفه فعلی نیست.");
+
+            if (!is_array($body)) $body = [];
+
+            if (isset($body['messages'][0]['message'])) $message = $body['messages'][0]['message'];
+            elseif (isset($body[0]['message'])) $message = $body[0]['message'];
+            else $message = '';
+
+            if (isset($body['messages'][0]['fields'][0])) $field = $body['messages'][0]['fields'][0];
+            elseif (isset($body[0]['fields'][0])) $field = $body[0]['fields'][0];
+            else $field = '';
+
+            $errorMessage = $message ?: 'درخواست با خطا مواجه شد.';
+            if ($field) $errorMessage .= ' (فیلد: ' . $field . ')';
+
+            throw NonRetryableException::permanent(esc_html($errorMessage));
+        }
+
+        if (is_wp_error($request)) throw NonRetryableException::permanent('خطایی در ارتباط با سرور رخ داد.');
+
+        $product = \wc_get_product($productId);
+        if ($product && $product->is_type('variable')) {
+            $variations = $product->get_children();
+            if (isset($body['variants'])) {
+                $wcVariations = [];
+                $attributes = $product->get_attributes();
+
+                foreach ($variations as $variationId) {
+                    $variation = \wc_get_product($variationId);
+                    $attributeValues = [];
+
+                    foreach ($attributes as $attributeName => $attribute) {
+                        if ($attribute->get_variation()) {
+                            $cleanAttributeName = str_replace('attribute_', '', $attributeName);
+                            $value = $variation->get_attribute($cleanAttributeName);
+
+                            $value = urldecode($value);
+                            $value = trim($value);
+                            $value = mb_strtolower($value, 'UTF-8');
+                            $value = str_replace(['ي', 'ك'], ['ی', 'ک'], $value);
+                            $value = str_replace(['-', '_', '–', '—'], ' ', $value);
+                            $value = preg_replace('/\s+/', ' ', $value);
+
+                            if (!empty($value)) $attributeValues[] = $value;
+                        }
+                    }
+
+                    if (!empty($attributeValues)) {
+                        $key = implode("_", $attributeValues);
+                        $wcVariations[$key] = $variationId;
+                    }
+                }
+
+                $syncBasalamVariations = [];
+                foreach ($body['variants'] as $variant) {
+                    $attributeValues = [];
+                    if (!empty($variant['properties'])) {
+                        foreach ($variant['properties'] as $property) {
+                            $val = $property['value']['title'];
+
+                            $val = trim($val);
+                            $val = mb_strtolower($val, 'UTF-8');
+                            $val = str_replace(['ي', 'ك'], ['ی', 'ک'], $val);
+                            $val = str_replace(['-', '_', '–', '—'], ' ', $val);
+                            $val = preg_replace('/\s+/', ' ', $val);
+
+                            if (!empty($val)) $attributeValues[] = $val;
+                        }
+                    }
+
+                    if (!empty($attributeValues)) {
+                        $key = implode("_", $attributeValues);
+                        $syncBasalamVariations[$key] = $variant['id'];
+                    }
+                }
+
+                foreach ($wcVariations as $key => $wcVarId) {
+                    if (isset($syncBasalamVariations[$key])) {
+                        update_post_meta($wcVarId, 'sync_basalam_variation_id', $syncBasalamVariations[$key]);
+                    }
+                }
+            }
+        }
+
+        return $this->finishUpdate($productId, $body, 'فرایند بروزرسانی محصول با موفقیت انجام شد.');
+    }
+
+    private function finishUpdate($productId, $body, string $message): array
+    {
+        update_post_meta($productId, ProductMetaKey::basalamProductSyncStatus(), 'synced');
+
+        $result = [
+            'success'     => true,
+            'message'     => $message,
+            'status_code' => 200,
+        ];
+
+        do_action('wnc_basalam_after_update_product_api', $productId, $body, $result);
+
+        return $result;
+    }
+
+    private function shouldUpdateVariationsSeparately($productId, array $productData): bool
+    {
+        if (empty($productData['variants']) || !is_array($productData['variants'])) return false;
+
+        $product = \wc_get_product($productId);
+        if (!$product || !$product->is_type('variable')) return false;
+
+        return UpdateProductVariationsService::allVariantsHaveBasalamId($productData['variants']);
+    }
+
+    private function hasProductFieldsToUpdate(array $productData): bool
+    {
+        $identifiers = ['id' => true, 'type' => true];
+
+        return !empty(array_diff_key($productData, $identifiers));
+    }
+
+    private function stripForbiddenDescription(NonRetryableException $e, array &$productData, int $productId, int $attempt): bool
+    {
+        if (!isset($productData['description']) || !is_string($productData['description'])) return false;
+
+        $values = DescriptionErrorSanitizer::extractDescriptionValues($e->getResponseData());
+        if (empty($values)) return false;
+
+        $cleaned = DescriptionErrorSanitizer::sanitize($productData['description'], $values);
+        if ($cleaned === $productData['description']) return false;
+
+        $productData['description'] = $cleaned;
+
+        return true;
+    }
+
+    public function updateProductStatus($productId, $status)
+    {
+        $syncBasalamProductId = get_post_meta($productId, ProductMetaKey::basalamProductId(), true);
+
+        ProductConnection::assertUnique($productId, $syncBasalamProductId);
+
+        $url = sprintf(Endpoints::PRODUCT_UPDATE, $syncBasalamProductId);
+
+        $data = ["status" => $status];
+
+        $data = apply_filters('sync_basalam_product_status_data_before_update', $data, $productId, $status);
+
+        do_action('wnc_basalam_before_update_product_status', $productId, $status, $data);
+
+        try {
+            $request = $this->apiservice->patch($url, $data);
+        } catch (RetryableException $e) {
+            throw $e;
+        } catch (NonRetryableException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw NonRetryableException::permanent(esc_html($e->getMessage()));
+        }
+
+        if (!is_wp_error($request)) {
+            update_post_meta($productId, ProductMetaKey::basalamProductSyncStatus(), 'synced');
+            update_post_meta($productId, ProductMetaKey::basalamProductStatus(), $status);
+
+            $result = [
+                'success'     => true,
+                'message'     => 'وضعیت محصول با موفقیت در باسلام تغییر کرد.',
+                'status_code' => 200,
+            ];
+
+            do_action('wnc_basalam_after_update_product_status', $productId, $status, $result);
+
+            return $result;
+        }
+
+        throw NonRetryableException::permanent("تغییر وضعیت محصول در باسلام ناموفق بود.");
+    }
+}

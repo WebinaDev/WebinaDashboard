@@ -58,7 +58,7 @@ export function BrandsTable({
           {columns.parent ? <TableHead>{t('brands.colParent')}</TableHead> : null}
           {columns.count ? <TableHead>{t('brands.colCount')}</TableHead> : null}
           {columns.views ? <TableHead>{t('brands.colViews')}</TableHead> : null}
-          <TableHead className="w-36">{t('brands.colActions')}</TableHead>
+          <TableHead className="w-36 min-w-36">{t('brands.colActions')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -97,7 +97,7 @@ export function BrandsTable({
                 {columns.views ? (
                   <TableCell>{row.views != null ? formatNumber(row.views, locale) : '—'}</TableCell>
                 ) : null}
-                <TableCell>
+                <TableCell className="w-36 min-w-36">
                   <BrandRowActions row={row} busy={busyId === row.id} onDelete={() => onDelete(row.id)} />
                 </TableCell>
               </TableRow>

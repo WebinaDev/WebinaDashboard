@@ -1,7 +1,8 @@
 /**
  * After Vite build: write build-entry.json + copy manifest.json (FTP often skips .vite/).
+ * Expects shared runtime already built at assets/dashboard-build/shared/.
  */
-import { copyFileSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,6 +12,7 @@ const pluginRoot = resolve(clientDir, '..')
 const pluginPhp = resolve(pluginRoot, 'webino-dashboard.php')
 const buildDir = resolve(pluginRoot, 'assets/dashboard-build')
 const viteManifest = resolve(buildDir, '.vite/manifest.json')
+const sharedImportMap = resolve(buildDir, 'shared/import-map.json')
 
 const versionMatch = readFileSync(pluginPhp, 'utf8').match(
   /define\s*\(\s*'WEBINO_DASHBOARD_VERSION'\s*,\s*'([^']+)'/,
@@ -43,7 +45,25 @@ if (Array.isArray(entry.imports)) {
   }
 }
 
-const payload = { js, css, shared, builtAt: new Date().toISOString(), pluginVersion }
+/** @type {Record<string, string>} */
+let importMap = {}
+if (existsSync(sharedImportMap)) {
+  const raw = JSON.parse(readFileSync(sharedImportMap, 'utf8'))
+  if (raw?.packages && typeof raw.packages === 'object') {
+    importMap = raw.packages
+  }
+} else {
+  console.warn('[write-build-entry] missing shared/import-map.json — run build-shared-runtime.mjs')
+}
+
+const payload = {
+  js,
+  css,
+  shared,
+  importMap,
+  builtAt: new Date().toISOString(),
+  pluginVersion,
+}
 writeFileSync(resolve(buildDir, 'build-entry.json'), JSON.stringify(payload, null, 2) + '\n', 'utf8')
 copyFileSync(viteManifest, resolve(buildDir, 'manifest.json'))
 
@@ -66,4 +86,7 @@ if (css) {
 }
 console.log('[write-build-entry] compat aliases -> assets/index.js', basename(js))
 
-console.log('[write-build-entry]', payload)
+console.log('[write-build-entry]', {
+  ...payload,
+  importMapKeys: Object.keys(importMap),
+})

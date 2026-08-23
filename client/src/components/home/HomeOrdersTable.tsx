@@ -14,6 +14,7 @@ type HomeOrdersTableProps = {
   rows: DashboardOverviewOrderRow[]
   monthLabel?: string
   viewAllHref?: string
+  orderHrefBase?: string
   emptyMessage: string
   currency: string
   currencySymbol?: string
@@ -25,6 +26,7 @@ export function HomeOrdersTable({
   rows,
   monthLabel,
   viewAllHref,
+  orderHrefBase = '/orders/list',
   emptyMessage,
   currency,
   currencySymbol,
@@ -63,7 +65,7 @@ export function HomeOrdersTable({
               {rows.map((row) => (
                 <TableRow key={row.id} className="hover:bg-muted/50">
                   <TableCell>
-                    <Link className="text-primary font-medium hover:underline" to={`/orders/list/${row.id}`}>
+                    <Link className="text-primary font-medium hover:underline" to={`${orderHrefBase}/${row.id}`}>
                       #{row.number || formatNumber(row.id, locale)}
                     </Link>
                   </TableCell>

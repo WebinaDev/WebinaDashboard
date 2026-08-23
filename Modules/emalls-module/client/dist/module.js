@@ -1,0 +1,1 @@
+// stub — build module emalls-module\nexport const routes = {};\nexport default { routes };\n

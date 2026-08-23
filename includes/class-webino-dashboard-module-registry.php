@@ -23,6 +23,8 @@ final class Webino_Dashboard_Module_Registry {
 	const TOGGLE_SYNC_OPTION   = 'webino_dashboard_module_toggle_synced_v1';
 	/** One-time: re-activate complete on-disk modules after Modules path move. */
 	const DISK_REACTIVATE_OPTION = 'webino_dashboard_disk_modules_reactivated_2';
+	/** One-time: turn coffee-profile on after it shipped default_active=false. */
+	const COFFEE_PROFILE_FORCE_ON = 'webino_dashboard_coffee_profile_force_on_v1';
 
 	/**
 	 * @return void
@@ -38,6 +40,7 @@ final class Webino_Dashboard_Module_Registry {
 		self::maybe_migrate_legacy_slug_options();
 		self::ensure_disk_modules_registered();
 		self::maybe_reactivate_disk_modules();
+		self::maybe_force_enable_coffee_profile();
 		self::maybe_sync_sidebar_toggles_from_marketplace();
 
 		add_action( 'init', array( __CLASS__, 'load_active_modules' ), 10 );
@@ -208,7 +211,7 @@ final class Webino_Dashboard_Module_Registry {
 			}
 			$active = get_option( self::OPTION_PREFIX . $slug . '_active', null );
 			if ( null === $active ) {
-				self::set_active( $slug, true );
+				self::set_active( $slug, self::manifest_default_active( $manifest ) );
 			}
 			if ( $version && '' === (string) get_option( self::OPTION_PREFIX . $slug . '_version', '' ) ) {
 				update_option( self::OPTION_PREFIX . $slug . '_version', sanitize_text_field( $version ), false );
@@ -235,9 +238,33 @@ final class Webino_Dashboard_Module_Registry {
 				self::mark_installed( $slug, (string) ( $manifest['version'] ?? '' ) );
 				continue;
 			}
+			if ( ! self::manifest_default_active( $manifest ) ) {
+				continue;
+			}
 			self::set_active( $slug, true );
 		}
 		update_option( self::DISK_REACTIVATE_OPTION, '1', false );
+	}
+
+	/**
+	 * First 0.1.59 builds registered coffee-profile as inactive (default_active false).
+	 * Force it on once so it appears in shop settings after zip replace.
+	 *
+	 * @return void
+	 */
+	public static function maybe_force_enable_coffee_profile() {
+		if ( '1' === (string) get_option( self::COFFEE_PROFILE_FORCE_ON, '' ) ) {
+			return;
+		}
+		$slug     = 'coffee-profile-module';
+		$manifest = self::get_manifest( $slug );
+		if ( is_array( $manifest ) && self::module_package_is_complete( $slug, $manifest ) ) {
+			if ( ! get_option( self::OPTION_PREFIX . $slug . '_installed', false ) ) {
+				self::mark_installed( $slug, (string) ( $manifest['version'] ?? '' ) );
+			}
+			self::set_active( $slug, true );
+		}
+		update_option( self::COFFEE_PROFILE_FORCE_ON, '1', false );
 	}
 
 	/**
@@ -273,7 +300,24 @@ final class Webino_Dashboard_Module_Registry {
 		if ( ! self::is_installed( $slug ) ) {
 			return false;
 		}
-		return (bool) get_option( self::OPTION_PREFIX . $slug . '_active', true );
+		return (bool) get_option( self::OPTION_PREFIX . $slug . '_active', self::manifest_default_active( $slug ) );
+	}
+
+	/**
+	 * Whether a module should be active on first install.
+	 *
+	 * @param string|array<string,mixed> $slug_or_manifest Package slug or decoded manifest.
+	 * @return bool
+	 */
+	public static function manifest_default_active( $slug_or_manifest ) {
+		$manifest = is_array( $slug_or_manifest ) ? $slug_or_manifest : self::get_manifest( (string) $slug_or_manifest );
+		if ( ! is_array( $manifest ) ) {
+			return true;
+		}
+		if ( array_key_exists( 'default_active', $manifest ) ) {
+			return (bool) $manifest['default_active'];
+		}
+		return true;
 	}
 
 	/**
@@ -402,13 +446,14 @@ final class Webino_Dashboard_Module_Registry {
 	 */
 	public static function mark_installed( $slug, $version = '' ) {
 		$slug = sanitize_key( $slug );
+		$active = self::manifest_default_active( $slug );
 		update_option( self::OPTION_PREFIX . $slug . '_installed', 1, false );
 		update_option( self::OPTION_PREFIX . $slug . '_installed_via', self::INSTALLED_VIA_VALUE, false );
-		update_option( self::OPTION_PREFIX . $slug . '_active', 1, false );
+		update_option( self::OPTION_PREFIX . $slug . '_active', $active ? 1 : 0, false );
 		if ( $version ) {
 			update_option( self::OPTION_PREFIX . $slug . '_version', sanitize_text_field( $version ), false );
 		}
-		self::sync_sidebar_toggle( $slug, true );
+		self::sync_sidebar_toggle( $slug, $active );
 	}
 
 	/**
@@ -1155,15 +1200,17 @@ final class Webino_Dashboard_Module_Registry {
 	public static function local_row_from_manifest( $manifest ) {
 		$slug     = (string) ( $manifest['slug'] ?? '' );
 		$settings = isset( $manifest['settings'] ) && is_array( $manifest['settings'] ) ? $manifest['settings'] : array();
+		$name = (string) ( $manifest['name'] ?? $settings['title'] ?? $slug );
 		return array(
 			'slug'           => $slug,
+			'name'           => $name,
 			'installed'      => self::is_installed( $slug ),
 			'active'         => self::is_active( $slug ),
 			'is_builtin'     => ! empty( $manifest['is_builtin'] ),
 			'version'        => (string) ( $manifest['version'] ?? get_option( self::OPTION_PREFIX . $slug . '_version', '1.0.0' ) ),
 			'settings_area'  => (string) ( $settings['area'] ?? 'shop' ),
 			'settings_route' => (string) ( $settings['route'] ?? '' ),
-			'settings_title' => (string) ( $settings['title'] ?? $manifest['name'] ?? $slug ),
+			'settings_title' => (string) ( $settings['title'] ?? $name ),
 		);
 	}
 
@@ -1204,12 +1251,25 @@ final class Webino_Dashboard_Module_Registry {
 				if ( '' === $route ) {
 					continue;
 				}
-				$out[] = array(
-					'slug'  => $slug . ( ! empty( $sec['id'] ) ? '-' . sanitize_key( (string) $sec['id'] ) : '' ),
-					'title' => (string) ( $sec['title'] ?? $title ),
-					'area'  => (string) ( $sec['area'] ?? $area ),
-					'route' => $route,
+				$section_id = ! empty( $sec['id'] ) ? sanitize_key( (string) $sec['id'] ) : '';
+				$title_key  = ! empty( $sec['titleKey'] ) ? (string) $sec['titleKey'] : '';
+				if ( '' === $title_key && 'wfcp-module' === $slug && '' !== $section_id ) {
+					$title_key = 'wfcp.tab.' . $section_id;
+				}
+				$row = array(
+					'slug'        => $slug . ( $section_id ? '-' . $section_id : '' ),
+					'moduleSlug'  => $slug,
+					'sectionId'   => $section_id,
+					'moduleTitle' => $title,
+					'title'       => (string) ( $sec['title'] ?? $title ),
+					'area'        => (string) ( $sec['area'] ?? $area ),
+					'route'       => $route,
+					'parentSlug'  => sanitize_key( (string) ( $manifest['parent_slug'] ?? '' ) ),
 				);
+				if ( '' !== $title_key ) {
+					$row['titleKey'] = $title_key;
+				}
+				$out[] = $row;
 			}
 			return $out;
 		}
@@ -1219,10 +1279,14 @@ final class Webino_Dashboard_Module_Registry {
 			$route = '/settings/' . $area . '/ext/' . $slug;
 		}
 		$out[] = array(
-			'slug'  => $slug,
-			'title' => $title,
-			'area'  => $area,
-			'route' => $route,
+			'slug'        => $slug,
+			'moduleSlug'  => $slug,
+			'sectionId'   => '',
+			'moduleTitle' => $title,
+			'title'       => $title,
+			'area'        => $area,
+			'route'       => $route,
+			'parentSlug'  => sanitize_key( (string) ( $manifest['parent_slug'] ?? '' ) ),
 		);
 		return $out;
 	}

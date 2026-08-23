@@ -49,6 +49,21 @@ class Webino_Dashboard_Modules {
 	}
 
 	/**
+	 * Wallet gateway package is installed and switched on.
+	 *
+	 * @return bool
+	 */
+	public static function is_wallet_module_active() {
+		if ( class_exists( 'Webino_Dashboard_Module_Registry', false ) ) {
+			if ( ! Webino_Dashboard_Module_Registry::is_installed( 'wallet-gateway-module' ) ) {
+				return false;
+			}
+			return Webino_Dashboard_Module_Registry::is_active( 'wallet-gateway-module' );
+		}
+		return self::is_module_enabled( 'wallet-gateway-module' );
+	}
+
+	/**
 	 * Copy legacy `bots` parent toggle to bots / bale-bot / telegram-bot when child options were never set.
 	 *
 	 * @return void
@@ -122,6 +137,7 @@ class Webino_Dashboard_Modules {
 					array( 'id' => 'brands', 'title' => __( 'Brands', 'webino-dashboard' ), 'path' => '/shop/brands', 'capability' => 'manage_product_terms' ),
 					array( 'id' => 'product-cats', 'title' => __( 'Product categories', 'webino-dashboard' ), 'path' => '/shop/product-categories', 'capability' => 'manage_product_terms' ),
 					array( 'id' => 'attributes', 'title' => __( 'Attributes', 'webino-dashboard' ), 'path' => '/shop/attributes', 'capability' => 'manage_product_terms' ),
+					array( 'id' => 'shop-tickets', 'title' => __( 'Support tickets', 'webino-dashboard' ), 'path' => '/shop/tickets', 'capability' => 'edit_shop_orders' ),
 				),
 			),
 			array(
@@ -133,7 +149,49 @@ class Webino_Dashboard_Modules {
 				'icon'       => 'package',
 				'children'   => array(
 					array( 'id' => 'order-list', 'title' => __( 'Orders', 'webino-dashboard' ), 'path' => '/orders/list', 'capability' => 'edit_shop_orders' ),
-					array( 'id' => 'order-reports', 'title' => __( 'Reports', 'webino-dashboard' ), 'path' => '/orders/reports', 'capability' => 'view_woocommerce_reports' ),
+				),
+			),
+			array(
+				'id'         => 'account-portal',
+				'nav_group'  => self::NAV_GROUP_SHOP,
+				'title'      => __( 'My account', 'webino-dashboard' ),
+				'path'       => '/account',
+				'capability' => 'webino_account_portal',
+				'icon'       => 'user',
+				'children'   => array(
+					array( 'id' => 'account-home', 'title' => __( 'Overview', 'webino-dashboard' ), 'path' => '/account', 'capability' => 'webino_account_portal' ),
+					array( 'id' => 'account-orders', 'title' => __( 'My orders', 'webino-dashboard' ), 'path' => '/account/orders', 'capability' => 'webino_account_portal' ),
+					array( 'id' => 'account-addresses', 'title' => __( 'Addresses', 'webino-dashboard' ), 'path' => '/account/addresses', 'capability' => 'webino_account_portal' ),
+					array( 'id' => 'account-notifications', 'title' => __( 'Notifications', 'webino-dashboard' ), 'path' => '/account/notifications', 'capability' => 'webino_account_portal' ),
+					array( 'id' => 'account-favorites', 'title' => __( 'Favorites', 'webino-dashboard' ), 'path' => '/account/favorites', 'capability' => 'webino_account_portal' ),
+					array( 'id' => 'account-reviews', 'title' => __( 'Reviews & questions', 'webino-dashboard' ), 'path' => '/account/reviews', 'capability' => 'webino_account_portal' ),
+					array( 'id' => 'account-profile', 'title' => __( 'Account info', 'webino-dashboard' ), 'path' => '/account/profile', 'capability' => 'webino_account_portal' ),
+					array( 'id' => 'account-wallet', 'title' => __( 'Wallet', 'webino-dashboard' ), 'path' => '/account/wallet', 'capability' => 'webino_account_portal' ),
+					array( 'id' => 'account-tickets', 'title' => __( 'Support', 'webino-dashboard' ), 'path' => '/account/tickets', 'capability' => 'webino_account_portal' ),
+				),
+			),
+			array(
+				'id'                   => 'shop-reports',
+				'nav_group'            => self::NAV_GROUP_REPORTS,
+				'title'                => __( 'Store analytics', 'webino-dashboard' ),
+				'path'                 => '/reports/overview',
+				'capability'           => 'view_woocommerce_reports',
+				'icon'                 => 'line-chart',
+				'requires_woocommerce' => true,
+				'children'             => array(
+					array( 'id' => 'shop-reports-overview', 'title' => __( 'Overview', 'webino-dashboard' ), 'path' => '/reports/overview', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-revenue', 'title' => __( 'Revenue', 'webino-dashboard' ), 'path' => '/reports/revenue', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-orders', 'title' => __( 'Orders', 'webino-dashboard' ), 'path' => '/reports/orders', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-products', 'title' => __( 'Products', 'webino-dashboard' ), 'path' => '/reports/products', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-variations', 'title' => __( 'Variations', 'webino-dashboard' ), 'path' => '/reports/variations', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-categories', 'title' => __( 'Categories', 'webino-dashboard' ), 'path' => '/reports/categories', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-coupons', 'title' => __( 'Coupons', 'webino-dashboard' ), 'path' => '/reports/coupons', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-taxes', 'title' => __( 'Taxes', 'webino-dashboard' ), 'path' => '/reports/taxes', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-customers', 'title' => __( 'Customers', 'webino-dashboard' ), 'path' => '/reports/customers', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-downloads', 'title' => __( 'Downloads', 'webino-dashboard' ), 'path' => '/reports/downloads', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-stock', 'title' => __( 'Stock', 'webino-dashboard' ), 'path' => '/reports/stock', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-sales', 'title' => __( 'Sales & profit', 'webino-dashboard' ), 'path' => '/reports/sales', 'capability' => 'view_woocommerce_reports' ),
+					array( 'id' => 'shop-reports-financial', 'title' => __( 'Financial', 'webino-dashboard' ), 'path' => '/reports/financial', 'capability' => 'view_woocommerce_reports' ),
 				),
 			),
 			array(

@@ -39,6 +39,71 @@ class Webino_Dashboard_Rest_Base {
 	}
 
 	/**
+	 * Customer or partner self-service portal.
+	 *
+	 * @return bool
+	 */
+	public static function has_account_portal() {
+		return self::can( 'webino_account_portal' ) || self::can( 'webino_partner_portal' );
+	}
+
+	/**
+	 * List or view shop orders (staff or account portal).
+	 *
+	 * @return bool
+	 */
+	public static function can_access_orders() {
+		return self::can( 'edit_shop_orders' ) || self::has_account_portal();
+	}
+
+	/**
+	 * Account portal without store-wide order access.
+	 *
+	 * @return bool
+	 */
+	public static function is_portal_only() {
+		return self::has_account_portal() && ! self::can( 'edit_shop_orders' );
+	}
+
+	/**
+	 * @deprecated Use is_portal_only().
+	 * @return bool
+	 */
+	public static function is_partner_portal_only() {
+		return self::is_portal_only();
+	}
+
+	/**
+	 * @param int $order_id Order ID.
+	 * @return bool
+	 */
+	public static function can_view_order( $order_id ) {
+		if ( self::can( 'edit_shop_orders' ) ) {
+			return true;
+		}
+		if ( ! self::has_account_portal() || ! function_exists( 'wc_get_order' ) ) {
+			return false;
+		}
+		$o = wc_get_order( (int) $order_id );
+		if ( ! $o ) {
+			return false;
+		}
+		return (int) $o->get_customer_id() === get_current_user_id();
+	}
+
+	/**
+	 * @param int $user_id Target user.
+	 * @return bool
+	 */
+	public static function can_edit_profile_user( $user_id ) {
+		$user_id = (int) $user_id;
+		if ( current_user_can( 'edit_user', $user_id ) ) {
+			return true;
+		}
+		return get_current_user_id() === $user_id && self::has_account_portal();
+	}
+
+	/**
 	 * Accounting module data (financial tables).
 	 *
 	 * @return bool

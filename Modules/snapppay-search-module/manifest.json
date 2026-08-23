@@ -1,0 +1,31 @@
+{
+  "slug": "snapppay-search-module",
+  "name": "SnappPay Search",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "parent_slug": "wnc-core-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "SnappPay Search",
+    "sections": [
+      {
+        "id": "connection",
+        "route": "/settings/shop/snapppay-search",
+        "title": "SnappPay Search"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/snapppay-search",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "wnc.modules.snapppay-search.title"
+      }
+    ]
+  }
+}

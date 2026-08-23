@@ -61,5 +61,8 @@ export interface BootstrapPayload {
     title: string
     area: 'site' | 'shop'
     route: string
+    moduleSlug?: string
+    sectionId?: string
+    moduleTitle?: string
   }[]
 }

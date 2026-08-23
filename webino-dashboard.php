@@ -3,13 +3,16 @@
  * Plugin Name:       Webino Dashboard
  * Plugin URI:        https://webina.dev
  * Description:       Standalone customer dashboard at /dashboard (SPA), separate from wp-admin.
- * Version:           0.1.8
+ * Version:           0.1.85
  * Author:            Webina
  * Author URI:        https://webina.dev
  * Text Domain:       webino-dashboard
  * Domain Path:       /languages
  * Requires at least: 6.1
  * Requires PHP:      7.4
+ * Requires Plugins:  woocommerce
+ * WC requires at least: 8.0
+ * WC tested up to:   11.0
  *
  * @package WebinoDashboard
  */
@@ -18,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WEBINO_DASHBOARD_VERSION', '0.1.8' );
+define( 'WEBINO_DASHBOARD_VERSION', '0.1.85' );
 define( 'WEBINO_DASHBOARD_FILE', __FILE__ );
 define( 'WEBINO_DASHBOARD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_URL', plugin_dir_url( __FILE__ ) );
@@ -30,6 +33,17 @@ if ( ! defined( 'WEBINO_DASHBOARD_VENDOR_HOST' ) ) {
 if ( ! defined( 'WEBINO_DASHBOARD_VENDOR_URL' ) ) {
 	define( 'WEBINO_DASHBOARD_VENDOR_URL', 'https://' . WEBINO_DASHBOARD_VENDOR_HOST );
 }
+
+add_action(
+	'before_woocommerce_init',
+	static function () {
+		if ( ! class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+			return;
+		}
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', WEBINO_DASHBOARD_FILE, true );
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', WEBINO_DASHBOARD_FILE, true );
+	}
+);
 
 require_once WEBINO_DASHBOARD_DIR . 'includes/class-webino-dashboard-bootstrap.php';
 

@@ -43,7 +43,7 @@ export function ResetPasswordDialog({ userId, open, onOpenChange }: ResetPasswor
           <DialogTitle>{t('users.actionResetPassword')}</DialogTitle>
         </DialogHeader>
         <p className="text-muted-foreground text-sm">
-          {t('users.resetEmailHint', { defaultValue: 'A reset link will be emailed to the user (recommended).' })}
+          {t('users.resetEmailHint')}
         </p>
         <DialogFooter className="gap-2 sm:justify-start">
           <Button

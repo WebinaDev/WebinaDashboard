@@ -6,6 +6,11 @@ export type Category = {
   description: string
   count: number
   url: string
+  seo?: {
+    title?: string
+    description?: string
+    focus_keyword?: string
+  }
 }
 
 export type CategoryTreeNode = {

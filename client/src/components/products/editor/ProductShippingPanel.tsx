@@ -28,16 +28,16 @@ export function ProductShippingPanel({
   const { t } = useTranslation()
 
   return (
-    <Card className="gap-4 py-4 shadow-sm">
-      <CardHeader className="px-4 pb-0">
+    <Card className="gap-2 py-3 shadow-sm">
+      <CardHeader className="px-3 pb-0">
         <CardTitle className="text-sm font-semibold">{t('products.editor.shippingPanel')}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 px-4">
-        <div className="space-y-2">
+      <CardContent className="space-y-3 px-3">
+        <div className="space-y-1.5">
           <Label htmlFor="product-weight">{t('products.fieldWeight')}</Label>
           <Input id="product-weight" value={weight} onChange={(e) => onWeightChange(e.target.value)} />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label>{t('products.fieldDimensions')}</Label>
           <div className="grid grid-cols-3 gap-2">
             <Input

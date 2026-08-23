@@ -1,0 +1,1 @@
+import{t as e}from"./PageShell-BXcZgLYP.js";import{t}from"./CategoryManager-3XOH9pXu.js";import{useTranslation as n}from"react-i18next";import{jsx as r}from"react/jsx-runtime";function i(){let{t:i}=n();return r(e,{title:i(`categories.title`),children:r(t,{selectable:!1,compact:!1})})}export{i as default};

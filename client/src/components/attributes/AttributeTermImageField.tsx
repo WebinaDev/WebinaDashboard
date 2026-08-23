@@ -39,9 +39,9 @@ export function AttributeTermImageField({ imageId, imageUrl, onChange, onRemove 
       <div className="space-y-2">
         <Label>{t('attributes.terms.image')}</Label>
         {imageId > 0 && imageUrl ? (
-          <LazyImage src={imageUrl} alt={t('a11y.thumbnail')} className="size-16 rounded-md border object-cover" />
+          <LazyImage src={imageUrl} alt={t('a11y.thumbnail')} className="size-24 rounded-lg border object-cover" />
         ) : (
-          <div className="text-muted-foreground flex size-16 items-center justify-center rounded-md border border-dashed text-xs">
+          <div className="text-muted-foreground flex size-24 items-center justify-center rounded-lg border border-dashed text-xs">
             {t('attributes.terms.noImage')}
           </div>
         )}

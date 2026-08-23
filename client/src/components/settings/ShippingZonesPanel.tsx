@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { MapPin, Trash2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
+import { getSsrPage } from '@/lib/ssrPage'
 
 type ShippingResponse = {
   zones: ShippingZoneRow[]
@@ -23,10 +24,14 @@ export function ShippingZonesPanel() {
   const qc = useQueryClient()
   const [newName, setNewName] = useState('')
   const [globalDraft, setGlobalDraft] = useState<Record<string, unknown>>({})
+  const initial = useMemo(() => getSsrPage()?.shippingZones as ShippingResponse | undefined, [])
 
   const q = useQuery({
     queryKey: ['shipping-zones'],
     queryFn: () => apiFetch<ShippingResponse>('shop/shipping/zones'),
+    initialData: initial,
+    staleTime: initial ? 90_000 : undefined,
+    refetchOnMount: initial ? false : true,
   })
   useQueryErrorToast(q)
 
@@ -79,14 +84,14 @@ export function ShippingZonesPanel() {
 
   return (
     <div className="space-y-4">
-      <Card className="shadow-sm">
+      <Card variant="glass">
         <CardHeader>
           <CardTitle className="text-base">{t('settings.shop.sections.shipping')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Input
-              className="max-w-xs"
+              className="min-w-[12rem] flex-1"
               placeholder={t('settings.shop.shippingNewZone')}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -95,27 +100,43 @@ export function ShippingZonesPanel() {
               {t('settings.shop.shippingAddZone')}
             </Button>
           </div>
-          <ul className="divide-y divide-border rounded-md border border-border">
+          <ul className="grid gap-3 sm:grid-cols-2">
             {zones.map((z) => (
-              <li key={z.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-                <span>
-                  {z.name}
-                  <span className="text-muted-foreground ms-2 text-xs">
-                    {t('settings.shop.shippingMethodCount', { count: z.method_count })}
-                  </span>
-                </span>
-                {z.id > 0 ? (
-                  <Button type="button" size="icon" variant="ghost" className="size-8" disabled={remove.isPending} onClick={() => void remove.mutateAsync(z.id)}>
-                    <Trash2 className="size-4" />
-                  </Button>
-                ) : null}
+              <li key={z.id}>
+                <Card className="py-4 shadow-soft">
+                  <CardContent className="flex items-center justify-between gap-2 px-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+                        <MapPin className="size-4" aria-hidden />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{z.name}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {t('settings.shop.shippingMethodCount', { count: z.method_count })}
+                        </p>
+                      </div>
+                    </div>
+                    {z.id > 0 ? (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 shrink-0"
+                        disabled={remove.isPending}
+                        onClick={() => void remove.mutateAsync(z.id)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    ) : null}
+                  </CardContent>
+                </Card>
               </li>
             ))}
           </ul>
         </CardContent>
       </Card>
       {global ? (
-        <Card className="shadow-sm">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">{t('settings.shop.shippingOptions')}</CardTitle>
           </CardHeader>

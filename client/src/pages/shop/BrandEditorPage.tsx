@@ -6,9 +6,11 @@ import { useMatch, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { AiGenerateButton } from '@/components/AiGenerateButton'
 import { BrandFormFields } from '@/components/brands/BrandFormFields'
 import type { BrandFormState, BrandRow } from '@/components/brands/types'
 import { PageShell } from '@/components/PageShell'
+import { SimpleSeoFields } from '@/components/seo/SimpleSeoFields'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +29,15 @@ import { apiFetch } from '@/lib/api'
 import { slugifyFromName } from '@/lib/categoryTree'
 
 function emptyForm(): BrandFormState {
-  return { name: '', slug: '', parent: 0, description: '', thumbnail_id: 0, thumbnail_url: '' }
+  return {
+    name: '',
+    slug: '',
+    parent: 0,
+    description: '',
+    thumbnail_id: 0,
+    thumbnail_url: '',
+    seo: { title: '', description: '', focus_keyword: '' },
+  }
 }
 
 function formFromBrand(brand: BrandRow): BrandFormState {
@@ -38,6 +48,11 @@ function formFromBrand(brand: BrandRow): BrandFormState {
     description: brand.description ?? '',
     thumbnail_id: brand.thumbnail_id ?? 0,
     thumbnail_url: brand.thumbnail_url ?? '',
+    seo: {
+      title: brand.seo?.title ?? '',
+      description: brand.seo?.description ?? '',
+      focus_keyword: brand.seo?.focus_keyword ?? '',
+    },
   }
 }
 
@@ -48,6 +63,7 @@ function buildPayload(form: BrandFormState) {
     parent: form.parent,
     description: form.description,
     thumbnail_id: form.thumbnail_id > 0 ? form.thumbnail_id : 0,
+    seo: form.seo,
   }
 }
 
@@ -138,6 +154,9 @@ export default function BrandEditorPage() {
             </Button>
           ) : null}
           {!isNew ? (
+            <AiGenerateButton type="product_brand" id={id} onDone={() => void q.refetch()} />
+          ) : null}
+          {!isNew ? (
             <Button type="button" variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
               <Trash2 className="me-1 size-4" />
               {t('common.delete')}
@@ -167,6 +186,14 @@ export default function BrandEditorPage() {
               onChange={setForm}
             />
           )}
+          {!isNew && !q.isLoading ? (
+            <div className="mt-6">
+              <SimpleSeoFields
+                seo={form.seo}
+                onChange={(seo) => setForm((f) => ({ ...f, seo: { ...f.seo, ...seo } }))}
+              />
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

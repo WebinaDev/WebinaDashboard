@@ -73,6 +73,14 @@ export function AttributeTermDialog({
               onRemove={() => onChange({ image_id: 0, image_url: '' })}
             />
           ) : null}
+          <div className="space-y-2">
+            <Label>{t('attributes.terms.menuOrder')}</Label>
+            <Input
+              type="number"
+              value={String(form.menu_order)}
+              onChange={(e) => onChange({ menu_order: Number.parseInt(e.target.value, 10) || 0 })}
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

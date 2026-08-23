@@ -1,0 +1,117 @@
+{
+  "slug": "ai-content-module",
+  "name": "AI Content",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "site",
+    "title": "AI Content",
+    "sections": [
+      {
+        "id": "settings",
+        "route": "/ai-content/settings",
+        "title": "AI Content"
+      }
+    ]
+  },
+  "sidebar": {
+    "module_id": "ai-content-module",
+    "title": "AI Content",
+    "path": "/ai-content",
+    "capability": "edit_posts",
+    "icon": "sparkles",
+    "nav_group": "content",
+    "children": [
+      {
+        "id": "ai-content-overview",
+        "title": "Overview",
+        "path": "/ai-content",
+        "capability": "edit_posts",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "ai-content-jobs",
+        "title": "Jobs",
+        "path": "/ai-content/jobs",
+        "capability": "edit_posts",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "ai-content-calendar",
+        "title": "Content calendar",
+        "path": "/ai-content/calendar",
+        "capability": "edit_posts",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "ai-content-products",
+        "title": "Product content",
+        "path": "/ai-content/products",
+        "capability": "edit_products",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "ai-content-taxonomies",
+        "title": "Categories & brands",
+        "path": "/ai-content/taxonomies",
+        "capability": "manage_product_terms",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "ai-content-attributes",
+        "title": "Attribute templates",
+        "path": "/ai-content/attributes",
+        "capability": "manage_product_terms",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "ai-content-settings",
+        "title": "Settings",
+        "path": "/ai-content/settings",
+        "capability": "manage_options",
+        "exclude_from_module_toggle": true
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "ai-content",
+        "capability": "edit_posts",
+        "headerTitleKey": "aiContent.overviewTitle"
+      },
+      {
+        "path": "ai-content/jobs",
+        "capability": "edit_posts",
+        "headerTitleKey": "aiContent.jobsPageTitle"
+      },
+      {
+        "path": "ai-content/calendar",
+        "capability": "edit_posts",
+        "headerTitleKey": "aiContent.calendarTitle"
+      },
+      {
+        "path": "ai-content/products",
+        "capability": "edit_products",
+        "headerTitleKey": "aiContent.productsTitle"
+      },
+      {
+        "path": "ai-content/taxonomies",
+        "capability": "manage_product_terms",
+        "headerTitleKey": "aiContent.taxonomiesTitle"
+      },
+      {
+        "path": "ai-content/attributes",
+        "capability": "manage_product_terms",
+        "headerTitleKey": "aiContent.attributesTitle"
+      },
+      {
+        "path": "ai-content/settings",
+        "capability": "manage_options",
+        "headerTitleKey": "aiContent.settingsTitle"
+      }
+    ]
+  }
+}

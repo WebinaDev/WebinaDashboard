@@ -17,6 +17,19 @@ final class Webino_Dashboard_REST_Bots {
 	const NS = 'webino-dashboard/v1';
 
 	/**
+	 * Strip WC price HTML and decode entities so SPA never shows literal &nbsp;.
+	 *
+	 * @param string $html Price HTML or plain text.
+	 * @return string
+	 */
+	public static function sanitize_price_text( $html ) {
+		$text = wp_strip_all_tags( (string) $html );
+		$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$text = str_replace( array( "\xC2\xA0", '&nbsp;' ), ' ', $text );
+		return trim( preg_replace( '/\s+/u', ' ', $text ) ?? $text );
+	}
+
+	/**
 	 * @return void
 	 */
 	public static function init() {
@@ -26,6 +39,120 @@ final class Webino_Dashboard_REST_Bots {
 		}
 		$done = true;
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+		// admin-ajax fallback when CDN/WAF blocks /wp-json/ for bot SPA pages.
+		add_action( 'wp_ajax_webino_dashboard_bots_rest', array( __CLASS__, 'ajax_bots_rest' ) );
+	}
+
+	/**
+	 * Whether a REST path under webino-dashboard/v1 is allowed via admin-ajax proxy.
+	 * Blocks public webhook endpoints.
+	 *
+	 * @param string $path Path without leading slash, e.g. bots/bale/settings.
+	 * @return bool
+	 */
+	private static function is_ajax_proxy_path_allowed( $path ) {
+		$path = ltrim( (string) $path, '/' );
+		$path = strtok( $path, '?' );
+		if ( ! is_string( $path ) || $path === '' ) {
+			return false;
+		}
+		// Never proxy inbound webhook or health probes (public / unauthenticated).
+		if ( preg_match( '#^bots/(bale|telegram)/(webhook|health)(/|$)#', $path ) ) {
+			return false;
+		}
+		if ( preg_match( '#^bots/(bale|telegram)/#', $path ) ) {
+			return true;
+		}
+		if ( 0 === strpos( $path, 'bots/parity/' ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * admin-ajax proxy for bots/* REST (WAF-safe). Always HTTP 200.
+	 *
+	 * @return void
+	 */
+	public static function ajax_bots_rest() {
+		if ( ! check_ajax_referer( 'wp_rest', 'nonce', false ) ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Invalid nonce',
+					'code'    => 'invalid_nonce',
+				)
+			);
+		}
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Forbidden',
+					'code'    => 'forbidden',
+				)
+			);
+		}
+
+		$rest_path = isset( $_POST['rest_path'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
+			? sanitize_text_field( wp_unslash( (string) $_POST['rest_path'] ) )
+			: '';
+		$rest_path = ltrim( $rest_path, '/' );
+
+		if ( ! self::is_ajax_proxy_path_allowed( $rest_path ) ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Path not allowed',
+					'code'    => 'path_not_allowed',
+				)
+			);
+		}
+
+		$method = isset( $_POST['rest_method'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			? strtoupper( sanitize_text_field( wp_unslash( (string) $_POST['rest_method'] ) ) )
+			: 'GET';
+		if ( ! in_array( $method, array( 'GET', 'POST', 'PUT', 'PATCH', 'DELETE' ), true ) ) {
+			$method = 'GET';
+		}
+
+		$query = array();
+		if ( isset( $_POST['rest_query'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$raw_q = wp_unslash( (string) $_POST['rest_query'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing
+			parse_str( ltrim( $raw_q, '?' ), $parsed );
+			if ( is_array( $parsed ) ) {
+				$query = $parsed;
+			}
+		}
+
+		$route = '/' . self::NS . '/' . $rest_path;
+		$req   = new WP_REST_Request( $method, $route );
+		foreach ( $query as $key => $value ) {
+			$req->set_param( (string) $key, $value );
+		}
+
+		if ( in_array( $method, array( 'POST', 'PUT', 'PATCH', 'DELETE' ), true ) && isset( $_POST['payload'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$raw = wp_unslash( (string) $_POST['payload'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing
+			if ( $raw !== '' ) {
+				$req->set_body( $raw );
+				$req->set_header( 'Content-Type', 'application/json' );
+				$decoded = json_decode( $raw, true );
+				if ( is_array( $decoded ) ) {
+					$req->set_body_params( $decoded );
+				}
+			}
+		}
+
+		$response = rest_do_request( $req );
+		if ( $response->is_error() ) {
+			$err = $response->as_error();
+			wp_send_json_error(
+				array(
+					'message' => $err->get_error_message(),
+					'code'    => $err->get_error_code(),
+				)
+			);
+		}
+
+		$data = $response->get_data();
+		wp_send_json_success( $data );
 	}
 
 	/**
@@ -43,6 +170,99 @@ final class Webino_Dashboard_REST_Bots {
 			}
 			$mod = $ctx['module_id'];
 			$pre = $ctx['pre'];
+
+			register_rest_route(
+				self::NS,
+				'/bots/' . $pre . '/loyalty',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => function () use ( $mod ) {
+							unset( $mod );
+							if ( ! class_exists( 'Webino_Dashboard_Bots_Loyalty', false ) ) {
+								return new WP_Error( 'loyalty', __( 'Loyalty unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+							}
+							return new WP_REST_Response(
+								array(
+									'settings'      => Webino_Dashboard_Bots_Loyalty::settings(),
+									'top_customers' => Webino_Dashboard_Bots_Loyalty::top_customers( 20 ),
+								)
+							);
+						},
+						'permission_callback' => function () use ( $mod ) {
+							return self::perm_manage( $mod );
+						},
+					),
+					array(
+						'methods'             => array( 'POST', 'PUT', 'PATCH' ),
+						'callback'            => function ( WP_REST_Request $req ) use ( $mod ) {
+							unset( $mod );
+							if ( ! class_exists( 'Webino_Dashboard_Bots_Loyalty', false ) ) {
+								return new WP_Error( 'loyalty', __( 'Loyalty unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+							}
+							$params = $req->get_json_params();
+							$saved  = Webino_Dashboard_Bots_Loyalty::save_settings( is_array( $params ) ? $params : array() );
+							return new WP_REST_Response( array( 'settings' => $saved ) );
+						},
+						'permission_callback' => function () use ( $mod ) {
+							return self::perm_manage( $mod );
+						},
+					),
+				)
+			);
+
+			register_rest_route(
+				self::NS,
+				'/bots/' . $pre . '/coupons',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => function () use ( $mod ) {
+							return self::bot_coupons_list( $mod );
+						},
+						'permission_callback' => function () use ( $mod ) {
+							return self::perm_manage( $mod );
+						},
+					),
+					array(
+						'methods'             => 'POST',
+						'callback'            => function ( WP_REST_Request $req ) use ( $mod ) {
+							return self::bot_coupons_create( $req, $mod );
+						},
+						'permission_callback' => function () use ( $mod ) {
+							return self::perm_manage( $mod );
+						},
+					),
+				)
+			);
+
+			register_rest_route(
+				self::NS,
+				'/bots/' . $pre . '/users/(?P<id>\d+)/block',
+				array(
+					'methods'             => 'POST',
+					'callback'            => function ( WP_REST_Request $req ) use ( $mod ) {
+						return self::user_block( $req, $mod );
+					},
+					'permission_callback' => function () use ( $mod ) {
+						return self::perm_manage( $mod );
+					},
+				)
+			);
+
+			register_rest_route(
+				self::NS,
+				'/bots/' . $pre . '/connection-status',
+				array(
+					'methods'             => 'GET',
+					'callback'            => function () use ( $which, $mod ) {
+						return self::connection_status( $which, $mod );
+					},
+					'permission_callback' => function () use ( $mod ) {
+						return self::perm_manage( $mod );
+					},
+				)
+			);
 
 			register_rest_route(
 				self::NS,
@@ -194,6 +414,84 @@ final class Webino_Dashboard_REST_Bots {
 
 			register_rest_route(
 				self::NS,
+				'/bots/' . $pre . '/shop-notify',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => function () use ( $which, $mod ) {
+							return self::shop_notify_get( $which, $mod );
+						},
+						'permission_callback' => function () use ( $mod ) {
+							return self::perm_manage( $mod );
+						},
+					),
+					array(
+						'methods'             => array( 'POST', 'PUT', 'PATCH' ),
+						'callback'            => function ( WP_REST_Request $req ) use ( $which, $mod ) {
+							return self::shop_notify_post( $req, $which, $mod );
+						},
+						'permission_callback' => function () use ( $mod ) {
+							return self::perm_manage( $mod );
+						},
+					),
+				)
+			);
+
+			register_rest_route(
+				self::NS,
+				'/bots/' . $pre . '/orders/test-notify',
+				array(
+					'methods'             => 'POST',
+					'callback'            => function ( WP_REST_Request $req ) use ( $which, $mod ) {
+						return self::orders_test_notify( $req, $which, $mod );
+					},
+					'permission_callback' => function () use ( $mod ) {
+						return self::perm_manage( $mod );
+					},
+				)
+			);
+
+			register_rest_route(
+				self::NS,
+				'/bots/' . $pre . '/newsletter/subscribers',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => function () use ( $which, $mod ) {
+							return self::newsletter_subscribers_get( $which, $mod );
+						},
+						'permission_callback' => function () use ( $mod ) {
+							return self::perm_manage( $mod );
+						},
+					),
+					array(
+						'methods'             => 'POST',
+						'callback'            => function ( WP_REST_Request $req ) use ( $which, $mod ) {
+							return self::newsletter_subscribers_post( $req, $which, $mod );
+						},
+						'permission_callback' => function () use ( $mod ) {
+							return self::perm_manage( $mod );
+						},
+					),
+				)
+			);
+
+			register_rest_route(
+				self::NS,
+				'/bots/' . $pre . '/newsletter/send',
+				array(
+					'methods'             => 'POST',
+					'callback'            => function ( WP_REST_Request $req ) use ( $which, $mod ) {
+						return self::newsletter_send( $req, $which, $mod );
+					},
+					'permission_callback' => function () use ( $mod ) {
+						return self::perm_manage( $mod );
+					},
+				)
+			);
+
+			register_rest_route(
+				self::NS,
 				'/bots/' . $pre . '/webhook-urls',
 				array(
 					'methods'             => 'GET',
@@ -238,7 +536,449 @@ final class Webino_Dashboard_REST_Bots {
 					},
 				)
 			);
+
+			register_rest_route(
+				self::NS,
+				'/bots/' . $pre . '/stats/advanced',
+				array(
+					'methods'             => 'GET',
+					'callback'            => function () use ( $which, $mod ) {
+						return self::stats_advanced( $which, $mod );
+					},
+					'permission_callback' => function () use ( $mod ) {
+						return self::perm_manage( $mod );
+					},
+				)
+			);
 		}
+
+		self::register_parity_routes();
+	}
+
+	/**
+	 * Shared parity endpoints (admin-ops, c2c, faq, tickets, club, …).
+	 *
+	 * @return void
+	 */
+	private static function register_parity_routes() {
+		static $registered = false;
+		if ( $registered ) {
+			return;
+		}
+		$registered = true;
+
+		$perm = array( __CLASS__, 'perm_any_bot' );
+
+		$shared = array(
+			'admin-ops'          => array(
+				'get'  => static function () {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_Admin_Ops', false ) ) {
+						return new WP_Error( 'admin_ops', __( 'Admin ops unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					return new WP_REST_Response( array( 'settings' => Webino_Dashboard_Bots_Admin_Ops::settings() ) );
+				},
+				'post' => static function ( WP_REST_Request $req ) {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_Admin_Ops', false ) ) {
+						return new WP_Error( 'admin_ops', __( 'Admin ops unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					$params = $req->get_json_params();
+					$saved  = Webino_Dashboard_Bots_Admin_Ops::save_settings( is_array( $params ) ? $params : array() );
+					return new WP_REST_Response( array( 'settings' => $saved ) );
+				},
+			),
+			'c2c'                => array(
+				'get'  => static function () {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_C2C_Gateway', false ) ) {
+						return new WP_Error( 'c2c', __( 'C2C unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					return new WP_REST_Response( array( 'settings' => Webino_Dashboard_Bots_C2C_Gateway::settings() ) );
+				},
+				'post' => static function ( WP_REST_Request $req ) {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_C2C_Gateway', false ) ) {
+						return new WP_Error( 'c2c', __( 'C2C unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					$params = $req->get_json_params();
+					$saved  = Webino_Dashboard_Bots_C2C_Gateway::save_settings( is_array( $params ) ? $params : array() );
+					return new WP_REST_Response( array( 'settings' => $saved ) );
+				},
+			),
+			'faq'                => array(
+				'get'  => static function () {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_FAQ', false ) ) {
+						return new WP_Error( 'faq', __( 'FAQ unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					return new WP_REST_Response( array( 'settings' => Webino_Dashboard_Bots_FAQ::settings() ) );
+				},
+				'post' => static function ( WP_REST_Request $req ) {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_FAQ', false ) ) {
+						return new WP_Error( 'faq', __( 'FAQ unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					$params = $req->get_json_params();
+					$saved  = Webino_Dashboard_Bots_FAQ::save_settings( is_array( $params ) ? $params : array() );
+					return new WP_REST_Response( array( 'settings' => $saved ) );
+				},
+			),
+			'club'               => array(
+				'get'  => static function () {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_Club', false ) ) {
+						return new WP_Error( 'club', __( 'Club unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					return new WP_REST_Response( array( 'settings' => Webino_Dashboard_Bots_Club::settings() ) );
+				},
+				'post' => static function ( WP_REST_Request $req ) {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_Club', false ) ) {
+						return new WP_Error( 'club', __( 'Club unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					$params = $req->get_json_params();
+					$saved  = Webino_Dashboard_Bots_Club::save_settings( is_array( $params ) ? $params : array() );
+					return new WP_REST_Response( array( 'settings' => $saved ) );
+				},
+			),
+			'channel-publisher'  => array(
+				'get'  => static function () {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_Channel_Publisher', false ) ) {
+						return new WP_Error( 'channel', __( 'Channel publisher unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					return new WP_REST_Response( array( 'settings' => Webino_Dashboard_Bots_Channel_Publisher::settings() ) );
+				},
+				'post' => static function ( WP_REST_Request $req ) {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_Channel_Publisher', false ) ) {
+						return new WP_Error( 'channel', __( 'Channel publisher unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					$params = $req->get_json_params();
+					$saved  = Webino_Dashboard_Bots_Channel_Publisher::save_settings( is_array( $params ) ? $params : array() );
+					return new WP_REST_Response( array( 'settings' => $saved ) );
+				},
+			),
+			'site-widgets'       => array(
+				'get'  => static function () {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_Site_Widgets', false ) ) {
+						return new WP_Error( 'widgets', __( 'Site widgets unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					return new WP_REST_Response( array( 'settings' => Webino_Dashboard_Bots_Site_Widgets::settings() ) );
+				},
+				'post' => static function ( WP_REST_Request $req ) {
+					if ( ! class_exists( 'Webino_Dashboard_Bots_Site_Widgets', false ) ) {
+						return new WP_Error( 'widgets', __( 'Site widgets unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+					}
+					$params = $req->get_json_params();
+					$saved  = Webino_Dashboard_Bots_Site_Widgets::save_settings( is_array( $params ) ? $params : array() );
+					return new WP_REST_Response( array( 'settings' => $saved ) );
+				},
+			),
+		);
+
+		foreach ( $shared as $slug => $handlers ) {
+			register_rest_route(
+				self::NS,
+				'/bots/parity/' . $slug,
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => $handlers['get'],
+						'permission_callback' => $perm,
+					),
+					array(
+						'methods'             => array( 'POST', 'PUT', 'PATCH' ),
+						'callback'            => $handlers['post'],
+						'permission_callback' => $perm,
+					),
+				)
+			);
+		}
+
+		register_rest_route(
+			self::NS,
+			'/bots/parity/tickets',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'parity_tickets_get' ),
+					'permission_callback' => $perm,
+				),
+				array(
+					'methods'             => array( 'POST', 'PUT', 'PATCH' ),
+					'callback'            => array( __CLASS__, 'parity_tickets_post' ),
+					'permission_callback' => $perm,
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/bots/parity/templates',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'parity_templates_get' ),
+					'permission_callback' => $perm,
+				),
+				array(
+					'methods'             => array( 'POST', 'PUT', 'PATCH' ),
+					'callback'            => array( __CLASS__, 'parity_templates_post' ),
+					'permission_callback' => $perm,
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/bots/parity/modules',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'parity_modules_get' ),
+					'permission_callback' => $perm,
+				),
+				array(
+					'methods'             => array( 'POST', 'PUT', 'PATCH' ),
+					'callback'            => array( __CLASS__, 'parity_modules_post' ),
+					'permission_callback' => $perm,
+				),
+			)
+		);
+	}
+
+	/**
+	 * Permission: manage WooCommerce and at least one bot module enabled.
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function perm_any_bot() {
+		if ( ! Webino_Dashboard_Rest_Base::can( 'manage_woocommerce' ) ) {
+			return false;
+		}
+		$bale = class_exists( 'Webino_Dashboard_Modules', false ) && Webino_Dashboard_Modules::is_module_enabled( 'bale-bot-module' );
+		$tg   = class_exists( 'Webino_Dashboard_Modules', false ) && Webino_Dashboard_Modules::is_module_enabled( 'telegram-bot-module' );
+		if ( ! $bale && ! $tg ) {
+			return new WP_Error(
+				'webino_module_disabled',
+				__( 'This dashboard module is disabled.', 'webino-dashboard' ),
+				array( 'status' => 403 )
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function parity_tickets_get() {
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Tickets', false ) ) {
+			return new WP_Error( 'tickets', __( 'Tickets unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		return new WP_REST_Response( array( 'items' => Webino_Dashboard_Bots_Tickets::all() ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function parity_tickets_post( WP_REST_Request $req ) {
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Tickets', false ) ) {
+			return new WP_Error( 'tickets', __( 'Tickets unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$params = $req->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+		$action    = isset( $params['action'] ) ? sanitize_key( (string) $params['action'] ) : '';
+		$ticket_id = isset( $params['ticket_id'] ) ? sanitize_text_field( (string) $params['ticket_id'] ) : '';
+		if ( $ticket_id === '' ) {
+			return new WP_Error( 'ticket_id', __( 'ticket_id required.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( 'close' === $action ) {
+			$ok = Webino_Dashboard_Bots_Tickets::close( $ticket_id );
+			return new WP_REST_Response( array( 'ok' => (bool) $ok, 'ticket' => Webino_Dashboard_Bots_Tickets::get( $ticket_id ) ) );
+		}
+		if ( 'reply' === $action ) {
+			$text = isset( $params['text'] ) ? (string) $params['text'] : '';
+			if ( trim( $text ) === '' ) {
+				return new WP_Error( 'text', __( 'Reply text required.', 'webino-dashboard' ), array( 'status' => 400 ) );
+			}
+			$ok = Webino_Dashboard_Bots_Tickets::append( $ticket_id, 'admin', $text );
+			return new WP_REST_Response( array( 'ok' => (bool) $ok, 'ticket' => Webino_Dashboard_Bots_Tickets::get( $ticket_id ) ) );
+		}
+		return new WP_Error( 'action', __( 'Use action=close or action=reply.', 'webino-dashboard' ), array( 'status' => 400 ) );
+	}
+
+	/**
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function parity_templates_get() {
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Templates', false ) ) {
+			return new WP_Error( 'templates', __( 'Templates unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		return new WP_REST_Response( array( 'settings' => Webino_Dashboard_Bots_Templates::settings() ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function parity_templates_post( WP_REST_Request $req ) {
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Templates', false ) ) {
+			return new WP_Error( 'templates', __( 'Templates unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$params = $req->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+		if ( ! empty( $params['preview'] ) ) {
+			$tpl  = isset( $params['template'] ) ? (string) $params['template'] : ( isset( $params['key'] ) ? (string) $params['key'] : '' );
+			$vars = isset( $params['vars'] ) && is_array( $params['vars'] ) ? $params['vars'] : array();
+			$safe = array();
+			foreach ( $vars as $k => $v ) {
+				if ( is_scalar( $v ) ) {
+					$safe[ sanitize_key( (string) $k ) ] = (string) $v;
+				}
+			}
+			return new WP_REST_Response(
+				array(
+					'preview' => Webino_Dashboard_Bots_Templates::preview( $tpl, $safe ),
+				)
+			);
+		}
+		$saved = Webino_Dashboard_Bots_Templates::save_settings( $params );
+		return new WP_REST_Response( array( 'settings' => $saved ) );
+	}
+
+	/**
+	 * @return WP_REST_Response
+	 */
+	public static function parity_modules_get() {
+		$raw = get_option( 'webino_dashboard_bots_modules', array() );
+		return new WP_REST_Response( array( 'modules' => is_array( $raw ) ? $raw : array() ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @return WP_REST_Response
+	 */
+	public static function parity_modules_post( WP_REST_Request $req ) {
+		$params = $req->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+		$cur = get_option( 'webino_dashboard_bots_modules', array() );
+		if ( ! is_array( $cur ) ) {
+			$cur = array();
+		}
+		$src = isset( $params['modules'] ) && is_array( $params['modules'] ) ? $params['modules'] : $params;
+		foreach ( $src as $key => $val ) {
+			$k = sanitize_key( (string) $key );
+			if ( $k === '' ) {
+				continue;
+			}
+			$cur[ $k ] = ! empty( $val ) && '0' !== (string) $val ? '1' : '0';
+		}
+		update_option( 'webino_dashboard_bots_modules', $cur, false );
+		return new WP_REST_Response( array( 'modules' => $cur ) );
+	}
+
+	/**
+	 * Advanced stats: sales by payment method, abandon recovery, coupon counts.
+	 *
+	 * @param string $which bale|telegram.
+	 * @param string $mod   Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function stats_advanced( $which, $mod ) {
+		unset( $mod );
+		Webino_Dashboard_Bots_Loader::register_autoloaders();
+		$ctx = self::require_bot_ctx( $which );
+		if ( is_wp_error( $ctx ) ) {
+			return $ctx;
+		}
+
+		$by_method = array(
+			'wallet'  => array( 'count' => 0, 'total' => 0.0 ),
+			'c2c'     => array( 'count' => 0, 'total' => 0.0 ),
+			'gateway' => array( 'count' => 0, 'total' => 0.0 ),
+			'other'   => array( 'count' => 0, 'total' => 0.0 ),
+		);
+
+		if ( function_exists( 'wc_get_orders' ) ) {
+			$provider_mq = array(
+				'key'   => '_woobale_provider',
+				'value' => $which,
+			);
+			if ( 'bale' === $which ) {
+				$provider_mq = array(
+					'relation' => 'OR',
+					array(
+						'key'   => '_woobale_provider',
+						'value' => 'bale',
+					),
+					array(
+						'key'     => '_woobale_provider',
+						'compare' => 'NOT EXISTS',
+					),
+				);
+			}
+			$orders = wc_get_orders(
+				array(
+					'limit'        => 500,
+					'status'       => array( 'wc-processing', 'wc-completed', 'processing', 'completed' ),
+					'return'       => 'objects',
+					'meta_query'   => array(
+						'relation' => 'AND',
+						array(
+							'key'   => '_woobale_source',
+							'value' => '1',
+						),
+						$provider_mq,
+					),
+					'date_created' => ( time() - 90 * DAY_IN_SECONDS ) . '...' . time(),
+				)
+			);
+			if ( is_array( $orders ) ) {
+				foreach ( $orders as $order ) {
+					if ( ! $order instanceof WC_Order ) {
+						continue;
+					}
+					$pm     = (string) $order->get_meta( '_woobale_payment_method' );
+					$method = (string) $order->get_payment_method();
+					$bucket = 'other';
+					if ( 'wallet' === $pm || 'bale_wallet' === $method ) {
+						$bucket = 'wallet';
+					} elseif ( 'c2c' === $pm || false !== strpos( $method, 'c2c' ) ) {
+						$bucket = 'c2c';
+					} elseif ( $method !== '' || 'gateway' === $pm ) {
+						$bucket = 'gateway';
+					}
+					++$by_method[ $bucket ]['count'];
+					$by_method[ $bucket ]['total'] += (float) $order->get_total();
+				}
+			}
+		}
+
+		$coupon_q = new WP_Query(
+			array(
+				'post_type'      => 'shop_coupon',
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_key'       => '_webino_bot_coupon',
+				'meta_value'     => '1',
+			)
+		);
+		$coupon_count = (int) $coupon_q->found_posts;
+
+		$abandon_sent = (int) get_option( 'webino_dashboard_bots_abandon_sent_' . $which, 0 );
+		$abandon_recovered = (int) get_option( 'webino_dashboard_bots_abandon_recovered_' . $which, 0 );
+
+		return new WP_REST_Response(
+			array(
+				'sales_by_payment' => $by_method,
+				'bot_coupons'      => $coupon_count,
+				'abandon'          => array(
+					'sent'      => $abandon_sent,
+					'recovered' => $abandon_recovered,
+				),
+				'window_days'      => 90,
+			)
+		);
 	}
 
 	/**
@@ -278,6 +1018,43 @@ final class Webino_Dashboard_REST_Bots {
 	 * @param string $mod   Module id.
 	 * @return WP_REST_Response|WP_Error
 	 */
+	/**
+	 * @param string $which bale|telegram.
+	 * @param string $mod   Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function connection_status( $which, $mod ) {
+		unset( $mod );
+		$client = self::client( $which );
+		if ( null === $client ) {
+			return new WP_REST_Response(
+				array(
+					'ok'    => false,
+					'error' => __( 'Bot token is not set.', 'webino-dashboard' ),
+				)
+			);
+		}
+		$me = $client->get_me();
+		$wh = $client->get_webhook_info();
+		$ok = is_array( $me ) && ! empty( $me['ok'] );
+		$username = ( $ok && isset( $me['result']['username'] ) ) ? (string) $me['result']['username'] : '';
+		$err      = '';
+		if ( ! $ok ) {
+			$err_cls = 'telegram' === $which ? \Webino_Dashboard_Bots_Telegram\Bale\Client::class : \Webino_Dashboard_Bots_Bale\Bale\Client::class;
+			$err     = $err_cls::summarize_error( is_array( $me ) ? $me : $wh );
+		}
+		return new WP_REST_Response(
+			array(
+				'ok'      => (bool) $ok,
+				'bot'     => array( 'username' => $username ),
+				'webhook' => array(
+					'url' => is_array( $wh ) && isset( $wh['result']['url'] ) ? (string) $wh['result']['url'] : '',
+				),
+				'error'   => $err,
+			)
+		);
+	}
+
 	private static function dashboard_stats( $which, $mod ) {
 		unset( $mod );
 		Webino_Dashboard_Bots_Loader::register_autoloaders();
@@ -308,7 +1085,7 @@ final class Webino_Dashboard_REST_Bots {
 			$orders_out[] = array(
 				'id'          => $order->get_id(),
 				'number'      => $order->get_order_number(),
-				'total_text'  => wp_strip_all_tags( $order->get_formatted_order_total() ),
+				'total_text'  => self::sanitize_price_text( $order->get_formatted_order_total() ),
 				'status'      => $order->get_status(),
 				'status_name' => wc_get_order_status_name( $order->get_status() ),
 				'date'        => $order->get_date_created() ? $order->get_date_created()->date_i18n( get_option( 'date_format' ) ) : '',
@@ -343,14 +1120,14 @@ final class Webino_Dashboard_REST_Bots {
 						'count'      => (int) ( $sales_cmp['current']['count'] ?? 0 ),
 						'total'      => (float) ( $sales_cmp['current']['total'] ?? 0 ),
 						'total_text' => function_exists( 'wc_price' )
-							? wp_strip_all_tags( wc_price( (float) ( $sales_cmp['current']['total'] ?? 0 ) ) )
+							? self::sanitize_price_text( wc_price( (float) ( $sales_cmp['current']['total'] ?? 0 ) ) )
 							: '',
 					),
 					'previous' => array(
 						'count'      => (int) ( $sales_cmp['previous']['count'] ?? 0 ),
 						'total'      => (float) ( $sales_cmp['previous']['total'] ?? 0 ),
 						'total_text' => function_exists( 'wc_price' )
-							? wp_strip_all_tags( wc_price( (float) ( $sales_cmp['previous']['total'] ?? 0 ) ) )
+							? self::sanitize_price_text( wc_price( (float) ( $sales_cmp['previous']['total'] ?? 0 ) ) )
 							: '',
 					),
 				),
@@ -592,8 +1369,24 @@ final class Webino_Dashboard_REST_Bots {
 			'caption' => $text,
 			'media'   => $media,
 		);
-		$res     = $broadcast_class::start( $payload );
-		$status  = ! empty( $res['ok'] ) ? 200 : 400;
+		$start_args = array();
+		$segment    = isset( $params['segment'] ) ? sanitize_key( (string) $params['segment'] ) : '';
+		if ( $segment !== '' && class_exists( 'Webino_Dashboard_Bots_Segments', false ) ) {
+			$seg_args = array(
+				'provider' => $which,
+			);
+			if ( isset( $params['product_id'] ) ) {
+				$seg_args['product_id'] = (int) $params['product_id'];
+			}
+			if ( isset( $params['days'] ) ) {
+				$seg_args['days'] = (int) $params['days'];
+			}
+			$start_args['user_ids'] = Webino_Dashboard_Bots_Segments::resolve_user_ids( $segment, $seg_args );
+		} elseif ( isset( $params['user_ids'] ) && is_array( $params['user_ids'] ) ) {
+			$start_args['user_ids'] = array_map( 'absint', $params['user_ids'] );
+		}
+		$res    = $broadcast_class::start( $payload, $start_args );
+		$status = ! empty( $res['ok'] ) ? 200 : 400;
 		return new WP_REST_Response( $res, $status );
 	}
 
@@ -748,12 +1541,219 @@ final class Webino_Dashboard_REST_Bots {
 	/**
 	 * @param string $which bale|telegram.
 	 * @param string $mod   Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function shop_notify_get( $which, $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Order_Notify', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Shop bot notify unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		return new WP_REST_Response(
+			array(
+				'provider'      => $which,
+				'shop_notify'   => Webino_Dashboard_Bots_Order_Notify::get_shop_notify( $which ),
+				'event_catalog' => Webino_Dashboard_Bots_Order_Notify::event_catalog(),
+				'shortcodes'    => Webino_Dashboard_Bots_Order_Notify::shortcodes(),
+			)
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @param string          $which bale|telegram.
+	 * @param string          $mod Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function shop_notify_post( WP_REST_Request $req, $which, $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Order_Notify', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Shop bot notify unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$params = $req->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+		$sn = isset( $params['shop_notify'] ) && is_array( $params['shop_notify'] ) ? $params['shop_notify'] : $params;
+		$saved = Webino_Dashboard_Bots_Order_Notify::save_shop_notify( $which, $sn );
+		return new WP_REST_Response(
+			array(
+				'provider'      => $which,
+				'shop_notify'   => $saved,
+				'event_catalog' => Webino_Dashboard_Bots_Order_Notify::event_catalog(),
+				'shortcodes'    => Webino_Dashboard_Bots_Order_Notify::shortcodes(),
+			)
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @param string          $which bale|telegram.
+	 * @param string          $mod Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function orders_test_notify( WP_REST_Request $req, $which, $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Order_Notify', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Shop bot notify unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$params    = $req->get_json_params();
+		$params    = is_array( $params ) ? $params : array();
+		$event_key = sanitize_key( (string) ( $params['event_key'] ?? 'processing' ) );
+		$order_id  = absint( $params['order_id'] ?? 0 );
+		$role      = sanitize_key( (string) ( $params['role'] ?? 'admin' ) );
+
+		if ( $order_id > 0 && function_exists( 'wc_get_order' ) ) {
+			$order = wc_get_order( $order_id );
+			if ( ! $order ) {
+				return new WP_Error( 'not_found', __( 'Order not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
+			}
+			$snapshot = Webino_Dashboard_Bots_Order_Notify::build_order_snapshot( $order );
+		} else {
+			$snapshot = array(
+				'id'               => 0,
+				'number'           => 'TEST',
+				'customer_name'    => 'Test Customer',
+				'customer_phone'   => '',
+				'mobile'           => '',
+				'customer_email'   => '',
+				'customer_user_id' => 0,
+				'total'            => '0',
+				'price'            => '0',
+				'status'           => 'processing',
+				'status_label'     => 'Processing',
+				'site_name'        => get_bloginfo( 'name' ),
+				'site_url'         => home_url(),
+			);
+		}
+
+		$sn = Webino_Dashboard_Bots_Order_Notify::get_shop_notify( $which );
+		$scope = 'admin' === $role ? 'order_admin' : 'order_customer';
+		$body  = isset( $sn['templates'][ $scope ][ $event_key ] ) ? trim( (string) $sn['templates'][ $scope ][ $event_key ] ) : '';
+		if ( '' === $body ) {
+			$body = sprintf(
+				/* translators: %s: event key */
+				__( 'Test bot notify — event %s — order {order_number} ({status_label})', 'webino-dashboard' ),
+				$event_key
+			);
+		}
+		$text = Webino_Dashboard_Bots_Order_Notify::render_template( $body, array_merge( $snapshot, array( 'order_id' => (string) ( $snapshot['id'] ?? '' ), 'order_number' => (string) ( $snapshot['number'] ?? '' ) ) ) );
+
+		$sent = 0;
+		if ( 'admin' === $role ) {
+			foreach ( $sn['admin_chat_ids'] as $chat ) {
+				Webino_Dashboard_Bots_Loader::register_autoloaders();
+				if ( 'telegram' === $which ) {
+					$res = \Webino_Dashboard_Bots_Telegram\Messaging\OutboundMessenger::send_text_to_chat( (string) $chat, $text );
+				} else {
+					$res = \Webino_Dashboard_Bots_Bale\Messaging\OutboundMessenger::send_text_to_chat( (string) $chat, $text );
+				}
+				if ( ! empty( $res['ok'] ) ) {
+					++$sent;
+				}
+			}
+		} else {
+			$chat = '';
+			if ( ! empty( $params['chat_id'] ) ) {
+				$chat = sanitize_text_field( (string) $params['chat_id'] );
+			} elseif ( ! empty( $snapshot['customer_user_id'] ) ) {
+				$meta = 'telegram' === $which ? 'webino_dashboard_telegram_chat_id' : 'woobale_chat_id';
+				$chat = (string) get_user_meta( (int) $snapshot['customer_user_id'], $meta, true );
+			}
+			if ( '' === $chat ) {
+				return new WP_Error( 'no_chat', __( 'No customer chat id for test.', 'webino-dashboard' ), array( 'status' => 400 ) );
+			}
+			Webino_Dashboard_Bots_Loader::register_autoloaders();
+			if ( 'telegram' === $which ) {
+				$res = \Webino_Dashboard_Bots_Telegram\Messaging\OutboundMessenger::send_text_to_chat( $chat, $text );
+			} else {
+				$res = \Webino_Dashboard_Bots_Bale\Messaging\OutboundMessenger::send_text_to_chat( $chat, $text );
+			}
+			if ( ! empty( $res['ok'] ) ) {
+				++$sent;
+			}
+		}
+
+		return new WP_REST_Response(
+			array(
+				'ok'   => $sent > 0,
+				'sent' => $sent,
+			)
+		);
+	}
+
+	/**
+	 * @param string $which bale|telegram.
+	 * @param string $mod Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function newsletter_subscribers_get( $which, $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Order_Notify', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Shop bot notify unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		return new WP_REST_Response(
+			array(
+				'subscribers' => Webino_Dashboard_Bots_Order_Notify::list_subscribers( $which, false ),
+			)
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @param string          $which bale|telegram.
+	 * @param string          $mod Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function newsletter_subscribers_post( WP_REST_Request $req, $which, $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Order_Notify', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Shop bot notify unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$params  = $req->get_json_params();
+		$params  = is_array( $params ) ? $params : array();
+		$user_id = absint( $params['user_id'] ?? 0 );
+		$opt_in  = ! isset( $params['opt_in'] ) || ! empty( $params['opt_in'] );
+		if ( $user_id < 1 ) {
+			return new WP_Error( 'invalid', __( 'Invalid user.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		Webino_Dashboard_Bots_Order_Notify::set_subscriber_opt_in( $which, $user_id, $opt_in );
+		return new WP_REST_Response(
+			array(
+				'ok'          => true,
+				'subscribers' => Webino_Dashboard_Bots_Order_Notify::list_subscribers( $which, false ),
+			)
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @param string          $which bale|telegram.
+	 * @param string          $mod Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function newsletter_send( WP_REST_Request $req, $which, $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Order_Notify', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Shop bot notify unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$params  = $req->get_json_params();
+		$message = is_array( $params ) && isset( $params['message'] ) ? (string) $params['message'] : '';
+		$res     = Webino_Dashboard_Bots_Order_Notify::send_newsletter( $which, $message );
+		return new WP_REST_Response( $res );
+	}
+
+	/**
+	 * @param string $which bale|telegram.
+	 * @param string $mod   Module id.
 	 * @return WP_REST_Response
 	 */
 	private static function settings_get( $which, $mod ) {
 		unset( $mod );
 		$raw = self::get_settings_array( $which );
 		$out = self::mask_secrets( $raw );
+		if ( class_exists( 'Webino_Dashboard_Bots_Loyalty', false ) ) {
+			$out['loyalty'] = Webino_Dashboard_Bots_Loyalty::settings();
+		}
 		return new WP_REST_Response( $out );
 	}
 
@@ -770,10 +1770,16 @@ final class Webino_Dashboard_REST_Bots {
 		if ( ! is_array( $params ) ) {
 			$params = array();
 		}
-		foreach ( array( 'bot_token', 'provider_token', 'bot_token_sandbox' ) as $secret_key ) {
+		$had_new_bot_token = isset( $params['bot_token'] ) && is_string( $params['bot_token'] ) && false === strpos( $params['bot_token'], '…' ) && '' !== trim( $params['bot_token'] );
+		foreach ( array( 'bot_token', 'provider_token', 'bot_token_sandbox', 'webhook_secret' ) as $secret_key ) {
 			if ( isset( $params[ $secret_key ] ) && is_string( $params[ $secret_key ] ) && false !== strpos( $params[ $secret_key ], '…' ) ) {
 				unset( $params[ $secret_key ] );
 			}
+		}
+
+		if ( isset( $params['loyalty'] ) && is_array( $params['loyalty'] ) && class_exists( 'Webino_Dashboard_Bots_Loyalty', false ) ) {
+			Webino_Dashboard_Bots_Loyalty::save_settings( $params['loyalty'] );
+			unset( $params['loyalty'] );
 		}
 
 		if ( 'telegram' === $which ) {
@@ -784,7 +1790,26 @@ final class Webino_Dashboard_REST_Bots {
 			\Webino_Dashboard_Bots_Bale\Core\Plugin::update_settings( $merged );
 		}
 
-		return new WP_REST_Response( self::mask_secrets( self::get_settings_array( $which ) ) );
+		// After a real bot token change, re-register webhook so Bale points at our REST URL.
+		if ( $had_new_bot_token && '1' === (string) get_option( 'webino_dashboard_' . $which . '_webhook_configured', '' ) ) {
+			$client = self::client( $which );
+			if ( null !== $client ) {
+				$pre    = 'bale' === $which ? 'bale' : 'telegram';
+				$url    = esc_url_raw( rest_url( self::NS . '/bots/' . $pre . '/webhook' ) );
+				$s      = self::get_settings_array( $which );
+				$secret = isset( $s['webhook_secret'] ) ? trim( (string) $s['webhook_secret'] ) : '';
+				$res    = $client->set_webhook( $url, $secret !== '' ? $secret : null );
+				if ( is_array( $res ) && ! empty( $res['ok'] ) ) {
+					update_option( 'webino_dashboard_' . $which . '_webhook_configured', '1', false );
+				}
+			}
+		}
+
+		$out = self::mask_secrets( self::get_settings_array( $which ) );
+		if ( class_exists( 'Webino_Dashboard_Bots_Loyalty', false ) ) {
+			$out['loyalty'] = Webino_Dashboard_Bots_Loyalty::settings();
+		}
+		return new WP_REST_Response( $out );
 	}
 
 	/**
@@ -887,5 +1912,109 @@ final class Webino_Dashboard_REST_Bots {
 			}
 		}
 		return $s;
+	}
+
+	/**
+	 * @param string $mod Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function bot_coupons_list( $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'WC_Coupon', false ) ) {
+			return new WP_Error( 'wc', __( 'WooCommerce coupons unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$q = new WP_Query(
+			array(
+				'post_type'      => 'shop_coupon',
+				'post_status'    => 'publish',
+				'posts_per_page' => 50,
+				'meta_key'       => '_webino_bot_coupon',
+				'meta_value'     => '1',
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+		$items = array();
+		foreach ( $q->posts as $post ) {
+			$c = new WC_Coupon( $post->ID );
+			$items[] = array(
+				'id'     => $post->ID,
+				'code'   => $c->get_code(),
+				'amount' => (float) $c->get_amount(),
+				'type'   => $c->get_discount_type(),
+			);
+		}
+		return new WP_REST_Response( array( 'items' => $items ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @param string          $mod Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function bot_coupons_create( WP_REST_Request $req, $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'WC_Coupon', false ) ) {
+			return new WP_Error( 'wc', __( 'WooCommerce coupons unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$params = $req->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+		$code   = isset( $params['code'] ) ? wc_format_coupon_code( (string) $params['code'] ) : '';
+		$amount = isset( $params['amount'] ) ? (float) $params['amount'] : 0;
+		$type   = isset( $params['type'] ) ? sanitize_key( (string) $params['type'] ) : 'percent';
+		if ( $code === '' ) {
+			$code = 'BOT' . strtoupper( wp_generate_password( 6, false, false ) );
+		}
+		if ( $amount <= 0 ) {
+			return new WP_Error( 'amount', __( 'Enter a valid coupon amount.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( ! in_array( $type, array( 'percent', 'fixed_cart', 'fixed_product' ), true ) ) {
+			$type = 'percent';
+		}
+		$c = new WC_Coupon();
+		$c->set_code( $code );
+		$c->set_discount_type( $type );
+		$c->set_amount( $amount );
+		$c->update_meta_data( '_webino_bot_coupon', '1' );
+		$id = $c->save();
+		if ( ! $id ) {
+			return new WP_Error( 'create', __( 'Could not create coupon.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		}
+		return new WP_REST_Response(
+			array(
+				'ok'   => true,
+				'id'   => $id,
+				'code' => $c->get_code(),
+			),
+			201
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $req Request.
+	 * @param string          $mod Module id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function user_block( WP_REST_Request $req, $mod ) {
+		unset( $mod );
+		if ( ! class_exists( 'Webino_Dashboard_Bots_Loyalty', false ) ) {
+			return new WP_Error( 'loyalty', __( 'Loyalty unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$uid = (int) $req['id'];
+		if ( $uid < 1 || ! get_userdata( $uid ) ) {
+			return new WP_Error( 'user', __( 'User not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
+		}
+		$params  = $req->get_json_params();
+		$blocked = is_array( $params ) ? ! empty( $params['blocked'] ) : true;
+		Webino_Dashboard_Bots_Loyalty::set_blocked( $uid, (bool) $blocked );
+		return new WP_REST_Response(
+			array(
+				'ok'      => true,
+				'user_id' => $uid,
+				'blocked' => Webino_Dashboard_Bots_Loyalty::is_blocked( $uid ),
+			)
+		);
 	}
 }

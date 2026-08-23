@@ -1,0 +1,1 @@
+import{Navigate as e}from"react-router-dom";import{jsx as t}from"react/jsx-runtime";function n(){return t(e,{to:`/reports/overview`,replace:!0})}export{n as default};

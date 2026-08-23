@@ -1,11 +1,19 @@
+import { Navigate, useParams } from 'react-router-dom'
+
 import { ModuleDynamicRoute } from '@/components/ModuleDynamicRoute'
-import { SettingsSectionLayout } from '@/layouts/SettingsSectionLayout'
-import { shopNavItems } from '@/pages/settings/shop/settings-shop-nav'
+import { SettingsModulesChrome } from '@/components/settings/SettingsModulesChrome'
+import { resolveWfcpPricingTab } from '@/pages/settings/shop/wfcpPricingTabs'
 
 export default function SettingsShopPricingPage() {
+  const { tab } = useParams()
+  const resolved = resolveWfcpPricingTab(tab)
+  if (tab && tab !== resolved) {
+    return <Navigate to={`/settings/shop/pricing/${resolved}`} replace />
+  }
+
   return (
-    <SettingsSectionLayout titleKey="settings.shop.title" descriptionKey="settings.shop.description" navItems={shopNavItems()}>
+    <SettingsModulesChrome>
       <ModuleDynamicRoute slug="wfcp-module" routePath="settings/shop/pricing/:tab" />
-    </SettingsSectionLayout>
+    </SettingsModulesChrome>
   )
 }

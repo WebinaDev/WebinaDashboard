@@ -8,6 +8,7 @@ export type SettingsShopSectionId =
   | 'payments'
   | 'invoices'
   | 'sms'
+  | 'bots'
   | 'emails'
   | 'advanced'
   | 'pricing'
@@ -22,6 +23,7 @@ export const SHOP_SECTIONS: SettingsShopSectionId[] = [
   'payments',
   'invoices',
   'sms',
+  'bots',
   'emails',
   'advanced',
   'pricing',

@@ -9,7 +9,10 @@ const EDITOR_ALLOWED_TAGS = [
   'i',
   's',
   'strike',
+  'u',
   'h2',
+  'h3',
+  'h4',
   'ul',
   'ol',
   'li',
@@ -18,9 +21,33 @@ const EDITOR_ALLOWED_TAGS = [
   'code',
   'a',
   'img',
+  'hr',
+  'table',
+  'thead',
+  'tbody',
+  'tr',
+  'th',
+  'td',
+  'span',
+  'sub',
+  'sup',
+  'mark',
 ]
 
-const EDITOR_ALLOWED_ATTR = ['href', 'src', 'alt', 'title', 'target', 'rel']
+const EDITOR_ALLOWED_ATTR = [
+  'href',
+  'src',
+  'alt',
+  'title',
+  'target',
+  'rel',
+  'style',
+  'class',
+  'colspan',
+  'rowspan',
+  'width',
+  'height',
+]
 
 let purify: ReturnType<typeof createDOMPurify> | null = null
 
@@ -36,4 +63,28 @@ export function sanitizeEditorHtml(html: string): string {
     ALLOWED_TAGS: EDITOR_ALLOWED_TAGS,
     ALLOWED_ATTR: EDITOR_ALLOWED_ATTR,
   })
+}
+
+export function editorPlainText(html: string): string {
+  const stripped = sanitizeEditorHtml(html)
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return stripped
+}
+
+export function editorTextCounts(html: string): { chars: number; words: number } {
+  const text = editorPlainText(html)
+  if (!text) {
+    return { chars: 0, words: 0 }
+  }
+  return {
+    chars: text.length,
+    words: text.split(/\s+/).filter(Boolean).length,
+  }
 }

@@ -62,6 +62,11 @@ export interface MarketplaceSettingsSection {
   title: string
   area: 'site' | 'shop'
   route: string
+  moduleSlug?: string
+  sectionId?: string
+  moduleTitle?: string
+  titleKey?: string
+  parentSlug?: string
 }
 
 export interface MarketplaceInstallJobStatus {

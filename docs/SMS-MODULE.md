@@ -34,16 +34,18 @@ For **stock-low** / **stock-out**, enable the **admin** toggle (customer SMS usu
 
 ## Order events (`event_key`)
 
+Catalog is built from `wc_get_order_statuses()` on the site (any custom status is included). Built-in aliases:
+
 | Key | When (dashboard hook) |
 |-----|------------------------|
 | `pending_on_create` | Checkout processed, status pending |
 | `pending_on_status` | Status → pending |
-| `processing` | Status → processing |
-| `sent-to-warehouse`, `packaged`, `courier`, `post`, `tipax` | Custom WC statuses (filter: `webino_dashboard_sms_custom_status_map`) |
-| `on-hold`, `completed`, `cancelled`, `refunded`, `failed`, `checkout-draft` | Standard WC |
+| Standard / custom WC slugs | Status change (`event_for_status`) |
 | `post-barcode` | `webino_dashboard_order_post_barcode_saved` |
 | `stock-low` | `woocommerce_low_stock` or `webino_dashboard_product_stock_low` |
 | `stock-out` | `woocommerce_no_stock` or `webino_dashboard_product_stock_out` |
+
+Realtime path: Woo hook → shutdown queue → non-blocking `crm_post_async` → CRM `orders/notify` → Edge pattern send.
 
 ## Stock / warehouse integration
 
@@ -63,7 +65,11 @@ PHP bootstrap: [`Modules/sms-panel-module/bootstrap.php`](../../Modules/sms-pane
 
 ## Shortcodes
 
-`{order_id}`, `{order_number}`, `{customer_name}`, `{customer_phone}`, `{total}`, `{status}`, `{status_label}`, `{tracking}`, `{barcode}`, `{site_name}`, `{site_url}`, `{code}`, `{product_name}`, `{product_url}`, `{qty}`, `{stock_quantity}`, `{low_stock_amount}`.
+`{order_id}`, `{order_number}`, `{customer_name}`, `{customer_phone}`, `{customer_email}`, `{total}`, `{status}`, `{status_label}`, `{tracking}`, `{barcode}`, `{items}`, `{items_qty}`, `{payment_method}`, `{shipping_method}`, `{transaction_id}`, `{billing_address}`, `{shipping_address}`, `{order_date}`, `{site_name}`, `{site_url}`, `{code}`, `{product_name}`, `{product_url}`, `{qty}`, `{stock_quantity}`, `{low_stock_amount}`.
+
+**Order SMS is pattern-only:** if the IPPanel pattern is not synced for that event/role, the send is skipped (`pattern_missing`) — no webservice fallback.
+
+Event catalog comes from `wc_get_order_statuses()` on the customer site (plus extras: `pending_on_create`, `post-barcode`, `stock-low`, `stock-out`). Custom WC statuses are included automatically.
 
 ## Marketing panel
 

@@ -17,24 +17,42 @@ export type SettingsNavItem = {
 type SettingsSectionLayoutProps = {
   titleKey: string
   descriptionKey?: string
+  eyebrowKey?: string
   navItems: SettingsNavItem[]
+  /** Optional block above the main content (e.g. module cards). */
+  modulesSlot?: ReactNode
   children: ReactNode
 }
 
-export function SettingsSectionLayout({ titleKey, descriptionKey, navItems, children }: SettingsSectionLayoutProps) {
+/** Legacy layout — horizontal section chips only (no vertical sidebar). Prefer SettingsModulesChrome. */
+export function SettingsSectionLayout({
+  titleKey,
+  descriptionKey,
+  eyebrowKey,
+  navItems,
+  modulesSlot,
+  children,
+}: SettingsSectionLayoutProps) {
   const { t } = useTranslation()
 
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     cn(
-      'rounded-md px-3 py-2 text-sm transition-colors',
-      isActive ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+      'shrink-0 snap-start rounded-xl px-3.5 py-2 text-sm whitespace-nowrap transition-colors',
+      isActive
+        ? 'bg-primary/10 font-medium text-primary'
+        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
     )
 
   return (
-    <PageShell title={t(titleKey)} description={descriptionKey ? t(descriptionKey) : undefined}>
-      <div className="flex flex-col gap-6 lg:flex-row">
+    <PageShell
+      title={t(titleKey)}
+      description={descriptionKey ? t(descriptionKey) : undefined}
+      eyebrow={eyebrowKey ? t(eyebrowKey) : undefined}
+    >
+      <div className="flex w-full min-w-0 flex-col gap-4">
+        {modulesSlot}
         <nav
-          className="flex shrink-0 flex-wrap gap-1 border-b border-border pb-2 lg:w-56 lg:flex-col lg:border-b-0 lg:border-e lg:pb-0 lg:pe-4"
+          className="wd-settings-tabs-scroll flex w-full min-w-0 gap-1.5 overflow-x-auto overscroll-x-contain touch-pan-x border-b border-border pb-2 snap-x snap-mandatory"
           aria-label={t('settings.sectionNav')}
         >
           {navItems.map((item) => {
@@ -47,7 +65,7 @@ export function SettingsSectionLayout({ titleKey, descriptionKey, navItems, chil
             )
           })}
         </nav>
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 space-y-4">{children}</div>
       </div>
     </PageShell>
   )

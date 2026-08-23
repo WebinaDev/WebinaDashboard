@@ -1,4 +1,4 @@
-import { ExternalLink, Maximize, Minimize } from 'lucide-react'
+import { EllipsisVertical, ExternalLink, Maximize, Minimize } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
@@ -16,6 +16,14 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
 import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
@@ -186,24 +194,24 @@ export function DashboardLayout() {
         onLogout={() => void logout()}
       />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex w-full items-center gap-2 px-4">
+        <header className="flex h-14 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 sm:h-16">
+          <div className="flex w-full min-w-0 items-center gap-2 px-3 sm:px-4">
             <SidebarTrigger className="-ms-1" />
-            <Separator orientation="vertical" className="me-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
+            <Separator orientation="vertical" className="me-2 hidden data-[orientation=vertical]:h-4 sm:block" />
+            <Breadcrumb className="min-w-0 flex-1 overflow-hidden">
+              <BreadcrumbList className="flex-nowrap">
                 <BreadcrumbItem className="hidden md:block">
                   <BreadcrumbLink asChild>
                     <Link to="/">{t('nav.overview')}</Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{headerTitle}</BreadcrumbPage>
+                <BreadcrumbItem className="min-w-0">
+                  <BreadcrumbPage className="truncate">{headerTitle}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <div className="ms-auto flex items-center gap-2">
+            <div className="ms-auto hidden items-center gap-2 md:flex">
               <Button
                 type="button"
                 variant="outline"
@@ -227,9 +235,38 @@ export function DashboardLayout() {
               <AccentMenu />
               <ThemeMenu />
             </div>
+            <div className="ms-auto flex items-center gap-1 md:hidden">
+              <ThemeMenu />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="outline" size="icon" aria-label={t('nav.moreActions')}>
+                    <EllipsisVertical className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuLabel>{t('nav.moreActions')}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => void toggleFs()}>
+                    {fs ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+                    {t('nav.fullscreen')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href={siteUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="size-4" />
+                      {t('nav.visitSite')}
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <div className="flex flex-col gap-2 px-2 py-1.5">
+                    <LanguageMenu />
+                    <AccentMenu />
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </header>
-        <div className="@container/main flex min-w-0 flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="@container/main wd-app-atmosphere flex min-w-0 flex-1 flex-col gap-3 p-3 pt-0 sm:gap-4 sm:p-4 sm:pt-0">
           {bq.isError ? (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-sm" role="alert">
               {t('errors.restUnavailable')}

@@ -1350,6 +1350,42 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
+	 * Fire-and-forget POST to CRM (non-blocking). Used for realtime order SMS.
+	 *
+	 * @param string              $path Relative path under site root.
+	 * @param array<string,mixed> $body Body fields.
+	 * @return void
+	 */
+	public function crm_post_async( $path, array $body = array() ) {
+		$domain  = isset( $body['domain'] ) ? $this->normalize_site_domain( (string) $body['domain'] ) : $this->get_current_domain();
+		$payload = $this->build_request_body( array_merge( $body, array( 'domain' => $domain ) ) );
+		$path    = ltrim( (string) $path, '/' );
+		$bases   = $this->get_request_bases();
+		if ( ! $bases ) {
+			return;
+		}
+		$base     = $bases[0];
+		$url      = trailingslashit( $base ) . $path;
+		$is_local = $this->is_local_bypass_base( $base );
+		$headers  = array(
+			'Content-Type' => 'application/json; charset=utf-8',
+		);
+		if ( $is_local ) {
+			$headers['Host'] = $this->crm_public_host();
+		}
+		wp_remote_post(
+			$url,
+			array(
+				'timeout'   => 0.01,
+				'blocking'  => false,
+				'headers'   => $headers,
+				'body'      => wp_json_encode( $payload ),
+				'sslverify' => $this->should_verify_ssl_for_base( $base ),
+			)
+		);
+	}
+
+	/**
 	 * GET JSON from CRM REST.
 	 *
 	 * @param string              $path    Relative path.
@@ -1363,9 +1399,12 @@ final class Webino_Dashboard_License {
 		$timeout      = isset( $options['timeout'] ) ? max( 2, (int) $options['timeout'] ) : $this->crm_get_http_timeout();
 		$wall_cap     = isset( $options['wall_cap'] ) ? max( 3, (int) $options['wall_cap'] ) : $this->crm_get_wall_clock_cap();
 		$wall_started = microtime( true );
+		$last_error   = '';
+		$last_code    = 0;
 
 		foreach ( $this->get_request_bases() as $base ) {
 			if ( ( microtime( true ) - $wall_started ) >= $wall_cap ) {
+				$last_error = __( 'CRM request timed out.', 'webino-dashboard' );
 				break;
 			}
 			$url      = add_query_arg( $query, trailingslashit( $base ) . $path );
@@ -1383,6 +1422,7 @@ final class Webino_Dashboard_License {
 				)
 			);
 			if ( is_wp_error( $response ) ) {
+				$last_error = $response->get_error_message();
 				continue;
 			}
 			$code = (int) wp_remote_retrieve_response_code( $response );
@@ -1395,11 +1435,41 @@ final class Webino_Dashboard_License {
 					'data' => is_array( $data ) ? $data : array(),
 				);
 			}
+			$last_code = $code;
+			if ( is_array( $data ) ) {
+				if ( ! empty( $data['message'] ) && is_string( $data['message'] ) ) {
+					$last_error = $data['message'];
+				} elseif ( ! empty( $data['error'] ) && is_string( $data['error'] ) ) {
+					$last_error = $data['error'];
+				} elseif ( ! empty( $data['code'] ) && is_string( $data['code'] ) ) {
+					$last_error = $data['code'];
+				} else {
+					$last_error = sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'CRM HTTP %d', 'webino-dashboard' ),
+						$code
+					);
+				}
+			} else {
+				$last_error = sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'CRM HTTP %d', 'webino-dashboard' ),
+					$code
+				);
+			}
+			// Auth / not-enabled errors won't succeed on another base — stop early.
+			if ( in_array( $code, array( 401, 403, 404, 429, 503 ), true ) ) {
+				break;
+			}
 		}
-		return array(
+		$out = array(
 			'ok'    => false,
-			'error' => __( 'CRM request failed.', 'webino-dashboard' ),
+			'error' => $last_error ? $last_error : __( 'CRM request failed.', 'webino-dashboard' ),
 		);
+		if ( $last_code > 0 ) {
+			$out['code'] = $last_code;
+		}
+		return $out;
 	}
 
 	/**

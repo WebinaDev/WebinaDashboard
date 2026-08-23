@@ -4,12 +4,11 @@ import { Navigate, useParams } from 'react-router-dom'
 
 import { ModuleDynamicRoute } from '@/components/ModuleDynamicRoute'
 import { QueryErrorState } from '@/components/QueryErrorState'
+import { SettingsModulesChrome } from '@/components/settings/SettingsModulesChrome'
 import { RoutePageSkeleton } from '@/components/skeletons'
 import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
-import { SettingsSectionLayout } from '@/layouts/SettingsSectionLayout'
 import { marketplaceSettingsSectionsFromBootstrap } from '@/lib/marketplace-api'
 import { resolveModuleSettingsRoutePath } from '@/lib/moduleRuntime'
-import { shopNavItemsWithModules } from '@/pages/settings/shop/settings-shop-nav'
 
 export default function ModuleSettingsShell() {
   const { t } = useTranslation()
@@ -19,7 +18,9 @@ export default function ModuleSettingsShell() {
   const bootstrapReady = data !== undefined
 
   const section = useMemo(() => {
-    return marketplaceSettingsSectionsFromBootstrap().find((s) => s.slug === moduleSlug)
+    return marketplaceSettingsSectionsFromBootstrap().find(
+      (s) => s.slug === moduleSlug || (s as { moduleSlug?: string }).moduleSlug === moduleSlug,
+    )
   }, [moduleSlug])
 
   const routePath = useMemo(() => {
@@ -39,11 +40,7 @@ export default function ModuleSettingsShell() {
   }
 
   return (
-    <SettingsSectionLayout
-      titleKey="marketplace.moduleSettingsTitle"
-      descriptionKey="marketplace.moduleSettingsDesc"
-      navItems={shopNavItemsWithModules()}
-    >
+    <SettingsModulesChrome>
       {!bootstrapReady ? (
         isPending || !isError ? (
           <RoutePageSkeleton />
@@ -55,6 +52,6 @@ export default function ModuleSettingsShell() {
       ) : (
         <QueryErrorState message={t('modules.loadFailed')} />
       )}
-    </SettingsSectionLayout>
+    </SettingsModulesChrome>
   )
 }

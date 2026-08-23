@@ -1,0 +1,14 @@
+{
+  "slug": "wnc-core-module",
+  "name": "Marketplace",
+  "version": "1.5.2",
+  "is_builtin": true,
+  "is_first_party": true,
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Marketplace",
+    "route": "/settings/shop/marketplace"
+  }
+}

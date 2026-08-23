@@ -6,6 +6,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LANG_DIR="$ROOT/languages"
 
 if ! command -v msgfmt >/dev/null 2>&1; then
+  shopt -s nullglob
+  existing=( "$LANG_DIR"/webino-dashboard-*.mo )
+  if ((${#existing[@]} > 0)); then
+    echo "WARN: msgfmt not found — keeping existing .mo catalogs" >&2
+    exit 0
+  fi
   echo "msgfmt not found. Install gettext (e.g. apt install gettext)." >&2
   exit 1
 fi

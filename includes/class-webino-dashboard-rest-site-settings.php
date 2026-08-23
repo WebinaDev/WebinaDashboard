@@ -161,6 +161,10 @@ final class Webino_Dashboard_REST_Site_Settings {
 			update_option( 'WPLANG', $lang );
 		}
 
+		if ( class_exists( 'Webino_Dashboard_SSR', false ) ) {
+			Webino_Dashboard_SSR::invalidate_user_caches();
+		}
+
 		return self::general_get();
 	}
 
@@ -196,14 +200,41 @@ final class Webino_Dashboard_REST_Site_Settings {
 	}
 
 	/**
+	 * Drop cached shop SMS payload after save/bind/sync.
+	 *
+	 * @return void
+	 */
+	public static function invalidate_sms_shop_cache() {
+		delete_transient( self::sms_shop_cache_key() );
+	}
+
+	/**
 	 * @return WP_REST_Response
 	 */
 	public static function sms_get() {
 		$key    = self::sms_shop_cache_key();
 		$cached = get_transient( $key );
 		if ( is_array( $cached ) ) {
+			// Always refresh local event catalog labels from WooCommerce.
+			$catalog = class_exists( 'Webino_Dashboard_Sms_Order_Map', false )
+				? Webino_Dashboard_Sms_Order_Map::event_catalog()
+				: array();
+			if ( $catalog ) {
+				$cached['event_catalog'] = $catalog;
+				$cached['event_keys']    = array_column( $catalog, 'key' );
+			}
+			if ( isset( $cached['settings'] ) && is_array( $cached['settings'] ) && class_exists( 'Webino_Dashboard_Sms_Recovery', false ) ) {
+				$cached['settings'] = Webino_Dashboard_Sms_Recovery::merge_into_shop_settings( $cached['settings'] );
+			}
+			if ( class_exists( 'Webino_Dashboard_Sms_Recovery', false ) ) {
+				$cached['shortcodes'] = Webino_Dashboard_Sms_Recovery::merge_shortcodes( $cached['shortcodes'] ?? array() );
+			}
 			return new WP_REST_Response( $cached, 200 );
 		}
+
+		$local_catalog = class_exists( 'Webino_Dashboard_Sms_Order_Map', false )
+			? Webino_Dashboard_Sms_Order_Map::event_catalog()
+			: array();
 
 		$license = Webino_Dashboard_License::instance();
 		if ( $license->is_license_active( false ) ) {
@@ -213,34 +244,53 @@ final class Webino_Dashboard_REST_Site_Settings {
 				self::CRM_FAST_OPTS
 			);
 			if ( ! empty( $res['ok'] ) && is_array( $res['data'] ) ) {
-				$payload         = $res['data'];
-				$templates_res   = $license->crm_get( 'wp-json/webinocrm/v1/modirpayamak/templates', array(), self::CRM_FAST_OPTS );
-				$shortcodes_res  = $license->crm_get( 'wp-json/webinocrm/v1/modirpayamak/templates/shortcodes', array(), self::CRM_FAST_OPTS );
-				$registry_res    = $license->crm_get( 'wp-json/webinocrm/v1/modirpayamak/patterns/registry', array(), self::CRM_FAST_OPTS );
-				$response        = array(
-					'provider'    => 'modirpayamak',
-					'unavailable' => false,
-					'settings'    => $payload['settings'] ?? array(),
-					'event_keys'  => $payload['event_keys'] ?? array(),
-					'templates'   => is_array( $templates_res['data'] ?? null ) ? ( $templates_res['data']['templates'] ?? array() ) : array(),
-					'shortcodes'  => is_array( $shortcodes_res['data'] ?? null ) ? ( $shortcodes_res['data']['shortcodes'] ?? array() ) : array(),
-					'registry'    => is_array( $registry_res['data'] ?? null ) ? ( $registry_res['data']['registry'] ?? array() ) : array(),
+				$payload        = $res['data'];
+				$templates_res  = $license->crm_get( 'wp-json/webinocrm/v1/modirpayamak/templates', array(), self::CRM_FAST_OPTS );
+				$shortcodes_res = $license->crm_get( 'wp-json/webinocrm/v1/modirpayamak/templates/shortcodes', array(), self::CRM_FAST_OPTS );
+				$registry_res   = $license->crm_get( 'wp-json/webinocrm/v1/modirpayamak/patterns/registry', array(), self::CRM_FAST_OPTS );
+				$crm_keys       = is_array( $payload['event_keys'] ?? null ) ? $payload['event_keys'] : array();
+				$event_keys     = array_values(
+					array_unique(
+						array_merge(
+							$crm_keys,
+							array_column( $local_catalog, 'key' )
+						)
+					)
 				);
+				$response       = array(
+					'provider'      => 'modirpayamak',
+					'unavailable'   => false,
+					'settings'      => $payload['settings'] ?? array(),
+					'event_keys'    => array_column( $local_catalog, 'key' ) ?: $event_keys,
+					'event_catalog' => $local_catalog ?: ( $payload['event_catalog'] ?? array() ),
+					'templates'     => is_array( $templates_res['data'] ?? null ) ? ( $templates_res['data']['templates'] ?? array() ) : array(),
+					'shortcodes'    => is_array( $shortcodes_res['data'] ?? null ) ? ( $shortcodes_res['data']['shortcodes'] ?? array() ) : array(),
+					'registry'      => is_array( $registry_res['data'] ?? null ) ? ( $registry_res['data']['registry'] ?? array() ) : array(),
+				);
+				if ( class_exists( 'Webino_Dashboard_Sms_Recovery', false ) ) {
+					if ( is_array( $response['settings'] ) ) {
+						$response['settings'] = Webino_Dashboard_Sms_Recovery::merge_into_shop_settings( $response['settings'] );
+					}
+					$response['shortcodes'] = Webino_Dashboard_Sms_Recovery::merge_shortcodes( $response['shortcodes'] ?? array() );
+				}
 				set_transient( $key, $response, self::SMS_SHOP_CACHE_TTL );
 				return new WP_REST_Response( $response, 200 );
 			}
 		}
 
 		$fallback = array(
-			'provider'    => 'modirpayamak',
-			'unavailable' => true,
-			'settings'    => Webino_Dashboard_Module_Registry::sms_ready()
+			'provider'      => 'modirpayamak',
+			'unavailable'   => true,
+			'settings'      => Webino_Dashboard_Module_Registry::sms_ready()
 				? Webino_Dashboard_Sms_Settings::get()
 				: array(),
-			'event_keys'  => array(),
-			'templates'   => array(),
-			'shortcodes'  => array(),
-			'registry'    => array(),
+			'event_keys'    => array_column( $local_catalog, 'key' ),
+			'event_catalog' => $local_catalog,
+			'templates'     => array(),
+			'shortcodes'    => class_exists( 'Webino_Dashboard_Sms_Recovery', false )
+				? Webino_Dashboard_Sms_Recovery::merge_shortcodes( array() )
+				: array(),
+			'registry'      => array(),
 		);
 		return new WP_REST_Response( $fallback, 200 );
 	}
@@ -260,7 +310,14 @@ final class Webino_Dashboard_REST_Site_Settings {
 		$license = Webino_Dashboard_License::instance();
 		if ( $license->is_license_active( false ) ) {
 			if ( isset( $data['settings'] ) && is_array( $data['settings'] ) ) {
-				$license->crm_post( 'wp-json/webinocrm/v1/modirpayamak/settings/shop', array( 'settings' => $data['settings'] ) );
+				$settings = $data['settings'];
+				if ( class_exists( 'Webino_Dashboard_Sms_Recovery', false ) ) {
+					$settings = Webino_Dashboard_Sms_Recovery::merge_into_shop_settings( $settings );
+				}
+				if ( empty( $settings['event_catalog'] ) && class_exists( 'Webino_Dashboard_Sms_Order_Map', false ) ) {
+					$settings['event_catalog'] = Webino_Dashboard_Sms_Order_Map::event_catalog();
+				}
+				$license->crm_post( 'wp-json/webinocrm/v1/modirpayamak/settings/shop', array( 'settings' => $settings ) );
 			}
 			if ( isset( $data['templates'] ) && is_array( $data['templates'] ) ) {
 				$license->crm_post( 'wp-json/webinocrm/v1/modirpayamak/templates', array( 'templates' => $data['templates'] ) );

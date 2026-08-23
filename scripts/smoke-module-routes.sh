@@ -92,6 +92,16 @@ PY
     continue
   fi
 
+  if grep -qE 'process\.env' "$dist"; then
+    echo "FAIL: $slug dist still references process.env (browser throws process is not defined)"
+    FAIL=1
+  fi
+
+  if ! grep -qE 'from[[:space:]]*["'\'']react["'\'']|from[[:space:]]*["'\'']react/jsx-runtime["'\'']' "$dist"; then
+    echo "FAIL: $slug dist missing bare react import (shared runtime / externals broken)"
+    FAIL=1
+  fi
+
   if grep -qE 'mounted:\s*true|routes:\s*\{\s*\}|routes:\s*\[\s*\]|Placeholder bundle' "$dist"; then
     echo "FAIL: $slug dist looks like a stub"
     grep -nE 'mounted:\s*true|routes:\s*\{\s*\}|Placeholder' "$dist" | head -3
@@ -105,6 +115,49 @@ PY
     FAIL=1
   fi
 done
+
+SHARED_MAP="$ROOT/assets/dashboard-build/shared/import-map.json"
+if [[ ! -f "$SHARED_MAP" ]]; then
+  echo "FAIL: missing shared runtime import-map.json (run build-shared-runtime.mjs)"
+  FAIL=1
+else
+  echo "OK: shared import-map.json present"
+fi
+
+RQ_SHARED="$ROOT/assets/dashboard-build/shared/_tanstack_react-query.js"
+if [[ ! -f "$RQ_SHARED" ]] || ! grep -qE 'export\s*\*\s*from\s*["'\'']@tanstack/query-core["'\'']' "$RQ_SHARED"; then
+  echo "FAIL: shared react-query must re-export @tanstack/query-core (QueryClient)"
+  FAIL=1
+else
+  echo "OK: shared react-query re-exports query-core"
+fi
+
+ROLLDOWN_RT="$(ls "$ROOT/assets/dashboard-build/assets"/rolldown-runtime-*.js 2>/dev/null | head -1 || true)"
+if [[ -z "$ROLLDOWN_RT" ]]; then
+  echo "FAIL: missing assets/rolldown-runtime-*.js (run client build)"
+  FAIL=1
+elif grep -qE 'Calling `require` for' "$ROLLDOWN_RT" && ! grep -q '__webinRequireMap' "$ROLLDOWN_RT"; then
+  echo "FAIL: rolldown-runtime still has raw require throw (run patch-host-rolldown-require.mjs)"
+  FAIL=1
+elif ! grep -q '__webinRequireMap' "$ROLLDOWN_RT"; then
+  echo "WARN: rolldown-runtime has no require throw and no shim (ok if Rolldown changed)"
+else
+  echo "OK: host rolldown-runtime require shim present"
+fi
+
+if ! grep -q 'print_shared_runtime_import_map' "$ROOT/includes/class-webino-dashboard-assets.php"; then
+  echo "FAIL: PHP must emit import map for shared runtime"
+  FAIL=1
+else
+  echo "OK: PHP import map emitter present"
+fi
+
+if ! grep -q "process.env.NODE_ENV" "$ROOT/scripts/module-client-vite.config.mjs"; then
+  echo "FAIL: module-client-vite must define process.env.NODE_ENV"
+  FAIL=1
+else
+  echo "OK: module vite defines NODE_ENV"
+fi
 
 if grep -R --include='*.tsx' --include='*.ts' -E 'slug="(wfcp|analytics|bale-bot)"' "$ROOT/client/src" 2>/dev/null | grep -q .; then
   echo "FAIL: legacy module slugs in dashboard client"

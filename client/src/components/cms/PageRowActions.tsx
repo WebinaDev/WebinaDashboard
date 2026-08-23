@@ -43,7 +43,7 @@ export function PageRowActions({ row, quickEditOpen, onQuickEditToggle, onTrashe
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-0.5">
+      <div className="flex flex-nowrap items-center gap-1">
         <Button type="button" size="icon" variant="ghost" className="size-8" asChild>
           <Link to={`/pages/${row.id}`}>
             <Pencil className="size-4" />

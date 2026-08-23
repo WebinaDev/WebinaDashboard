@@ -76,9 +76,9 @@ export function ReportKpiGrid({ summary, compareSummary, currency, currencySymbo
           const prev = compareSummary?.[kpi.key]
           const numValue = Number(value)
           return (
-            <Card key={kpi.key} className="shadow-sm">
+            <Card key={kpi.key} variant="stat" className="overflow-hidden">
               <CardContent className="space-y-1 pt-4">
-                <p className="text-muted-foreground text-xs">{t(kpi.labelKey)}</p>
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{t(kpi.labelKey)}</p>
                 <div className="flex items-baseline justify-between gap-2">
                   {kpi.money ? (
                     <MoneyDisplay
@@ -86,12 +86,12 @@ export function ReportKpiGrid({ summary, compareSummary, currency, currencySymbo
                       currency={currency}
                       currencySymbol={currencySymbol}
                       locale={locale}
-                      amountClassName="text-lg font-semibold"
+                      amountClassName="text-lg font-semibold tracking-tight sm:text-xl"
                     />
                   ) : kpi.percent ? (
-                    <p className="text-lg font-semibold">{numValue.toFixed(1)}%</p>
+                    <p className="text-lg font-semibold tracking-tight sm:text-xl">{numValue.toFixed(1)}%</p>
                   ) : (
-                    <p className="text-lg font-semibold">{formatNumber(numValue, locale)}</p>
+                    <p className="text-lg font-semibold tracking-tight sm:text-xl">{formatNumber(numValue, locale)}</p>
                   )}
                   <DeltaBadge current={numValue} previous={prev !== undefined ? Number(prev) : undefined} />
                 </div>

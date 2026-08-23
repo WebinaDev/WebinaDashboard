@@ -7,6 +7,7 @@ export type GlobalAttribute = {
   type: AttributeType
   order_by: string
   has_archives: boolean
+  show_swatch_label?: boolean
   taxonomy: string
   term_count: number
 }
@@ -29,6 +30,7 @@ export type AttributeFormState = {
   type: AttributeType
   order_by: string
   has_archives: boolean
+  show_swatch_label: boolean
 }
 
 export type AttributeTermFormState = {
@@ -39,4 +41,10 @@ export type AttributeTermFormState = {
   color: string
   image_id: number
   image_url: string
+}
+
+export type AttributeGroup = {
+  id: string
+  name: string
+  attribute_ids: number[]
 }

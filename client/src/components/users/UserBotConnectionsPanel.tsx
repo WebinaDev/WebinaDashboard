@@ -34,9 +34,31 @@ export function UserBotConnectionsPanel({ userId, bots, onChanged }: UserBotConn
     onError: (e: Error) => toastApiError(t, e),
   })
 
+  const block = useMutation({
+    mutationFn: (blocked: boolean) =>
+      apiFetch(`bots/bale/users/${userId}/block`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blocked }),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['user', userId] })
+      toast.success(t('common.saved'))
+      onChanged()
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const anyConnected = Boolean(bots.telegram?.connected || bots.bale?.connected)
+
   return (
     <OrderSidebarPanel title={t('users.sectionBots')} defaultOpen>
       <div className="space-y-4 text-start text-sm">
+        {typeof bots.loyalty_points === 'number' ? (
+          <p className="text-muted-foreground">
+            {t('users.loyaltyPoints')}: <span className="font-medium text-foreground">{bots.loyalty_points}</span>
+          </p>
+        ) : null}
         <div>
           <p className="font-medium">{t('users.botTelegram')}</p>
           <p className="text-muted-foreground mt-1">
@@ -87,6 +109,17 @@ export function UserBotConnectionsPanel({ userId, bots, onChanged }: UserBotConn
             </Button>
           ) : null}
         </div>
+        {anyConnected ? (
+          <Button
+            type="button"
+            size="sm"
+            variant={bots.blocked ? 'secondary' : 'destructive'}
+            disabled={block.isPending}
+            onClick={() => void block.mutateAsync(!bots.blocked)}
+          >
+            {bots.blocked ? t('users.unblockBot') : t('users.blockBot')}
+          </Button>
+        ) : null}
       </div>
     </OrderSidebarPanel>
   )

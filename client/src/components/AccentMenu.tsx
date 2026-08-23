@@ -26,7 +26,7 @@ export function AccentMenu() {
   const bq = useBootstrapQuery()
   const dir = i18n.dir()
 
-  const [accent, setAccent] = useState<AccentPreset>('default')
+  const [accent, setAccent] = useState<AccentPreset>('colorful')
 
   useEffect(() => {
     setAccent(normalizeAccent(bq.data?.uiAccent))

@@ -30,39 +30,49 @@ export function RevenueOrdersChart({ series, compareSeries, locale }: RevenueOrd
   const hasCompare = Boolean(compareSeries?.length)
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm" variant="stat">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t('reports.chart.revenueOrders')}</CardTitle>
       </CardHeader>
-      <CardContent className="h-80 pt-0">
+      <CardContent className="h-56 pt-0 sm:h-72 lg:h-80">
         {empty ? (
           <p className="text-muted-foreground flex h-full items-center justify-center text-sm">{t('reports.emptyHint')}</p>
         ) : (
           <ChartContainer
             config={{
-              revenue: { label: t('reports.revenue'), color: 'hsl(var(--chart-1))' },
-              compareRevenue: { label: t('reports.comparePeriod'), color: 'hsl(var(--chart-2))' },
-              orders: { label: t('reports.orders'), color: 'hsl(var(--chart-3))' },
+              revenue: { label: t('reports.revenue'), color: 'var(--color-chart-1)' },
+              compareRevenue: { label: t('reports.comparePeriod'), color: 'var(--color-chart-2)' },
+              orders: { label: t('reports.orders'), color: 'var(--color-chart-3)' },
             }}
             className="h-full w-full"
           >
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
-              <YAxis yAxisId="left" tickFormatter={axisFmt} tickLine={false} axisLine={false} width={48} />
-              <YAxis yAxisId="right" orientation="right" tickFormatter={axisFmt} tickLine={false} axisLine={false} width={40} />
+              <defs>
+                <linearGradient id="wd-rev-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-revenue)" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="var(--color-revenue)" stopOpacity={0.02} />
+                </linearGradient>
+                <linearGradient id="wd-rev-compare" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-compareRevenue)" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="var(--color-compareRevenue)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} className="stroke-border/40" strokeDasharray="3 3" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 10 }} />
+              <YAxis yAxisId="left" tickFormatter={axisFmt} tickLine={false} axisLine={false} width={48} tick={{ fontSize: 10 }} />
+              <YAxis yAxisId="right" orientation="right" tickFormatter={axisFmt} tickLine={false} axisLine={false} width={40} tick={{ fontSize: 10 }} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
-              <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="var(--color-revenue)" fill="var(--color-revenue)" fillOpacity={0.15} />
+              <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="var(--color-revenue)" fill="url(#wd-rev-fill)" strokeWidth={2} />
               {hasCompare ? (
                 <Area
                   yAxisId="left"
                   type="monotone"
                   dataKey="compareRevenue"
                   stroke="var(--color-compareRevenue)"
-                  fill="var(--color-compareRevenue)"
-                  fillOpacity={0.08}
+                  fill="url(#wd-rev-compare)"
                   strokeDasharray="4 4"
+                  strokeWidth={1.5}
                 />
               ) : null}
               <Line yAxisId="right" type="monotone" dataKey="orders" stroke="var(--color-orders)" strokeWidth={2} dot={false} />

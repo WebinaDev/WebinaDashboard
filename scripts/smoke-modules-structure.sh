@@ -8,7 +8,7 @@ FAIL=0
 
 echo "== Modules structure smoke =="
 
-for slug in wfcp-module sms-panel-module bale-bot-module telegram-bot-module analytics-module digipay-upg-module digikala-sellers-module torob-products-extractor-module torobpay-gateway-module snapppay-gateway-module basalam-module zarinpal-gateway-module; do
+for slug in ai-content-module wfcp-module sms-panel-module bale-bot-module telegram-bot-module analytics-module digipay-upg-module digikala-sellers-module torob-products-extractor-module torobpay-gateway-module snapppay-gateway-module basalam-module zarinpal-gateway-module coffee-profile-module bale-pay-gateway-module card-to-card-gateway-module payment-module wallet-gateway-module; do
   if [[ ! -f "$MODULES/$slug/manifest.json" ]]; then
     echo "FAIL: missing $MODULES/$slug/manifest.json"
     FAIL=1

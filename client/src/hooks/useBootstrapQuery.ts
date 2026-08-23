@@ -21,10 +21,11 @@ export function useBootstrapQuery() {
       return normalizeBootstrapPayload(data)
     },
     initialData: initial,
-    initialDataUpdatedAt: initial ? 1 : undefined,
-    staleTime: 60_000,
+    initialDataUpdatedAt: initial ? Date.now() : undefined,
+    staleTime: 120_000,
     gcTime: 600_000,
     placeholderData: (prev) => prev ?? initial,
-    refetchOnMount: initial ? 'always' : true,
+    // Snapshot is already embedded in the HTML — avoid an immediate REST round-trip.
+    refetchOnMount: initial ? false : true,
   })
 }

@@ -33,13 +33,16 @@ export function HomeSalesStatCard({ sales, currency, currencySymbol, locale }: H
     [sales.series, sales.compare_series],
   )
   const revenueDelta = pctDelta(sales.summary.revenue, sales.compare_summary.revenue)
+  const gradId = 'home-sales-revenue-fill'
 
   return (
-    <Card className="shadow-sm">
+    <Card variant="stat">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{t('home.sales.thisMonth')}</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          {sales.range === 'last30' ? t('home.sales.last30') : t('home.sales.thisMonth')}
+        </CardTitle>
         <Button asChild variant="outline" size="sm" className="h-7 text-xs">
-          <Link to="/orders/reports">{t('home.sales.viewDetails')}</Link>
+          <Link to="/reports/overview">{t('home.sales.viewDetails')}</Link>
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -61,23 +64,45 @@ export function HomeSalesStatCard({ sales, currency, currencySymbol, locale }: H
             <ChangePctBadge value={null} />
           )}
         </div>
-        <div className="h-36 min-h-0 min-w-0">
+        <div className="h-28 min-h-0 min-w-0 sm:h-36">
           {chartData.length === 0 ? (
             <p className="text-muted-foreground flex h-full items-center justify-center text-xs">{t('reports.emptyHint')}</p>
           ) : (
             <ChartContainer
               config={{
-                revenue: { label: t('reports.revenue'), color: 'hsl(var(--chart-1))' },
-                orders: { label: t('reports.orders'), color: 'hsl(var(--chart-3))' },
+                revenue: { label: t('reports.revenue'), color: 'var(--color-chart-1)' },
+                orders: { label: t('reports.orders'), color: 'var(--color-chart-3)' },
+                compareRevenue: { label: t('reports.comparePeriod'), color: 'var(--color-chart-4)' },
               }}
-              className="h-full min-h-[8rem] w-full"
+              className="h-full min-h-[7rem] w-full sm:min-h-[9rem]"
               initialDimension={{ width: 320, height: 144 }}
             >
               <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-revenue)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--color-revenue)" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
                 <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" />
                 <YAxis tickFormatter={(v) => formatChartNumber(v, locale)} tick={{ fontSize: 9 }} width={40} />
-                <Area type="monotone" dataKey="revenue" fill="var(--color-revenue)" fillOpacity={0.15} stroke="var(--color-revenue)" strokeWidth={2} />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  fill={`url(#${gradId})`}
+                  stroke="var(--color-revenue)"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="compareRevenue"
+                  stroke="var(--color-chart-4)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  dot={false}
+                  opacity={0.65}
+                />
                 <Line type="monotone" dataKey="orders" stroke="var(--color-orders)" strokeWidth={1.5} dot={false} yAxisId={0} />
               </ComposedChart>
             </ChartContainer>

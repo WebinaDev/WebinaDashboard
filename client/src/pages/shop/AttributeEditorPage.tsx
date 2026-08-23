@@ -29,7 +29,7 @@ import { slugifyFromName } from '@/lib/categoryTree'
 import type { AttributeFormState, AttributeTerm, AttributeTermFormState, GlobalAttribute } from '@/types/attributes'
 
 function emptyForm(): AttributeFormState {
-  return { label: '', slug: '', type: 'select', order_by: 'menu_order', has_archives: false }
+  return { label: '', slug: '', type: 'select', order_by: 'menu_order', has_archives: false, show_swatch_label: true }
 }
 
 function formFromAttribute(attr: GlobalAttribute): AttributeFormState {
@@ -39,6 +39,7 @@ function formFromAttribute(attr: GlobalAttribute): AttributeFormState {
     type: attr.type,
     order_by: attr.order_by,
     has_archives: attr.has_archives,
+    show_swatch_label: attr.show_swatch_label !== false,
   }
 }
 
@@ -103,6 +104,7 @@ export default function AttributeEditorPage() {
         type: form.type,
         order_by: form.order_by,
         has_archives: form.has_archives,
+        show_swatch_label: form.show_swatch_label,
       }
       if (isNew) {
         return apiFetch<GlobalAttribute>('shop/global-attributes', {
@@ -181,7 +183,6 @@ export default function AttributeEditorPage() {
   })
 
   const terms = termsQ.data?.items ?? []
-  const typeLocked = !isNew && terms.length > 0
 
   return (
     <PageShell
@@ -208,7 +209,7 @@ export default function AttributeEditorPage() {
                 onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
                 slugAuto={slugAuto}
                 onSlugAutoChange={setSlugAuto}
-                typeLocked={typeLocked}
+                previewTerms={terms}
               />
               <Button type="button" disabled={save.isPending || !form.label.trim()} onClick={() => void save.mutateAsync()}>
                 {t('common.save')}

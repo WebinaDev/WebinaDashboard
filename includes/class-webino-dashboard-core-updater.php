@@ -169,6 +169,9 @@ final class Webino_Dashboard_Core_Updater {
 			if ( method_exists( 'Webino_Dashboard_Install', 'ensure_analytics_tables' ) ) {
 				Webino_Dashboard_Install::ensure_analytics_tables();
 			}
+			if ( class_exists( 'Webino_Dashboard_Assets', false ) && method_exists( 'Webino_Dashboard_Assets', 'purge_stale_build_assets' ) ) {
+				Webino_Dashboard_Assets::purge_stale_build_assets();
+			}
 			update_option( 'webino_dashboard_db_version', $new_version );
 			self::clear_caches();
 			flush_rewrite_rules( false );

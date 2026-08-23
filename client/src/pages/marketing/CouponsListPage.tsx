@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { ListStatsStrip } from '@/components/ListStatsStrip'
 import { CouponsBulkActions } from '@/components/coupons/CouponsBulkActions'
 import { CouponsTable, type CouponTableRow } from '@/components/coupons/CouponsTable'
 import { PostsPagination } from '@/components/magazine/PostsPagination'
@@ -100,6 +101,19 @@ export default function CouponsListPage() {
 
   return (
     <PageShell title={t('coupons.title')}>
+      <div className="mb-4">
+        <ListStatsStrip
+          items={[
+            { id: 'total', label: t('coupons.stats.total'), value: found },
+            {
+              id: 'active',
+              label: t('coupons.stats.active'),
+              value: items.filter((c) => !(c as { expired?: boolean }).expired).length,
+            },
+          ]}
+          locale={locale}
+        />
+      </div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Button type="button" size="sm" asChild>
           <Link to="/marketing/coupons/new">

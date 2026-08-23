@@ -1,0 +1,24 @@
+Webina Dashboard — recover after ERR_HTTP2_PROTOCOL_ERROR / broken SPA
+=======================================================================
+
+Symptoms: dashboard-shell-*.js or index-*.css fail with ERR_HTTP2_PROTOCOL_ERROR;
+then jQuery / LiteSpeed Lazy Load console noise. Usually mixed/partial upload or
+CDN/LiteSpeed serving a stale/corrupt hashed asset — not the ajax overview code.
+
+1. WP Admin → Plugins → delete Webina Dashboard completely (do not merge folders).
+2. Upload webino-dashboard-0.1.26.zip (or 0.1.25+) → Activate.
+3. On disk confirm:
+   assets/dashboard-build/build-entry.json → pluginVersion matches zip
+   and "shared" / "css" files exist under assets/dashboard-build/assets/
+4. LiteSpeed Cache → Toolbox → Purge All.
+5. Purge Cloudflare/CDN for:
+   /wp-content/plugins/WebinaDashboard/assets/dashboard-build/*
+6. Hard refresh or Incognito. Network tab: shell/css must be 200 and match
+   hashes in build-entry.json (not an old hash like D2ATqINp).
+
+اگر بعد از replace کامل هنوز HTTP2 روی همان فایل‌های جدید است: در LiteSpeed Page Optimization،
+minify/combine/HTTP2 Push برای JS/CSS را موقتاً خاموش کنید یا مسیر
+WebinaDashboard/assets/dashboard-build را exclude کنید؛ سپس دوباره purge.
+
+نسخهٔ پیشنهادی آپلود: webino-dashboard-0.1.27.zip
+(بعد از activate، leftoverهای hashed خارج از build-entry پاک می‌شوند.)

@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { PageRowActions, type PageListRow } from '@/components/cms/PageRowActions'
 import { PagesQuickEditRow } from '@/components/cms/PagesQuickEditRow'
 import { PostsPagination } from '@/components/magazine/PostsPagination'
+import { ListStatsStrip } from '@/components/ListStatsStrip'
 import { PageShell } from '@/components/PageShell'
 import { TableListSkeleton } from '@/components/TableListSkeleton'
 import { Button } from '@/components/ui/button'
@@ -76,9 +77,12 @@ export default function PagesListPage() {
   const q = useQuery({
     queryKey: ['pages', 'list', page, perPage],
     queryFn: () =>
-      apiFetch<{ items: Row[]; page: number; found: number }>(
-        `content/pages?page=${page}&per_page=${perPage}`,
-      ),
+      apiFetch<{
+        items: Row[]
+        page: number
+        found: number
+        stats?: { total: number; publish: number; draft: number; pending: number }
+      }>(`content/pages?page=${page}&per_page=${perPage}`),
   })
   useQueryErrorToast(q)
 
@@ -89,8 +93,19 @@ export default function PagesListPage() {
 
   const items = q.data?.items ?? []
   const found = q.data?.found ?? 0
+  const stats = q.data?.stats
   const locale = i18n.language
   const pageOptions = pageOptionsQ.data?.items ?? items
+
+  const statItems = useMemo(() => {
+    if (!stats) return []
+    return [
+      { id: 'total', label: t('pages.stats.total'), value: stats.total },
+      { id: 'publish', label: t('pages.stats.publish'), value: stats.publish },
+      { id: 'draft', label: t('pages.stats.draft'), value: stats.draft },
+      { id: 'pending', label: t('pages.stats.pending'), value: stats.pending },
+    ]
+  }, [stats, t, i18n.language])
 
   const visibleColumnCount = useMemo(() => {
     let count = Object.values(columns).filter(Boolean).length
@@ -117,6 +132,11 @@ export default function PagesListPage() {
 
   return (
     <PageShell title={t('pages.title')} description={t('pages.listDescription')}>
+      {statItems.length ? (
+        <div className="mb-4">
+          <ListStatsStrip items={statItems} locale={locale} />
+        </div>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {t('pages.totalCount', { count: formatNumber(found, locale) })}
@@ -176,7 +196,7 @@ export default function PagesListPage() {
                     {columns.status ? <TableHead>{t('pages.colStatus')}</TableHead> : null}
                     {columns.date ? <TableHead>{t('pages.colDate')}</TableHead> : null}
                     {columns.excerpt ? <TableHead>{t('pages.colExcerpt')}</TableHead> : null}
-                    <TableHead className="w-40">{t('pages.colActions')}</TableHead>
+                    <TableHead className="w-52 min-w-52">{t('pages.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -217,7 +237,7 @@ export default function PagesListPage() {
                               {row.excerpt?.trim() || t('common.emptyValue')}
                             </TableCell>
                           ) : null}
-                          <TableCell>
+                          <TableCell className="w-52 min-w-52">
                             <PageRowActions
                               row={row}
                               quickEditOpen={quickEditId === row.id}

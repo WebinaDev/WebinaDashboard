@@ -6,9 +6,11 @@ import { useMatch, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { AiGenerateButton } from '@/components/AiGenerateButton'
 import { ProductCategoryFormFields } from '@/components/product-categories/ProductCategoryFormFields'
 import type { ProductCategoryFormState, ProductCategoryRow } from '@/components/product-categories/types'
 import { PageShell } from '@/components/PageShell'
+import { SimpleSeoFields } from '@/components/seo/SimpleSeoFields'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +29,15 @@ import { apiFetch } from '@/lib/api'
 import { slugifyFromName } from '@/lib/categoryTree'
 
 function emptyForm(): ProductCategoryFormState {
-  return { name: '', slug: '', parent: 0, description: '', thumbnail_id: 0, thumbnail_url: '' }
+  return {
+    name: '',
+    slug: '',
+    parent: 0,
+    description: '',
+    thumbnail_id: 0,
+    thumbnail_url: '',
+    seo: { title: '', description: '', focus_keyword: '' },
+  }
 }
 
 function formFromCategory(category: ProductCategoryRow): ProductCategoryFormState {
@@ -38,6 +48,11 @@ function formFromCategory(category: ProductCategoryRow): ProductCategoryFormStat
     description: category.description ?? '',
     thumbnail_id: category.thumbnail_id ?? 0,
     thumbnail_url: category.thumbnail_url ?? '',
+    seo: {
+      title: category.seo?.title ?? '',
+      description: category.seo?.description ?? '',
+      focus_keyword: category.seo?.focus_keyword ?? '',
+    },
   }
 }
 
@@ -48,6 +63,7 @@ function buildPayload(form: ProductCategoryFormState) {
     parent: form.parent,
     description: form.description,
     thumbnail_id: form.thumbnail_id > 0 ? form.thumbnail_id : 0,
+    seo: form.seo,
   }
 }
 
@@ -138,6 +154,9 @@ export default function ProductCategoryEditorPage() {
             </Button>
           ) : null}
           {!isNew ? (
+            <AiGenerateButton type="product_cat" id={id} onDone={() => void q.refetch()} />
+          ) : null}
+          {!isNew ? (
             <Button type="button" variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
               <Trash2 className="me-1 size-4" />
               {t('common.delete')}
@@ -167,6 +186,14 @@ export default function ProductCategoryEditorPage() {
               onChange={setForm}
             />
           )}
+          {!isNew && !q.isLoading ? (
+            <div className="mt-6">
+              <SimpleSeoFields
+                seo={form.seo}
+                onChange={(seo) => setForm((f) => ({ ...f, seo: { ...f.seo, ...seo } }))}
+              />
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

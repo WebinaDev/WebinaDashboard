@@ -1,0 +1,9 @@
+{
+  "slug": "payment-module",
+  "name": "Payments",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php"
+}

@@ -64,6 +64,19 @@ class Webino_Dashboard_Orders {
 	 * @return string
 	 */
 	public static function get_order_source( $o ) {
+		if ( class_exists( 'Webino_Dashboard_Marketplace' ) ) {
+			$label = Webino_Dashboard_Marketplace::order_label( $o );
+			if ( '' !== $label ) {
+				return $label;
+			}
+		}
+		$platform = (string) $o->get_meta( '_wnc_platform' );
+		if ( '' !== $platform ) {
+			$labels = class_exists( 'Webino_Dashboard_Marketplace' )
+				? Webino_Dashboard_Marketplace::labels()
+				: array();
+			return $labels[ $platform ] ?? ucfirst( $platform );
+		}
 		$source_type = (string) $o->get_meta( '_wc_order_attribution_source_type' );
 		$utm_source  = (string) $o->get_meta( '_wc_order_attribution_utm_source' );
 		if ( '' !== $source_type && '' !== $utm_source ) {
@@ -116,24 +129,73 @@ class Webino_Dashboard_Orders {
 	}
 
 	/**
-	 * Resolve WooCommerce state code to label.
+	 * Resolve WooCommerce state code to label (IR / PWS aware).
 	 *
 	 * @param string $country Country code.
-	 * @param string $state State code.
+	 * @param string $state State code or term id.
 	 * @return string
 	 */
 	public static function get_state_label( $country, $state ) {
-		$state   = (string) $state;
-		$country = (string) $country;
+		$state   = trim( (string) $state );
+		$country = trim( (string) $country );
 		if ( '' === $state ) {
 			return '';
 		}
+		if ( '' === $country ) {
+			$base    = function_exists( 'wc_get_base_location' ) ? wc_get_base_location() : array();
+			$country = is_array( $base ) && ! empty( $base['country'] ) ? (string) $base['country'] : 'IR';
+		}
+
+		// Numeric PWS state_city term id.
+		if ( ctype_digit( $state ) && taxonomy_exists( 'state_city' ) ) {
+			$term = get_term( (int) $state, 'state_city' );
+			if ( $term instanceof WP_Term && ! is_wp_error( $term ) ) {
+				return (string) $term->name;
+			}
+		}
+
 		if ( function_exists( 'WC' ) && WC()->countries ) {
 			$states = WC()->countries->get_states( $country );
 			if ( is_array( $states ) && isset( $states[ $state ] ) ) {
 				return (string) $states[ $state ];
 			}
 		}
+
+		// Map WC code → state_city parent via term meta state_code / name.
+		if ( taxonomy_exists( 'state_city' ) ) {
+			$terms = get_terms(
+				array(
+					'taxonomy'   => 'state_city',
+					'hide_empty' => false,
+					'parent'     => 0,
+				)
+			);
+			if ( is_array( $terms ) ) {
+				$wc_label = '';
+				if ( function_exists( 'WC' ) && WC()->countries ) {
+					$all = WC()->countries->get_states( $country );
+					if ( is_array( $all ) && isset( $all[ $state ] ) ) {
+						$wc_label = (string) $all[ $state ];
+					}
+				}
+				foreach ( $terms as $term ) {
+					if ( ! ( $term instanceof WP_Term ) ) {
+						continue;
+					}
+					$meta_code = (string) get_term_meta( $term->term_id, 'state_code', true );
+					if ( $meta_code && strcasecmp( $meta_code, $state ) === 0 ) {
+						return (string) $term->name;
+					}
+					if ( strcasecmp( (string) $term->name, $state ) === 0 ) {
+						return (string) $term->name;
+					}
+					if ( $wc_label && strcasecmp( (string) $term->name, $wc_label ) === 0 ) {
+						return (string) $term->name;
+					}
+				}
+			}
+		}
+
 		return $state;
 	}
 
@@ -292,25 +354,62 @@ class Webino_Dashboard_Orders {
 	}
 
 	/**
+	 * @param int $customer_id Optional customer scope.
 	 * @return array<int, array{slug: string, label: string, count: int}>
 	 */
-	public static function get_status_counts() {
-		global $wpdb;
-		$counts = array();
+	public static function get_status_counts( $customer_id = 0 ) {
+		$counts      = array();
+		$customer_id = (int) $customer_id;
 		if ( ! self::wc_active() ) {
 			return $counts;
 		}
 		$statuses = wc_get_order_statuses();
 		$total    = 0;
-		foreach ( array_keys( $statuses ) as $status ) {
-			$slug  = str_replace( 'wc-', '', $status );
-			$count = function_exists( 'wc_orders_count' ) ? (int) wc_orders_count( $slug ) : 0;
-			$counts[] = array(
-				'slug'  => str_replace( 'wc-', '', $status ),
-				'label' => $statuses[ $status ],
-				'count' => $count,
+		if ( $customer_id > 0 ) {
+			$tally = array();
+			$ids   = wc_get_orders(
+				array(
+					'customer_id' => $customer_id,
+					'limit'       => -1,
+					'return'      => 'ids',
+					'type'        => 'shop_order',
+				)
 			);
-			$total += $count;
+			if ( ! is_array( $ids ) ) {
+				$ids = array();
+			}
+			foreach ( $ids as $oid ) {
+				$o = wc_get_order( $oid );
+				if ( ! $o ) {
+					continue;
+				}
+				$slug = $o->get_status();
+				if ( ! isset( $tally[ $slug ] ) ) {
+					$tally[ $slug ] = 0;
+				}
+				$tally[ $slug ]++;
+			}
+			foreach ( array_keys( $statuses ) as $status ) {
+				$slug     = str_replace( 'wc-', '', $status );
+				$count    = isset( $tally[ $slug ] ) ? (int) $tally[ $slug ] : 0;
+				$counts[] = array(
+					'slug'  => $slug,
+					'label' => $statuses[ $status ],
+					'count' => $count,
+				);
+				$total += $count;
+			}
+		} else {
+			foreach ( array_keys( $statuses ) as $status ) {
+				$slug  = str_replace( 'wc-', '', $status );
+				$count = function_exists( 'wc_orders_count' ) ? (int) wc_orders_count( $slug ) : 0;
+				$counts[] = array(
+					'slug'  => $slug,
+					'label' => $statuses[ $status ],
+					'count' => $count,
+				);
+				$total += $count;
+			}
 		}
 		array_unshift(
 			$counts,
@@ -324,29 +423,152 @@ class Webino_Dashboard_Orders {
 	}
 
 	/**
+	 * Portal tab slug => WooCommerce statuses.
+	 *
+	 * @return array<string, list<string>>
+	 */
+	public static function get_portal_group_map() {
+		return array(
+			'active'    => array( 'pending', 'on-hold', 'processing' ),
+			'completed' => array( 'completed' ),
+			'refunded'  => array( 'refunded' ),
+			'cancelled' => array( 'cancelled', 'failed' ),
+		);
+	}
+
+	/**
+	 * Portal order tabs: active, completed, refunded, cancelled.
+	 *
+	 * @param int $customer_id Customer user ID.
+	 * @return array<int, array{slug: string, label: string, count: int, statuses: list<string>}>
+	 */
+	public static function get_portal_status_groups( $customer_id ) {
+		$customer_id = (int) $customer_id;
+		$map         = self::get_portal_group_map();
+		$groups_def  = array(
+			'active'    => array(
+				'label'    => __( 'Active', 'webino-dashboard' ),
+				'statuses' => $map['active'],
+			),
+			'completed' => array(
+				'label'    => __( 'Delivered', 'webino-dashboard' ),
+				'statuses' => $map['completed'],
+			),
+			'refunded'  => array(
+				'label'    => __( 'Returned', 'webino-dashboard' ),
+				'statuses' => $map['refunded'],
+			),
+			'cancelled' => array(
+				'label'    => __( 'Cancelled', 'webino-dashboard' ),
+				'statuses' => $map['cancelled'],
+			),
+		);
+		$tally = array();
+		if ( $customer_id > 0 && self::wc_active() ) {
+			$ids = wc_get_orders(
+				array(
+					'customer_id' => $customer_id,
+					'limit'       => -1,
+					'return'      => 'ids',
+					'type'        => 'shop_order',
+				)
+			);
+			foreach ( (array) $ids as $oid ) {
+				$o = wc_get_order( $oid );
+				if ( ! $o ) {
+					continue;
+				}
+				$st = $o->get_status();
+				if ( ! isset( $tally[ $st ] ) ) {
+					$tally[ $st ] = 0;
+				}
+				$tally[ $st ]++;
+			}
+		}
+		$out = array();
+		foreach ( $groups_def as $slug => $def ) {
+			$count = 0;
+			foreach ( $def['statuses'] as $st ) {
+				$count += isset( $tally[ $st ] ) ? (int) $tally[ $st ] : 0;
+			}
+			$out[] = array(
+				'slug'     => $slug,
+				'label'    => $def['label'],
+				'count'    => $count,
+				'statuses' => $def['statuses'],
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Tab counts for the customer portal order list.
+	 *
+	 * @param int $customer_id Customer user ID.
+	 * @return array<int, array{slug: string, label: string, count: int}>
+	 */
+	public static function get_portal_status_counts( $customer_id ) {
+		$groups = self::get_portal_status_groups( $customer_id );
+		$total  = 0;
+		$out    = array();
+		foreach ( $groups as $g ) {
+			$total += (int) $g['count'];
+			$out[]  = array(
+				'slug'  => $g['slug'],
+				'label' => $g['label'],
+				'count' => (int) $g['count'],
+			);
+		}
+		array_unshift(
+			$out,
+			array(
+				'slug'  => 'all',
+				'label' => __( 'All', 'webino-dashboard' ),
+				'count' => $total,
+			)
+		);
+		return $out;
+	}
+
+	/**
 	 * @param WC_Order $o Order.
 	 * @return array<string, mixed>
 	 */
 	public static function map_list_item( $o ) {
-		$dc = $o->get_date_created();
+		$dc       = $o->get_date_created();
+		$ship     = self::format_address_parts( $o, 'shipping' );
+		$state_raw = (string) ( $ship['state'] ?? '' );
+		$state_lbl = (string) ( $ship['state_label'] ?? '' );
 		return array(
-			'id'                => $o->get_id(),
-			'number'            => $o->get_order_number(),
-			'status'            => $o->get_status(),
-			'status_label'      => wc_get_order_status_name( $o->get_status() ),
-			'total'             => $o->get_total(),
-			'currency'          => $o->get_currency(),
-			'date'              => $dc ? $dc->format( 'c' ) : null,
-			'customer_name'     => trim( $o->get_formatted_billing_full_name() ) ?: trim( $o->get_formatted_shipping_full_name() ),
-			'billing_email'     => $o->get_billing_email(),
-			'billing_phone'     => $o->get_billing_phone(),
-			'ship_to'           => self::format_ship_to_line( $o ),
-			'ship_to_maps_url'  => self::ship_to_maps_url( $o ),
-			'shipping_method'   => self::get_shipping_method_title( $o ),
-			'source'            => self::get_order_source( $o ),
-			'source_type'       => (string) $o->get_meta( '_wc_order_attribution_source_type' ),
-			'utm_source'        => (string) $o->get_meta( '_wc_order_attribution_utm_source' ),
-			'created_via'       => (string) $o->get_created_via(),
+			'id'                   => $o->get_id(),
+			'number'               => $o->get_order_number(),
+			'status'               => $o->get_status(),
+			'status_label'         => wc_get_order_status_name( $o->get_status() ),
+			'total'                => $o->get_total(),
+			'currency'             => $o->get_currency(),
+			'date'                 => $dc ? $dc->format( 'c' ) : null,
+			'customer_name'        => trim( $o->get_formatted_billing_full_name() ) ?: trim( $o->get_formatted_shipping_full_name() ),
+			'billing_email'        => $o->get_billing_email(),
+			'billing_phone'        => $o->get_billing_phone(),
+			'ship_to'              => self::format_ship_to_line( $o ),
+			'ship_to_maps_url'     => self::ship_to_maps_url( $o ),
+			'shipping_method'      => self::get_shipping_method_title( $o ),
+			'source'               => self::get_order_source( $o ),
+			'source_type'          => (string) $o->get_meta( '_wc_order_attribution_source_type' ),
+			'utm_source'           => (string) $o->get_meta( '_wc_order_attribution_utm_source' ),
+			'utm_medium'           => (string) $o->get_meta( '_wc_order_attribution_utm_medium' ),
+			'utm_campaign'         => (string) $o->get_meta( '_wc_order_attribution_utm_campaign' ),
+			'created_via'          => (string) $o->get_created_via(),
+			'marketplace'          => class_exists( 'Webino_Dashboard_Marketplace' ) ? Webino_Dashboard_Marketplace::order_slug( $o ) : (string) $o->get_meta( '_wnc_platform' ),
+			'remote_order_id'      => class_exists( 'Webino_Dashboard_Marketplace' ) ? Webino_Dashboard_Marketplace::remote_order_id( $o ) : (string) $o->get_meta( '_wnc_remote_order_id' ),
+			'remote_status'        => (string) ( $o->get_meta( '_digikala_native_status' ) ?: $o->get_meta( '_wnc_remote_status' ) ),
+			'digikala_fulfillment' => (string) $o->get_meta( '_digikala_fulfillment' ),
+			'digikala_shipment_id' => (string) $o->get_meta( '_digikala_shipment_id' ),
+			'payment_method'       => $o->get_payment_method(),
+			'payment_method_title' => $o->get_payment_method_title(),
+			'state'                => $state_raw,
+			'state_label'          => $state_lbl && $state_lbl !== $state_raw ? $state_lbl : ( $state_lbl ?: '' ),
+			'customer_id'          => (int) $o->get_customer_id(),
 		);
 	}
 
@@ -357,24 +579,78 @@ class Webino_Dashboard_Orders {
 	public static function map_detail( $o ) {
 		$items_out = array();
 		foreach ( array_values( $o->get_items() ) as $item ) {
+			if ( ! is_a( $item, 'WC_Order_Item_Product' ) ) {
+				continue;
+			}
 			$product = $item->get_product();
 			$sku     = $product && is_callable( array( $product, 'get_sku' ) ) ? (string) $product->get_sku() : '';
+			$pid     = (int) $item->get_product_id();
+			$vid     = (int) $item->get_variation_id();
+			$image  = '';
+			$img_id = 0;
+			if ( $product && is_callable( array( $product, 'get_image_id' ) ) ) {
+				$img_id = (int) $product->get_image_id();
+			}
+			if ( $img_id <= 0 && $pid > 0 ) {
+				$parent = ( $vid > 0 || ! $product ) ? wc_get_product( $pid ) : $product;
+				if ( $parent && is_callable( array( $parent, 'get_image_id' ) ) ) {
+					$img_id = (int) $parent->get_image_id();
+					if ( $img_id <= 0 && is_callable( array( $parent, 'get_gallery_image_ids' ) ) ) {
+						$gallery = $parent->get_gallery_image_ids();
+						if ( is_array( $gallery ) && ! empty( $gallery[0] ) ) {
+							$img_id = (int) $gallery[0];
+						}
+					}
+				}
+			}
+			if ( $img_id <= 0 && $product && is_callable( array( $product, 'get_gallery_image_ids' ) ) ) {
+				$gallery = $product->get_gallery_image_ids();
+				if ( is_array( $gallery ) && ! empty( $gallery[0] ) ) {
+					$img_id = (int) $gallery[0];
+				}
+			}
+			if ( $img_id > 0 ) {
+				$size = 'woocommerce_thumbnail';
+				$src  = wp_get_attachment_image_url( $img_id, $size );
+				if ( ! $src ) {
+					$src = wp_get_attachment_image_url( $img_id, 'thumbnail' );
+				}
+				$image = $src ? esc_url_raw( (string) $src ) : '';
+			}
+			$attributes = array();
+			if ( is_callable( array( $item, 'get_formatted_meta_data' ) ) ) {
+				foreach ( $item->get_formatted_meta_data( '_' ) as $meta ) {
+					$raw_key = isset( $meta->key ) ? (string) $meta->key : '';
+					if ( '' !== $raw_key && ( '_' === $raw_key[0] || 'reduced_stock' === $raw_key ) ) {
+						continue;
+					}
+					$attributes[] = array(
+						'key'   => wp_strip_all_tags( (string) ( $raw_key ? $raw_key : $meta->display_key ) ),
+						'value' => wp_strip_all_tags( (string) $meta->display_value ),
+					);
+				}
+			}
 			$items_out[] = array(
 				'name'         => $item->get_name(),
 				'quantity'     => $item->get_quantity(),
 				'subtotal'     => $item->get_subtotal(),
 				'total'        => $item->get_total(),
 				'sku'          => $sku,
-				'product_id'   => (int) $item->get_product_id(),
-				'variation_id' => (int) $item->get_variation_id(),
+				'product_id'   => $pid,
+				'variation_id' => $vid,
+				'image'        => $image,
+				'attributes'   => $attributes,
+				'edit_url'     => $pid > 0 ? '/shop/products/' . ( $vid > 0 ? $pid : $pid ) : '',
 			);
 		}
 
 		$shipping_items = array();
 		foreach ( $o->get_shipping_methods() as $method ) {
 			$shipping_items[] = array(
-				'name'  => $method->get_name(),
-				'total' => $method->get_total(),
+				'id'        => $method->get_method_id(),
+				'instance'  => $method->get_instance_id(),
+				'name'      => $method->get_name(),
+				'total'     => $method->get_total(),
 			);
 		}
 
@@ -413,25 +689,26 @@ class Webino_Dashboard_Orders {
 
 		$billing_parts  = self::format_address_parts( $o, 'billing' );
 		$shipping_parts = self::format_address_parts( $o, 'shipping' );
+		$sms_log        = self::get_sms_log( $o );
 
 		return array(
-			'id'                   => $o->get_id(),
-			'number'               => $o->get_order_number(),
-			'status'               => $o->get_status(),
-			'status_label'         => wc_get_order_status_name( $o->get_status() ),
-			'total'                => $o->get_total(),
-			'subtotal'             => $o->get_subtotal(),
-			'total_discount'       => $o->get_discount_total(),
-			'shipping_total'       => $o->get_shipping_total(),
-			'currency'             => $o->get_currency(),
-			'payment_method'       => $o->get_payment_method(),
-			'payment_method_title' => $o->get_payment_method_title(),
-			'customer_note'        => $o->get_customer_note(),
-			'customer_id'          => $customer_id,
-			'is_guest'             => $customer_id <= 0,
-			'customer_ip'          => (string) $o->get_customer_ip_address(),
-			'is_editable'          => $o->is_editable(),
-			'billing'              => array_merge(
+			'id'                       => $o->get_id(),
+			'number'                   => $o->get_order_number(),
+			'status'                   => $o->get_status(),
+			'status_label'             => wc_get_order_status_name( $o->get_status() ),
+			'total'                    => $o->get_total(),
+			'subtotal'                 => $o->get_subtotal(),
+			'total_discount'           => $o->get_discount_total(),
+			'shipping_total'           => $o->get_shipping_total(),
+			'currency'                 => $o->get_currency(),
+			'payment_method'           => $o->get_payment_method(),
+			'payment_method_title'     => $o->get_payment_method_title(),
+			'customer_note'            => $o->get_customer_note(),
+			'customer_id'              => $customer_id,
+			'is_guest'                 => $customer_id <= 0,
+			'customer_ip'              => (string) $o->get_customer_ip_address(),
+			'is_editable'              => $o->is_editable(),
+			'billing'                  => array_merge(
 				array(
 					'first_name' => $o->get_billing_first_name(),
 					'last_name'  => $o->get_billing_last_name(),
@@ -450,7 +727,7 @@ class Webino_Dashboard_Orders {
 					'name'        => $billing_parts['name'],
 				)
 			),
-			'shipping'             => array_merge(
+			'shipping'                 => array_merge(
 				array(
 					'first_name' => $o->get_shipping_first_name(),
 					'last_name'  => $o->get_shipping_last_name(),
@@ -468,24 +745,37 @@ class Webino_Dashboard_Orders {
 					'name'        => $shipping_parts['name'],
 				)
 			),
-			'billing_formatted'    => self::address_parts_for_rest( $billing_parts ),
-			'shipping_formatted'   => self::address_parts_for_rest( $shipping_parts ),
-			'shipping_method'      => self::get_shipping_method_title( $o ),
-			'shipping_items'       => $shipping_items,
-			'tracking_code'        => self::get_tracking_code( $o ),
-			'tracking_url'         => self::get_tracking_url( $o ),
-			'tracking_provider'    => self::get_meta_first( $o, array( '_tracking_provider', 'tracking_provider' ) ) ?: '',
-			'delivery_date'        => self::get_meta_first( $o, array( '_delivery_date', 'delivery_date', '_pws_delivery_date' ) ),
-			'delivery_time'        => self::get_meta_first( $o, array( '_delivery_time', 'delivery_time', '_pws_delivery_time' ) ),
-			'national_id'          => self::get_meta_first( $o, array( '_billing_national_id', '_national_code', 'billing_national_id', 'national_id' ) ),
-			'checkout_phone'       => self::get_meta_first( $o, array( '_billing_phone_extra', 'checkout_phone', '_checkout_phone' ) ),
-			'payment_gateway_meta' => $digipay,
-			'attribution'          => self::get_attribution( $o ),
-			'notes'                => $notes_out,
-			'customer_history'     => self::get_customer_history( $customer_id ),
-			'date_created'         => $dc ? $dc->format( 'c' ) : null,
-			'date_modified'        => $dm ? $dm->format( 'c' ) : null,
-			'items'                => $items_out,
+			'billing_formatted'        => self::address_parts_for_rest( $billing_parts ),
+			'shipping_formatted'       => self::address_parts_for_rest( $shipping_parts ),
+			'shipping_method'          => self::get_shipping_method_title( $o ),
+			'shipping_items'           => $shipping_items,
+			'shipping_method_options'  => self::get_shipping_method_options(),
+			'tracking_code'            => self::get_tracking_code( $o ),
+			'tracking_url'             => self::get_tracking_url( $o ),
+			'tracking_provider'        => self::get_meta_first( $o, array( '_tracking_provider', 'tracking_provider' ) ) ?: '',
+			'post_barcode'             => self::get_meta_first( $o, array( '_post_barcode', 'post_barcode' ) ),
+			'delivery_date'            => self::get_meta_first( $o, array( '_delivery_date', 'delivery_date', '_pws_delivery_date' ) ),
+			'delivery_time'            => self::get_meta_first( $o, array( '_delivery_time', 'delivery_time', '_pws_delivery_time' ) ),
+			'national_id'              => self::get_meta_first( $o, array( '_billing_national_id', '_national_code', 'billing_national_id', 'national_id' ) ),
+			'checkout_phone'           => self::get_meta_first( $o, array( '_billing_phone_extra', 'checkout_phone', '_checkout_phone' ) ),
+			'payment_gateway_meta'     => $digipay,
+			'attribution'              => self::get_attribution( $o ),
+			'marketplace'              => class_exists( 'Webino_Dashboard_Marketplace' ) ? Webino_Dashboard_Marketplace::order_slug( $o ) : (string) $o->get_meta( '_wnc_platform' ),
+			'remote_order_id'          => class_exists( 'Webino_Dashboard_Marketplace' ) ? Webino_Dashboard_Marketplace::remote_order_id( $o ) : (string) $o->get_meta( '_wnc_remote_order_id' ),
+			'remote_status'            => (string) ( $o->get_meta( '_digikala_native_status' ) ?: $o->get_meta( '_wnc_remote_status' ) ),
+			'digikala_fulfillment'     => (string) $o->get_meta( '_digikala_fulfillment' ),
+			'digikala_shipment_id'     => (string) $o->get_meta( '_digikala_shipment_id' ),
+			'digikala_native_status'   => (string) $o->get_meta( '_digikala_native_status' ),
+			'digikala_order_items'     => ( static function ( $raw ) {
+				$decoded = json_decode( (string) $raw, true );
+				return is_array( $decoded ) ? $decoded : array();
+			} )( $o->get_meta( '_digikala_order_items' ) ),
+			'notes'                    => $notes_out,
+			'customer_history'         => self::get_customer_history( $customer_id ),
+			'sms_log'                  => $sms_log,
+			'date_created'             => $dc ? $dc->format( 'c' ) : null,
+			'date_modified'            => $dm ? $dm->format( 'c' ) : null,
+			'items'                    => $items_out,
 		);
 	}
 
@@ -498,17 +788,28 @@ class Webino_Dashboard_Orders {
 		$page     = max( 1, (int) $request->get_param( 'page' ) ?: 1 );
 		$per_page = min( 100, max( 1, (int) $request->get_param( 'per_page' ) ?: 20 ) );
 		$search   = sanitize_text_field( (string) $request->get_param( 'search' ) );
-		$status   = sanitize_key( (string) $request->get_param( 'status' ) );
+		$raw_status = (string) $request->get_param( 'status' );
+		$status     = sanitize_key( $raw_status );
+		$group      = sanitize_key( (string) $request->get_param( 'group' ) );
 		$orderby  = sanitize_key( (string) $request->get_param( 'orderby' ) ) ?: 'date';
 		$order    = strtoupper( sanitize_key( (string) $request->get_param( 'order' ) ) ) === 'ASC' ? 'ASC' : 'DESC';
 		$after    = sanitize_text_field( (string) $request->get_param( 'after' ) );
 		$before   = sanitize_text_field( (string) $request->get_param( 'before' ) );
 
 		$wc_orderby = 'date';
+		$meta_key   = '';
 		if ( 'id' === $orderby ) {
 			$wc_orderby = 'ID';
 		} elseif ( 'total' === $orderby ) {
 			$wc_orderby = 'total';
+		} elseif ( 'payment' === $orderby ) {
+			$wc_orderby = 'meta_value';
+			$meta_key   = '_payment_method';
+		} elseif ( 'utm_source' === $orderby ) {
+			$wc_orderby = 'meta_value';
+			$meta_key   = '_wc_order_attribution_utm_source';
+		} elseif ( 'status' === $orderby ) {
+			$wc_orderby = 'status';
 		}
 
 		$args = array(
@@ -518,9 +819,18 @@ class Webino_Dashboard_Orders {
 			'order'    => $order,
 			'return'   => 'objects',
 			'paginate' => true,
+			'type'     => 'shop_order',
 		);
+		if ( $meta_key ) {
+			$args['meta_key'] = $meta_key;
+		}
 
-		if ( '' !== $status && 'all' !== $status ) {
+		$group_map = self::get_portal_group_map();
+		if ( isset( $group_map[ $group ] ) ) {
+			$args['status'] = $group_map[ $group ];
+		} elseif ( false !== strpos( $raw_status, ',' ) ) {
+			$args['status'] = array_values( array_filter( array_map( 'sanitize_key', explode( ',', $raw_status ) ) ) );
+		} elseif ( '' !== $status && 'all' !== $status ) {
 			$args['status'] = $status;
 		}
 
@@ -532,7 +842,443 @@ class Webino_Dashboard_Orders {
 			$args['date_created'] = self::build_date_query( $after, $before );
 		}
 
+		$meta_query = array();
+
+		$marketplace = sanitize_key( (string) $request->get_param( 'marketplace' ) );
+		if ( '' !== $marketplace ) {
+			if ( 'basalam' === $marketplace ) {
+				$meta_query[] = array(
+					'relation' => 'OR',
+					array(
+						'key'   => '_wnc_platform',
+						'value' => 'basalam',
+					),
+					array(
+						'key'   => '_is_sync_basalam_order',
+						'value' => '1',
+					),
+				);
+			} elseif ( 'digikala' === $marketplace ) {
+				$meta_query[] = array(
+					'relation' => 'OR',
+					array(
+						'key'   => '_wnc_platform',
+						'value' => 'digikala',
+					),
+					array(
+						'key'     => '_digikala_order_id',
+						'compare' => 'EXISTS',
+					),
+				);
+			} else {
+				$meta_query[] = array(
+					'key'   => '_wnc_platform',
+					'value' => $marketplace,
+				);
+			}
+		}
+
+		$payment = sanitize_text_field( (string) $request->get_param( 'payment_method' ) );
+		if ( '' !== $payment ) {
+			$args['payment_method'] = $payment;
+		}
+
+		$utm_source = sanitize_text_field( (string) $request->get_param( 'utm_source' ) );
+		if ( '' !== $utm_source ) {
+			$meta_query[] = array(
+				'key'   => '_wc_order_attribution_utm_source',
+				'value' => $utm_source,
+			);
+		}
+		$utm_medium = sanitize_text_field( (string) $request->get_param( 'utm_medium' ) );
+		if ( '' !== $utm_medium ) {
+			$meta_query[] = array(
+				'key'   => '_wc_order_attribution_utm_medium',
+				'value' => $utm_medium,
+			);
+		}
+		$utm_campaign = sanitize_text_field( (string) $request->get_param( 'utm_campaign' ) );
+		if ( '' !== $utm_campaign ) {
+			$meta_query[] = array(
+				'key'   => '_wc_order_attribution_utm_campaign',
+				'value' => $utm_campaign,
+			);
+		}
+
+		$created_via = sanitize_text_field( (string) $request->get_param( 'created_via' ) );
+		if ( '' !== $created_via ) {
+			$args['created_via'] = $created_via;
+		}
+
+		$customer = sanitize_text_field( (string) $request->get_param( 'customer' ) );
+		if ( '' !== $customer ) {
+			if ( ctype_digit( $customer ) ) {
+				$args['customer_id'] = (int) $customer;
+			} elseif ( is_email( $customer ) ) {
+				$args['billing_email'] = $customer;
+			} else {
+				$args['s'] = ( isset( $args['s'] ) ? $args['s'] . ' ' : '' ) . $customer;
+			}
+		}
+
+		$customer_role = sanitize_key( (string) $request->get_param( 'customer_role' ) );
+		if ( 'webino_partner' === $customer_role ) {
+			$partner_ids = get_users(
+				array(
+					'role'   => 'webino_partner',
+					'fields' => 'ID',
+					'number' => 5000,
+				)
+			);
+			$partner_ids = array_map( 'intval', (array) $partner_ids );
+			if ( empty( $partner_ids ) ) {
+				$args['customer_id'] = 0;
+			} else {
+				$args['customer'] = $partner_ids;
+			}
+		}
+
+		$state = sanitize_text_field( (string) $request->get_param( 'state' ) );
+		if ( '' !== $state ) {
+			$meta_query[] = array(
+				'relation' => 'OR',
+				array(
+					'key'   => '_shipping_state',
+					'value' => $state,
+				),
+				array(
+					'key'   => '_billing_state',
+					'value' => $state,
+				),
+			);
+		}
+
+		$min_total = $request->get_param( 'min_total' );
+		$max_total = $request->get_param( 'max_total' );
+		if ( null !== $min_total && '' !== (string) $min_total ) {
+			$args['total'] = (float) $min_total . '...';
+		}
+		if ( null !== $max_total && '' !== (string) $max_total ) {
+			$max = (float) $max_total;
+			if ( isset( $args['total'] ) && is_string( $args['total'] ) && false !== strpos( $args['total'], '...' ) ) {
+				$args['total'] = (float) $min_total . '...' . $max;
+			} else {
+				$args['total'] = '...' . $max;
+			}
+		}
+
+		$shipping_method = sanitize_text_field( (string) $request->get_param( 'shipping_method' ) );
+		if ( '' !== $shipping_method ) {
+			// Filtered after fetch when possible; also try method title meta.
+			$args['_webino_shipping_method'] = $shipping_method;
+		}
+
+		if ( $meta_query ) {
+			if ( count( $meta_query ) > 1 ) {
+				$meta_query['relation'] = 'AND';
+			}
+			$args['meta_query'] = $meta_query;
+		}
+
 		return $args;
+	}
+
+	/**
+	 * List-page KPI stats for current date window (defaults last 30 days).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return array<string,mixed>
+	 */
+	public static function get_list_stats( $request ) {
+		$after  = sanitize_text_field( (string) $request->get_param( 'after' ) );
+		$before = sanitize_text_field( (string) $request->get_param( 'before' ) );
+		if ( '' === $after && '' === $before ) {
+			$after  = gmdate( 'Y-m-d', strtotime( '-29 days' ) );
+			$before = gmdate( 'Y-m-d' );
+		}
+		$date = self::build_date_query( $after, $before );
+		$base = array(
+			'limit'        => -1,
+			'return'       => 'ids',
+			'type'         => 'shop_order',
+			'date_created' => $date,
+		);
+		if ( class_exists( 'Webino_Dashboard_Rest_Base', false ) && Webino_Dashboard_Rest_Base::is_partner_portal_only() ) {
+			$base['customer_id'] = get_current_user_id();
+		}
+		$status = sanitize_key( (string) $request->get_param( 'status' ) );
+		$paid   = class_exists( 'Webino_Dashboard_Order_Reports' )
+			? Webino_Dashboard_Order_Reports::default_statuses()
+			: array( 'completed', 'processing' );
+		if ( '' !== $status && 'all' !== $status ) {
+			$base['status'] = $status;
+		} else {
+			// Revenue KPIs exclude unpaid (pending payment / on-hold).
+			$base['status'] = $paid;
+		}
+
+		$ids = wc_get_orders( $base );
+		if ( ! is_array( $ids ) ) {
+			$ids = array();
+		}
+		$count      = count( $ids );
+		$revenue    = 0.0;
+		$processing = 0;
+		$completed  = 0;
+		$pending    = 0;
+		$on_hold    = 0;
+		// Cap detailed walk for performance.
+		$walk = array_slice( $ids, 0, 2000 );
+		foreach ( $walk as $oid ) {
+			$o = wc_get_order( $oid );
+			if ( ! $o ) {
+				continue;
+			}
+			$revenue += (float) $o->get_total();
+			$st       = $o->get_status();
+			if ( 'processing' === $st ) {
+				++$processing;
+			} elseif ( 'completed' === $st ) {
+				++$completed;
+			} elseif ( 'pending' === $st ) {
+				++$pending;
+			} elseif ( 'on-hold' === $st ) {
+				++$on_hold;
+			}
+		}
+		if ( $count > count( $walk ) && class_exists( 'Webino_Dashboard_Order_Aggregates' ) ) {
+			$agg = Webino_Dashboard_Order_Aggregates::sum_orders_in_range(
+				array(
+					'status'       => ! empty( $base['status'] ) ? $base['status'] : $paid,
+					'date_created' => $date,
+				),
+				false,
+				true
+			);
+			if ( is_array( $agg ) ) {
+				$revenue = (float) ( $agg['revenue'] ?? $revenue );
+				$count   = (int) ( $agg['order_count'] ?? $count );
+			}
+		}
+
+		return array(
+			'order_count'  => $count,
+			'revenue'      => $revenue,
+			'avg_order_value' => $count > 0 ? $revenue / $count : 0.0,
+			'processing'   => $processing,
+			'completed'    => $completed,
+			'pending'      => $pending,
+			'on_hold'      => $on_hold,
+			'currency'     => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '',
+		);
+	}
+
+	/**
+	 * Filter dropdown options for orders list.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function get_filter_options() {
+		$payments = array();
+		if ( function_exists( 'WC' ) && WC()->payment_gateways() ) {
+			foreach ( WC()->payment_gateways()->payment_gateways() as $gw ) {
+				$payments[] = array(
+					'id'    => $gw->id,
+					'title' => $gw->get_title() ?: $gw->id,
+				);
+			}
+		}
+		$states = array();
+		$country = 'IR';
+		if ( function_exists( 'wc_get_base_location' ) ) {
+			$base = wc_get_base_location();
+			if ( ! empty( $base['country'] ) ) {
+				$country = (string) $base['country'];
+			}
+		}
+		if ( function_exists( 'WC' ) && WC()->countries ) {
+			$wc_states = WC()->countries->get_states( $country );
+			if ( is_array( $wc_states ) ) {
+				foreach ( $wc_states as $code => $label ) {
+					$states[] = array(
+						'code'  => (string) $code,
+						'label' => (string) $label,
+					);
+				}
+			}
+		}
+		if ( taxonomy_exists( 'state_city' ) ) {
+			$terms = get_terms(
+				array(
+					'taxonomy'   => 'state_city',
+					'hide_empty' => false,
+					'parent'     => 0,
+				)
+			);
+			if ( is_array( $terms ) ) {
+				$seen = array();
+				foreach ( $states as $s ) {
+					$seen[ strtolower( $s['code'] ) ] = true;
+				}
+				foreach ( $terms as $term ) {
+					if ( ! ( $term instanceof WP_Term ) ) {
+						continue;
+					}
+					$code = (string) get_term_meta( $term->term_id, 'state_code', true );
+					if ( '' === $code ) {
+						$code = (string) $term->term_id;
+					}
+					$key = strtolower( $code );
+					if ( isset( $seen[ $key ] ) ) {
+						continue;
+					}
+					$seen[ $key ] = true;
+					$states[]     = array(
+						'code'  => $code,
+						'label' => (string) $term->name,
+					);
+				}
+			}
+		}
+
+		$marketplaces = array(
+			array( 'id' => 'digikala', 'title' => 'Digikala' ),
+			array( 'id' => 'basalam', 'title' => 'Basalam' ),
+			array( 'id' => 'technolife', 'title' => 'Technolife' ),
+			array( 'id' => 'tapsishop', 'title' => 'TapsiShop' ),
+			array( 'id' => 'snappshop', 'title' => 'SnappShop' ),
+			array( 'id' => 'torob', 'title' => 'Torob' ),
+			array( 'id' => 'emalls', 'title' => 'Emalls' ),
+			array( 'id' => 'snapppay-search', 'title' => 'SnappPay Search' ),
+			array( 'id' => 'zarehbin', 'title' => 'Zarehbin' ),
+		);
+
+		return array(
+			'payments'      => $payments,
+			'states'        => $states,
+			'shipping'      => self::get_shipping_method_options(),
+			'marketplaces'  => $marketplaces,
+		);
+	}
+
+	/**
+	 * Enabled WooCommerce shipping methods for tracking provider select.
+	 *
+	 * @return array<int,array{id:string,title:string}>
+	 */
+	public static function get_shipping_method_options() {
+		$out = array();
+		if ( ! function_exists( 'WC' ) || ! WC()->shipping() ) {
+			return $out;
+		}
+		$methods = WC()->shipping()->get_shipping_methods();
+		foreach ( $methods as $id => $method ) {
+			if ( ! is_object( $method ) ) {
+				continue;
+			}
+			$enabled = true;
+			if ( is_callable( array( $method, 'is_enabled' ) ) ) {
+				$enabled = (bool) $method->is_enabled();
+			} elseif ( isset( $method->enabled ) ) {
+				$enabled = 'yes' === $method->enabled;
+			}
+			if ( ! $enabled ) {
+				continue;
+			}
+			$title = is_callable( array( $method, 'get_method_title' ) )
+				? (string) $method->get_method_title()
+				: (string) $id;
+			$out[] = array(
+				'id'    => (string) $id,
+				'title' => $title ?: (string) $id,
+			);
+		}
+		$out[] = array(
+			'id'    => 'other',
+			'title' => __( 'Other', 'webino-dashboard' ),
+		);
+		return $out;
+	}
+
+	/**
+	 * @param WC_Order $o Order.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function get_sms_log( $o ) {
+		$raw = $o->get_meta( '_webino_sms_log' );
+		if ( is_string( $raw ) && '' !== $raw ) {
+			$decoded = json_decode( $raw, true );
+			$raw     = is_array( $decoded ) ? $decoded : array();
+		}
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		return array_values( $raw );
+	}
+
+	/**
+	 * Append an SMS log entry on the order.
+	 *
+	 * @param WC_Order|int $order Order.
+	 * @param array<string,mixed> $entry Entry.
+	 * @return void
+	 */
+	public static function append_sms_log( $order, $entry ) {
+		$o = is_a( $order, 'WC_Order' ) ? $order : wc_get_order( $order );
+		if ( ! $o ) {
+			return;
+		}
+		$log   = self::get_sms_log( $o );
+		$log[] = array_merge(
+			array(
+				'time'   => gmdate( 'c' ),
+				'status' => 'sent',
+				'event'  => '',
+				'phone'  => '',
+			),
+			$entry
+		);
+		if ( count( $log ) > 50 ) {
+			$log = array_slice( $log, -50 );
+		}
+		$o->update_meta_data( '_webino_sms_log', $log );
+		$o->save();
+	}
+
+	/**
+	 * Post-filter shipping method when WC query cannot.
+	 *
+	 * @param WC_Order[] $orders Orders.
+	 * @param string     $method Method id or title fragment.
+	 * @return WC_Order[]
+	 */
+	public static function filter_orders_by_shipping_method( $orders, $method ) {
+		$method = trim( (string) $method );
+		if ( '' === $method || ! is_array( $orders ) ) {
+			return $orders;
+		}
+		$out = array();
+		foreach ( $orders as $o ) {
+			if ( ! is_a( $o, 'WC_Order' ) ) {
+				continue;
+			}
+			$title = strtolower( self::get_shipping_method_title( $o ) );
+			$match = false;
+			foreach ( $o->get_shipping_methods() as $sm ) {
+				if ( strtolower( (string) $sm->get_method_id() ) === strtolower( $method )
+					|| false !== strpos( strtolower( (string) $sm->get_name() ), strtolower( $method ) ) ) {
+					$match = true;
+					break;
+				}
+			}
+			if ( ! $match && false !== strpos( $title, strtolower( $method ) ) ) {
+				$match = true;
+			}
+			if ( $match ) {
+				$out[] = $o;
+			}
+		}
+		return $out;
 	}
 
 	/**

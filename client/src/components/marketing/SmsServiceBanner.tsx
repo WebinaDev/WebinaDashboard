@@ -26,5 +26,6 @@ export function SmsServiceBanner({ message, onRetry }: SmsServiceBannerProps) {
 
 export function isSmsUnavailable(payload: { unavailable?: boolean; ok?: boolean } | undefined): boolean {
   if (!payload) return false
-  return payload.unavailable === true || payload.ok === false
+  // Only treat explicit CRM/service unavailability — not generic ok:false API errors.
+  return payload.unavailable === true
 }

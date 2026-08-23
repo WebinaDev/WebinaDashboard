@@ -4,7 +4,7 @@ import { lazyPage } from '@/routes/lazyPage'
 
 export type DashboardRouteDef = {
   path: string
-  capability: string
+  capability: string | string[]
   /** i18n key for `SiteHeader`; optional `headerParamKeys` maps :params to interpolation names */
   headerTitleKey?: string
   headerParamKeys?: Record<string, string>
@@ -139,6 +139,18 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     Component: lazyPage(() => import('@/pages/shop/AttributeEditorPage')),
   },
   {
+    path: 'shop/tickets',
+    capability: 'edit_shop_orders',
+    headerTitleKey: 'account.staffTicketsTitle',
+    Component: lazyPage(() => import('@/pages/shop/ShopTicketsPage')),
+  },
+  {
+    path: 'shop/tickets/:ticketId',
+    capability: 'edit_shop_orders',
+    headerTitleKey: 'account.ticketDetailTitle',
+    Component: lazyPage(() => import('@/pages/shop/ShopTicketDetailPage')),
+  },
+  {
     path: 'shop/attributes/:attributeId',
     capability: 'manage_product_terms',
     headerTitleKey: 'attributes.editTitle',
@@ -146,13 +158,13 @@ export const dashboardRoutes: DashboardRouteDef[] = [
   },
   {
     path: 'orders/list',
-    capability: 'edit_shop_orders',
+    capability: ['edit_shop_orders', 'webino_partner_portal'],
     headerTitleKey: 'orders.title',
     Component: lazyPage(() => import('@/pages/orders/OrdersListPage')),
   },
   {
     path: 'orders/list/:orderId',
-    capability: 'edit_shop_orders',
+    capability: ['edit_shop_orders', 'webino_partner_portal'],
     headerTitleKey: 'orders.detailTitle',
     headerParamKeys: { orderId: 'id' },
     Component: lazyPage(() => import('@/pages/orders/OrderDetailPage')),
@@ -161,7 +173,14 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     path: 'orders/reports',
     capability: 'view_woocommerce_reports',
     headerTitleKey: 'reports.title',
-    Component: lazyPage(() => import('@/pages/orders/SalesReportsPage')),
+    Component: lazyPage(() => import('@/pages/reports/ShopReportsRedirect')),
+  },
+  {
+    path: 'reports/:section',
+    capability: 'view_woocommerce_reports',
+    headerTitleKey: 'reports.shopTitle',
+    headerParamKeys: { section: 'section' },
+    Component: lazyPage(() => import('@/pages/reports/ShopReportsShell')),
   },
   {
     path: 'marketing/coupons',
@@ -207,6 +226,67 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     Component: lazyPage(() => import('@/pages/users/UserDetailPage')),
   },
   {
+    path: 'account/orders',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'orders.title',
+    Component: lazyPage(() => import('@/pages/orders/OrdersListPage')),
+  },
+  {
+    path: 'account/orders/:orderId',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'orders.detailTitle',
+    headerParamKeys: { orderId: 'id' },
+    Component: lazyPage(() => import('@/pages/orders/OrderDetailPage')),
+  },
+  {
+    path: 'account',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'account.homeTitle',
+    Component: lazyPage(() => import('@/pages/account/AccountHomePage')),
+  },
+  {
+    path: 'account/profile',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'users.myAccountTitle',
+    Component: lazyPage(() => import('@/pages/users/UserDetailPage')),
+  },
+  {
+    path: 'account/addresses',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'account.addressesTitle',
+    Component: lazyPage(() => import('@/pages/account/AccountAddressesPage')),
+  },
+  {
+    path: 'account/notifications',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'account.notificationsTitle',
+    Component: lazyPage(() => import('@/pages/account/AccountNotificationsPage')),
+  },
+  {
+    path: 'account/favorites',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'account.favoritesTitle',
+    Component: lazyPage(() => import('@/pages/account/AccountFavoritesPage')),
+  },
+  {
+    path: 'account/reviews',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'account.reviewsTitle',
+    Component: lazyPage(() => import('@/pages/account/AccountReviewsPage')),
+  },
+  {
+    path: 'account/tickets',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'account.ticketsTitle',
+    Component: lazyPage(() => import('@/pages/account/AccountTicketsPage')),
+  },
+  {
+    path: 'account/tickets/:ticketId',
+    capability: ['webino_account_portal', 'webino_partner_portal'],
+    headerTitleKey: 'account.ticketDetailTitle',
+    Component: lazyPage(() => import('@/pages/account/AccountTicketDetailPage')),
+  },
+  {
     path: 'marketplace',
     capability: 'manage_options',
     headerTitleKey: 'marketplace.title',
@@ -242,6 +322,85 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     headerTitleKey: 'settings.shop.sections.pricing',
     headerParamKeys: { tab: 'tab' },
     Component: lazyPage(() => import('@/pages/settings/shop/SettingsShopPricingPage')),
+  },
+  {
+    path: 'settings/shop/pricing/:tab/',
+    capability: 'edit_products',
+    headerTitleKey: 'settings.shop.sections.pricing',
+    headerParamKeys: { tab: 'tab' },
+    Component: lazyPage(() => import('@/pages/settings/shop/SettingsShopPricingPage')),
+  },
+  {
+    path: 'settings/shop/marketplace',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'marketplace.module.wnc-core-module',
+    Component: lazyPage(() => import('@/pages/marketplace/MarketplaceHubPage')),
+  },
+  {
+    path: 'settings/shop/emalls',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'wnc.modules.emalls.title',
+    Component: lazyPage(() => import('@/pages/marketplace/EmallsConnectorPage')),
+  },
+  {
+    path: 'settings/shop/snapppay-search',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'wnc.modules.snapppay-search.title',
+    Component: lazyPage(() => import('@/pages/marketplace/SnappPaySearchConnectorPage')),
+  },
+  {
+    path: 'settings/shop/zarehbin',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'wnc.modules.zarehbin.title',
+    Component: lazyPage(() => import('@/pages/marketplace/ZarehbinConnectorPage')),
+  },
+  {
+    path: 'settings/shop/tapsishop',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'wnc.modules.tapsishop.title',
+    Component: lazyPage(() => import('@/pages/marketplace/TapsishopConnectorPage')),
+  },
+  {
+    path: 'settings/shop/snappshop',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'wnc.modules.snappshop.title',
+    Component: lazyPage(() => import('@/pages/marketplace/SnappshopConnectorPage')),
+  },
+  {
+    path: 'settings/shop/technolife',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'wnc.modules.technolife.title',
+    Component: lazyPage(() => import('@/pages/marketplace/TechnolifeConnectorPage')),
+  },
+  {
+    path: 'settings/shop/torob',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'wnc.modules.torob.title',
+    Component: lazyPage(() => import('@/pages/marketplace/TorobConnectorPage')),
+  },
+  {
+    path: 'settings/shop/digikala',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'digikala.title',
+    Component: lazyPage(() => import('@/pages/marketplace/DigikalaConnectorPage')),
+  },
+  {
+    path: 'settings/shop/digikala/sync',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'digikala.syncTitle',
+    Component: lazyPage(() => import('@/pages/marketplace/DigikalaConnectorPage')),
+  },
+  {
+    path: 'settings/shop/digikala/jobs',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'digikala.jobsTitle',
+    Component: lazyPage(() => import('@/pages/marketplace/DigikalaConnectorPage')),
+  },
+  {
+    path: 'settings/shop/basalam',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'basalam.title',
+    Component: lazyPage(() => import('@/pages/marketplace/BasalamConnectorPage')),
   },
   {
     path: 'settings/shop/:section',

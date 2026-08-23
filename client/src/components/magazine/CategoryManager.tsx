@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import { ListStatsStrip } from '@/components/ListStatsStrip'
 import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
@@ -47,11 +48,18 @@ import {
 } from '@/lib/categoryTree'
 import { cn } from '@/lib/utils'
 
+type CategorySeoState = {
+  title: string
+  description: string
+  focus_keyword: string
+}
+
 type CategoryFormState = {
   name: string
   slug: string
   parent: number
   description: string
+  seo: CategorySeoState
 }
 
 type CategoryManagerProps = {
@@ -62,8 +70,12 @@ type CategoryManagerProps = {
   listTitle?: string
 }
 
+function emptySeo(): CategorySeoState {
+  return { title: '', description: '', focus_keyword: '' }
+}
+
 function emptyForm(): CategoryFormState {
-  return { name: '', slug: '', parent: 0, description: '' }
+  return { name: '', slug: '', parent: 0, description: '', seo: emptySeo() }
 }
 
 function formFromCategory(cat: Category): CategoryFormState {
@@ -72,6 +84,11 @@ function formFromCategory(cat: Category): CategoryFormState {
     slug: cat.slug,
     parent: cat.parent || 0,
     description: cat.description ?? '',
+    seo: {
+      title: cat.seo?.title ?? '',
+      description: cat.seo?.description ?? '',
+      focus_keyword: cat.seo?.focus_keyword ?? '',
+    },
   }
 }
 
@@ -83,6 +100,7 @@ function CategoryFormFields({
   slugAuto,
   onSlugAutoChange,
   idPrefix,
+  showSeo = false,
 }: {
   form: CategoryFormState
   onChange: (next: CategoryFormState) => void
@@ -91,6 +109,7 @@ function CategoryFormFields({
   slugAuto: boolean
   onSlugAutoChange: (auto: boolean) => void
   idPrefix: string
+  showSeo?: boolean
 }) {
   const { t } = useTranslation()
   const parentOptions = useMemo(() => parentSelectOptions(items, excludeId), [items, excludeId])
@@ -154,6 +173,36 @@ function CategoryFormFields({
         />
         <p className="text-xs text-muted-foreground">{t('categories.fieldDescriptionHint')}</p>
       </div>
+      {showSeo ? (
+        <div className="space-y-3 rounded-lg border p-3">
+          <p className="text-sm font-medium">{t('aiContent.seoPanel')}</p>
+          <div className="space-y-2">
+            <Label htmlFor={`${idPrefix}-seo-kw`}>{t('categories.fieldFocusKeyword')}</Label>
+            <Input
+              id={`${idPrefix}-seo-kw`}
+              value={form.seo.focus_keyword}
+              onChange={(e) => onChange({ ...form, seo: { ...form.seo, focus_keyword: e.target.value } })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${idPrefix}-seo-title`}>{t('categories.fieldSeoTitle')}</Label>
+            <Input
+              id={`${idPrefix}-seo-title`}
+              value={form.seo.title}
+              onChange={(e) => onChange({ ...form, seo: { ...form.seo, title: e.target.value } })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${idPrefix}-seo-desc`}>{t('categories.fieldSeoDescription')}</Label>
+            <Textarea
+              id={`${idPrefix}-seo-desc`}
+              value={form.seo.description}
+              onChange={(e) => onChange({ ...form, seo: { ...form.seo, description: e.target.value } })}
+              rows={2}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -317,7 +366,7 @@ export function CategoryManager({
   onSelectionChange,
   listTitle,
 }: CategoryManagerProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const boot = useBootstrapQuery()
   const canManage = Boolean(boot.data?.capabilities?.includes('manage_categories'))
@@ -333,12 +382,26 @@ export function CategoryManager({
 
   const catsQ = useQuery({
     queryKey: ['categories'],
-    queryFn: () => apiFetch<{ items: Category[] }>('content/categories'),
+    queryFn: () =>
+      apiFetch<{
+        items: Category[]
+        stats?: { total: number; with_posts: number; empty: number }
+      }>('content/categories'),
   })
   useQueryErrorToast(catsQ)
 
   const items = catsQ.data?.items ?? []
+  const stats = catsQ.data?.stats
   const tree = useMemo(() => buildCategoryTree(items), [items])
+  const locale = i18n.language
+  const statItems = useMemo(() => {
+    if (!stats || compact) return []
+    return [
+      { id: 'total', label: t('categories.stats.total'), value: stats.total },
+      { id: 'with', label: t('categories.stats.withPosts'), value: stats.with_posts },
+      { id: 'empty', label: t('categories.stats.empty'), value: stats.empty },
+    ]
+  }, [stats, compact, t, i18n.language])
 
   const invalidate = () => void qc.invalidateQueries({ queryKey: ['categories'] })
 
@@ -352,6 +415,7 @@ export function CategoryManager({
           slug: addForm.slug.trim() || slugifyFromName(addForm.name),
           parent: addForm.parent,
           description: addForm.description,
+          seo: addForm.seo,
         }),
       }),
     onSuccess: (res) => {
@@ -376,6 +440,7 @@ export function CategoryManager({
           slug: payload.body.slug.trim() || slugifyFromName(payload.body.name),
           parent: payload.body.parent,
           description: payload.body.description,
+          seo: payload.body.seo,
         }),
       }),
     onSuccess: () => {
@@ -457,6 +522,7 @@ export function CategoryManager({
         slugAuto={addSlugAuto}
         onSlugAutoChange={setAddSlugAuto}
         idPrefix="add-category"
+        showSeo={!compact}
       />
       <Button
         type="button"
@@ -506,6 +572,11 @@ export function CategoryManager({
 
   return (
     <>
+      {statItems.length ? (
+        <div className="mb-4">
+          <ListStatsStrip items={statItems} locale={locale} />
+        </div>
+      ) : null}
       {content}
 
       <Dialog open={editCategory != null} onOpenChange={(open) => !open && setEditCategory(null)}>
@@ -522,6 +593,7 @@ export function CategoryManager({
               slugAuto={editSlugAuto}
               onSlugAutoChange={setEditSlugAuto}
               idPrefix="edit-category"
+              showSeo
             />
           ) : null}
           <DialogFooter>

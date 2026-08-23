@@ -1,0 +1,54 @@
+{
+  "slug": "wallet-gateway-module",
+  "name": "Store Wallet",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "parent_slug": "payment-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Wallet",
+    "sections": [
+      {
+        "id": "gateway",
+        "route": "/settings/shop/wallet",
+        "title": "Wallet",
+        "titleKey": "wallet.title"
+      }
+    ]
+  },
+  "sidebar": {
+    "parent_id": "shop",
+    "nodes": [
+      {
+        "id": "wallet-withdrawals",
+        "title": "Wallet withdrawals",
+        "path": "/shop/wallet-withdrawals",
+        "capability": "manage_woocommerce",
+        "titleKey": "wallet.withdrawalsTitle"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/wallet",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "wallet.title"
+      },
+      {
+        "path": "shop/wallet-withdrawals",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "wallet.withdrawalsTitle"
+      },
+      {
+        "path": "account/wallet",
+        "capability": "webino_account_portal",
+        "headerTitleKey": "wallet.accountTitle"
+      }
+    ]
+  }
+}

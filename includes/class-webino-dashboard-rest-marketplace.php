@@ -580,13 +580,14 @@ final class Webino_Dashboard_REST_Marketplace {
 				continue;
 			}
 			$meta = $by_slug[ $slug ] ?? array();
+			$local_name = (string) ( $row['name'] ?? $row['settings_title'] ?? '' );
 			$items[] = array_merge(
 				$meta,
 				$row,
 				array(
-					'slug'    => $slug,
-					'name'    => (string) ( $meta['name'] ?? $slug ),
-					'active'  => ! empty( $row['active'] ),
+					'slug'      => $slug,
+					'name'      => (string) ( $meta['name'] ?? ( $local_name !== '' ? $local_name : $slug ) ),
+					'active'    => ! empty( $row['active'] ),
 					'installed' => true,
 				)
 			);

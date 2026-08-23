@@ -18,7 +18,7 @@ export function HomeProductStatsCard({ stats, locale }: HomeProductStatsCardProp
   const { t } = useTranslation()
 
   return (
-    <Card className="shadow-sm">
+    <Card variant="stat">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base font-medium">{t('home.sections.products')}</CardTitle>
         <Link className="text-primary text-xs hover:underline" to="/shop/products">

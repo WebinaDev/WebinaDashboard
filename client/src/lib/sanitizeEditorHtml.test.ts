@@ -9,8 +9,13 @@ describe('sanitizeEditorHtml', () => {
     expect(out).toContain('<p>Hi</p>')
   })
 
-  it('keeps basic formatting tags', () => {
-    const out = sanitizeEditorHtml('<p><strong>Bold</strong></p>')
-    expect(out).toContain('<strong>Bold</strong>')
+  it('keeps justify, underline, and tables', () => {
+    const html =
+      '<p class="has-text-align-justify" style="text-align: justify">متن</p><p><u>زیرخط</u></p><table><tbody><tr><td>۱</td></tr></tbody></table>'
+    const out = sanitizeEditorHtml(html)
+    expect(out).toContain('has-text-align-justify')
+    expect(out).toContain('<u>')
+    expect(out).toContain('<table>')
+    expect(out).toContain('<td>')
   })
 })
