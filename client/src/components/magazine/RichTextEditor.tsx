@@ -482,7 +482,8 @@ export function RichTextEditor({ value, onChange, disabled, placeholder }: RichT
 
   useEffect(() => {
     if (!editorReady || !editor) return
-    editor.setEditable(!disabled)
+    // Avoid emitUpdate: true (default) — it fires onUpdate with empty HTML before setContent syncs.
+    editor.setEditable(!disabled, false)
   }, [disabled, editor, editorReady])
 
   useEffect(() => {

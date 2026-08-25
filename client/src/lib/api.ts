@@ -102,6 +102,10 @@ function ajaxActionForPath(path: string): string | null {
   if (clean === 'basalam/oauth/complete') {
     return 'webino_dashboard_basalam_oauth_complete'
   }
+  // Product editor — prefer admin-ajax when CDN/WAF blocks /wp-json/.
+  if (clean === 'shop/products/lookup' || clean.startsWith('shop/products')) {
+    return 'webino_dashboard_shop_rest'
+  }
   // Bot SPA pages — single ajax proxy for all bots/* management routes.
   if (
     clean.startsWith('bots/bale/') ||
@@ -114,6 +118,28 @@ function ajaxActionForPath(path: string): string | null {
     }
   }
   return null
+}
+
+function restNonJsonMessage(rawText: string, status: number): { message: string; code: string } {
+  const lower = rawText.toLowerCase()
+  if (
+    lower.includes('briefly unavailable for scheduled maintenance') ||
+    lower.includes('site is undergoing maintenance') ||
+    lower.includes('در حال به‌روزرسانی') ||
+    lower.includes('maintenance')
+  ) {
+    return { message: 'Site is updating', code: 'site_updating' }
+  }
+  if (rawText.includes('Upstream Error') || status === 502 || status === 520 || status === 521 || status === 522) {
+    return {
+      message: 'REST blocked by CDN/WAF — whitelist /wp-json/ or use admin-ajax',
+      code: 'rest_cdn_blocked',
+    }
+  }
+  if (rawText.trim().startsWith('<') || rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+    return { message: `Invalid JSON response (HTML, HTTP ${status || 0})`, code: 'invalid_json' }
+  }
+  return { message: 'Invalid JSON response', code: 'invalid_json' }
 }
 
 function ajaxNonJsonMessage(rawText: string, status: number): string {
@@ -192,6 +218,17 @@ async function apiFetchViaAjax<T>(path: string, timeoutMs: number, init: Request
       })
     }
     return json.data as T
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw err
+    }
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new ApiError('Request timed out', { code: 'timeout', status: 0 })
+    }
+    if (err instanceof TypeError) {
+      throw new ApiError('Network unavailable', { code: 'network_offline', status: 0 })
+    }
+    throw err
   } finally {
     clear()
   }
@@ -231,12 +268,8 @@ export async function apiFetch<T>(
     try {
       data = JSON.parse(rawText) as T & { message?: string; error?: string; code?: string }
     } catch {
-      throw new ApiError(
-        rawText.includes('Upstream Error') || rawText.includes('Forbidden')
-          ? 'REST blocked by CDN/WAF — use admin-ajax fallback or whitelist /wp-json/'
-          : 'Invalid JSON response',
-        { code: 'invalid_json', status: res.status },
-      )
+      const mapped = restNonJsonMessage(rawText, res.status)
+      throw new ApiError(mapped.message, { code: mapped.code, status: res.status })
     }
     if (!res.ok) {
       const errBody = data as { message?: string; error?: string; code?: string }
@@ -255,6 +288,9 @@ export async function apiFetch<T>(
     }
     if (err instanceof DOMException && err.name === 'AbortError') {
       throw new ApiError('Request timed out', { code: 'timeout', status: 0 })
+    }
+    if (err instanceof TypeError) {
+      throw new ApiError('Network unavailable', { code: 'network_offline', status: 0 })
     }
     throw err
   } finally {

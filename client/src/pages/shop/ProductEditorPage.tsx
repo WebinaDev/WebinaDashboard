@@ -5,6 +5,7 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { useProductEditorForm } from '@/hooks/useProductEditorForm'
 
 import { QueryErrorState } from '@/components/QueryErrorState'
+import { apiErrorMessage } from '@/lib/apiError'
 import { ProductAttributesPanel } from '@/components/products/editor/ProductAttributesPanel'
 import { ProductDescriptionsSection } from '@/components/products/editor/ProductDescriptionsSection'
 import { ProductEditorLayout } from '@/components/products/editor/ProductEditorLayout'
@@ -65,10 +66,10 @@ export default function ProductEditorPage() {
     await form.save.mutateAsync()
   }
 
+  /** Autosave WFCP purchase fields only — wired solely to the purchase input, not type Select. */
   function handlePurchaseBlur() {
-    if (form.id && !form.save.isPending && !form.patchWfcp.isPending) {
-      void form.patchWfcp.mutateAsync()
-    }
+    if (!form.id || form.save.isPending || form.patchWfcp.isPending) return
+    void form.patchWfcp.mutateAsync()
   }
 
   if (form.loadFailed) {
@@ -81,6 +82,10 @@ export default function ProductEditorPage() {
         onSave={() => {}}
         main={
           <QueryErrorState
+            message={apiErrorMessage(
+              t,
+              form.productQ.error ?? form.lookupQ.error ?? undefined,
+            )}
             onRetry={() => {
               void form.productQ.refetch()
               void form.lookupQ.refetch()
@@ -111,14 +116,19 @@ export default function ProductEditorPage() {
         onSlugChange={form.setSlug}
         onSlugTouched={() => form.setSlugTouched(true)}
       />
-      <ProductDescriptionsSection
-        shortOnly
-        shortDescription={form.shortDescription}
-        description={form.description}
-        disabled={form.save.isPending}
-        onShortChange={form.setShortDescription}
-        onDescriptionChange={form.setDescription}
-      />
+      {form.descriptionsReady ? (
+        <ProductDescriptionsSection
+          productId={form.id ?? 'new'}
+          shortOnly
+          shortDescription={form.shortDescription}
+          description={form.description}
+          disabled={form.save.isPending}
+          onShortChange={form.setShortDescription}
+          onDescriptionChange={form.setDescription}
+        />
+      ) : (
+        <Skeleton className="h-28 w-full rounded-xl" />
+      )}
 
       <Tabs defaultValue="content" className="gap-3">
         <TabsList
@@ -136,14 +146,19 @@ export default function ProductEditorPage() {
         </TabsList>
 
         <TabsContent value="content" className="space-y-3 outline-none">
-          <ProductDescriptionsSection
-            longOnly
-            shortDescription={form.shortDescription}
-            description={form.description}
-            disabled={form.save.isPending}
-            onShortChange={form.setShortDescription}
-            onDescriptionChange={form.setDescription}
-          />
+          {form.descriptionsReady ? (
+            <ProductDescriptionsSection
+              productId={form.id ?? 'new'}
+              longOnly
+              shortDescription={form.shortDescription}
+              description={form.description}
+              disabled={form.save.isPending}
+              onShortChange={form.setShortDescription}
+              onDescriptionChange={form.setDescription}
+            />
+          ) : (
+            <Skeleton className="h-56 w-full rounded-xl" />
+          )}
         </TabsContent>
 
         <TabsContent value="pricing" className="space-y-3 outline-none">
@@ -193,8 +208,16 @@ export default function ProductEditorPage() {
             onBackordersChange={form.setBackorders}
           />
           {form.productType === 'variable' ? (
-            form.id ? (
-              <ProductVariationsPanel productId={form.id} />
+            form.id && form.productQ.data?.type === 'variable' ? (
+              <ProductVariationsPanel
+                productId={form.id}
+                hasSavedVariationAttributes={(form.productQ.data.product_attributes ?? []).some(
+                  (a) =>
+                    Boolean(a.variation) &&
+                    Array.isArray(a.options) &&
+                    a.options.length > 0,
+                )}
+              />
             ) : (
               <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
                 {t('products.editor.saveBeforeVariations')}
@@ -213,8 +236,16 @@ export default function ProductEditorPage() {
           />
         </TabsContent>
 
-        <TabsContent value="attributes" className="space-y-3 outline-none">
-          <ProductAttributesPanel attributes={form.attributes} onChange={form.setAttributes} />
+        <TabsContent
+          value="attributes"
+          forceMount
+          className="space-y-3 outline-none data-[state=inactive]:hidden"
+        >
+          <ProductAttributesPanel
+            attributes={form.attributes}
+            onChange={form.setAttributes}
+            productType={form.productType}
+          />
         </TabsContent>
 
         {coffeeProfileActive ? (
@@ -224,7 +255,7 @@ export default function ProductEditorPage() {
               component="CoffeeProfileProductPanel"
               componentProps={{ productId: form.id || undefined, registerSave: registerCoffeeSave }}
             />
-            {form.productType === 'variable' ? (
+            {form.productType === 'variable' && form.id && form.productQ.data?.type === 'variable' ? (
               <ModulePanel
                 slug="coffee-profile-module"
                 component="CoffeeWeightPricingPanel"

@@ -871,6 +871,34 @@ class Webino_Dashboard_REST_Crud {
 
 		register_rest_route(
 			self::NS,
+			'/orders/print-labels',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'orders_print_labels' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' );
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shop/products/print-labels',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'products_print_labels' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_products' );
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shop/reports/sales',
 			array(
 				'methods'             => 'GET',
@@ -1618,6 +1646,7 @@ class Webino_Dashboard_REST_Crud {
 				? Webino_Dashboard_AI_Writer::map_post_seo( (int) $p->ID )
 				: self::map_post_seo_fallback( (int) $p->ID ),
 			'rank_math_available'=> class_exists( 'RankMath', false ) || defined( 'RANK_MATH_VERSION' ),
+			'ai_page_prompt'     => (string) get_post_meta( (int) $p->ID, '_webino_ai_page_prompt', true ),
 		);
 	}
 
@@ -1656,6 +1685,15 @@ class Webino_Dashboard_REST_Crud {
 				Webino_Dashboard_AI_Writer::apply_post_seo( (int) $id, $seo );
 			} else {
 				self::apply_post_seo_fallback( (int) $id, $seo );
+			}
+		}
+
+		if ( null !== $request->get_param( 'ai_page_prompt' ) ) {
+			update_post_meta( $id, '_webino_ai_page_prompt', sanitize_textarea_field( (string) $request->get_param( 'ai_page_prompt' ) ) );
+		} else {
+			$json = $request->get_json_params();
+			if ( is_array( $json ) && array_key_exists( 'ai_page_prompt', $json ) ) {
+				update_post_meta( $id, '_webino_ai_page_prompt', sanitize_textarea_field( (string) $json['ai_page_prompt'] ) );
 			}
 		}
 		return true;
@@ -2673,31 +2711,28 @@ class Webino_Dashboard_REST_Crud {
 			'menu_order'  => (int) get_term_meta( $term->term_id, 'order', true ),
 			'count'       => (int) $term->count,
 		);
+		$taxonomy = isset( $term->taxonomy ) ? (string) $term->taxonomy : null;
 		if ( 'color' === $attr_type ) {
-			$color = get_term_meta( $term->term_id, 'product_attribute_color', true );
-			if ( '' === $color || false === $color ) {
-				$color = get_term_meta( $term->term_id, 'yith_wccl_value', true );
+			if ( class_exists( 'Webino_Dashboard_Variation_Swatches', false ) ) {
+				$item['color'] = Webino_Dashboard_Variation_Swatches::resolve_term_color( (int) $term->term_id, $taxonomy );
+			} else {
+				$color = get_term_meta( $term->term_id, 'product_attribute_color', true );
+				$item['color'] = self::normalize_attribute_hex_color( is_string( $color ) ? $color : '' );
 			}
-			if ( '' === $color || false === $color ) {
-				$color = get_term_meta( $term->term_id, 'ishop_attribute_color', true );
-			}
-			if ( '' === $color || false === $color ) {
-				$color = get_term_meta( $term->term_id, 'color', true );
-			}
-			$item['color'] = self::normalize_attribute_hex_color( is_string( $color ) ? $color : '' );
 		}
 		if ( 'image' === $attr_type ) {
-			$image_id = (int) get_term_meta( $term->term_id, 'product_attribute_image', true );
-			if ( $image_id <= 0 ) {
-				$yith = get_term_meta( $term->term_id, 'yith_wccl_value', true );
-				if ( is_numeric( $yith ) ) {
-					$image_id = (int) $yith;
-				} elseif ( is_string( $yith ) && '' !== $yith ) {
-					$image_id = (int) attachment_url_to_postid( $yith );
+			if ( class_exists( 'Webino_Dashboard_Variation_Swatches', false ) ) {
+				$img               = Webino_Dashboard_Variation_Swatches::resolve_term_image( (int) $term->term_id, $taxonomy );
+				$item['image_id']  = $img['id'];
+				$item['image_url'] = $img['url'] ? $img['url'] : ( $img['id'] > 0 ? (string) wp_get_attachment_image_url( $img['id'], 'thumbnail' ) : '' );
+				if ( $item['image_id'] > 0 && '' === $item['image_url'] ) {
+					$item['image_url'] = (string) wp_get_attachment_image_url( $item['image_id'], 'thumbnail' );
 				}
+			} else {
+				$image_id          = (int) get_term_meta( $term->term_id, 'product_attribute_image', true );
+				$item['image_id']  = $image_id;
+				$item['image_url'] = $image_id > 0 ? (string) wp_get_attachment_image_url( $image_id, 'thumbnail' ) : '';
 			}
-			$item['image_id']  = $image_id;
-			$item['image_url'] = $image_id > 0 ? (string) wp_get_attachment_image_url( $image_id, 'thumbnail' ) : '';
 		}
 		return $item;
 	}
@@ -2709,13 +2744,25 @@ class Webino_Dashboard_REST_Crud {
 	 * @return void
 	 */
 	private static function save_global_attribute_term_meta( $term_id, $attr_type, $params ) {
+		$term_id  = (int) $term_id;
+		$taxonomy = null;
+		$term     = get_term( $term_id );
+		if ( $term instanceof WP_Term && ! is_wp_error( $term ) ) {
+			$taxonomy = (string) $term->taxonomy;
+		}
+
 		if ( 'color' === $attr_type && null !== ( $params['color'] ?? null ) ) {
-			$color = self::normalize_attribute_hex_color( (string) $params['color'] );
-			if ( $color ) {
+			$raw   = (string) $params['color'];
+			$color = class_exists( 'Webino_Dashboard_Variation_Swatches', false )
+				? Webino_Dashboard_Variation_Swatches::normalize_hex( $raw )
+				: self::normalize_attribute_hex_color( $raw );
+			if ( class_exists( 'Webino_Dashboard_Variation_Swatches', false ) ) {
+				Webino_Dashboard_Variation_Swatches::sync_term_color( $term_id, $color, $taxonomy, false );
+			} elseif ( $color ) {
 				update_term_meta( $term_id, 'product_attribute_color', $color );
 				update_term_meta( $term_id, 'yith_wccl_value', $color );
 				update_term_meta( $term_id, 'ishop_attribute_color', $color );
-			} else {
+			} elseif ( '' === trim( $raw ) ) {
 				delete_term_meta( $term_id, 'product_attribute_color' );
 				delete_term_meta( $term_id, 'yith_wccl_value' );
 				delete_term_meta( $term_id, 'ishop_attribute_color' );
@@ -2723,7 +2770,9 @@ class Webino_Dashboard_REST_Crud {
 		}
 		if ( 'image' === $attr_type && null !== ( $params['image_id'] ?? null ) ) {
 			$image_id = absint( $params['image_id'] );
-			if ( $image_id > 0 ) {
+			if ( class_exists( 'Webino_Dashboard_Variation_Swatches', false ) ) {
+				Webino_Dashboard_Variation_Swatches::sync_term_image( $term_id, $image_id, $taxonomy, false );
+			} elseif ( $image_id > 0 ) {
 				update_term_meta( $term_id, 'product_attribute_image', $image_id );
 				$url = (string) wp_get_attachment_url( $image_id );
 				if ( $url ) {
@@ -3422,25 +3471,30 @@ class Webino_Dashboard_REST_Crud {
 		if ( is_array( $raw_attrs ) && class_exists( 'WC_Product_Attribute' ) ) {
 			$attr_objects = array();
 			foreach ( $raw_attrs as $i => $row ) {
-				if ( ! is_array( $row ) || empty( $row['name'] ) || empty( $row['options'] ) || ! is_array( $row['options'] ) ) {
+				if ( ! is_array( $row ) ) {
 					continue;
 				}
-				$options = array_values(
+				$aid  = isset( $row['attribute_id'] ) ? (int) $row['attribute_id'] : 0;
+				$name = isset( $row['name'] ) ? sanitize_text_field( (string) $row['name'] ) : '';
+				// Keep rows that have a name and/or attribute_id even when options are empty (clear terms / attach empty global attr).
+				if ( '' === $name && $aid <= 0 ) {
+					continue;
+				}
+				$raw_options = ( isset( $row['options'] ) && is_array( $row['options'] ) ) ? $row['options'] : array();
+				$options     = array_values(
 					array_filter(
-						array_map( 'sanitize_text_field', array_map( 'strval', $row['options'] ) )
+						array_map( 'sanitize_text_field', array_map( 'strval', $raw_options ) ),
+						static function ( $opt ) {
+							return '' !== $opt;
+						}
 					)
 				);
-				if ( ! $options ) {
-					continue;
-				}
 
 				$attr = new WC_Product_Attribute();
-				$aid  = isset( $row['attribute_id'] ) ? (int) $row['attribute_id'] : 0;
-				$name = sanitize_text_field( (string) $row['name'] );
 
 				// Always prefer / create a WooCommerce global attribute (never product-only).
-				if ( $aid <= 0 && function_exists( 'wc_create_attribute' ) ) {
-					$slug = sanitize_title( 0 === strpos( $name, 'pa_' ) ? substr( $name, 3 ) : $name );
+				if ( $aid <= 0 && '' !== $name && function_exists( 'wc_create_attribute' ) ) {
+					$slug  = sanitize_title( 0 === strpos( $name, 'pa_' ) ? substr( $name, 3 ) : $name );
 					$label = $name;
 					if ( 0 === strpos( $name, 'pa_' ) && function_exists( 'wc_attribute_label' ) ) {
 						$label = wc_attribute_label( $name );
@@ -3474,26 +3528,48 @@ class Webino_Dashboard_REST_Crud {
 				$attr->set_visible( isset( $row['visible'] ) ? (bool) $row['visible'] : true );
 				$attr->set_variation( $is_var_product && ! empty( $row['variation'] ) );
 
-				$key = sanitize_title( $name );
-				if ( $aid > 0 && function_exists( 'wc_attribute_taxonomy_id_to_name' ) ) {
-					$tax_name = wc_attribute_taxonomy_id_to_name( $aid );
-					if ( ! is_string( $tax_name ) || '' === $tax_name ) {
-						$tax_name = self::resolve_attribute_taxonomy( $aid, $name );
-					}
+				if ( $aid > 0 ) {
+					// Use shared helper (wc_attribute_taxonomy_name_by_id) — not the non-existent id_to_name alias.
+					$tax_name = self::resolve_attribute_taxonomy( $aid, $name );
 					if ( is_string( $tax_name ) && '' !== $tax_name ) {
 						if ( ! taxonomy_exists( $tax_name ) ) {
 							register_taxonomy( $tax_name, array( 'product' ) );
 						}
+						$resolved_ids = array();
 						foreach ( $options as $opt ) {
-							if ( ! term_exists( $opt, $tax_name ) ) {
-								wp_insert_term( $opt, $tax_name );
+							$term_id = 0;
+							if ( ctype_digit( (string) $opt ) ) {
+								$by_id = get_term( (int) $opt, $tax_name );
+								if ( $by_id && ! is_wp_error( $by_id ) ) {
+									$term_id = (int) $by_id->term_id;
+								}
+							}
+							if ( $term_id <= 0 ) {
+								$by_slug = get_term_by( 'slug', sanitize_title( $opt ), $tax_name );
+								if ( $by_slug && ! is_wp_error( $by_slug ) ) {
+									$term_id = (int) $by_slug->term_id;
+								}
+							}
+							if ( $term_id <= 0 ) {
+								$by_name = get_term_by( 'name', $opt, $tax_name );
+								if ( $by_name && ! is_wp_error( $by_name ) ) {
+									$term_id = (int) $by_name->term_id;
+								}
+							}
+							if ( $term_id <= 0 ) {
+								$inserted = wp_insert_term( $opt, $tax_name );
+								if ( ! is_wp_error( $inserted ) && ! empty( $inserted['term_id'] ) ) {
+									$term_id = (int) $inserted['term_id'];
+								}
+							}
+							if ( $term_id > 0 ) {
+								$resolved_ids[] = $term_id;
 							}
 						}
 						$attr->set_id( $aid );
 						$attr->set_name( $tax_name );
-						$attr->set_options( $options );
-						$key = $tax_name;
-						$attr_objects[ $key ] = $attr;
+						$attr->set_options( array_values( array_unique( $resolved_ids ) ) );
+						$attr_objects[ $tax_name ] = $attr;
 						continue;
 					}
 				}
@@ -3501,9 +3577,8 @@ class Webino_Dashboard_REST_Crud {
 				// Last resort should still not happen; skip orphan custom attrs.
 				continue;
 			}
-			if ( array() !== $attr_objects ) {
-				$p->set_attributes( $attr_objects );
-			}
+			// Always apply — empty array clears all product attributes.
+			$p->set_attributes( $attr_objects );
 		}
 		foreach ( array( 'weight', 'length', 'width', 'height' ) as $dim ) {
 			if ( null === $request->get_param( $dim ) ) {
@@ -3638,6 +3713,72 @@ class Webino_Dashboard_REST_Crud {
 	}
 
 	/**
+	 * Convert an existing product between simple and variable using WC factory classes.
+	 * Calling $product->save() on the wrong class resets product_type — always return a fresh instance.
+	 *
+	 * @param int    $product_id Product ID.
+	 * @param string $new_type   simple|variable.
+	 * @return WC_Product|WP_Error
+	 */
+	private static function convert_product_type( $product_id, $new_type ) {
+		$product_id = (int) $product_id;
+		$new_type   = sanitize_key( (string) $new_type );
+		if ( ! in_array( $new_type, array( 'simple', 'variable' ), true ) ) {
+			return new WP_Error( 'invalid_type', __( 'Invalid product type.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$current = wc_get_product( $product_id );
+		if ( ! $current ) {
+			return new WP_Error( 'not_found', 'Not found', array( 'status' => 404 ) );
+		}
+		if ( $current->get_type() === $new_type ) {
+			return $current;
+		}
+		$children = $current->get_children();
+		if ( ! empty( $children ) ) {
+			return new WP_Error(
+				'type_has_variations',
+				__( 'Cannot change product type while variations exist. Delete variations first.', 'webino-dashboard' ),
+				array( 'status' => 400 )
+			);
+		}
+		if ( ! class_exists( 'WC_Product_Factory', false ) ) {
+			return new WP_Error( 'no_wc', 'WC inactive', array( 'status' => 400 ) );
+		}
+		$classname = WC_Product_Factory::get_product_classname( $product_id, $new_type );
+		if ( ! is_string( $classname ) || ! class_exists( $classname ) ) {
+			return new WP_Error( 'invalid_type', __( 'Invalid product type.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		/** @var WC_Product $converted */
+		$converted = new $classname( $product_id );
+		if ( 'variable' === $new_type ) {
+			// Parent-level stock from a former simple product blocks storefront availability.
+			$converted->set_manage_stock( false );
+			$converted->set_stock_quantity( '' );
+			$converted->set_stock_status( 'instock' );
+		}
+		$converted->save();
+		if ( function_exists( 'wc_delete_product_transients' ) ) {
+			wc_delete_product_transients( $product_id );
+		}
+		clean_post_cache( $product_id );
+		if ( class_exists( 'WC_Cache_Helper', false ) && method_exists( 'WC_Cache_Helper', 'invalidate_cache_group' ) ) {
+			WC_Cache_Helper::invalidate_cache_group( 'object_' . $product_id );
+		}
+		$fresh = wc_get_product( $product_id );
+		if ( ! $fresh ) {
+			return new WP_Error( 'not_found', 'Not found', array( 'status' => 404 ) );
+		}
+		if ( $fresh->get_type() !== $new_type ) {
+			return new WP_Error(
+				'type_convert_failed',
+				__( 'Could not change product type.', 'webino-dashboard' ),
+				array( 'status' => 500 )
+			);
+		}
+		return $fresh;
+	}
+
+	/**
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
 	 */
@@ -3650,6 +3791,19 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! $p ) {
 			return new WP_Error( 'not_found', 'Not found', array( 'status' => 404 ) );
 		}
+
+		$type_param = $request->get_param( 'type' );
+		if ( null !== $type_param ) {
+			$new_type = sanitize_key( (string) $type_param );
+			if ( in_array( $new_type, array( 'simple', 'variable' ), true ) && $p->get_type() !== $new_type ) {
+				$converted = self::convert_product_type( $id, $new_type );
+				if ( is_wp_error( $converted ) ) {
+					return $converted;
+				}
+				$p = $converted;
+			}
+		}
+
 		if ( null !== $request->get_param( 'name' ) ) {
 			$p->set_name( sanitize_text_field( (string) $request->get_param( 'name' ) ) );
 		}
@@ -3660,6 +3814,12 @@ class Webino_Dashboard_REST_Crud {
 			}
 		}
 		$is_variable = $p->is_type( 'variable' );
+		if ( $is_variable && $p->get_manage_stock() ) {
+			// Repair leftovers from simple→variable (or legacy saves).
+			$p->set_manage_stock( false );
+			$p->set_stock_quantity( '' );
+			$p->set_stock_status( 'instock' );
+		}
 		if ( ! $is_variable ) {
 			if ( null !== $request->get_param( 'regular_price' ) ) {
 				$pr = wc_format_decimal( $request->get_param( 'regular_price' ) );
@@ -3708,6 +3868,11 @@ class Webino_Dashboard_REST_Crud {
 			Webino_Dashboard_REST::apply_product_ishop( $p, $ishop );
 		}
 		$p->save();
+
+		if ( $p->is_type( 'variable' ) ) {
+			self::repair_variable_children_stock_status( $id );
+			self::sync_variable_parent( $id );
+		}
 
 		$wfcp = $request->get_param( 'wfcp' );
 		if ( is_array( $wfcp ) && array() !== $wfcp ) {
@@ -4340,11 +4505,19 @@ class Webino_Dashboard_REST_Crud {
 			$sq = $request->get_param( 'stock_quantity' );
 			$v->set_stock_quantity( null === $sq || '' === $sq ? null : (int) $sq );
 		}
-		if ( null !== $request->get_param( 'stock_status' ) ) {
+		$status_explicit = null !== $request->get_param( 'stock_status' );
+		if ( $status_explicit ) {
 			$st = sanitize_key( (string) $request->get_param( 'stock_status' ) );
 			if ( in_array( $st, array( 'instock', 'outofstock', 'onbackorder' ), true ) ) {
 				$v->set_stock_status( $st );
 			}
+		} elseif ( $v->get_manage_stock() ) {
+			// UI often sends qty without status; WC is_in_stock() keys off stock_status.
+			$qty = $v->get_stock_quantity();
+			$v->set_stock_status( ( null !== $qty && (int) $qty > 0 ) ? 'instock' : 'outofstock' );
+		} elseif ( null !== $request->get_param( 'manage_stock' ) ) {
+			// Stock management turned off without explicit status → treat as available.
+			$v->set_stock_status( 'instock' );
 		}
 		if ( null !== $request->get_param( 'image_id' ) ) {
 			$img = (int) $request->get_param( 'image_id' );
@@ -4418,6 +4591,51 @@ class Webino_Dashboard_REST_Crud {
 	}
 
 	/**
+	 * Sync parent variable stock/price summary after variation mutations.
+	 *
+	 * @param int $parent_id Parent product ID.
+	 * @return void
+	 */
+	private static function sync_variable_parent( $parent_id ) {
+		$parent_id = (int) $parent_id;
+		if ( $parent_id < 1 ) {
+			return;
+		}
+		if ( class_exists( 'WC_Product_Variable' ) ) {
+			WC_Product_Variable::sync( $parent_id );
+		}
+		if ( function_exists( 'wc_delete_product_transients' ) ) {
+			wc_delete_product_transients( $parent_id );
+		}
+	}
+
+	/**
+	 * Align variation stock_status with qty when manage_stock is on (repair legacy saves).
+	 *
+	 * @param int $parent_id Parent product ID.
+	 * @return void
+	 */
+	private static function repair_variable_children_stock_status( $parent_id ) {
+		$parent = wc_get_product( (int) $parent_id );
+		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
+			return;
+		}
+		foreach ( $parent->get_children() as $vid ) {
+			$v = wc_get_product( (int) $vid );
+			if ( ! $v || ! $v->is_type( 'variation' ) || ! $v->get_manage_stock() ) {
+				continue;
+			}
+			$qty  = $v->get_stock_quantity();
+			$want = ( null !== $qty && (int) $qty > 0 ) ? 'instock' : 'outofstock';
+			if ( $v->get_stock_status() === $want ) {
+				continue;
+			}
+			$v->set_stock_status( $want );
+			$v->save();
+		}
+	}
+
+	/**
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
 	 */
@@ -4472,6 +4690,7 @@ class Webino_Dashboard_REST_Crud {
 		self::apply_variation_request( $v, $request );
 		$v->save();
 		self::maybe_sync_variation_wfcp( $v->get_id() );
+		self::sync_variable_parent( $parent_id );
 		$v2 = wc_get_product( $v->get_id() );
 		return new WP_REST_Response( $v2 && $v2->is_type( 'variation' ) ? self::map_variation_row( $v2 ) : self::map_variation_row( $v ), 201 );
 	}
@@ -4490,6 +4709,7 @@ class Webino_Dashboard_REST_Crud {
 		self::apply_variation_request( $v, $request );
 		$v->save();
 		self::maybe_sync_variation_wfcp( $vid );
+		self::sync_variable_parent( $parent_id );
 		$v2 = wc_get_product( $vid );
 		return new WP_REST_Response( $v2 && $v2->is_type( 'variation' ) ? self::map_variation_row( $v2 ) : self::map_variation_row( $v ) );
 	}
@@ -4505,10 +4725,8 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! $v || ! $v->is_type( 'variation' ) || (int) $v->get_parent_id() !== $parent_id ) {
 			return new WP_Error( 'not_found', __( 'Variation not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
 		}
-		$r = wp_delete_post( $vid, true );
-		if ( ! $r ) {
-			return new WP_Error( 'fail', __( 'Could not delete variation.', 'webino-dashboard' ), array( 'status' => 400 ) );
-		}
+		$v->delete( true );
+		self::sync_variable_parent( $parent_id );
 		return new WP_REST_Response( array( 'deleted' => true ) );
 	}
 
@@ -4606,9 +4824,7 @@ class Webino_Dashboard_REST_Crud {
 			self::maybe_sync_variation_wfcp( (int) $vid );
 			++$updated;
 		}
-		if ( function_exists( 'wc_delete_product_transients' ) ) {
-			wc_delete_product_transients( $parent_id );
-		}
+		self::sync_variable_parent( $parent_id );
 		return new WP_REST_Response( array( 'updated' => $updated ) );
 	}
 
@@ -4693,11 +4909,8 @@ class Webino_Dashboard_REST_Crud {
 			++$created;
 		}
 
-		if ( $created > 0 && class_exists( 'WC_Product_Variable' ) ) {
-			WC_Product_Variable::sync( $parent_id );
-			if ( function_exists( 'wc_delete_product_transients' ) ) {
-				wc_delete_product_transients( $parent_id );
-			}
+		if ( $created > 0 ) {
+			self::sync_variable_parent( $parent_id );
 		}
 
 		return new WP_REST_Response(
@@ -4859,8 +5072,11 @@ class Webino_Dashboard_REST_Crud {
 			return new WP_Error( 'not_found', 'Not found', array( 'status' => 404 ) );
 		}
 		$type = sanitize_key( (string) $request->get_param( 'type' ) );
-		if ( ! in_array( $type, array( 'invoice', 'label', 'receipt' ), true ) ) {
+		if ( ! in_array( $type, array( 'invoice', 'label', 'receipt', 'packing', 'customer_label', 'store_label' ), true ) ) {
 			return new WP_Error( 'invalid', __( 'Invalid document type.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( class_exists( 'Webino_Dashboard_Order_Document_Settings', false ) && ! Webino_Dashboard_Order_Document_Settings::is_enabled( $type ) ) {
+			return new WP_Error( 'disabled', __( 'This document type is disabled.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 
 		$user_id = get_current_user_id();
@@ -4869,6 +5085,100 @@ class Webino_Dashboard_REST_Crud {
 		Webino_Dashboard_I18n::with_user_locale(
 			function () use ( $o, $type, $locale ) {
 				$html = Webino_Dashboard_Order_Documents::render( $o, $type, $locale );
+				header( 'Content-Type: text/html; charset=utf-8' );
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo $html;
+				exit;
+			},
+			$user_id
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return void|WP_Error
+	 */
+	public static function orders_print_labels( $request ) {
+		if ( ! Webino_Dashboard_Orders::wc_active() ) {
+			return new WP_Error( 'no_wc', __( 'Store module is not available.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( class_exists( 'Webino_Dashboard_Order_Document_Settings', false ) && ! Webino_Dashboard_Order_Document_Settings::is_enabled( 'label' ) ) {
+			return new WP_Error( 'disabled', __( 'This document type is disabled.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( ! function_exists( 'wc_get_orders' ) ) {
+			return new WP_Error( 'no_wc', __( 'Store module is not available.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$meta_key = Webino_Dashboard_Order_Document_Settings::LABEL_PRINTED_META;
+		$candidates = wc_get_orders(
+			array(
+				'status'     => array( 'processing', 'on-hold' ),
+				'limit'      => 80,
+				'orderby'    => 'date',
+				'order'      => 'ASC',
+				'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => $meta_key,
+						'compare' => 'NOT EXISTS',
+					),
+				),
+			)
+		);
+		$orders = array();
+		foreach ( (array) $candidates as $order ) {
+			if ( ! ( $order instanceof WC_Order ) ) {
+				continue;
+			}
+			if ( $order->get_meta( $meta_key ) ) {
+				continue;
+			}
+			$orders[] = $order;
+			if ( count( $orders ) >= 50 ) {
+				break;
+			}
+		}
+		if ( ! $orders ) {
+			return new WP_Error( 'empty', __( 'No new orders to print.', 'webino-dashboard' ), array( 'status' => 404 ) );
+		}
+		$user_id = get_current_user_id();
+		$locale  = Webino_Dashboard_I18n::get_user_locale( $user_id );
+		$html    = Webino_Dashboard_I18n::with_user_locale(
+			function () use ( $orders, $locale ) {
+				return Webino_Dashboard_Order_Documents::render_labels_batch( $orders, $locale );
+			},
+			$user_id
+		);
+		foreach ( $orders as $order ) {
+			if ( $order instanceof WC_Order ) {
+				$order->update_meta_data( $meta_key, (string) time() );
+				$order->save();
+			}
+		}
+		header( 'Content-Type: text/html; charset=utf-8' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $html;
+		exit;
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return void|WP_Error
+	 */
+	public static function products_print_labels( $request ) {
+		if ( class_exists( 'Webino_Dashboard_Order_Document_Settings', false ) && ! Webino_Dashboard_Order_Document_Settings::is_enabled( 'product_label' ) ) {
+			return new WP_Error( 'disabled', __( 'This document type is disabled.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$raw   = (string) $request->get_param( 'ids' );
+		$parts = preg_split( '/[,\s]+/', $raw );
+		$ids   = array_values( array_unique( array_filter( array_map( 'intval', is_array( $parts ) ? $parts : array() ) ) ) );
+		if ( ! $ids ) {
+			return new WP_Error( 'empty', __( 'No products selected.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$ids     = array_slice( $ids, 0, 80 );
+		$user_id = get_current_user_id();
+		$locale  = Webino_Dashboard_I18n::get_user_locale( $user_id );
+		Webino_Dashboard_I18n::with_user_locale(
+			function () use ( $ids, $locale ) {
+				$html = Webino_Dashboard_Order_Documents::render_product_labels( $ids, $locale );
 				header( 'Content-Type: text/html; charset=utf-8' );
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo $html;

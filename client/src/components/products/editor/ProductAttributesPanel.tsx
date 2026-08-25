@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronsUpDown } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -37,7 +37,8 @@ import type { AttributeRow } from '@/types/product'
 
 type ProductAttributesPanelProps = {
   attributes: AttributeRow[]
-  onChange: (rows: AttributeRow[]) => void
+  onChange: Dispatch<SetStateAction<AttributeRow[]>>
+  productType?: 'simple' | 'variable'
 }
 
 const CREATE_TYPES: AttributeType[] = ['select', 'text', 'color', 'image', 'button']
@@ -53,7 +54,11 @@ function joinOptions(values: string[]): string {
   return values.join(', ')
 }
 
-export function ProductAttributesPanel({ attributes, onChange }: ProductAttributesPanelProps) {
+export function ProductAttributesPanel({
+  attributes,
+  onChange,
+  productType = 'simple',
+}: ProductAttributesPanelProps) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -110,26 +115,37 @@ export function ProductAttributesPanel({ attributes, onChange }: ProductAttribut
     onError: (e: Error) => toastApiError(t, e),
   })
 
-  function updateRow(idx: number, patch: Partial<AttributeRow>) {
-    const next = [...attributes]
-    next[idx] = { ...next[idx], ...patch }
-    onChange(next)
+  function rowKey(row: AttributeRow): string {
+    if (row.attribute_id != null && row.attribute_id > 0) return `id:${row.attribute_id}`
+    return `name:${row.name}`
+  }
+
+  function updateRow(match: AttributeRow, patch: Partial<AttributeRow>) {
+    onChange((prev) =>
+      prev.map((row) => (rowKey(row) === rowKey(match) ? { ...row, ...patch } : row)),
+    )
+  }
+
+  function removeRow(match: AttributeRow) {
+    onChange((prev) => prev.filter((row) => rowKey(row) !== rowKey(match)))
   }
 
   function addAttribute(ga: GlobalAttribute) {
     const name = ga.slug ? `pa_${ga.slug}` : ga.label
-    if (attributes.some((r) => r.name === name || r.attribute_id === ga.id)) return
-    onChange([
-      ...attributes,
-      {
-        name,
-        options: '',
-        variation: false,
-        visible: true,
-        attribute_id: ga.id,
-        taxonomy: true,
-      },
-    ])
+    onChange((prev) => {
+      if (prev.some((r) => r.name === name || r.attribute_id === ga.id)) return prev
+      return [
+        ...prev,
+        {
+          name,
+          options: '',
+          variation: productType === 'variable',
+          visible: true,
+          attribute_id: ga.id,
+          taxonomy: true,
+        },
+      ]
+    })
     setPickerOpen(false)
   }
 
@@ -229,14 +245,14 @@ export function ProductAttributesPanel({ attributes, onChange }: ProductAttribut
           <p className="text-muted-foreground text-xs">{t('products.editor.noAttributesSelected')}</p>
         ) : null}
 
-        {attributes.map((row, idx) => {
+        {attributes.map((row) => {
           const meta = globalMeta(row)
           const isGlobal = Boolean(meta)
           const selectedTerms = parseOptions(row.options)
 
           return (
             <div
-              key={`${row.attribute_id ?? row.name}-${idx}`}
+              key={rowKey(row)}
               className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-2"
             >
               <div className="space-y-1 sm:col-span-2">
@@ -256,7 +272,7 @@ export function ProductAttributesPanel({ attributes, onChange }: ProductAttribut
                     attributeType={meta.type}
                     selected={selectedTerms}
                     onChange={(names) =>
-                      updateRow(idx, {
+                      updateRow(row, {
                         options: joinOptions(names),
                         attribute_id: meta.id,
                         taxonomy: true,
@@ -270,13 +286,13 @@ export function ProductAttributesPanel({ attributes, onChange }: ProductAttribut
               </div>
               <div className="flex flex-wrap gap-4 sm:col-span-2">
                 <label className="flex items-center gap-2 text-xs">
-                  <Checkbox checked={row.visible} onCheckedChange={(v) => updateRow(idx, { visible: v === true })} />
+                  <Checkbox checked={row.visible} onCheckedChange={(v) => updateRow(row, { visible: v === true })} />
                   {t('products.attrVisible')}
                 </label>
                 <label className="flex items-center gap-2 text-xs">
                   <Checkbox
                     checked={row.variation}
-                    onCheckedChange={(v) => updateRow(idx, { variation: v === true })}
+                    onCheckedChange={(v) => updateRow(row, { variation: v === true })}
                   />
                   {t('products.attrVariation')}
                 </label>
@@ -285,7 +301,7 @@ export function ProductAttributesPanel({ attributes, onChange }: ProductAttribut
                   variant="outline"
                   size="sm"
                   className="ms-auto"
-                  onClick={() => onChange(attributes.filter((_, i) => i !== idx))}
+                  onClick={() => removeRow(row)}
                 >
                   {t('common.delete')}
                 </Button>
@@ -295,7 +311,12 @@ export function ProductAttributesPanel({ attributes, onChange }: ProductAttribut
         })}
       </CardContent>
     </Card>
-      <ProductAttributeGroupsPanel attributes={attributes} globalItems={globalItems} onChange={onChange} />
+      <ProductAttributeGroupsPanel
+        attributes={attributes}
+        globalItems={globalItems}
+        productType={productType}
+        onChange={onChange}
+      />
     </div>
   )
 }

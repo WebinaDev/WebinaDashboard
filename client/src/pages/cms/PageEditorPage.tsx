@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useMatch, useNavigate, useParams } from 'react-router-dom'
+import { useMatch, useNavigate, useParams, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
@@ -35,6 +35,8 @@ type Page = {
   password: string
   date: string
   seo?: SimpleSeo
+  ai_page_prompt?: string
+  elementor_url?: string
 }
 
 function toDateTimeLocal(value?: string) {
@@ -56,6 +58,7 @@ function buildPagePayload(input: {
   publishImmediately: boolean
   publishDate: string
   seo: SimpleSeo
+  aiPagePrompt: string
 }) {
   const body: Record<string, unknown> = {
     title: input.title,
@@ -67,6 +70,7 @@ function buildPagePayload(input: {
     comment_status: input.commentStatus,
     visibility: input.visibility,
     seo: input.seo,
+    ai_page_prompt: input.aiPagePrompt,
   }
 
   if (input.visibility === 'password' && input.password.trim()) {
@@ -104,6 +108,8 @@ export default function PageEditorPage() {
   const [publishImmediately, setPublishImmediately] = useState(true)
   const [publishDate, setPublishDate] = useState(() => dayjs().format('YYYY-MM-DDTHH:mm'))
   const [seo, setSeo] = useState<SimpleSeo>({})
+  const [aiPagePrompt, setAiPagePrompt] = useState('')
+  const [siteDescription, setSiteDescription] = useState('')
 
   const pageQ = useQuery({
     queryKey: ['page', id],
@@ -126,11 +132,48 @@ export default function PageEditorPage() {
     setVisibility(p.visibility ?? 'public')
     setPassword('')
     setSeo(p.seo ?? {})
+    setAiPagePrompt(p.ai_page_prompt ?? '')
     const dateLocal = toDateTimeLocal(p.date)
     setPublishDate(dateLocal)
     const isFuture = dayjs(p.date).isAfter(dayjs())
     setPublishImmediately(!isFuture && p.status !== 'future')
   }, [pageQ.data])
+
+  const siteQ = useQuery({
+    queryKey: ['ai-content', 'settings-public'],
+    queryFn: () =>
+      apiFetch<{ site_description?: string; site_topic?: string; do_page?: boolean }>('ai-content/site-profile'),
+    retry: false,
+  })
+
+  useEffect(() => {
+    if (!siteQ.data) return
+    setSiteDescription((siteQ.data.site_description || siteQ.data.site_topic || '').trim())
+  }, [siteQ.data])
+
+  const generateAi = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error('save first')
+      return apiFetch<{ ok: boolean; job_id: number }>('ai-content/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'page',
+          id,
+          page_prompt: aiPagePrompt,
+          run_now: false,
+        }),
+      })
+    },
+    onSuccess: (res) => {
+      if (!res?.job_id) {
+        toast.error(t('aiContent.jobQueueFailed'))
+        return
+      }
+      toast.success(t('aiContent.jobQueued'))
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
 
   const save = useMutation({
     mutationFn: async () => {
@@ -147,6 +190,7 @@ export default function PageEditorPage() {
         publishImmediately,
         publishDate,
         seo,
+        aiPagePrompt,
       })
 
       if (id) {
@@ -251,6 +295,53 @@ export default function PageEditorPage() {
           </Card>
 
           {!loading ? <SimpleSeoFields seo={seo} onChange={setSeo} /> : null}
+
+          {!loading ? (
+            <Card className="gap-4 py-4 shadow-sm">
+              <CardHeader className="px-4 pb-0">
+                <CardTitle className="text-sm font-semibold">{t('aiContent.pageAiCard')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 px-4">
+                {siteDescription ? (
+                  <p className="text-muted-foreground text-xs">
+                    {t('aiContent.siteDescription')}: {siteDescription}{' '}
+                    <Link className="underline-offset-2 hover:underline" to="/ai-content/settings">
+                      {t('aiContent.editSiteDescription')}
+                    </Link>
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    <Link className="underline-offset-2 hover:underline" to="/ai-content/settings">
+                      {t('aiContent.editSiteDescription')}
+                    </Link>
+                  </p>
+                )}
+                <Textarea
+                  rows={4}
+                  value={aiPagePrompt}
+                  onChange={(e) => setAiPagePrompt(e.target.value)}
+                  placeholder={t('aiContent.pagePromptPlaceholder')}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!id || generateAi.isPending || save.isPending}
+                    onClick={() => void generateAi.mutateAsync()}
+                  >
+                    {t('aiContent.generatePage')}
+                  </Button>
+                  {pageQ.data?.elementor_url ? (
+                    <Button type="button" size="sm" variant="outline" asChild>
+                      <a href={pageQ.data.elementor_url} target="_blank" rel="noreferrer">
+                        {t('pages.actionElementor')}
+                      </a>
+                    </Button>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">

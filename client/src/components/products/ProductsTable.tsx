@@ -6,6 +6,7 @@ import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { ProductRowActions } from '@/components/products/ProductRowActions'
 import type { ProductColumnVisibility, ProductListRow } from '@/components/products/types'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { LazyImage } from '@/components/ui/lazy-image'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
@@ -23,6 +24,9 @@ type ProductsTableProps = {
   onDuplicate: (id: number) => Promise<void>
   onDelete: (id: number) => Promise<void>
   onSyncChannel: (id: number, provider: 'bale' | 'telegram') => Promise<void>
+  selectedIds?: number[]
+  onSelectedChange?: (ids: number[]) => void
+  selectable?: boolean
 }
 
 function termList(terms: { name: string }[]): string {
@@ -52,14 +56,38 @@ export function ProductsTable({
   onDuplicate,
   onDelete,
   onSyncChannel,
+  selectedIds = [],
+  onSelectedChange,
+  selectable = false,
 }: ProductsTableProps) {
   const { t } = useTranslation()
   const store = useStoreCurrency()
+  const allSelected = items.length > 0 && items.every((row) => selectedIds.includes(row.id))
+  const someSelected = items.some((row) => selectedIds.includes(row.id))
+
+  function toggleAll(checked: boolean) {
+    onSelectedChange?.(checked ? items.map((row) => row.id) : [])
+  }
+
+  function toggleRow(id: number, checked: boolean) {
+    if (!onSelectedChange) return
+    if (checked) onSelectedChange([...selectedIds, id])
+    else onSelectedChange(selectedIds.filter((x) => x !== id))
+  }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          {selectable ? (
+            <TableHead className="w-10">
+              <Checkbox
+                checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                onCheckedChange={(v) => toggleAll(v === true)}
+                aria-label={t('products.selectAll')}
+              />
+            </TableHead>
+          ) : null}
           {columns.image ? <TableHead className="w-14">{t('products.colImage')}</TableHead> : null}
           {columns.name ? <TableHead>{t('products.colName')}</TableHead> : null}
           {columns.marketplaces ? <TableHead>{t('products.colMarketplaces')}</TableHead> : null}
@@ -94,9 +122,19 @@ export function ProductsTable({
           items.map((row) => {
             const currency = row.wfcp?.settings_currency ?? store.currency
             const wfcp = row.wfcp
+            const checked = selectedIds.includes(row.id)
 
             return (
-              <TableRow key={row.id}>
+              <TableRow key={row.id} data-state={checked ? 'selected' : undefined}>
+                {selectable ? (
+                  <TableCell>
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => toggleRow(row.id, v === true)}
+                      aria-label={t('products.selectProduct', { name: row.name })}
+                    />
+                  </TableCell>
+                ) : null}
                 {columns.image ? (
                   <TableCell>
                     {row.image_url ? (

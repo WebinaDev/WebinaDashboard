@@ -86,6 +86,7 @@ final class Webino_Dashboard_AI_Queue {
 			);
 		}
 
+		self::schedule( $job_id );
 		return $job_id;
 	}
 
@@ -209,15 +210,17 @@ final class Webino_Dashboard_AI_Queue {
 		if ( function_exists( 'ignore_user_abort' ) ) {
 			ignore_user_abort( true );
 		}
-		if ( function_exists( 'set_time_limit' ) ) {
-			@set_time_limit( 180 );
-		}
 
 		$table = Webino_Dashboard_AI_Content_Db::table( 'jobs' );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$job = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $job_id ), ARRAY_A );
 		if ( ! $job || 'running' !== $job['status'] ) {
 			return;
+		}
+
+		$is_page = 'page_design' === (string) ( $job['job_type'] ?? '' );
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( $is_page ? 0 : 180 );
 		}
 
 		self::$current_job_id = $job_id;
@@ -238,6 +241,7 @@ final class Webino_Dashboard_AI_Queue {
 			if ( is_wp_error( $stop ) ) {
 				self::mark_cancelled( $job_id, $stop->get_error_message() );
 				self::$current_job_id = 0;
+				self::kick_next_pending();
 				return;
 			}
 			$result = self::run_job_logic( (string) $job['job_type'], (string) $job['target_type'], (int) $job['target_id'], $payload );
@@ -248,6 +252,7 @@ final class Webino_Dashboard_AI_Queue {
 					self::fail_job( $job_id, $result->get_error_message() );
 				}
 				self::$current_job_id = 0;
+				self::kick_next_pending();
 				return;
 			}
 			$usage = self::usage_fields();
@@ -273,6 +278,38 @@ final class Webino_Dashboard_AI_Queue {
 			self::fail_job( $job_id, $e->getMessage() );
 		}
 		self::$current_job_id = 0;
+		self::kick_next_pending();
+	}
+
+	/**
+	 * Schedule the next pending job so the queue drains one-by-one.
+	 *
+	 * @return void
+	 */
+	public static function kick_next_pending() {
+		if ( self::is_paused() ) {
+			return;
+		}
+		global $wpdb;
+		Webino_Dashboard_AI_Content_Db::ensure_tables();
+		$table = Webino_Dashboard_AI_Content_Db::table( 'jobs' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$running = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'running' )
+		);
+		if ( $running > 0 ) {
+			return;
+		}
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$next = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$table} WHERE status = %s ORDER BY id ASC LIMIT 1",
+				'pending'
+			)
+		);
+		if ( $next > 0 ) {
+			self::schedule( $next );
+		}
 	}
 
 	/**
@@ -309,6 +346,7 @@ final class Webino_Dashboard_AI_Queue {
 			}
 		}
 		self::fail_job( (int) $job_id, $msg );
+		self::kick_next_pending();
 	}
 
 	/**
@@ -429,7 +467,7 @@ final class Webino_Dashboard_AI_Queue {
 	}
 
 	/**
-	 * @param string $phase queued|provider|seo|writing|done.
+	 * @param string $phase queued|layout|visual|provider|seo|writing|done.
 	 * @return void
 	 */
 	public static function set_phase( $phase ) {
@@ -453,7 +491,8 @@ final class Webino_Dashboard_AI_Queue {
 	}
 
 	/**
-	 * Mark running jobs older than 3 minutes as failed.
+	 * Mark stuck running jobs as failed.
+	 * Non-page jobs: 3 minutes. page_design: 6-hour zombie guard only (model may run a long time).
 	 *
 	 * @return void
 	 */
@@ -462,20 +501,37 @@ final class Webino_Dashboard_AI_Queue {
 		if ( ! Webino_Dashboard_AI_Content_Db::jobs_table_exists() ) {
 			return;
 		}
-		$table  = Webino_Dashboard_AI_Content_Db::table( 'jobs' );
-		$cutoff = gmdate( 'Y-m-d H:i:s', time() - 3 * MINUTE_IN_SECONDS );
-		$now    = current_time( 'mysql', true );
-		$msg    = __( 'Job timed out.', 'webino-dashboard' );
+		$table = Webino_Dashboard_AI_Content_Db::table( 'jobs' );
+		$now   = current_time( 'mysql', true );
+		$msg   = __( 'Job timed out.', 'webino-dashboard' );
+
+		$cutoff_default = gmdate( 'Y-m-d H:i:s', time() - 3 * MINUTE_IN_SECONDS );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET status = %s, error_message = CASE WHEN error_message IS NULL OR error_message = '' THEN %s ELSE error_message END, finished_at = %s, updated_at = %s WHERE status = %s AND started_at IS NOT NULL AND started_at < %s",
+				"UPDATE {$table} SET status = %s, error_message = CASE WHEN error_message IS NULL OR error_message = '' THEN %s ELSE error_message END, finished_at = %s, updated_at = %s WHERE status = %s AND job_type <> %s AND started_at IS NOT NULL AND started_at < %s",
 				'failed',
 				$msg,
 				$now,
 				$now,
 				'running',
-				$cutoff
+				'page_design',
+				$cutoff_default
+			)
+		);
+
+		$cutoff_page = gmdate( 'Y-m-d H:i:s', time() - 6 * HOUR_IN_SECONDS );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET status = %s, error_message = CASE WHEN error_message IS NULL OR error_message = '' THEN %s ELSE error_message END, finished_at = %s, updated_at = %s WHERE status = %s AND job_type = %s AND started_at IS NOT NULL AND started_at < %s",
+				'failed',
+				$msg,
+				$now,
+				$now,
+				'running',
+				'page_design',
+				$cutoff_page
 			)
 		);
 	}
@@ -612,6 +668,226 @@ final class Webino_Dashboard_AI_Queue {
 	}
 
 	/**
+	 * Pass 1 complete + visual gate with one retry.
+	 *
+	 * @param callable            $make_user function(array $ctx): string.
+	 * @param array<string,mixed> $schema Schema.
+	 * @param array<string,mixed> $ctx Mutable context.
+	 * @param array<string,mixed> $complete_extra Provider opts.
+	 * @return array{ok:bool,data?:array,provider?:string,model?:string,tokens_in?:int,tokens_out?:int,error?:string}|WP_Error
+	 */
+	private static function complete_with_layout_retry( $make_user, $schema, &$ctx, $complete_extra = array() ) {
+		$attempt   = 0;
+		$max       = 2;
+		$last_gate = null;
+		$system    = Webino_Dashboard_AI_Prompts::page_layout_system_rules();
+
+		while ( $attempt < $max ) {
+			++$attempt;
+			$stop = self::abort_if_cancelled();
+			if ( is_wp_error( $stop ) ) {
+				return $stop;
+			}
+
+			$user   = (string) call_user_func( $make_user, $ctx );
+			$force  = isset( $complete_extra['force_provider'] ) ? (string) $complete_extra['force_provider'] : null;
+			$result = Webino_Dashboard_AI_Providers::complete( $system, $user, $schema, $force, is_array( $complete_extra ) ? $complete_extra : array() );
+			self::remember_usage( $result );
+			if ( empty( $result['ok'] ) ) {
+				return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
+			}
+
+			$data = isset( $result['data'] ) && is_array( $result['data'] ) ? $result['data'] : array();
+			$gate = Webino_Dashboard_AI_Seo_Gate::validate_page_layout( $data );
+			if ( ! is_wp_error( $gate ) ) {
+				$result['data'] = $data;
+				return $result;
+			}
+
+			$last_gate = $gate;
+			if ( $attempt >= $max ) {
+				return $gate;
+			}
+
+			$ctx['regenerate_hint'] = self::visual_retry_hint( $gate );
+		}
+
+		return $last_gate instanceof WP_Error
+			? $last_gate
+			: new WP_Error( 'ai_visual', __( 'Page layout validation failed.', 'webino-dashboard' ) );
+	}
+
+	/**
+	 * Pass 2 visual complete (single attempt + optional retry on visual gate).
+	 *
+	 * @param callable            $make_user function(array $ctx): string.
+	 * @param array<string,mixed> $schema Schema.
+	 * @param array<string,mixed> $layout Layout blueprint.
+	 * @param array<string,mixed> $ctx Mutable context.
+	 * @param array<string,mixed> $complete_extra Provider opts.
+	 * @return array{ok:bool,data?:array,provider?:string,model?:string,tokens_in?:int,tokens_out?:int,error?:string}|WP_Error
+	 */
+	private static function complete_visual_pass( $make_user, $schema, $layout, &$ctx, $complete_extra = array() ) {
+		$attempt   = 0;
+		$max       = 2;
+		$last_gate = null;
+		$system    = Webino_Dashboard_AI_Prompts::page_visual_system_rules();
+
+		while ( $attempt < $max ) {
+			++$attempt;
+			$stop = self::abort_if_cancelled();
+			if ( is_wp_error( $stop ) ) {
+				return $stop;
+			}
+
+			$user   = (string) call_user_func( $make_user, $ctx );
+			$force  = isset( $complete_extra['force_provider'] ) ? (string) $complete_extra['force_provider'] : null;
+			$result = Webino_Dashboard_AI_Providers::complete( $system, $user, $schema, $force, is_array( $complete_extra ) ? $complete_extra : array() );
+			self::remember_usage( $result );
+			if ( empty( $result['ok'] ) ) {
+				return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
+			}
+
+			$visual = isset( $result['data'] ) && is_array( $result['data'] ) ? $result['data'] : array();
+			$data   = Webino_Dashboard_AI_Prompts::merge_page_blueprint( $layout, $visual );
+			$gate   = Webino_Dashboard_AI_Seo_Gate::validate_page_visual( $data );
+			if ( ! is_wp_error( $gate ) ) {
+				$result['data'] = $data;
+				return $result;
+			}
+
+			$last_gate = $gate;
+			if ( $attempt >= $max ) {
+				return $gate;
+			}
+
+			$ctx['regenerate_hint'] = 'Visual pass failed: ' . $gate->get_error_message() . "\nFill substantial html+css on every widget=html block. Add page_css for global identity.";
+		}
+
+		return $last_gate instanceof WP_Error
+			? $last_gate
+			: new WP_Error( 'ai_visual', __( 'Page visual validation failed.', 'webino-dashboard' ) );
+	}
+
+	/**
+	 * Complete once then SEO-gate; on soft SEO failure, one model rewrite with regenerate_hint.
+	 *
+	 * @param string               $system System prompt.
+	 * @param callable             $make_user function(array $ctx): string.
+	 * @param array<string,mixed>  $schema Schema.
+	 * @param string               $type product|blog|term.
+	 * @param array<string,mixed>  $ctx Mutable context (regenerate_hint set on retry).
+	 * @param callable             $make_gate_ctx function(array $data, array $ctx): array.
+	 * @param array<string,mixed>  $complete_extra Extra provider opts.
+	 * @return array{ok:bool,data?:array,provider?:string,model?:string,tokens_in?:int,tokens_out?:int,error?:string}|WP_Error
+	 */
+	private static function complete_with_seo_retry( $system, $make_user, $schema, $type, &$ctx, $make_gate_ctx, $complete_extra = array() ) {
+		$attempt = 0;
+		$max     = 2;
+		$last_gate = null;
+
+		while ( $attempt < $max ) {
+			++$attempt;
+			$stop = self::abort_if_cancelled();
+			if ( is_wp_error( $stop ) ) {
+				return $stop;
+			}
+
+			$user   = (string) call_user_func( $make_user, $ctx );
+			$force  = isset( $complete_extra['force_provider'] ) ? (string) $complete_extra['force_provider'] : null;
+			$result = Webino_Dashboard_AI_Providers::complete( $system, $user, $schema, $force, is_array( $complete_extra ) ? $complete_extra : array() );
+			self::remember_usage( $result );
+			if ( empty( $result['ok'] ) ) {
+				return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
+			}
+
+			$data = isset( $result['data'] ) && is_array( $result['data'] ) ? $result['data'] : array();
+			if ( 'term' === $type && ! empty( $ctx['name'] ) ) {
+				$data = array_merge( $data, array( 'title' => (string) $ctx['name'] ) );
+				$result['data'] = $data;
+			}
+			self::set_phase( 'seo' );
+			$gate_ctx = (array) call_user_func( $make_gate_ctx, $data, $ctx );
+			$gate     = Webino_Dashboard_AI_Seo_Gate::validate( $data, $type, $gate_ctx );
+			if ( ! is_wp_error( $gate ) ) {
+				return $result;
+			}
+
+			$last_gate = $gate;
+			$code      = $gate->get_error_code();
+			if ( $attempt >= $max || ! self::is_seo_retryable_error( $code ) ) {
+				return $gate;
+			}
+
+			$ctx['regenerate_hint'] = self::seo_retry_hint( $gate, $type );
+			self::set_phase( 'provider' );
+		}
+
+		return $last_gate instanceof WP_Error
+			? $last_gate
+			: new WP_Error( 'ai_seo', __( 'SEO checks failed.', 'webino-dashboard' ) );
+	}
+
+	/**
+	 * @param string $code Error code.
+	 * @return bool
+	 */
+	private static function is_seo_retryable_error( $code ) {
+		return in_array(
+			(string) $code,
+			array( 'ai_seo', 'ai_cannibal', 'ai_thin', 'ai_site_name', 'ai_focus', 'ai_visual' ),
+			true
+		);
+	}
+
+	/**
+	 * @param WP_Error $gate Gate error.
+	 * @return string
+	 */
+	private static function visual_retry_hint( $gate ) {
+		$msg   = $gate->get_error_message();
+		$lines = array(
+			'Previous layout failed visual structure checks. Redesign the page skeleton.',
+			'Error: ' . $msg,
+			'Requirements: 5–8 sections, every section has blocks[], hero + final CTA each include widget=html.',
+			'Use catalog widgets (counter for stats, accordion for FAQ, bento via html blocks).',
+			'Do not output long html/css in pass 1 — only widget settings copy.',
+		);
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * @param WP_Error $gate Gate error.
+	 * @param string   $type Entity type.
+	 * @return string
+	 */
+	private static function seo_retry_hint( $gate, $type = 'product' ) {
+		$code = $gate->get_error_code();
+		$msg  = $gate->get_error_message();
+		$lines = array(
+			'Previous draft failed SEO validation. Fix and return full JSON again.',
+			'Error: ' . $msg,
+		);
+		if ( 'ai_cannibal' === $code ) {
+			$lines[] = 'Pick a NEW focus_keyword with a different angle (do not reuse the previous keyword). Put the new keyword in seo.title, seo.description, and body text.';
+		} elseif ( 'ai_thin' === $code ) {
+			if ( 'page' === $type ) {
+				$lines[] = 'Add short marketing copy inside blocks[].html and widget settings — not a text column article.';
+			} else {
+				$lines[] = 'Expand the main content to meet the minimum word count with useful product facts.';
+			}
+		} elseif ( 'ai_site_name' === $code ) {
+			$lines[] = 'Include the exact site name in the description/content.';
+		} elseif ( 'ai_focus' === $code ) {
+			$lines[] = 'Provide a clear focus_keyword and use it in title and content.';
+		} else {
+			$lines[] = 'If title_kw or content_kw failed: put the exact focus_keyword in the product/post title (or seo.title) AND naturally in the body/description text.';
+			$lines[] = 'If desc_kw failed: include the focus_keyword in seo.description.';
+		}
+		return implode( "\n", $lines );
+	}
+
+	/**
 	 * @param string              $job_type Type.
 	 * @param string              $target_type Target.
 	 * @param int                 $target_id ID.
@@ -637,7 +913,193 @@ final class Webino_Dashboard_AI_Queue {
 		if ( 'attr_template' === $job_type ) {
 			return self::job_attr_template( $target_id, $payload );
 		}
+		if ( 'catalog_classify' === $job_type ) {
+			return self::job_catalog_classify( $payload );
+		}
+		if ( 'title_rewrite' === $job_type ) {
+			return self::job_title_rewrite( $payload );
+		}
+		if ( 'page_design' === $job_type ) {
+			return self::job_page_design( $target_id, $payload );
+		}
 		return new WP_Error( 'ai_job', __( 'Unknown job type.', 'webino-dashboard' ) );
+	}
+
+	/**
+	 * @param int                 $page_id Page ID.
+	 * @param array<string,mixed> $payload Payload.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function job_page_design( $page_id, $payload ) {
+		if ( function_exists( 'ignore_user_abort' ) ) {
+			ignore_user_abort( true );
+		}
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 0 );
+		}
+
+		$ready = Webino_Dashboard_AI_Content_Settings::assert_entity( 'page' );
+		if ( is_wp_error( $ready ) ) {
+			return $ready;
+		}
+		$el = Webino_Dashboard_AI_Elementor::assert_available();
+		if ( is_wp_error( $el ) ) {
+			return $el;
+		}
+
+		$page_id = (int) $page_id;
+		$post    = get_post( $page_id );
+		if ( ! $post || 'page' !== $post->post_type ) {
+			return new WP_Error( 'not_found', __( 'Page not found.', 'webino-dashboard' ) );
+		}
+
+		$settings = Webino_Dashboard_AI_Content_Settings::get();
+		$memory   = Webino_Dashboard_AI_Design_Memory::get();
+
+		// Ensure palette from kit when mode=site and memory empty.
+		if ( 'site' === ( $settings['palette_mode'] ?? 'site' ) && empty( $memory['source'] ) ) {
+			$extracted = Webino_Dashboard_AI_Design_Memory::extract_from_elementor_kit();
+			if ( ! is_wp_error( $extracted ) ) {
+				$memory = $extracted;
+			}
+		}
+
+		$page_prompt = (string) ( $payload['page_prompt'] ?? get_post_meta( $page_id, '_webino_ai_page_prompt', true ) );
+		if ( '' === trim( $page_prompt ) ) {
+			$page_prompt = (string) ( $payload['prompt'] ?? '' );
+		}
+		if ( '' !== trim( $page_prompt ) ) {
+			update_post_meta( $page_id, '_webino_ai_page_prompt', sanitize_textarea_field( $page_prompt ) );
+		}
+
+		$related = array();
+		$pages   = get_posts(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => 'publish',
+				'posts_per_page' => 8,
+				'exclude'        => array( $page_id ),
+				'orderby'        => 'modified',
+				'order'          => 'DESC',
+			)
+		);
+		foreach ( $pages as $p ) {
+			$related[] = array(
+				'title' => $p->post_title,
+				'url'   => get_permalink( $p ),
+			);
+		}
+
+		$ctx = array(
+			'page_id'         => $page_id,
+			'title'           => $post->post_title,
+			'slug'            => $post->post_name,
+			'page_prompt'     => $page_prompt,
+			'focus_keyword'   => (string) ( $payload['focus_keyword'] ?? '' ),
+			'design_memory'   => Webino_Dashboard_AI_Design_Memory::for_prompt(),
+			'related_urls'    => $related,
+			'regenerate_hint' => (string) ( $payload['regenerate_hint'] ?? '' ),
+		);
+
+		self::set_phase( 'layout' );
+		$layout_result = self::complete_with_layout_retry(
+			static function ( $c ) {
+				return Webino_Dashboard_AI_Prompts::page_layout_user( $c );
+			},
+			Webino_Dashboard_AI_Prompts::page_layout_schema(),
+			$ctx,
+			Webino_Dashboard_AI_Content_Settings::page_provider_extra()
+		);
+		if ( is_wp_error( $layout_result ) ) {
+			return $layout_result;
+		}
+
+		$layout = isset( $layout_result['data'] ) && is_array( $layout_result['data'] ) ? $layout_result['data'] : array();
+		$ctx['page_layout'] = $layout;
+
+		self::set_phase( 'visual' );
+		$visual_result = self::complete_visual_pass(
+			static function ( $c ) {
+				return Webino_Dashboard_AI_Prompts::page_visual_user( $c );
+			},
+			Webino_Dashboard_AI_Prompts::page_visual_schema(),
+			$layout,
+			$ctx,
+			Webino_Dashboard_AI_Content_Settings::page_provider_extra()
+		);
+		if ( is_wp_error( $visual_result ) ) {
+			return $visual_result;
+		}
+
+		$data = isset( $visual_result['data'] ) && is_array( $visual_result['data'] ) ? $visual_result['data'] : array();
+
+		self::set_phase( 'seo' );
+		$gate_ctx = array(
+			'focus_keyword' => (string) ( $data['focus_keyword'] ?? $ctx['focus_keyword'] ),
+			'exclude_type'  => 'page',
+			'exclude_id'    => $page_id,
+			'min_words'     => (int) ( Webino_Dashboard_AI_Content_Settings::get()['min_page_words'] ?? 150 ),
+			'site_name'     => Webino_Dashboard_AI_Content_Settings::resolved_site_name(),
+		);
+		$gate = Webino_Dashboard_AI_Seo_Gate::validate( $data, 'page', $gate_ctx );
+		if ( is_wp_error( $gate ) && self::is_seo_retryable_error( $gate->get_error_code() ) ) {
+			$ctx['regenerate_hint'] = self::seo_retry_hint( $gate, 'page' );
+			$ctx['page_layout']     = $layout;
+			self::set_phase( 'visual' );
+			$retry_visual = self::complete_visual_pass(
+				static function ( $c ) {
+					return Webino_Dashboard_AI_Prompts::page_visual_user( $c );
+				},
+				Webino_Dashboard_AI_Prompts::page_visual_schema(),
+				$layout,
+				$ctx,
+				Webino_Dashboard_AI_Content_Settings::page_provider_extra()
+			);
+			if ( is_wp_error( $retry_visual ) ) {
+				return $retry_visual;
+			}
+			$data = isset( $retry_visual['data'] ) && is_array( $retry_visual['data'] ) ? $retry_visual['data'] : $data;
+			self::set_phase( 'seo' );
+			$gate = Webino_Dashboard_AI_Seo_Gate::validate( $data, 'page', $gate_ctx );
+		}
+		if ( is_wp_error( $gate ) ) {
+			return $gate;
+		}
+
+		$result = array(
+			'ok'         => true,
+			'data'       => $data,
+			'provider'   => $visual_result['provider'] ?? $layout_result['provider'] ?? '',
+			'model'      => $visual_result['model'] ?? $layout_result['model'] ?? '',
+			'tokens_in'  => (int) ( $layout_result['tokens_in'] ?? 0 ) + (int) ( $visual_result['tokens_in'] ?? 0 ),
+			'tokens_out' => (int) ( $layout_result['tokens_out'] ?? 0 ) + (int) ( $visual_result['tokens_out'] ?? 0 ),
+		);
+		self::set_phase( 'writing' );
+		$stop = self::abort_if_cancelled();
+		if ( is_wp_error( $stop ) ) {
+			return $stop;
+		}
+
+		$applied = Webino_Dashboard_AI_Writer::apply_page(
+			$page_id,
+			$data,
+			array(
+				'page_prompt' => $page_prompt,
+				'set_status'  => ! empty( $payload['publish'] ) || ! empty( $settings['auto_publish'] ),
+				'status'      => (string) ( $payload['status'] ?? $settings['publish_status'] ?? 'draft' ),
+			)
+		);
+		if ( is_wp_error( $applied ) ) {
+			return $applied;
+		}
+
+		return array(
+			'provider'   => $result['provider'] ?? '',
+			'tokens_in'  => $result['tokens_in'] ?? 0,
+			'tokens_out' => $result['tokens_out'] ?? 0,
+			'summary'    => 'Page #' . $page_id . ' designed with Elementor',
+			'page_id'    => $page_id,
+		);
 	}
 
 	/**
@@ -701,36 +1163,27 @@ final class Webino_Dashboard_AI_Queue {
 		self::remember_usage( $research['result'] );
 		$ctx['research_notes'] = (string) ( $research['notes'] ?? '' );
 
-		$result = Webino_Dashboard_AI_Providers::complete(
+		$result = self::complete_with_seo_retry(
 			Webino_Dashboard_AI_Prompts::system_rules(),
-			Webino_Dashboard_AI_Prompts::product_user( $ctx ),
-			Webino_Dashboard_AI_Prompts::product_schema()
+			static function ( $c ) {
+				return Webino_Dashboard_AI_Prompts::product_user( $c );
+			},
+			Webino_Dashboard_AI_Prompts::product_schema(),
+			'product',
+			$ctx,
+			static function ( $data, $c ) use ( $p, $product_id ) {
+				return array(
+					'focus_keyword' => (string) ( $data['focus_keyword'] ?? $data['seo']['focus_keyword'] ?? $p->get_name() ),
+					'exclude_type'  => 'product',
+					'exclude_id'    => (int) $product_id,
+				);
+			}
 		);
-		self::remember_usage( $result );
-		if ( empty( $result['ok'] ) ) {
-			return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
-		}
-
-		$stop = self::abort_if_cancelled();
-		if ( is_wp_error( $stop ) ) {
-			return $stop;
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		$data = $result['data'];
-		self::set_phase( 'seo' );
-		$gate = Webino_Dashboard_AI_Seo_Gate::validate(
-			$data,
-			'product',
-			array(
-				'focus_keyword' => (string) ( $data['focus_keyword'] ?? $data['seo']['focus_keyword'] ?? $p->get_name() ),
-				'exclude_type'  => 'product',
-				'exclude_id'    => (int) $product_id,
-			)
-		);
-		if ( is_wp_error( $gate ) ) {
-			return $gate;
-		}
-
 		self::set_phase( 'writing' );
 		$stop = self::abort_if_cancelled();
 		if ( is_wp_error( $stop ) ) {
@@ -780,31 +1233,27 @@ final class Webino_Dashboard_AI_Queue {
 		);
 
 		self::set_phase( 'provider' );
-		$result = Webino_Dashboard_AI_Providers::complete(
+		$result = self::complete_with_seo_retry(
 			Webino_Dashboard_AI_Prompts::system_rules(),
-			Webino_Dashboard_AI_Prompts::blog_user( $ctx ),
-			Webino_Dashboard_AI_Prompts::blog_schema()
+			static function ( $c ) {
+				return Webino_Dashboard_AI_Prompts::blog_user( $c );
+			},
+			Webino_Dashboard_AI_Prompts::blog_schema(),
+			'blog',
+			$ctx,
+			static function ( $data, $c ) use ( $payload ) {
+				return array(
+					'focus_keyword' => (string) ( $data['focus_keyword'] ?? $c['focus_keyword'] ),
+					'exclude_type'  => 'post',
+					'exclude_id'    => (int) ( $payload['post_id'] ?? 0 ),
+				);
+			}
 		);
-		self::remember_usage( $result );
-		if ( empty( $result['ok'] ) ) {
-			return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		$data = $result['data'];
-		self::set_phase( 'seo' );
-		$gate = Webino_Dashboard_AI_Seo_Gate::validate(
-			$data,
-			'blog',
-			array(
-				'focus_keyword' => (string) ( $data['focus_keyword'] ?? $ctx['focus_keyword'] ),
-				'exclude_type'  => 'post',
-				'exclude_id'    => (int) ( $payload['post_id'] ?? 0 ),
-			)
-		);
-		if ( is_wp_error( $gate ) ) {
-			return $gate;
-		}
-
 		self::set_phase( 'writing' );
 		$stop = self::abort_if_cancelled();
 		if ( is_wp_error( $stop ) ) {
@@ -863,31 +1312,27 @@ final class Webino_Dashboard_AI_Queue {
 		);
 
 		self::set_phase( 'provider' );
-		$result = Webino_Dashboard_AI_Providers::complete(
+		$result = self::complete_with_seo_retry(
 			Webino_Dashboard_AI_Prompts::system_rules(),
-			Webino_Dashboard_AI_Prompts::term_user( $ctx ),
-			Webino_Dashboard_AI_Prompts::term_schema( $taxonomy )
+			static function ( $c ) {
+				return Webino_Dashboard_AI_Prompts::term_user( $c );
+			},
+			Webino_Dashboard_AI_Prompts::term_schema( $taxonomy ),
+			'term',
+			$ctx,
+			static function ( $data, $c ) use ( $term, $taxonomy, $term_id ) {
+				return array(
+					'focus_keyword' => (string) ( $data['focus_keyword'] ?? $term->name ),
+					'exclude_type'  => $taxonomy,
+					'exclude_id'    => (int) $term_id,
+				);
+			}
 		);
-		self::remember_usage( $result );
-		if ( empty( $result['ok'] ) ) {
-			return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		$data = $result['data'];
-		self::set_phase( 'seo' );
-		$gate = Webino_Dashboard_AI_Seo_Gate::validate(
-			array_merge( $data, array( 'title' => $term->name ) ),
-			'term',
-			array(
-				'focus_keyword' => (string) ( $data['focus_keyword'] ?? $term->name ),
-				'exclude_type'  => $taxonomy,
-				'exclude_id'    => (int) $term_id,
-			)
-		);
-		if ( is_wp_error( $gate ) ) {
-			return $gate;
-		}
-
 		self::set_phase( 'writing' );
 		$stop = self::abort_if_cancelled();
 		if ( is_wp_error( $stop ) ) {
@@ -949,6 +1394,170 @@ final class Webino_Dashboard_AI_Queue {
 			'summary'    => 'Category suggestions ready',
 			'suggestions'=> $result['data'],
 		);
+	}
+
+	/**
+	 * @param array<string,mixed> $payload Payload.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function job_catalog_classify( $payload ) {
+		$ids = isset( $payload['product_ids'] ) && is_array( $payload['product_ids'] ) ? array_map( 'intval', $payload['product_ids'] ) : array();
+		$ids = array_values( array_filter( $ids ) );
+		if ( ! $ids ) {
+			return new WP_Error( 'ai_catalog', __( 'No products in batch.', 'webino-dashboard' ) );
+		}
+		$products = array();
+		foreach ( $ids as $pid ) {
+			$p = function_exists( 'wc_get_product' ) ? wc_get_product( $pid ) : null;
+			if ( ! $p ) {
+				continue;
+			}
+			$products[] = array(
+				'id'         => $pid,
+				'name'       => $p->get_name(),
+				'sku'        => $p->get_sku(),
+				'categories' => self::product_category_names( $pid ),
+				'brands'     => self::product_brands( $pid ),
+			);
+		}
+		self::set_phase( 'provider' );
+		$result = Webino_Dashboard_AI_Providers::complete(
+			Webino_Dashboard_AI_Prompts::system_rules(),
+			Webino_Dashboard_AI_Prompts::catalog_classify_user(
+				array(
+					'category_tree' => Webino_Dashboard_AI_Proposals::category_tree(),
+					'brands'        => Webino_Dashboard_AI_Proposals::brand_list(),
+					'products'      => $products,
+				)
+			),
+			Webino_Dashboard_AI_Prompts::catalog_classify_schema()
+		);
+		self::remember_usage( $result );
+		if ( empty( $result['ok'] ) ) {
+			return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
+		}
+		$data  = isset( $result['data'] ) && is_array( $result['data'] ) ? $result['data'] : array();
+		$items = isset( $data['items'] ) && is_array( $data['items'] ) ? $data['items'] : array();
+		$n     = 0;
+		foreach ( $items as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$pid = (int) ( $row['product_id'] ?? 0 );
+			if ( $pid < 1 || ! in_array( $pid, $ids, true ) ) {
+				continue;
+			}
+			$p = wc_get_product( $pid );
+			$current = array(
+				'name'       => $p ? $p->get_name() : '',
+				'categories' => self::product_category_names( $pid ),
+				'brands'     => self::product_brands( $pid ),
+			);
+			$saved = Webino_Dashboard_AI_Proposals::upsert( 'catalog', $pid, $current, $row );
+			if ( ! is_wp_error( $saved ) ) {
+				++$n;
+			}
+		}
+		if ( ! empty( $data['glossary_brands'] ) && is_array( $data['glossary_brands'] ) ) {
+			Webino_Dashboard_AI_Proposals::merge_glossary( array( 'brands' => $data['glossary_brands'] ) );
+		}
+		return array(
+			'provider'   => $result['provider'] ?? '',
+			'tokens_in'  => $result['tokens_in'] ?? 0,
+			'tokens_out' => $result['tokens_out'] ?? 0,
+			'summary'    => 'Catalog proposals: ' . $n,
+		);
+	}
+
+	/**
+	 * @param array<string,mixed> $payload Payload.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function job_title_rewrite( $payload ) {
+		$ids = isset( $payload['product_ids'] ) && is_array( $payload['product_ids'] ) ? array_map( 'intval', $payload['product_ids'] ) : array();
+		$ids = array_values( array_filter( $ids ) );
+		if ( ! $ids ) {
+			return new WP_Error( 'ai_title', __( 'No products in batch.', 'webino-dashboard' ) );
+		}
+		$products = array();
+		foreach ( $ids as $pid ) {
+			$p = function_exists( 'wc_get_product' ) ? wc_get_product( $pid ) : null;
+			if ( ! $p ) {
+				continue;
+			}
+			$products[] = array(
+				'id'     => $pid,
+				'name'   => $p->get_name(),
+				'sku'    => $p->get_sku(),
+				'brands' => self::product_brands( $pid ),
+			);
+		}
+		self::set_phase( 'provider' );
+		$result = Webino_Dashboard_AI_Providers::complete(
+			Webino_Dashboard_AI_Prompts::system_rules(),
+			Webino_Dashboard_AI_Prompts::title_rewrite_user(
+				array(
+					'glossary' => Webino_Dashboard_AI_Proposals::get_glossary(),
+					'products' => $products,
+				)
+			),
+			Webino_Dashboard_AI_Prompts::title_rewrite_schema()
+		);
+		self::remember_usage( $result );
+		if ( empty( $result['ok'] ) ) {
+			return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
+		}
+		$data  = isset( $result['data'] ) && is_array( $result['data'] ) ? $result['data'] : array();
+		$items = isset( $data['items'] ) && is_array( $data['items'] ) ? $data['items'] : array();
+		$n     = 0;
+		foreach ( $items as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$pid = (int) ( $row['product_id'] ?? 0 );
+			if ( $pid < 1 || ! in_array( $pid, $ids, true ) ) {
+				continue;
+			}
+			$p = wc_get_product( $pid );
+			$current = array(
+				'name' => $p ? $p->get_name() : '',
+			);
+			$saved = Webino_Dashboard_AI_Proposals::upsert( 'title', $pid, $current, $row );
+			if ( ! is_wp_error( $saved ) ) {
+				++$n;
+			}
+		}
+		Webino_Dashboard_AI_Proposals::merge_glossary(
+			array(
+				'product_types' => isset( $data['glossary_product_types'] ) && is_array( $data['glossary_product_types'] ) ? $data['glossary_product_types'] : array(),
+				'brands'        => isset( $data['glossary_brands'] ) && is_array( $data['glossary_brands'] ) ? $data['glossary_brands'] : array(),
+			)
+		);
+		return array(
+			'provider'   => $result['provider'] ?? '',
+			'tokens_in'  => $result['tokens_in'] ?? 0,
+			'tokens_out' => $result['tokens_out'] ?? 0,
+			'summary'    => 'Title proposals: ' . $n,
+		);
+	}
+
+	/**
+	 * @param int $product_id Product.
+	 * @return list<array{id:int,name:string}>
+	 */
+	private static function product_category_names( $product_id ) {
+		$p = function_exists( 'wc_get_product' ) ? wc_get_product( (int) $product_id ) : null;
+		if ( ! $p ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $p->get_category_ids() as $cid ) {
+			$t = get_term( (int) $cid, 'product_cat' );
+			if ( $t && ! is_wp_error( $t ) ) {
+				$out[] = array( 'id' => (int) $t->term_id, 'name' => $t->name );
+			}
+		}
+		return $out;
 	}
 
 	/**

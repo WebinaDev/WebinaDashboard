@@ -1,18 +1,16 @@
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
-import { jobPhase, jobPhasePercent } from '@/lib/aiJobProgress'
 import { toastApiError } from '@/lib/apiError'
+import { AiJobCard, isActiveJob } from '../components/AiJobCard'
 import { AiToman } from '../components/AiToman'
 import {
-  type AiJob,
   cancelAiJob,
   cancelPendingAiJobs,
   fetchAiJobs,
@@ -23,28 +21,6 @@ import {
 } from '../lib/ai-content-api'
 
 const FILTERS = ['', 'pending', 'running', 'failed', 'cancelled', 'done'] as const
-
-function jobTargetHref(job: AiJob): string | null {
-  if (job.target_type === 'calendar') return '/ai-content/calendar'
-  if (job.target_id < 1) return null
-  if (job.target_type === 'product') return `/shop/products/${job.target_id}`
-  if (job.target_type === 'post') return `/magazine/posts/${job.target_id}`
-  if (job.target_type === 'product_cat' || job.target_type === 'product_brand') {
-    return '/ai-content/taxonomies'
-  }
-  return null
-}
-
-function statusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (status === 'done') return 'default'
-  if (status === 'failed' || status === 'cancelled') return 'destructive'
-  if (status === 'running') return 'secondary'
-  return 'outline'
-}
-
-function isActiveJob(job: AiJob) {
-  return job.status === 'pending' || job.status === 'running'
-}
 
 export default function AiJobsPage() {
   const { t, i18n } = useTranslation()
@@ -77,7 +53,30 @@ export default function AiJobsPage() {
   })
 
   const runDue = useMutation({
-    mutationFn: () => runDueJobs(1),
+    mutationFn: async () => {
+      let total = 0
+      for (let guard = 0; guard < 200; guard++) {
+        const snap = await fetchAiJobs({ limit: 80 })
+        const items = snap.items ?? []
+        if (items.some((j) => j.status === 'running')) {
+          await new Promise((r) => setTimeout(r, 2000))
+          continue
+        }
+        if (!items.some((j) => j.status === 'pending')) {
+          break
+        }
+        const res = await runDueJobs(1)
+        if (res.paused) {
+          return { processed: [], count: total, paused: true as const }
+        }
+        if ((res.count || 0) < 1) {
+          break
+        }
+        total += res.count
+        await new Promise((r) => setTimeout(r, 1500))
+      }
+      return { processed: [], count: total }
+    },
     onSuccess: (res) => {
       if (res.paused) {
         toast.message(t('aiContent.queuePausedHint'))
@@ -167,7 +166,7 @@ export default function AiJobsPage() {
           disabled={runDue.isPending || paused}
           onClick={() => void runDue.mutateAsync()}
         >
-          {t('aiContent.jobsRunDue')}
+          {runDue.isPending ? t('aiContent.jobsRunDueRunning') : t('aiContent.jobsRunDue')}
         </Button>
       </div>
       {paused ? <p className="text-muted-foreground text-sm">{t('aiContent.queuePausedHint')}</p> : null}
@@ -186,86 +185,16 @@ export default function AiJobsPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {jobsQ.isPending ? <Skeleton className="h-24 w-full rounded-xl" /> : null}
-          {(jobsQ.data?.items ?? []).map((job) => {
-            const href = jobTargetHref(job)
-            return (
-              <div
-                key={job.id}
-                className="flex flex-wrap items-start justify-between gap-2 border-b py-3 text-sm last:border-0"
-              >
-                <div className="min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">#{job.id}</span>
-                    <span>{t(`aiContent.jobType.${job.job_type}`, { defaultValue: job.job_type })}</span>
-                    <Badge variant={statusVariant(job.status)}>
-                      {t(`aiContent.jobStatus.${job.status}`, { defaultValue: job.status })}
-                    </Badge>
-                    {job.provider ? <span className="text-muted-foreground">{job.provider}{job.model ? ` · ${job.model}` : ''}</span> : null}
-                  </div>
-                  <div className="text-muted-foreground">
-                    {href ? (
-                      <Link className="underline-offset-2 hover:underline" to={href}>
-                        {job.target_type}
-                        {job.target_id > 0 ? ` #${job.target_id}` : ''}
-                      </Link>
-                    ) : (
-                      <span>
-                        {job.target_type}
-                        {job.target_id > 0 ? ` #${job.target_id}` : ''}
-                      </span>
-                    )}
-                    {job.attempts > 0 ? ` · ${t('aiContent.jobsAttempts', { count: job.attempts })}` : ''}
-                    {job.tokens_in || job.tokens_out
-                      ? ` · ${t('aiContent.jobsTokens', { inCount: job.tokens_in || 0, outCount: job.tokens_out || 0 })}`
-                      : ''}
-                    {Number(job.cost_toman) > 0 ? (
-                      <>
-                        {' · '}
-                        <AiToman amount={Number(job.cost_toman)} locale={i18n.language} />
-                        {job.cost_estimated ? ` (${t('aiContent.costApprox')})` : ''}
-                      </>
-                    ) : null}
-                    {job.created_at ? ` · ${job.created_at}` : ''}
-                  </div>
-                  {job.error_message ? (
-                    <div className="text-destructive whitespace-pre-wrap">{job.error_message}</div>
-                  ) : isActiveJob(job) ? (
-                    <div className="space-y-1">
-                      <div className="bg-muted h-1.5 overflow-hidden rounded-full">
-                        <div
-                          className="bg-primary h-full transition-[width] duration-500"
-                          style={{ width: `${jobPhasePercent(jobPhase(job))}%` }}
-                        />
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        {t(`aiContent.phase.${jobPhase(job)}`, { defaultValue: jobPhase(job) })}
-                      </div>
-                    </div>
-                  ) : job.result_summary &&
-                    !['queued', 'provider', 'seo', 'writing', 'done', 'cancelled'].includes(job.result_summary) ? (
-                    <div className="text-muted-foreground">{job.result_summary}</div>
-                  ) : null}
-                </div>
-                <div className="flex gap-2">
-                  {isActiveJob(job) ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={cancelOne.isPending}
-                      onClick={() => void cancelOne.mutateAsync(job.id)}
-                    >
-                      {t('aiContent.jobsCancel')}
-                    </Button>
-                  ) : null}
-                  {job.status === 'failed' || job.status === 'cancelled' ? (
-                    <Button size="sm" variant="outline" disabled={retry.isPending} onClick={() => void retry.mutateAsync(job.id)}>
-                      {t('aiContent.retry')}
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-            )
-          })}
+          {(jobsQ.data?.items ?? []).map((job) => (
+            <AiJobCard
+              key={job.id}
+              job={job}
+              retryPending={retry.isPending}
+              cancelPending={cancelOne.isPending}
+              onRetry={(id) => void retry.mutateAsync(id)}
+              onCancel={(id) => void cancelOne.mutateAsync(id)}
+            />
+          ))}
           {!jobsQ.isPending && !jobsQ.data?.items?.length ? (
             <p className="text-sm text-muted-foreground">{t('aiContent.noJobs')}</p>
           ) : null}

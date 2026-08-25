@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMatch, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -73,6 +73,13 @@ function slugifyName(name: string) {
     .replace(/^-|-$/g, '')
 }
 
+/** TipTap empty doc variants that must not wipe hydrated product HTML. */
+function isTrivialEditorHtml(html: string) {
+  const t = html.trim()
+  if (t === '') return true
+  return /^<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>$/i.test(t)
+}
+
 export function useProductEditorForm() {
   const { t } = useTranslation()
   const nav = useNavigate()
@@ -124,6 +131,31 @@ export function useProductEditorForm() {
   const [ishop, setIshop] = useState<ProductIshop>(() => emptyProductIshop())
   const [permalink, setPermalink] = useState('')
   const [permalinkBase, setPermalinkBase] = useState('')
+  /** Only full-hydrate once per product id so patch/refetch cannot wipe in-progress edits. */
+  const hydratedProductIdRef = useRef<number | 'new' | null>(null)
+  const descriptionDirtyRef = useRef(false)
+  const shortDescriptionDirtyRef = useRef(false)
+  const attributesDirtyRef = useRef(false)
+  const hydratingRef = useRef(false)
+  const [descriptionsReady, setDescriptionsReady] = useState(Boolean(isNew))
+
+  function mapProductAttributes(p: Product): AttributeRow[] {
+    const pa = p.product_attributes ?? []
+    if (!pa.length) return []
+    return pa.map((a) => ({
+      name: a.name,
+      options: (a.options ?? []).map(String).join(', '),
+      variation: Boolean(a.variation),
+      visible: a.visible !== false,
+      attribute_id: a.attribute_id,
+      taxonomy: a.taxonomy,
+    }))
+  }
+
+  const setAttributesFromUi = useCallback((next: AttributeRow[] | ((prev: AttributeRow[]) => AttributeRow[])) => {
+    attributesDirtyRef.current = true
+    setAttributes(next)
+  }, [])
 
   const productQ = useQuery({
     queryKey: ['product', id],
@@ -136,22 +168,7 @@ export function useProductEditorForm() {
     queryFn: () => apiFetch<ProductLookup>('shop/products/lookup'),
   })
 
-  const hydrate = useCallback((p: Product) => {
-    setName(p.name)
-    setSlug(p.slug ?? '')
-    setSlugTouched(Boolean(p.slug))
-    setProductType(p.type === 'variable' ? 'variable' : 'simple')
-    setSku(p.sku ?? '')
-    setStatus(p.status || 'draft')
-    setCatalogVisibility(p.catalog_visibility ?? 'visible')
-    setFeatured(Boolean(p.featured))
-    setRegular(p.regular ?? '')
-    setSale(p.sale ?? '')
-    setStock(p.stock != null ? String(p.stock) : '')
-    setManageStock(Boolean(p.manage_stock))
-    setBackorders(p.backorders ?? 'no')
-    setDescription(p.description ?? '')
-    setShortDescription(p.short_description ?? '')
+  const applyWfcpFromProduct = useCallback((p: Product) => {
     setPurchase(String(p.wfcp?.purchase_price ?? p.wfcp_prices?.purchase_price ?? ''))
     setLockPrice(Boolean(p.wfcp?.lock_price ?? p.wfcp_prices?.lock_price))
     setWfcpPrices(p.wfcp_prices)
@@ -179,53 +196,126 @@ export function useProductEditorForm() {
     } else {
       setReferenceLastSync(typeof last === 'string' ? last : '')
     }
-    setImageId(p.image_id ?? 0)
-    setImageUrl(p.image_url ?? '')
-    const urls = p.gallery_urls ?? []
-    const ids = p.gallery_ids ?? []
-    if (urls.length) {
-      setGallery(urls)
-    } else {
-      setGallery(ids.map((gid) => ({ id: gid, url: '' })))
-    }
-    setCategoryIds([...(p.category_ids ?? [])])
-    setBrandIds([...(p.brand_ids ?? [])])
-    setTagIds([...(p.tag_ids ?? [])])
-    const pa = p.product_attributes ?? []
-    setAttributes(
-      pa.length
-        ? pa.map((a) => ({
-            name: a.name,
-            options: (a.options ?? []).map(String).join(', '),
-            variation: Boolean(a.variation),
-            visible: a.visible !== false,
-            attribute_id: a.attribute_id,
-            taxonomy: a.taxonomy,
-          }))
-        : [],
-    )
-    setWeight(p.weight ?? '')
-    setLength(p.length ?? '')
-    setWidth(p.width ?? '')
-    setHeight(p.height ?? '')
-    setUpsellIds([...(p.upsell_ids ?? [])])
-    setCrossSellIds([...(p.cross_sell_ids ?? [])])
-    setVariationCount((p.variation_ids ?? []).length)
-    setSeo({ ...emptyProductSeo(), ...(p.seo ?? {}) })
-    setIshop({
-      ...emptyProductIshop(),
-      ...(p.ishop ?? {}),
-      labels: { ...(p.ishop?.labels ?? {}) },
-      custom_labels: [...(p.ishop?.custom_labels ?? [])],
-      faqs: [...(p.ishop?.faqs ?? [])],
-    })
-    setPermalink(p.permalink ?? '')
-    setPermalinkBase(p.permalink_base ?? '')
   }, [])
 
+  const hydrate = useCallback(
+    (p: Product, opts?: { forceAttributes?: boolean }) => {
+      hydratingRef.current = true
+      setName(p.name)
+      setSlug(p.slug ?? '')
+      setSlugTouched(Boolean(p.slug))
+      setProductType(p.type === 'variable' ? 'variable' : 'simple')
+      setSku(p.sku ?? '')
+      setStatus(p.status || 'draft')
+      setCatalogVisibility(p.catalog_visibility ?? 'visible')
+      setFeatured(Boolean(p.featured))
+      setRegular(p.regular ?? '')
+      setSale(p.sale ?? '')
+      setStock(p.stock != null ? String(p.stock) : '')
+      setManageStock(Boolean(p.manage_stock))
+      setBackorders(p.backorders ?? 'no')
+      setDescription(p.description ?? '')
+      setShortDescription(p.short_description ?? '')
+      applyWfcpFromProduct(p)
+      setImageId(p.image_id ?? 0)
+      setImageUrl(p.image_url ?? '')
+      const urls = p.gallery_urls ?? []
+      const ids = p.gallery_ids ?? []
+      if (urls.length) {
+        setGallery(urls)
+      } else {
+        setGallery(ids.map((gid) => ({ id: gid, url: '' })))
+      }
+      setCategoryIds([...(p.category_ids ?? [])])
+      setBrandIds([...(p.brand_ids ?? [])])
+      setTagIds([...(p.tag_ids ?? [])])
+      // Never overwrite in-progress attribute edits unless explicitly forcing (initial load / post-save).
+      if (opts?.forceAttributes || !attributesDirtyRef.current) {
+        setAttributes(mapProductAttributes(p))
+        attributesDirtyRef.current = false
+      }
+      setWeight(p.weight ?? '')
+      setLength(p.length ?? '')
+      setWidth(p.width ?? '')
+      setHeight(p.height ?? '')
+      setUpsellIds([...(p.upsell_ids ?? [])])
+      setCrossSellIds([...(p.cross_sell_ids ?? [])])
+      setVariationCount((p.variation_ids ?? []).length)
+      setSeo({ ...emptyProductSeo(), ...(p.seo ?? {}) })
+      setIshop({
+        ...emptyProductIshop(),
+        ...(p.ishop ?? {}),
+        labels: { ...(p.ishop?.labels ?? {}) },
+        custom_labels: [...(p.ishop?.custom_labels ?? [])],
+        faqs: [...(p.ishop?.faqs ?? [])],
+      })
+      setPermalink(p.permalink ?? '')
+      setPermalinkBase(p.permalink_base ?? '')
+      descriptionDirtyRef.current = false
+      shortDescriptionDirtyRef.current = false
+      setDescriptionsReady(true)
+      // TipTap effects run after microtasks; keep hydrating gate open briefly.
+      window.setTimeout(() => {
+        hydratingRef.current = false
+      }, 300)
+    },
+    [applyWfcpFromProduct],
+  )
+
+  const setDescriptionFromUi = useCallback(
+    (v: string) => {
+      const ready = isNew || hydratedProductIdRef.current === id
+      if (hydratingRef.current || !ready) {
+        // Ignore TipTap empty emissions before/during hydrate.
+        if (isTrivialEditorHtml(v)) return
+        setDescription(v)
+        return
+      }
+      setDescription((prev) => {
+        if (isTrivialEditorHtml(v) && !isTrivialEditorHtml(prev) && !descriptionDirtyRef.current) {
+          return prev
+        }
+        descriptionDirtyRef.current = true
+        return v
+      })
+    },
+    [id, isNew],
+  )
+
+  const setShortDescriptionFromUi = useCallback(
+    (v: string) => {
+      const ready = isNew || hydratedProductIdRef.current === id
+      if (hydratingRef.current || !ready) {
+        if (isTrivialEditorHtml(v)) return
+        setShortDescription(v)
+        return
+      }
+      setShortDescription((prev) => {
+        if (isTrivialEditorHtml(v) && !isTrivialEditorHtml(prev) && !shortDescriptionDirtyRef.current) {
+          return prev
+        }
+        shortDescriptionDirtyRef.current = true
+        return v
+      })
+    },
+    [id, isNew],
+  )
+
   useEffect(() => {
-    if (productQ.data) hydrate(productQ.data)
-  }, [productQ.data, hydrate])
+    if (isNew) {
+      hydratedProductIdRef.current = 'new'
+      attributesDirtyRef.current = false
+      setDescriptionsReady(true)
+      return
+    }
+    if (!id || !productQ.data) return
+    // Hydrate only when product id changes — never on productQ.data identity churn.
+    if (hydratedProductIdRef.current === id) return
+    attributesDirtyRef.current = false
+    setDescriptionsReady(false)
+    hydrate(productQ.data, { forceAttributes: true })
+    hydratedProductIdRef.current = id
+  }, [id, isNew, productQ.data, hydrate])
 
   useEffect(() => {
     if (!slugTouched && name.trim() && isNew) {
@@ -240,7 +330,7 @@ export function useProductEditorForm() {
   }, [lookupQ.data?.permalink_base, permalinkBase])
 
   const productAttributesPayload = attributes
-    .filter((row) => row.name.trim() && row.options.trim())
+    .filter((row) => row.name.trim() || (row.attribute_id != null && row.attribute_id > 0))
     .map((row) => ({
       name: row.name.trim(),
       options: row.options
@@ -260,8 +350,6 @@ export function useProductEditorForm() {
       status,
       catalog_visibility: catalogVisibility,
       featured,
-      description,
-      short_description: shortDescription,
       image_id: imageId,
       gallery_ids: gallery.map((g) => g.id),
       category_ids: categoryIds,
@@ -294,6 +382,20 @@ export function useProductEditorForm() {
       },
     }
 
+    // Only send descriptions when the user edited them — never wipe with TipTap empty HTML.
+    if (isNew || descriptionDirtyRef.current) {
+      if (isNew || !isTrivialEditorHtml(description)) {
+        body.description = description
+      }
+    }
+    if (isNew || shortDescriptionDirtyRef.current) {
+      if (isNew || !isTrivialEditorHtml(shortDescription)) {
+        body.short_description = shortDescription
+      }
+    }
+
+    body.type = productType
+
     if (productType === 'simple') {
       body.regular_price = regular
       body.sale_price = sale
@@ -304,10 +406,6 @@ export function useProductEditorForm() {
         body.stock_quantity = Number.isNaN(stockNum) ? null : stockNum
       }
       body.manage_stock = manageStock
-    }
-
-    if (isNew) {
-      body.type = productType
     }
 
     return body
@@ -332,12 +430,16 @@ export function useProductEditorForm() {
     onSuccess: (p) => {
       void qc.invalidateQueries({ queryKey: ['products'] })
       toast.success(t('common.saved'))
+      attributesDirtyRef.current = false
       if (!id && p.id) {
         void qc.setQueryData(['product', p.id], p)
+        hydratedProductIdRef.current = p.id
+        hydrate(p, { forceAttributes: true })
         nav(`/shop/products/${p.id}`, { replace: true })
       } else if (id) {
-        void qc.invalidateQueries({ queryKey: ['product', id] })
-        hydrate(p)
+        void qc.setQueryData(['product', id], p)
+        hydratedProductIdRef.current = id
+        hydrate(p, { forceAttributes: true })
       }
     },
     onError: (e: Error) => toastApiError(t, e),
@@ -373,7 +475,8 @@ export function useProductEditorForm() {
     },
     onSuccess: (p) => {
       if (p) {
-        hydrate(p)
+        void qc.setQueryData(['product', id], p)
+        applyWfcpFromProduct(p)
       }
     },
     onError: (e: Error) => toastApiError(t, e),
@@ -404,7 +507,8 @@ export function useProductEditorForm() {
       toast.success(t('common.saved'))
       if (id) {
         const p = await apiFetch<Product>(`shop/products/${id}`)
-        hydrate(p)
+        void qc.setQueryData(['product', id], p)
+        applyWfcpFromProduct(p)
       }
     },
     onError: (e: Error) => toastApiError(t, e),
@@ -418,6 +522,7 @@ export function useProductEditorForm() {
     isNew,
     loading: Boolean(id) && productQ.isLoading,
     loadFailed,
+    descriptionsReady,
     productQ,
     lookupQ,
     name,
@@ -447,9 +552,9 @@ export function useProductEditorForm() {
     backorders,
     setBackorders,
     description,
-    setDescription,
+    setDescription: setDescriptionFromUi,
     shortDescription,
-    setShortDescription,
+    setShortDescription: setShortDescriptionFromUi,
     purchase,
     setPurchase,
     lockPrice,
@@ -486,7 +591,7 @@ export function useProductEditorForm() {
     tagIds,
     setTagIds,
     attributes,
-    setAttributes,
+    setAttributes: setAttributesFromUi,
     weight,
     setWeight,
     length,

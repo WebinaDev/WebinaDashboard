@@ -26,6 +26,7 @@ class Webino_Dashboard_REST {
 		add_action( 'wp_ajax_webino_dashboard_auth_session', array( __CLASS__, 'ajax_auth_session' ) );
 		add_action( 'wp_ajax_webino_dashboard_overview', array( __CLASS__, 'ajax_overview' ) );
 		add_action( 'wp_ajax_webino_dashboard_sms_panel', array( __CLASS__, 'ajax_sms_panel' ) );
+		add_action( 'wp_ajax_webino_dashboard_shop_rest', array( __CLASS__, 'ajax_shop_rest' ) );
 	}
 
 	/**
@@ -103,6 +104,115 @@ class Webino_Dashboard_REST {
 				500
 			);
 		}
+	}
+
+	/**
+	 * Whether a shop REST path may be proxied via admin-ajax.
+	 *
+	 * @param string $path Path without leading slash, e.g. shop/products/12.
+	 * @return bool
+	 */
+	private static function is_shop_ajax_proxy_path_allowed( $path ) {
+		$path = ltrim( (string) $path, '/' );
+		$path = strtok( $path, '?' );
+		if ( ! is_string( $path ) || '' === $path ) {
+			return false;
+		}
+		return 0 === strpos( $path, 'shop/products' );
+	}
+
+	/**
+	 * admin-ajax proxy for shop/products* REST (CDN/WAF-safe). Always HTTP 200 envelope.
+	 *
+	 * @return void
+	 */
+	public static function ajax_shop_rest() {
+		if ( ! check_ajax_referer( 'wp_rest', 'nonce', false ) ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Invalid nonce',
+					'code'    => 'invalid_nonce',
+				)
+			);
+		}
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Forbidden',
+					'code'    => 'forbidden',
+				)
+			);
+		}
+		if ( ! Webino_Dashboard_Rest_Base::can_read() ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Forbidden',
+					'code'    => 'forbidden',
+				)
+			);
+		}
+
+		$rest_path = isset( $_POST['rest_path'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
+			? sanitize_text_field( wp_unslash( (string) $_POST['rest_path'] ) )
+			: '';
+		$rest_path = ltrim( $rest_path, '/' );
+
+		if ( ! self::is_shop_ajax_proxy_path_allowed( $rest_path ) ) {
+			wp_send_json_error(
+				array(
+					'message' => 'Path not allowed',
+					'code'    => 'path_not_allowed',
+				)
+			);
+		}
+
+		$method = isset( $_POST['rest_method'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			? strtoupper( sanitize_text_field( wp_unslash( (string) $_POST['rest_method'] ) ) )
+			: 'GET';
+		if ( ! in_array( $method, array( 'GET', 'POST', 'PUT', 'PATCH', 'DELETE' ), true ) ) {
+			$method = 'GET';
+		}
+
+		$query = array();
+		if ( isset( $_POST['rest_query'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$raw_q = wp_unslash( (string) $_POST['rest_query'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing
+			parse_str( ltrim( $raw_q, '?' ), $parsed );
+			if ( is_array( $parsed ) ) {
+				$query = $parsed;
+			}
+		}
+
+		$route = '/' . self::NS . '/' . $rest_path;
+		$req   = new WP_REST_Request( $method, $route );
+		foreach ( $query as $key => $value ) {
+			$req->set_param( (string) $key, $value );
+		}
+
+		if ( in_array( $method, array( 'POST', 'PUT', 'PATCH', 'DELETE' ), true ) && isset( $_POST['payload'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$raw = wp_unslash( (string) $_POST['payload'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing
+			if ( '' !== $raw ) {
+				$req->set_body( $raw );
+				$req->set_header( 'Content-Type', 'application/json' );
+				$decoded = json_decode( $raw, true );
+				if ( is_array( $decoded ) ) {
+					$req->set_body_params( $decoded );
+				}
+			}
+		}
+
+		$response = rest_do_request( $req );
+		if ( $response->is_error() ) {
+			$err = $response->as_error();
+			wp_send_json_error(
+				array(
+					'message' => $err->get_error_message(),
+					'code'    => $err->get_error_code(),
+				)
+			);
+		}
+
+		$data = $response->get_data();
+		wp_send_json_success( $data );
 	}
 
 	/**

@@ -113,6 +113,10 @@ final class Webino_Dashboard_Plugin {
 		flush_rewrite_rules( false );
 		update_option( $option, WEBINO_DASHBOARD_VERSION, false );
 		$this->flush_bootstrap_transients();
+		if ( class_exists( 'Webino_Dashboard_Variation_Swatches', false ) ) {
+			// Force re-run of YITH swatch meta copy on next init (after WC taxonomies register).
+			delete_option( Webino_Dashboard_Variation_Swatches::YITH_MIGRATE_OPTION );
+		}
 		if ( function_exists( 'opcache_reset' ) ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			@opcache_reset();

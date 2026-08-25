@@ -1771,7 +1771,7 @@ final class Webino_Dashboard_REST_Bots {
 			$params = array();
 		}
 		$had_new_bot_token = isset( $params['bot_token'] ) && is_string( $params['bot_token'] ) && false === strpos( $params['bot_token'], '…' ) && '' !== trim( $params['bot_token'] );
-		foreach ( array( 'bot_token', 'provider_token', 'bot_token_sandbox', 'webhook_secret' ) as $secret_key ) {
+		foreach ( array( 'bot_token', 'provider_token', 'bot_token_sandbox', 'webhook_secret', 'proxy_password' ) as $secret_key ) {
 			if ( isset( $params[ $secret_key ] ) && is_string( $params[ $secret_key ] ) && false !== strpos( $params[ $secret_key ], '…' ) ) {
 				unset( $params[ $secret_key ] );
 			}
@@ -1910,6 +1910,9 @@ final class Webino_Dashboard_REST_Bots {
 			if ( ! empty( $s[ $k ] ) && is_string( $s[ $k ] ) && strlen( $s[ $k ] ) > 6 ) {
 				$s[ $k ] = substr( $s[ $k ], 0, 3 ) . '…' . substr( $s[ $k ], -3 );
 			}
+		}
+		if ( ! empty( $s['proxy_password'] ) && is_string( $s['proxy_password'] ) ) {
+			$s['proxy_password'] = '…';
 		}
 		return $s;
 	}

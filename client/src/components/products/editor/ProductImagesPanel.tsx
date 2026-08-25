@@ -1,13 +1,15 @@
-import { ChevronDown, ChevronUp } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronDown, ChevronUp, Upload } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { MediaImageDropzone, type MediaImageDropzoneHandle } from '@/components/media/MediaImageDropzone'
 import { MediaPickerDialog } from '@/components/magazine/MediaPickerDialog'
 import { Button } from '@/components/ui/button'
 import { LazyImage } from '@/components/ui/lazy-image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useMediaFileUpload } from '@/hooks/useMediaFileUpload'
 import type { GalleryImage } from '@/types/product'
 
 type ProductImagesPanelProps = {
@@ -38,6 +40,11 @@ export function ProductImagesPanel({
   const { t } = useTranslation()
   const [coverPickerOpen, setCoverPickerOpen] = useState(false)
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false)
+  const coverDropRef = useRef<MediaImageDropzoneHandle>(null)
+  const galleryDropRef = useRef<MediaImageDropzoneHandle>(null)
+
+  const coverUpload = useMediaFileUpload()
+  const galleryUpload = useMediaFileUpload()
 
   function addGalleryItem(item: { id: number; url: string }) {
     if (gallery.some((g) => g.id === item.id)) return
@@ -58,6 +65,30 @@ export function ProductImagesPanel({
     onGalleryChange(next)
   }
 
+  async function handleCoverFiles(files: File[]) {
+    const file = files[0]
+    if (!file) return
+    const item = await coverUpload.uploadOne(file)
+    if (item) {
+      onCoverChange(item)
+    }
+  }
+
+  async function handleGalleryFiles(files: File[]) {
+    const items = await galleryUpload.uploadMany(files)
+    if (items.length === 0) return
+    const next = [...gallery]
+    for (const item of items) {
+      if (!next.some((g) => g.id === item.id)) {
+        next.push(item)
+      }
+    }
+    onGalleryChange(next)
+  }
+
+  const coverBusy = coverUpload.isPending
+  const galleryBusy = galleryUpload.isPending
+
   return (
     <>
       <Card className="gap-2 py-3 shadow-sm">
@@ -68,22 +99,42 @@ export function ProductImagesPanel({
           <div className="space-y-2">
             <p className="text-muted-foreground text-xs font-medium">{t('products.editor.coverImage')}</p>
             {imageId > 0 && imageUrl ? (
-              <div className="bg-muted/20 overflow-hidden rounded-md border border-border">
-                <LazyImage
-                  src={imageUrl}
-                  alt={t('a11y.thumbnail')}
-                  className="aspect-square w-full object-contain"
-                  eager
-                />
-              </div>
+              <MediaImageDropzone
+                ref={coverDropRef}
+                busy={coverBusy}
+                onFiles={(files) => void handleCoverFiles(files)}
+                className="border-border bg-muted/20"
+              >
+                <div className="overflow-hidden rounded-md border border-border">
+                  <LazyImage
+                    src={imageUrl}
+                    alt={t('a11y.thumbnail')}
+                    className="aspect-square w-full object-contain"
+                    eager
+                  />
+                </div>
+              </MediaImageDropzone>
             ) : (
-              <div className="flex aspect-square items-center justify-center rounded-md border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
-                {t('posts.noFeaturedImage')}
-              </div>
+              <MediaImageDropzone
+                ref={coverDropRef}
+                busy={coverBusy}
+                emptyLabel={t('products.editor.dropImageHere')}
+                onFiles={(files) => void handleCoverFiles(files)}
+              />
             )}
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => setCoverPickerOpen(true)}>
                 {imageId > 0 ? t('posts.changeFeaturedImage') : t('posts.selectFeaturedImage')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={coverBusy}
+                onClick={() => coverDropRef.current?.openFilePicker()}
+              >
+                <Upload className="me-1 size-3.5" />
+                {coverBusy ? t('products.editor.uploading') : t('products.editor.uploadImage')}
               </Button>
               {imageId > 0 ? (
                 <Button type="button" size="sm" variant="ghost" onClick={onCoverRemove}>
@@ -151,9 +202,29 @@ export function ProductImagesPanel({
                 ))}
               </ul>
             )}
-            <Button type="button" size="sm" variant="outline" onClick={() => setGalleryPickerOpen(true)}>
-              {t('products.editor.addGalleryImage')}
-            </Button>
+            <MediaImageDropzone
+              ref={galleryDropRef}
+              multiple
+              busy={galleryBusy}
+              emptyLabel={t('products.editor.dropGalleryHere')}
+              onFiles={(files) => void handleGalleryFiles(files)}
+              className="min-h-[88px] aspect-auto py-4"
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => setGalleryPickerOpen(true)}>
+                {t('products.editor.addGalleryImage')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={galleryBusy}
+                onClick={() => galleryDropRef.current?.openFilePicker()}
+              >
+                <Upload className="me-1 size-3.5" />
+                {galleryBusy ? t('products.editor.uploading') : t('products.editor.uploadImage')}
+              </Button>
+            </div>
           </div>
 
           {onVideoUrlChange && onVideoCoverUrlChange ? (

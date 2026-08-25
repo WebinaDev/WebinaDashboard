@@ -25,6 +25,10 @@ fi
 # AI settings/attributes pages ship from module.js, not the host SPA.
 AI_SETTINGS_SRC="$ROOT/Modules/ai-content-module/client/pages/AiSettingsPage.tsx"
 AI_ATTRS_SRC="$ROOT/Modules/ai-content-module/client/pages/AiAttributesPage.tsx"
+AI_JOBS_SRC="$ROOT/Modules/ai-content-module/client/pages/AiJobsPage.tsx"
+AI_TITLES_SRC="$ROOT/Modules/ai-content-module/client/pages/AiTitlesPage.tsx"
+AI_TAX_SRC="$ROOT/Modules/ai-content-module/client/pages/AiTaxonomiesPage.tsx"
+AI_PAGES_SRC="$ROOT/Modules/ai-content-module/client/pages/AiPagesPage.tsx"
 AI_MODULE_JS="$ROOT/Modules/ai-content-module/client/dist/module.js"
 if [[ -f "$AI_SETTINGS_SRC" ]]; then
   if [[ ! -s "$AI_MODULE_JS" ]]; then
@@ -39,12 +43,40 @@ if [[ -f "$AI_SETTINGS_SRC" ]]; then
     echo "FAIL: AiAttributesPage.tsx is newer than module.js — run: bash scripts/build-module-client.sh ai-content-module" >&2
     exit 1
   fi
+  if [[ -f "$AI_JOBS_SRC" && "$AI_JOBS_SRC" -nt "$AI_MODULE_JS" ]]; then
+    echo "FAIL: AiJobsPage.tsx is newer than module.js — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
+  if [[ -f "$AI_TITLES_SRC" && "$AI_TITLES_SRC" -nt "$AI_MODULE_JS" ]]; then
+    echo "FAIL: AiTitlesPage.tsx is newer than module.js — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
+  if [[ -f "$AI_TAX_SRC" && "$AI_TAX_SRC" -nt "$AI_MODULE_JS" ]]; then
+    echo "FAIL: AiTaxonomiesPage.tsx is newer than module.js — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
+  if [[ -f "$AI_PAGES_SRC" && "$AI_PAGES_SRC" -nt "$AI_MODULE_JS" ]]; then
+    echo "FAIL: AiPagesPage.tsx is newer than module.js — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
   if ! grep -q 'ai-sec-tones' "$AI_MODULE_JS"; then
     echo "FAIL: module.js missing ai-sec-tones UI — run: bash scripts/build-module-client.sh ai-content-module" >&2
     exit 1
   fi
   if ! grep -q 'noCategoryAttributes' "$AI_MODULE_JS"; then
     echo "FAIL: module.js missing category-scoped attributes UI — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
+  if ! grep -q 'jobError.timeout' "$AI_MODULE_JS"; then
+    echo "FAIL: module.js missing job card UI — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
+  if ! grep -q 'titlesPageTitle\|titleSuggestAll' "$AI_MODULE_JS"; then
+    echo "FAIL: module.js missing titles page — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
+  if ! grep -q 'pagesTitle\|pagePromptPlaceholder' "$AI_MODULE_JS"; then
+    echo "FAIL: module.js missing Elementor pages AI UI — run: bash scripts/build-module-client.sh ai-content-module" >&2
     exit 1
   fi
   echo "OK: ai-content-module client is up to date"
@@ -78,7 +110,7 @@ cp "$ROOT/webino-dashboard.php" "$STAGE/$PLUGIN_DIR/"
 
 for dir in includes templates assets Modules languages; do
   if [[ -d "$ROOT/$dir" ]]; then
-    cp -a "$ROOT/$dir" "$STAGE/$PLUGIN_DIR/"
+    cp -r "$ROOT/$dir" "$STAGE/$PLUGIN_DIR/"
   fi
 done
 

@@ -16,9 +16,13 @@ import {
   type AiEntityKey,
   type AiFieldSpec,
   type AiSettings,
+  extractAiDesignMemory,
   fetchAiCostEstimate,
+  fetchAiDesignMemory,
   fetchAiSettings,
   fetchGapGptModels,
+  resetAiDesignMemory,
+  saveAiDesignMemory,
   saveAiSettings,
 } from '../lib/ai-content-api'
 import { AiCostCard } from '../components/AiCostCard'
@@ -100,6 +104,14 @@ const ENTITIES: {
     titleKey: 'aiContent.settingsBlogCat',
     navKey: 'aiContent.settingsBlogCat',
     fields: ['description', 'seo'],
+  },
+  {
+    id: 'page',
+    doKey: 'do_page',
+    promptKey: 'prompt_page',
+    titleKey: 'aiContent.settingsPageEntity',
+    navKey: 'aiContent.settingsPageEntity',
+    fields: ['title', 'slug', 'excerpt', 'content', 'seo'],
   },
 ]
 
@@ -216,6 +228,37 @@ export default function AiSettingsPage() {
   })
   useQueryErrorToast(costQ)
 
+  const memQ = useQuery({
+    queryKey: ['ai-content', 'design-memory'],
+    queryFn: fetchAiDesignMemory,
+  })
+  useQueryErrorToast(memQ)
+
+  const extractMem = useMutation({
+    mutationFn: extractAiDesignMemory,
+    onSuccess: (res) => {
+      qc.setQueryData(['ai-content', 'design-memory'], res)
+      toast.success(t('aiContent.designExtracted'))
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+  const resetMem = useMutation({
+    mutationFn: resetAiDesignMemory,
+    onSuccess: (res) => {
+      qc.setQueryData(['ai-content', 'design-memory'], res)
+      toast.success(t('aiContent.designReset'))
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+  const unlockMem = useMutation({
+    mutationFn: () => saveAiDesignMemory({ locked: false, force: true }),
+    onSuccess: (res) => {
+      qc.setQueryData(['ai-content', 'design-memory'], res)
+      toast.success(t('common.saved'))
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
   const entities = useMemo(
     () => ENTITIES.filter((ent) => ent.id !== 'coffee' || !!draft?.coffee_module),
     [draft?.coffee_module],
@@ -226,6 +269,7 @@ export default function AiSettingsPage() {
       { id: 'providers', label: t('aiContent.settingsProviders') },
       { id: 'cost', label: t('aiContent.settingsCost') },
       { id: 'site', label: t('aiContent.settingsProfile') },
+      { id: 'design', label: t('aiContent.settingsDesign') },
       { id: 'tones', label: t('aiContent.settingsTones') },
       { id: 'system', label: t('aiContent.settingsSystemPrompt') },
       ...entities.map((ent) => ({ id: ent.id, label: t(ent.navKey) })),
@@ -413,6 +457,15 @@ export default function AiSettingsPage() {
             <Label>{t('aiContent.siteTopic')}</Label>
             <Textarea rows={2} value={draft.site_topic ?? ''} onChange={(e) => set('site_topic', e.target.value)} />
           </div>
+          <div className="space-y-1 md:col-span-2">
+            <Label>{t('aiContent.siteDescription')}</Label>
+            <Textarea
+              rows={4}
+              value={draft.site_description ?? ''}
+              onChange={(e) => set('site_description', e.target.value)}
+              placeholder={t('aiContent.siteDescriptionHint')}
+            />
+          </div>
           <div className="space-y-1">
             <Label>{t('aiContent.language')}</Label>
             <select
@@ -503,6 +556,55 @@ export default function AiSettingsPage() {
               value={draft.internal_links_max ?? 4}
               onChange={(e) => set('internal_links_max', Number(e.target.value))}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card id="ai-sec-design">
+        <CardHeader>
+          <CardTitle>{t('aiContent.settingsDesign')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+            <div>
+              <Label htmlFor="palette_mode">{t('aiContent.paletteMode')}</Label>
+              <p className="text-muted-foreground text-xs">{t('aiContent.paletteModeHint')}</p>
+            </div>
+            <select
+              id="palette_mode"
+              className="flex h-9 rounded-md border bg-background px-3 text-sm"
+              value={draft.palette_mode ?? 'site'}
+              onChange={(e) => set('palette_mode', e.target.value)}
+            >
+              <option value="site">{t('aiContent.paletteModeSite')}</option>
+              <option value="suggest">{t('aiContent.paletteModeSuggest')}</option>
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {memQ.data?.palette
+              ? Object.entries(memQ.data.palette).map(([slot, hex]) => (
+                  <div key={slot} className="flex items-center gap-2 rounded-md border px-2 py-1 text-xs">
+                    <span className="inline-block size-4 rounded-sm border" style={{ background: hex }} />
+                    <span className="text-muted-foreground">{slot}</span>
+                    <span className="font-mono">{hex}</span>
+                  </div>
+                ))
+              : null}
+          </div>
+          <p className="text-muted-foreground text-xs">
+            {t('aiContent.designSource')}: {memQ.data?.source || '—'} ·{' '}
+            {memQ.data?.locked ? t('aiContent.designLocked') : t('aiContent.designUnlocked')}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" disabled={extractMem.isPending} onClick={() => void extractMem.mutateAsync()}>
+              {t('aiContent.extractKit')}
+            </Button>
+            <Button type="button" size="sm" variant="outline" disabled={unlockMem.isPending} onClick={() => void unlockMem.mutateAsync()}>
+              {t('aiContent.unlockDesign')}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" disabled={resetMem.isPending} onClick={() => void resetMem.mutateAsync()}>
+              {t('aiContent.resetDesign')}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -607,6 +709,58 @@ export default function AiSettingsPage() {
                   onChange={(e) => set(ent.promptKey, e.target.value as never)}
                 />
               </details>
+              {ent.id === 'page' ? (
+                <>
+                  <details className="rounded-lg border p-3">
+                    <summary className="cursor-pointer text-sm font-medium">{t('aiContent.pageSystemPrompt')}</summary>
+                    <Textarea
+                      className="mt-3"
+                      rows={8}
+                      disabled={!enabled}
+                      value={draft.prompt_page_system ?? ''}
+                      onChange={(e) => set('prompt_page_system', e.target.value)}
+                    />
+                  </details>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label>{t('aiContent.pageProvider')}</Label>
+                      <p className="text-muted-foreground text-xs">{t('aiContent.pageProviderHint')}</p>
+                      <select
+                        className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        disabled={!enabled}
+                        value={draft.page_provider ?? ''}
+                        onChange={(e) => set('page_provider', e.target.value)}
+                      >
+                        <option value="">{t('aiContent.pageProviderDefault')}</option>
+                        <option value="grok">Grok</option>
+                        <option value="gemini">Gemini</option>
+                        <option value="openai">ChatGPT</option>
+                        <option value="gapgpt">{t('aiContent.gapgpt')}</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>{t('aiContent.pageModel')}</Label>
+                      <p className="text-muted-foreground text-xs">{t('aiContent.pageModelHint')}</p>
+                      <Input
+                        disabled={!enabled}
+                        value={draft.page_model ?? ''}
+                        onChange={(e) => set('page_model', e.target.value)}
+                        placeholder={t('aiContent.pageModelPlaceholder')}
+                      />
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <Label>{t('aiContent.pageMaxTokens')}</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        disabled={!enabled}
+                        value={draft.page_max_tokens ?? 64000}
+                        onChange={(e) => set('page_max_tokens', Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : null}
               <div className="overflow-x-auto rounded-lg border">
                 <div className="bg-muted/40 text-muted-foreground grid grid-cols-[auto_1fr_auto] gap-3 px-3 py-2 text-xs font-medium">
                   <span>{t('aiContent.doEntity')}</span>
@@ -706,6 +860,106 @@ export default function AiSettingsPage() {
           <div className="flex items-center gap-2">
             <Checkbox checked={!!draft.enabled} onCheckedChange={(v) => set('enabled', Boolean(v))} id="enabled" />
             <Label htmlFor="enabled">{t('aiContent.enabled')}</Label>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('aiContent.settingsCatalog')}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2">
+            <Label htmlFor="catalog_assign_categories">{t('aiContent.catalogAssignCats')}</Label>
+            <Switch
+              id="catalog_assign_categories"
+              checked={draft.catalog_assign_categories !== false}
+              onCheckedChange={(v) => set('catalog_assign_categories', Boolean(v))}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2">
+            <Label htmlFor="catalog_assign_brands">{t('aiContent.catalogAssignBrands')}</Label>
+            <Switch
+              id="catalog_assign_brands"
+              checked={draft.catalog_assign_brands !== false}
+              onCheckedChange={(v) => set('catalog_assign_brands', Boolean(v))}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2">
+            <div>
+              <Label htmlFor="catalog_create_terms">{t('aiContent.catalogCreateTerms')}</Label>
+              <p className="text-muted-foreground text-xs">{t('aiContent.catalogCreateTermsHint')}</p>
+            </div>
+            <Switch
+              id="catalog_create_terms"
+              checked={draft.catalog_create_terms !== false}
+              onCheckedChange={(v) => set('catalog_create_terms', Boolean(v))}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2">
+            <div>
+              <Label htmlFor="catalog_only_missing">{t('aiContent.catalogOnlyMissing')}</Label>
+              <p className="text-muted-foreground text-xs">{t('aiContent.catalogOnlyMissingHint')}</p>
+            </div>
+            <Switch
+              id="catalog_only_missing"
+              checked={draft.catalog_only_missing !== false}
+              onCheckedChange={(v) => set('catalog_only_missing', Boolean(v))}
+            />
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <Label>{t('aiContent.promptCatalog')}</Label>
+            <Textarea
+              rows={4}
+              value={draft.prompt_catalog ?? ''}
+              onChange={(e) => set('prompt_catalog', e.target.value)}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2">
+            <Label htmlFor="title_enabled">{t('aiContent.titleEnabled')}</Label>
+            <Switch
+              id="title_enabled"
+              checked={draft.title_enabled !== false}
+              onCheckedChange={(v) => set('title_enabled', Boolean(v))}
+            />
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <Label>{t('aiContent.titlePattern')}</Label>
+            <Input
+              value={draft.title_pattern ?? ''}
+              onChange={(e) => set('title_pattern', e.target.value)}
+            />
+            <p className="text-muted-foreground text-xs">{t('aiContent.titlePatternHint')}</p>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.titleBrandScript')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.title_brand_script ?? 'fa'}
+              onChange={(e) => set('title_brand_script', e.target.value)}
+            >
+              <option value="fa">{t('aiContent.titleBrandFa')}</option>
+              <option value="en">{t('aiContent.titleBrandEn')}</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+            <div>
+              <Label htmlFor="title_include_feature">{t('aiContent.titleIncludeFeature')}</Label>
+              <p className="text-muted-foreground text-xs">{t('aiContent.titleIncludeFeatureHint')}</p>
+            </div>
+            <Switch
+              id="title_include_feature"
+              checked={draft.title_include_feature !== false}
+              onCheckedChange={(v) => set('title_include_feature', Boolean(v))}
+            />
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <Label>{t('aiContent.promptTitle')}</Label>
+            <Textarea
+              rows={4}
+              value={draft.prompt_title ?? ''}
+              onChange={(e) => set('prompt_title', e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>

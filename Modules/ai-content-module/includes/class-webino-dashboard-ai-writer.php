@@ -315,6 +315,98 @@ final class Webino_Dashboard_AI_Writer {
 	}
 
 	/**
+	 * Apply AI page blueprint + Elementor tree.
+	 *
+	 * @param int                 $page_id Page ID.
+	 * @param array<string,mixed> $data Blueprint.
+	 * @param array<string,mixed> $opts Options.
+	 * @return true|WP_Error
+	 */
+	public static function apply_page( $page_id, $data, $opts = array() ) {
+		$page_id = (int) $page_id;
+		$post    = get_post( $page_id );
+		if ( ! $post || 'page' !== $post->post_type ) {
+			return new WP_Error( 'not_page', __( 'Page not found.', 'webino-dashboard' ) );
+		}
+
+		$on = static function ( $field ) {
+			return Webino_Dashboard_AI_Content_Settings::field_enabled( 'page', $field );
+		};
+
+		$title   = $on( 'title' ) ? sanitize_text_field( (string) ( $data['title'] ?? $post->post_title ) ) : $post->post_title;
+		$slug    = $on( 'slug' ) ? sanitize_title( (string) ( $data['slug'] ?? $title ) ) : $post->post_name;
+		$excerpt = $on( 'excerpt' ) ? sanitize_textarea_field( (string) ( $data['excerpt'] ?? '' ) ) : $post->post_excerpt;
+		$h1      = sanitize_text_field( (string) ( $data['h1'] ?? $title ) );
+
+		$settings = Webino_Dashboard_AI_Content_Settings::get();
+		$status   = $post->post_status;
+		if ( ! empty( $opts['set_status'] ) || ! empty( $settings['auto_publish'] ) ) {
+			$status = sanitize_key( (string) ( $opts['status'] ?? $settings['publish_status'] ?? 'draft' ) );
+			if ( ! in_array( $status, array( 'draft', 'publish', 'pending' ), true ) ) {
+				$status = 'draft';
+			}
+		}
+
+		$fallback_html = '';
+		if ( $on( 'content' ) ) {
+			$fallback_html = '<h1>' . esc_html( $h1 ) . '</h1>';
+			if ( $excerpt ) {
+				$fallback_html .= '<p>' . esc_html( $excerpt ) . '</p>';
+			}
+		}
+
+		$args = array(
+			'ID'           => $page_id,
+			'post_title'   => $title,
+			'post_name'    => $slug,
+			'post_excerpt' => $excerpt,
+			'post_status'  => $status,
+		);
+		if ( $fallback_html ) {
+			$args['post_content'] = $fallback_html;
+		}
+		$result = wp_update_post( $args, true );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( ! empty( $opts['page_prompt'] ) ) {
+			update_post_meta( $page_id, '_webino_ai_page_prompt', sanitize_textarea_field( (string) $opts['page_prompt'] ) );
+		}
+
+		if ( $on( 'seo' ) ) {
+			$seo = self::normalize_seo( $data, 'webpage', $title );
+			self::apply_post_seo( $page_id, $seo );
+		}
+
+		// Palette suggestion when mode=suggest and unlocked / empty source.
+		if ( ! empty( $data['palette_suggestion'] ) && is_array( $data['palette_suggestion'] ) ) {
+			$mode = (string) ( $settings['palette_mode'] ?? 'site' );
+			$mem  = Webino_Dashboard_AI_Design_Memory::get();
+			if ( 'suggest' === $mode && ( empty( $mem['source'] ) || empty( $mem['locked'] ) ) ) {
+				Webino_Dashboard_AI_Design_Memory::apply_suggested_palette( $data['palette_suggestion'] );
+			}
+		}
+
+		$tree  = Webino_Dashboard_AI_Elementor_Compiler::compile( $data, $page_id );
+		if ( is_wp_error( $tree ) ) {
+			return $tree;
+		}
+		$saved = Webino_Dashboard_AI_Elementor::save_document( $page_id, $tree );
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+
+		Webino_Dashboard_AI_Design_Memory::lock_after_success();
+
+		$focus   = (string) ( $data['focus_keyword'] ?? ( $data['seo']['focus_keyword'] ?? '' ) );
+		$content = Webino_Dashboard_AI_Seo_Gate::flatten_page_blueprint( $data );
+		Webino_Dashboard_AI_Seo_Gate::record_run( 'page', $page_id, $focus, $title, $content );
+
+		return true;
+	}
+
+	/**
 	 * @param int $post_id Post ID.
 	 * @return array<string,mixed>
 	 */

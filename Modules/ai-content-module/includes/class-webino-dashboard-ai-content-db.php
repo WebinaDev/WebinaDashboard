@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Webino_Dashboard_AI_Content_Db {
 
 	const OPTION_VERSION = 'webino_dashboard_ai_content_db_version';
-	const SCHEMA_VERSION = '1.1.0';
+	const SCHEMA_VERSION = '1.2.0';
 
 	/**
 	 * @param string $suffix Table suffix.
@@ -37,13 +37,23 @@ final class Webino_Dashboard_AI_Content_Db {
 	}
 
 	/**
+	 * @return bool
+	 */
+	public static function proposals_table_exists() {
+		global $wpdb;
+		$table = self::table( 'proposals' );
+		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		return (string) $found === $table;
+	}
+
+	/**
 	 * @return void
 	 */
 	public static function ensure_tables() {
 		global $wpdb;
 
 		$stored  = (string) get_option( self::OPTION_VERSION, '' );
-		$missing = ! self::jobs_table_exists();
+		$missing = ! self::jobs_table_exists() || ! self::proposals_table_exists();
 		if ( $stored === self::SCHEMA_VERSION && ! $missing ) {
 			return;
 		}
@@ -57,6 +67,7 @@ final class Webino_Dashboard_AI_Content_Db {
 		dbDelta( self::sql_calendar( $p, $charset ) );
 		dbDelta( self::sql_attr_templates( $p, $charset ) );
 		dbDelta( self::sql_runs( $p, $charset ) );
+		dbDelta( self::sql_proposals( $p, $charset ) );
 
 		update_option( self::OPTION_VERSION, self::SCHEMA_VERSION, false );
 	}
@@ -156,6 +167,28 @@ final class Webino_Dashboard_AI_Content_Db {
 			KEY focus_keyword (focus_keyword),
 			KEY title_hash (title_hash),
 			KEY target (target_type, target_id)
+		) $charset;";
+	}
+
+	/**
+	 * @param string $p Prefix.
+	 * @param string $charset Charset.
+	 * @return string
+	 */
+	private static function sql_proposals( $p, $charset ) {
+		return "CREATE TABLE {$p}webino_ai_proposals (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			kind varchar(32) NOT NULL DEFAULT '',
+			product_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			current_json longtext NULL,
+			proposed_json longtext NULL,
+			status varchar(20) NOT NULL DEFAULT 'pending',
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY kind_product (kind, product_id),
+			KEY status (status),
+			KEY product_id (product_id)
 		) $charset;";
 	}
 }

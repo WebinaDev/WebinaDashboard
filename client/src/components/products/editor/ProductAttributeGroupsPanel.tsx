@@ -32,6 +32,7 @@ type ProductAttributeGroupsPanelProps = {
   attributes: AttributeRow[]
   globalItems: GlobalAttribute[]
   onChange: (rows: AttributeRow[]) => void
+  productType?: 'simple' | 'variable'
 }
 
 type EditorState = {
@@ -48,6 +49,7 @@ export function ProductAttributeGroupsPanel({
   attributes,
   globalItems,
   onChange,
+  productType = 'simple',
 }: ProductAttributeGroupsPanelProps) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -125,7 +127,7 @@ export function ProductAttributeGroupsPanel({
       next.push({
         name,
         options: '',
-        variation: false,
+        variation: productType === 'variable',
         visible: true,
         attribute_id: ga.id,
         taxonomy: true,

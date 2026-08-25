@@ -18,7 +18,7 @@ export type AiFieldSpec = {
   unit: 'words' | 'paragraphs' | 'count'
 }
 
-export type AiEntityKey = 'product' | 'product_cat' | 'product_brand' | 'blog' | 'blog_cat' | 'coffee'
+export type AiEntityKey = 'product' | 'product_cat' | 'product_brand' | 'blog' | 'blog_cat' | 'coffee' | 'page'
 
 export type AiSettings = {
   default_provider: string
@@ -29,6 +29,11 @@ export type AiSettings = {
   gapgpt_model: string
   site_name: string
   site_topic: string
+  site_description?: string
+  palette_mode?: 'site' | 'suggest'
+  page_provider?: string
+  page_model?: string
+  page_max_tokens?: number
   tone: string
   language: string
   seo_sep: string
@@ -41,6 +46,7 @@ export type AiSettings = {
   min_blog_words: number
   min_product_words: number
   min_term_words: number
+  min_page_words?: number
   require_site_name: boolean
   web_research?: boolean
   review_emojis?: boolean
@@ -56,6 +62,7 @@ export type AiSettings = {
   do_product_brand: boolean
   do_blog: boolean
   do_blog_cat: boolean
+  do_page?: boolean
   do_coffee: boolean
   queue_paused?: boolean
   prompt_system: string
@@ -65,6 +72,18 @@ export type AiSettings = {
   prompt_blog: string
   prompt_blog_cat: string
   prompt_coffee: string
+  prompt_catalog?: string
+  prompt_title?: string
+  prompt_page?: string
+  prompt_page_system?: string
+  catalog_assign_categories?: boolean
+  catalog_assign_brands?: boolean
+  catalog_create_terms?: boolean
+  catalog_only_missing?: boolean
+  title_enabled?: boolean
+  title_pattern?: string
+  title_brand_script?: 'fa' | 'en'
+  title_include_feature?: boolean
   coffee_module?: boolean
   fields: Record<AiEntityKey, Record<string, AiFieldSpec>>
   prompt_defaults?: Record<string, string>
@@ -87,6 +106,7 @@ export type AiJob = {
   job_type: string
   target_type: string
   target_id: number
+  target_title?: string
   status: string
   provider: string
   model?: string
@@ -255,6 +275,58 @@ export function generateAi(body: Record<string, unknown>) {
   })
 }
 
+export type AiDesignMemory = {
+  palette: Record<string, string>
+  kit_color_ids: Record<string, string>
+  radius: Record<string, number>
+  spacing: Record<string, number>
+  shadow: string
+  button_style: string
+  approved_archetypes: string[]
+  source: string
+  locked: boolean
+  updated_at: string
+}
+
+export function fetchAiDesignMemory() {
+  return apiFetch<AiDesignMemory>('ai-content/design-memory')
+}
+
+export function saveAiDesignMemory(body: Partial<AiDesignMemory> & { force?: boolean }) {
+  return apiFetch<AiDesignMemory>('ai-content/design-memory', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+export function extractAiDesignMemory() {
+  return apiFetch<AiDesignMemory>('ai-content/design-memory/extract', { method: 'POST' })
+}
+
+export function resetAiDesignMemory() {
+  return apiFetch<AiDesignMemory>('ai-content/design-memory/reset', { method: 'POST' })
+}
+
+export type AiPageRow = {
+  id: number
+  title: string
+  status: string
+  modified: string
+  url: string
+  page_prompt: string
+  has_elementor: boolean
+  elementor_url: string
+}
+
+export function fetchAiPages(page = 1, search = '') {
+  const q = new URLSearchParams({ page: String(page), per_page: '50' })
+  if (search) q.set('search', search)
+  return apiFetch<{ items: AiPageRow[]; page: number; found: number; elementor: boolean }>(
+    `ai-content/pages?${q.toString()}`,
+  )
+}
+
 export function fetchIncompleteProducts(limit = 50) {
   return apiFetch<{ items: { id: number; name: string; missing: string[] }[]; total: number }>(
     `ai-content/products/incomplete?limit=${limit}`,
@@ -388,5 +460,58 @@ export function fillTermsBatch(taxonomy: 'product_cat' | 'product_brand' | 'cate
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ taxonomy, ids }),
+  })
+}
+
+export type AiProposal = {
+  id: number
+  kind: 'title' | 'catalog'
+  product_id: number
+  product_name: string
+  current: Record<string, unknown>
+  proposed: Record<string, unknown>
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export function fetchAiProposals(kind: 'title' | 'catalog', status = 'pending', limit = 100) {
+  return apiFetch<{ items: AiProposal[]; total: number }>(
+    `ai-content/proposals/${kind}?status=${encodeURIComponent(status)}&limit=${limit}`,
+  )
+}
+
+export function enqueueAiProposals(kind: 'title' | 'catalog', ids?: number[]) {
+  return apiFetch<{ ok: boolean; job_ids: number[]; count: number; chunks: number }>(
+    `ai-content/proposals/${kind}/enqueue`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ids ? { ids } : {}),
+    },
+  )
+}
+
+export function applyAiProposal(id: number, body?: { name?: string; proposed?: Record<string, unknown> }) {
+  return apiFetch<AiProposal>(`ai-content/proposals/${id}/apply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body ?? {}),
+  })
+}
+
+export function skipAiProposal(id: number) {
+  return apiFetch<AiProposal>(`ai-content/proposals/${id}/skip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
+  })
+}
+
+export function requeueAiProposal(kind: 'title' | 'catalog', productId: number) {
+  return apiFetch<{ ok: boolean; count: number }>(`ai-content/proposals/${kind}/product/${productId}/requeue`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
   })
 }

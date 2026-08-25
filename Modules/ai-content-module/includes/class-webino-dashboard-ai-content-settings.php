@@ -43,12 +43,17 @@ final class Webino_Dashboard_AI_Content_Settings {
 				'gapgpt_model'           => 'gpt-5.6-terra',
 				'site_name'              => '',
 				'site_topic'             => (string) get_option( 'blogdescription', '' ),
+				'site_description'       => '',
+				'palette_mode'           => 'site',
 				'tone'                   => 'professional, friendly',
 				'tones'                  => self::default_tones(),
 				'language'               => $lang,
 				'seo_sep'                => ' - ',
 				'temperature'            => 0.55,
 				'max_tokens'             => 0,
+				'page_provider'          => '',
+				'page_model'             => '',
+				'page_max_tokens'        => 64000,
 				'web_research'           => true,
 				'review_emojis'          => true,
 				'daily_blog_quota'       => 1,
@@ -58,6 +63,7 @@ final class Webino_Dashboard_AI_Content_Settings {
 				'min_blog_words'         => 900,
 				'min_product_words'      => 400,
 				'min_term_words'         => 250,
+				'min_page_words'         => 150,
 				'require_site_name'      => true,
 				'internal_links_min'     => 2,
 				'internal_links_max'     => 4,
@@ -72,8 +78,17 @@ final class Webino_Dashboard_AI_Content_Settings {
 				'do_product_brand'       => true,
 				'do_blog'                => true,
 				'do_blog_cat'            => true,
+				'do_page'                => true,
 				'do_coffee'              => true,
-				'fields'                 => self::field_defaults(),
+				'catalog_assign_categories' => true,
+				'catalog_assign_brands'     => true,
+				'catalog_create_terms'      => true,
+				'catalog_only_missing'      => true,
+				'title_enabled'             => true,
+				'title_pattern'             => '{product} {brand} مدل {model} {feature}',
+				'title_brand_script'        => 'fa',
+				'title_include_feature'     => true,
+				'fields'                    => self::field_defaults(),
 			),
 			$prompts
 		);
@@ -119,6 +134,12 @@ final class Webino_Dashboard_AI_Content_Settings {
 				'Complete WooCommerce product content for all enabled SEO and marketing fields. Keep existing factual data (SKU, brand, price cues). Fill empty fields. If attribute_template is set, only fill those attribute names with values; do not invent new attribute names.',
 				'Complete WooCommerce product content for all enabled SEO and marketing fields. Keep existing factual data (SKU, brand, price cues, current attributes). Fill empty fields. If attribute_template is set, only fill those attribute names; prefer provided option lists; do not invent new attribute names. Structure the review/description with H2/H3 (intro, tasting or use, comparison when related products exist, who it is for, then a final summary with how to order from {site_name}).',
 			),
+			'prompt_page_system' => array(
+				"You are an elite brand web designer + SEO copywriter for WordPress/Elementor.\nWrite in {language}. Tone: {tone}.\nSite name: \"{site_name}\". Niche: \"{site_topic}\". Site domain description: \"{site_description}\".\nYou output a PageBlueprint JSON only (never raw Elementor JSON).\nDesign rules:\n- Extraordinary, innovative, brand-aligned layouts using ONLY approved archetypes.\n- Reuse the provided design_memory palette on every page. Never invent unrelated colors.\n- NEVER specify fonts or font_family — site theme fonts apply.\n- Sections must feel cinematic: asymmetric splits, bento grids, full-bleed CTAs, timelines, stats, FAQ — not plain stacked text.\n- Mention the site name naturally at least once in visible copy.\nSEO rules (Rank Math / helpful content):\n- focus_keyword in title, slug, h1, first section copy, seo_title, seo_description.\n- SEO title ~10–60 chars; meta description ~70–160 chars.\n- Clear H1 once; H2/H3 hierarchy inside section texts/html.\n- Return ONLY valid JSON. No markdown fences.",
+			),
+			'prompt_page' => array(
+				'Design one landing/marketing page for Elementor. Follow the page_prompt closely for content goals. Use 4–7 sections from approved_archetypes. Fill rich Persian/English copy matching site_description. Include internal link CTAs when related_urls are provided. If palette_mode is suggest and design_memory is empty, also return palette_suggestion with hex colors for primary,secondary,accent,bg,surface,text,muted.',
+			),
 		);
 	}
 
@@ -136,6 +157,14 @@ final class Webino_Dashboard_AI_Content_Settings {
 			'prompt_blog' => 'Write a helpful, original blog post for this site niche. Use H2/H3, cover the topic thoroughly, and include the focus keyword naturally.',
 			'prompt_blog_cat' => 'Write archive/landing content for a blog category. Explain what readers will find in this category.',
 			'prompt_coffee' => 'Fill the coffee tasting profile. blend_arabica + blend_robusta must sum to 100 (use 0/0 only if this is not coffee). Pick origin_ids only from the provided origin list. Keep scale fields inside scale_min/scale_max. caffeine_mg must not exceed caffeine_max. Set visible flags for sections that have meaningful values. Do not invent origins or change pack weight.',
+			'prompt_catalog' => 'Assign WooCommerce product_cat and product_brand using the existing site tree. Prefer existing category ids/paths. Create a new category only when nothing in the tree fits, and always attach it under a real parent when possible. Return every selected leaf AND its parents conceptually (server will add ancestors). Prefer existing brand names; create a brand only if it is genuinely missing. One primary brand per product.',
+			'prompt_title' => 'Rewrite each product title to match the pattern and be consistent across the catalog. Reuse glossary product_type phrases exactly (never mix synonyms like holder vs phone stand). Write all brand names in the requested script (all Persian or all English). Feature/size is optional. Keep model codes as-is. Return JSON only.',
+			'prompt_page_system' => "You are an elite brand art director + SEO copywriter for WordPress/Elementor.\nWrite in {language}. Tone: {tone}.\nSite name: \"{site_name}\". Niche: \"{site_topic}\". Site domain: \"{site_description}\".\nOutput a Visual PageBlueprint JSON only (never raw Elementor _elementor_data).\nThis is a MARKETING PAGE, not an article. Copy lives inside cinematic layouts.\nDesign rules:\n- Every section MUST include blocks[] with real Elementor widget names from the catalog.\n- At least one block per major section MUST be widget=html with substantial HTML+CSS (glass hero, CSS-grid bento, real timeline, marquee, overlapping cards, full-bleed CTA). CSS may be long.\n- Also use native widgets: heading, button, image, counter, accordion, tabs, testimonial, video, image-carousel, star-rating, icon-box, spacer, divider.\n- page_css: scoped visual identity (gradients, motion, radius) using design_memory hex colors. NEVER font-family.\n- layout: full-width, min_height, overlays, column splits, overlap. Not a single text column.\n- Reuse design_memory palette. Import local templates only via import_template_ids from the catalog.\n- Mention the site name naturally once in visible copy.\nSEO: focus_keyword in title, slug, h1, first hero copy, seo_title, seo_description. SEO title ~10–60 chars; meta ~70–160. One H1. Return ONLY valid JSON.",
+			'prompt_page' => 'Design one extraordinary landing page. Follow page_prompt. 5–8 sections. Required mix: cinematic HTML hero, bento/grid, stats counters, FAQ accordion, full-bleed CTA, plus images/video when media exists. Fill blocks[].html and blocks[].css for visual identity. Include internal CTAs from related_urls. If palette_mode is suggest and design_memory is empty, also return palette_suggestion (primary,secondary,accent,bg,surface,text,muted).',
+			'prompt_page_layout_system' => "You are an elite brand art director for WordPress/Elementor.\nWrite in {language}. Tone: {tone}.\nSite name: \"{site_name}\". Niche: \"{site_topic}\". Site domain: \"{site_description}\".\nPass 1 — LAYOUT ONLY. Output PageLayout JSON (never raw Elementor _elementor_data).\nThis is a MARKETING PAGE, not an article. Short punchy copy inside widget settings only.\nRules:\n- Minimum 5–8 sections: full-width hero, bento/grid, stats, FAQ, full-bleed CTA, plus media when available.\n- Every section MUST have blocks[] with widget names from elementor_catalog.widgets (use role + when_to_use).\n- At least one html-capable block (widget=html) in hero AND in final CTA section.\n- layout: full_width, min_height, column splits, overlap flags, gradient/image/video backgrounds.\n- Do NOT output long html or css in pass 1 — settings copy only.\n- Reuse design_memory palette tokens in background colors.\n- Mention site name once in hero settings copy.\nSEO (light): focus_keyword in title, slug, h1, seo.title, seo.description. Return ONLY valid JSON.",
+			'prompt_page_layout' => 'Design the page skeleton for page_prompt. Pick widgets from the catalog. 5–8 sections with diverse archetypes. Hero + CTA must include widget=html blocks (empty html ok). Stats use counter widgets. FAQ uses accordion. Include related_urls as button urls where natural. If palette_mode is suggest and design_memory is empty, return palette_suggestion.',
+			'prompt_page_visual_system' => "You are a cinematic web visual designer for WordPress/Elementor html widgets.\nWrite in {language}. Tone: {tone}.\nSite name: \"{site_name}\". Niche: \"{site_topic}\".\nPass 2 — VISUAL IDENTITY ONLY. You receive page_layout from pass 1.\nFill blocks[].html and blocks[].css + page_css. Do NOT change widget choices, column indices, or marketing copy except tiny hierarchy tweaks.\nDesign language: glassmorphism, gradients, CSS Grid bento, real timelines, marquees, overlapping cards, full-bleed CTAs.\nUse design_memory hex colors in CSS. NEVER font-family.\nScope classes with the page scope hint in rules. Return ONLY valid JSON.",
+			'prompt_page_visual' => 'Add cinematic HTML+CSS to the provided page_layout. Every html widget block needs substantial html+css. Non-html blocks may get wrapper html if needed. page_css for global motion/gradients. Keep copy from pass 1. No articles — visual marketing only.',
 		);
 	}
 
@@ -189,6 +218,13 @@ final class Webino_Dashboard_AI_Content_Settings {
 				'origin_ids'     => $sw,
 				'visible'        => $sw,
 			),
+			'page'          => array(
+				'title'   => $sw,
+				'slug'    => $sw,
+				'excerpt' => array( 'enabled' => true, 'length' => 2, 'unit' => 'paragraphs' ),
+				'content' => array( 'enabled' => true, 'length' => 150, 'unit' => 'words' ),
+				'seo'     => $sw,
+			),
 		);
 	}
 
@@ -232,6 +268,7 @@ final class Webino_Dashboard_AI_Content_Settings {
 		$merged['min_product_words'] = self::derived_words( $merged, 'product', 'description', 400 );
 		$merged['min_blog_words']    = self::derived_words( $merged, 'blog', 'content', 900 );
 		$merged['min_term_words']    = self::derived_words( $merged, 'product_cat', 'description', 250 );
+		$merged['min_page_words']    = self::derived_words( $merged, 'page', 'content', 150 );
 
 		return $merged;
 	}
@@ -379,6 +416,11 @@ final class Webino_Dashboard_AI_Content_Settings {
 				$out[ $field ] = sprintf( 'Write %s as %d paragraphs.', $field, $len );
 			} elseif ( 'count' === $unit ) {
 				$out[ $field ] = sprintf( 'Include exactly %d items for %s.', $len, $field );
+			} elseif ( 'page' === $entity && 'content' === $field ) {
+				$out[ $field ] = sprintf(
+					'Short marketing copy inside blocks and html widgets (~%d words total across the page). Not an article or long-form text column.',
+					$len
+				);
 			} else {
 				$out[ $field ] = sprintf( 'Write %s with at least %d words.', $field, $len );
 			}
@@ -474,6 +516,7 @@ final class Webino_Dashboard_AI_Content_Settings {
 			'{language}'           => $lang,
 			'{tone}'               => self::resolved_tone( $settings ),
 			'{site_topic}'         => (string) ( $settings['site_topic'] ?? '' ),
+			'{site_description}'   => (string) ( $settings['site_description'] ?? '' ),
 			'{seo_sep}'            => (string) ( $settings['seo_sep'] ?? ' - ' ),
 			'{internal_links_min}' => (string) $min_links,
 			'{internal_links_max}' => (string) $max_links,
@@ -499,6 +542,8 @@ final class Webino_Dashboard_AI_Content_Settings {
 			'product_brand' => 'product_brand',
 			'category'      => 'blog_cat',
 			'blog_cat'      => 'blog_cat',
+			'page'          => 'page',
+			'page_design'   => 'page',
 		);
 		$key = sanitize_key( $type );
 		return isset( $map[ $key ] ) ? $map[ $key ] : $key;
@@ -532,15 +577,29 @@ final class Webino_Dashboard_AI_Content_Settings {
 			}
 		}
 
-		foreach ( array( 'grok_model', 'gemini_model', 'openai_model', 'gapgpt_model', 'site_topic', 'tone', 'seo_sep', 'site_name' ) as $key ) {
+		foreach ( array( 'grok_model', 'gemini_model', 'openai_model', 'gapgpt_model', 'site_topic', 'tone', 'seo_sep', 'site_name', 'title_pattern', 'page_model' ) as $key ) {
 			if ( array_key_exists( $key, $raw ) ) {
 				$out[ $key ] = sanitize_text_field( (string) $raw[ $key ] );
 			}
 		}
 
+		if ( array_key_exists( 'site_description', $raw ) ) {
+			$out['site_description'] = sanitize_textarea_field( (string) $raw['site_description'] );
+		}
+
+		if ( isset( $raw['palette_mode'] ) ) {
+			$pm = sanitize_key( (string) $raw['palette_mode'] );
+			$out['palette_mode'] = in_array( $pm, array( 'site', 'suggest' ), true ) ? $pm : 'site';
+		}
+
 		if ( isset( $raw['language'] ) ) {
 			$lang = sanitize_key( (string) $raw['language'] );
 			$out['language'] = in_array( $lang, array( 'fa', 'en' ), true ) ? $lang : 'fa';
+		}
+
+		if ( isset( $raw['title_brand_script'] ) ) {
+			$script = sanitize_key( (string) $raw['title_brand_script'] );
+			$out['title_brand_script'] = in_array( $script, array( 'fa', 'en' ), true ) ? $script : 'fa';
 		}
 
 		if ( array_key_exists( 'temperature', $raw ) ) {
@@ -549,8 +608,15 @@ final class Webino_Dashboard_AI_Content_Settings {
 		if ( array_key_exists( 'max_tokens', $raw ) ) {
 			$out['max_tokens'] = min( 128000, max( 0, (int) $raw['max_tokens'] ) );
 		}
+		if ( array_key_exists( 'page_max_tokens', $raw ) ) {
+			$out['page_max_tokens'] = min( 128000, max( 0, (int) $raw['page_max_tokens'] ) );
+		}
+		if ( isset( $raw['page_provider'] ) ) {
+			$pp = sanitize_key( (string) $raw['page_provider'] );
+			$out['page_provider'] = ( '' === $pp || 'default' === $pp ) ? '' : ( in_array( $pp, $providers, true ) ? $pp : '' );
+		}
 
-		foreach ( array( 'daily_blog_quota', 'daily_product_quota', 'min_blog_words', 'min_product_words', 'min_term_words', 'internal_links_min', 'internal_links_max', 'max_regenerate' ) as $ikey ) {
+		foreach ( array( 'daily_blog_quota', 'daily_product_quota', 'min_blog_words', 'min_product_words', 'min_term_words', 'min_page_words', 'internal_links_min', 'internal_links_max', 'max_regenerate' ) as $ikey ) {
 			if ( array_key_exists( $ikey, $raw ) ) {
 				$out[ $ikey ] = max( 0, (int) $raw[ $ikey ] );
 			}
@@ -560,7 +626,7 @@ final class Webino_Dashboard_AI_Content_Settings {
 			$out['similarity_threshold'] = min( 0.99, max( 0.3, (float) $raw['similarity_threshold'] ) );
 		}
 
-		foreach ( array( 'auto_publish', 'require_site_name', 'enabled', 'do_product', 'do_product_cat', 'do_product_brand', 'do_blog', 'do_blog_cat', 'do_coffee', 'web_research', 'review_emojis' ) as $bkey ) {
+		foreach ( array( 'auto_publish', 'require_site_name', 'enabled', 'do_product', 'do_product_cat', 'do_product_brand', 'do_blog', 'do_blog_cat', 'do_page', 'do_coffee', 'web_research', 'review_emojis', 'catalog_assign_categories', 'catalog_assign_brands', 'catalog_create_terms', 'catalog_only_missing', 'title_enabled', 'title_include_feature' ) as $bkey ) {
 			if ( array_key_exists( $bkey, $raw ) ) {
 				$out[ $bkey ] = (bool) $raw[ $bkey ];
 			}
@@ -687,6 +753,31 @@ final class Webino_Dashboard_AI_Content_Settings {
 			}
 		}
 		return $out;
+	}
+
+	/**
+	 * Provider extras for page_design jobs only.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function page_provider_extra() {
+		$s     = self::get();
+		$extra = array();
+		$pp    = sanitize_key( (string) ( $s['page_provider'] ?? '' ) );
+		if ( in_array( $pp, array( 'grok', 'gemini', 'openai', 'gapgpt' ), true ) ) {
+			$extra['force_provider'] = $pp;
+		}
+		$pm = trim( (string) ( $s['page_model'] ?? '' ) );
+		if ( '' !== $pm ) {
+			$extra['force_model'] = sanitize_text_field( $pm );
+		}
+		$max = (int) ( $s['page_max_tokens'] ?? 0 );
+		if ( $max > 0 ) {
+			$extra['max_tokens'] = min( 128000, $max );
+		}
+		// Wait until the model returns (no HTTP timeout for page design).
+		$extra['timeout'] = 0;
+		return $extra;
 	}
 
 	/**

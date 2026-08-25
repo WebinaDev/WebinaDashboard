@@ -49,6 +49,53 @@ final class Webino_Dashboard_REST_AI_Content {
 
 		register_rest_route(
 			self::NS,
+			'/ai-content/design-memory',
+			array(
+				array_merge( $manage, array( 'methods' => 'GET', 'callback' => array( __CLASS__, 'design_memory_get' ) ) ),
+				array_merge( $manage, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'design_memory_post' ) ) ),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/design-memory/extract',
+			array_merge( $manage, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'design_memory_extract' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/design-memory/reset',
+			array_merge( $manage, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'design_memory_reset' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/site-profile',
+			array_merge(
+				array( 'permission_callback' => array( __CLASS__, 'perm_pages' ) ),
+				array( 'methods' => 'GET', 'callback' => array( __CLASS__, 'site_profile_get' ) )
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/pages',
+			array_merge(
+				array( 'permission_callback' => array( __CLASS__, 'perm_pages' ) ),
+				array(
+					'methods'  => 'GET',
+					'callback' => array( __CLASS__, 'pages_list' ),
+					'args'     => array(
+						'page'     => array( 'type' => 'integer', 'default' => 1 ),
+						'per_page' => array( 'type' => 'integer', 'default' => 50 ),
+						'search'   => array( 'type' => 'string', 'default' => '' ),
+					),
+				)
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/ai-content/gapgpt/models',
 			array_merge(
 				$manage,
@@ -237,11 +284,57 @@ final class Webino_Dashboard_REST_AI_Content {
 			'/ai-content/terms/fill-batch',
 			array_merge( $terms, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'terms_fill_batch' ) ) )
 		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/proposals/(?P<kind>title|catalog)',
+			array_merge(
+				$products,
+				array(
+					'methods'  => 'GET',
+					'callback' => array( __CLASS__, 'proposals_list' ),
+					'args'     => array(
+						'status' => array(
+							'type'    => 'string',
+							'default' => 'pending',
+						),
+						'limit'  => array(
+							'type'    => 'integer',
+							'default' => 100,
+						),
+					),
+				)
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/proposals/(?P<kind>title|catalog)/enqueue',
+			array_merge( $products, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'proposals_enqueue' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/proposals/(?P<id>\d+)/apply',
+			array_merge( $products, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'proposals_apply' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/proposals/(?P<id>\d+)/skip',
+			array_merge( $products, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'proposals_skip' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/proposals/(?P<kind>title|catalog)/product/(?P<product_id>\d+)/requeue',
+			array_merge( $products, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'proposals_requeue_one' ) ) )
+		);
 	}
 
 	/** @return bool */
 	public static function perm_edit() {
-		return Webino_Dashboard_Rest_Base::can( 'edit_posts' );
+		return Webino_Dashboard_Rest_Base::can( 'edit_posts' ) || Webino_Dashboard_Rest_Base::can( 'edit_pages' );
 	}
 
 	/** @return bool */
@@ -257,6 +350,114 @@ final class Webino_Dashboard_REST_AI_Content {
 	/** @return bool */
 	public static function perm_terms() {
 		return Webino_Dashboard_Rest_Base::can( 'manage_product_terms' );
+	}
+
+	/** @return bool */
+	public static function perm_pages() {
+		return Webino_Dashboard_Rest_Base::can( 'edit_pages' );
+	}
+
+	/**
+	 * @return WP_REST_Response
+	 */
+	public static function design_memory_get() {
+		return new WP_REST_Response( Webino_Dashboard_AI_Design_Memory::get() );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function design_memory_post( $request ) {
+		$body  = $request->get_json_params();
+		$force = is_array( $body ) && ! empty( $body['force'] );
+		$saved = Webino_Dashboard_AI_Design_Memory::save( is_array( $body ) ? $body : array(), $force );
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+		return new WP_REST_Response( $saved );
+	}
+
+	/**
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function design_memory_extract() {
+		$saved = Webino_Dashboard_AI_Design_Memory::extract_from_elementor_kit();
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+		return new WP_REST_Response( $saved );
+	}
+
+	/**
+	 * @return WP_REST_Response
+	 */
+	public static function design_memory_reset() {
+		return new WP_REST_Response( Webino_Dashboard_AI_Design_Memory::reset() );
+	}
+
+	/**
+	 * Lightweight site description for page editors.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function site_profile_get() {
+		$s = Webino_Dashboard_AI_Content_Settings::get();
+		return new WP_REST_Response(
+			array(
+				'site_name'        => Webino_Dashboard_AI_Content_Settings::resolved_site_name( $s ),
+				'site_topic'       => (string) ( $s['site_topic'] ?? '' ),
+				'site_description' => (string) ( $s['site_description'] ?? '' ),
+				'do_page'          => ! empty( $s['do_page'] ),
+			)
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function pages_list( $request ) {
+		$page     = max( 1, (int) $request->get_param( 'page' ) );
+		$per_page = min( 100, max( 1, (int) $request->get_param( 'per_page' ) ) );
+		$search   = sanitize_text_field( (string) $request->get_param( 'search' ) );
+
+		$q = new WP_Query(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future' ),
+				'posts_per_page' => $per_page,
+				'paged'          => $page,
+				's'              => $search,
+				'orderby'        => 'modified',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $q->posts as $p ) {
+			$items[] = array(
+				'id'           => (int) $p->ID,
+				'title'        => get_the_title( $p ),
+				'status'       => $p->post_status,
+				'modified'     => $p->post_modified,
+				'url'          => get_permalink( $p ),
+				'page_prompt'  => (string) get_post_meta( $p->ID, '_webino_ai_page_prompt', true ),
+				'has_elementor'=> 'builder' === (string) get_post_meta( $p->ID, '_elementor_edit_mode', true ),
+				'elementor_url'=> defined( 'ELEMENTOR_VERSION' )
+					? admin_url( 'post.php?post=' . (int) $p->ID . '&action=elementor' )
+					: '',
+			);
+		}
+
+		return new WP_REST_Response(
+			array(
+				'items'       => $items,
+				'page'        => $page,
+				'found'       => (int) $q->found_posts,
+				'elementor'   => defined( 'ELEMENTOR_VERSION' ),
+			)
+		);
 	}
 
 	/**
@@ -504,6 +705,7 @@ final class Webino_Dashboard_REST_AI_Content {
 			'product_brand' => array( 'term_fill', 'product_brand' ),
 			'category'      => array( 'term_fill', 'category' ),
 			'blog'          => array( 'blog_write', 'calendar' ),
+			'page'          => array( 'page_design', 'page' ),
 		);
 
 		if ( ! isset( $map[ $type ] ) ) {
@@ -524,6 +726,20 @@ final class Webino_Dashboard_REST_AI_Content {
 				'topic'         => (string) ( $body['topic'] ?? '' ),
 				'focus_keyword' => (string) ( $body['focus_keyword'] ?? '' ),
 			) );
+		}
+		if ( 'page' === $type ) {
+			if ( $id <= 0 ) {
+				return new WP_Error( 'invalid_id', __( 'Page id required.', 'webino-dashboard' ), array( 'status' => 400 ) );
+			}
+			if ( ! empty( $body['page_prompt'] ) ) {
+				$payload['page_prompt'] = sanitize_textarea_field( (string) $body['page_prompt'] );
+			}
+			if ( ! empty( $body['prompt'] ) && empty( $payload['page_prompt'] ) ) {
+				$payload['page_prompt'] = sanitize_textarea_field( (string) $body['prompt'] );
+			}
+			if ( ! empty( $body['focus_keyword'] ) ) {
+				$payload['focus_keyword'] = sanitize_text_field( (string) $body['focus_keyword'] );
+			}
 		}
 
 		$job_type    = $map[ $type ][0];
@@ -900,6 +1116,95 @@ final class Webino_Dashboard_REST_AI_Content {
 			$job_ids[] = $jid;
 		}
 		return new WP_REST_Response( array( 'ok' => true, 'job_ids' => $job_ids, 'count' => count( $job_ids ) ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function proposals_list( $request ) {
+		$kind   = sanitize_key( (string) $request['kind'] );
+		$status = sanitize_key( (string) $request->get_param( 'status' ) );
+		$limit  = (int) $request->get_param( 'limit' );
+		return new WP_REST_Response(
+			Webino_Dashboard_AI_Proposals::list_proposals(
+				$kind,
+				array(
+					'status' => $status ? $status : 'pending',
+					'limit'  => $limit > 0 ? $limit : 100,
+				)
+			)
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function proposals_enqueue( $request ) {
+		$ready = self::assert_ready();
+		if ( is_wp_error( $ready ) ) {
+			return $ready;
+		}
+		$kind = sanitize_key( (string) $request['kind'] );
+		$body = $request->get_json_params();
+		$ids  = isset( $body['ids'] ) && is_array( $body['ids'] ) ? array_map( 'intval', $body['ids'] ) : null;
+		$res  = Webino_Dashboard_AI_Proposals::enqueue_batch( $kind, $ids );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return new WP_REST_Response( $res, 202 );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function proposals_apply( $request ) {
+		$body     = $request->get_json_params();
+		$override = is_array( $body ) && isset( $body['proposed'] ) && is_array( $body['proposed'] ) ? $body['proposed'] : null;
+		if ( is_array( $body ) && isset( $body['name'] ) ) {
+			$override = is_array( $override ) ? $override : array();
+			$override['name'] = (string) $body['name'];
+		}
+		$res = Webino_Dashboard_AI_Proposals::apply( (int) $request['id'], $override );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return new WP_REST_Response( $res );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function proposals_skip( $request ) {
+		$res = Webino_Dashboard_AI_Proposals::skip( (int) $request['id'] );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return new WP_REST_Response( $res );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function proposals_requeue_one( $request ) {
+		$ready = self::assert_ready();
+		if ( is_wp_error( $ready ) ) {
+			return $ready;
+		}
+		$kind = sanitize_key( (string) $request['kind'] );
+		$pid  = (int) $request['product_id'];
+		if ( $pid < 1 ) {
+			return new WP_Error( 'ai_proposal', __( 'Invalid product.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$res = Webino_Dashboard_AI_Proposals::enqueue_batch( $kind, array( $pid ) );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return new WP_REST_Response( $res, 202 );
 	}
 
 	/**

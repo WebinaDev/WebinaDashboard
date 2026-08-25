@@ -19,27 +19,27 @@ var y = Object.create, b = Object.defineProperty, x = Object.getOwnPropertyDescr
 }) : n, e));
 //#endregion
 //#region node_modules/clsx/dist/clsx.mjs
-function ee(e) {
+function O(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
 	else if (typeof e == "object") if (Array.isArray(e)) {
 		var i = e.length;
-		for (t = 0; t < i; t++) e[t] && (n = ee(e[t])) && (r && (r += " "), r += n);
+		for (t = 0; t < i; t++) e[t] && (n = O(e[t])) && (r && (r += " "), r += n);
 	} else for (n in e) e[n] && (r && (r += " "), r += n);
 	return r;
 }
-function te() {
-	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = ee(e)) && (r && (r += " "), r += t);
+function ee() {
+	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = O(e)) && (r && (r += " "), r += t);
 	return r;
 }
 //#endregion
 //#region node_modules/class-variance-authority/dist/index.mjs
-var O = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, k = te, A = (e, t) => (n) => {
+var te = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, k = ee, A = (e, t) => (n) => {
 	if (t?.variants == null) return k(e, n?.class, n?.className);
 	let { variants: r, defaultVariants: i } = t, a = Object.keys(r).map((e) => {
 		let t = n?.[e], a = i?.[e];
 		if (t === null) return null;
-		let o = O(t) || O(a);
+		let o = te(t) || te(a);
 		return r[e][o];
 	}), o = n && Object.entries(n).reduce((e, t) => {
 		let [n, r] = t;
@@ -901,13 +901,13 @@ var at = $e, ot = tt, st = (e, t) => {
 }, Rt = [], I = (e) => {
 	let t = (t) => t[e] || Rt;
 	return t.isThemeGetter = !0, t;
-}, zt = /^\[(?:(\w[\w-]*):)?(.+)\]$/i, Bt = /^\((?:(\w[\w-]*):)?(.+)\)$/i, Vt = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/, Ht = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/, Ut = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/, Wt = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/, Gt = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/, Kt = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/, qt = (e) => Vt.test(e), L = (e) => !!e && !Number.isNaN(Number(e)), Jt = (e) => !!e && Number.isInteger(Number(e)), Yt = (e) => e.endsWith("%") && L(e.slice(0, -1)), R = (e) => Ht.test(e), Xt = () => !0, Zt = (e) => Ut.test(e) && !Wt.test(e), Qt = () => !1, $t = (e) => Gt.test(e), en = (e) => Kt.test(e), tn = (e) => !z(e) && !B(e), nn = (e) => vn(e, Sn, Qt), z = (e) => zt.test(e), rn = (e) => vn(e, Cn, Zt), an = (e) => vn(e, wn, L), on = (e) => vn(e, En, Xt), sn = (e) => vn(e, Tn, Qt), cn = (e) => vn(e, bn, Qt), ln = (e) => vn(e, xn, en), un = (e) => vn(e, Dn, $t), B = (e) => Bt.test(e), dn = (e) => yn(e, Cn), fn = (e) => yn(e, Tn), pn = (e) => yn(e, bn), mn = (e) => yn(e, Sn), hn = (e) => yn(e, xn), gn = (e) => yn(e, Dn, !0), _n = (e) => yn(e, En, !0), vn = (e, t, n) => {
+}, zt = /^\[(?:(\w[\w-]*):)?(.+)\]$/i, Bt = /^\((?:(\w[\w-]*):)?(.+)\)$/i, Vt = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/, Ht = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/, Ut = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/, Wt = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/, Gt = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/, Kt = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/, qt = (e) => Vt.test(e), L = (e) => !!e && !Number.isNaN(Number(e)), Jt = (e) => !!e && Number.isInteger(Number(e)), Yt = (e) => e.endsWith("%") && L(e.slice(0, -1)), Xt = (e) => Ht.test(e), Zt = () => !0, Qt = (e) => Ut.test(e) && !Wt.test(e), $t = () => !1, en = (e) => Gt.test(e), tn = (e) => Kt.test(e), nn = (e) => !R(e) && !z(e), rn = (e) => yn(e, Cn, $t), R = (e) => zt.test(e), an = (e) => yn(e, wn, Qt), on = (e) => yn(e, Tn, L), sn = (e) => yn(e, Dn, Zt), cn = (e) => yn(e, En, $t), ln = (e) => yn(e, xn, $t), un = (e) => yn(e, Sn, tn), dn = (e) => yn(e, On, en), z = (e) => Bt.test(e), fn = (e) => bn(e, wn), pn = (e) => bn(e, En), mn = (e) => bn(e, xn), hn = (e) => bn(e, Cn), gn = (e) => bn(e, Sn), _n = (e) => bn(e, On, !0), vn = (e) => bn(e, Dn, !0), yn = (e, t, n) => {
 	let r = zt.exec(e);
 	return r ? r[1] ? t(r[1]) : n(r[2]) : !1;
-}, yn = (e, t, n = !1) => {
+}, bn = (e, t, n = !1) => {
 	let r = Bt.exec(e);
 	return r ? r[1] ? t(r[1]) : n : !1;
-}, bn = (e) => e === "position" || e === "percentage", xn = (e) => e === "image" || e === "url", Sn = (e) => e === "length" || e === "size" || e === "bg-size", Cn = (e) => e === "length", wn = (e) => e === "number", Tn = (e) => e === "family-name", En = (e) => e === "number" || e === "weight", Dn = (e) => e === "shadow", On = /* @__PURE__ */ Lt(() => {
+}, xn = (e) => e === "position" || e === "percentage", Sn = (e) => e === "image" || e === "url", Cn = (e) => e === "length" || e === "size" || e === "bg-size", wn = (e) => e === "length", Tn = (e) => e === "number", En = (e) => e === "family-name", Dn = (e) => e === "number" || e === "weight", On = (e) => e === "shadow", kn = /* @__PURE__ */ Lt(() => {
 	let e = I("color"), t = I("font"), n = I("text"), r = I("font-weight"), i = I("tracking"), a = I("leading"), o = I("breakpoint"), s = I("container"), c = I("spacing"), l = I("radius"), u = I("shadow"), d = I("inset-shadow"), f = I("text-shadow"), p = I("drop-shadow"), m = I("blur"), h = I("perspective"), g = I("aspect"), _ = I("ease"), v = I("animate"), y = () => [
 		"auto",
 		"avoid",
@@ -933,8 +933,8 @@ var at = $e, ot = tt, st = (e, t) => {
 		"left-bottom"
 	], x = () => [
 		...b(),
-		B,
-		z
+		z,
+		R
 	], S = () => [
 		"auto",
 		"hidden",
@@ -946,8 +946,8 @@ var at = $e, ot = tt, st = (e, t) => {
 		"contain",
 		"none"
 	], w = () => [
-		B,
 		z,
+		R,
 		c
 	], T = () => [
 		qt,
@@ -958,32 +958,32 @@ var at = $e, ot = tt, st = (e, t) => {
 		Jt,
 		"none",
 		"subgrid",
-		B,
-		z
+		z,
+		R
 	], D = () => [
 		"auto",
 		{ span: [
 			"full",
 			Jt,
-			B,
-			z
+			z,
+			R
 		] },
 		Jt,
-		B,
-		z
-	], ee = () => [
+		z,
+		R
+	], O = () => [
 		Jt,
 		"auto",
-		B,
-		z
-	], te = () => [
+		z,
+		R
+	], ee = () => [
 		"auto",
 		"min",
 		"max",
 		"fr",
-		B,
-		z
-	], O = () => [
+		z,
+		R
+	], te = () => [
 		"start",
 		"end",
 		"center",
@@ -1040,13 +1040,13 @@ var at = $e, ot = tt, st = (e, t) => {
 		...w()
 	], M = () => [
 		e,
-		B,
-		z
+		z,
+		R
 	], ie = () => [
 		...b(),
-		pn,
-		cn,
-		{ position: [B, z] }
+		mn,
+		ln,
+		{ position: [z, R] }
 	], ae = () => ["no-repeat", { repeat: [
 		"",
 		"x",
@@ -1057,25 +1057,25 @@ var at = $e, ot = tt, st = (e, t) => {
 		"auto",
 		"cover",
 		"contain",
-		mn,
-		nn,
-		{ size: [B, z] }
+		hn,
+		rn,
+		{ size: [z, R] }
 	], se = () => [
 		Yt,
-		dn,
-		rn
+		fn,
+		an
 	], N = () => [
 		"",
 		"none",
 		"full",
 		l,
-		B,
-		z
+		z,
+		R
 	], P = () => [
 		"",
 		L,
-		dn,
-		rn
+		fn,
+		an
 	], ce = () => [
 		"solid",
 		"dashed",
@@ -1101,28 +1101,28 @@ var at = $e, ot = tt, st = (e, t) => {
 	], F = () => [
 		L,
 		Yt,
-		pn,
-		cn
+		mn,
+		ln
 	], ue = () => [
 		"",
 		"none",
 		m,
-		B,
-		z
+		z,
+		R
 	], de = () => [
 		"none",
 		L,
-		B,
-		z
+		z,
+		R
 	], fe = () => [
 		"none",
 		L,
-		B,
-		z
+		z,
+		R
 	], pe = () => [
 		L,
-		B,
-		z
+		z,
+		R
 	], me = () => [
 		qt,
 		"full",
@@ -1138,17 +1138,17 @@ var at = $e, ot = tt, st = (e, t) => {
 				"bounce"
 			],
 			aspect: ["video"],
-			blur: [R],
-			breakpoint: [R],
-			color: [Xt],
-			container: [R],
-			"drop-shadow": [R],
+			blur: [Xt],
+			breakpoint: [Xt],
+			color: [Zt],
+			container: [Xt],
+			"drop-shadow": [Xt],
 			ease: [
 				"in",
 				"out",
 				"in-out"
 			],
-			font: [tn],
+			font: [nn],
 			"font-weight": [
 				"thin",
 				"extralight",
@@ -1160,7 +1160,7 @@ var at = $e, ot = tt, st = (e, t) => {
 				"extrabold",
 				"black"
 			],
-			"inset-shadow": [R],
+			"inset-shadow": [Xt],
 			leading: [
 				"none",
 				"tight",
@@ -1177,11 +1177,11 @@ var at = $e, ot = tt, st = (e, t) => {
 				"distant",
 				"none"
 			],
-			radius: [R],
-			shadow: [R],
+			radius: [Xt],
+			shadow: [Xt],
 			spacing: ["px", L],
-			text: [R],
-			"text-shadow": [R],
+			text: [Xt],
+			"text-shadow": [Xt],
 			tracking: [
 				"tighter",
 				"tight",
@@ -1196,15 +1196,15 @@ var at = $e, ot = tt, st = (e, t) => {
 				"auto",
 				"square",
 				qt,
+				R,
 				z,
-				B,
 				g
 			] }],
 			container: ["container"],
 			columns: [{ columns: [
 				L,
+				R,
 				z,
-				B,
 				s
 			] }],
 			"break-after": [{ "break-after": y() }],
@@ -1303,8 +1303,8 @@ var at = $e, ot = tt, st = (e, t) => {
 			z: [{ z: [
 				Jt,
 				"auto",
-				B,
-				z
+				z,
+				R
 			] }],
 			basis: [{ basis: [
 				qt,
@@ -1330,36 +1330,36 @@ var at = $e, ot = tt, st = (e, t) => {
 				"auto",
 				"initial",
 				"none",
-				z
+				R
 			] }],
 			grow: [{ grow: [
 				"",
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			shrink: [{ shrink: [
 				"",
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			order: [{ order: [
 				Jt,
 				"first",
 				"last",
 				"none",
-				B,
-				z
+				z,
+				R
 			] }],
 			"grid-cols": [{ "grid-cols": E() }],
 			"col-start-end": [{ col: D() }],
-			"col-start": [{ "col-start": ee() }],
-			"col-end": [{ "col-end": ee() }],
+			"col-start": [{ "col-start": O() }],
+			"col-end": [{ "col-end": O() }],
 			"grid-rows": [{ "grid-rows": E() }],
 			"row-start-end": [{ row: D() }],
-			"row-start": [{ "row-start": ee() }],
-			"row-end": [{ "row-end": ee() }],
+			"row-start": [{ "row-start": O() }],
+			"row-end": [{ "row-end": O() }],
 			"grid-flow": [{ "grid-flow": [
 				"row",
 				"col",
@@ -1367,22 +1367,22 @@ var at = $e, ot = tt, st = (e, t) => {
 				"row-dense",
 				"col-dense"
 			] }],
-			"auto-cols": [{ "auto-cols": te() }],
-			"auto-rows": [{ "auto-rows": te() }],
+			"auto-cols": [{ "auto-cols": ee() }],
+			"auto-rows": [{ "auto-rows": ee() }],
 			gap: [{ gap: w() }],
 			"gap-x": [{ "gap-x": w() }],
 			"gap-y": [{ "gap-y": w() }],
-			"justify-content": [{ justify: [...O(), "normal"] }],
+			"justify-content": [{ justify: [...te(), "normal"] }],
 			"justify-items": [{ "justify-items": [...k(), "normal"] }],
 			"justify-self": [{ "justify-self": ["auto", ...k()] }],
-			"align-content": [{ content: ["normal", ...O()] }],
+			"align-content": [{ content: ["normal", ...te()] }],
 			"align-items": [{ items: [...k(), { baseline: ["", "last"] }] }],
 			"align-self": [{ self: [
 				"auto",
 				...k(),
 				{ baseline: ["", "last"] }
 			] }],
-			"place-content": [{ "place-content": O() }],
+			"place-content": [{ "place-content": te() }],
 			"place-items": [{ "place-items": [...k(), "baseline"] }],
 			"place-self": [{ "place-self": ["auto", ...k()] }],
 			p: [{ p: w() }],
@@ -1456,15 +1456,15 @@ var at = $e, ot = tt, st = (e, t) => {
 			"font-size": [{ text: [
 				"base",
 				n,
-				dn,
-				rn
+				fn,
+				an
 			] }],
 			"font-smoothing": ["antialiased", "subpixel-antialiased"],
 			"font-style": ["italic", "not-italic"],
 			"font-weight": [{ font: [
 				r,
-				_n,
-				on
+				vn,
+				sn
 			] }],
 			"font-stretch": [{ "font-stretch": [
 				"ultra-condensed",
@@ -1477,14 +1477,14 @@ var at = $e, ot = tt, st = (e, t) => {
 				"extra-expanded",
 				"ultra-expanded",
 				Yt,
-				z
+				R
 			] }],
 			"font-family": [{ font: [
-				fn,
-				sn,
+				pn,
+				cn,
 				t
 			] }],
-			"font-features": [{ "font-features": [z] }],
+			"font-features": [{ "font-features": [R] }],
 			"fvn-normal": ["normal-nums"],
 			"fvn-ordinal": ["ordinal"],
 			"fvn-slashed-zero": ["slashed-zero"],
@@ -1493,28 +1493,28 @@ var at = $e, ot = tt, st = (e, t) => {
 			"fvn-fraction": ["diagonal-fractions", "stacked-fractions"],
 			tracking: [{ tracking: [
 				i,
-				B,
-				z
+				z,
+				R
 			] }],
 			"line-clamp": [{ "line-clamp": [
 				L,
 				"none",
-				B,
-				an
+				z,
+				on
 			] }],
 			leading: [{ leading: [a, ...w()] }],
 			"list-image": [{ "list-image": [
 				"none",
-				B,
-				z
+				z,
+				R
 			] }],
 			"list-style-position": [{ list: ["inside", "outside"] }],
 			"list-style-type": [{ list: [
 				"disc",
 				"decimal",
 				"none",
-				B,
-				z
+				z,
+				R
 			] }],
 			"text-alignment": [{ text: [
 				"left",
@@ -1537,15 +1537,15 @@ var at = $e, ot = tt, st = (e, t) => {
 				L,
 				"from-font",
 				"auto",
-				B,
-				rn
+				z,
+				an
 			] }],
 			"text-decoration-color": [{ decoration: M() }],
 			"underline-offset": [{ "underline-offset": [
 				L,
 				"auto",
-				B,
-				z
+				z,
+				R
 			] }],
 			"text-transform": [
 				"uppercase",
@@ -1574,8 +1574,8 @@ var at = $e, ot = tt, st = (e, t) => {
 				"text-bottom",
 				"sub",
 				"super",
-				B,
-				z
+				z,
+				R
 			] }],
 			whitespace: [{ whitespace: [
 				"normal",
@@ -1603,8 +1603,8 @@ var at = $e, ot = tt, st = (e, t) => {
 			] }],
 			content: [{ content: [
 				"none",
-				B,
-				z
+				z,
+				R
 			] }],
 			"bg-attachment": [{ bg: [
 				"fixed",
@@ -1640,22 +1640,22 @@ var at = $e, ot = tt, st = (e, t) => {
 							"tl"
 						] },
 						Jt,
-						B,
-						z
+						z,
+						R
 					],
 					radial: [
 						"",
-						B,
-						z
+						z,
+						R
 					],
 					conic: [
 						Jt,
-						B,
-						z
+						z,
+						R
 					]
 				},
-				hn,
-				ln
+				gn,
+				un
 			] }],
 			"bg-color": [{ bg: M() }],
 			"gradient-from-pos": [{ from: se() }],
@@ -1723,49 +1723,49 @@ var at = $e, ot = tt, st = (e, t) => {
 			] }],
 			"outline-offset": [{ "outline-offset": [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"outline-w": [{ outline: [
 				"",
 				L,
-				dn,
-				rn
+				fn,
+				an
 			] }],
 			"outline-color": [{ outline: M() }],
 			shadow: [{ shadow: [
 				"",
 				"none",
 				u,
-				gn,
-				un
+				_n,
+				dn
 			] }],
 			"shadow-color": [{ shadow: M() }],
 			"inset-shadow": [{ "inset-shadow": [
 				"none",
 				d,
-				gn,
-				un
+				_n,
+				dn
 			] }],
 			"inset-shadow-color": [{ "inset-shadow": M() }],
 			"ring-w": [{ ring: P() }],
 			"ring-w-inset": ["ring-inset"],
 			"ring-color": [{ ring: M() }],
-			"ring-offset-w": [{ "ring-offset": [L, rn] }],
+			"ring-offset-w": [{ "ring-offset": [L, an] }],
 			"ring-offset-color": [{ "ring-offset": M() }],
 			"inset-ring-w": [{ "inset-ring": P() }],
 			"inset-ring-color": [{ "inset-ring": M() }],
 			"text-shadow": [{ "text-shadow": [
 				"none",
 				f,
-				gn,
-				un
+				_n,
+				dn
 			] }],
 			"text-shadow-color": [{ "text-shadow": M() }],
 			opacity: [{ opacity: [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"mix-blend": [{ "mix-blend": [
 				...le(),
@@ -1816,7 +1816,7 @@ var at = $e, ot = tt, st = (e, t) => {
 			"mask-image-y-to-pos": [{ "mask-y-to": F() }],
 			"mask-image-y-from-color": [{ "mask-y-from": M() }],
 			"mask-image-y-to-color": [{ "mask-y-to": M() }],
-			"mask-image-radial": [{ "mask-radial": [B, z] }],
+			"mask-image-radial": [{ "mask-radial": [z, R] }],
 			"mask-image-radial-from-pos": [{ "mask-radial-from": F() }],
 			"mask-image-radial-to-pos": [{ "mask-radial-to": F() }],
 			"mask-image-radial-from-color": [{ "mask-radial-from": M() }],
@@ -1851,111 +1851,111 @@ var at = $e, ot = tt, st = (e, t) => {
 			"mask-type": [{ "mask-type": ["alpha", "luminance"] }],
 			"mask-image": [{ mask: [
 				"none",
-				B,
-				z
+				z,
+				R
 			] }],
 			filter: [{ filter: [
 				"",
 				"none",
-				B,
-				z
+				z,
+				R
 			] }],
 			blur: [{ blur: ue() }],
 			brightness: [{ brightness: [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			contrast: [{ contrast: [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"drop-shadow": [{ "drop-shadow": [
 				"",
 				"none",
 				p,
-				gn,
-				un
+				_n,
+				dn
 			] }],
 			"drop-shadow-color": [{ "drop-shadow": M() }],
 			grayscale: [{ grayscale: [
 				"",
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"hue-rotate": [{ "hue-rotate": [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			invert: [{ invert: [
 				"",
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			saturate: [{ saturate: [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			sepia: [{ sepia: [
 				"",
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-filter": [{ "backdrop-filter": [
 				"",
 				"none",
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-blur": [{ "backdrop-blur": ue() }],
 			"backdrop-brightness": [{ "backdrop-brightness": [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-contrast": [{ "backdrop-contrast": [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-grayscale": [{ "backdrop-grayscale": [
 				"",
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-hue-rotate": [{ "backdrop-hue-rotate": [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-invert": [{ "backdrop-invert": [
 				"",
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-opacity": [{ "backdrop-opacity": [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-saturate": [{ "backdrop-saturate": [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"backdrop-sepia": [{ "backdrop-sepia": [
 				"",
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			"border-collapse": [{ border: ["collapse", "separate"] }],
 			"border-spacing": [{ "border-spacing": w() }],
@@ -1971,39 +1971,39 @@ var at = $e, ot = tt, st = (e, t) => {
 				"shadow",
 				"transform",
 				"none",
-				B,
-				z
+				z,
+				R
 			] }],
 			"transition-behavior": [{ transition: ["normal", "discrete"] }],
 			duration: [{ duration: [
 				L,
 				"initial",
-				B,
-				z
+				z,
+				R
 			] }],
 			ease: [{ ease: [
 				"linear",
 				"initial",
 				_,
-				B,
-				z
+				z,
+				R
 			] }],
 			delay: [{ delay: [
 				L,
-				B,
-				z
+				z,
+				R
 			] }],
 			animate: [{ animate: [
 				"none",
 				v,
-				B,
-				z
+				z,
+				R
 			] }],
 			backface: [{ backface: ["hidden", "visible"] }],
 			perspective: [{ perspective: [
 				h,
-				B,
-				z
+				z,
+				R
 			] }],
 			"perspective-origin": [{ "perspective-origin": x() }],
 			rotate: [{ rotate: de() }],
@@ -2019,8 +2019,8 @@ var at = $e, ot = tt, st = (e, t) => {
 			"skew-x": [{ "skew-x": pe() }],
 			"skew-y": [{ "skew-y": pe() }],
 			transform: [{ transform: [
-				B,
 				z,
+				R,
 				"",
 				"none",
 				"gpu",
@@ -2081,8 +2081,8 @@ var at = $e, ot = tt, st = (e, t) => {
 				"nwse-resize",
 				"zoom-in",
 				"zoom-out",
-				B,
-				z
+				z,
+				R
 			] }],
 			"field-sizing": [{ "field-sizing": ["fixed", "content"] }],
 			"pointer-events": [{ "pointer-events": ["auto", "none"] }],
@@ -2156,15 +2156,15 @@ var at = $e, ot = tt, st = (e, t) => {
 				"scroll",
 				"contents",
 				"transform",
-				B,
-				z
+				z,
+				R
 			] }],
 			fill: [{ fill: ["none", ...M()] }],
 			"stroke-w": [{ stroke: [
 				L,
-				dn,
-				rn,
-				an
+				fn,
+				an,
+				on
 			] }],
 			stroke: [{ stroke: ["none", ...M()] }],
 			"forced-color-adjust": [{ "forced-color-adjust": ["auto", "none"] }]
@@ -2353,12 +2353,12 @@ var at = $e, ot = tt, st = (e, t) => {
 });
 //#endregion
 //#region src/lib/utils.ts
-function V(...e) {
-	return On(te(e));
+function B(...e) {
+	return kn(ee(e));
 }
 //#endregion
 //#region src/components/ui/button.tsx
-var kn = A("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
+var An = A("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
 	variants: {
 		variant: {
 			default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
@@ -2384,12 +2384,12 @@ var kn = A("inline-flex shrink-0 items-center justify-center gap-2 rounded-md te
 		size: "default"
 	}
 });
-function H({ className: e, variant: t = "default", size: n = "default", asChild: r = !1, ...i }) {
+function V({ className: e, variant: t = "default", size: n = "default", asChild: r = !1, ...i }) {
 	return /* @__PURE__ */ h(r ? He : "button", {
 		"data-slot": "button",
 		"data-variant": t,
 		"data-size": n,
-		className: V(kn({
+		className: B(An({
 			variant: t,
 			size: n,
 			className: e
@@ -2399,47 +2399,47 @@ function H({ className: e, variant: t = "default", size: n = "default", asChild:
 }
 //#endregion
 //#region src/components/ui/card.tsx
-var An = {
+var jn = {
 	default: "",
 	stat: "wd-card-stat",
 	hero: "wd-card-hero",
 	glass: "wd-card-glass"
 };
-function U({ className: e, variant: t = "default", ...n }) {
+function H({ className: e, variant: t = "default", ...n }) {
 	return /* @__PURE__ */ h("div", {
 		"data-slot": "card",
 		"data-variant": t,
-		className: V("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", An[t], e),
+		className: B("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", jn[t], e),
 		...n
+	});
+}
+function U({ className: e, ...t }) {
+	return /* @__PURE__ */ h("div", {
+		"data-slot": "card-header",
+		className: B("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 text-start has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", e),
+		...t
 	});
 }
 function W({ className: e, ...t }) {
 	return /* @__PURE__ */ h("div", {
-		"data-slot": "card-header",
-		className: V("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 text-start has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", e),
+		"data-slot": "card-title",
+		className: B("leading-none font-semibold", e),
 		...t
 	});
 }
 function G({ className: e, ...t }) {
 	return /* @__PURE__ */ h("div", {
-		"data-slot": "card-title",
-		className: V("leading-none font-semibold", e),
-		...t
-	});
-}
-function K({ className: e, ...t }) {
-	return /* @__PURE__ */ h("div", {
 		"data-slot": "card-content",
-		className: V("px-6 text-start", e),
+		className: B("px-6 text-start", e),
 		...t
 	});
 }
 //#endregion
 //#region node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
-var jn = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), Mn = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), Nn = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), Pn = (e) => {
-	let t = Nn(e);
+var Mn = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), Nn = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), Pn = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), Fn = (e) => {
+	let t = Pn(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, Fn = {
+}, In = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -2449,61 +2449,61 @@ var jn = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, In = (e) => {
+}, Ln = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, Ln = t({}), Rn = () => i(Ln), zn = r(({ color: e, size: t, strokeWidth: r, absoluteStrokeWidth: i, className: a = "", children: o, iconNode: s, ...c }, l) => {
-	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = Rn() ?? {}, h = i ?? f ? Number(r ?? d) * 24 / Number(t ?? u) : r ?? d;
+}, Rn = t({}), zn = () => i(Rn), Bn = r(({ color: e, size: t, strokeWidth: r, absoluteStrokeWidth: i, className: a = "", children: o, iconNode: s, ...c }, l) => {
+	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = zn() ?? {}, h = i ?? f ? Number(r ?? d) * 24 / Number(t ?? u) : r ?? d;
 	return n("svg", {
 		ref: l,
-		...Fn,
-		width: t ?? u ?? Fn.width,
-		height: t ?? u ?? Fn.height,
+		...In,
+		width: t ?? u ?? In.width,
+		height: t ?? u ?? In.height,
 		stroke: e ?? p,
 		strokeWidth: h,
-		className: jn("lucide", m, a),
-		...!o && !In(c) && { "aria-hidden": "true" },
+		className: Mn("lucide", m, a),
+		...!o && !Ln(c) && { "aria-hidden": "true" },
 		...c
 	}, [...s.map(([e, t]) => n(e, t)), ...Array.isArray(o) ? o : [o]]);
-}), Bn = ((e, t) => {
-	let i = r(({ className: r, ...i }, a) => n(zn, {
+}), Vn = ((e, t) => {
+	let i = r(({ className: r, ...i }, a) => n(Bn, {
 		ref: a,
 		iconNode: t,
-		className: jn(`lucide-${Mn(Pn(e))}`, `lucide-${e}`, r),
+		className: Mn(`lucide-${Nn(Fn(e))}`, `lucide-${e}`, r),
 		...i
 	}));
-	return i.displayName = Pn(e), i;
+	return i.displayName = Fn(e), i;
 })("check", [["path", {
 	d: "M20 6 9 17l-5-5",
 	key: "1gmf2c"
 }]]);
 //#endregion
 //#region src/components/ui/checkbox.tsx
-function Vn({ className: e, ...t }) {
+function Hn({ className: e, ...t }) {
 	return /* @__PURE__ */ h(Ae, {
 		"data-slot": "checkbox",
-		className: V("peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary", e),
+		className: B("peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary", e),
 		...t,
 		children: /* @__PURE__ */ h(Me, {
 			"data-slot": "checkbox-indicator",
 			className: "grid place-content-center text-current transition-none",
-			children: /* @__PURE__ */ h(Bn, { className: "size-3.5" })
+			children: /* @__PURE__ */ h(Vn, { className: "size-3.5" })
 		})
 	});
 }
 //#endregion
 //#region src/components/ui/input.tsx
-function q({ className: e, type: t, ...n }) {
+function K({ className: e, type: t, ...n }) {
 	return /* @__PURE__ */ h("input", {
 		type: t,
 		"data-slot": "input",
-		className: V("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base text-start shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", e),
+		className: B("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base text-start shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", e),
 		...n
 	});
 }
 //#endregion
 //#region src/lib/safeUrl.ts
-function Hn(e) {
+function Un(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -2515,44 +2515,44 @@ function Hn(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function Un() {
+function Wn() {
 	return window.webinoDashboard;
 }
-var Wn = 3e4;
-function Gn(e) {
+var Gn = 3e4;
+function Kn(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function Kn(e) {
-	let t = Un();
+function qn(e) {
+	let t = Wn();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (Gn(e) || Hn(e)) return e;
-	throw new Y("Request blocked: URL not allowed", {
+	if (Kn(e) || Un(e)) return e;
+	throw new rr("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function qn(e, t) {
+function Jn(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function Jn(e) {
+function Yn(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
 	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : null;
 }
-function Yn(e, t) {
+function Xn(e, t) {
 	let n = e.toLowerCase();
 	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
 }
-async function Xn(e, t, n = {}) {
-	let r = Jn(e), i = Un();
-	if (!r || !i.ajaxUrl) throw new Y("AJAX fallback unavailable", {
+async function Zn(e, t, n = {}) {
+	let r = Yn(e), i = Wn();
+	if (!r || !i.ajaxUrl) throw new rr("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
 	});
@@ -2565,7 +2565,7 @@ async function Xn(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = qn({}, t);
+	let { signal: l, clear: u } = Jn({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -2577,12 +2577,12 @@ async function Xn(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new Y(Yn(t, e.status), {
+			throw new rr(Xn(t, e.status), {
 				code: "invalid_json",
 				status: e.status
 			});
 		}
-		if (!n.success) throw new Y(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+		if (!n.success) throw new rr(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
 			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
 			status: e.status
 		});
@@ -2591,11 +2591,11 @@ async function Xn(e, t, n = {}) {
 		u();
 	}
 }
-async function J(e, t = {}, n = Wn) {
-	if (Jn(e) && Un().ajaxUrl) return Xn(e, n, t);
-	let r = Kn(e), i = Un(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+async function q(e, t = {}, n = Gn) {
+	if (Yn(e) && Wn().ajaxUrl) return Zn(e, n, t);
+	let r = qn(e), i = Wn(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
 	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce);
-	let { signal: s, clear: c } = qn(t, n);
+	let { signal: s, clear: c } = Jn(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -2606,21 +2606,21 @@ async function J(e, t = {}, n = Wn) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			throw new Y(n.includes("Upstream Error") || n.includes("Forbidden") ? "REST blocked by CDN/WAF — use admin-ajax fallback or whitelist /wp-json/" : "Invalid JSON response", {
+			throw new rr(n.includes("Upstream Error") || n.includes("Forbidden") ? "REST blocked by CDN/WAF — use admin-ajax fallback or whitelist /wp-json/" : "Invalid JSON response", {
 				code: "invalid_json",
 				status: e.status
 			});
 		}
 		if (!e.ok) {
 			let t = i;
-			throw new Y(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			throw new rr(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof Y ? e : e instanceof DOMException && e.name === "AbortError" ? new Y("Request timed out", {
+		throw e instanceof rr ? e : e instanceof DOMException && e.name === "AbortError" ? new rr("Request timed out", {
 			code: "timeout",
 			status: 0
 		}) : e;
@@ -2630,41 +2630,41 @@ async function J(e, t = {}, n = Wn) {
 }
 //#endregion
 //#region src/lib/marketplace-api.ts
-function Zn(e) {
+function Qn(e) {
 	return `marketplace.installStep.${e}`;
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/typeof.js
-function Qn(e) {
+function $n(e) {
 	"@babel/helpers - typeof";
-	return Qn = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
+	return $n = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
 		return typeof e;
 	} : function(e) {
 		return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
-	}, Qn(e);
+	}, $n(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPrimitive.js
-function $n(e, t) {
-	if (Qn(e) != "object" || !e) return e;
+function er(e, t) {
+	if ($n(e) != "object" || !e) return e;
 	var n = e[Symbol.toPrimitive];
 	if (n !== void 0) {
 		var r = n.call(e, t || "default");
-		if (Qn(r) != "object") return r;
+		if ($n(r) != "object") return r;
 		throw TypeError("@@toPrimitive must return a primitive value.");
 	}
 	return (t === "string" ? String : Number)(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPropertyKey.js
-function er(e) {
-	var t = $n(e, "string");
-	return Qn(t) == "symbol" ? t : t + "";
+function tr(e) {
+	var t = er(e, "string");
+	return $n(t) == "symbol" ? t : t + "";
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/defineProperty.js
-function tr(e, t, n) {
-	return (t = er(t)) in e ? Object.defineProperty(e, t, {
+function nr(e, t, n) {
+	return (t = tr(t)) in e ? Object.defineProperty(e, t, {
 		value: n,
 		enumerable: !0,
 		configurable: !0,
@@ -2673,11 +2673,11 @@ function tr(e, t, n) {
 }
 //#endregion
 //#region src/lib/apiError.ts
-var Y = class extends Error {
+var rr = class extends Error {
 	constructor(e, t) {
-		super(e), tr(this, "code", void 0), tr(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
+		super(e), nr(this, "code", void 0), nr(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
 	}
-}, nr = {
+}, ir = {
 	invalid: "errors.api.invalid",
 	ai_disabled: "aiContent.errDisabled",
 	ai_entity_off: "aiContent.errEntityOff",
@@ -2704,22 +2704,22 @@ var Y = class extends Error {
 	install_job_start_failed: "marketplace.installJobStartFailed",
 	build_dev_only: "buildPipeline.devOnly"
 };
-function rr(e) {
+function ar(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 28") || t.includes("timed out") || t.includes("did not respond in time") || t.includes("زمان") && t.includes("پاسخ");
 }
-function ir(e) {
+function or(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 52") || t.includes("empty reply") || t.includes("closed the connection without a response") || t.includes("پاسخ") && t.includes("خالی");
 }
-function ar(e, t) {
-	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(Zn(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
+function sr(e, t) {
+	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(Qn(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
 }
-function or(e, t) {
+function cr(e, t) {
 	let n = t;
-	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return ar(e, n);
-	if (t instanceof Y && t.code) {
-		let n = nr[t.code];
+	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return sr(e, n);
+	if (t instanceof rr && t.code) {
+		let n = ir[t.code];
 		if (n === "marketplace.installFailedGeneric") {
 			let n = t.message?.trim();
 			return n ? e("marketplace.installFailed", { message: n }) : e("marketplace.installFailedGeneric");
@@ -2727,24 +2727,24 @@ function or(e, t) {
 		if (n) return e(n);
 	}
 	if (t && typeof t == "object" && "code" in t) {
-		let n = nr[String(t.code)];
+		let n = ir[String(t.code)];
 		if (n) return e(n);
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return rr(n) ? e("errors.api.timeout") : ir(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return ar(n) ? e("errors.api.timeout") : or(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
-function X(e, t) {
-	p.error(or(e, t));
+function J(e, t) {
+	p.error(cr(e, t));
 }
 //#endregion
 //#region src/hooks/useQueryErrorToast.ts
-function Z(e) {
+function Y(e) {
 	let { t } = l(), n = s(!1);
 	a(() => {
-		e.isError && e.error ? n.current || (n.current = !0, p.error(or(t, e.error))) : n.current = !1;
+		e.isError && e.error ? n.current || (n.current = !0, p.error(cr(t, e.error))) : n.current = !1;
 	}, [
 		e.isError,
 		e.error,
@@ -2754,7 +2754,7 @@ function Z(e) {
 }
 //#endregion
 //#region src/lib/categoryTree.ts
-function sr(e) {
+function lr(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) {
 		let e = n.parent || 0, r = t.get(e) ?? [];
@@ -2772,117 +2772,140 @@ function sr(e) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/lib/ai-content-api.ts
-function cr() {
-	return J("ai-content/overview");
+function ur() {
+	return q("ai-content/overview");
 }
-function lr() {
-	return J("ai-content/settings");
+function dr() {
+	return q("ai-content/settings");
 }
-function ur(e) {
-	return J("ai-content/settings", {
+function fr(e) {
+	return q("ai-content/settings", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function dr(e) {
+function pr(e) {
 	let t = !!e && Object.keys(e).length > 0;
-	return J("ai-content/cost-estimate", {
+	return q("ai-content/cost-estimate", {
 		method: t ? "POST" : "GET",
 		headers: t ? { "Content-Type": "application/json" } : void 0,
 		body: t ? JSON.stringify(e) : void 0
 	});
 }
-function fr(e = !1) {
+function mr(e = !1) {
 	let t = new URLSearchParams();
-	return e && t.set("refresh", "1"), J(`ai-content/gapgpt/models${t.toString() ? `?${t.toString()}` : ""}`);
+	return e && t.set("refresh", "1"), q(`ai-content/gapgpt/models${t.toString() ? `?${t.toString()}` : ""}`);
 }
-function pr(e) {
+function hr(e) {
 	let t = new URLSearchParams();
 	e?.status && t.set("status", e.status), e?.limit && t.set("limit", String(e.limit));
 	let n = t.toString();
-	return J(`ai-content/jobs${n ? `?${n}` : ""}`);
+	return q(`ai-content/jobs${n ? `?${n}` : ""}`);
 }
-function mr(e) {
-	return J(`ai-content/jobs/${e}/retry`, { method: "POST" });
+function gr(e) {
+	return q(`ai-content/jobs/${e}/retry`, { method: "POST" });
 }
-function hr(e = 1) {
-	return J("ai-content/jobs/run-due", {
+function _r(e = 1) {
+	return q("ai-content/jobs/run-due", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ limit: e })
 	}, 3e4);
 }
-function gr(e) {
-	return J(`ai-content/jobs/${e}/cancel`, { method: "POST" });
+function vr(e) {
+	return q(`ai-content/jobs/${e}/cancel`, { method: "POST" });
 }
-function _r() {
-	return J("ai-content/jobs/cancel-pending", { method: "POST" });
+function yr() {
+	return q("ai-content/jobs/cancel-pending", { method: "POST" });
 }
-function vr() {
-	return J("ai-content/queue");
+function br() {
+	return q("ai-content/queue");
 }
-function yr(e) {
-	return J("ai-content/queue", {
+function xr(e) {
+	return q("ai-content/queue", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ paused: e })
 	});
 }
-function br(e) {
-	return J("ai-content/generate", {
+function Sr(e) {
+	return q("ai-content/generate", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function xr(e = 50) {
-	return J(`ai-content/products/incomplete?limit=${e}`);
+function Cr() {
+	return q("ai-content/design-memory");
 }
-function Sr(e) {
-	return J("ai-content/products/fill-batch", {
+function wr(e) {
+	return q("ai-content/design-memory", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(e)
+	});
+}
+function Tr() {
+	return q("ai-content/design-memory/extract", { method: "POST" });
+}
+function Er() {
+	return q("ai-content/design-memory/reset", { method: "POST" });
+}
+function Dr(e = 1, t = "") {
+	let n = new URLSearchParams({
+		page: String(e),
+		per_page: "50"
+	});
+	return t && n.set("search", t), q(`ai-content/pages?${n.toString()}`);
+}
+function Or(e = 50) {
+	return q(`ai-content/products/incomplete?limit=${e}`);
+}
+function kr(e) {
+	return q("ai-content/products/fill-batch", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e ? { ids: e } : {})
 	});
 }
-function Cr(e, t) {
+function Ar(e, t) {
 	let n = new URLSearchParams();
 	e && n.set("from", e), t && n.set("to", t);
 	let r = n.toString();
-	return J(`ai-content/calendar${r ? `?${r}` : ""}`);
+	return q(`ai-content/calendar${r ? `?${r}` : ""}`);
 }
-function wr(e) {
-	return J("ai-content/calendar", {
+function jr(e) {
+	return q("ai-content/calendar", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function Tr(e) {
-	return J("ai-content/calendar/bulk", {
+function Mr(e) {
+	return q("ai-content/calendar/bulk", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function Er(e) {
-	return J(`ai-content/calendar/${e}`, { method: "DELETE" });
+function Nr(e) {
+	return q(`ai-content/calendar/${e}`, { method: "DELETE" });
 }
-function Dr() {
-	return J("ai-content/calendar/run-due", { method: "POST" });
+function Pr() {
+	return q("ai-content/calendar/run-due", { method: "POST" });
 }
-function Or() {
-	return J("ai-content/attribute-templates");
+function Fr() {
+	return q("ai-content/attribute-templates");
 }
-function kr(e) {
-	return J(`ai-content/attribute-templates/${e}/suggest`, { method: "POST" });
+function Ir(e) {
+	return q(`ai-content/attribute-templates/${e}/suggest`, { method: "POST" });
 }
-function Ar(e) {
-	return J(`ai-content/attribute-templates/${e}/draft`);
+function Lr(e) {
+	return q(`ai-content/attribute-templates/${e}/draft`);
 }
-function jr(e, t) {
-	return J("ai-content/attribute-templates", {
+function Rr(e, t) {
+	return q("ai-content/attribute-templates", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
@@ -2891,8 +2914,8 @@ function jr(e, t) {
 		})
 	});
 }
-function Mr(e, t) {
-	return J("ai-content/attribute-templates", {
+function zr(e, t) {
+	return q("ai-content/attribute-templates", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
@@ -2901,28 +2924,28 @@ function Mr(e, t) {
 		})
 	});
 }
-function Nr(e) {
-	return J(`ai-content/attribute-templates/${e}`, { method: "DELETE" });
+function Br(e) {
+	return q(`ai-content/attribute-templates/${e}`, { method: "DELETE" });
 }
-function Pr(e) {
-	return J("ai-content/suggest-categories", {
+function Vr(e) {
+	return q("ai-content/suggest-categories", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ kind: e })
 	});
 }
-function Fr(e) {
-	return J(`ai-content/suggest-categories/${e}`);
+function Hr(e) {
+	return q(`ai-content/suggest-categories/${e}`);
 }
-function Ir(e) {
-	return J(`ai-content/suggest-categories/${e}/apply`, {
+function Ur(e) {
+	return q(`ai-content/suggest-categories/${e}/apply`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({})
 	});
 }
-function Lr(e, t) {
-	return J("ai-content/terms/fill-batch", {
+function Wr(e, t) {
+	return q("ai-content/terms/fill-batch", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
@@ -2931,29 +2954,60 @@ function Lr(e, t) {
 		})
 	});
 }
+function Gr(e, t = "pending", n = 100) {
+	return q(`ai-content/proposals/${e}?status=${encodeURIComponent(t)}&limit=${n}`);
+}
+function Kr(e, t) {
+	return q(`ai-content/proposals/${e}/enqueue`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(t ? { ids: t } : {})
+	});
+}
+function qr(e, t) {
+	return q(`ai-content/proposals/${e}/apply`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(t ?? {})
+	});
+}
+function Jr(e) {
+	return q(`ai-content/proposals/${e}/skip`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: "{}"
+	});
+}
+function Yr(e, t) {
+	return q(`ai-content/proposals/${e}/product/${t}/requeue`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: "{}"
+	});
+}
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiAttributesPage.tsx
-function Rr() {
+function Xr() {
 	let { t: e } = l(), t = f(), [n, r] = c(0), [i, _] = c(""), [v, y] = c(null), [b, x] = c([]), S = s(0), C = d({
 		queryKey: ["product-categories", "ai-attr"],
-		queryFn: () => J("shop/product-categories?sort=name_asc&per_page=500")
+		queryFn: () => q("shop/product-categories?sort=name_asc&per_page=500")
 	});
-	Z(C);
+	Y(C);
 	let w = d({
 		queryKey: ["ai-content", "attr-templates"],
-		queryFn: Or
+		queryFn: Fr
 	});
-	Z(w);
+	Y(w);
 	let T = d({
 		queryKey: [
 			"ai-content",
 			"attr-draft",
 			n
 		],
-		queryFn: () => Ar(n),
+		queryFn: () => Lr(n),
 		enabled: n > 0
 	});
-	Z(T);
+	Y(T);
 	let E = C.data?.items ?? [], D = o(() => {
 		let e = E.map((e) => ({
 			id: e.id,
@@ -2963,7 +3017,7 @@ function Rr() {
 			description: "",
 			count: 0,
 			url: ""
-		})), t = sr(e), n = i.trim().toLowerCase();
+		})), t = lr(e), n = i.trim().toLowerCase();
 		if (!n) return t;
 		let r = new Set(E.filter((e) => e.name.toLowerCase().includes(n)).map((e) => e.id)), a = new Map(e.map((e) => [e.id, e])), o = /* @__PURE__ */ new Set();
 		for (let e of r) {
@@ -2971,11 +3025,11 @@ function Rr() {
 			for (; t && t > 0;) o.add(t), t = a.get(t)?.parent;
 		}
 		return t.filter(({ node: e }) => o.has(e.id));
-	}, [E, i]), ee = o(() => {
+	}, [E, i]), O = o(() => {
 		let e = /* @__PURE__ */ new Map();
 		for (let t of w.data?.items ?? []) e.set(t.product_cat_id, (t.labels ?? []).map((e) => e.label));
 		return e;
-	}, [w.data]), te = o(() => {
+	}, [w.data]), ee = o(() => {
 		let e = /* @__PURE__ */ new Map(), t = (w.data?.items ?? []).find((e) => e.product_cat_id === n);
 		for (let n of t?.labels ?? []) {
 			let t = n.attribute_id ?? 0;
@@ -3014,30 +3068,30 @@ function Rr() {
 		T.isFetching,
 		w.data
 	]);
-	let O = u({
-		mutationFn: () => kr(n),
+	let te = u({
+		mutationFn: () => Ir(n),
 		onSuccess: () => {
 			p.success(e("aiContent.jobQueued")), setTimeout(() => void T.refetch(), 3e3);
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), k = u({
-		mutationFn: () => Mr(n, b),
+		mutationFn: () => zr(n, b),
 		onSuccess: () => {
 			p.success(e("common.saved")), t.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), A = T.data?.draft?.attributes ?? [], j = v ?? A, ne = u({
-		mutationFn: () => jr(n, { attributes: j }),
+		mutationFn: () => Rr(n, { attributes: j }),
 		onSuccess: () => {
 			p.success(e("common.saved")), y(null), t.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), re = u({
-		mutationFn: (e) => Nr(e),
+		mutationFn: (e) => Br(e),
 		onSuccess: () => {
 			p.success(e("common.deleted")), t.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), M = (e, t) => {
 		x((n) => t ? n.includes(e) ? n : [...n, e] : n.filter((t) => t !== e));
 	}, ie = (e) => {
@@ -3055,9 +3109,9 @@ function Rr() {
 			})] }),
 			/* @__PURE__ */ g("div", {
 				className: "grid gap-4 lg:grid-cols-[minmax(16rem,22rem)_1fr]",
-				children: [/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.attrPickCategory") }) }), /* @__PURE__ */ g(K, {
+				children: [/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.attrPickCategory") }) }), /* @__PURE__ */ g(G, {
 					className: "space-y-2",
-					children: [/* @__PURE__ */ h(q, {
+					children: [/* @__PURE__ */ h(K, {
 						value: i,
 						onChange: (e) => _(e.target.value),
 						placeholder: e("products.editor.taxonomySearch"),
@@ -3071,7 +3125,7 @@ function Rr() {
 							className: "text-muted-foreground px-1 py-2 text-xs",
 							children: e("products.noCategories")
 						}) : D.map(({ node: t, depth: r }) => {
-							let i = ee.has(t.id);
+							let i = O.has(t.id);
 							return /* @__PURE__ */ g("button", {
 								type: "button",
 								className: `flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start ${n === t.id ? "bg-muted font-medium" : "hover:bg-muted/60"}`,
@@ -3087,16 +3141,16 @@ function Rr() {
 							}, t.id);
 						})
 					})]
-				})] }), /* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: n ? e("aiContent.attrForCategory", { name: E.find((e) => e.id === n)?.name ?? `#${n}` }) : e("aiContent.attrSelectCategoryFirst") }) }), /* @__PURE__ */ h(K, {
+				})] }), /* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: n ? e("aiContent.attrForCategory", { name: E.find((e) => e.id === n)?.name ?? `#${n}` }) : e("aiContent.attrSelectCategoryFirst") }) }), /* @__PURE__ */ h(G, {
 					className: "space-y-4",
 					children: n ? /* @__PURE__ */ g(m, { children: [
 						/* @__PURE__ */ g("div", {
 							className: "max-h-72 space-y-1 overflow-y-auto rounded-md border p-2",
-							children: [te.map((e) => {
+							children: [ee.map((e) => {
 								let t = e.attribute_id ?? 0, n = e.options ?? [];
 								return /* @__PURE__ */ g("label", {
 									className: "flex cursor-pointer items-start gap-2 py-1 text-sm",
-									children: [/* @__PURE__ */ h(Vn, {
+									children: [/* @__PURE__ */ h(Hn, {
 										className: "mt-0.5",
 										checked: b.includes(t),
 										onCheckedChange: (e) => M(t, e === !0)
@@ -3111,7 +3165,7 @@ function Rr() {
 										}) : null]
 									})]
 								}, t);
-							}), te.length ? null : /* @__PURE__ */ h("p", {
+							}), ee.length ? null : /* @__PURE__ */ h("p", {
 								className: "text-muted-foreground text-xs",
 								children: e("aiContent.noCategoryAttributes")
 							})]
@@ -3119,20 +3173,20 @@ function Rr() {
 						/* @__PURE__ */ g("div", {
 							className: "flex flex-wrap gap-2",
 							children: [
-								/* @__PURE__ */ h(H, {
+								/* @__PURE__ */ h(V, {
 									size: "sm",
 									disabled: k.isPending,
 									onClick: () => void k.mutateAsync(),
 									children: e("aiContent.saveMapping")
 								}),
-								/* @__PURE__ */ h(H, {
+								/* @__PURE__ */ h(V, {
 									size: "sm",
 									variant: "outline",
-									disabled: O.isPending,
-									onClick: () => void O.mutateAsync(),
+									disabled: te.isPending,
+									onClick: () => void te.mutateAsync(),
 									children: e("aiContent.suggest")
 								}),
-								/* @__PURE__ */ h(H, {
+								/* @__PURE__ */ h(V, {
 									size: "sm",
 									variant: "ghost",
 									onClick: () => void T.refetch(),
@@ -3151,7 +3205,7 @@ function Rr() {
 									className: "space-y-1 rounded-md border p-2 text-sm",
 									children: [/* @__PURE__ */ g("div", {
 										className: "flex items-center justify-between gap-2",
-										children: [/* @__PURE__ */ h(q, {
+										children: [/* @__PURE__ */ h(K, {
 											className: "h-8",
 											value: t.label,
 											onChange: (e) => {
@@ -3160,13 +3214,13 @@ function Rr() {
 													label: e.target.value
 												} : t));
 											}
-										}), /* @__PURE__ */ h(H, {
+										}), /* @__PURE__ */ h(V, {
 											size: "sm",
 											variant: "ghost",
 											onClick: () => y(j.filter((e, t) => t !== n)),
 											children: e("common.delete")
 										})]
-									}), /* @__PURE__ */ h(q, {
+									}), /* @__PURE__ */ h(K, {
 										className: "h-8 text-xs",
 										value: (t.options ?? []).join(", "),
 										onChange: (e) => {
@@ -3178,7 +3232,7 @@ function Rr() {
 										}
 									})]
 								}, `${t.label}-${n}`)),
-								j.length ? /* @__PURE__ */ h(H, {
+								j.length ? /* @__PURE__ */ h(V, {
 									size: "sm",
 									variant: "outline",
 									disabled: ne.isPending,
@@ -3196,7 +3250,7 @@ function Rr() {
 					})
 				})] })]
 			}),
-			/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.attrTemplates") }) }), /* @__PURE__ */ g(K, {
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.attrTemplates") }) }), /* @__PURE__ */ g(G, {
 				className: "space-y-2",
 				children: [(w.data?.items ?? []).map((t) => /* @__PURE__ */ g("div", {
 					className: "flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm last:border-0",
@@ -3211,7 +3265,7 @@ function Rr() {
 							className: "text-muted-foreground",
 							children: (t.labels ?? []).map((e) => e.label).join(" · ") || t.attribute_ids.join(", ")
 						})]
-					}), /* @__PURE__ */ h(H, {
+					}), /* @__PURE__ */ h(V, {
 						size: "sm",
 						variant: "destructive",
 						onClick: () => void re.mutateAsync(t.product_cat_id),
@@ -3227,7 +3281,7 @@ function Rr() {
 }
 //#endregion
 //#region src/components/ui/label.tsx
-var zr = /* @__PURE__ */ D((/* @__PURE__ */ T(((e, t) => {
+var Zr = /* @__PURE__ */ D((/* @__PURE__ */ T(((e, t) => {
 	(function(n, r) {
 		typeof e == "object" && t !== void 0 ? t.exports = r() : typeof define == "function" && define.amd ? define(r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs = r();
 	})(e, (function() {
@@ -3522,32 +3576,32 @@ var zr = /* @__PURE__ */ D((/* @__PURE__ */ T(((e, t) => {
 		}, w.en = b[y], w.Ls = b, w.p = {}, w;
 	}));
 })))());
-function Q({ className: e, ...t }) {
+function X({ className: e, ...t }) {
 	return /* @__PURE__ */ h(Be, {
 		"data-slot": "label",
-		className: V("flex items-center gap-2 text-start text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", e),
+		className: B("flex items-center gap-2 text-start text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", e),
 		...t
 	});
 }
 //#endregion
 //#region src/components/ui/textarea.tsx
-function Br({ className: e, ...t }) {
+function Qr({ className: e, ...t }) {
 	return /* @__PURE__ */ h("textarea", {
 		"data-slot": "textarea",
-		className: V("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
+		className: B("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
 		...t
 	});
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiCalendarPage.tsx
-function Vr() {
-	let { t: e } = l(), t = f(), [n, r] = c(""), [i, a] = c(""), [o, s] = c(() => (0, zr.default)().format("YYYY-MM-DD")), [m, _] = c("blog"), [v, y] = c(""), b = d({
+function $r() {
+	let { t: e } = l(), t = f(), [n, r] = c(""), [i, a] = c(""), [o, s] = c(() => (0, Zr.default)().format("YYYY-MM-DD")), [m, _] = c("blog"), [v, y] = c(""), b = d({
 		queryKey: ["ai-content", "calendar"],
-		queryFn: () => Cr()
+		queryFn: () => Ar()
 	});
-	Z(b);
+	Y(b);
 	let x = () => void t.invalidateQueries({ queryKey: ["ai-content"] }), S = u({
-		mutationFn: () => wr({
+		mutationFn: () => jr({
 			slot_date: o,
 			content_type: m,
 			topic: n,
@@ -3556,9 +3610,9 @@ function Vr() {
 		onSuccess: () => {
 			p.success(e("common.saved")), r(""), a(""), x();
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), C = u({
-		mutationFn: () => Tr({
+		mutationFn: () => Mr({
 			topics: v,
 			start_date: o,
 			content_type: m,
@@ -3567,38 +3621,38 @@ function Vr() {
 		onSuccess: (t) => {
 			p.success(e("aiContent.bulkCreated", { count: t.created })), y(""), x();
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), w = u({
-		mutationFn: (e) => Er(e),
+		mutationFn: (e) => Nr(e),
 		onSuccess: () => {
 			p.success(e("common.deleted")), x();
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), T = u({
-		mutationFn: Dr,
+		mutationFn: Pr,
 		onSuccess: () => {
 			p.success(e("aiContent.dueQueued")), x();
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	});
 	return /* @__PURE__ */ g("div", {
 		className: "space-y-4",
 		children: [
 			/* @__PURE__ */ h("div", {
 				className: "flex flex-wrap gap-2",
-				children: /* @__PURE__ */ h(H, {
+				children: /* @__PURE__ */ h(V, {
 					size: "sm",
 					onClick: () => void T.mutateAsync(),
 					disabled: T.isPending,
 					children: e("aiContent.runDue")
 				})
 			}),
-			/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.addSlot") }) }), /* @__PURE__ */ g(K, {
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.addSlot") }) }), /* @__PURE__ */ g(G, {
 				className: "grid gap-3 md:grid-cols-2",
 				children: [
 					/* @__PURE__ */ g("div", {
 						className: "space-y-1",
-						children: [/* @__PURE__ */ h(Q, { children: e("aiContent.fieldDate") }), /* @__PURE__ */ h(q, {
+						children: [/* @__PURE__ */ h(X, { children: e("aiContent.fieldDate") }), /* @__PURE__ */ h(K, {
 							type: "date",
 							value: o,
 							onChange: (e) => s(e.target.value)
@@ -3606,7 +3660,7 @@ function Vr() {
 					}),
 					/* @__PURE__ */ g("div", {
 						className: "space-y-1",
-						children: [/* @__PURE__ */ h(Q, { children: e("aiContent.fieldType") }), /* @__PURE__ */ g("select", {
+						children: [/* @__PURE__ */ h(X, { children: e("aiContent.fieldType") }), /* @__PURE__ */ g("select", {
 							className: "flex h-9 w-full rounded-md border bg-background px-3 text-sm",
 							value: m,
 							onChange: (e) => _(e.target.value),
@@ -3621,45 +3675,45 @@ function Vr() {
 					}),
 					/* @__PURE__ */ g("div", {
 						className: "space-y-1 md:col-span-2",
-						children: [/* @__PURE__ */ h(Q, { children: e("aiContent.fieldTopic") }), /* @__PURE__ */ h(q, {
+						children: [/* @__PURE__ */ h(X, { children: e("aiContent.fieldTopic") }), /* @__PURE__ */ h(K, {
 							value: n,
 							onChange: (e) => r(e.target.value)
 						})]
 					}),
 					/* @__PURE__ */ g("div", {
 						className: "space-y-1 md:col-span-2",
-						children: [/* @__PURE__ */ h(Q, { children: e("aiContent.fieldFocus") }), /* @__PURE__ */ h(q, {
+						children: [/* @__PURE__ */ h(X, { children: e("aiContent.fieldFocus") }), /* @__PURE__ */ h(K, {
 							value: i,
 							onChange: (e) => a(e.target.value)
 						})]
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						disabled: !n.trim() || S.isPending,
 						onClick: () => void S.mutateAsync(),
 						children: e("common.save")
 					})
 				]
 			})] }),
-			/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.bulkTopics") }) }), /* @__PURE__ */ g(K, {
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.bulkTopics") }) }), /* @__PURE__ */ g(G, {
 				className: "space-y-3",
 				children: [
 					/* @__PURE__ */ h("p", {
 						className: "text-sm text-muted-foreground",
 						children: e("aiContent.bulkHint")
 					}),
-					/* @__PURE__ */ h(Br, {
+					/* @__PURE__ */ h(Qr, {
 						rows: 6,
 						value: v,
 						onChange: (e) => y(e.target.value)
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						disabled: !v.trim() || C.isPending,
 						onClick: () => void C.mutateAsync(),
 						children: e("aiContent.bulkCreate")
 					})
 				]
 			})] }),
-			/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.calendarList") }) }), /* @__PURE__ */ g(K, {
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.calendarList") }) }), /* @__PURE__ */ g(G, {
 				className: "space-y-2",
 				children: [(b.data?.items ?? []).map((t) => /* @__PURE__ */ g("div", {
 					className: "flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm last:border-0",
@@ -3679,7 +3733,7 @@ function Vr() {
 							className: "text-muted-foreground",
 							children: t.focus_keyword
 						})
-					] })] }), /* @__PURE__ */ h(H, {
+					] })] }), /* @__PURE__ */ h(V, {
 						size: "sm",
 						variant: "destructive",
 						onClick: () => void w.mutateAsync(t.id),
@@ -3694,8 +3748,17 @@ function Vr() {
 	});
 }
 //#endregion
+//#region src/components/ui/skeleton.tsx
+function ei({ className: e, ...t }) {
+	return /* @__PURE__ */ h("div", {
+		"data-slot": "skeleton",
+		className: B("animate-pulse rounded-md bg-accent", e),
+		...t
+	});
+}
+//#endregion
 //#region src/components/ui/badge.tsx
-var Hr = A("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
+var ti = A("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
 	variants: { variant: {
 		default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
 		secondary: "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
@@ -3706,43 +3769,38 @@ var Hr = A("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflo
 	} },
 	defaultVariants: { variant: "default" }
 });
-function Ur({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
+function Z({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
 	return /* @__PURE__ */ h(n ? He : "span", {
 		"data-slot": "badge",
 		"data-variant": t,
-		className: V(Hr({ variant: t }), e),
+		className: B(ti({ variant: t }), e),
 		...r
 	});
 }
 //#endregion
-//#region src/components/ui/skeleton.tsx
-function Wr({ className: e, ...t }) {
-	return /* @__PURE__ */ h("div", {
-		"data-slot": "skeleton",
-		className: V("animate-pulse rounded-md bg-accent", e),
-		...t
-	});
-}
-//#endregion
 //#region src/lib/aiJobProgress.ts
-var Gr = [
+var ni = [
 	"queued",
+	"layout",
+	"visual",
 	"provider",
 	"seo",
 	"writing",
 	"done"
 ];
-function Kr(e) {
+function ri(e) {
 	if (!e) return "queued";
 	if (e.status === "done") return "done";
 	if (e.status === "failed") return "failed";
 	if (e.status === "cancelled") return "cancelled";
 	let t = String(e.result_summary || "").toLowerCase();
-	return Gr.includes(t) ? t : e.status === "running" ? "provider" : "queued";
+	return ni.includes(t) ? t : e.status === "running" ? "provider" : "queued";
 }
-function qr(e) {
+function ii(e) {
 	return {
-		queued: 12,
+		queued: 8,
+		layout: 22,
+		visual: 45,
 		provider: 40,
 		seo: 65,
 		writing: 85,
@@ -3753,14 +3811,14 @@ function qr(e) {
 }
 //#endregion
 //#region src/components/currency/IrtIcon.tsx
-function Jr({ className: e }) {
+function ai({ className: e }) {
 	return /* @__PURE__ */ g("svg", {
 		width: "13",
 		height: "12",
 		viewBox: "0 0 13 12",
 		fill: "none",
 		xmlns: "http://www.w3.org/2000/svg",
-		className: V("inline-block h-[0.85em] w-auto shrink-0 align-[-0.12em]", e),
+		className: B("inline-block h-[0.85em] w-auto shrink-0 align-[-0.12em]", e),
 		"aria-hidden": !0,
 		children: [
 			/* @__PURE__ */ h("path", {
@@ -3788,44 +3846,44 @@ function Jr({ className: e }) {
 }
 //#endregion
 //#region src/lib/currency.ts
-var Yr = /تومان|toman|irt/i;
-function Xr(e) {
+var oi = /تومان|toman|irt/i;
+function si(e) {
 	return e.replace(/&nbsp;/gi, " ").replace(/&#160;/g, " ").replace(/&#x0*a0;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, "\"").replace(/&#(\d+);/g, (e, t) => {
 		let n = Number(t);
 		return Number.isFinite(n) ? String.fromCharCode(n) : e;
 	}).replace(/\u00a0/g, " ");
 }
-function Zr(e, t) {
+function ci(e, t) {
 	let n = (e ?? "").trim(), r = (t ?? "").trim();
 	if (!n && !r) return !1;
 	let i = n.toUpperCase();
-	return !!(i === "IRT" || i === "TOMAN" || Yr.test(n) || Yr.test(r));
+	return !!(i === "IRT" || i === "TOMAN" || oi.test(n) || oi.test(r));
 }
-function Qr(e) {
+function li(e) {
 	return e.toLowerCase().startsWith("fa");
 }
-function $r(e) {
+function ui(e) {
 	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
 }
 //#endregion
 //#region src/lib/formatNumber.ts
-function ei(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = Qr(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return Qr(t) ? $r(i) : i;
+function di(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = li(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return li(t) ? ui(i) : i;
 }
 //#endregion
 //#region src/components/currency/MoneyDisplay.tsx
-function ti({ amount: e, currency: t, currencySymbol: n, locale: r, className: i, amountClassName: a, prefix: o }) {
-	let s = typeof e == "string" ? Xr(e).replace(/[^\d.-]/g, "") : "", c = typeof e == "number" ? e : parseFloat(s), l = typeof e == "string" && Number.isNaN(c) ? Xr(e) : ei(Number.isFinite(c) ? c : 0, r), u = Zr(t, n) || !t?.trim() && !n?.trim();
+function fi({ amount: e, currency: t, currencySymbol: n, locale: r, className: i, amountClassName: a, prefix: o }) {
+	let s = typeof e == "string" ? si(e).replace(/[^\d.-]/g, "") : "", c = typeof e == "number" ? e : parseFloat(s), l = typeof e == "string" && Number.isNaN(c) ? si(e) : di(Number.isFinite(c) ? c : 0, r), u = ci(t, n) || !t?.trim() && !n?.trim();
 	return /* @__PURE__ */ g("span", {
-		className: V("inline-flex items-baseline gap-1", i),
+		className: B("inline-flex items-baseline gap-1", i),
 		children: [
 			o,
 			/* @__PURE__ */ h("span", {
 				className: a,
 				children: l
 			}),
-			u ? /* @__PURE__ */ h(Jr, {}) : t ? /* @__PURE__ */ h("span", {
+			u ? /* @__PURE__ */ h(ai, {}) : t ? /* @__PURE__ */ h("span", {
 				className: "text-muted-foreground text-[0.85em]",
 				children: t
 			}) : null
@@ -3834,8 +3892,8 @@ function ti({ amount: e, currency: t, currencySymbol: n, locale: r, className: i
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/components/AiToman.tsx
-function $({ amount: e, locale: t, className: n }) {
-	return /* @__PURE__ */ h(ti, {
+function Q({ amount: e, locale: t, className: n }) {
+	return /* @__PURE__ */ h(fi, {
 		amount: Number.isFinite(e) ? e : 0,
 		currency: "IRT",
 		locale: t,
@@ -3843,8 +3901,166 @@ function $({ amount: e, locale: t, className: n }) {
 	});
 }
 //#endregion
+//#region ../Modules/ai-content-module/client/components/AiJobCard.tsx
+function pi(e) {
+	return e.target_type === "calendar" ? "/ai-content/calendar" : e.target_id < 1 ? null : e.target_type === "product" ? `/shop/products/${e.target_id}` : e.target_type === "post" ? `/magazine/posts/${e.target_id}` : e.target_type === "product_cat" || e.target_type === "product_brand" ? "/ai-content/taxonomies" : null;
+}
+function mi(e) {
+	return e.status === "pending" || e.status === "running";
+}
+function hi(e) {
+	return e === "done" ? "default" : e === "failed" || e === "cancelled" ? "destructive" : e === "running" ? "secondary" : "outline";
+}
+function gi(e, t) {
+	if (!e) return "";
+	let n = e.includes("T") ? e : `${e.replace(" ", "T")}Z`, r = new Date(n);
+	return Number.isNaN(r.getTime()) ? e : new Intl.DateTimeFormat(t.startsWith("fa") ? "fa-IR" : "en-GB", {
+		dateStyle: "medium",
+		timeStyle: "short"
+	}).format(r);
+}
+function _i(e, t) {
+	let n = e.trim();
+	return /cURL error 28|timed out|timeout/i.test(n) ? {
+		title: t("aiContent.jobError.timeout"),
+		detail: n
+	} : /cURL error/i.test(n) ? {
+		title: t("aiContent.jobError.network"),
+		detail: n
+	} : {
+		title: n,
+		detail: ""
+	};
+}
+function vi({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i }) {
+	let { t: a, i18n: o } = l(), s = pi(e), c = (e.target_title || "").trim() || a("aiContent.jobUntitled"), u = s ? /* @__PURE__ */ h(_, {
+		className: "hover:underline underline-offset-2",
+		to: s,
+		children: c
+	}) : /* @__PURE__ */ h("span", { children: c }), d = e.error_message ? _i(e.error_message, a) : null, f = !!(t || n);
+	return /* @__PURE__ */ g("div", {
+		className: "flex flex-wrap items-start justify-between gap-3 border-b py-3 last:border-0",
+		children: [/* @__PURE__ */ g("div", {
+			className: "min-w-0 flex-1 space-y-2",
+			children: [
+				/* @__PURE__ */ h("div", {
+					className: "text-sm font-semibold leading-snug",
+					children: u
+				}),
+				/* @__PURE__ */ g("div", {
+					className: "flex flex-wrap gap-1.5",
+					children: [
+						/* @__PURE__ */ h(Z, {
+							variant: "outline",
+							children: a("aiContent.jobId", { id: e.id })
+						}),
+						/* @__PURE__ */ h(Z, {
+							variant: "secondary",
+							children: a(`aiContent.jobType.${e.job_type}`, { defaultValue: e.job_type })
+						}),
+						/* @__PURE__ */ h(Z, {
+							variant: hi(e.status),
+							children: a(`aiContent.jobStatus.${e.status}`, { defaultValue: e.status })
+						}),
+						e.provider ? /* @__PURE__ */ h(Z, {
+							variant: "outline",
+							children: e.provider
+						}) : null,
+						e.model ? /* @__PURE__ */ h(Z, {
+							variant: "outline",
+							children: e.model
+						}) : null
+					]
+				}),
+				/* @__PURE__ */ g("div", {
+					className: "flex flex-wrap gap-1.5",
+					children: [
+						e.target_type ? /* @__PURE__ */ g(Z, {
+							variant: "outline",
+							children: [a(`aiContent.targetType.${e.target_type}`, { defaultValue: e.target_type }), e.target_id > 0 ? ` #${e.target_id}` : ""]
+						}) : null,
+						e.attempts > 0 ? /* @__PURE__ */ h(Z, {
+							variant: "outline",
+							children: a("aiContent.jobsAttempts", { count: e.attempts })
+						}) : null,
+						e.tokens_in > 0 ? /* @__PURE__ */ h(Z, {
+							variant: "outline",
+							children: a("aiContent.jobTokensIn", { count: e.tokens_in })
+						}) : null,
+						e.tokens_out > 0 ? /* @__PURE__ */ h(Z, {
+							variant: "outline",
+							children: a("aiContent.jobTokensOut", { count: e.tokens_out })
+						}) : null,
+						Number(e.cost_toman) > 0 ? /* @__PURE__ */ g(Z, {
+							variant: "outline",
+							className: "gap-1",
+							children: [/* @__PURE__ */ h(Q, {
+								amount: Number(e.cost_toman),
+								locale: o.language
+							}), e.cost_estimated ? ` · ${a("aiContent.costApprox")}` : ""]
+						}) : null,
+						e.created_at ? /* @__PURE__ */ h(Z, {
+							variant: "outline",
+							children: gi(e.created_at, o.language)
+						}) : null
+					]
+				}),
+				d ? /* @__PURE__ */ g("div", {
+					className: "border-destructive/30 bg-destructive/5 text-destructive space-y-0.5 rounded-md border px-2.5 py-2 text-xs",
+					children: [/* @__PURE__ */ h("div", {
+						className: "font-medium",
+						children: d.title
+					}), d.detail && d.detail !== d.title ? /* @__PURE__ */ h("div", {
+						className: "text-destructive/80 break-words",
+						children: d.detail
+					}) : null]
+				}) : mi(e) ? /* @__PURE__ */ g("div", {
+					className: "space-y-1",
+					children: [/* @__PURE__ */ h("div", {
+						className: "bg-muted h-1.5 overflow-hidden rounded-full",
+						children: /* @__PURE__ */ h("div", {
+							className: "bg-primary h-full transition-[width] duration-500",
+							style: { width: `${ii(ri(e))}%` }
+						})
+					}), /* @__PURE__ */ h("div", {
+						className: "text-muted-foreground text-xs",
+						children: a(`aiContent.phase.${ri(e)}`, { defaultValue: ri(e) })
+					})]
+				}) : e.result_summary && ![
+					"queued",
+					"layout",
+					"visual",
+					"provider",
+					"seo",
+					"writing",
+					"done",
+					"cancelled"
+				].includes(e.result_summary) ? /* @__PURE__ */ h("div", {
+					className: "text-muted-foreground text-xs",
+					children: e.result_summary
+				}) : null
+			]
+		}), f ? /* @__PURE__ */ g("div", {
+			className: "flex shrink-0 gap-2",
+			children: [mi(e) && n ? /* @__PURE__ */ h(V, {
+				size: "sm",
+				variant: "outline",
+				disabled: i,
+				onClick: () => n(e.id),
+				children: a("aiContent.jobsCancel")
+			}) : null, (e.status === "failed" || e.status === "cancelled") && t ? /* @__PURE__ */ h(V, {
+				size: "sm",
+				variant: "outline",
+				disabled: r,
+				onClick: () => t(e.id),
+				children: a("aiContent.retry")
+			}) : null]
+		}) : null]
+	});
+}
+//#endregion
 //#region ../Modules/ai-content-module/client/pages/AiJobsPage.tsx
-var ni = [
+var yi = [
 	"",
 	"pending",
 	"running",
@@ -3852,42 +4068,55 @@ var ni = [
 	"cancelled",
 	"done"
 ];
-function ri(e) {
-	return e.target_type === "calendar" ? "/ai-content/calendar" : e.target_id < 1 ? null : e.target_type === "product" ? `/shop/products/${e.target_id}` : e.target_type === "post" ? `/magazine/posts/${e.target_id}` : e.target_type === "product_cat" || e.target_type === "product_brand" ? "/ai-content/taxonomies" : null;
-}
-function ii(e) {
-	return e === "done" ? "default" : e === "failed" || e === "cancelled" ? "destructive" : e === "running" ? "secondary" : "outline";
-}
-function ai(e) {
-	return e.status === "pending" || e.status === "running";
-}
-function oi() {
-	let { t: e, i18n: t } = l(), n = f(), [r, i] = v(), a = r.get("status") ?? "", o = ni.includes(a) ? a : "", s = d({
+function bi() {
+	let { t: e, i18n: t } = l(), n = f(), [r, i] = v(), a = r.get("status") ?? "", o = yi.includes(a) ? a : "", s = d({
 		queryKey: [
 			"ai-content",
 			"jobs",
 			o
 		],
-		queryFn: () => pr({
+		queryFn: () => hr({
 			status: o || void 0,
 			limit: 80
 		}),
-		refetchInterval: (e) => (e.state.data?.items ?? []).some(ai) ? 2e3 : !1
+		refetchInterval: (e) => (e.state.data?.items ?? []).some(mi) ? 2e3 : !1
 	});
-	Z(s);
+	Y(s);
 	let c = d({
 		queryKey: ["ai-content", "queue"],
-		queryFn: vr
+		queryFn: br
 	});
-	Z(c);
-	let y = !!c.data?.paused, b = u({
-		mutationFn: (e) => mr(e),
+	Y(c);
+	let m = !!c.data?.paused, _ = u({
+		mutationFn: (e) => gr(e),
 		onSuccess: () => {
 			p.success(e("aiContent.jobRetried")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
-	}), x = u({
-		mutationFn: () => hr(1),
+		onError: (t) => J(e, t)
+	}), y = u({
+		mutationFn: async () => {
+			let e = 0;
+			for (let t = 0; t < 200; t++) {
+				let t = (await hr({ limit: 80 })).items ?? [];
+				if (t.some((e) => e.status === "running")) {
+					await new Promise((e) => setTimeout(e, 2e3));
+					continue;
+				}
+				if (!t.some((e) => e.status === "pending")) break;
+				let n = await _r(1);
+				if (n.paused) return {
+					processed: [],
+					count: e,
+					paused: !0
+				};
+				if ((n.count || 0) < 1) break;
+				e += n.count, await new Promise((e) => setTimeout(e, 1500));
+			}
+			return {
+				processed: [],
+				count: e
+			};
+		},
 		onSuccess: (t) => {
 			if (t.paused) {
 				p.message(e("aiContent.queuePausedHint"));
@@ -3895,184 +4124,97 @@ function oi() {
 			}
 			p.success(e("aiContent.jobsRunDueDone", { count: t.count })), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
-	}), S = u({
-		mutationFn: (e) => yr(e),
+		onError: (t) => J(e, t)
+	}), b = u({
+		mutationFn: (e) => xr(e),
 		onSuccess: (t) => {
 			n.setQueryData(["ai-content", "queue"], { paused: t.paused }), p.success(t.paused ? e("aiContent.queuePaused") : e("aiContent.queueResumed")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
-	}), C = u({
-		mutationFn: (e) => gr(e),
+		onError: (t) => J(e, t)
+	}), x = u({
+		mutationFn: (e) => vr(e),
 		onSuccess: () => {
 			p.success(e("aiContent.jobCancelled")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
-	}), w = u({
-		mutationFn: () => _r(),
+		onError: (t) => J(e, t)
+	}), S = u({
+		mutationFn: () => yr(),
 		onSuccess: (t) => {
 			p.success(e("aiContent.jobsCancelledCount", { count: t.count })), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
-	}), T = (e) => {
+		onError: (t) => J(e, t)
+	}), C = (e) => {
 		let t = new URLSearchParams(r);
 		e ? t.set("status", e) : t.delete("status"), i(t, { replace: !0 });
-	}, E = (s.data?.items ?? []).some((e) => e.status === "pending"), D = s.data?.items ?? [], ee = D.reduce((e, t) => e + (Number(t.cost_toman) || 0), 0), te = D.reduce((e, t) => e + (t.tokens_in || 0), 0), O = D.reduce((e, t) => e + (t.tokens_out || 0), 0);
+	}, w = (s.data?.items ?? []).some((e) => e.status === "pending"), T = s.data?.items ?? [], E = T.reduce((e, t) => e + (Number(t.cost_toman) || 0), 0), D = T.reduce((e, t) => e + (t.tokens_in || 0), 0), O = T.reduce((e, t) => e + (t.tokens_out || 0), 0);
 	return /* @__PURE__ */ g("div", {
 		className: "space-y-4",
 		children: [
 			/* @__PURE__ */ h("div", {
 				className: "flex flex-wrap items-center gap-2",
-				children: ni.map((t) => /* @__PURE__ */ h(H, {
+				children: yi.map((t) => /* @__PURE__ */ h(V, {
 					size: "sm",
 					variant: o === t ? "default" : "outline",
-					onClick: () => T(t),
+					onClick: () => C(t),
 					children: e(t ? `aiContent.jobsFilter.${t}` : "aiContent.jobsFilter.all")
 				}, t || "all"))
 			}),
 			/* @__PURE__ */ g("div", {
 				className: "flex flex-wrap items-center gap-2",
 				children: [
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						size: "sm",
-						variant: y ? "default" : "outline",
-						disabled: S.isPending,
-						onClick: () => void S.mutateAsync(!y),
-						children: e(y ? "aiContent.queueResume" : "aiContent.queuePause")
+						variant: m ? "default" : "outline",
+						disabled: b.isPending,
+						onClick: () => void b.mutateAsync(!m),
+						children: e(m ? "aiContent.queueResume" : "aiContent.queuePause")
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						size: "sm",
 						variant: "outline",
-						disabled: w.isPending || !E,
-						onClick: () => void w.mutateAsync(),
+						disabled: S.isPending || !w,
+						onClick: () => void S.mutateAsync(),
 						children: e("aiContent.jobsCancelPending")
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						size: "sm",
 						className: "ms-auto",
-						disabled: x.isPending || y,
-						onClick: () => void x.mutateAsync(),
-						children: e("aiContent.jobsRunDue")
+						disabled: y.isPending || m,
+						onClick: () => void y.mutateAsync(),
+						children: y.isPending ? e("aiContent.jobsRunDueRunning") : e("aiContent.jobsRunDue")
 					})
 				]
 			}),
-			y ? /* @__PURE__ */ h("p", {
+			m ? /* @__PURE__ */ h("p", {
 				className: "text-muted-foreground text-sm",
 				children: e("aiContent.queuePausedHint")
 			}) : null,
-			D.length ? /* @__PURE__ */ g("p", {
+			T.length ? /* @__PURE__ */ g("p", {
 				className: "text-muted-foreground text-sm",
 				children: [
 					e("aiContent.jobsCostTotal"),
 					" ",
-					/* @__PURE__ */ h($, {
-						amount: ee,
+					/* @__PURE__ */ h(Q, {
+						amount: E,
 						locale: t.language
 					}),
-					te || O ? ` · ${e("aiContent.jobsTokens", {
-						inCount: te,
+					D || O ? ` · ${e("aiContent.jobsTokens", {
+						inCount: D,
 						outCount: O
 					})}` : ""
 				]
 			}) : null,
-			/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.jobsPageTitle") }) }), /* @__PURE__ */ g(K, {
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.jobsPageTitle") }) }), /* @__PURE__ */ g(G, {
 				className: "space-y-2",
 				children: [
-					s.isPending ? /* @__PURE__ */ h(Wr, { className: "h-24 w-full rounded-xl" }) : null,
-					(s.data?.items ?? []).map((n) => {
-						let r = ri(n);
-						return /* @__PURE__ */ g("div", {
-							className: "flex flex-wrap items-start justify-between gap-2 border-b py-3 text-sm last:border-0",
-							children: [/* @__PURE__ */ g("div", {
-								className: "min-w-0 space-y-1",
-								children: [
-									/* @__PURE__ */ g("div", {
-										className: "flex flex-wrap items-center gap-2",
-										children: [
-											/* @__PURE__ */ g("span", {
-												className: "font-medium",
-												children: ["#", n.id]
-											}),
-											/* @__PURE__ */ h("span", { children: e(`aiContent.jobType.${n.job_type}`, { defaultValue: n.job_type }) }),
-											/* @__PURE__ */ h(Ur, {
-												variant: ii(n.status),
-												children: e(`aiContent.jobStatus.${n.status}`, { defaultValue: n.status })
-											}),
-											n.provider ? /* @__PURE__ */ g("span", {
-												className: "text-muted-foreground",
-												children: [n.provider, n.model ? ` · ${n.model}` : ""]
-											}) : null
-										]
-									}),
-									/* @__PURE__ */ g("div", {
-										className: "text-muted-foreground",
-										children: [
-											r ? /* @__PURE__ */ g(_, {
-												className: "underline-offset-2 hover:underline",
-												to: r,
-												children: [n.target_type, n.target_id > 0 ? ` #${n.target_id}` : ""]
-											}) : /* @__PURE__ */ g("span", { children: [n.target_type, n.target_id > 0 ? ` #${n.target_id}` : ""] }),
-											n.attempts > 0 ? ` · ${e("aiContent.jobsAttempts", { count: n.attempts })}` : "",
-											n.tokens_in || n.tokens_out ? ` · ${e("aiContent.jobsTokens", {
-												inCount: n.tokens_in || 0,
-												outCount: n.tokens_out || 0
-											})}` : "",
-											Number(n.cost_toman) > 0 ? /* @__PURE__ */ g(m, { children: [
-												" · ",
-												/* @__PURE__ */ h($, {
-													amount: Number(n.cost_toman),
-													locale: t.language
-												}),
-												n.cost_estimated ? ` (${e("aiContent.costApprox")})` : ""
-											] }) : null,
-											n.created_at ? ` · ${n.created_at}` : ""
-										]
-									}),
-									n.error_message ? /* @__PURE__ */ h("div", {
-										className: "text-destructive whitespace-pre-wrap",
-										children: n.error_message
-									}) : ai(n) ? /* @__PURE__ */ g("div", {
-										className: "space-y-1",
-										children: [/* @__PURE__ */ h("div", {
-											className: "bg-muted h-1.5 overflow-hidden rounded-full",
-											children: /* @__PURE__ */ h("div", {
-												className: "bg-primary h-full transition-[width] duration-500",
-												style: { width: `${qr(Kr(n))}%` }
-											})
-										}), /* @__PURE__ */ h("div", {
-											className: "text-muted-foreground text-xs",
-											children: e(`aiContent.phase.${Kr(n)}`, { defaultValue: Kr(n) })
-										})]
-									}) : n.result_summary && ![
-										"queued",
-										"provider",
-										"seo",
-										"writing",
-										"done",
-										"cancelled"
-									].includes(n.result_summary) ? /* @__PURE__ */ h("div", {
-										className: "text-muted-foreground",
-										children: n.result_summary
-									}) : null
-								]
-							}), /* @__PURE__ */ g("div", {
-								className: "flex gap-2",
-								children: [ai(n) ? /* @__PURE__ */ h(H, {
-									size: "sm",
-									variant: "outline",
-									disabled: C.isPending,
-									onClick: () => void C.mutateAsync(n.id),
-									children: e("aiContent.jobsCancel")
-								}) : null, n.status === "failed" || n.status === "cancelled" ? /* @__PURE__ */ h(H, {
-									size: "sm",
-									variant: "outline",
-									disabled: b.isPending,
-									onClick: () => void b.mutateAsync(n.id),
-									children: e("aiContent.retry")
-								}) : null]
-							})]
-						}, n.id);
-					}),
+					s.isPending ? /* @__PURE__ */ h(ei, { className: "h-24 w-full rounded-xl" }) : null,
+					(s.data?.items ?? []).map((e) => /* @__PURE__ */ h(vi, {
+						job: e,
+						retryPending: _.isPending,
+						cancelPending: x.isPending,
+						onRetry: (e) => void _.mutateAsync(e),
+						onCancel: (e) => void x.mutateAsync(e)
+					}, e.id)),
 					!s.isPending && !s.data?.items?.length ? /* @__PURE__ */ h("p", {
 						className: "text-sm text-muted-foreground",
 						children: e("aiContent.noJobs")
@@ -4084,35 +4226,35 @@ function oi() {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiOverviewPage.tsx
-var si = {
+var xi = {
 	pending: "/ai-content/jobs?status=pending",
 	failed: "/ai-content/jobs?status=failed",
 	done: "/ai-content/jobs?status=done",
 	calendar: "/ai-content/calendar"
 };
-function ci() {
+function Si() {
 	let { t: e, i18n: t } = l(), n = f(), r = d({
 		queryKey: ["ai-content", "overview"],
-		queryFn: cr,
+		queryFn: ur,
 		refetchInterval: (e) => (e.state.data?.jobs_pending ?? 0) > 0 ? 3e3 : !1
 	});
-	Z(r);
+	Y(r);
 	let i = d({
 		queryKey: [
 			"ai-content",
 			"jobs",
 			"recent"
 		],
-		queryFn: () => pr({ limit: 8 }),
+		queryFn: () => hr({ limit: 8 }),
 		refetchInterval: (e) => (e.state.data?.items ?? []).some((e) => e.status === "pending" || e.status === "running") ? 3e3 : !1
 	});
-	Z(i);
+	Y(i);
 	let a = u({
-		mutationFn: (e) => mr(e),
+		mutationFn: (e) => gr(e),
 		onSuccess: () => {
 			p.success(e("aiContent.jobRetried")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), o = r.data;
 	return /* @__PURE__ */ g("div", {
 		className: "space-y-4",
@@ -4120,7 +4262,7 @@ function ci() {
 			/* @__PURE__ */ g("div", {
 				className: "flex flex-wrap gap-2",
 				children: [
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						asChild: !0,
 						variant: "outline",
 						size: "sm",
@@ -4129,7 +4271,7 @@ function ci() {
 							children: e("aiContent.navJobs")
 						})
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						asChild: !0,
 						variant: "outline",
 						size: "sm",
@@ -4138,7 +4280,7 @@ function ci() {
 							children: e("aiContent.navCalendar")
 						})
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						asChild: !0,
 						variant: "outline",
 						size: "sm",
@@ -4147,7 +4289,7 @@ function ci() {
 							children: e("aiContent.navProducts")
 						})
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						asChild: !0,
 						variant: "outline",
 						size: "sm",
@@ -4156,7 +4298,7 @@ function ci() {
 							children: e("aiContent.navTaxonomies")
 						})
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						asChild: !0,
 						variant: "outline",
 						size: "sm",
@@ -4165,7 +4307,7 @@ function ci() {
 							children: e("aiContent.navAttributes")
 						})
 					}),
-					/* @__PURE__ */ h(H, {
+					/* @__PURE__ */ h(V, {
 						asChild: !0,
 						variant: "outline",
 						size: "sm",
@@ -4176,7 +4318,7 @@ function ci() {
 					})
 				]
 			}),
-			r.isPending ? /* @__PURE__ */ h(Wr, { className: "h-32 w-full rounded-xl" }) : /* @__PURE__ */ g("div", {
+			r.isPending ? /* @__PURE__ */ h(ei, { className: "h-32 w-full rounded-xl" }) : /* @__PURE__ */ g("div", {
 				className: "grid gap-3 sm:grid-cols-2 lg:grid-cols-5",
 				children: [[
 					["pending", o?.jobs_pending ?? 0],
@@ -4184,17 +4326,17 @@ function ci() {
 					["done", o?.jobs_done ?? 0],
 					["calendar", o?.calendar_upcoming ?? 0]
 				].map(([t, n]) => /* @__PURE__ */ h(_, {
-					to: si[String(t)] ?? "/ai-content/jobs",
+					to: xi[String(t)] ?? "/ai-content/jobs",
 					className: "block",
-					children: /* @__PURE__ */ g(U, {
+					children: /* @__PURE__ */ g(H, {
 						className: "h-full transition-colors hover:bg-muted/40",
-						children: [/* @__PURE__ */ h(W, {
+						children: [/* @__PURE__ */ h(U, {
 							className: "pb-2",
-							children: /* @__PURE__ */ h(G, {
+							children: /* @__PURE__ */ h(W, {
 								className: "text-sm font-medium text-muted-foreground",
 								children: e(`aiContent.stat.${t}`)
 							})
-						}), /* @__PURE__ */ h(K, { children: /* @__PURE__ */ h("div", {
+						}), /* @__PURE__ */ h(G, { children: /* @__PURE__ */ h("div", {
 							className: "text-2xl font-semibold",
 							children: n
 						}) })]
@@ -4202,17 +4344,17 @@ function ci() {
 				}, String(t))), /* @__PURE__ */ h(_, {
 					to: "/ai-content/jobs",
 					className: "block",
-					children: /* @__PURE__ */ g(U, {
+					children: /* @__PURE__ */ g(H, {
 						className: "h-full transition-colors hover:bg-muted/40",
-						children: [/* @__PURE__ */ h(W, {
+						children: [/* @__PURE__ */ h(U, {
 							className: "pb-2",
-							children: /* @__PURE__ */ h(G, {
+							children: /* @__PURE__ */ h(W, {
 								className: "text-sm font-medium text-muted-foreground",
 								children: e("aiContent.stat.spend")
 							})
-						}), /* @__PURE__ */ h(K, { children: /* @__PURE__ */ h("div", {
+						}), /* @__PURE__ */ h(G, { children: /* @__PURE__ */ h("div", {
 							className: "text-2xl font-semibold",
-							children: /* @__PURE__ */ h($, {
+							children: /* @__PURE__ */ h(Q, {
 								amount: o?.jobs_cost_toman ?? 0,
 								locale: t.language
 							})
@@ -4220,7 +4362,7 @@ function ci() {
 					})
 				})]
 			}),
-			/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.incompleteTitle") }) }), /* @__PURE__ */ g(K, {
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.incompleteTitle") }) }), /* @__PURE__ */ g(G, {
 				className: "space-y-2",
 				children: [/* @__PURE__ */ h("p", {
 					className: "text-sm text-muted-foreground",
@@ -4237,9 +4379,9 @@ function ci() {
 					})]
 				}, e.id))]
 			})] }),
-			/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ g(W, {
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ g(U, {
 				className: "flex flex-row items-center justify-between space-y-0",
-				children: [/* @__PURE__ */ h(G, { children: e("aiContent.jobsTitle") }), /* @__PURE__ */ h(H, {
+				children: [/* @__PURE__ */ h(W, { children: e("aiContent.jobsTitle") }), /* @__PURE__ */ h(V, {
 					asChild: !0,
 					variant: "ghost",
 					size: "sm",
@@ -4248,32 +4390,13 @@ function ci() {
 						children: e("aiContent.jobsViewAll")
 					})
 				})]
-			}), /* @__PURE__ */ g(K, {
+			}), /* @__PURE__ */ g(G, {
 				className: "space-y-2",
-				children: [(i.data?.items ?? []).map((t) => /* @__PURE__ */ g("div", {
-					className: "flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm last:border-0",
-					children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ g("div", {
-						className: "font-medium",
-						children: [
-							"#",
-							t.id,
-							" · ",
-							e(`aiContent.jobType.${t.job_type}`, { defaultValue: t.job_type }),
-							" ·",
-							" ",
-							e(`aiContent.jobStatus.${t.status}`, { defaultValue: t.status })
-						]
-					}), /* @__PURE__ */ h("div", {
-						className: "text-muted-foreground",
-						children: t.result_summary || t.error_message || t.provider
-					})] }), t.status === "failed" ? /* @__PURE__ */ h(H, {
-						size: "sm",
-						variant: "outline",
-						disabled: a.isPending,
-						onClick: () => void a.mutateAsync(t.id),
-						children: e("aiContent.retry")
-					}) : null]
-				}, t.id)), i.data?.items?.length ? null : /* @__PURE__ */ h("p", {
+				children: [(i.data?.items ?? []).map((e) => /* @__PURE__ */ h(vi, {
+					job: e,
+					retryPending: a.isPending,
+					onRetry: (e) => void a.mutateAsync(e)
+				}, e.id)), i.data?.items?.length ? null : /* @__PURE__ */ h("p", {
 					className: "text-sm text-muted-foreground",
 					children: e("aiContent.noJobs")
 				})]
@@ -4282,26 +4405,124 @@ function ci() {
 	});
 }
 //#endregion
+//#region ../Modules/ai-content-module/client/pages/AiPagesPage.tsx
+function Ci() {
+	let { t: e } = l(), t = f(), [n, r] = c(""), [i, a] = c({}), o = d({
+		queryKey: [
+			"ai-content",
+			"pages",
+			n
+		],
+		queryFn: () => Dr(1, n)
+	});
+	Y(o);
+	let s = u({
+		mutationFn: (e) => Sr({
+			type: "page",
+			id: e.id,
+			page_prompt: i[e.id] ?? o.data?.items.find((t) => t.id === e.id)?.page_prompt ?? "",
+			run_now: !1
+		}),
+		onSuccess: (n) => {
+			if (!n?.job_id || n.job_id < 1) {
+				p.error(e("aiContent.jobQueueFailed"));
+				return;
+			}
+			p.success(e("aiContent.jobQueued")), t.invalidateQueries({ queryKey: ["ai-content"] });
+		},
+		onError: (t) => J(e, t)
+	});
+	return /* @__PURE__ */ g("div", {
+		className: "space-y-4",
+		children: [
+			/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h("h1", {
+				className: "text-xl font-semibold tracking-tight",
+				children: e("aiContent.pagesTitle")
+			}), /* @__PURE__ */ h("p", {
+				className: "text-muted-foreground mt-1 text-sm",
+				children: e("aiContent.pagesLead")
+			})] }),
+			o.data?.elementor ? null : /* @__PURE__ */ h("p", {
+				className: "text-destructive text-sm",
+				children: e("aiContent.elementorRequired")
+			}),
+			/* @__PURE__ */ h(K, {
+				value: n,
+				onChange: (e) => r(e.target.value),
+				placeholder: e("aiContent.pagesSearch"),
+				className: "max-w-sm"
+			}),
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.pagesList") }) }), /* @__PURE__ */ g(G, {
+				className: "space-y-4",
+				children: [(o.data?.items ?? []).map((t) => /* @__PURE__ */ g("div", {
+					className: "space-y-2 border-b py-3 last:border-0",
+					children: [/* @__PURE__ */ g("div", {
+						className: "flex flex-wrap items-center justify-between gap-2",
+						children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(_, {
+							className: "font-medium underline-offset-2 hover:underline",
+							to: `/pages/${t.id}`,
+							children: t.title || `#${t.id}`
+						}), /* @__PURE__ */ g("div", {
+							className: "text-muted-foreground text-xs",
+							children: [t.status, t.has_elementor ? ` · ${e("aiContent.hasElementor")}` : ""]
+						})] }), /* @__PURE__ */ g("div", {
+							className: "flex gap-2",
+							children: [t.elementor_url ? /* @__PURE__ */ h(V, {
+								size: "sm",
+								variant: "ghost",
+								asChild: !0,
+								children: /* @__PURE__ */ h("a", {
+									href: t.elementor_url,
+									target: "_blank",
+									rel: "noreferrer",
+									children: e("pages.actionElementor")
+								})
+							}) : null, /* @__PURE__ */ h(V, {
+								size: "sm",
+								variant: "outline",
+								disabled: s.isPending || !o.data?.elementor,
+								onClick: () => void s.mutateAsync(t),
+								children: e("aiContent.generate")
+							})]
+						})]
+					}), /* @__PURE__ */ h(Qr, {
+						rows: 2,
+						value: i[t.id] ?? t.page_prompt,
+						onChange: (e) => a((n) => ({
+							...n,
+							[t.id]: e.target.value
+						})),
+						placeholder: e("aiContent.pagePromptPlaceholder")
+					})]
+				}, t.id)), o.data?.items?.length ? null : /* @__PURE__ */ h("p", {
+					className: "text-sm text-muted-foreground",
+					children: e("aiContent.noPages")
+				})]
+			})] })
+		]
+	});
+}
+//#endregion
 //#region ../Modules/ai-content-module/client/pages/AiProductsPage.tsx
-function li() {
+function wi() {
 	let { t: e, i18n: t } = l(), n = f(), r = d({
 		queryKey: ["ai-content", "incomplete"],
-		queryFn: () => xr(80)
+		queryFn: () => Or(80)
 	});
-	Z(r);
+	Y(r);
 	let i = d({
 		queryKey: ["ai-content", "cost-estimate"],
-		queryFn: () => dr()
+		queryFn: () => pr()
 	});
-	Z(i);
+	Y(i);
 	let a = u({
-		mutationFn: () => Sr(),
+		mutationFn: () => kr(),
 		onSuccess: (t) => {
 			p.success(e("aiContent.batchQueued", { count: t.count })), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), o = u({
-		mutationFn: (e) => br({
+		mutationFn: (e) => Sr({
 			type: "product",
 			id: e,
 			sync: !1
@@ -4313,13 +4534,13 @@ function li() {
 			}
 			p.success(e("aiContent.jobQueued")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), s = r.data?.items?.length ?? 0, c = i.data?.entities.product?.cost_toman.mid ?? 0;
 	return /* @__PURE__ */ g("div", {
 		className: "space-y-4",
 		children: [/* @__PURE__ */ g("div", {
 			className: "flex flex-wrap items-center gap-2",
-			children: [/* @__PURE__ */ h(H, {
+			children: [/* @__PURE__ */ h(V, {
 				size: "sm",
 				onClick: () => void a.mutateAsync(),
 				disabled: a.isPending,
@@ -4329,20 +4550,20 @@ function li() {
 				children: [
 					e("aiContent.costBatchHint", { count: s }),
 					" ",
-					/* @__PURE__ */ h($, {
+					/* @__PURE__ */ h(Q, {
 						amount: c,
 						locale: t.language
 					}),
 					" × ",
 					s,
 					" ≈ ",
-					/* @__PURE__ */ h($, {
+					/* @__PURE__ */ h(Q, {
 						amount: c * s,
 						locale: t.language
 					})
 				]
 			}) : null]
-		}), /* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.incompleteTitle") }) }), /* @__PURE__ */ g(K, {
+		}), /* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.incompleteTitle") }) }), /* @__PURE__ */ g(G, {
 			className: "space-y-2",
 			children: [(r.data?.items ?? []).map((t) => /* @__PURE__ */ g("div", {
 				className: "flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm last:border-0",
@@ -4353,7 +4574,7 @@ function li() {
 				}), /* @__PURE__ */ h("div", {
 					className: "text-muted-foreground",
 					children: t.missing.join(", ")
-				})] }), /* @__PURE__ */ h(H, {
+				})] }), /* @__PURE__ */ h(V, {
 					size: "sm",
 					variant: "outline",
 					disabled: o.isPending,
@@ -4369,28 +4590,28 @@ function li() {
 }
 //#endregion
 //#region src/components/ui/switch.tsx
-function ui({ className: e, size: t = "default", ...n }) {
+function $({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ h(at, {
 		"data-slot": "switch",
 		"data-size": t,
-		className: V("peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80", e),
+		className: B("peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80", e),
 		...n,
 		dir: "ltr",
 		children: /* @__PURE__ */ h(ot, {
 			"data-slot": "switch-thumb",
-			className: V("pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground")
+			className: B("pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground")
 		})
 	});
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/components/AiCostCard.tsx
-var di = [
+var Ti = [
 	"gpt-5.6-luna",
 	"gpt-5.6-terra",
 	"gpt-5.6-sol"
 ];
-function fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i }) {
-	let { t: a, i18n: o } = l(), s = o.language, c = e?.models ?? [], u = (t.gapgpt_model || e?.current.model || "").toLowerCase(), d = c.filter((e) => di.includes(e.id) || e.id === u || e.selected), f = c.filter((e) => !d.some((t) => t.id === e.id)), p = e?.entities.product, m = e?.entities.product_brand, _ = e?.entities.product_cat, v = e?.entities.blog;
+function Ei({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i }) {
+	let { t: a, i18n: o } = l(), s = o.language, c = e?.models ?? [], u = (t.gapgpt_model || e?.current.model || "").toLowerCase(), d = c.filter((e) => Ti.includes(e.id) || e.id === u || e.selected), f = c.filter((e) => !d.some((t) => t.id === e.id)), p = e?.entities.product, m = e?.entities.product_brand, _ = e?.entities.product_cat, v = e?.entities.blog;
 	return /* @__PURE__ */ g("div", {
 		className: "space-y-4",
 		children: [
@@ -4405,28 +4626,28 @@ function fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 			p ? /* @__PURE__ */ g("div", {
 				className: "grid gap-2 sm:grid-cols-2 lg:grid-cols-4",
 				children: [
-					/* @__PURE__ */ h(pi, {
+					/* @__PURE__ */ h(Di, {
 						locale: s,
 						label: a("aiContent.settingsProduct"),
 						mid: p.cost_toman.mid,
 						hi: p.cost_toman.hi,
 						source: p.source
 					}),
-					/* @__PURE__ */ h(pi, {
+					/* @__PURE__ */ h(Di, {
 						locale: s,
 						label: a("aiContent.settingsBrand"),
 						mid: m?.cost_toman.mid ?? 0,
 						hi: m?.cost_toman.hi ?? 0,
 						source: m?.source ?? ""
 					}),
-					/* @__PURE__ */ h(pi, {
+					/* @__PURE__ */ h(Di, {
 						locale: s,
 						label: a("aiContent.settingsProductCat"),
 						mid: _?.cost_toman.mid ?? 0,
 						hi: _?.cost_toman.hi ?? 0,
 						source: _?.source ?? ""
 					}),
-					/* @__PURE__ */ h(pi, {
+					/* @__PURE__ */ h(Di, {
 						locale: s,
 						label: a("aiContent.settingsBlog"),
 						mid: v?.cost_toman.mid ?? 0,
@@ -4471,7 +4692,7 @@ function fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 								children: a("aiContent.settingsBlog")
 							})
 						] })
-					}), /* @__PURE__ */ h("tbody", { children: d.map((e) => /* @__PURE__ */ h(mi, {
+					}), /* @__PURE__ */ h("tbody", { children: d.map((e) => /* @__PURE__ */ h(Oi, {
 						model: e,
 						selected: e.id === u,
 						locale: s,
@@ -4488,7 +4709,7 @@ function fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 					className: "mt-3 overflow-x-auto",
 					children: /* @__PURE__ */ h("table", {
 						className: "w-full min-w-[720px] text-sm",
-						children: /* @__PURE__ */ h("tbody", { children: f.slice(0, 20).map((e) => /* @__PURE__ */ h(mi, {
+						children: /* @__PURE__ */ h("tbody", { children: f.slice(0, 20).map((e) => /* @__PURE__ */ h(Oi, {
 							model: e,
 							selected: e.id === u,
 							locale: s,
@@ -4523,8 +4744,8 @@ function fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 						children: /* @__PURE__ */ g("div", {
 							className: "space-y-1",
 							children: [
-								/* @__PURE__ */ h(Q, { children: a("aiContent.costUsdToToman") }),
-								/* @__PURE__ */ h(q, {
+								/* @__PURE__ */ h(X, { children: a("aiContent.costUsdToToman") }),
+								/* @__PURE__ */ h(K, {
 									type: "number",
 									min: 1e3,
 									value: t.usd_to_toman ?? e?.usd_to_toman ?? 1e5,
@@ -4548,7 +4769,7 @@ function fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 										className: "truncate font-medium",
 										children: e.id
 									}),
-									/* @__PURE__ */ h(q, {
+									/* @__PURE__ */ h(K, {
 										className: "w-28",
 										type: "number",
 										min: 0,
@@ -4556,7 +4777,7 @@ function fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 										onChange: (t) => i(e.id, "in_per_1m", Number(t.target.value)),
 										"aria-label": a("aiContent.costIn")
 									}),
-									/* @__PURE__ */ h(q, {
+									/* @__PURE__ */ h(K, {
 										className: "w-28",
 										type: "number",
 										min: 0,
@@ -4573,7 +4794,7 @@ function fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 		]
 	});
 }
-function pi({ label: e, mid: t, hi: n, locale: r, source: i }) {
+function Di({ label: e, mid: t, hi: n, locale: r, source: i }) {
 	let { t: a } = l();
 	return /* @__PURE__ */ g("div", {
 		className: "rounded-lg border p-3",
@@ -4584,7 +4805,7 @@ function pi({ label: e, mid: t, hi: n, locale: r, source: i }) {
 			}),
 			/* @__PURE__ */ h("div", {
 				className: "mt-1 text-lg font-semibold",
-				children: /* @__PURE__ */ h($, {
+				children: /* @__PURE__ */ h(Q, {
 					amount: t,
 					locale: r
 				})
@@ -4594,7 +4815,7 @@ function pi({ label: e, mid: t, hi: n, locale: r, source: i }) {
 				children: [
 					a("aiContent.costUpTo"),
 					" ",
-					/* @__PURE__ */ h($, {
+					/* @__PURE__ */ h(Q, {
 						amount: n,
 						locale: r
 					}),
@@ -4604,7 +4825,7 @@ function pi({ label: e, mid: t, hi: n, locale: r, source: i }) {
 		]
 	});
 }
-function mi({ model: e, selected: t, locale: n, onPick: r }) {
+function Oi({ model: e, selected: t, locale: n, onPick: r }) {
 	return /* @__PURE__ */ g("tr", {
 		className: `cursor-pointer border-t hover:bg-muted/50 ${t ? "bg-primary/10" : ""}`,
 		onClick: () => r(e.id),
@@ -4615,42 +4836,42 @@ function mi({ model: e, selected: t, locale: n, onPick: r }) {
 			}),
 			/* @__PURE__ */ h("td", {
 				className: "px-3 py-2",
-				children: /* @__PURE__ */ h($, {
+				children: /* @__PURE__ */ h(Q, {
 					amount: e.in_per_1m,
 					locale: n
 				})
 			}),
 			/* @__PURE__ */ h("td", {
 				className: "px-3 py-2",
-				children: /* @__PURE__ */ h($, {
+				children: /* @__PURE__ */ h(Q, {
 					amount: e.out_per_1m,
 					locale: n
 				})
 			}),
 			/* @__PURE__ */ h("td", {
 				className: "px-3 py-2",
-				children: /* @__PURE__ */ h($, {
+				children: /* @__PURE__ */ h(Q, {
 					amount: e.costs.product ?? 0,
 					locale: n
 				})
 			}),
 			/* @__PURE__ */ h("td", {
 				className: "px-3 py-2",
-				children: /* @__PURE__ */ h($, {
+				children: /* @__PURE__ */ h(Q, {
 					amount: e.costs.product_brand ?? 0,
 					locale: n
 				})
 			}),
 			/* @__PURE__ */ h("td", {
 				className: "px-3 py-2",
-				children: /* @__PURE__ */ h($, {
+				children: /* @__PURE__ */ h(Q, {
 					amount: e.costs.product_cat ?? 0,
 					locale: n
 				})
 			}),
 			/* @__PURE__ */ h("td", {
 				className: "px-3 py-2",
-				children: /* @__PURE__ */ h($, {
+				children: /* @__PURE__ */ h(Q, {
 					amount: e.costs.blog ?? 0,
 					locale: n
 				})
@@ -4660,7 +4881,7 @@ function mi({ model: e, selected: t, locale: n, onPick: r }) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiSettingsPage.tsx
-var hi = [
+var ki = [
 	{
 		id: "product",
 		doKey: "do_product",
@@ -4737,8 +4958,22 @@ var hi = [
 		titleKey: "aiContent.settingsBlogCat",
 		navKey: "aiContent.settingsBlogCat",
 		fields: ["description", "seo"]
+	},
+	{
+		id: "page",
+		doKey: "do_page",
+		promptKey: "prompt_page",
+		titleKey: "aiContent.settingsPageEntity",
+		navKey: "aiContent.settingsPageEntity",
+		fields: [
+			"title",
+			"slug",
+			"excerpt",
+			"content",
+			"seo"
+		]
 	}
-], gi = [
+], Ai = [
 	"professional",
 	"friendly",
 	"expert",
@@ -4748,7 +4983,7 @@ var hi = [
 	"luxury",
 	"casual",
 	"enthusiastic"
-], _i = {
+], ji = {
 	short_description: ["paragraphs", "words"],
 	description: ["words", "paragraphs"],
 	ai_review_summary: ["words", "paragraphs"],
@@ -4757,18 +4992,18 @@ var hi = [
 	excerpt: ["paragraphs", "words"],
 	content: ["words", "paragraphs"]
 };
-function vi() {
+function Mi() {
 	let { t: e } = l(), t = f(), [n, r] = c(null), i = d({
 		queryKey: ["ai-content", "settings"],
-		queryFn: lr
+		queryFn: dr
 	});
-	Z(i);
-	let s = !!i.data?.has_gapgpt_key, m = d({
+	Y(i);
+	let s = !!i.data?.has_gapgpt_key, _ = d({
 		queryKey: ["ai-content", "gapgpt-models"],
-		queryFn: () => fr(!1),
+		queryFn: () => mr(!1),
 		enabled: s
 	});
-	Z(m), a(() => {
+	Y(_), a(() => {
 		i.data && r({
 			...i.data,
 			grok_api_key: "",
@@ -4777,8 +5012,8 @@ function vi() {
 			gapgpt_api_key: ""
 		});
 	}, [i.data]);
-	let _ = u({
-		mutationFn: () => ur(n ?? {}),
+	let v = u({
+		mutationFn: () => fr(n ?? {}),
 		onSuccess: async (n) => {
 			p.success(e("common.saved")), r({
 				...n,
@@ -4788,17 +5023,17 @@ function vi() {
 				gapgpt_api_key: ""
 			}), await t.invalidateQueries({ queryKey: ["ai-content", "settings"] }), await t.invalidateQueries({ queryKey: ["ai-content", "gapgpt-models"] });
 		},
-		onError: (t) => X(e, t)
-	}), v = u({
-		mutationFn: () => fr(!0),
+		onError: (t) => J(e, t)
+	}), y = u({
+		mutationFn: () => mr(!0),
 		onSuccess: (n) => {
 			t.setQueryData(["ai-content", "gapgpt-models"], n), p.success(e("aiContent.gapgptRefreshModels"));
 		},
-		onError: (t) => X(e, t)
-	}), y = o(() => {
-		let e = (m.data?.models ?? []).map((e) => e.id).filter(Boolean), t = (n?.gapgpt_model || "").trim();
+		onError: (t) => J(e, t)
+	}), b = o(() => {
+		let e = (_.data?.models ?? []).map((e) => e.id).filter(Boolean), t = (n?.gapgpt_model || "").trim();
 		return t && !e.includes(t) && e.unshift(t), e;
-	}, [m.data, n?.gapgpt_model]), b = d({
+	}, [_.data, n?.gapgpt_model]), x = d({
 		queryKey: [
 			"ai-content",
 			"cost-estimate",
@@ -4810,7 +5045,7 @@ function vi() {
 			n?.do_coffee,
 			n?.language
 		],
-		queryFn: () => dr({
+		queryFn: () => pr({
 			gapgpt_model: n?.gapgpt_model,
 			default_provider: n?.default_provider,
 			usd_to_toman: n?.usd_to_toman,
@@ -4822,8 +5057,34 @@ function vi() {
 		}),
 		enabled: !!n
 	});
-	Z(b);
-	let x = o(() => hi.filter((e) => e.id !== "coffee" || !!n?.coffee_module), [n?.coffee_module]), S = o(() => [
+	Y(x);
+	let S = d({
+		queryKey: ["ai-content", "design-memory"],
+		queryFn: Cr
+	});
+	Y(S);
+	let C = u({
+		mutationFn: Tr,
+		onSuccess: (n) => {
+			t.setQueryData(["ai-content", "design-memory"], n), p.success(e("aiContent.designExtracted"));
+		},
+		onError: (t) => J(e, t)
+	}), w = u({
+		mutationFn: Er,
+		onSuccess: (n) => {
+			t.setQueryData(["ai-content", "design-memory"], n), p.success(e("aiContent.designReset"));
+		},
+		onError: (t) => J(e, t)
+	}), T = u({
+		mutationFn: () => wr({
+			locked: !1,
+			force: !0
+		}),
+		onSuccess: (n) => {
+			t.setQueryData(["ai-content", "design-memory"], n), p.success(e("common.saved"));
+		},
+		onError: (t) => J(e, t)
+	}), E = o(() => ki.filter((e) => e.id !== "coffee" || !!n?.coffee_module), [n?.coffee_module]), D = o(() => [
 		{
 			id: "providers",
 			label: e("aiContent.settingsProviders")
@@ -4837,6 +5098,10 @@ function vi() {
 			label: e("aiContent.settingsProfile")
 		},
 		{
+			id: "design",
+			label: e("aiContent.settingsDesign")
+		},
+		{
 			id: "tones",
 			label: e("aiContent.settingsTones")
 		},
@@ -4844,7 +5109,7 @@ function vi() {
 			id: "system",
 			label: e("aiContent.settingsSystemPrompt")
 		},
-		...x.map((t) => ({
+		...E.map((t) => ({
 			id: t.id,
 			label: e(t.navKey)
 		})),
@@ -4852,17 +5117,17 @@ function vi() {
 			id: "automation",
 			label: e("aiContent.settingsAutomation")
 		}
-	], [x, e]);
+	], [E, e]);
 	if (!n) return /* @__PURE__ */ h("div", {
 		className: "text-sm text-muted-foreground",
 		children: e("common.loading")
 	});
-	let C = (e, t) => {
+	let O = (e, t) => {
 		r((n) => ({
 			...n ?? {},
 			[e]: t
 		}));
-	}, w = (e, t, n) => {
+	}, ee = (e, t, n) => {
 		r((r) => {
 			let i = { ...r?.fields ?? {} }, a = i[e]?.[t] ?? {
 				enabled: !0,
@@ -4893,23 +5158,23 @@ function vi() {
 			})] }),
 			/* @__PURE__ */ h("nav", {
 				className: "bg-background/95 sticky top-0 z-20 -mx-1 flex flex-wrap gap-1 border-b py-2 backdrop-blur",
-				children: S.map((e) => /* @__PURE__ */ h("a", {
+				children: D.map((e) => /* @__PURE__ */ h("a", {
 					href: `#ai-sec-${e.id}`,
 					className: "hover:bg-muted rounded-md px-2.5 py-1.5 text-xs font-medium",
 					children: e.label
 				}, e.id))
 			}),
-			/* @__PURE__ */ g(U, {
+			/* @__PURE__ */ g(H, {
 				id: "ai-sec-providers",
-				children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.settingsProviders") }) }), /* @__PURE__ */ g(K, {
+				children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsProviders") }) }), /* @__PURE__ */ g(G, {
 					className: "grid gap-3 md:grid-cols-2",
 					children: [
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.defaultProvider") }), /* @__PURE__ */ g("select", {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.defaultProvider") }), /* @__PURE__ */ g("select", {
 								className: "flex h-9 w-full rounded-md border bg-background px-3 text-sm",
 								value: n.default_provider ?? "grok",
-								onChange: (e) => C("default_provider", e.target.value),
+								onChange: (e) => O("default_provider", e.target.value),
 								children: [
 									/* @__PURE__ */ h("option", {
 										value: "grok",
@@ -4932,92 +5197,92 @@ function vi() {
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ g(Q, { children: ["Grok API key ", n.has_grok_key ? `(${n.grok_api_key_masked})` : ""] }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ g(X, { children: ["Grok API key ", n.has_grok_key ? `(${n.grok_api_key_masked})` : ""] }), /* @__PURE__ */ h(K, {
 								type: "password",
 								value: n.grok_api_key ?? "",
-								onChange: (e) => C("grok_api_key", e.target.value),
+								onChange: (e) => O("grok_api_key", e.target.value),
 								placeholder: e("aiContent.leaveBlankKeep")
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ g(Q, { children: ["Gemini API key ", n.has_gemini_key ? `(${n.gemini_api_key_masked})` : ""] }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ g(X, { children: ["Gemini API key ", n.has_gemini_key ? `(${n.gemini_api_key_masked})` : ""] }), /* @__PURE__ */ h(K, {
 								type: "password",
 								value: n.gemini_api_key ?? "",
-								onChange: (e) => C("gemini_api_key", e.target.value),
+								onChange: (e) => O("gemini_api_key", e.target.value),
 								placeholder: e("aiContent.leaveBlankKeep")
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ g(Q, { children: ["OpenAI API key ", n.has_openai_key ? `(${n.openai_api_key_masked})` : ""] }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ g(X, { children: ["OpenAI API key ", n.has_openai_key ? `(${n.openai_api_key_masked})` : ""] }), /* @__PURE__ */ h(K, {
 								type: "password",
 								value: n.openai_api_key ?? "",
-								onChange: (e) => C("openai_api_key", e.target.value),
+								onChange: (e) => O("openai_api_key", e.target.value),
 								placeholder: e("aiContent.leaveBlankKeep")
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ g(Q, { children: [
+							children: [/* @__PURE__ */ g(X, { children: [
 								e("aiContent.gapgptKey"),
 								" ",
 								n.has_gapgpt_key ? `(${n.gapgpt_api_key_masked})` : ""
-							] }), /* @__PURE__ */ h(q, {
+							] }), /* @__PURE__ */ h(K, {
 								type: "password",
 								value: n.gapgpt_api_key ?? "",
-								onChange: (e) => C("gapgpt_api_key", e.target.value),
+								onChange: (e) => O("gapgpt_api_key", e.target.value),
 								placeholder: e("aiContent.leaveBlankKeep")
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: "Grok model" }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: "Grok model" }), /* @__PURE__ */ h(K, {
 								value: n.grok_model ?? "",
-								onChange: (e) => C("grok_model", e.target.value)
+								onChange: (e) => O("grok_model", e.target.value)
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: "Gemini model" }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: "Gemini model" }), /* @__PURE__ */ h(K, {
 								value: n.gemini_model ?? "",
-								onChange: (e) => C("gemini_model", e.target.value)
+								onChange: (e) => O("gemini_model", e.target.value)
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: "OpenAI model" }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: "OpenAI model" }), /* @__PURE__ */ h(K, {
 								value: n.openai_model ?? "",
-								onChange: (e) => C("openai_model", e.target.value)
+								onChange: (e) => O("openai_model", e.target.value)
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
 							children: [
-								/* @__PURE__ */ h(Q, { children: e("aiContent.gapgptModel") }),
+								/* @__PURE__ */ h(X, { children: e("aiContent.gapgptModel") }),
 								/* @__PURE__ */ g("div", {
 									className: "flex flex-col gap-2 sm:flex-row",
 									children: [/* @__PURE__ */ h("select", {
 										className: "flex h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-60",
 										value: n.gapgpt_model ?? "",
-										disabled: !s || m.isLoading,
-										onChange: (e) => C("gapgpt_model", e.target.value),
-										children: y.length === 0 ? /* @__PURE__ */ h("option", {
+										disabled: !s || _.isLoading,
+										onChange: (e) => O("gapgpt_model", e.target.value),
+										children: b.length === 0 ? /* @__PURE__ */ h("option", {
 											value: n.gapgpt_model ?? "",
 											children: n.gapgpt_model || "—"
-										}) : y.map((e) => /* @__PURE__ */ h("option", {
+										}) : b.map((e) => /* @__PURE__ */ h("option", {
 											value: e,
 											children: e
 										}, e))
-									}), /* @__PURE__ */ h(H, {
+									}), /* @__PURE__ */ h(V, {
 										type: "button",
 										variant: "outline",
-										disabled: !s || v.isPending || m.isFetching,
-										onClick: () => void v.mutateAsync(),
+										disabled: !s || y.isPending || _.isFetching,
+										onClick: () => void y.mutateAsync(),
 										children: e("aiContent.gapgptRefreshModels")
 									})]
 								}),
-								s ? m.isFetched && y.length === 0 ? /* @__PURE__ */ h("p", {
+								s ? _.isFetched && b.length === 0 ? /* @__PURE__ */ h("p", {
 									className: "text-muted-foreground text-xs",
 									children: e("aiContent.gapgptNoModels")
 								}) : null : /* @__PURE__ */ h("p", {
@@ -5029,21 +5294,21 @@ function vi() {
 					]
 				})]
 			}),
-			/* @__PURE__ */ g(U, {
+			/* @__PURE__ */ g(H, {
 				id: "ai-sec-cost",
-				children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.settingsCost") }) }), /* @__PURE__ */ h(K, { children: /* @__PURE__ */ h(fi, {
-					estimate: b.data,
+				children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsCost") }) }), /* @__PURE__ */ h(G, { children: /* @__PURE__ */ h(Ei, {
+					estimate: x.data,
 					draft: n,
 					onPickModel: (e) => {
-						C("gapgpt_model", e), C("default_provider", "gapgpt");
+						O("gapgpt_model", e), O("default_provider", "gapgpt");
 					},
-					onUsdToToman: (e) => C("usd_to_toman", e),
+					onUsdToToman: (e) => O("usd_to_toman", e),
 					onRate: (e, t, r) => {
 						let i = n.gapgpt_rates ?? {}, a = i[e] ?? {
-							in_per_1m: b.data?.models.find((t) => t.id === e)?.in_per_1m ?? 0,
-							out_per_1m: b.data?.models.find((t) => t.id === e)?.out_per_1m ?? 0
+							in_per_1m: x.data?.models.find((t) => t.id === e)?.in_per_1m ?? 0,
+							out_per_1m: x.data?.models.find((t) => t.id === e)?.out_per_1m ?? 0
 						};
-						C("gapgpt_rates", {
+						O("gapgpt_rates", {
 							...i,
 							[e]: {
 								...a,
@@ -5053,32 +5318,41 @@ function vi() {
 					}
 				}) })]
 			}),
-			/* @__PURE__ */ g(U, {
+			/* @__PURE__ */ g(H, {
 				id: "ai-sec-site",
-				children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.settingsProfile") }) }), /* @__PURE__ */ g(K, {
+				children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsProfile") }) }), /* @__PURE__ */ g(G, {
 					className: "grid gap-3 md:grid-cols-2",
 					children: [
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.siteName") }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.siteName") }), /* @__PURE__ */ h(K, {
 								value: n.site_name ?? "",
-								onChange: (e) => C("site_name", e.target.value)
+								onChange: (e) => O("site_name", e.target.value)
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.siteTopic") }), /* @__PURE__ */ h(Br, {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.siteTopic") }), /* @__PURE__ */ h(Qr, {
 								rows: 2,
 								value: n.site_topic ?? "",
-								onChange: (e) => C("site_topic", e.target.value)
+								onChange: (e) => O("site_topic", e.target.value)
+							})]
+						}),
+						/* @__PURE__ */ g("div", {
+							className: "space-y-1 md:col-span-2",
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.siteDescription") }), /* @__PURE__ */ h(Qr, {
+								rows: 4,
+								value: n.site_description ?? "",
+								onChange: (e) => O("site_description", e.target.value),
+								placeholder: e("aiContent.siteDescriptionHint")
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.language") }), /* @__PURE__ */ g("select", {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.language") }), /* @__PURE__ */ g("select", {
 								className: "flex h-9 w-full rounded-md border bg-background px-3 text-sm",
 								value: n.language ?? "fa",
-								onChange: (e) => C("language", e.target.value),
+								onChange: (e) => O("language", e.target.value),
 								children: [/* @__PURE__ */ h("option", {
 									value: "fa",
 									children: e("aiContent.lang.fa")
@@ -5093,7 +5367,7 @@ function vi() {
 							children: [
 								/* @__PURE__ */ g("div", {
 									className: "flex items-center justify-between",
-									children: [/* @__PURE__ */ h(Q, { children: e("aiContent.temperature") }), /* @__PURE__ */ h("span", {
+									children: [/* @__PURE__ */ h(X, { children: e("aiContent.temperature") }), /* @__PURE__ */ h("span", {
 										className: "text-muted-foreground text-sm tabular-nums",
 										children: Number(n.temperature ?? .55).toFixed(2)
 									})]
@@ -5104,7 +5378,7 @@ function vi() {
 									max: 2,
 									step: .05,
 									value: n.temperature ?? .55,
-									onChange: (e) => C("temperature", Number(e.target.value)),
+									onChange: (e) => O("temperature", Number(e.target.value)),
 									className: "w-full accent-primary"
 								}),
 								/* @__PURE__ */ h("p", {
@@ -5116,12 +5390,12 @@ function vi() {
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
 							children: [
-								/* @__PURE__ */ h(Q, { children: e("aiContent.maxTokens") }),
-								/* @__PURE__ */ h(q, {
+								/* @__PURE__ */ h(X, { children: e("aiContent.maxTokens") }),
+								/* @__PURE__ */ h(K, {
 									type: "number",
 									min: 0,
 									value: n.max_tokens ?? 0,
-									onChange: (e) => C("max_tokens", Number(e.target.value))
+									onChange: (e) => O("max_tokens", Number(e.target.value))
 								}),
 								/* @__PURE__ */ h("p", {
 									className: "text-muted-foreground text-xs",
@@ -5131,94 +5405,184 @@ function vi() {
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.seoSep") }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.seoSep") }), /* @__PURE__ */ h(K, {
 								value: n.seo_sep ?? " - ",
-								onChange: (e) => C("seo_sep", e.target.value)
+								onChange: (e) => O("seo_sep", e.target.value)
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "flex items-center gap-2 pt-6",
-							children: [/* @__PURE__ */ h(Vn, {
+							children: [/* @__PURE__ */ h(Hn, {
 								checked: !!n.require_site_name,
-								onCheckedChange: (e) => C("require_site_name", !!e),
+								onCheckedChange: (e) => O("require_site_name", !!e),
 								id: "require_site_name"
-							}), /* @__PURE__ */ h(Q, {
+							}), /* @__PURE__ */ h(X, {
 								htmlFor: "require_site_name",
 								children: e("aiContent.requireSiteName")
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2",
-							children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(Q, {
+							children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(X, {
 								htmlFor: "web_research",
 								children: e("aiContent.webResearch")
 							}), /* @__PURE__ */ h("p", {
 								className: "text-muted-foreground text-xs",
 								children: e("aiContent.webResearchHint")
-							})] }), /* @__PURE__ */ h(ui, {
+							})] }), /* @__PURE__ */ h($, {
 								id: "web_research",
 								checked: n.web_research !== !1,
-								onCheckedChange: (e) => C("web_research", !!e)
+								onCheckedChange: (e) => O("web_research", !!e)
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2",
-							children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(Q, {
+							children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(X, {
 								htmlFor: "review_emojis",
 								children: e("aiContent.reviewEmojis")
 							}), /* @__PURE__ */ h("p", {
 								className: "text-muted-foreground text-xs",
 								children: e("aiContent.reviewEmojisHint")
-							})] }), /* @__PURE__ */ h(ui, {
+							})] }), /* @__PURE__ */ h($, {
 								id: "review_emojis",
 								checked: !!n.review_emojis,
-								onCheckedChange: (e) => C("review_emojis", !!e)
+								onCheckedChange: (e) => O("review_emojis", !!e)
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.internalLinksMin") }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.internalLinksMin") }), /* @__PURE__ */ h(K, {
 								type: "number",
 								min: 0,
 								value: n.internal_links_min ?? 2,
-								onChange: (e) => C("internal_links_min", Number(e.target.value))
+								onChange: (e) => O("internal_links_min", Number(e.target.value))
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.internalLinksMax") }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.internalLinksMax") }), /* @__PURE__ */ h(K, {
 								type: "number",
 								min: 0,
 								value: n.internal_links_max ?? 4,
-								onChange: (e) => C("internal_links_max", Number(e.target.value))
+								onChange: (e) => O("internal_links_max", Number(e.target.value))
 							})]
 						})
 					]
 				})]
 			}),
-			/* @__PURE__ */ g(U, {
+			/* @__PURE__ */ g(H, {
+				id: "ai-sec-design",
+				children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsDesign") }) }), /* @__PURE__ */ g(G, {
+					className: "space-y-4",
+					children: [
+						/* @__PURE__ */ g("div", {
+							className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2",
+							children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(X, {
+								htmlFor: "palette_mode",
+								children: e("aiContent.paletteMode")
+							}), /* @__PURE__ */ h("p", {
+								className: "text-muted-foreground text-xs",
+								children: e("aiContent.paletteModeHint")
+							})] }), /* @__PURE__ */ g("select", {
+								id: "palette_mode",
+								className: "flex h-9 rounded-md border bg-background px-3 text-sm",
+								value: n.palette_mode ?? "site",
+								onChange: (e) => O("palette_mode", e.target.value),
+								children: [/* @__PURE__ */ h("option", {
+									value: "site",
+									children: e("aiContent.paletteModeSite")
+								}), /* @__PURE__ */ h("option", {
+									value: "suggest",
+									children: e("aiContent.paletteModeSuggest")
+								})]
+							})]
+						}),
+						/* @__PURE__ */ h("div", {
+							className: "flex flex-wrap gap-2",
+							children: S.data?.palette ? Object.entries(S.data.palette).map(([e, t]) => /* @__PURE__ */ g("div", {
+								className: "flex items-center gap-2 rounded-md border px-2 py-1 text-xs",
+								children: [
+									/* @__PURE__ */ h("span", {
+										className: "inline-block size-4 rounded-sm border",
+										style: { background: t }
+									}),
+									/* @__PURE__ */ h("span", {
+										className: "text-muted-foreground",
+										children: e
+									}),
+									/* @__PURE__ */ h("span", {
+										className: "font-mono",
+										children: t
+									})
+								]
+							}, e)) : null
+						}),
+						/* @__PURE__ */ g("p", {
+							className: "text-muted-foreground text-xs",
+							children: [
+								e("aiContent.designSource"),
+								": ",
+								S.data?.source || "—",
+								" ·",
+								" ",
+								S.data?.locked ? e("aiContent.designLocked") : e("aiContent.designUnlocked")
+							]
+						}),
+						/* @__PURE__ */ g("div", {
+							className: "flex flex-wrap gap-2",
+							children: [
+								/* @__PURE__ */ h(V, {
+									type: "button",
+									size: "sm",
+									variant: "outline",
+									disabled: C.isPending,
+									onClick: () => void C.mutateAsync(),
+									children: e("aiContent.extractKit")
+								}),
+								/* @__PURE__ */ h(V, {
+									type: "button",
+									size: "sm",
+									variant: "outline",
+									disabled: T.isPending,
+									onClick: () => void T.mutateAsync(),
+									children: e("aiContent.unlockDesign")
+								}),
+								/* @__PURE__ */ h(V, {
+									type: "button",
+									size: "sm",
+									variant: "ghost",
+									disabled: w.isPending,
+									onClick: () => void w.mutateAsync(),
+									children: e("aiContent.resetDesign")
+								})
+							]
+						})
+					]
+				})]
+			}),
+			/* @__PURE__ */ g(H, {
 				id: "ai-sec-tones",
-				children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.settingsTones") }) }), /* @__PURE__ */ g(K, {
+				children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsTones") }) }), /* @__PURE__ */ g(G, {
 					className: "space-y-2",
 					children: [/* @__PURE__ */ h("p", {
 						className: "text-muted-foreground text-sm",
 						children: e("aiContent.settingsTonesHint")
 					}), /* @__PURE__ */ h("div", {
 						className: "grid gap-2 sm:grid-cols-2",
-						children: gi.map((t) => {
-							let r = n.tones ?? {}, i = !!r[t], a = gi.filter((e) => !!r[e]).length;
+						children: Ai.map((t) => {
+							let r = n.tones ?? {}, i = !!r[t], a = Ai.filter((e) => !!r[e]).length;
 							return /* @__PURE__ */ g("div", {
 								className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2",
-								children: [/* @__PURE__ */ h(Q, {
+								children: [/* @__PURE__ */ h(X, {
 									htmlFor: `tone-${t}`,
 									className: "text-sm font-normal",
 									children: e(`aiContent.tone.${t}`)
-								}), /* @__PURE__ */ h(ui, {
+								}), /* @__PURE__ */ h($, {
 									id: `tone-${t}`,
 									checked: i,
 									onCheckedChange: (e) => {
 										let n = !!e;
-										!n && a <= 1 || C("tones", {
+										!n && a <= 1 || O("tones", {
 											...r,
 											[t]: n
 										});
@@ -5229,156 +5593,240 @@ function vi() {
 					})]
 				})]
 			}),
-			/* @__PURE__ */ g(U, {
+			/* @__PURE__ */ g(H, {
 				id: "ai-sec-system",
-				children: [/* @__PURE__ */ g(W, {
+				children: [/* @__PURE__ */ g(U, {
 					className: "flex flex-row items-center justify-between space-y-0",
-					children: [/* @__PURE__ */ h(G, { children: e("aiContent.settingsSystemPrompt") }), /* @__PURE__ */ h(H, {
+					children: [/* @__PURE__ */ h(W, { children: e("aiContent.settingsSystemPrompt") }), /* @__PURE__ */ h(V, {
 						type: "button",
 						size: "sm",
 						variant: "outline",
-						onClick: () => C("prompt_system", n.prompt_defaults?.prompt_system ?? ""),
+						onClick: () => O("prompt_system", n.prompt_defaults?.prompt_system ?? ""),
 						children: e("aiContent.resetPrompt")
 					})]
-				}), /* @__PURE__ */ h(K, { children: /* @__PURE__ */ g("details", {
+				}), /* @__PURE__ */ h(G, { children: /* @__PURE__ */ g("details", {
 					className: "rounded-lg border p-3",
 					open: !0,
 					children: [/* @__PURE__ */ h("summary", {
 						className: "cursor-pointer text-sm font-medium",
 						children: e("aiContent.entityPrompt")
-					}), /* @__PURE__ */ h(Br, {
+					}), /* @__PURE__ */ h(Qr, {
 						className: "mt-3",
 						rows: 10,
 						value: n.prompt_system ?? "",
-						onChange: (e) => C("prompt_system", e.target.value)
+						onChange: (e) => O("prompt_system", e.target.value)
 					})]
 				}) })]
 			}),
-			x.map((t) => {
+			E.map((t) => {
 				let r = !!n[t.doKey], i = String(n[t.promptKey] ?? "");
-				return /* @__PURE__ */ g(U, {
+				return /* @__PURE__ */ g(H, {
 					id: `ai-sec-${t.id}`,
-					children: [/* @__PURE__ */ g(W, {
+					children: [/* @__PURE__ */ g(U, {
 						className: "flex flex-row items-center justify-between space-y-0",
-						children: [/* @__PURE__ */ h(G, { children: e(t.titleKey) }), /* @__PURE__ */ g("div", {
+						children: [/* @__PURE__ */ h(W, { children: e(t.titleKey) }), /* @__PURE__ */ g("div", {
 							className: "flex items-center gap-2",
-							children: [/* @__PURE__ */ h(Q, {
+							children: [/* @__PURE__ */ h(X, {
 								htmlFor: `do-${t.id}`,
 								className: "text-sm font-normal",
 								children: e("aiContent.doEntity")
-							}), /* @__PURE__ */ h(ui, {
+							}), /* @__PURE__ */ h($, {
 								id: `do-${t.id}`,
 								checked: r,
-								onCheckedChange: (e) => C(t.doKey, !!e)
+								onCheckedChange: (e) => O(t.doKey, !!e)
 							})]
 						})]
-					}), /* @__PURE__ */ g(K, {
+					}), /* @__PURE__ */ g(G, {
 						className: "space-y-3",
-						children: [/* @__PURE__ */ g("details", {
-							className: "rounded-lg border p-3",
-							children: [
-								/* @__PURE__ */ h("summary", {
-									className: "flex cursor-pointer items-center justify-between text-sm font-medium",
-									children: /* @__PURE__ */ h("span", { children: e("aiContent.entityPrompt") })
-								}),
-								/* @__PURE__ */ h("div", {
-									className: "mt-2 flex justify-end",
-									children: /* @__PURE__ */ h(H, {
-										type: "button",
-										size: "sm",
-										variant: "ghost",
-										onClick: () => C(t.promptKey, n.prompt_defaults?.[String(t.promptKey)] ?? ""),
-										children: e("aiContent.resetPrompt")
-									})
-								}),
-								/* @__PURE__ */ h(Br, {
-									rows: 4,
-									disabled: !r,
-									value: i,
-									onChange: (e) => C(t.promptKey, e.target.value)
-								})
-							]
-						}), /* @__PURE__ */ g("div", {
-							className: "overflow-x-auto rounded-lg border",
-							children: [/* @__PURE__ */ g("div", {
-								className: "bg-muted/40 text-muted-foreground grid grid-cols-[auto_1fr_auto] gap-3 px-3 py-2 text-xs font-medium",
+						children: [
+							/* @__PURE__ */ g("details", {
+								className: "rounded-lg border p-3",
 								children: [
-									/* @__PURE__ */ h("span", { children: e("aiContent.doEntity") }),
-									/* @__PURE__ */ h("span", { children: e("aiContent.settingsFields") }),
-									/* @__PURE__ */ h("span", { children: e("aiContent.settingsLength") })
+									/* @__PURE__ */ h("summary", {
+										className: "flex cursor-pointer items-center justify-between text-sm font-medium",
+										children: /* @__PURE__ */ h("span", { children: e("aiContent.entityPrompt") })
+									}),
+									/* @__PURE__ */ h("div", {
+										className: "mt-2 flex justify-end",
+										children: /* @__PURE__ */ h(V, {
+											type: "button",
+											size: "sm",
+											variant: "ghost",
+											onClick: () => O(t.promptKey, n.prompt_defaults?.[String(t.promptKey)] ?? ""),
+											children: e("aiContent.resetPrompt")
+										})
+									}),
+									/* @__PURE__ */ h(Qr, {
+										rows: 4,
+										disabled: !r,
+										value: i,
+										onChange: (e) => O(t.promptKey, e.target.value)
+									})
 								]
-							}), t.fields.map((i) => {
-								let a = n.fields?.[t.id]?.[i] ?? {
-									enabled: !0,
-									length: 0,
-									unit: "words"
-								}, o = _i[i];
-								return /* @__PURE__ */ g("div", {
-									className: "grid grid-cols-[auto_1fr_auto] items-center gap-3 border-t px-3 py-2",
-									children: [
-										/* @__PURE__ */ h(ui, {
-											checked: !!a.enabled,
+							}),
+							t.id === "page" ? /* @__PURE__ */ g(m, { children: [/* @__PURE__ */ g("details", {
+								className: "rounded-lg border p-3",
+								children: [/* @__PURE__ */ h("summary", {
+									className: "cursor-pointer text-sm font-medium",
+									children: e("aiContent.pageSystemPrompt")
+								}), /* @__PURE__ */ h(Qr, {
+									className: "mt-3",
+									rows: 8,
+									disabled: !r,
+									value: n.prompt_page_system ?? "",
+									onChange: (e) => O("prompt_page_system", e.target.value)
+								})]
+							}), /* @__PURE__ */ g("div", {
+								className: "grid gap-3 md:grid-cols-2",
+								children: [
+									/* @__PURE__ */ g("div", {
+										className: "space-y-1",
+										children: [
+											/* @__PURE__ */ h(X, { children: e("aiContent.pageProvider") }),
+											/* @__PURE__ */ h("p", {
+												className: "text-muted-foreground text-xs",
+												children: e("aiContent.pageProviderHint")
+											}),
+											/* @__PURE__ */ g("select", {
+												className: "flex h-9 w-full rounded-md border bg-background px-3 text-sm",
+												disabled: !r,
+												value: n.page_provider ?? "",
+												onChange: (e) => O("page_provider", e.target.value),
+												children: [
+													/* @__PURE__ */ h("option", {
+														value: "",
+														children: e("aiContent.pageProviderDefault")
+													}),
+													/* @__PURE__ */ h("option", {
+														value: "grok",
+														children: "Grok"
+													}),
+													/* @__PURE__ */ h("option", {
+														value: "gemini",
+														children: "Gemini"
+													}),
+													/* @__PURE__ */ h("option", {
+														value: "openai",
+														children: "ChatGPT"
+													}),
+													/* @__PURE__ */ h("option", {
+														value: "gapgpt",
+														children: e("aiContent.gapgpt")
+													})
+												]
+											})
+										]
+									}),
+									/* @__PURE__ */ g("div", {
+										className: "space-y-1",
+										children: [
+											/* @__PURE__ */ h(X, { children: e("aiContent.pageModel") }),
+											/* @__PURE__ */ h("p", {
+												className: "text-muted-foreground text-xs",
+												children: e("aiContent.pageModelHint")
+											}),
+											/* @__PURE__ */ h(K, {
+												disabled: !r,
+												value: n.page_model ?? "",
+												onChange: (e) => O("page_model", e.target.value),
+												placeholder: e("aiContent.pageModelPlaceholder")
+											})
+										]
+									}),
+									/* @__PURE__ */ g("div", {
+										className: "space-y-1 md:col-span-2",
+										children: [/* @__PURE__ */ h(X, { children: e("aiContent.pageMaxTokens") }), /* @__PURE__ */ h(K, {
+											type: "number",
+											min: 0,
 											disabled: !r,
-											onCheckedChange: (e) => w(t.id, i, { enabled: !!e })
-										}),
-										/* @__PURE__ */ h("span", {
-											className: "text-sm",
-											children: e(`aiContent.field.${i}`)
-										}),
-										o ? /* @__PURE__ */ g("div", {
-											className: "flex items-center gap-2",
-											children: [/* @__PURE__ */ h(q, {
-												className: "w-20",
-												type: "number",
-												min: 0,
-												disabled: !r || !a.enabled,
-												value: a.length,
-												onChange: (e) => w(t.id, i, { length: Number(e.target.value) })
-											}), /* @__PURE__ */ h("select", {
-												className: "flex h-9 rounded-md border bg-background px-2 text-sm",
-												disabled: !r || !a.enabled,
-												value: a.unit,
-												onChange: (e) => w(t.id, i, { unit: e.target.value }),
-												children: o.map((t) => /* @__PURE__ */ h("option", {
-													value: t,
-													children: e(`aiContent.unit.${t}`)
-												}, t))
-											})]
-										}) : /* @__PURE__ */ h("span", {})
+											value: n.page_max_tokens ?? 64e3,
+											onChange: (e) => O("page_max_tokens", Number(e.target.value))
+										})]
+									})
+								]
+							})] }) : null,
+							/* @__PURE__ */ g("div", {
+								className: "overflow-x-auto rounded-lg border",
+								children: [/* @__PURE__ */ g("div", {
+									className: "bg-muted/40 text-muted-foreground grid grid-cols-[auto_1fr_auto] gap-3 px-3 py-2 text-xs font-medium",
+									children: [
+										/* @__PURE__ */ h("span", { children: e("aiContent.doEntity") }),
+										/* @__PURE__ */ h("span", { children: e("aiContent.settingsFields") }),
+										/* @__PURE__ */ h("span", { children: e("aiContent.settingsLength") })
 									]
-								}, i);
-							})]
-						})]
+								}), t.fields.map((i) => {
+									let a = n.fields?.[t.id]?.[i] ?? {
+										enabled: !0,
+										length: 0,
+										unit: "words"
+									}, o = ji[i];
+									return /* @__PURE__ */ g("div", {
+										className: "grid grid-cols-[auto_1fr_auto] items-center gap-3 border-t px-3 py-2",
+										children: [
+											/* @__PURE__ */ h($, {
+												checked: !!a.enabled,
+												disabled: !r,
+												onCheckedChange: (e) => ee(t.id, i, { enabled: !!e })
+											}),
+											/* @__PURE__ */ h("span", {
+												className: "text-sm",
+												children: e(`aiContent.field.${i}`)
+											}),
+											o ? /* @__PURE__ */ g("div", {
+												className: "flex items-center gap-2",
+												children: [/* @__PURE__ */ h(K, {
+													className: "w-20",
+													type: "number",
+													min: 0,
+													disabled: !r || !a.enabled,
+													value: a.length,
+													onChange: (e) => ee(t.id, i, { length: Number(e.target.value) })
+												}), /* @__PURE__ */ h("select", {
+													className: "flex h-9 rounded-md border bg-background px-2 text-sm",
+													disabled: !r || !a.enabled,
+													value: a.unit,
+													onChange: (e) => ee(t.id, i, { unit: e.target.value }),
+													children: o.map((t) => /* @__PURE__ */ h("option", {
+														value: t,
+														children: e(`aiContent.unit.${t}`)
+													}, t))
+												})]
+											}) : /* @__PURE__ */ h("span", {})
+										]
+									}, i);
+								})]
+							})
+						]
 					})]
 				}, t.id);
 			}),
-			/* @__PURE__ */ g(U, {
+			/* @__PURE__ */ g(H, {
 				id: "ai-sec-automation",
-				children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.settingsAutomation") }) }), /* @__PURE__ */ g(K, {
+				children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsAutomation") }) }), /* @__PURE__ */ g(G, {
 					className: "grid gap-3 md:grid-cols-2",
 					children: [
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.dailyBlogQuota") }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.dailyBlogQuota") }), /* @__PURE__ */ h(K, {
 								type: "number",
 								value: n.daily_blog_quota ?? 1,
-								onChange: (e) => C("daily_blog_quota", Number(e.target.value))
+								onChange: (e) => O("daily_blog_quota", Number(e.target.value))
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.dailyProductQuota") }), /* @__PURE__ */ h(q, {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.dailyProductQuota") }), /* @__PURE__ */ h(K, {
 								type: "number",
 								value: n.daily_product_quota ?? 5,
-								onChange: (e) => C("daily_product_quota", Number(e.target.value))
+								onChange: (e) => O("daily_product_quota", Number(e.target.value))
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ h(Q, { children: e("aiContent.publishStatus") }), /* @__PURE__ */ g("select", {
+							children: [/* @__PURE__ */ h(X, { children: e("aiContent.publishStatus") }), /* @__PURE__ */ g("select", {
 								className: "flex h-9 w-full rounded-md border bg-background px-3 text-sm",
 								value: n.publish_status ?? "draft",
-								onChange: (e) => C("publish_status", e.target.value),
+								onChange: (e) => O("publish_status", e.target.value),
 								children: [
 									/* @__PURE__ */ h("option", {
 										value: "draft",
@@ -5397,22 +5845,22 @@ function vi() {
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "flex items-center gap-2 pt-6",
-							children: [/* @__PURE__ */ h(Vn, {
+							children: [/* @__PURE__ */ h(Hn, {
 								checked: !!n.auto_publish,
-								onCheckedChange: (e) => C("auto_publish", !!e),
+								onCheckedChange: (e) => O("auto_publish", !!e),
 								id: "auto_publish"
-							}), /* @__PURE__ */ h(Q, {
+							}), /* @__PURE__ */ h(X, {
 								htmlFor: "auto_publish",
 								children: e("aiContent.autoPublish")
 							})]
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "flex items-center gap-2",
-							children: [/* @__PURE__ */ h(Vn, {
+							children: [/* @__PURE__ */ h(Hn, {
 								checked: !!n.enabled,
-								onCheckedChange: (e) => C("enabled", !!e),
+								onCheckedChange: (e) => O("enabled", !!e),
 								id: "enabled"
-							}), /* @__PURE__ */ h(Q, {
+							}), /* @__PURE__ */ h(X, {
 								htmlFor: "enabled",
 								children: e("aiContent.enabled")
 							})]
@@ -5420,11 +5868,136 @@ function vi() {
 					]
 				})]
 			}),
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsCatalog") }) }), /* @__PURE__ */ g(G, {
+				className: "grid gap-4 md:grid-cols-2",
+				children: [
+					/* @__PURE__ */ g("div", {
+						className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2",
+						children: [/* @__PURE__ */ h(X, {
+							htmlFor: "catalog_assign_categories",
+							children: e("aiContent.catalogAssignCats")
+						}), /* @__PURE__ */ h($, {
+							id: "catalog_assign_categories",
+							checked: n.catalog_assign_categories !== !1,
+							onCheckedChange: (e) => O("catalog_assign_categories", !!e)
+						})]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2",
+						children: [/* @__PURE__ */ h(X, {
+							htmlFor: "catalog_assign_brands",
+							children: e("aiContent.catalogAssignBrands")
+						}), /* @__PURE__ */ h($, {
+							id: "catalog_assign_brands",
+							checked: n.catalog_assign_brands !== !1,
+							onCheckedChange: (e) => O("catalog_assign_brands", !!e)
+						})]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2",
+						children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(X, {
+							htmlFor: "catalog_create_terms",
+							children: e("aiContent.catalogCreateTerms")
+						}), /* @__PURE__ */ h("p", {
+							className: "text-muted-foreground text-xs",
+							children: e("aiContent.catalogCreateTermsHint")
+						})] }), /* @__PURE__ */ h($, {
+							id: "catalog_create_terms",
+							checked: n.catalog_create_terms !== !1,
+							onCheckedChange: (e) => O("catalog_create_terms", !!e)
+						})]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2",
+						children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(X, {
+							htmlFor: "catalog_only_missing",
+							children: e("aiContent.catalogOnlyMissing")
+						}), /* @__PURE__ */ h("p", {
+							className: "text-muted-foreground text-xs",
+							children: e("aiContent.catalogOnlyMissingHint")
+						})] }), /* @__PURE__ */ h($, {
+							id: "catalog_only_missing",
+							checked: n.catalog_only_missing !== !1,
+							onCheckedChange: (e) => O("catalog_only_missing", !!e)
+						})]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "space-y-1 md:col-span-2",
+						children: [/* @__PURE__ */ h(X, { children: e("aiContent.promptCatalog") }), /* @__PURE__ */ h(Qr, {
+							rows: 4,
+							value: n.prompt_catalog ?? "",
+							onChange: (e) => O("prompt_catalog", e.target.value)
+						})]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2",
+						children: [/* @__PURE__ */ h(X, {
+							htmlFor: "title_enabled",
+							children: e("aiContent.titleEnabled")
+						}), /* @__PURE__ */ h($, {
+							id: "title_enabled",
+							checked: n.title_enabled !== !1,
+							onCheckedChange: (e) => O("title_enabled", !!e)
+						})]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "space-y-1 md:col-span-2",
+						children: [
+							/* @__PURE__ */ h(X, { children: e("aiContent.titlePattern") }),
+							/* @__PURE__ */ h(K, {
+								value: n.title_pattern ?? "",
+								onChange: (e) => O("title_pattern", e.target.value)
+							}),
+							/* @__PURE__ */ h("p", {
+								className: "text-muted-foreground text-xs",
+								children: e("aiContent.titlePatternHint")
+							})
+						]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "space-y-1",
+						children: [/* @__PURE__ */ h(X, { children: e("aiContent.titleBrandScript") }), /* @__PURE__ */ g("select", {
+							className: "flex h-9 w-full rounded-md border bg-background px-3 text-sm",
+							value: n.title_brand_script ?? "fa",
+							onChange: (e) => O("title_brand_script", e.target.value),
+							children: [/* @__PURE__ */ h("option", {
+								value: "fa",
+								children: e("aiContent.titleBrandFa")
+							}), /* @__PURE__ */ h("option", {
+								value: "en",
+								children: e("aiContent.titleBrandEn")
+							})]
+						})]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2",
+						children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(X, {
+							htmlFor: "title_include_feature",
+							children: e("aiContent.titleIncludeFeature")
+						}), /* @__PURE__ */ h("p", {
+							className: "text-muted-foreground text-xs",
+							children: e("aiContent.titleIncludeFeatureHint")
+						})] }), /* @__PURE__ */ h($, {
+							id: "title_include_feature",
+							checked: n.title_include_feature !== !1,
+							onCheckedChange: (e) => O("title_include_feature", !!e)
+						})]
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "space-y-1 md:col-span-2",
+						children: [/* @__PURE__ */ h(X, { children: e("aiContent.promptTitle") }), /* @__PURE__ */ h(Qr, {
+							rows: 4,
+							value: n.prompt_title ?? "",
+							onChange: (e) => O("prompt_title", e.target.value)
+						})]
+					})
+				]
+			})] }),
 			/* @__PURE__ */ h("div", {
 				className: "bg-background/95 sticky bottom-0 z-20 -mx-1 flex justify-end border-t px-1 py-3 backdrop-blur",
-				children: /* @__PURE__ */ h(H, {
-					onClick: () => void _.mutateAsync(),
-					disabled: _.isPending,
+				children: /* @__PURE__ */ h(V, {
+					onClick: () => void v.mutateAsync(),
+					disabled: v.isPending,
 					children: e("common.save")
 				})
 			})
@@ -5433,170 +6006,398 @@ function vi() {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiTaxonomiesPage.tsx
-function yi() {
+function Ni() {
 	let { t: e, i18n: t } = l(), n = f(), [r, i] = c("blog"), a = d({
 		queryKey: [
 			"ai-content",
 			"suggest",
 			r
 		],
-		queryFn: () => Fr(r)
+		queryFn: () => Hr(r)
 	});
-	Z(a);
+	Y(a);
 	let o = d({
 		queryKey: ["ai-content", "cost-estimate"],
-		queryFn: () => dr()
+		queryFn: () => pr()
 	});
-	Z(o);
+	Y(o);
 	let s = u({
-		mutationFn: () => Pr(r),
+		mutationFn: () => Vr(r),
 		onSuccess: () => {
 			p.success(e("aiContent.jobQueued")), setTimeout(() => void n.invalidateQueries({ queryKey: ["ai-content", "suggest"] }), 2500);
 		},
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), m = u({
-		mutationFn: () => Ir(r),
+		mutationFn: () => Ur(r),
 		onSuccess: (t) => p.success(e("aiContent.catsApplied", { count: t.count })),
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), _ = u({
-		mutationFn: () => Lr("product_cat"),
+		mutationFn: () => Wr("product_cat"),
 		onSuccess: (t) => p.success(e("aiContent.batchQueued", { count: t.count })),
-		onError: (t) => X(e, t)
+		onError: (t) => J(e, t)
 	}), v = u({
-		mutationFn: () => Lr("product_brand"),
+		mutationFn: () => Wr("product_brand"),
 		onSuccess: (t) => p.success(e("aiContent.batchQueued", { count: t.count })),
-		onError: (t) => X(e, t)
-	}), y = u({
-		mutationFn: () => Lr("category"),
+		onError: (t) => J(e, t)
+	}), y = d({
+		queryKey: [
+			"ai-content",
+			"proposals",
+			"catalog"
+		],
+		queryFn: () => Gr("catalog", "pending", 200),
+		refetchInterval: 4e3
+	});
+	Y(y);
+	let b = u({
+		mutationFn: () => Kr("catalog"),
+		onSuccess: (t) => {
+			p.success(e("aiContent.batchQueued", { count: t.count })), n.invalidateQueries({ queryKey: ["ai-content"] });
+		},
+		onError: (t) => J(e, t)
+	}), x = u({
+		mutationFn: (e) => qr(e),
+		onSuccess: () => {
+			p.success(e("aiContent.proposalApplied")), n.invalidateQueries({ queryKey: [
+				"ai-content",
+				"proposals",
+				"catalog"
+			] });
+		},
+		onError: (t) => J(e, t)
+	}), S = u({
+		mutationFn: (e) => Jr(e),
+		onSuccess: () => void n.invalidateQueries({ queryKey: [
+			"ai-content",
+			"proposals",
+			"catalog"
+		] }),
+		onError: (t) => J(e, t)
+	}), C = u({
+		mutationFn: () => Wr("category"),
 		onSuccess: (t) => p.success(e("aiContent.batchQueued", { count: t.count })),
-		onError: (t) => X(e, t)
-	}), b = a.data?.suggestions?.categories ?? [];
+		onError: (t) => J(e, t)
+	}), w = a.data?.suggestions?.categories ?? [];
 	return /* @__PURE__ */ g("div", {
 		className: "space-y-4",
-		children: [/* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.suggestCats") }) }), /* @__PURE__ */ g(K, {
-			className: "space-y-3",
-			children: [/* @__PURE__ */ g("div", {
-				className: "flex flex-wrap gap-2",
-				children: [
-					/* @__PURE__ */ g("select", {
-						className: "flex h-9 rounded-md border bg-background px-3 text-sm",
-						value: r,
-						onChange: (e) => i(e.target.value),
-						children: [/* @__PURE__ */ h("option", {
-							value: "blog",
-							children: e("aiContent.typeBlog")
-						}), /* @__PURE__ */ h("option", {
-							value: "product",
-							children: e("aiContent.typeProduct")
-						})]
-					}),
-					/* @__PURE__ */ h(H, {
-						size: "sm",
-						onClick: () => void s.mutateAsync(),
-						disabled: s.isPending,
-						children: e("aiContent.suggest")
-					}),
-					/* @__PURE__ */ h(H, {
-						size: "sm",
-						variant: "outline",
-						onClick: () => void m.mutateAsync(),
-						disabled: m.isPending || !b.length,
-						children: e("aiContent.applySuggestions")
-					}),
-					/* @__PURE__ */ h(H, {
-						size: "sm",
-						variant: "ghost",
-						onClick: () => void a.refetch(),
-						children: e("common.refresh")
-					})
-				]
-			}), /* @__PURE__ */ g("div", {
-				className: "space-y-2",
-				children: [b.map((e, t) => /* @__PURE__ */ g("div", {
-					className: "rounded-md border p-2 text-sm",
+		children: [
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.suggestCats") }) }), /* @__PURE__ */ g(G, {
+				className: "space-y-3",
+				children: [/* @__PURE__ */ g("div", {
+					className: "flex flex-wrap gap-2",
 					children: [
-						/* @__PURE__ */ h("div", {
-							className: "font-medium",
-							children: e.name
+						/* @__PURE__ */ g("select", {
+							className: "flex h-9 rounded-md border bg-background px-3 text-sm",
+							value: r,
+							onChange: (e) => i(e.target.value),
+							children: [/* @__PURE__ */ h("option", {
+								value: "blog",
+								children: e("aiContent.typeBlog")
+							}), /* @__PURE__ */ h("option", {
+								value: "product",
+								children: e("aiContent.typeProduct")
+							})]
 						}),
-						/* @__PURE__ */ h("div", {
-							className: "text-muted-foreground",
-							children: e.description
+						/* @__PURE__ */ h(V, {
+							size: "sm",
+							onClick: () => void s.mutateAsync(),
+							disabled: s.isPending,
+							children: e("aiContent.suggest")
 						}),
-						e.children?.length ? /* @__PURE__ */ h("div", {
-							className: "mt-1 text-xs",
-							children: e.children.join(" · ")
-						}) : null
+						/* @__PURE__ */ h(V, {
+							size: "sm",
+							variant: "outline",
+							onClick: () => void m.mutateAsync(),
+							disabled: m.isPending || !w.length,
+							children: e("aiContent.applySuggestions")
+						}),
+						/* @__PURE__ */ h(V, {
+							size: "sm",
+							variant: "ghost",
+							onClick: () => void a.refetch(),
+							children: e("common.refresh")
+						})
 					]
-				}, `${e.name}-${t}`)), b.length ? null : /* @__PURE__ */ h("p", {
-					className: "text-sm text-muted-foreground",
-					children: e("aiContent.noSuggestions")
+				}), /* @__PURE__ */ g("div", {
+					className: "space-y-2",
+					children: [w.map((e, t) => /* @__PURE__ */ g("div", {
+						className: "rounded-md border p-2 text-sm",
+						children: [
+							/* @__PURE__ */ h("div", {
+								className: "font-medium",
+								children: e.name
+							}),
+							/* @__PURE__ */ h("div", {
+								className: "text-muted-foreground",
+								children: e.description
+							}),
+							e.children?.length ? /* @__PURE__ */ h("div", {
+								className: "mt-1 text-xs",
+								children: e.children.join(" · ")
+							}) : null
+						]
+					}, `${e.name}-${t}`)), w.length ? null : /* @__PURE__ */ h("p", {
+						className: "text-sm text-muted-foreground",
+						children: e("aiContent.noSuggestions")
+					})]
 				})]
-			})]
-		})] }), /* @__PURE__ */ g(U, { children: [/* @__PURE__ */ h(W, { children: /* @__PURE__ */ h(G, { children: e("aiContent.fillTerms") }) }), /* @__PURE__ */ g(K, {
-			className: "space-y-3",
-			children: [/* @__PURE__ */ g("p", {
+			})] }),
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.catalogAssignTitle") }) }), /* @__PURE__ */ g(G, {
+				className: "space-y-3",
+				children: [
+					/* @__PURE__ */ h("p", {
+						className: "text-muted-foreground text-sm",
+						children: e("aiContent.catalogAssignHint")
+					}),
+					/* @__PURE__ */ h(V, {
+						size: "sm",
+						onClick: () => void b.mutateAsync(),
+						disabled: b.isPending,
+						children: e("aiContent.catalogSuggestProducts")
+					}),
+					/* @__PURE__ */ g("div", {
+						className: "space-y-2",
+						children: [(y.data?.items ?? []).map((t) => {
+							let n = t.proposed, r = [...(n.categories ?? []).map((e) => e.parent ? `${e.parent} › ${e.name}` : e.name || ""), ...(n.new_categories ?? []).map((e) => e.parent ? `${e.parent} › ${e.name}` : e.name || "")].filter(Boolean), i = n.brand || n.brand_name || "";
+							return /* @__PURE__ */ g("div", {
+								className: "flex flex-wrap items-start justify-between gap-2 border-b py-2 text-sm last:border-0",
+								children: [/* @__PURE__ */ g("div", { children: [
+									/* @__PURE__ */ h("div", {
+										className: "font-medium",
+										children: t.product_name || `#${t.product_id}`
+									}),
+									/* @__PURE__ */ h("div", {
+										className: "text-muted-foreground",
+										children: r.join(" · ") || "—"
+									}),
+									i ? /* @__PURE__ */ g("div", {
+										className: "text-muted-foreground",
+										children: [
+											e("aiContent.settingsBrand"),
+											": ",
+											i
+										]
+									}) : null
+								] }), /* @__PURE__ */ g("div", {
+									className: "flex gap-2",
+									children: [/* @__PURE__ */ h(V, {
+										size: "sm",
+										variant: "outline",
+										disabled: S.isPending,
+										onClick: () => void S.mutateAsync(t.id),
+										children: e("aiContent.proposalSkip")
+									}), /* @__PURE__ */ h(V, {
+										size: "sm",
+										disabled: x.isPending,
+										onClick: () => void x.mutateAsync(t.id),
+										children: e("aiContent.proposalApply")
+									})]
+								})]
+							}, t.id);
+						}), y.data?.items?.length ? null : /* @__PURE__ */ h("p", {
+							className: "text-sm text-muted-foreground",
+							children: e("aiContent.noCatalogProposals")
+						})]
+					})
+				]
+			})] }),
+			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.fillTerms") }) }), /* @__PURE__ */ g(G, {
+				className: "space-y-3",
+				children: [/* @__PURE__ */ g("p", {
+					className: "text-muted-foreground text-sm",
+					children: [
+						e("aiContent.costPerTerm"),
+						" ",
+						/* @__PURE__ */ h(Q, {
+							amount: o.data?.entities.product_cat?.cost_toman.mid ?? 0,
+							locale: t.language
+						}),
+						" · ",
+						e("aiContent.settingsBrand"),
+						" ",
+						/* @__PURE__ */ h(Q, {
+							amount: o.data?.entities.product_brand?.cost_toman.mid ?? 0,
+							locale: t.language
+						}),
+						" · ",
+						e("aiContent.settingsBlogCat"),
+						" ",
+						/* @__PURE__ */ h(Q, {
+							amount: o.data?.entities.blog_cat?.cost_toman.mid ?? 0,
+							locale: t.language
+						})
+					]
+				}), /* @__PURE__ */ g("div", {
+					className: "flex flex-wrap gap-2",
+					children: [
+						/* @__PURE__ */ h(V, {
+							size: "sm",
+							onClick: () => void _.mutateAsync(),
+							disabled: _.isPending,
+							children: e("aiContent.fillProductCats")
+						}),
+						/* @__PURE__ */ h(V, {
+							size: "sm",
+							variant: "outline",
+							onClick: () => void v.mutateAsync(),
+							disabled: v.isPending,
+							children: e("aiContent.fillBrands")
+						}),
+						/* @__PURE__ */ h(V, {
+							size: "sm",
+							variant: "outline",
+							onClick: () => void C.mutateAsync(),
+							disabled: C.isPending,
+							children: e("aiContent.fillBlogCats")
+						})
+					]
+				})]
+			})] })
+		]
+	});
+}
+//#endregion
+//#region ../Modules/ai-content-module/client/pages/AiTitlesPage.tsx
+function Pi() {
+	let { t: e } = l(), t = f(), [n, r] = c({}), i = d({
+		queryKey: [
+			"ai-content",
+			"proposals",
+			"title"
+		],
+		queryFn: () => Gr("title", "pending", 500),
+		refetchInterval: 4e3
+	});
+	Y(i), a(() => {
+		let e = {};
+		for (let t of i.data?.items ?? []) {
+			let n = String(t.proposed.name ?? "");
+			e[t.id] = n;
+		}
+		r((t) => {
+			let n = { ...e };
+			for (let r of Object.keys(t)) {
+				let i = Number(r);
+				n[i] !== void 0 && t[i] !== void 0 && t[i] !== e[i] && (n[i] = t[i]);
+			}
+			return n;
+		});
+	}, [i.data?.items]);
+	let o = u({
+		mutationFn: () => Kr("title"),
+		onSuccess: (n) => {
+			p.success(e("aiContent.batchQueued", { count: n.count })), t.invalidateQueries({ queryKey: ["ai-content"] });
+		},
+		onError: (t) => J(e, t)
+	}), s = u({
+		mutationFn: (e) => qr(e, { name: n[e] ?? "" }),
+		onSuccess: () => {
+			p.success(e("aiContent.proposalApplied")), t.invalidateQueries({ queryKey: [
+				"ai-content",
+				"proposals",
+				"title"
+			] });
+		},
+		onError: (t) => J(e, t)
+	}), m = u({
+		mutationFn: (e) => Jr(e),
+		onSuccess: () => void t.invalidateQueries({ queryKey: [
+			"ai-content",
+			"proposals",
+			"title"
+		] }),
+		onError: (t) => J(e, t)
+	}), v = u({
+		mutationFn: (e) => Yr("title", e),
+		onSuccess: () => {
+			p.success(e("aiContent.jobQueued")), t.invalidateQueries({ queryKey: ["ai-content"] });
+		},
+		onError: (t) => J(e, t)
+	});
+	return /* @__PURE__ */ g("div", {
+		className: "space-y-4",
+		children: [/* @__PURE__ */ g("div", {
+			className: "flex flex-wrap items-center gap-2",
+			children: [/* @__PURE__ */ h(V, {
+				size: "sm",
+				onClick: () => void o.mutateAsync(),
+				disabled: o.isPending,
+				children: e("aiContent.titleSuggestAll")
+			}), /* @__PURE__ */ h("p", {
 				className: "text-muted-foreground text-sm",
-				children: [
-					e("aiContent.costPerTerm"),
-					" ",
-					/* @__PURE__ */ h($, {
-						amount: o.data?.entities.product_cat?.cost_toman.mid ?? 0,
-						locale: t.language
-					}),
-					" · ",
-					e("aiContent.settingsBrand"),
-					" ",
-					/* @__PURE__ */ h($, {
-						amount: o.data?.entities.product_brand?.cost_toman.mid ?? 0,
-						locale: t.language
-					}),
-					" · ",
-					e("aiContent.settingsBlogCat"),
-					" ",
-					/* @__PURE__ */ h($, {
-						amount: o.data?.entities.blog_cat?.cost_toman.mid ?? 0,
-						locale: t.language
-					})
-				]
-			}), /* @__PURE__ */ g("div", {
-				className: "flex flex-wrap gap-2",
-				children: [
-					/* @__PURE__ */ h(H, {
-						size: "sm",
-						onClick: () => void _.mutateAsync(),
-						disabled: _.isPending,
-						children: e("aiContent.fillProductCats")
-					}),
-					/* @__PURE__ */ h(H, {
-						size: "sm",
-						variant: "outline",
-						onClick: () => void v.mutateAsync(),
-						disabled: v.isPending,
-						children: e("aiContent.fillBrands")
-					}),
-					/* @__PURE__ */ h(H, {
-						size: "sm",
-						variant: "outline",
-						onClick: () => void y.mutateAsync(),
-						disabled: y.isPending,
-						children: e("aiContent.fillBlogCats")
-					})
-				]
+				children: e("aiContent.titleSuggestAllHint")
+			})]
+		}), /* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.titlesPageTitle") }) }), /* @__PURE__ */ g(G, {
+			className: "space-y-3",
+			children: [(i.data?.items ?? []).map((t) => {
+				let i = String(t.current.name ?? t.product_name);
+				return /* @__PURE__ */ g("div", {
+					className: "grid gap-2 border-b py-3 last:border-0 md:grid-cols-[1fr_1fr_auto]",
+					children: [
+						/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h("div", {
+							className: "text-muted-foreground text-xs",
+							children: e("aiContent.titleCurrent")
+						}), /* @__PURE__ */ h(_, {
+							className: "text-sm font-medium underline-offset-2 hover:underline",
+							to: `/shop/products/${t.product_id}`,
+							children: i
+						})] }),
+						/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h("div", {
+							className: "text-muted-foreground text-xs",
+							children: e("aiContent.titleProposed")
+						}), /* @__PURE__ */ h(K, {
+							value: n[t.id] ?? "",
+							onChange: (e) => r((n) => ({
+								...n,
+								[t.id]: e.target.value
+							}))
+						})] }),
+						/* @__PURE__ */ g("div", {
+							className: "flex flex-wrap items-end gap-2",
+							children: [
+								/* @__PURE__ */ h(V, {
+									size: "sm",
+									disabled: s.isPending,
+									onClick: () => void s.mutateAsync(t.id),
+									children: e("aiContent.proposalApply")
+								}),
+								/* @__PURE__ */ h(V, {
+									size: "sm",
+									variant: "outline",
+									disabled: m.isPending,
+									onClick: () => void m.mutateAsync(t.id),
+									children: e("aiContent.proposalSkip")
+								}),
+								/* @__PURE__ */ h(V, {
+									size: "sm",
+									variant: "ghost",
+									disabled: v.isPending,
+									onClick: () => void v.mutateAsync(t.product_id),
+									children: e("aiContent.titleRedo")
+								})
+							]
+						})
+					]
+				}, t.id);
+			}), i.data?.items?.length ? null : /* @__PURE__ */ h("p", {
+				className: "text-sm text-muted-foreground",
+				children: e("aiContent.noTitleProposals")
 			})]
 		})] })]
 	});
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/module-entry.tsx
-var bi = {
-	"ai-content": ci,
-	"ai-content/jobs": oi,
-	"ai-content/calendar": Vr,
-	"ai-content/products": li,
-	"ai-content/taxonomies": yi,
-	"ai-content/attributes": Rr,
-	"ai-content/settings": vi
-}, xi = { routes: bi };
+var Fi = {
+	"ai-content": Si,
+	"ai-content/jobs": bi,
+	"ai-content/calendar": $r,
+	"ai-content/products": wi,
+	"ai-content/titles": Pi,
+	"ai-content/pages": Ci,
+	"ai-content/taxonomies": Ni,
+	"ai-content/attributes": Xr,
+	"ai-content/settings": Mi
+}, Ii = { routes: Fi };
 //#endregion
-export { xi as default, bi as routes };
+export { Ii as default, Fi as routes };

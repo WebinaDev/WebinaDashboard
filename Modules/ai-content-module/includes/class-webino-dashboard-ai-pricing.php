@@ -230,7 +230,70 @@ final class Webino_Dashboard_AI_Pricing {
 				$job['model'] = $model;
 			}
 		}
+		$job['target_title'] = self::job_target_title( $job );
 		return $job;
+	}
+
+	/**
+	 * Human title for the job target (product, post, term, calendar topic).
+	 *
+	 * @param array<string,mixed> $job Job row.
+	 * @return string
+	 */
+	public static function job_target_title( $job ) {
+		$type = sanitize_key( (string) ( $job['target_type'] ?? '' ) );
+		$id   = (int) ( $job['target_id'] ?? 0 );
+
+		if ( 'product' === $type && $id > 0 ) {
+			if ( function_exists( 'wc_get_product' ) ) {
+				$p = wc_get_product( $id );
+				if ( $p ) {
+					$name = trim( (string) $p->get_name() );
+					if ( '' !== $name ) {
+						return $name;
+					}
+				}
+			}
+			$title = trim( (string) get_the_title( $id ) );
+			if ( '' !== $title ) {
+				return $title;
+			}
+		}
+
+		if ( 'post' === $type && $id > 0 ) {
+			$title = trim( (string) get_the_title( $id ) );
+			if ( '' !== $title ) {
+				return $title;
+			}
+		}
+
+		if ( in_array( $type, array( 'product_cat', 'product_brand', 'category' ), true ) && $id > 0 ) {
+			$term = get_term( $id );
+			if ( $term && ! is_wp_error( $term ) && '' !== (string) $term->name ) {
+				return (string) $term->name;
+			}
+		}
+
+		if ( 'calendar' === $type ) {
+			$payload = $job['payload'] ?? array();
+			if ( is_string( $payload ) ) {
+				$decoded = json_decode( $payload, true );
+				$payload = is_array( $decoded ) ? $decoded : array();
+			}
+			if ( is_array( $payload ) ) {
+				foreach ( array( 'topic', 'title', 'focus_keyword' ) as $key ) {
+					$val = isset( $payload[ $key ] ) ? trim( sanitize_text_field( (string) $payload[ $key ] ) ) : '';
+					if ( '' !== $val ) {
+						return $val;
+					}
+				}
+			}
+		}
+
+		if ( $id > 0 ) {
+			return $type . ' #' . $id;
+		}
+		return $type;
 	}
 
 	/**

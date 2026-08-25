@@ -60,7 +60,7 @@ final class Webino_Dashboard_REST_Site_Settings {
 				array(
 					'methods'             => 'GET',
 					'callback'            => array( __CLASS__, 'invoices_get' ),
-					'permission_callback' => array( __CLASS__, 'can_manage_shop' ),
+					'permission_callback' => array( __CLASS__, 'can_view_invoices' ),
 				),
 				array(
 					'methods'             => 'POST',
@@ -117,6 +117,17 @@ final class Webino_Dashboard_REST_Site_Settings {
 	 */
 	public static function can_manage_shop() {
 		return Webino_Dashboard_Rest_Base::can( 'manage_woocommerce' ) || Webino_Dashboard_Rest_Base::can( 'manage_options' );
+	}
+
+	/**
+	 * Print buttons need enable flags; POST stays shop-manager-only.
+	 *
+	 * @return bool
+	 */
+	public static function can_view_invoices() {
+		return self::can_manage_shop()
+			|| Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' )
+			|| Webino_Dashboard_Rest_Base::can( 'edit_products' );
 	}
 
 	/**

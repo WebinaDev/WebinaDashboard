@@ -1,0 +1,1 @@
+import{t as e}from"./SettingsModulesChrome-CHF2oYbo.js";import{t}from"./WncPlatformPanel-CNErJPVz.js";import{jsx as n}from"react/jsx-runtime";function r(){return n(e,{children:n(t,{platform:`torob`,titleKey:`wnc.modules.torob.title`,subtitleKey:`wnc.modules.torob.subtitle`,feedPlatform:!0,embedded:!0})})}export{r as default};

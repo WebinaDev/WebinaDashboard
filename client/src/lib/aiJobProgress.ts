@@ -3,7 +3,7 @@ export type AiJobProgress = {
   result_summary?: string | null
 }
 
-const PHASES = ['queued', 'provider', 'seo', 'writing', 'done'] as const
+const PHASES = ['queued', 'layout', 'visual', 'provider', 'seo', 'writing', 'done'] as const
 
 export function jobPhase(job?: AiJobProgress | null): string {
   if (!job) return 'queued'
@@ -18,7 +18,9 @@ export function jobPhase(job?: AiJobProgress | null): string {
 
 export function jobPhasePercent(phase: string): number {
   const map: Record<string, number> = {
-    queued: 12,
+    queued: 8,
+    layout: 22,
+    visual: 45,
     provider: 40,
     seo: 65,
     writing: 85,

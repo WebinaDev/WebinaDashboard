@@ -52,6 +52,20 @@
         "exclude_from_module_toggle": true
       },
       {
+        "id": "ai-content-titles",
+        "title": "Product titles",
+        "path": "/ai-content/titles",
+        "capability": "edit_products",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "ai-content-pages",
+        "title": "Pages",
+        "path": "/ai-content/pages",
+        "capability": "edit_pages",
+        "exclude_from_module_toggle": true
+      },
+      {
         "id": "ai-content-taxonomies",
         "title": "Categories & brands",
         "path": "/ai-content/taxonomies",
@@ -96,6 +110,16 @@
         "path": "ai-content/products",
         "capability": "edit_products",
         "headerTitleKey": "aiContent.productsTitle"
+      },
+      {
+        "path": "ai-content/titles",
+        "capability": "edit_products",
+        "headerTitleKey": "aiContent.titlesPageTitle"
+      },
+      {
+        "path": "ai-content/pages",
+        "capability": "edit_pages",
+        "headerTitleKey": "aiContent.pagesTitle"
       },
       {
         "path": "ai-content/taxonomies",

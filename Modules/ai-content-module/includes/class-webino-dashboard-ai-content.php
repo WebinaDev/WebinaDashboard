@@ -19,6 +19,7 @@ final class Webino_Dashboard_AI_Content {
 	 */
 	public static function init() {
 		Webino_Dashboard_AI_Content_Db::ensure_tables();
+		Webino_Dashboard_AI_Providers::init();
 		Webino_Dashboard_AI_Queue::init();
 	}
 
@@ -44,13 +45,14 @@ final class Webino_Dashboard_AI_Content {
 		if ( ! function_exists( 'wc_get_products' ) ) {
 			return array( 'items' => array(), 'total' => 0 );
 		}
-		$ids = wc_get_products(
+		$limit = max( 1, (int) $limit );
+		$ids   = wc_get_products(
 			array(
-				'limit'  => 200,
-				'status' => array( 'publish', 'draft', 'pending' ),
-				'return' => 'ids',
-				'orderby'=> 'date',
-				'order'  => 'DESC',
+				'limit'   => 500,
+				'status'  => array( 'publish', 'draft', 'pending' ),
+				'return'  => 'ids',
+				'orderby' => 'date',
+				'order'   => 'DESC',
 			)
 		);
 		$items = array();
@@ -65,19 +67,19 @@ final class Webino_Dashboard_AI_Content {
 			$faqs  = get_post_meta( (int) $id, '_product_faqs', true );
 			$attrs = $p->get_attributes();
 			$missing = array();
-			if ( mb_strlen( $desc ) < 120 ) {
+			if ( Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', 'description' ) && mb_strlen( $desc ) < 120 ) {
 				$missing[] = 'description';
 			}
-			if ( mb_strlen( $short ) < 20 ) {
+			if ( Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', 'short_description' ) && mb_strlen( $short ) < 20 ) {
 				$missing[] = 'short_description';
 			}
-			if ( '' === $seo ) {
+			if ( Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', 'seo' ) && '' === $seo ) {
 				$missing[] = 'seo';
 			}
-			if ( ! is_array( $faqs ) || ! $faqs ) {
+			if ( Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', 'faqs' ) && ( ! is_array( $faqs ) || ! $faqs ) ) {
 				$missing[] = 'faqs';
 			}
-			if ( ! $attrs ) {
+			if ( Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', 'attributes' ) && ! $attrs ) {
 				$missing[] = 'attributes';
 			}
 			if ( ! $missing ) {
@@ -89,13 +91,24 @@ final class Webino_Dashboard_AI_Content {
 				'status'  => $p->get_status(),
 				'missing' => $missing,
 			);
-			if ( count( $items ) >= $limit ) {
-				break;
-			}
 		}
+
+		usort(
+			$items,
+			static function ( $a, $b ) {
+				$ca = count( $a['missing'] );
+				$cb = count( $b['missing'] );
+				if ( $ca !== $cb ) {
+					return $cb - $ca;
+				}
+				return (int) $a['id'] - (int) $b['id'];
+			}
+		);
+
+		$total = count( $items );
 		return array(
-			'items' => $items,
-			'total' => count( $items ),
+			'items' => array_slice( $items, 0, $limit ),
+			'total' => $total,
 		);
 	}
 

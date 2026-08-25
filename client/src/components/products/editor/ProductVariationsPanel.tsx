@@ -55,9 +55,14 @@ function hydrateVarWholesale(raw: unknown): WholesaleRuleForm {
 
 type ProductVariationsPanelProps = {
   productId: number
+  /** True when the saved product has at least one variation attribute with options. */
+  hasSavedVariationAttributes?: boolean
 }
 
-export function ProductVariationsPanel({ productId }: ProductVariationsPanelProps) {
+export function ProductVariationsPanel({
+  productId,
+  hasSavedVariationAttributes = true,
+}: ProductVariationsPanelProps) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [newSku, setNewSku] = useState('')
@@ -266,11 +271,14 @@ export function ProductVariationsPanel({ productId }: ProductVariationsPanelProp
       <CardContent className="space-y-3 px-3">
         <p className="text-muted-foreground text-xs">{t('products.editor.variationsHint')}</p>
         <p className="text-muted-foreground text-xs">{t('products.editor.variationsWfcpHint')}</p>
+        {!hasSavedVariationAttributes ? (
+          <p className="text-amber-700 dark:text-amber-400 text-xs">{t('products.editor.needVariationAttrs')}</p>
+        ) : null}
         <Button
           type="button"
           size="sm"
           variant="outline"
-          disabled={previewGenerate.isPending || generating}
+          disabled={!hasSavedVariationAttributes || previewGenerate.isPending || generating}
           onClick={() => void previewGenerate.mutateAsync()}
         >
           {t('products.editor.generateAll')}

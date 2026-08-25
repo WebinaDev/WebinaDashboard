@@ -4,6 +4,8 @@ import { RichTextEditor } from '@/components/magazine/LazyRichTextEditor'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 type ProductDescriptionsSectionProps = {
+  /** Remount TipTap when switching products so content matches the loaded product. */
+  productId?: number | string
   shortDescription: string
   description: string
   disabled?: boolean
@@ -16,6 +18,7 @@ type ProductDescriptionsSectionProps = {
 }
 
 export function ProductDescriptionsSection({
+  productId,
   shortDescription,
   description,
   disabled,
@@ -27,6 +30,7 @@ export function ProductDescriptionsSection({
   const { t } = useTranslation()
   const showShort = !longOnly
   const showLong = !shortOnly
+  const editorKey = productId != null ? String(productId) : 'new'
 
   return (
     <>
@@ -37,6 +41,7 @@ export function ProductDescriptionsSection({
           </CardHeader>
           <CardContent className="px-3">
             <RichTextEditor
+              key={`short-${editorKey}`}
               value={shortDescription}
               onChange={onShortChange}
               disabled={disabled}
@@ -52,6 +57,7 @@ export function ProductDescriptionsSection({
           </CardHeader>
           <CardContent className="px-3">
             <RichTextEditor
+              key={`long-${editorKey}`}
               value={description}
               onChange={onDescriptionChange}
               disabled={disabled}

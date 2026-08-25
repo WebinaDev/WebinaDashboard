@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { toastApiError } from '@/lib/apiError'
 import { fetchAiJobs, fetchAiOverview, retryAiJob } from '../lib/ai-content-api'
+import { AiJobCard } from '../components/AiJobCard'
 import { AiToman } from '../components/AiToman'
 
 const STAT_LINKS: Record<string, string> = {
@@ -141,22 +142,12 @@ export default function AiOverviewPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {(jobsQ.data?.items ?? []).map((job) => (
-            <div key={job.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm last:border-0">
-              <div>
-                <div className="font-medium">
-                  #{job.id} · {t(`aiContent.jobType.${job.job_type}`, { defaultValue: job.job_type })} ·{' '}
-                  {t(`aiContent.jobStatus.${job.status}`, { defaultValue: job.status })}
-                </div>
-                <div className="text-muted-foreground">
-                  {job.result_summary || job.error_message || job.provider}
-                </div>
-              </div>
-              {job.status === 'failed' ? (
-                <Button size="sm" variant="outline" disabled={retry.isPending} onClick={() => void retry.mutateAsync(job.id)}>
-                  {t('aiContent.retry')}
-                </Button>
-              ) : null}
-            </div>
+            <AiJobCard
+              key={job.id}
+              job={job}
+              retryPending={retry.isPending}
+              onRetry={(id) => void retry.mutateAsync(id)}
+            />
           ))}
           {!jobsQ.data?.items?.length ? (
             <p className="text-sm text-muted-foreground">{t('aiContent.noJobs')}</p>

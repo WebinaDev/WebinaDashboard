@@ -8,10 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { toastApiError } from '@/lib/apiError'
 import {
+  applyAiProposal,
   applyCategorySuggestions,
+  enqueueAiProposals,
   fetchAiCostEstimate,
+  fetchAiProposals,
   fillTermsBatch,
   getCategorySuggestions,
+  skipAiProposal,
   suggestCategories,
 } from '../lib/ai-content-api'
 import { AiToman } from '../components/AiToman'
@@ -57,6 +61,37 @@ export default function AiTaxonomiesPage() {
   const fillBrands = useMutation({
     mutationFn: () => fillTermsBatch('product_brand'),
     onSuccess: (res) => toast.success(t('aiContent.batchQueued', { count: res.count })),
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const catalogQ = useQuery({
+    queryKey: ['ai-content', 'proposals', 'catalog'],
+    queryFn: () => fetchAiProposals('catalog', 'pending', 200),
+    refetchInterval: 4000,
+  })
+  useQueryErrorToast(catalogQ)
+
+  const catalogEnqueue = useMutation({
+    mutationFn: () => enqueueAiProposals('catalog'),
+    onSuccess: (res) => {
+      toast.success(t('aiContent.batchQueued', { count: res.count }))
+      void qc.invalidateQueries({ queryKey: ['ai-content'] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const catalogApply = useMutation({
+    mutationFn: (id: number) => applyAiProposal(id),
+    onSuccess: () => {
+      toast.success(t('aiContent.proposalApplied'))
+      void qc.invalidateQueries({ queryKey: ['ai-content', 'proposals', 'catalog'] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const catalogSkip = useMutation({
+    mutationFn: (id: number) => skipAiProposal(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['ai-content', 'proposals', 'catalog'] }),
     onError: (e: Error) => toastApiError(t, e),
   })
 
@@ -114,6 +149,65 @@ export default function AiTaxonomiesPage() {
               </div>
             ))}
             {!cats.length ? <p className="text-sm text-muted-foreground">{t('aiContent.noSuggestions')}</p> : null}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('aiContent.catalogAssignTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-muted-foreground text-sm">{t('aiContent.catalogAssignHint')}</p>
+          <Button size="sm" onClick={() => void catalogEnqueue.mutateAsync()} disabled={catalogEnqueue.isPending}>
+            {t('aiContent.catalogSuggestProducts')}
+          </Button>
+          <div className="space-y-2">
+            {(catalogQ.data?.items ?? []).map((row) => {
+              const proposed = row.proposed as {
+                brand?: string
+                brand_name?: string
+                categories?: { name?: string; parent?: string }[]
+                new_categories?: { name?: string; parent?: string }[]
+              }
+              const cats = [
+                ...(proposed.categories ?? []).map((c) =>
+                  c.parent ? `${c.parent} › ${c.name}` : c.name || '',
+                ),
+                ...(proposed.new_categories ?? []).map((c) =>
+                  c.parent ? `${c.parent} › ${c.name}` : c.name || '',
+                ),
+              ].filter(Boolean)
+              const brand = proposed.brand || proposed.brand_name || ''
+              return (
+                <div
+                  key={row.id}
+                  className="flex flex-wrap items-start justify-between gap-2 border-b py-2 text-sm last:border-0"
+                >
+                  <div>
+                    <div className="font-medium">{row.product_name || `#${row.product_id}`}</div>
+                    <div className="text-muted-foreground">{cats.join(' · ') || '—'}</div>
+                    {brand ? <div className="text-muted-foreground">{t('aiContent.settingsBrand')}: {brand}</div> : null}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={catalogSkip.isPending}
+                      onClick={() => void catalogSkip.mutateAsync(row.id)}
+                    >
+                      {t('aiContent.proposalSkip')}
+                    </Button>
+                    <Button size="sm" disabled={catalogApply.isPending} onClick={() => void catalogApply.mutateAsync(row.id)}>
+                      {t('aiContent.proposalApply')}
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+            {!catalogQ.data?.items?.length ? (
+              <p className="text-sm text-muted-foreground">{t('aiContent.noCatalogProposals')}</p>
+            ) : null}
           </div>
         </CardContent>
       </Card>

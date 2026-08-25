@@ -71,26 +71,46 @@ export function ProductAttributeTermsPicker({
       setShowAdd(false)
       void qc.invalidateQueries({ queryKey: ['attributes', attributeId, 'terms'] })
       void qc.invalidateQueries({ queryKey: ['attributes'] })
-      const name = res.item?.name
-      if (name && !selected.includes(name)) {
-        onChange([...selected, name])
+      const item = res.item
+      if (item?.name) {
+        const already =
+          selected.includes(item.name) ||
+          selected.includes(item.slug) ||
+          selected.includes(String(item.id))
+        if (!already) {
+          onChange([...selected, item.name])
+        }
       }
     },
     onError: (e: Error) => toastApiError(t, e),
   })
 
   const terms = q.data?.items ?? []
+  const selectedSet = useMemo(() => new Set(selected.map(String)), [selected])
+
+  function isSelected(term: AttributeTerm): boolean {
+    return (
+      selectedSet.has(term.name) ||
+      selectedSet.has(term.slug) ||
+      selectedSet.has(String(term.id))
+    )
+  }
+
   const filtered = useMemo(() => {
     const qstr = search.trim().toLowerCase()
     if (!qstr) return terms
     return terms.filter((term) => term.name.toLowerCase().includes(qstr) || term.slug.toLowerCase().includes(qstr))
   }, [terms, search])
 
-  function toggle(name: string) {
-    if (selected.includes(name)) {
-      onChange(selected.filter((n) => n !== name))
+  function toggle(term: AttributeTerm) {
+    if (isSelected(term)) {
+      onChange(
+        selected.filter(
+          (n) => n !== term.name && n !== term.slug && String(n) !== String(term.id),
+        ),
+      )
     } else {
-      onChange([...selected, name])
+      onChange([...selected, term.name])
     }
   }
 
@@ -115,7 +135,7 @@ export function ProductAttributeTermsPicker({
           ) : (
             <div className="flex flex-wrap gap-2">
               {filtered.map((term) => {
-                const active = selected.includes(term.name)
+                const active = isSelected(term)
                 if (attributeType === 'color') {
                   return (
                     <button
@@ -126,7 +146,7 @@ export function ProductAttributeTermsPicker({
                         'flex flex-col items-center gap-1 rounded-lg p-1',
                         active ? 'ring-2 ring-primary/40' : '',
                       )}
-                      onClick={() => toggle(term.name)}
+                      onClick={() => toggle(term)}
                     >
                       <span
                         className={cn(
@@ -150,7 +170,7 @@ export function ProductAttributeTermsPicker({
                         'flex flex-col items-center gap-1 rounded-lg p-1',
                         active ? 'ring-2 ring-primary/40' : '',
                       )}
-                      onClick={() => toggle(term.name)}
+                      onClick={() => toggle(term)}
                     >
                       {term.image_url ? (
                         <LazyImage
@@ -174,7 +194,7 @@ export function ProductAttributeTermsPicker({
                         'rounded-md border px-2.5 py-1 text-xs font-medium',
                         active ? 'border-primary bg-primary/10' : 'border-border',
                       )}
-                      onClick={() => toggle(term.name)}
+                      onClick={() => toggle(term)}
                     >
                       {term.name}
                     </button>
@@ -185,7 +205,7 @@ export function ProductAttributeTermsPicker({
                     key={term.id}
                     className="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1 text-xs"
                   >
-                    <Checkbox checked={active} onCheckedChange={() => toggle(term.name)} />
+                    <Checkbox checked={active} onCheckedChange={() => toggle(term)} />
                     {term.name}
                   </label>
                 )

@@ -1,13 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search } from 'lucide-react'
+import { Printer, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMatch } from 'react-router-dom'
+import { toast } from 'sonner'
+import { toastApiError } from '@/lib/apiError'
 
 import { ListStatsStrip } from '@/components/ListStatsStrip'
 import { PostsPagination } from '@/components/magazine/PostsPagination'
 import { OrderStatusTabs, type StatusCount } from '@/components/orders/OrderStatusTabs'
 import { OrdersBulkActions } from '@/components/orders/OrdersBulkActions'
+import type { OrderDocumentsSettings } from '@/components/settings/OrderDocumentsSettingsPanel'
 import {
   OrdersFiltersBar,
   type OrdersFilterOptions,
@@ -16,6 +19,7 @@ import {
 import { OrdersTable, type OrderListRow, type OrderSortField, type OrderSortOrder } from '@/components/orders/OrdersTable'
 import { PageShell } from '@/components/PageShell'
 import { TableListSkeleton } from '@/components/TableListSkeleton'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
@@ -24,6 +28,7 @@ import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { apiFetch } from '@/lib/api'
 import { normalizeCapabilities } from '@/lib/bootstrapQuery'
 import { formatNumber } from '@/lib/formatNumber'
+import { openPrintDocumentChecked, unprintedLabelsPrintUrl } from '@/lib/orderPrint'
 
 type StatusOption = { slug: string; label: string }
 
@@ -111,6 +116,7 @@ export default function OrdersListPage() {
   const [orderby, setOrderby] = useState<OrderSortField>('date')
   const [order, setOrder] = useState<OrderSortOrder>('desc')
   const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [printingLabels, setPrintingLabels] = useState(false)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -155,6 +161,14 @@ export default function OrdersListPage() {
     staleTime: 120_000,
   })
 
+  const docsQ = useQuery({
+    queryKey: ['shop-settings', 'invoices'],
+    queryFn: () => apiFetch<OrderDocumentsSettings>('shop/settings/invoices'),
+    staleTime: 60_000,
+    enabled: canManageOrders && !isPortal,
+  })
+  const enableLabel = docsQ.data?.enable_label !== false
+
   const items = q.data?.items ?? EMPTY_ITEMS
   const found = q.data?.found ?? 0
   const statusCounts = q.data?.status_counts ?? []
@@ -198,6 +212,23 @@ export default function OrdersListPage() {
   function handleBulkDone() {
     setSelectedIds([])
     void qc.invalidateQueries({ queryKey: ['orders'] })
+  }
+
+  async function handlePrintNewLabels() {
+    if (printingLabels) return
+    setPrintingLabels(true)
+    try {
+      const result = await openPrintDocumentChecked(unprintedLabelsPrintUrl())
+      if (result === 'empty') {
+        toast.error(t('orders.printNewLabelsEmpty'))
+        return
+      }
+      void qc.invalidateQueries({ queryKey: ['orders'] })
+    } catch (e) {
+      toastApiError(t, e instanceof Error ? e : new Error(String(e)))
+    } finally {
+      setPrintingLabels(false)
+    }
   }
 
   const selectedLabel = useMemo(() => {
@@ -254,7 +285,21 @@ export default function OrdersListPage() {
           {selectedLabel ? <span className="text-foreground ms-2 font-medium">{selectedLabel}</span> : null}
         </p>
         {canManageOrders && !isPortal ? (
-          <OrdersBulkActions selectedIds={selectedIds} statuses={statuses} onDone={handleBulkDone} />
+          <div className="flex flex-wrap items-center gap-2">
+            {enableLabel ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={printingLabels}
+                onClick={() => void handlePrintNewLabels()}
+              >
+                <Printer className="size-4" aria-hidden />
+                {t('orders.printNewLabels')}
+              </Button>
+            ) : null}
+            <OrdersBulkActions selectedIds={selectedIds} statuses={statuses} onDone={handleBulkDone} />
+          </div>
         ) : null}
       </div>
 

@@ -16,6 +16,8 @@ class Webino_Dashboard_Variation_Swatches {
 
 	const OPTION = 'webino_dashboard_swatch_settings';
 
+	const YITH_MIGRATE_OPTION = 'webino_dashboard_yith_swatch_meta_migrated';
+
 	/**
 	 * @return void
 	 */
@@ -23,6 +25,7 @@ class Webino_Dashboard_Variation_Swatches {
 		add_filter( 'product_attributes_type_selector', array( __CLASS__, 'register_types' ) );
 		add_filter( 'woocommerce_dropdown_variation_attribute_options_html', array( __CLASS__, 'filter_dropdown_html' ), 20, 2 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_yith_term_meta' ), 30 );
 	}
 
 	/**
@@ -138,13 +141,79 @@ class Webino_Dashboard_Variation_Swatches {
 	}
 
 	/**
+	 * YITH stores colors as `yith_wccl_value` and/or `{taxonomy}_yith_wccl_value`.
+	 *
+	 * @param int         $term_id  Term ID.
+	 * @param string|null $taxonomy Optional taxonomy (pa_*); resolved from term when empty.
+	 * @return list<string>
+	 */
+	public static function yith_meta_keys_for_term( $term_id, $taxonomy = null ) {
+		$keys = array( 'yith_wccl_value' );
+		$tax  = is_string( $taxonomy ) ? $taxonomy : '';
+		if ( '' === $tax ) {
+			$term = get_term( (int) $term_id );
+			if ( $term instanceof WP_Term && ! is_wp_error( $term ) && is_string( $term->taxonomy ) ) {
+				$tax = $term->taxonomy;
+			}
+		}
+		if ( '' !== $tax ) {
+			$prefixed = $tax . '_yith_wccl_value';
+			if ( ! in_array( $prefixed, $keys, true ) ) {
+				$keys[] = $prefixed;
+			}
+		}
+		return $keys;
+	}
+
+	/**
+	 * Raw YITH value (hex, URL, or attachment id string) if present.
+	 *
+	 * @param int         $term_id  Term ID.
+	 * @param string|null $taxonomy Optional taxonomy.
+	 * @return string
+	 */
+	public static function raw_yith_term_value( $term_id, $taxonomy = null ) {
+		$term_id = (int) $term_id;
+		foreach ( self::yith_meta_keys_for_term( $term_id, $taxonomy ) as $key ) {
+			$raw = get_term_meta( $term_id, $key, true );
+			if ( is_numeric( $raw ) && (int) $raw > 0 ) {
+				return (string) (int) $raw;
+			}
+			if ( is_string( $raw ) && '' !== trim( $raw ) ) {
+				return trim( $raw );
+			}
+		}
+		return '';
+	}
+
+	/**
 	 * @param int $term_id Term ID.
 	 * @return string Hex color or empty.
 	 */
 	public static function term_color( $term_id ) {
+		return self::resolve_term_color( $term_id );
+	}
+
+	/**
+	 * Resolve color with Webina canonical + YITH + legacy fallbacks.
+	 *
+	 * @param int         $term_id  Term ID.
+	 * @param string|null $taxonomy Optional taxonomy for YITH prefixed key.
+	 * @return string
+	 */
+	public static function resolve_term_color( $term_id, $taxonomy = null ) {
 		$term_id = (int) $term_id;
-		$keys    = array( 'product_attribute_color', 'yith_wccl_value', 'ishop_attribute_color', 'color' );
+		$keys    = array_merge(
+			array( 'product_attribute_color' ),
+			self::yith_meta_keys_for_term( $term_id, $taxonomy ),
+			array( 'ishop_attribute_color', 'color' )
+		);
+		$seen = array();
 		foreach ( $keys as $key ) {
+			if ( isset( $seen[ $key ] ) ) {
+				continue;
+			}
+			$seen[ $key ] = true;
 			$raw = get_term_meta( $term_id, $key, true );
 			$hex = self::normalize_hex( is_string( $raw ) ? $raw : '' );
 			if ( '' !== $hex ) {
@@ -159,14 +228,31 @@ class Webino_Dashboard_Variation_Swatches {
 	 * @return array{id:int,url:string}
 	 */
 	public static function term_image( $term_id ) {
+		return self::resolve_term_image( $term_id );
+	}
+
+	/**
+	 * @param int         $term_id  Term ID.
+	 * @param string|null $taxonomy Optional taxonomy.
+	 * @return array{id:int,url:string}
+	 */
+	public static function resolve_term_image( $term_id, $taxonomy = null ) {
 		$term_id  = (int) $term_id;
 		$image_id = (int) get_term_meta( $term_id, 'product_attribute_image', true );
 		if ( $image_id <= 0 ) {
-			$yith = get_term_meta( $term_id, 'yith_wccl_value', true );
-			if ( is_numeric( $yith ) ) {
-				$image_id = (int) $yith;
-			} elseif ( is_string( $yith ) && '' !== $yith ) {
-				$image_id = (int) attachment_url_to_postid( $yith );
+			foreach ( self::yith_meta_keys_for_term( $term_id, $taxonomy ) as $key ) {
+				$yith = get_term_meta( $term_id, $key, true );
+				if ( is_numeric( $yith ) && (int) $yith > 0 ) {
+					$image_id = (int) $yith;
+					break;
+				}
+				if ( is_string( $yith ) && '' !== $yith ) {
+					$resolved = (int) attachment_url_to_postid( $yith );
+					if ( $resolved > 0 ) {
+						$image_id = $resolved;
+						break;
+					}
+				}
 			}
 		}
 		$url = $image_id > 0 ? (string) wp_get_attachment_image_url( $image_id, 'woocommerce_gallery_thumbnail' ) : '';
@@ -177,6 +263,241 @@ class Webino_Dashboard_Variation_Swatches {
 			'id'  => $image_id,
 			'url' => $url,
 		);
+	}
+
+	/**
+	 * Dual-write color to Webina + YITH (+ iShop) keys.
+	 *
+	 * @param int         $term_id  Term ID.
+	 * @param string      $color    Normalized #RRGGBB or empty to clear.
+	 * @param string|null $taxonomy Optional taxonomy.
+	 * @param bool        $force_clear Force delete even when only YITH has a value.
+	 * @return void
+	 */
+	public static function sync_term_color( $term_id, $color, $taxonomy = null, $force_clear = false ) {
+		$term_id = (int) $term_id;
+		$color   = self::normalize_hex( $color );
+		$keys    = array_merge(
+			array( 'product_attribute_color', 'ishop_attribute_color' ),
+			self::yith_meta_keys_for_term( $term_id, $taxonomy )
+		);
+		$keys = array_values( array_unique( $keys ) );
+
+		if ( '' !== $color ) {
+			foreach ( $keys as $key ) {
+				update_term_meta( $term_id, $key, $color );
+			}
+			return;
+		}
+
+		$canonical = self::normalize_hex( (string) get_term_meta( $term_id, 'product_attribute_color', true ) );
+		$yith_hex  = self::normalize_hex( self::raw_yith_term_value( $term_id, $taxonomy ) );
+
+		// Empty payload before migration (UI never saw hex): keep YITH data.
+		if ( ! $force_clear && '' === $canonical && '' !== $yith_hex ) {
+			return;
+		}
+
+		foreach ( $keys as $key ) {
+			delete_term_meta( $term_id, $key );
+		}
+	}
+
+	/**
+	 * Dual-write image id / YITH URL.
+	 *
+	 * @param int         $term_id  Term ID.
+	 * @param int         $image_id Attachment ID (0 to clear).
+	 * @param string|null $taxonomy Optional taxonomy.
+	 * @param bool        $force_clear Force delete even when only YITH has a value.
+	 * @return void
+	 */
+	public static function sync_term_image( $term_id, $image_id, $taxonomy = null, $force_clear = false ) {
+		$term_id   = (int) $term_id;
+		$image_id  = absint( $image_id );
+		$yith_keys = self::yith_meta_keys_for_term( $term_id, $taxonomy );
+
+		if ( $image_id > 0 ) {
+			update_term_meta( $term_id, 'product_attribute_image', $image_id );
+			$url   = (string) wp_get_attachment_url( $image_id );
+			$value = $url ? $url : (string) $image_id;
+			foreach ( $yith_keys as $key ) {
+				update_term_meta( $term_id, $key, $value );
+			}
+			return;
+		}
+
+		$canonical_id = (int) get_term_meta( $term_id, 'product_attribute_image', true );
+		$yith_raw     = self::raw_yith_term_value( $term_id, $taxonomy );
+
+		// Empty payload before migration: keep YITH image meta.
+		if ( ! $force_clear && $canonical_id <= 0 && '' !== $yith_raw ) {
+			return;
+		}
+
+		delete_term_meta( $term_id, 'product_attribute_image' );
+		foreach ( $yith_keys as $key ) {
+			delete_term_meta( $term_id, $key );
+		}
+	}
+
+	/**
+	 * One-shot: copy YITH term meta into Webina canonical keys.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_yith_term_meta() {
+		if ( '1' === (string) get_option( self::YITH_MIGRATE_OPTION, '' ) ) {
+			return;
+		}
+
+		self::migrate_yith_from_attribute_taxonomies();
+		self::migrate_yith_from_termmeta_scan();
+
+		update_option( self::YITH_MIGRATE_OPTION, '1', false );
+	}
+
+	/**
+	 * @return void
+	 */
+	private static function migrate_yith_from_attribute_taxonomies() {
+		if ( ! function_exists( 'wc_get_attribute_taxonomies' ) ) {
+			return;
+		}
+		$taxonomies = wc_get_attribute_taxonomies();
+		if ( ! is_array( $taxonomies ) ) {
+			return;
+		}
+
+		foreach ( $taxonomies as $row ) {
+			$type = isset( $row->attribute_type ) ? self::normalize_type( (string) $row->attribute_type ) : 'select';
+			if ( ! in_array( $type, array( 'color', 'image' ), true ) ) {
+				continue;
+			}
+			$name = isset( $row->attribute_name ) ? (string) $row->attribute_name : '';
+			if ( '' === $name ) {
+				continue;
+			}
+			$taxonomy = function_exists( 'wc_attribute_taxonomy_name' )
+				? wc_attribute_taxonomy_name( $name )
+				: 'pa_' . $name;
+			if ( ! taxonomy_exists( $taxonomy ) ) {
+				continue;
+			}
+			$terms = get_terms(
+				array(
+					'taxonomy'   => $taxonomy,
+					'hide_empty' => false,
+					'fields'     => 'ids',
+				)
+			);
+			if ( is_wp_error( $terms ) || ! is_array( $terms ) ) {
+				continue;
+			}
+			foreach ( $terms as $term_id ) {
+				self::migrate_one_term( (int) $term_id, $type, $taxonomy );
+			}
+		}
+	}
+
+	/**
+	 * Catch YITH-prefixed keys even when attribute type was reset to select.
+	 *
+	 * @return void
+	 */
+	private static function migrate_yith_from_termmeta_scan() {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+			return;
+		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			"SELECT term_id, meta_key, meta_value FROM {$wpdb->termmeta}
+			WHERE meta_key = 'yith_wccl_value'
+			   OR meta_key LIKE '%\\_yith\\_wccl\\_value'
+			   OR meta_key = 'ishop_attribute_color'"
+		);
+		if ( ! is_array( $rows ) ) {
+			return;
+		}
+		foreach ( $rows as $row ) {
+			$term_id = isset( $row->term_id ) ? (int) $row->term_id : 0;
+			if ( $term_id < 1 ) {
+				continue;
+			}
+			$raw = isset( $row->meta_value ) ? (string) $row->meta_value : '';
+			$hex = self::normalize_hex( $raw );
+			if ( '' !== $hex ) {
+				$canonical = self::normalize_hex( (string) get_term_meta( $term_id, 'product_attribute_color', true ) );
+				if ( '' === $canonical ) {
+					self::sync_term_color( $term_id, $hex, null, true );
+				} else {
+					$plain = get_term_meta( $term_id, 'yith_wccl_value', true );
+					if ( ! is_string( $plain ) || '' === trim( $plain ) ) {
+						update_term_meta( $term_id, 'yith_wccl_value', $canonical );
+					}
+				}
+				continue;
+			}
+			// Image-like YITH value (URL or attachment id).
+			$image_id = 0;
+			if ( is_numeric( $raw ) && (int) $raw > 0 ) {
+				$image_id = (int) $raw;
+			} elseif ( '' !== $raw && false !== filter_var( $raw, FILTER_VALIDATE_URL ) ) {
+				$image_id = (int) attachment_url_to_postid( $raw );
+			}
+			if ( $image_id > 0 && (int) get_term_meta( $term_id, 'product_attribute_image', true ) <= 0 ) {
+				self::sync_term_image( $term_id, $image_id, null, true );
+			}
+		}
+	}
+
+	/**
+	 * @param int    $term_id  Term ID.
+	 * @param string $type     color|image.
+	 * @param string $taxonomy Taxonomy name.
+	 * @return void
+	 */
+	private static function migrate_one_term( $term_id, $type, $taxonomy ) {
+		$term_id = (int) $term_id;
+		if ( $term_id < 1 ) {
+			return;
+		}
+		if ( 'color' === $type ) {
+			$canonical = self::normalize_hex( (string) get_term_meta( $term_id, 'product_attribute_color', true ) );
+			if ( '' !== $canonical ) {
+				$plain = get_term_meta( $term_id, 'yith_wccl_value', true );
+				if ( ( ! is_string( $plain ) || '' === trim( $plain ) ) ) {
+					update_term_meta( $term_id, 'yith_wccl_value', $canonical );
+				}
+				$prefixed = $taxonomy . '_yith_wccl_value';
+				$pref     = get_term_meta( $term_id, $prefixed, true );
+				if ( ! is_string( $pref ) || '' === trim( $pref ) ) {
+					update_term_meta( $term_id, $prefixed, $canonical );
+				}
+				return;
+			}
+			$hex = self::resolve_term_color( $term_id, $taxonomy );
+			if ( '' !== $hex ) {
+				self::sync_term_color( $term_id, $hex, $taxonomy, true );
+			}
+			return;
+		}
+		if ( 'image' === $type ) {
+			$canonical_id = (int) get_term_meta( $term_id, 'product_attribute_image', true );
+			if ( $canonical_id > 0 ) {
+				$plain = get_term_meta( $term_id, 'yith_wccl_value', true );
+				if ( ! is_string( $plain ) || '' === trim( $plain ) ) {
+					$url = (string) wp_get_attachment_url( $canonical_id );
+					update_term_meta( $term_id, 'yith_wccl_value', $url ? $url : (string) $canonical_id );
+				}
+				return;
+			}
+			$img = self::resolve_term_image( $term_id, $taxonomy );
+			if ( $img['id'] > 0 ) {
+				self::sync_term_image( $term_id, $img['id'], $taxonomy, true );
+			}
+		}
 	}
 
 	/**

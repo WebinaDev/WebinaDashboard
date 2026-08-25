@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Columns3 } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { Columns3, Printer } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -18,6 +18,7 @@ import type {
 } from '@/components/products/types'
 import { PostsPagination } from '@/components/magazine/PostsPagination'
 import { PageShell } from '@/components/PageShell'
+import type { OrderDocumentsSettings } from '@/components/settings/OrderDocumentsSettingsPanel'
 import { TableListSkeleton } from '@/components/TableListSkeleton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -31,6 +32,7 @@ import {
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { formatNumber } from '@/lib/formatNumber'
+import { openPrintDocumentChecked, productLabelsPrintUrl } from '@/lib/orderPrint'
 import type { DashboardOverviewResponse } from '@/types/dashboardOverview'
 
 const COLUMNS_STORAGE_KEY = 'webino-products-list-columns'
@@ -149,6 +151,8 @@ export default function ProductsListPage() {
   const [appliedFilters, setAppliedFilters] = useState<ProductFilters>(DEFAULT_FILTERS)
   const [columns, setColumns] = useState<ProductColumnVisibility>(loadColumnVisibility)
   const [busyId, setBusyId] = useState<number | null>(null)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [printingLabels, setPrintingLabels] = useState(false)
 
   const lookup = useQuery({
     queryKey: ['products', 'lookup'],
@@ -170,9 +174,27 @@ export default function ProductsListPage() {
     staleTime: 60_000,
   })
 
+  const docsQ = useQuery({
+    queryKey: ['shop-settings', 'invoices'],
+    queryFn: () => apiFetch<OrderDocumentsSettings>('shop/settings/invoices'),
+    staleTime: 60_000,
+  })
+  const enableProductLabel = docsQ.data?.enable_product_label !== false
+
   const items = q.data?.items ?? []
   const found = q.data?.found ?? 0
   const productStats = statsQ.data?.products
+  const itemIdKey = useMemo(() => items.map((r) => r.id).join(','), [items])
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.length === 0) return prev
+      const ids = new Set(items.map((r) => r.id))
+      const next = prev.filter((id) => ids.has(id))
+      if (next.length === prev.length) return prev
+      return next
+    })
+  }, [itemIdKey, items])
 
   const productStatItems = useMemo(() => {
     if (!productStats) {
@@ -187,7 +209,10 @@ export default function ProductsListPage() {
     ]
   }, [found, productStats, t])
 
-  const visibleColumnCount = useMemo(() => Object.values(columns).filter(Boolean).length + 1, [columns])
+  const visibleColumnCount = useMemo(
+    () => Object.values(columns).filter(Boolean).length + 1 + (enableProductLabel ? 1 : 0),
+    [columns, enableProductLabel],
+  )
 
   const toggleColumn = useCallback((id: ProductColumnId, checked: boolean) => {
     setColumns((prev) => {
@@ -239,6 +264,25 @@ export default function ProductsListPage() {
     onSettled: () => setBusyId(null),
   })
 
+  async function handlePrintWarehouseLabels() {
+    if (selectedIds.length === 0) {
+      toast.error(t('products.printWarehouseLabelsEmpty'))
+      return
+    }
+    if (printingLabels) return
+    setPrintingLabels(true)
+    try {
+      const result = await openPrintDocumentChecked(productLabelsPrintUrl(selectedIds))
+      if (result === 'empty') {
+        toast.error(t('products.printWarehouseLabelsEmpty'))
+      }
+    } catch (e) {
+      toastApiError(t, e instanceof Error ? e : new Error(String(e)))
+    } finally {
+      setPrintingLabels(false)
+    }
+  }
+
   const syncChannel = useMutation({
     mutationFn: ({ id, provider }: { id: number; provider: 'bale' | 'telegram' }) => {
       setBusyId(id)
@@ -259,6 +303,21 @@ export default function ProductsListPage() {
         <ListStatsStrip items={productStatItems} locale={locale} />
       </div>
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        {enableProductLabel ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={printingLabels}
+            onClick={() => void handlePrintWarehouseLabels()}
+          >
+            <Printer className="size-4" aria-hidden />
+            {t('products.printWarehouseLabels')}
+            {selectedIds.length > 0 ? (
+              <span className="text-muted-foreground ms-1">({selectedIds.length})</span>
+            ) : null}
+          </Button>
+        ) : null}
         <Button asChild size="sm">
           <Link to="/shop/products/new">{t('products.add')}</Link>
         </Button>
@@ -275,7 +334,14 @@ export default function ProductsListPage() {
           />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
             {found > 0 ? (
-              <p className="text-muted-foreground text-sm">{t('products.foundCount', { count: formatNumber(found, locale) })}</p>
+              <p className="text-muted-foreground text-sm">
+                {t('products.foundCount', { count: formatNumber(found, locale) })}
+                {selectedIds.length > 0 ? (
+                  <span className="text-foreground ms-2 font-medium">
+                    {t('products.selectedCount', { count: formatNumber(selectedIds.length, locale) })}
+                  </span>
+                ) : null}
+              </p>
             ) : (
               <span />
             )}
@@ -311,6 +377,9 @@ export default function ProductsListPage() {
               emptyMessage={t('products.emptyList')}
               visibleColumnCount={visibleColumnCount}
               busyId={busyId}
+              selectable={enableProductLabel}
+              selectedIds={enableProductLabel ? selectedIds : []}
+              onSelectedChange={enableProductLabel ? setSelectedIds : undefined}
               onDuplicate={async (id) => {
                 await duplicate.mutateAsync(id)
               }}

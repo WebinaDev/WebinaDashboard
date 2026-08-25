@@ -14,19 +14,126 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Webino_Dashboard_AI_Providers {
 
+	const GAPGPT_HTTP_TIMEOUT    = 180;
+	const GAPGPT_CONNECT_TIMEOUT = 20;
+
+	/**
+	 * Active HTTP timeout for the current complete() call (null = provider default).
+	 * 0 means wait indefinitely (CURLOPT_TIMEOUT = 0).
+	 *
+	 * @var int|null
+	 */
+	private static $http_timeout = null;
+
+	/**
+	 * Register HTTP filters so wp_remote_* cannot cap GapGPT to ~30s on shared hosts.
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		add_filter( 'http_request_args', array( __CLASS__, 'filter_gapgpt_http_args' ), 9999, 2 );
+		add_action( 'http_api_curl', array( __CLASS__, 'filter_gapgpt_curl_handle' ), 9999, 2 );
+	}
+
+	/**
+	 * @param int $default Default seconds when no override is set.
+	 * @return int
+	 */
+	private static function effective_timeout( $default ) {
+		if ( null === self::$http_timeout ) {
+			return (int) $default;
+		}
+		return (int) self::$http_timeout;
+	}
+
+	/**
+	 * Timeout for wp_remote_* (0 can mean "no wait" on some stacks → use 24h as unlimited).
+	 *
+	 * @param int $default Default.
+	 * @return int
+	 */
+	private static function wp_http_timeout( $default ) {
+		$t = self::effective_timeout( $default );
+		return ( 0 === $t ) ? (int) DAY_IN_SECONDS : $t;
+	}
+
+	/**
+	 * @param array<string,mixed> $args Request args.
+	 * @param string              $url URL.
+	 * @return array<string,mixed>
+	 */
+	public static function filter_gapgpt_http_args( $args, $url ) {
+		if ( ! self::is_gapgpt_url( $url ) ) {
+			return $args;
+		}
+		$args['timeout'] = self::wp_http_timeout( self::GAPGPT_HTTP_TIMEOUT );
+		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
+			$args['headers'] = array();
+		}
+		$args['headers']['Expect'] = '';
+		return $args;
+	}
+
+	/**
+	 * @param resource            $handle cURL handle.
+	 * @param array<string,mixed> $request Request context.
+	 * @return void
+	 */
+	public static function filter_gapgpt_curl_handle( $handle, $request ) {
+		$url = isset( $request['url'] ) ? (string) $request['url'] : '';
+		if ( ! self::is_gapgpt_url( $url ) ) {
+			return;
+		}
+		curl_setopt( $handle, CURLOPT_TIMEOUT, self::effective_timeout( self::GAPGPT_HTTP_TIMEOUT ) );
+		curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT, self::GAPGPT_CONNECT_TIMEOUT );
+		if ( defined( 'CURL_HTTP_VERSION_1_1' ) ) {
+			curl_setopt( $handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1 );
+		}
+		if ( defined( 'CURL_IPRESOLVE_V4' ) ) {
+			curl_setopt( $handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4 );
+		}
+	}
+
+	/**
+	 * @param string $url URL.
+	 * @return bool
+	 */
+	private static function is_gapgpt_url( $url ) {
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+		if ( ! is_string( $host ) || '' === $host ) {
+			return false;
+		}
+		return in_array( strtolower( $host ), array( 'api.gapgpt.app', 'api.gapapi.com' ), true );
+	}
+
 	/**
 	 * @param string               $system System prompt.
 	 * @param string               $user User prompt.
 	 * @param array<string,mixed>  $schema Optional JSON schema hint (for prompt).
 	 * @param string|null          $force_provider Optional provider slug.
+	 * @param array<string,mixed>  $extra Extra: force_model, max_tokens, timeout.
 	 * @return array{ok:bool,content?:string,data?:array,provider?:string,model?:string,tokens_in?:int,tokens_out?:int,error?:string}
 	 */
-	public static function complete( $system, $user, $schema = array(), $force_provider = null ) {
+	public static function complete( $system, $user, $schema = array(), $force_provider = null, $extra = array() ) {
 		$schema_hint = '';
 		if ( ! empty( $schema ) ) {
 			$schema_hint = "\n\nReturn ONLY valid JSON matching this shape (no markdown):\n" . wp_json_encode( $schema, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
 		}
-		return self::dispatch( (string) $system . $schema_hint, (string) $user, $force_provider, array(), true );
+		if ( ! is_array( $extra ) ) {
+			$extra = array();
+		}
+		if ( empty( $force_provider ) && ! empty( $extra['force_provider'] ) ) {
+			$force_provider = (string) $extra['force_provider'];
+		}
+		$prev_timeout = self::$http_timeout;
+		if ( array_key_exists( 'timeout', $extra ) ) {
+			self::$http_timeout = (int) $extra['timeout'];
+		}
+		try {
+			return self::dispatch( (string) $system . $schema_hint, (string) $user, $force_provider, $extra, true );
+		} finally {
+			self::$http_timeout = $prev_timeout;
+		}
 	}
 
 	/**
@@ -171,14 +278,20 @@ final class Webino_Dashboard_AI_Providers {
 	 * @return array{ok:bool,content?:string,tokens_in?:int,tokens_out?:int,error?:string}
 	 */
 	private static function call_provider( $provider, $api_key, $settings, $system, $user, $extra = array() ) {
+		$forced = trim( (string) ( $extra['force_model'] ?? '' ) );
+		$gemini = $forced ? $forced : (string) ( $settings['gemini_model'] ?? 'gemini-2.0-flash' );
+		$openai = $forced ? $forced : (string) ( $settings['openai_model'] ?? 'gpt-4o-mini' );
+		$gapgpt = $forced ? $forced : (string) ( $settings['gapgpt_model'] ?? 'gpt-5.6-terra' );
+		$grok   = $forced ? $forced : (string) ( $settings['grok_model'] ?? 'grok-2-latest' );
+
 		if ( 'gemini' === $provider ) {
-			return self::call_gemini( $api_key, (string) ( $settings['gemini_model'] ?? 'gemini-2.0-flash' ), $system, $user, $settings, $extra );
+			return self::call_gemini( $api_key, $gemini, $system, $user, $settings, $extra );
 		}
 		if ( 'openai' === $provider ) {
 			return self::call_openai_compatible(
 				'https://api.openai.com/v1/chat/completions',
 				$api_key,
-				(string) ( $settings['openai_model'] ?? 'gpt-4o-mini' ),
+				$openai,
 				$system,
 				$user,
 				$settings,
@@ -189,7 +302,7 @@ final class Webino_Dashboard_AI_Providers {
 			$result = self::call_openai_compatible(
 				'https://api.gapgpt.app/v1/chat/completions',
 				$api_key,
-				(string) ( $settings['gapgpt_model'] ?? 'gpt-5.6-terra' ),
+				$gapgpt,
 				$system,
 				$user,
 				$settings,
@@ -199,7 +312,7 @@ final class Webino_Dashboard_AI_Providers {
 				$result = self::call_openai_compatible(
 					'https://api.gapapi.com/v1/chat/completions',
 					$api_key,
-					(string) ( $settings['gapgpt_model'] ?? 'gpt-5.6-terra' ),
+					$gapgpt,
 					$system,
 					$user,
 					$settings,
@@ -214,7 +327,7 @@ final class Webino_Dashboard_AI_Providers {
 		return self::call_openai_compatible(
 			'https://api.x.ai/v1/chat/completions',
 			$api_key,
-			(string) ( $settings['grok_model'] ?? 'grok-2-latest' ),
+			$grok,
 			$system,
 			$user,
 			$settings,
@@ -242,7 +355,10 @@ final class Webino_Dashboard_AI_Providers {
 			),
 			'temperature' => $temp,
 		);
-		$max = (int) ( $settings['max_tokens'] ?? 0 );
+		$max = (int) ( $extra['max_tokens'] ?? 0 );
+		if ( $max <= 0 ) {
+			$max = (int) ( $settings['max_tokens'] ?? 0 );
+		}
 		if ( $max > 0 ) {
 			$body['max_tokens'] = min( 128000, $max );
 		}
@@ -270,13 +386,22 @@ final class Webino_Dashboard_AI_Providers {
 	 * @return array{ok:bool,content?:string,tokens_in?:int,tokens_out?:int,error?:string}
 	 */
 	private static function post_openai_json( $url, $api_key, $body ) {
+		if ( self::is_gapgpt_url( $url ) ) {
+			$curl = self::post_openai_json_via_curl( $url, $api_key, $body );
+			if ( null !== $curl ) {
+				return $curl;
+			}
+		}
+
+		$timeout = self::wp_http_timeout( self::is_gapgpt_url( $url ) ? self::GAPGPT_HTTP_TIMEOUT : 120 );
 		$response = wp_remote_post(
 			$url,
 			array(
-				'timeout' => 120,
+				'timeout' => $timeout,
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
+					'Expect'        => '',
 				),
 				'body'    => wp_json_encode( $body ),
 			)
@@ -288,6 +413,76 @@ final class Webino_Dashboard_AI_Providers {
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$raw  = (string) wp_remote_retrieve_body( $response );
+		return self::parse_openai_response( $raw, $code, $body );
+	}
+
+	/**
+	 * Direct cURL POST for GapGPT — bypasses WordPress http_request_args caps on some hosts.
+	 *
+	 * @param string               $url URL.
+	 * @param string               $api_key Key.
+	 * @param array<string,mixed>  $body Body.
+	 * @return array{ok:bool,content?:string,tokens_in?:int,tokens_out?:int,error?:string,http_code?:int}|null null when cURL unavailable.
+	 */
+	private static function post_openai_json_via_curl( $url, $api_key, $body ) {
+		if ( ! function_exists( 'curl_init' ) ) {
+			return null;
+		}
+
+		$payload = wp_json_encode( $body );
+		if ( false === $payload ) {
+			return array( 'ok' => false, 'error' => 'JSON encode failed', 'http_code' => 0 );
+		}
+
+		$ch = curl_init( $url );
+		if ( false === $ch ) {
+			return null;
+		}
+
+		$opts = array(
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_POST           => true,
+			CURLOPT_POSTFIELDS     => $payload,
+			CURLOPT_TIMEOUT        => self::effective_timeout( self::GAPGPT_HTTP_TIMEOUT ),
+			CURLOPT_CONNECTTIMEOUT => self::GAPGPT_CONNECT_TIMEOUT,
+			CURLOPT_SSL_VERIFYPEER => true,
+			CURLOPT_SSL_VERIFYHOST => 2,
+			CURLOPT_HTTPHEADER     => array(
+				'Authorization: Bearer ' . $api_key,
+				'Content-Type: application/json',
+				'Accept: application/json',
+				'Expect:',
+			),
+		);
+		if ( defined( 'CURL_HTTP_VERSION_1_1' ) ) {
+			$opts[ CURLOPT_HTTP_VERSION ] = CURL_HTTP_VERSION_1_1;
+		}
+		if ( defined( 'CURL_IPRESOLVE_V4' ) ) {
+			$opts[ CURLOPT_IPRESOLVE ] = CURL_IPRESOLVE_V4;
+		}
+
+		curl_setopt_array( $ch, $opts );
+		$raw  = curl_exec( $ch );
+		$err  = curl_error( $ch );
+		$erno = (int) curl_errno( $ch );
+		$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		curl_close( $ch );
+
+		if ( false === $raw ) {
+			$msg = '' !== $err ? 'cURL error ' . $erno . ': ' . $err : 'cURL request failed';
+			return array( 'ok' => false, 'error' => $msg, 'http_code' => 0 );
+		}
+
+		return self::parse_openai_response( (string) $raw, $code, $body );
+	}
+
+	/**
+	 * @param string               $raw Response body.
+	 * @param int                  $code HTTP status.
+	 * @param array<string,mixed>  $body Request body (for model id).
+	 * @return array{ok:bool,content?:string,tokens_in?:int,tokens_out?:int,error?:string,http_code?:int}
+	 */
+	private static function parse_openai_response( $raw, $code, $body ) {
 		$data = json_decode( $raw, true );
 		if ( $code < 200 || $code >= 300 ) {
 			$msg = is_array( $data ) && isset( $data['error']['message'] ) ? (string) $data['error']['message'] : 'HTTP ' . $code;
@@ -307,6 +502,113 @@ final class Webino_Dashboard_AI_Providers {
 			'tokens_out' => isset( $data['usage']['completion_tokens'] ) ? (int) $data['usage']['completion_tokens'] : 0,
 			'error'      => '' === trim( $content ) ? 'Empty completion' : '',
 			'http_code'  => $code,
+		);
+	}
+
+	/**
+	 * @param string $url URL.
+	 * @param string $api_key Key.
+	 * @return array{code:int,body:string,error:string}|null null when cURL unavailable.
+	 */
+	private static function gapgpt_http_get_via_curl( $url, $api_key ) {
+		if ( ! function_exists( 'curl_init' ) ) {
+			return null;
+		}
+
+		$ch = curl_init( $url );
+		if ( false === $ch ) {
+			return null;
+		}
+
+		$opts = array(
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_TIMEOUT        => 60,
+			CURLOPT_CONNECTTIMEOUT => self::GAPGPT_CONNECT_TIMEOUT,
+			CURLOPT_SSL_VERIFYPEER => true,
+			CURLOPT_SSL_VERIFYHOST => 2,
+			CURLOPT_HTTPHEADER     => array(
+				'Authorization: Bearer ' . $api_key,
+				'Accept: application/json',
+				'Expect:',
+			),
+		);
+		if ( defined( 'CURL_HTTP_VERSION_1_1' ) ) {
+			$opts[ CURLOPT_HTTP_VERSION ] = CURL_HTTP_VERSION_1_1;
+		}
+		if ( defined( 'CURL_IPRESOLVE_V4' ) ) {
+			$opts[ CURLOPT_IPRESOLVE ] = CURL_IPRESOLVE_V4;
+		}
+
+		curl_setopt_array( $ch, $opts );
+		$raw  = curl_exec( $ch );
+		$err  = curl_error( $ch );
+		$erno = (int) curl_errno( $ch );
+		$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		curl_close( $ch );
+
+		if ( false === $raw ) {
+			$msg = '' !== $err ? 'cURL error ' . $erno . ': ' . $err : 'cURL request failed';
+			return array(
+				'code'  => 0,
+				'body'  => '',
+				'error' => $msg,
+			);
+		}
+
+		return array(
+			'code'  => $code,
+			'body'  => (string) $raw,
+			'error' => '',
+		);
+	}
+
+	/**
+	 * @param string $url URL.
+	 * @param string $api_key Key.
+	 * @return array{response:array<string,mixed>|WP_Error,code:int,body:string}
+	 */
+	private static function gapgpt_http_get( $url, $api_key ) {
+		$curl = self::gapgpt_http_get_via_curl( $url, $api_key );
+		if ( is_array( $curl ) ) {
+			if ( '' !== $curl['error'] ) {
+				return array(
+					'response' => new WP_Error( 'http_request_failed', $curl['error'] ),
+					'code'     => 0,
+					'body'     => '',
+				);
+			}
+			return array(
+				'response' => array(
+					'response' => array( 'code' => $curl['code'] ),
+					'body'     => $curl['body'],
+				),
+				'code'     => $curl['code'],
+				'body'     => $curl['body'],
+			);
+		}
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 60,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Accept'        => 'application/json',
+					'Expect'        => '',
+				),
+			)
+		);
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'response' => $response,
+				'code'     => 0,
+				'body'     => '',
+			);
+		}
+		return array(
+			'response' => $response,
+			'code'     => (int) wp_remote_retrieve_response_code( $response ),
+			'body'     => (string) wp_remote_retrieve_body( $response ),
 		);
 	}
 
@@ -331,7 +633,10 @@ final class Webino_Dashboard_AI_Providers {
 		if ( $json ) {
 			$gen['responseMimeType'] = 'application/json';
 		}
-		$max = (int) ( $settings['max_tokens'] ?? 0 );
+		$max = (int) ( $extra['max_tokens'] ?? 0 );
+		if ( $max <= 0 ) {
+			$max = (int) ( $settings['max_tokens'] ?? 0 );
+		}
 		if ( $max > 0 ) {
 			$gen['maxOutputTokens'] = min( 128000, $max );
 		}
@@ -355,7 +660,7 @@ final class Webino_Dashboard_AI_Providers {
 		$response = wp_remote_post(
 			$url,
 			array(
-				'timeout' => 120,
+				'timeout' => self::wp_http_timeout( 120 ),
 				'headers' => array( 'Content-Type' => 'application/json' ),
 				'body'    => wp_json_encode( $body ),
 			)
@@ -446,37 +751,19 @@ final class Webino_Dashboard_AI_Providers {
 			}
 		}
 
-		$response = wp_remote_get(
-			'https://api.gapgpt.app/v1/models',
-			array(
-				'timeout' => 30,
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Accept'        => 'application/json',
-				),
-			)
-		);
-
+		$fetch   = self::gapgpt_http_get( 'https://api.gapgpt.app/v1/models', $api_key );
+		$response = $fetch['response'];
 		if ( is_wp_error( $response ) ) {
-			$fallback = wp_remote_get(
-				'https://api.gapapi.com/v1/models',
-				array(
-					'timeout' => 30,
-					'headers' => array(
-						'Authorization' => 'Bearer ' . $api_key,
-						'Accept'        => 'application/json',
-					),
-				)
-			);
-			if ( ! is_wp_error( $fallback ) ) {
-				$response = $fallback;
+			$fallback = self::gapgpt_http_get( 'https://api.gapapi.com/v1/models', $api_key );
+			if ( ! is_wp_error( $fallback['response'] ) ) {
+				$fetch = $fallback;
 			} else {
 				return new WP_Error( 'gapgpt_models', $response->get_error_message(), array( 'status' => 502 ) );
 			}
 		}
 
-		$code = (int) wp_remote_retrieve_response_code( $response );
-		$raw  = (string) wp_remote_retrieve_body( $response );
+		$code = (int) $fetch['code'];
+		$raw  = (string) $fetch['body'];
 		$data = json_decode( $raw, true );
 		if ( $code < 200 || $code >= 300 ) {
 			$msg = is_array( $data ) && isset( $data['error']['message'] ) ? (string) $data['error']['message'] : 'HTTP ' . $code;
