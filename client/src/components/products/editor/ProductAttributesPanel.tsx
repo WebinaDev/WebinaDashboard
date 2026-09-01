@@ -18,7 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronUp, ChevronsUpDown, GripVertical } from 'lucide-react'
-import { useMemo, useState, useEffect, type Dispatch, type SetStateAction } from 'react'
+import { useMemo, useState, useEffect, useRef, type Dispatch, type SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -129,15 +129,23 @@ function OrderConfigDefaultSelect({
   }, [q.data?.items, selected])
   const matchedValue = useMemo(() => resolveDefaultTermSlug(value, terms), [value, terms])
   const selectValue = matchedValue || terms[0]?.slug || terms[0]?.id?.toString() || ''
+  const seededRef = useRef(false)
+  useEffect(() => {
+    seededRef.current = false
+  }, [attributeId])
   useEffect(() => {
     if (value.trim() !== '' || terms.length === 0) {
       return
     }
+    if (seededRef.current) {
+      return
+    }
+    seededRef.current = true
     const first = terms[0]?.slug || (terms[0]?.id != null ? String(terms[0].id) : '')
     if (first) {
       onChange(first)
     }
-  }, [value, terms, onChange])
+  }, [value, terms, onChange, attributeId])
   if (terms.length === 0) {
     return (
       <p className="text-muted-foreground text-xs">{t('products.editor.noAttributesSelected')}</p>

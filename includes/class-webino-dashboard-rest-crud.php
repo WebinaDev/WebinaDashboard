@@ -4289,7 +4289,10 @@ class Webino_Dashboard_REST_Crud {
 					continue;
 				}
 				$aid  = isset( $row['attribute_id'] ) ? (int) $row['attribute_id'] : 0;
-				$name = isset( $row['name'] ) ? sanitize_text_field( (string) $row['name'] ) : '';
+				$name = isset( $row['name'] ) ? trim( (string) $row['name'] ) : '';
+				if ( $aid <= 0 && '' !== $name && 0 === strpos( $name, 'pa_' ) ) {
+					$aid = self::attribute_id_from_taxonomy( $name );
+				}
 				// Keep rows that have a name and/or attribute_id even when options are empty (clear terms / attach empty global attr).
 				if ( '' === $name && $aid <= 0 ) {
 					continue;
@@ -4399,16 +4402,34 @@ class Webino_Dashboard_REST_Crud {
 			}
 			// Always apply — empty array clears all product attributes.
 			$p->set_attributes( $attr_objects );
+			$preserve_order_configs = false;
 			if ( class_exists( 'Webino_Dashboard_Order_Configs', false ) ) {
-				$product_id = (int) $p->get_id();
-				$clean      = Webino_Dashboard_Order_Configs::sanitize_configs( $order_configs, $product_id );
+				$product_id             = (int) $p->get_id();
+				$clean                  = Webino_Dashboard_Order_Configs::sanitize_configs( $order_configs, $product_id );
+				$preserve_order_configs = $order_config_requested && array() === $order_configs;
 				if ( array() === $clean ) {
-					if ( ! ( $order_config_requested && array() === $order_configs ) ) {
+					if ( ! $preserve_order_configs ) {
 						$p->delete_meta_data( Webino_Dashboard_Order_Configs::META_KEY );
 					}
 				} else {
 					$p->update_meta_data( Webino_Dashboard_Order_Configs::META_KEY, $clean );
 				}
+				// #region agent log
+				if ( class_exists( 'Webino_Dashboard_Order_Configs', false ) ) {
+					Webino_Dashboard_Order_Configs::agent_debug_log_public(
+						'apply_product_catalog_fields',
+						array(
+							'product_id'             => $product_id,
+							'order_config_requested' => $order_config_requested,
+							'raw_count'              => count( $order_configs ),
+							'clean_count'            => count( $clean ),
+							'raw'                    => $order_configs,
+							'clean'                  => $clean,
+						),
+						'H-save'
+					);
+				}
+				// #endregion
 			}
 		}
 		foreach ( array( 'weight', 'length', 'width', 'height' ) as $dim ) {
@@ -4701,6 +4722,20 @@ class Webino_Dashboard_REST_Crud {
 		$p->save();
 
 		$pid = $p->get_id();
+		if ( $pid && class_exists( 'Webino_Dashboard_Order_Configs', false ) ) {
+			$meta = $p->get_meta( Webino_Dashboard_Order_Configs::META_KEY, true );
+			if ( is_array( $meta ) && array() !== $meta ) {
+				Webino_Dashboard_Order_Configs::save_configs( $pid, $meta, true );
+			}
+			Webino_Dashboard_Order_Configs::agent_debug_log_public(
+				'after_product_save',
+				array(
+					'product_id' => $pid,
+					'meta'       => Webino_Dashboard_Order_Configs::get_configs( $pid ),
+				),
+				'H-save'
+			);
+		}
 		if ( $pid && null !== $request->get_param( 'moadian_sstid' ) ) {
 			update_post_meta( $pid, '_webino_moadian_sstid', sanitize_text_field( (string) $request->get_param( 'moadian_sstid' ) ) );
 		}
