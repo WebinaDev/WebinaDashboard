@@ -422,6 +422,20 @@ export function useProductEditorForm() {
   const save = useMutation({
     mutationFn: async () => {
       const payload = buildPayload()
+      // #region agent log
+      fetch('http://127.0.0.1:7308/ingest/12ea5e9f-eb2e-40bb-9a64-50be6ec6bab5', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ff9619' },
+        body: JSON.stringify({
+          sessionId: 'ff9619',
+          location: 'useProductEditorForm.ts:save',
+          message: 'product_attributes payload',
+          data: { product_attributes: payload.product_attributes },
+          hypothesisId: 'H-save',
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {})
+      // #endregion
       if (id) {
         return apiFetch<Product>(`shop/products/${id}`, {
           method: 'PATCH',
