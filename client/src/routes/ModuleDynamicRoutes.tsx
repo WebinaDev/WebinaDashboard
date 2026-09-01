@@ -8,6 +8,16 @@ import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { isSafeModuleRoutePath, normalizeModuleRoutePath } from '@/lib/moduleRoute'
 import { Suspense } from 'react'
 
+function hasValidCapability(capability: string | string[] | undefined): boolean {
+  if (typeof capability === 'string') {
+    return capability.trim().length > 0
+  }
+  if (Array.isArray(capability)) {
+    return capability.some((cap) => typeof cap === 'string' && cap.trim().length > 0)
+  }
+  return false
+}
+
 export function useModuleDynamicRoutes() {
   const { data } = useBootstrapQuery()
   const clients = data?.activeModuleClients ?? []
@@ -20,7 +30,7 @@ export function useModuleDynamicRoutes() {
       .filter((route) => {
         const path = typeof route?.path === 'string' ? normalizeModuleRoutePath(route.path) : ''
         const hasPath = path.length > 0 && isSafeModuleRoutePath(path)
-        const hasCapability = typeof route?.capability === 'string' && route.capability.trim().length > 0
+        const hasCapability = hasValidCapability(route?.capability)
         return hasPath && hasCapability
       })
       .map((route) => {

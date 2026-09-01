@@ -79,7 +79,14 @@ export function ProductRowActions({ row, busy, onDuplicate, onDelete, onSyncChan
         ) : null}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="button" size="icon" variant="ghost" className="size-8" disabled={busy} onClick={() => setDeleteOpen(true)}>
+            <Button
+              type="button"
+              size="icon"
+              variant="destructive"
+              className="size-8"
+              disabled={busy}
+              onClick={() => setDeleteOpen(true)}
+            >
               <Trash2 className="size-4" />
               <span className="sr-only">{t('common.delete')}</span>
             </Button>

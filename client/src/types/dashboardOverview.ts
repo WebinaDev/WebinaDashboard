@@ -116,6 +116,39 @@ export type DashboardTaskOrdersBlock = {
   href: string
 }
 
+export type DashboardFulfillmentAction = 'pack' | 'ship' | 'tracking' | 'refund' | 'return'
+
+export type DashboardFulfillmentItem = {
+  id: number
+  number: string
+  customer_name: string
+  status: string
+  status_label?: string
+  href: string
+  action: DashboardFulfillmentAction
+  shipping_kind?: 'courier' | 'post' | 'tipax' | 'other' | ''
+  shipping_label?: string
+  purchase_type?: string
+  payment_method_title?: string
+  return_status?: string
+  return_item?: string
+  return_qty?: number
+}
+
+export type DashboardFulfillmentBucket = {
+  count: number
+  items: DashboardFulfillmentItem[]
+  href: string
+}
+
+export type DashboardOverviewFulfillment = {
+  pack: DashboardFulfillmentBucket
+  ship: DashboardFulfillmentBucket
+  tracking: DashboardFulfillmentBucket
+  refund: DashboardFulfillmentBucket
+  returns: DashboardFulfillmentBucket
+}
+
 export type DashboardOverviewTasks = {
   comments_hold: { count: number; href: string }
   orders_processing?: DashboardTaskOrdersBlock
@@ -139,6 +172,7 @@ export type DashboardOverviewResponse = {
   sales?: DashboardOverviewSales
   traffic?: DashboardOverviewTraffic
   tasks?: DashboardOverviewTasks
+  fulfillment?: DashboardOverviewFulfillment
   comments?: { items: CommentRow[]; counts: CommentCounts }
   alerts?: DashboardOverviewAlert[]
   partner?: {

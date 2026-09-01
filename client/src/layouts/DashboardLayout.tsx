@@ -1,4 +1,4 @@
-import { EllipsisVertical, ExternalLink, Maximize, Minimize } from 'lucide-react'
+import { EllipsisVertical, ExternalLink, Maximize, Minimize, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
@@ -6,6 +6,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AccentMenu } from '@/components/AccentMenu'
 import { AppSidebar } from '@/components/app-sidebar'
 import { LanguageMenu } from '@/components/LanguageMenu'
+import { NotificationBell } from '@/components/NotificationBell'
 import { ThemeMenu } from '@/components/ThemeMenu'
 import {
   Breadcrumb,
@@ -51,6 +52,60 @@ function CloseMobileSidebarOnNavigate() {
   }, [pathname, setOpenMobile])
 
   return null
+}
+
+const LICENSE_BANNER_DISMISS_KEY = 'wd_license_banner_dismissed_until'
+
+function LicenseSoftBanner() {
+  const { t } = useTranslation()
+  const bq = useBootstrapQuery()
+  const lic = bq.data?.license ?? window.webinoDashboard?.license
+  const showInactive = Boolean(lic?.show_banner)
+  const showUnreachable = Boolean(lic?.show_unreachable_banner) && !showInactive
+  const show = showInactive || showUnreachable
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      const until = Number(localStorage.getItem(LICENSE_BANNER_DISMISS_KEY) || 0)
+      return until > Date.now()
+    } catch {
+      return false
+    }
+  })
+
+  if (!show || dismissed) return null
+
+  const messageKey = showUnreachable ? 'license.banner.unreachable' : 'license.banner.inactive'
+  const borderClass = showUnreachable
+    ? 'border-sky-500/40 bg-sky-500/10 text-sky-950 dark:text-sky-50'
+    : 'border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-50'
+
+  return (
+    <div className={`flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm ${borderClass}`} role="status">
+      <p className="min-w-0 flex-1">{t(messageKey)}</p>
+      <Button type="button" size="sm" variant="outline" asChild>
+        <Link to="/license">{t('license.banner.manage')}</Link>
+      </Button>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="size-8 shrink-0"
+        aria-label={t('license.banner.dismiss')}
+        onClick={() => {
+          // Temporary UI dismiss only — server nag_since keeps the 2-day clock.
+          const until = Date.now() + 6 * 60 * 60 * 1000
+          try {
+            localStorage.setItem(LICENSE_BANNER_DISMISS_KEY, String(until))
+          } catch {
+            /* ignore */
+          }
+          setDismissed(true)
+        }}
+      >
+        <X className="size-4" />
+      </Button>
+    </div>
+  )
 }
 
 export function DashboardLayout() {
@@ -212,6 +267,7 @@ export function DashboardLayout() {
               </BreadcrumbList>
             </Breadcrumb>
             <div className="ms-auto hidden items-center gap-2 md:flex">
+              <NotificationBell />
               <Button
                 type="button"
                 variant="outline"
@@ -236,6 +292,7 @@ export function DashboardLayout() {
               <ThemeMenu />
             </div>
             <div className="ms-auto flex items-center gap-1 md:hidden">
+              <NotificationBell />
               <ThemeMenu />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -267,6 +324,7 @@ export function DashboardLayout() {
           </div>
         </header>
         <div className="@container/main wd-app-atmosphere flex min-w-0 flex-1 flex-col gap-3 p-3 pt-0 sm:gap-4 sm:p-4 sm:pt-0">
+          <LicenseSoftBanner />
           {bq.isError ? (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-sm" role="alert">
               {t('errors.restUnavailable')}

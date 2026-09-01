@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Printer, Search } from 'lucide-react'
+import { Plus, Printer, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useMatch } from 'react-router-dom'
+import { Link, useMatch } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { ListFiltersCollapsible } from '@/components/ListFiltersCollapsible'
 import { ListStatsStrip } from '@/components/ListStatsStrip'
 import { PostsPagination } from '@/components/magazine/PostsPagination'
 import { OrderStatusTabs, type StatusCount } from '@/components/orders/OrderStatusTabs'
@@ -103,8 +104,16 @@ export default function OrdersListPage() {
   const store = useStoreCurrency()
   const locale = i18n.language
   const boot = useBootstrapQuery()
-  const canManageOrders = normalizeCapabilities(boot.data?.capabilities).includes('edit_shop_orders')
-  const isPortal = Boolean(useMatch('/account/orders')) || !canManageOrders
+  const caps = normalizeCapabilities(boot.data?.capabilities)
+  const canManageOrders = caps.includes('edit_shop_orders')
+  const canCreateOrders =
+    canManageOrders || caps.includes('webino_create_shop_orders') || caps.includes('webino_pos')
+  const canUsePos = caps.includes('webino_pos') || canManageOrders
+  const isPortal =
+    Boolean(useMatch('/account/orders')) ||
+    ((caps.includes('webino_account_portal') || caps.includes('webino_partner_portal')) &&
+      !canManageOrders &&
+      !caps.includes('webino_view_own_shop_orders'))
   const detailBase = isPortal ? '/account/orders' : '/orders/list'
 
   const [page, setPage] = useState(1)
@@ -253,6 +262,24 @@ export default function OrdersListPage() {
       title={isPortal ? t('orders.myOrdersTitle') : t('orders.title')}
       description={isPortal ? t('orders.myOrdersDescription') : t('orders.listDescription')}
     >
+      {!isPortal && canCreateOrders ? (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {canUsePos ? (
+            <Button type="button" variant="outline" asChild>
+              <Link to="/pos">
+                <Plus className="size-4" aria-hidden />
+                {t('pos.title')}
+              </Link>
+            </Button>
+          ) : null}
+          <Button type="button" asChild>
+            <Link to="/orders/new">
+              <Plus className="size-4" aria-hidden />
+              {t('orders.newOrder')}
+            </Link>
+          </Button>
+        </div>
+      ) : null}
       {canManageOrders && !isPortal && statItems.length ? (
         <div className="mb-4">
           <ListStatsStrip
@@ -266,8 +293,8 @@ export default function OrdersListPage() {
 
       <OrderStatusTabs counts={statusCounts} active={statusFilter} onChange={handleStatusChange} locale={locale} />
 
-      <div className="mb-3 mt-4">
-        <div className="relative mb-3 min-w-[12rem] max-w-md">
+      <div className="mb-3 mt-4 space-y-3">
+        <div className="relative min-w-[12rem] max-w-md">
           <Search className="text-muted-foreground pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2" aria-hidden />
           <Input
             value={searchInput}
@@ -276,7 +303,13 @@ export default function OrdersListPage() {
             className="ps-9"
           />
         </div>
-        {!isPortal ? <OrdersFiltersBar filters={filters} options={optionsQ.data} onChange={patchFilters} /> : null}
+        {!isPortal ? (
+          <ListFiltersCollapsible
+            activeCount={Object.values(filters).filter((v) => String(v).trim() !== '').length}
+          >
+            <OrdersFiltersBar filters={filters} options={optionsQ.data} onChange={patchFilters} />
+          </ListFiltersCollapsible>
+        ) : null}
       </div>
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">

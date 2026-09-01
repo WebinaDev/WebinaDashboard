@@ -24,8 +24,21 @@ class Webino_Dashboard_Variation_Swatches {
 	public static function init() {
 		add_filter( 'product_attributes_type_selector', array( __CLASS__, 'register_types' ) );
 		add_filter( 'woocommerce_dropdown_variation_attribute_options_html', array( __CLASS__, 'filter_dropdown_html' ), 20, 2 );
+		add_filter( 'woocommerce_ajax_variation_threshold', array( __CLASS__, 'ajax_variation_threshold' ), 10, 2 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_yith_term_meta' ), 30 );
+	}
+
+	/**
+	 * Embed variation JSON on PDP for large matrices (matches dashboard generate cap).
+	 *
+	 * @param int         $threshold Default threshold.
+	 * @param WC_Product  $product   Variable product.
+	 * @return int
+	 */
+	public static function ajax_variation_threshold( $threshold, $product ) {
+		unset( $product );
+		return max( (int) $threshold, 2500 );
 	}
 
 	/**
@@ -566,6 +579,115 @@ class Webino_Dashboard_Variation_Swatches {
 	}
 
 	/**
+	 * Render swatches for a custom (non-variation) attribute select.
+	 *
+	 * @param string               $taxonomy    Taxonomy (pa_*) or empty for custom.
+	 * @param array<int,string>    $options     Option slugs or names.
+	 * @param string               $selected    Selected slug.
+	 * @param string               $select_name Form field name (must not be attribute_*).
+	 * @param WC_Product|null      $product     Product context.
+	 * @param string               $select_id   Optional select id.
+	 * @return string
+	 */
+	public static function render_attribute_swatches( $taxonomy, $options, $selected, $select_name, $product = null, $select_id = '' ) {
+		$taxonomy    = (string) $taxonomy;
+		$selected    = (string) $selected;
+		$select_name = (string) $select_name;
+		if ( false !== strpos( $select_name, '[' ) ) {
+			$select_name = preg_replace( '/[^\w\[\]-]/u', '', $select_name );
+		} else {
+			$select_name = sanitize_key( $select_name );
+		}
+		if ( '' === $select_name || ! is_array( $options ) || array() === $options ) {
+			return '';
+		}
+		$ctx = '' !== $taxonomy ? self::context_for_taxonomy( $taxonomy ) : array(
+			'id'         => 0,
+			'type'       => 'select',
+			'show_label' => true,
+		);
+		if ( ! in_array( $ctx['type'], array( 'color', 'image', 'button' ), true ) ) {
+			return self::render_plain_select( $taxonomy, $options, $selected, $select_name, $product, $select_id );
+		}
+		$show  = ! empty( $ctx['show_label'] ) || 'button' === $ctx['type'];
+		$items = self::option_items( $taxonomy, $options, $product );
+		$select_id = '' !== $select_id ? $select_id : $select_name;
+
+		ob_start();
+		?>
+		<div class="wd-swatches wd-swatches--<?php echo esc_attr( $ctx['type'] ); ?><?php echo $show ? ' wd-swatches--labels' : ''; ?>" data-attribute="<?php echo esc_attr( $taxonomy ); ?>" data-wcf-select="<?php echo esc_attr( $select_name ); ?>">
+			<?php foreach ( $items as $item ) : ?>
+				<?php
+				$is_selected = (string) $item['value'] === $selected || (string) $item['slug'] === $selected;
+				$classes     = array( 'wd-swatch', 'wd-swatch--' . $ctx['type'] );
+				if ( $is_selected ) {
+					$classes[] = 'is-selected';
+				}
+				if ( 'color' === $ctx['type'] && self::color_is_light( $item['color'] ) ) {
+					$classes[] = 'is-light';
+				}
+				?>
+				<button
+					type="button"
+					class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>"
+					data-value="<?php echo esc_attr( $item['value'] ); ?>"
+					aria-label="<?php echo esc_attr( $item['name'] ); ?>"
+					aria-pressed="<?php echo $is_selected ? 'true' : 'false'; ?>"
+					title="<?php echo esc_attr( $item['name'] ); ?>"
+					<?php echo $item['color'] ? 'style="--wd-swatch-color:' . esc_attr( $item['color'] ) . '"' : ''; ?>
+				>
+					<span class="wd-swatch-face" aria-hidden="true">
+						<?php if ( 'image' === $ctx['type'] && $item['image'] ) : ?>
+							<img src="<?php echo esc_url( $item['image'] ); ?>" alt="" width="44" height="44" loading="lazy" />
+						<?php elseif ( 'button' === $ctx['type'] ) : ?>
+							<?php echo esc_html( $item['name'] ); ?>
+						<?php endif; ?>
+					</span>
+					<?php if ( $show && 'button' !== $ctx['type'] ) : ?>
+						<span class="wd-swatch-name"><?php echo esc_html( $item['name'] ); ?></span>
+					<?php endif; ?>
+				</button>
+			<?php endforeach; ?>
+			<div class="wd-swatch-select-hidden" aria-hidden="true">
+				<select id="<?php echo esc_attr( $select_id ); ?>" name="<?php echo esc_attr( $select_name ); ?>">
+					<option value=""><?php echo esc_html__( 'Choose an option', 'woocommerce' ); ?></option>
+					<?php foreach ( $items as $item ) : ?>
+						<option value="<?php echo esc_attr( $item['value'] ); ?>" <?php selected( $selected, $item['value'] ); ?>><?php echo esc_html( $item['name'] ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</div>
+		</div>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Fallback dropdown when attribute type is not swatch-capable.
+	 *
+	 * @param string          $taxonomy    Taxonomy.
+	 * @param array<int,string> $options   Options.
+	 * @param string          $selected    Selected.
+	 * @param string          $select_name Name.
+	 * @param WC_Product|null $product     Product.
+	 * @param string          $select_id   Id.
+	 * @return string
+	 */
+	private static function render_plain_select( $taxonomy, $options, $selected, $select_name, $product, $select_id ) {
+		$items     = self::option_items( $taxonomy, $options, $product );
+		$select_id = '' !== $select_id ? $select_id : preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) $select_name );
+		ob_start();
+		?>
+		<select id="<?php echo esc_attr( $select_id ); ?>" name="<?php echo esc_attr( $select_name ); ?>" class="wcf-plain-select">
+			<option value=""><?php echo esc_html__( 'Choose an option', 'woocommerce' ); ?></option>
+			<?php foreach ( $items as $item ) : ?>
+				<option value="<?php echo esc_attr( $item['value'] ); ?>" <?php selected( $selected, $item['value'] ); ?>><?php echo esc_html( $item['name'] ); ?></option>
+			<?php endforeach; ?>
+		</select>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/**
 	 * @param string               $html Dropdown HTML.
 	 * @param array<string,mixed>  $args WC args.
 	 * @return string
@@ -642,7 +764,7 @@ class Webino_Dashboard_Variation_Swatches {
 	 * @param WC_Product|null $product Product.
 	 * @return array<int,array<string,string>>
 	 */
-	private static function option_items( $taxonomy, $options, $product ) {
+	public static function option_items( $taxonomy, $options, $product ) {
 		$items = array();
 		foreach ( $options as $option ) {
 			$option = (string) $option;

@@ -1,0 +1,64 @@
+{
+  "slug": "accounting-module",
+  "name": "Accounting",
+  "version": "1.4.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Accounting",
+    "sections": [
+      { "id": "connection", "route": "/settings/shop/accounting", "title": "Moadian", "titleKey": "accounting.settings.moadian" },
+      { "id": "company", "route": "/settings/shop/accounting/company", "title": "Company", "titleKey": "accounting.settings.company" },
+      { "id": "sync", "route": "/settings/shop/accounting/sync", "title": "Sync", "titleKey": "accounting.settings.sync" },
+      { "id": "tax", "route": "/settings/shop/accounting/tax", "title": "Tax mapping", "titleKey": "accounting.settings.tax" },
+      { "id": "hesabfa", "route": "/settings/shop/accounting/hesabfa", "title": "Hesabfa", "titleKey": "accounting.settings.hesabfa" },
+      { "id": "payroll", "route": "/settings/shop/accounting/payroll", "title": "Payroll / Tamin", "titleKey": "accounting.settings.payroll" }
+    ]
+  },
+  "sidebar": {
+    "module_id": "accounting-module",
+    "title": "Accounting",
+    "path": "/accounting/overview",
+    "capability": "manage_woocommerce",
+    "icon": "calculator",
+    "nav_group": "reports",
+    "children": [
+      { "id": "accounting-overview", "title": "Overview", "path": "/accounting/overview", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-chart", "title": "Chart of accounts", "path": "/accounting/chart", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-journals", "title": "Journals", "path": "/accounting/journals", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-persons", "title": "Persons", "path": "/accounting/persons", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-products", "title": "Products", "path": "/accounting/products", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-invoices", "title": "Invoices", "path": "/accounting/invoices", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-purchases", "title": "Purchases", "path": "/accounting/purchases", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-expenses", "title": "Expenses", "path": "/accounting/expenses", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-treasury", "title": "Treasury", "path": "/accounting/treasury", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-checks", "title": "Checks", "path": "/accounting/checks", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-installments", "title": "Installments", "path": "/accounting/installments", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-warehouses", "title": "Warehouses", "path": "/accounting/warehouses", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-production", "title": "Production", "path": "/accounting/production", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-moadian", "title": "Moadian", "path": "/accounting/moadian", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-hesabfa", "title": "Hesabfa", "path": "/accounting/hesabfa", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-payroll", "title": "Payroll", "path": "/accounting/payroll", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-my-payroll", "title": "My payslips", "path": "/accounting/my-payroll", "capability": "read", "exclude_from_module_toggle": true },
+      { "id": "accounting-projects", "title": "Projects", "path": "/accounting/projects", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-reports", "title": "Reports", "path": "/accounting/reports", "capability": "view_woocommerce_reports", "exclude_from_module_toggle": true },
+      { "id": "accounting-tools", "title": "Tools", "path": "/accounting/tools", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      { "path": "accounting/:section", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.title", "headerParamKeys": { "section": "section" } },
+      { "path": "accounting/my-payroll", "capability": ["read"], "headerTitleKey": "accounting.payroll.myPayroll" },
+      { "path": "settings/shop/accounting", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.moadian" },
+      { "path": "settings/shop/accounting/company", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.company" },
+      { "path": "settings/shop/accounting/sync", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.sync" },
+      { "path": "settings/shop/accounting/tax", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.tax" },
+      { "path": "settings/shop/accounting/hesabfa", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.hesabfa" },
+      { "path": "settings/shop/accounting/payroll", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.payroll" }
+    ]
+  }
+}

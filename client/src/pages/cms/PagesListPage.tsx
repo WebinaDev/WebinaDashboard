@@ -8,6 +8,7 @@ import { PageRowActions, type PageListRow } from '@/components/cms/PageRowAction
 import { PagesQuickEditRow } from '@/components/cms/PagesQuickEditRow'
 import { PostsPagination } from '@/components/magazine/PostsPagination'
 import { ListStatsStrip } from '@/components/ListStatsStrip'
+import { MobileListCard } from '@/components/MobileListCard'
 import { PageShell } from '@/components/PageShell'
 import { TableListSkeleton } from '@/components/TableListSkeleton'
 import { Button } from '@/components/ui/button'
@@ -189,6 +190,67 @@ export default function PagesListPage() {
             <TableListSkeleton rows={8} columns={visibleColumnCount} />
           ) : (
             <>
+              <div className="space-y-3 p-3 md:hidden">
+                {items.length === 0 ? (
+                  <div className="text-muted-foreground py-8 text-center text-sm">
+                    <p className="mb-3">{t('pages.emptyHint')}</p>
+                    <Button asChild size="sm">
+                      <Link to="/pages/new">{t('pages.add')}</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  items.map((row) => (
+                    <div key={row.id} className="space-y-2">
+                      <MobileListCard
+                        media={
+                          <div className="space-y-1">
+                            <p className="font-medium">{row.title}</p>
+                            <p className="text-muted-foreground text-xs">
+                              {translatePostStatus(t, row.status)} · {formatDisplayDate(row.date, locale)}
+                            </p>
+                          </div>
+                        }
+                        actions={
+                          <PageRowActions
+                            row={row}
+                            quickEditOpen={quickEditId === row.id}
+                            onQuickEditToggle={() =>
+                              setQuickEditId((cur) => (cur === row.id ? null : row.id))
+                            }
+                            onTrashed={invalidateList}
+                          />
+                        }
+                      >
+                        {row.excerpt?.trim() ? (
+                          <p className="text-muted-foreground line-clamp-2 text-sm">{row.excerpt}</p>
+                        ) : null}
+                      </MobileListCard>
+                      {quickEditId === row.id ? (
+                        <div className="overflow-hidden rounded-xl border">
+                          <table className="w-full">
+                            <tbody>
+                              <PagesQuickEditRow
+                                pageId={row.id}
+                                initialTitle={row.title}
+                                initialStatus={row.status}
+                                initialParent={row.parent}
+                                pageOptions={pageOptions}
+                                colSpan={1}
+                                onSaved={() => {
+                                  setQuickEditId(null)
+                                  invalidateList()
+                                }}
+                                onCancel={() => setQuickEditId(null)}
+                              />
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -268,6 +330,7 @@ export default function PagesListPage() {
                   )}
                 </TableBody>
               </Table>
+              </div>
               <PostsPagination
                 page={page}
                 perPage={perPage}

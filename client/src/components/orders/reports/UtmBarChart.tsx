@@ -39,8 +39,8 @@ export function UtmBarChart({ rows, locale, title }: UtmBarChartProps) {
         ) : (
           <ChartContainer
             config={{
-              revenue: { label: t('reports.revenue'), color: 'hsl(var(--chart-2))' },
-              profit: { label: t('reports.table.profit'), color: 'hsl(var(--chart-3))' },
+              revenue: { label: t('reports.revenue'), color: 'var(--color-chart-2)' },
+              profit: { label: t('reports.table.profit'), color: 'var(--color-chart-3)' },
             }}
             className="h-full w-full"
           >

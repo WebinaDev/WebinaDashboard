@@ -14,6 +14,7 @@ import type {
   CommentRow,
   CommentStatusFilter,
 } from '@/components/comments/types'
+import { ListFiltersCollapsible } from '@/components/ListFiltersCollapsible'
 import { PostsPagination } from '@/components/magazine/PostsPagination'
 import { PageShell } from '@/components/PageShell'
 import { TableListSkeleton } from '@/components/TableListSkeleton'
@@ -178,54 +179,55 @@ export default function CommentsPage() {
 
   return (
     <PageShell title={t('comments.title')}>
-      <Card className="mb-4 shadow-sm">
-        <CardContent className="space-y-4 pt-6">
-          <CommentStatusTabs value={status} counts={counts} locale={locale} onChange={handleStatusChange} />
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="relative min-w-[200px] flex-1">
-              <Search className="text-muted-foreground pointer-events-none absolute top-2.5 start-3 size-4" aria-hidden />
-              <Input
-                className="ps-9"
-                placeholder={t('comments.searchPlaceholder')}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
-            {found > 0 ? (
-              <p className="text-muted-foreground text-sm">{t('comments.foundCount', { count: formatNumber(found, locale) })}</p>
-            ) : null}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" size="sm">
-                  <Columns3 className="size-4" />
-                  {t('comments.toggleColumns')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>{t('comments.toggleColumns')}</DropdownMenuLabel>
-                <DropdownMenuCheckboxItem checked={columns.author} onCheckedChange={(v) => toggleColumn('author', v === true)}>
-                  {t('comments.colAuthor')}
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem checked={columns.email} onCheckedChange={(v) => toggleColumn('email', v === true)}>
-                  {t('comments.colEmail')}
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem checked={columns.excerpt} onCheckedChange={(v) => toggleColumn('excerpt', v === true)}>
-                  {t('comments.colExcerpt')}
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem checked={columns.post} onCheckedChange={(v) => toggleColumn('post', v === true)}>
-                  {t('comments.colPost')}
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem checked={columns.date} onCheckedChange={(v) => toggleColumn('date', v === true)}>
-                  {t('comments.colDate')}
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem checked={columns.status} onCheckedChange={(v) => toggleColumn('status', v === true)}>
-                  {t('comments.colStatus')}
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+      <div className="mb-4">
+        <CommentStatusTabs value={status} counts={counts} locale={locale} onChange={handleStatusChange} />
+      </div>
+
+      <ListFiltersCollapsible className="mb-4" activeCount={search.trim() ? 1 : 0}>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="text-muted-foreground pointer-events-none absolute top-2.5 start-3 size-4" aria-hidden />
+            <Input
+              className="ps-9"
+              placeholder={t('comments.searchPlaceholder')}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
           </div>
-        </CardContent>
-      </Card>
+          {found > 0 ? (
+            <p className="text-muted-foreground text-sm">{t('comments.foundCount', { count: formatNumber(found, locale) })}</p>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" size="sm">
+                <Columns3 className="size-4" />
+                {t('comments.toggleColumns')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>{t('comments.toggleColumns')}</DropdownMenuLabel>
+              <DropdownMenuCheckboxItem checked={columns.author} onCheckedChange={(v) => toggleColumn('author', v === true)}>
+                {t('comments.colAuthor')}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={columns.email} onCheckedChange={(v) => toggleColumn('email', v === true)}>
+                {t('comments.colEmail')}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={columns.excerpt} onCheckedChange={(v) => toggleColumn('excerpt', v === true)}>
+                {t('comments.colExcerpt')}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={columns.post} onCheckedChange={(v) => toggleColumn('post', v === true)}>
+                {t('comments.colPost')}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={columns.date} onCheckedChange={(v) => toggleColumn('date', v === true)}>
+                {t('comments.colDate')}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={columns.status} onCheckedChange={(v) => toggleColumn('status', v === true)}>
+                {t('comments.colStatus')}
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </ListFiltersCollapsible>
 
       <Card className="shadow-sm">
         <CardContent className="overflow-x-auto p-0">

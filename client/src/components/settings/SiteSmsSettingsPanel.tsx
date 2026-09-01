@@ -344,6 +344,13 @@ export function SiteSmsSettingsPanel() {
               </div>
             </div>
 
+            <p className="rounded-xl border border-dashed p-3 text-muted-foreground text-xs">
+              {t('settings.siteSms.multiChannelOtpHint')}{' '}
+              <Link className="text-primary underline" to="/notifications?tab=otp">
+                {t('notifications.tabs.otp')}
+              </Link>
+            </p>
+
             <div className="flex items-center justify-between gap-3 rounded-xl border p-4">
               <div>
                 <Label>{t('settings.siteSms.usePatternForOtp')}</Label>

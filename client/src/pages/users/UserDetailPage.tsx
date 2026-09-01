@@ -77,6 +77,8 @@ const ROLES = [
   { value: 'subscriber', key: 'users.roleSubscriber' },
   { value: 'customer', key: 'users.roleCustomer' },
   { value: 'webino_partner', key: 'users.rolePartner' },
+  { value: 'webino_seller', key: 'users.roleSeller' },
+  { value: 'webino_accountant', key: 'users.roleAccountant' },
   { value: 'author', key: 'users.roleAuthor' },
   { value: 'editor', key: 'users.roleEditor' },
   { value: 'shop_manager', key: 'users.roleShopManager' },

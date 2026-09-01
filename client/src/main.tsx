@@ -8,8 +8,14 @@ import { bootI18n, showBootError } from '@/lib/bootError'
 import { createQueryClient } from '@/lib/queryClient'
 import { QueryClientProvider } from '@tanstack/react-query'
 import '@/index.css'
+import '@/fonts-fa.css'
 
 const queryClient = createQueryClient()
+
+/** Non-fatal CDN/Vite font CSS preload glitches must not block React mount. */
+function isIgnorableBootError(msg: string): boolean {
+  return /Unable to preload CSS/i.test(msg) || /fonts-fa/i.test(msg)
+}
 
 function appTree() {
   return (
@@ -94,6 +100,10 @@ window.addEventListener('error', (event) => {
   if (!msg) {
     return
   }
+  if (isIgnorableBootError(msg)) {
+    console.warn('[Webino Dashboard] Ignored non-fatal boot asset error:', msg)
+    return
+  }
   console.error('[Webino Dashboard] Uncaught boot error', event.error ?? event.message)
   showBootError(bootI18n('errors.boot.loadFailed'), msg)
 })
@@ -104,6 +114,11 @@ window.addEventListener('unhandledrejection', (event) => {
   }
   const reason = event.reason
   const msg = reason instanceof Error ? reason.message : String(reason)
+  if (isIgnorableBootError(msg)) {
+    console.warn('[Webino Dashboard] Ignored non-fatal boot rejection:', msg)
+    event.preventDefault()
+    return
+  }
   console.error('[Webino Dashboard] Unhandled rejection during boot', reason)
   showBootError(bootI18n('errors.boot.loadFailed'), msg)
 })

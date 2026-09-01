@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
+import { MobileListCard } from '@/components/MobileListCard'
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { formatDisplayDateTime } from '@/lib/date'
 import { localizeDigits } from '@/lib/digits'
@@ -39,6 +40,8 @@ export type OrderListRow = {
   state?: string
   state_label?: string
   customer_id?: number
+  is_pos?: boolean
+  sales_channel?: string
 }
 
 export type OrderSortField = 'id' | 'date' | 'total' | 'status' | 'payment' | 'utm_source' | 'customer'
@@ -119,6 +122,74 @@ export function OrdersTable({
   }
 
   return (
+    <>
+      <div className="space-y-3 p-3 md:hidden">
+        {items.length === 0 ? (
+          <p className="text-muted-foreground py-8 text-center text-sm">{t('orders.emptyHint')}</p>
+        ) : (
+          items.map((row) => {
+            const checked = selectedIds.includes(row.id)
+            return (
+              <MobileListCard
+                key={row.id}
+                leading={
+                  selectable ? (
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => toggleRow(row.id, v === true)}
+                      aria-label={t('orders.selectOrder', { number: localizeDigits(row.number, locale) })}
+                    />
+                  ) : null
+                }
+                media={
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 space-y-1">
+                      <Link to={`${detailBase}/${row.id}`} className="text-primary font-medium hover:underline">
+                        #{localizeDigits(row.number, locale)}
+                      </Link>
+                      <p className="truncate text-sm">{row.customer_name || t('common.emptyValue')}</p>
+                      {row.is_pos ? (
+                        <Badge variant="outline" className="mt-1">
+                          {t('pos.badge')}
+                        </Badge>
+                      ) : null}
+                      <p className="text-muted-foreground text-xs">
+                        {formatDisplayDateTime(row.date ?? undefined, locale)}
+                      </p>
+                    </div>
+                    <Badge variant={statusBadgeVariant(row.status)}>{translateOrderStatus(t, row.status)}</Badge>
+                  </div>
+                }
+                actions={
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link to={`${detailBase}/${row.id}`}>
+                      <Eye className="size-4" aria-hidden />
+                      {t('common.view')}
+                    </Link>
+                  </Button>
+                }
+              >
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">{t('orders.colTotal')}</span>
+                  <MoneyDisplay
+                    amount={parseFloat(row.total || '0')}
+                    currency={row.currency || store.currency}
+                    currencySymbol={store.currencySymbol}
+                    locale={locale}
+                  />
+                </div>
+                {row.payment_method_title || row.payment_method ? (
+                  <p className="text-muted-foreground truncate text-xs">
+                    {row.payment_method_title || row.payment_method}
+                  </p>
+                ) : null}
+              </MobileListCard>
+            )
+          })
+        )}
+      </div>
+
+      <div className="hidden md:block">
     <Table>
       <TableHeader>
         <TableRow>
@@ -245,5 +316,7 @@ export function OrdersTable({
         )}
       </TableBody>
     </Table>
+      </div>
+    </>
   )
 }

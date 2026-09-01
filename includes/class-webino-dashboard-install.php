@@ -68,6 +68,7 @@ class Webino_Dashboard_Install {
 			self::sql_notifications( $p, $charset_collate ),
 			self::sql_wallet_ledger( $p, $charset_collate ),
 			self::sql_wallet_withdrawals( $p, $charset_collate ),
+			self::sql_order_returns( $p, $charset_collate ),
 		);
 
 		foreach ( $tables as $sql ) {
@@ -605,6 +606,36 @@ class Webino_Dashboard_Install {
 			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY user_id (user_id),
+			KEY status (status)
+		) $charset_collate;";
+	}
+
+	/**
+	 * @param string $p Prefix.
+	 * @param string $charset_collate Charset.
+	 * @return string
+	 */
+	private static function sql_order_returns( $p, $charset_collate ) {
+		return "CREATE TABLE {$p}webino_order_returns (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			order_id bigint(20) unsigned NOT NULL,
+			order_item_id bigint(20) unsigned NOT NULL,
+			product_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			variation_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			item_name varchar(255) NOT NULL DEFAULT '',
+			qty decimal(12,4) NOT NULL DEFAULT 1,
+			reason text NULL,
+			status varchar(32) NOT NULL DEFAULT 'requested',
+			resolution varchar(32) NOT NULL DEFAULT 'none',
+			source varchar(32) NOT NULL DEFAULT 'staff',
+			wc_refund_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			exchange_order_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY order_id (order_id),
+			KEY order_item_id (order_item_id),
 			KEY status (status)
 		) $charset_collate;";
 	}

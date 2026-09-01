@@ -19,15 +19,15 @@ export function HourlyOrdersChart({ rows, locale }: HourlyOrdersChartProps) {
   }))
 
   return (
-    <Card className="shadow-sm">
+    <Card className="min-w-0 overflow-hidden shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t('reports.chart.byHour')}</CardTitle>
       </CardHeader>
-      <CardContent className="h-64 pt-0">
+      <CardContent className="h-64 min-w-0 pt-0">
         {data.every((d) => d.orders === 0) ? (
           <p className="text-muted-foreground flex h-full items-center justify-center text-sm">{t('reports.emptyHint')}</p>
         ) : (
-          <ChartContainer config={{ orders: { label: t('reports.orders'), color: 'hsl(var(--chart-3))' } }} className="h-full w-full">
+          <ChartContainer config={{ orders: { label: t('reports.orders'), color: 'var(--color-chart-3)' } }} className="h-full min-w-0 w-full">
             <BarChart data={data}>
               <CartesianGrid vertical={false} />
               <XAxis dataKey="hour" tickLine={false} axisLine={false} interval={2} />

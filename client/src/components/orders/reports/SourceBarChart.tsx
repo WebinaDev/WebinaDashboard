@@ -25,7 +25,7 @@ export function SourceBarChart({ rows, locale }: SourceBarChartProps) {
         {data.length === 0 ? (
           <p className="text-muted-foreground flex h-full items-center justify-center text-sm">{t('reports.emptyHint')}</p>
         ) : (
-          <ChartContainer config={{ revenue: { label: t('reports.revenue'), color: 'hsl(var(--chart-2))' } }} className="h-full w-full">
+          <ChartContainer config={{ revenue: { label: t('reports.revenue'), color: 'var(--color-chart-2)' } }} className="h-full w-full">
             <BarChart data={data} layout="vertical" margin={{ left: 8, right: 8 }}>
               <CartesianGrid horizontal={false} />
               <XAxis type="number" tickFormatter={axisFmt} hide />

@@ -9,6 +9,7 @@ import { SiteGeneralSettingsPanel } from '@/components/settings/SiteGeneralSetti
 import { SiteSmsSettingsPanel } from '@/components/settings/SiteSmsSettingsPanel'
 import { WcSettingsSectionPanel } from '@/components/settings/WcSettingsSectionPanel'
 import { LicenseSettingsPanel } from '@/components/settings/LicenseSettingsPanel'
+import { NotificationsSettingsPanel } from '@/components/notifications/NotificationsSettingsPanel'
 import { useBotProvider } from '@/hooks/useBotProvider'
 import { isSiteSection } from '@/lib/settings-nav'
 import { Card, CardContent } from '@/components/ui/card'
@@ -69,6 +70,7 @@ export default function SettingsSiteShell() {
         <ModulePanel slug="analytics-module" component="AnalyticsSettingsPanel" />
       ) : null}
       {section === 'sms' ? <SiteSmsSettingsPanel /> : null}
+      {section === 'notifications' ? <NotificationsSettingsPanel /> : null}
     </SettingsModulesChrome>
   )
 }

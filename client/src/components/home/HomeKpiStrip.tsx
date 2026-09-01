@@ -53,12 +53,12 @@ export function HomeKpiStrip({ summary, compareSummary, currency, currencySymbol
   return (
     <section className="space-y-2" aria-label={t('home.sections.sales')}>
       <h2 className="text-sm font-semibold tracking-tight">{t('home.sections.kpis')}</h2>
-      <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+      <div className="flex gap-2.5 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 xl:grid-cols-6">
         {HOME_KPIS.map((kpi) => {
           const value = Number(summary[kpi.key] ?? 0)
           const prev = compareSummary?.[kpi.key]
           return (
-            <Card key={kpi.key} variant="stat" className="overflow-hidden">
+            <Card key={kpi.key} variant="stat" className="min-w-[9.5rem] shrink-0 overflow-hidden md:min-w-0">
               <CardContent className="space-y-1 pt-3.5 pb-3">
                 <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                   {t(kpi.labelKey)}

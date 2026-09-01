@@ -187,7 +187,39 @@ final class Webino_Dashboard_Bots_Order_Notify {
 			)
 		);
 
+		self::seed_default_templates( $out );
+
 		return $out;
+	}
+
+	/**
+	 * Fill empty bot templates with per-event Persian defaults for UI and delivery.
+	 *
+	 * @param array<string,mixed> $out Shop notify settings.
+	 * @return void
+	 */
+	private static function seed_default_templates( array &$out ) {
+		if ( ! class_exists( 'Webino_Dashboard_Notify_Copy', false ) ) {
+			return;
+		}
+		$keys = class_exists( 'Webino_Dashboard_Sms_Order_Map', false )
+			? Webino_Dashboard_Sms_Order_Map::all_event_keys()
+			: array_keys( $out['events'] ?? array() );
+		if ( ! $keys ) {
+			$keys = array( 'pending_on_create', 'processing', 'completed' );
+		}
+		foreach ( $keys as $key ) {
+			$key = Webino_Dashboard_Notify_Copy::canonical_event_key( (string) $key );
+			if ( '' === $key ) {
+				continue;
+			}
+			foreach ( array( 'order_customer', 'order_admin' ) as $scope ) {
+				$current = trim( (string) ( $out['templates'][ $scope ][ $key ] ?? '' ) );
+				if ( '' === $current ) {
+					$out['templates'][ $scope ][ $key ] = Webino_Dashboard_Notify_Copy::bot_template( $scope, $key );
+				}
+			}
+		}
 	}
 
 	/**
@@ -308,6 +340,10 @@ final class Webino_Dashboard_Bots_Order_Notify {
 			array( 'key' => 'qty', 'label' => __( 'Stock quantity', 'webino-dashboard' ), 'scope' => 'stock' ),
 			array( 'key' => 'stock_quantity', 'label' => __( 'Stock quantity', 'webino-dashboard' ), 'scope' => 'stock' ),
 			array( 'key' => 'low_stock_amount', 'label' => __( 'Low stock threshold', 'webino-dashboard' ), 'scope' => 'stock' ),
+			array( 'key' => 'return_item', 'label' => __( 'Return item name', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'return_qty', 'label' => __( 'Return quantity', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'return_reason', 'label' => __( 'Return reason', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'return_status', 'label' => __( 'Return status', 'webino-dashboard' ), 'scope' => 'order' ),
 		);
 	}
 
@@ -645,8 +681,17 @@ final class Webino_Dashboard_Bots_Order_Notify {
 	 * @return string
 	 */
 	private static function template_body( array $sn, $scope, $event_key ) {
-		$tpl = $sn['templates'][ $scope ][ $event_key ] ?? '';
-		return trim( (string) $tpl );
+		$event_key = class_exists( 'Webino_Dashboard_Notify_Copy', false )
+			? Webino_Dashboard_Notify_Copy::canonical_event_key( $event_key )
+			: sanitize_key( (string) $event_key );
+		$tpl       = trim( (string) ( $sn['templates'][ $scope ][ $event_key ] ?? '' ) );
+		if ( '' !== $tpl ) {
+			return $tpl;
+		}
+		if ( class_exists( 'Webino_Dashboard_Notify_Copy', false ) ) {
+			return Webino_Dashboard_Notify_Copy::bot_template( $scope, $event_key );
+		}
+		return '';
 	}
 
 	/**

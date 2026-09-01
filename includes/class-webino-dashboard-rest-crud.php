@@ -699,6 +699,12 @@ class Webino_Dashboard_REST_Crud {
 					'permission_callback' => function () {
 						return Webino_Dashboard_Rest_Base::can( 'edit_products' ); },
 				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => array( __CLASS__, 'product_variations_delete_all' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_products' ); },
+				),
 			)
 		);
 
@@ -826,6 +832,13 @@ class Webino_Dashboard_REST_Crud {
 					'permission_callback' => function () {
 						return Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' ); },
 				),
+				array(
+					'methods'             => 'PUT',
+					'callback'            => array( __CLASS__, 'order_put' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can_create_orders();
+					},
+				),
 			)
 		);
 
@@ -852,6 +865,43 @@ class Webino_Dashboard_REST_Crud {
 					'permission_callback' => function () {
 						return Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' ); },
 				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/orders/(?P<id>\d+)/returns',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'order_returns_list' ),
+					'permission_callback' => function ( $request ) {
+						return Webino_Dashboard_Rest_Base::can_view_order( (int) $request['id'] );
+					},
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'order_returns_create' ),
+					'permission_callback' => function ( $request ) {
+						$order_id = (int) $request['id'];
+						if ( Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' ) ) {
+							return true;
+						}
+						return Webino_Dashboard_Rest_Base::can_view_order( $order_id );
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/orders/(?P<id>\d+)/returns/(?P<return_id>\d+)/(?P<action>approve|reject|receive|refund|exchange)',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'order_returns_action' ),
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' );
+				},
 			)
 		);
 
@@ -890,6 +940,20 @@ class Webino_Dashboard_REST_Crud {
 				array(
 					'methods'             => 'GET',
 					'callback'            => array( __CLASS__, 'products_print_labels' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_products' );
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shop/products/apply-english-slugs',
+			array(
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'products_apply_english_slugs' ),
 					'permission_callback' => function () {
 						return Webino_Dashboard_Rest_Base::can( 'edit_products' );
 					},
@@ -2591,6 +2655,36 @@ class Webino_Dashboard_REST_Crud {
 	}
 
 	/**
+	 * Non-empty Latin slug for global attribute taxonomies (Persian labels sanitize to empty).
+	 *
+	 * @param string $name  Raw attribute name or pa_* key.
+	 * @param string $label Human-readable label fallback.
+	 * @return string
+	 */
+	private static function latin_attribute_slug( $name, $label = '' ) {
+		$raw = (string) $name;
+		if ( 0 === strpos( $raw, 'pa_' ) ) {
+			$raw = substr( $raw, 3 );
+		}
+		if ( '' === $raw && '' !== (string) $label ) {
+			$raw = (string) $label;
+		}
+		$slug = function_exists( 'wc_sanitize_taxonomy_name' )
+			? wc_sanitize_taxonomy_name( $raw )
+			: sanitize_title( $raw );
+		if ( '' === $slug || 'pa' === $slug || 'pa_' === $slug ) {
+			$slug = 'a' . substr( md5( (string) $name . '|' . (string) $label ), 0, 8 );
+		}
+		if ( function_exists( 'wc_get_attribute_slug_max_byte_length' ) ) {
+			$max = (int) wc_get_attribute_slug_max_byte_length();
+			if ( $max > 0 && strlen( $slug ) > $max ) {
+				$slug = substr( $slug, 0, $max );
+			}
+		}
+		return $slug;
+	}
+
+	/**
 	 * Resolve WooCommerce attribute taxonomy name (never invent empty pa_*).
 	 *
 	 * @param int    $attr_id Attribute ID.
@@ -2606,12 +2700,17 @@ class Webino_Dashboard_REST_Crud {
 			}
 		}
 		$slug = (string) $slug;
+		$raw  = $slug;
 		if ( 0 === strpos( $slug, 'pa_' ) ) {
 			$slug = substr( $slug, 3 );
+			$raw  = $slug;
 		}
 		$slug = function_exists( 'wc_sanitize_taxonomy_name' )
 			? wc_sanitize_taxonomy_name( $slug )
 			: sanitize_title( $slug );
+		if ( '' === $slug ) {
+			$slug = self::latin_attribute_slug( $raw, $raw );
+		}
 		if ( '' === $slug ) {
 			return '';
 		}
@@ -2619,6 +2718,719 @@ class Webino_Dashboard_REST_Crud {
 			return wc_attribute_taxonomy_name( $slug );
 		}
 		return 'pa_' . $slug;
+	}
+
+	/**
+	 * True when an attribute key survives sanitize_title unchanged (no DB/taxonomy lookup).
+	 *
+	 * @param string $name Attribute or pa_* taxonomy name.
+	 * @return bool
+	 */
+	private static function attribute_key_is_sanitize_stable( $name ) {
+		$name = (string) $name;
+		if ( '' === $name ) {
+			return false;
+		}
+		$san = sanitize_title( $name );
+		if ( '' === $san || 'pa' === $san || 'pa_' === $san ) {
+			return false;
+		}
+		return $san === $name;
+	}
+
+	/**
+	 * True when a taxonomy name survives WooCommerce sanitize_title unchanged.
+	 *
+	 * @param string $name Taxonomy name (usually pa_*).
+	 * @return bool
+	 */
+	private static function is_sanitize_stable_taxonomy_name( $name ) {
+		if ( ! self::attribute_key_is_sanitize_stable( $name ) ) {
+			return false;
+		}
+		return taxonomy_exists( (string) $name );
+	}
+
+	/**
+	 * Register taxonomy and return a validated global attribute context.
+	 *
+	 * @param string $taxonomy pa_* taxonomy name.
+	 * @param int    $aid      Attribute ID.
+	 * @param string $label    Human-readable label.
+	 * @return array{taxonomy:string,attribute_id:int}
+	 */
+	private static function finalize_global_attribute_context( $taxonomy, $aid, $label = '' ) {
+		$empty = array(
+			'taxonomy'     => '',
+			'attribute_id' => 0,
+		);
+		$taxonomy = (string) $taxonomy;
+		$aid        = (int) $aid;
+		if ( '' === $taxonomy || $aid <= 0 || ! self::attribute_key_is_sanitize_stable( $taxonomy ) ) {
+			return $empty;
+		}
+		self::register_global_attribute_taxonomy_if_needed( $taxonomy, $label );
+		if ( ! taxonomy_exists( $taxonomy ) ) {
+			return $empty;
+		}
+		return array(
+			'taxonomy'     => $taxonomy,
+			'attribute_id' => $aid,
+		);
+	}
+
+	/**
+	 * Attribute ID for a global pa_* taxonomy.
+	 *
+	 * @param string $taxonomy Taxonomy name.
+	 * @return int
+	 */
+	private static function attribute_id_from_taxonomy( $taxonomy ) {
+		if ( ! function_exists( 'wc_get_attribute_taxonomies' ) ) {
+			return 0;
+		}
+		$taxonomy = (string) $taxonomy;
+		$bare       = 0 === strpos( $taxonomy, 'pa_' ) ? substr( $taxonomy, 3 ) : $taxonomy;
+		foreach ( wc_get_attribute_taxonomies() as $tax ) {
+			if ( $tax->attribute_name === $bare ) {
+				return (int) $tax->attribute_id;
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Human-readable option labels for a parent product attribute.
+	 *
+	 * @param WC_Product           $parent Parent product.
+	 * @param WC_Product_Attribute $attr   Attribute object.
+	 * @return array<int,string>
+	 */
+	private static function parent_attribute_option_labels( $parent, $attr ) {
+		$labels = array();
+		if ( ! $parent || ! is_a( $attr, 'WC_Product_Attribute' ) ) {
+			return $labels;
+		}
+		if ( $attr->is_taxonomy() ) {
+			$pid = (int) $parent->get_id();
+			if ( $pid > 0 && function_exists( 'wc_get_product_terms' ) ) {
+				$names = wc_get_product_terms( $pid, $attr->get_name(), array( 'fields' => 'names' ) );
+				if ( ! is_wp_error( $names ) && is_array( $names ) ) {
+					foreach ( $names as $name ) {
+						$name = (string) $name;
+						if ( '' !== $name ) {
+							$labels[] = $name;
+						}
+					}
+				}
+			}
+			if ( array() === $labels ) {
+				foreach ( (array) $attr->get_options() as $term_id ) {
+					if ( is_numeric( $term_id ) ) {
+						$term = get_term( (int) $term_id, $attr->get_name() );
+						if ( $term && ! is_wp_error( $term ) ) {
+							$labels[] = (string) $term->name;
+						}
+					} else {
+						$opt = (string) $term_id;
+						if ( '' !== $opt ) {
+							$labels[] = $opt;
+						}
+					}
+				}
+			}
+			return $labels;
+		}
+		foreach ( (array) $attr->get_options() as $opt ) {
+			$opt = (string) $opt;
+			if ( '' !== $opt ) {
+				$labels[] = $opt;
+			}
+		}
+		return $labels;
+	}
+
+	/**
+	 * Option labels/slugs for a parent variation axis (labels, slugs, and get_variation_attributes fallback).
+	 *
+	 * @param WC_Product           $parent   Parent product.
+	 * @param WC_Product_Attribute $attr     Attribute object.
+	 * @param string               $axis_key Parent attribute array key.
+	 * @return array<int,string>
+	 */
+	private static function parent_variation_axis_option_values( $parent, $attr, $axis_key = '' ) {
+		$values = array();
+		if ( ! $parent || ! is_a( $attr, 'WC_Product_Attribute' ) ) {
+			return $values;
+		}
+		foreach ( self::parent_attribute_option_labels( $parent, $attr ) as $opt ) {
+			$opt = (string) $opt;
+			if ( '' !== $opt ) {
+				$values[] = $opt;
+			}
+		}
+		if ( method_exists( $attr, 'get_slugs' ) ) {
+			foreach ( (array) $attr->get_slugs() as $slug ) {
+				$slug = (string) $slug;
+				if ( '' !== $slug ) {
+					$values[] = $slug;
+				}
+			}
+		}
+		$axes = $parent->get_variation_attributes();
+		if ( is_array( $axes ) ) {
+			$keys = array();
+			$axis_key = (string) $axis_key;
+			if ( '' !== $axis_key ) {
+				$keys[] = $axis_key;
+			}
+			$name = (string) $attr->get_name();
+			if ( '' !== $name && ! in_array( $name, $keys, true ) ) {
+				$keys[] = $name;
+			}
+			foreach ( $keys as $key ) {
+				if ( ! isset( $axes[ $key ] ) || ! is_array( $axes[ $key ] ) ) {
+					continue;
+				}
+				foreach ( $axes[ $key ] as $opt ) {
+					$opt = (string) $opt;
+					if ( '' !== $opt ) {
+						$values[] = $opt;
+					}
+				}
+			}
+		}
+		return array_values( array_unique( $values ) );
+	}
+
+	/**
+	 * Assign variation taxonomy term IDs to the parent product (WooCommerce expects this for combos).
+	 *
+	 * @param WC_Product $parent Variable parent.
+	 * @return void
+	 */
+	private static function sync_parent_variation_taxonomy_terms( $parent ) {
+		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
+			return;
+		}
+		$parent_id = (int) $parent->get_id();
+		if ( $parent_id <= 0 ) {
+			return;
+		}
+		foreach ( $parent->get_attributes() as $axis_key => $attr ) {
+			if ( ! is_a( $attr, 'WC_Product_Attribute' ) || ! $attr->get_variation() || ! $attr->is_taxonomy() ) {
+				continue;
+			}
+			$term_ids = self::resolve_variation_taxonomy_term_ids( $parent, $attr, (string) $axis_key );
+			if ( array() !== $term_ids ) {
+				wp_set_object_terms( $parent_id, $term_ids, $attr->get_name() );
+			}
+		}
+	}
+
+	/**
+	 * Resolve global attribute term IDs from numeric options, labels, or slugs.
+	 *
+	 * @param WC_Product           $parent   Variable parent.
+	 * @param WC_Product_Attribute $attr     Attribute object.
+	 * @param string               $axis_key Parent attribute array key.
+	 * @return array<int,int>
+	 */
+	private static function resolve_variation_taxonomy_term_ids( $parent, $attr, $axis_key = '' ) {
+		$term_ids = array();
+		if ( ! $parent || ! is_a( $attr, 'WC_Product_Attribute' ) || ! $attr->is_taxonomy() ) {
+			return $term_ids;
+		}
+		$tax = (string) $attr->get_name();
+		if ( ! taxonomy_exists( $tax ) ) {
+			return $term_ids;
+		}
+		$seen = array();
+		$add  = static function ( $term_id ) use ( &$term_ids, &$seen ) {
+			$term_id = (int) $term_id;
+			if ( $term_id <= 0 || isset( $seen[ $term_id ] ) ) {
+				return;
+			}
+			$seen[ $term_id ] = true;
+			$term_ids[]         = $term_id;
+		};
+		foreach ( (array) $attr->get_options() as $opt ) {
+			if ( is_numeric( $opt ) && (int) $opt > 0 ) {
+				$add( (int) $opt );
+				continue;
+			}
+			$slug = self::ensure_term_slug( $tax, (string) $opt );
+			if ( '' === $slug ) {
+				continue;
+			}
+			$term = get_term_by( 'slug', $slug, $tax );
+			if ( $term && ! is_wp_error( $term ) ) {
+				$add( (int) $term->term_id );
+			}
+		}
+		foreach ( self::parent_variation_axis_option_values( $parent, $attr, $axis_key ) as $opt ) {
+			$slug = self::ensure_term_slug( $tax, $opt );
+			if ( '' === $slug ) {
+				continue;
+			}
+			$term = get_term_by( 'slug', $slug, $tax );
+			if ( $term && ! is_wp_error( $term ) ) {
+				$add( (int) $term->term_id );
+			}
+		}
+		return array_values( $term_ids );
+	}
+
+	/**
+	 * Slugs or labels for one variation axis from get_variation_attributes() fallback.
+	 *
+	 * @param array<string,array<int,string>> $axes           Variation axes.
+	 * @param string                          $attribute_key  Parent attribute key.
+	 * @param string                          $name           Attribute name.
+	 * @param string                          $taxonomy       pa_* taxonomy when resolving slugs.
+	 * @param bool                            $resolve_slugs  Resolve taxonomy term slugs.
+	 * @return array<int,string>
+	 */
+	private static function variation_axis_slugs_from_axes( $axes, $attribute_key, $name, $taxonomy, $resolve_slugs ) {
+		$out  = array();
+		$keys = array( (string) $attribute_key, (string) $name );
+		if ( ! is_array( $axes ) ) {
+			return $out;
+		}
+		foreach ( array_unique( $keys ) as $key ) {
+			if ( '' === $key || ! isset( $axes[ $key ] ) || ! is_array( $axes[ $key ] ) ) {
+				continue;
+			}
+			foreach ( $axes[ $key ] as $opt ) {
+				$opt = (string) $opt;
+				if ( '' === $opt ) {
+					continue;
+				}
+				if ( $resolve_slugs && taxonomy_exists( (string) $taxonomy ) ) {
+					$slug = self::ensure_term_slug( (string) $taxonomy, $opt );
+					if ( '' !== $slug ) {
+						$out[] = $slug;
+					}
+				} else {
+					$out[] = $opt;
+				}
+			}
+		}
+		return array_values( array_unique( $out ) );
+	}
+
+	/**
+	 * Build parent-keyed slug map the way WooCommerce create_all_product_variations expects.
+	 *
+	 * @param WC_Product $parent Variable parent.
+	 * @return array<string,array<int,string>>
+	 */
+	private static function prime_variation_attribute_slug_map( $parent ) {
+		$map = array();
+		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
+			return $map;
+		}
+		$parent_id = (int) $parent->get_id();
+		if ( $parent_id <= 0 ) {
+			return $map;
+		}
+		$axes = $parent->get_variation_attributes();
+		if ( ! is_array( $axes ) ) {
+			$axes = array();
+		}
+		$variation_attrs = $parent->get_attributes();
+		if ( function_exists( 'wc_attributes_array_filter_variation' ) ) {
+			$variation_attrs = array_filter( $variation_attrs, 'wc_attributes_array_filter_variation' );
+		} else {
+			$variation_attrs = array_filter(
+				$variation_attrs,
+				static function ( $attr ) {
+					return is_a( $attr, 'WC_Product_Attribute' ) && $attr->get_variation();
+				}
+			);
+		}
+		foreach ( $variation_attrs as $attribute_key => $attr ) {
+			if ( ! is_a( $attr, 'WC_Product_Attribute' ) ) {
+				continue;
+			}
+			$name  = (string) $attr->get_name();
+			$slugs = array();
+			if ( $attr->is_taxonomy() && taxonomy_exists( $name ) ) {
+				$axis_label = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $name, $parent ) : $name;
+				self::register_global_attribute_taxonomy_if_needed( $name, is_string( $axis_label ) ? $axis_label : $name );
+				if ( function_exists( 'wc_get_product_terms' ) ) {
+					$terms = wc_get_product_terms( $parent_id, $name, array( 'fields' => 'slugs' ) );
+					if ( is_array( $terms ) ) {
+						$slugs = $terms;
+					}
+				}
+				if ( array() === $slugs && method_exists( $attr, 'get_slugs' ) ) {
+					$slugs = array_values(
+						array_filter(
+							array_map( 'strval', (array) $attr->get_slugs() ),
+							static function ( $v ) {
+								return '' !== $v;
+							}
+						)
+					);
+				}
+				if ( array() === $slugs ) {
+					foreach ( self::parent_variation_axis_option_values( $parent, $attr, (string) $attribute_key ) as $opt ) {
+						$slug = self::ensure_term_slug( $name, $opt );
+						if ( '' !== $slug ) {
+							$slugs[] = $slug;
+						}
+					}
+				}
+				$axis_slugs = self::variation_axis_slugs_from_axes( $axes, (string) $attribute_key, $name, $name, true );
+				if ( array() === $slugs && array() !== $axis_slugs ) {
+					$slugs = $axis_slugs;
+				}
+				$term_ids = self::resolve_variation_taxonomy_term_ids( $parent, $attr, (string) $attribute_key );
+				if ( array() !== $term_ids ) {
+					wp_set_object_terms( $parent_id, $term_ids, $name );
+				}
+			} else {
+				if ( method_exists( $attr, 'get_slugs' ) ) {
+					$slugs = array_values(
+						array_filter(
+							array_map( 'strval', (array) $attr->get_slugs() ),
+							static function ( $v ) {
+								return '' !== $v;
+							}
+						)
+					);
+				}
+				if ( array() === $slugs ) {
+					$slugs = array_values(
+						array_filter(
+							array_map( 'strval', (array) $attr->get_options() ),
+							static function ( $v ) {
+								return '' !== $v;
+							}
+						)
+					);
+				}
+				$axis_values = self::variation_axis_slugs_from_axes( $axes, (string) $attribute_key, $name, $name, false );
+				if ( array() === $slugs && array() !== $axis_values ) {
+					$slugs = $axis_values;
+				}
+			}
+			$slugs = array_values(
+				array_unique(
+					array_filter(
+						array_map( 'strval', $slugs ),
+						static function ( $v ) {
+							return '' !== $v;
+						}
+					)
+				)
+			);
+			if ( array() !== $slugs ) {
+				$map[ (string) $attribute_key ] = $slugs;
+			}
+		}
+		return $map;
+	}
+
+	/**
+	 * Create variations from a slug map (WooCommerce core cartesian loop).
+	 *
+	 * @param WC_Product                        $parent   Variable parent.
+	 * @param array<string,array<int,string>>   $slug_map Attribute key => slugs or custom values.
+	 * @param int                               $batch    Max creations this call.
+	 * @return int
+	 */
+	private static function create_variations_from_slug_map( $parent, $slug_map, $batch = 40 ) {
+		if ( ! $parent || ! $parent->is_type( 'variable' ) || ! is_array( $slug_map ) || array() === $slug_map ) {
+			return 0;
+		}
+		if ( function_exists( 'wc_array_cartesian' ) ) {
+			$possible = array_reverse( wc_array_cartesian( $slug_map ) );
+		} else {
+			$possible = self::cartesian_variation_combos( $slug_map );
+		}
+		if ( ! is_array( $possible ) || array() === $possible ) {
+			return 0;
+		}
+		$existing_attributes = array();
+		foreach ( $parent->get_children() as $child_id ) {
+			$child = wc_get_product( (int) $child_id );
+			if ( $child && $child->is_type( 'variation' ) ) {
+				$existing_attributes[] = $child->get_attributes();
+			}
+		}
+		$created   = 0;
+		$parent_id = (int) $parent->get_id();
+		$batch     = max( 0, (int) $batch );
+		foreach ( $possible as $combo ) {
+			if ( ! is_array( $combo ) || array() === $combo ) {
+				continue;
+			}
+			if ( in_array( $combo, $existing_attributes, false ) ) { // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+				continue;
+			}
+			$variation = new WC_Product_Variation();
+			$variation->set_parent_id( $parent_id );
+			$variation->set_status( 'publish' );
+			$variation->set_attributes( $combo );
+			$variation_id = $variation->save();
+			if ( $variation_id > 0 ) {
+				do_action( 'product_variation_linked', $variation_id );
+				++$created;
+			}
+			if ( $batch > 0 && $created >= $batch ) {
+				break;
+			}
+		}
+		return $created;
+	}
+
+	/**
+	 * Migrate custom / Persian variation axes on the parent to global pa_* taxonomies.
+	 *
+	 * @param WC_Product $parent Variable parent.
+	 * @return WC_Product Refreshed parent (same instance if unchanged).
+	 */
+	private static function migrate_parent_variation_attributes_to_global( $parent ) {
+		if ( ! $parent || ! $parent->is_type( 'variable' ) || ! class_exists( 'WC_Product_Attribute' ) ) {
+			return $parent;
+		}
+		$changed   = false;
+		$new_attrs = array();
+		foreach ( $parent->get_attributes() as $key => $attr ) {
+			if ( ! is_a( $attr, 'WC_Product_Attribute' ) ) {
+				continue;
+			}
+			if ( ! $attr->get_variation() ) {
+				$new_attrs[ $key ] = $attr;
+				continue;
+			}
+			$name = (string) $attr->get_name();
+			if ( $attr->is_taxonomy() && self::attribute_key_is_sanitize_stable( $name ) ) {
+				$axis_label = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $name, $parent ) : $name;
+				self::register_global_attribute_taxonomy_if_needed( $name, is_string( $axis_label ) ? $axis_label : $name );
+				$new_attrs[ $name ] = $attr;
+				continue;
+			}
+			$label = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $name, $parent ) : $name;
+			if ( ! is_string( $label ) || '' === $label ) {
+				$label = $name;
+			}
+			$ctx = self::ensure_global_attribute_taxonomy_context( $label, $name );
+			$tax = isset( $ctx['taxonomy'] ) ? (string) $ctx['taxonomy'] : '';
+			$aid = isset( $ctx['attribute_id'] ) ? (int) $ctx['attribute_id'] : 0;
+			if ( '' === $tax || $aid <= 0 || ! taxonomy_exists( $tax ) ) {
+				$new_attrs[ $key ] = $attr;
+				continue;
+			}
+			$term_ids = array();
+			foreach ( self::parent_variation_axis_option_values( $parent, $attr, $key ) as $opt ) {
+				$slug = self::ensure_term_slug( $tax, $opt );
+				if ( '' === $slug ) {
+					continue;
+				}
+				$term = get_term_by( 'slug', $slug, $tax );
+				if ( $term && ! is_wp_error( $term ) ) {
+					$term_ids[] = (int) $term->term_id;
+				}
+			}
+			$term_ids = array_values( array_unique( $term_ids ) );
+			if ( array() === $term_ids ) {
+				$new_attrs[ $key ] = $attr;
+				continue;
+			}
+			$migrated = new WC_Product_Attribute();
+			$migrated->set_id( $aid );
+			$migrated->set_name( $tax );
+			$migrated->set_options( $term_ids );
+			$migrated->set_position( (int) $attr->get_position() );
+			$migrated->set_visible( $attr->get_visible() );
+			$migrated->set_variation( true );
+			$new_attrs[ $tax ] = $migrated;
+			$changed           = true;
+		}
+		if ( $changed ) {
+			$parent->set_attributes( $new_attrs );
+			$parent->save();
+			if ( function_exists( 'wc_delete_product_transients' ) ) {
+				wc_delete_product_transients( $parent->get_id() );
+			}
+		}
+		self::sync_parent_variation_taxonomy_terms( $parent );
+		$refreshed = wc_get_product( $parent->get_id() );
+		return ( $refreshed && $refreshed->is_type( 'variable' ) ) ? $refreshed : $parent;
+	}
+
+	/**
+	 * Register a WooCommerce global attribute taxonomy for the current request.
+	 *
+	 * @param string $taxonomy pa_* taxonomy name.
+	 * @param string $label    Human-readable label.
+	 * @return void
+	 */
+	private static function register_global_attribute_taxonomy_if_needed( $taxonomy, $label = '' ) {
+		$taxonomy = (string) $taxonomy;
+		if ( '' === $taxonomy || taxonomy_exists( $taxonomy ) ) {
+			return;
+		}
+		register_taxonomy(
+			$taxonomy,
+			apply_filters( 'woocommerce_taxonomy_objects_' . $taxonomy, array( 'product' ) ),
+			apply_filters(
+				'woocommerce_taxonomy_args_' . $taxonomy,
+				array(
+					'labels'       => array( 'name' => $label ? $label : $taxonomy ),
+					'hierarchical' => true,
+					'show_ui'      => false,
+					'query_var'    => true,
+					'rewrite'      => false,
+				)
+			)
+		);
+	}
+
+	/**
+	 * Flush WooCommerce attribute taxonomy cache.
+	 *
+	 * @return void
+	 */
+	private static function flush_attribute_taxonomy_cache() {
+		delete_transient( 'wc_attribute_taxonomies' );
+		if ( function_exists( 'wc_get_attribute_taxonomies' ) ) {
+			wp_cache_delete( 'woocommerce_attribute_taxonomies', 'woocommerce' );
+		}
+	}
+
+	/**
+	 * Find or create a global WooCommerce attribute taxonomy with a non-empty Latin slug.
+	 *
+	 * @param string $label     Human-readable label.
+	 * @param string $name_hint Raw axis name from parent product.
+	 * @return string pa_* taxonomy name or empty string.
+	 */
+	private static function ensure_global_attribute_taxonomy( $label, $name_hint = '' ) {
+		$ctx = self::ensure_global_attribute_taxonomy_context( $label, $name_hint );
+		return isset( $ctx['taxonomy'] ) ? (string) $ctx['taxonomy'] : '';
+	}
+
+	/**
+	 * @param string $label     Human-readable label.
+	 * @param string $name_hint Raw axis name from parent product.
+	 * @return array{taxonomy:string,attribute_id:int}
+	 */
+	private static function ensure_global_attribute_taxonomy_context( $label, $name_hint = '' ) {
+		$empty = array(
+			'taxonomy'      => '',
+			'attribute_id'  => 0,
+		);
+		$label     = (string) $label;
+		$name_hint = (string) $name_hint;
+		$slug      = self::latin_attribute_slug( $name_hint, $label );
+
+		if ( function_exists( 'wc_get_attribute_taxonomies' ) ) {
+			foreach ( wc_get_attribute_taxonomies() as $tax ) {
+				$label_match = ( $tax->attribute_label === $label );
+				$slug_match  = ( sanitize_title( $tax->attribute_name ) === $slug || $tax->attribute_name === $slug );
+				if ( ! $label_match && ! $slug_match ) {
+					continue;
+				}
+				$resolved = self::resolve_attribute_taxonomy( (int) $tax->attribute_id, $tax->attribute_name );
+				if ( '' === $resolved || ! self::attribute_key_is_sanitize_stable( $resolved ) ) {
+					continue;
+				}
+				return self::finalize_global_attribute_context( $resolved, (int) $tax->attribute_id, $label );
+			}
+		}
+
+		$aid = 0;
+		if ( function_exists( 'wc_create_attribute' ) ) {
+			$created = wc_create_attribute(
+				array(
+					'name'         => $label ? $label : $slug,
+					'slug'         => $slug,
+					'type'         => 'select',
+					'order_by'     => 'menu_order',
+					'has_archives' => false,
+				)
+			);
+			if ( ! is_wp_error( $created ) && (int) $created > 0 ) {
+				$aid = (int) $created;
+			} elseif ( is_wp_error( $created ) ) {
+				self::flush_attribute_taxonomy_cache();
+				if ( function_exists( 'wc_get_attribute_taxonomies' ) ) {
+					foreach ( wc_get_attribute_taxonomies() as $tax ) {
+						if ( $tax->attribute_name === $slug ) {
+							$aid = (int) $tax->attribute_id;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if ( $aid <= 0 ) {
+			return $empty;
+		}
+
+		self::flush_attribute_taxonomy_cache();
+		$tax = self::resolve_attribute_taxonomy( $aid, $slug );
+		return self::finalize_global_attribute_context( $tax, $aid, $label );
+	}
+
+	/**
+	 * Write variation attribute map to product object and post meta.
+	 *
+	 * @param WC_Product_Variation   $variation Variation.
+	 * @param array<string,string>   $storage   pa_* => term slug.
+	 * @return void
+	 */
+	private static function persist_variation_storage_attributes( $variation, $storage ) {
+		if ( ! $variation || ! is_array( $storage ) || array() === $storage ) {
+			return;
+		}
+		$variation->set_attributes( $storage );
+		$vid = (int) $variation->get_id();
+		if ( $vid <= 0 ) {
+			return;
+		}
+		foreach ( $storage as $taxonomy => $slug ) {
+			$meta_key = self::variation_storage_meta_key( $taxonomy );
+			if ( '' !== $meta_key ) {
+				update_post_meta( $vid, $meta_key, $slug );
+			}
+		}
+	}
+
+	/**
+	 * Save variation with storage attributes; repair meta if WC read-back is empty.
+	 *
+	 * @param WC_Product_Variation   $variation Variation.
+	 * @param array<string,string>   $storage   pa_* => term slug.
+	 * @return WC_Product_Variation|null Saved variation or null on failure.
+	 */
+	private static function save_variation_with_storage_attributes( $variation, $storage ) {
+		if ( ! $variation || ! is_array( $storage ) || array() === $storage ) {
+			return null;
+		}
+		$variation->set_attributes( $storage );
+		$variation->save();
+		$vid = (int) $variation->get_id();
+		if ( $vid <= 0 ) {
+			return null;
+		}
+		foreach ( $storage as $taxonomy => $slug ) {
+			$meta_key = self::variation_storage_meta_key( $taxonomy );
+			if ( '' !== $meta_key ) {
+				update_post_meta( $vid, $meta_key, $slug );
+			}
+		}
+		clean_post_cache( $vid );
+		$v = wc_get_product( $vid );
+		if ( $v && $v->is_type( 'variation' ) && ! self::variation_attributes_are_empty( $v ) ) {
+			return $v;
+		}
+		return null;
 	}
 
 	/**
@@ -2682,7 +3494,7 @@ class Webino_Dashboard_REST_Crud {
 					'woocommerce_taxonomy_args_' . $taxonomy,
 					array(
 						'labels'       => array( 'name' => $label ),
-						'hierarchical' => false,
+						'hierarchical' => true,
 						'show_ui'      => false,
 						'query_var'    => true,
 						'rewrite'      => false,
@@ -3469,7 +4281,9 @@ class Webino_Dashboard_REST_Crud {
 		}
 		$raw_attrs = $request->get_param( 'product_attributes' );
 		if ( is_array( $raw_attrs ) && class_exists( 'WC_Product_Attribute' ) ) {
-			$attr_objects = array();
+			$attr_objects              = array();
+			$order_configs             = array();
+			$order_config_requested    = false;
 			foreach ( $raw_attrs as $i => $row ) {
 				if ( ! is_array( $row ) ) {
 					continue;
@@ -3479,6 +4293,10 @@ class Webino_Dashboard_REST_Crud {
 				// Keep rows that have a name and/or attribute_id even when options are empty (clear terms / attach empty global attr).
 				if ( '' === $name && $aid <= 0 ) {
 					continue;
+				}
+				$is_order_config = ! empty( $row['order_config'] );
+				if ( $is_order_config ) {
+					$order_config_requested = true;
 				}
 				$raw_options = ( isset( $row['options'] ) && is_array( $row['options'] ) ) ? $row['options'] : array();
 				$options     = array_values(
@@ -3494,7 +4312,7 @@ class Webino_Dashboard_REST_Crud {
 
 				// Always prefer / create a WooCommerce global attribute (never product-only).
 				if ( $aid <= 0 && '' !== $name && function_exists( 'wc_create_attribute' ) ) {
-					$slug  = sanitize_title( 0 === strpos( $name, 'pa_' ) ? substr( $name, 3 ) : $name );
+					$slug  = self::latin_attribute_slug( $name, $name );
 					$label = $name;
 					if ( 0 === strpos( $name, 'pa_' ) && function_exists( 'wc_attribute_label' ) ) {
 						$label = wc_attribute_label( $name );
@@ -3526,7 +4344,7 @@ class Webino_Dashboard_REST_Crud {
 				$is_var_product = $p->is_type( 'variable' );
 				$attr->set_position( (int) $i );
 				$attr->set_visible( isset( $row['visible'] ) ? (bool) $row['visible'] : true );
-				$attr->set_variation( $is_var_product && ! empty( $row['variation'] ) );
+				$attr->set_variation( $is_var_product && ! empty( $row['variation'] ) && ! $is_order_config );
 
 				if ( $aid > 0 ) {
 					// Use shared helper (wc_attribute_taxonomy_name_by_id) — not the non-existent id_to_name alias.
@@ -3545,21 +4363,12 @@ class Webino_Dashboard_REST_Crud {
 								}
 							}
 							if ( $term_id <= 0 ) {
-								$by_slug = get_term_by( 'slug', sanitize_title( $opt ), $tax_name );
-								if ( $by_slug && ! is_wp_error( $by_slug ) ) {
-									$term_id = (int) $by_slug->term_id;
-								}
-							}
-							if ( $term_id <= 0 ) {
-								$by_name = get_term_by( 'name', $opt, $tax_name );
-								if ( $by_name && ! is_wp_error( $by_name ) ) {
-									$term_id = (int) $by_name->term_id;
-								}
-							}
-							if ( $term_id <= 0 ) {
-								$inserted = wp_insert_term( $opt, $tax_name );
-								if ( ! is_wp_error( $inserted ) && ! empty( $inserted['term_id'] ) ) {
-									$term_id = (int) $inserted['term_id'];
+								$term_slug = self::ensure_term_slug( $tax_name, $opt );
+								if ( '' !== $term_slug ) {
+									$by_slug = get_term_by( 'slug', $term_slug, $tax_name );
+									if ( $by_slug && ! is_wp_error( $by_slug ) ) {
+										$term_id = (int) $by_slug->term_id;
+									}
 								}
 							}
 							if ( $term_id > 0 ) {
@@ -3570,6 +4379,17 @@ class Webino_Dashboard_REST_Crud {
 						$attr->set_name( $tax_name );
 						$attr->set_options( array_values( array_unique( $resolved_ids ) ) );
 						$attr_objects[ $tax_name ] = $attr;
+						if ( $is_order_config ) {
+							$default_raw = (string) ( $row['order_config_default'] ?? '' );
+							if ( class_exists( 'Webino_Dashboard_Order_Configs', false ) ) {
+								$default_raw = Webino_Dashboard_Order_Configs::resolve_default_slug( $default_raw, $aid, $tax_name );
+							}
+							$order_configs[] = array(
+								'name'         => $tax_name,
+								'default'      => $default_raw,
+								'attribute_id' => $aid,
+							);
+						}
 						continue;
 					}
 				}
@@ -3579,6 +4399,17 @@ class Webino_Dashboard_REST_Crud {
 			}
 			// Always apply — empty array clears all product attributes.
 			$p->set_attributes( $attr_objects );
+			if ( class_exists( 'Webino_Dashboard_Order_Configs', false ) ) {
+				$product_id = (int) $p->get_id();
+				$clean      = Webino_Dashboard_Order_Configs::sanitize_configs( $order_configs, $product_id );
+				if ( array() === $clean ) {
+					if ( ! ( $order_config_requested && array() === $order_configs ) ) {
+						$p->delete_meta_data( Webino_Dashboard_Order_Configs::META_KEY );
+					}
+				} else {
+					$p->update_meta_data( Webino_Dashboard_Order_Configs::META_KEY, $clean );
+				}
+			}
 		}
 		foreach ( array( 'weight', 'length', 'width', 'height' ) as $dim ) {
 			if ( null === $request->get_param( $dim ) ) {
@@ -3868,6 +4699,17 @@ class Webino_Dashboard_REST_Crud {
 			Webino_Dashboard_REST::apply_product_ishop( $p, $ishop );
 		}
 		$p->save();
+
+		$pid = $p->get_id();
+		if ( $pid && null !== $request->get_param( 'moadian_sstid' ) ) {
+			update_post_meta( $pid, '_webino_moadian_sstid', sanitize_text_field( (string) $request->get_param( 'moadian_sstid' ) ) );
+		}
+		if ( $pid && null !== $request->get_param( 'moadian_vat_rate' ) ) {
+			update_post_meta( $pid, '_webino_moadian_vat_rate', (float) $request->get_param( 'moadian_vat_rate' ) );
+		}
+		if ( $pid && null !== $request->get_param( 'moadian_tax_exempt' ) ) {
+			update_post_meta( $pid, '_webino_moadian_tax_exempt', empty( $request->get_param( 'moadian_tax_exempt' ) ) ? '0' : '1' );
+		}
 
 		if ( $p->is_type( 'variable' ) ) {
 			self::repair_variable_children_stock_status( $id );
@@ -4525,15 +5367,46 @@ class Webino_Dashboard_REST_Crud {
 		}
 		$attrs = $request->get_param( 'attributes' );
 		if ( is_array( $attrs ) ) {
-			$clean = array();
+			$parent = wc_get_product( (int) $v->get_parent_id() );
+			if ( $parent && $parent->is_type( 'variable' ) ) {
+				$parent = self::migrate_parent_variation_attributes_to_global( $parent );
+			}
+			$axes  = ( $parent && $parent->is_type( 'variable' ) ) ? $parent->get_variation_attributes() : array();
+			$combo = array();
 			foreach ( $attrs as $k => $val ) {
 				$key = sanitize_text_field( (string) $k );
 				if ( '' === $key ) {
 					continue;
 				}
-				$clean[ $key ] = sanitize_text_field( (string) $val );
+				$raw = sanitize_text_field( (string) $val );
+				if ( is_array( $axes ) && array() !== $axes ) {
+					$axis_key = self::resolve_variation_axis_key( $axes, $key );
+					if ( '' !== $axis_key ) {
+						$key = $axis_key;
+					}
+				}
+				$combo[ $key ] = $raw;
 			}
-			$v->set_attributes( $clean );
+			if ( is_array( $axes ) && array() !== $axes ) {
+				$complete = true;
+				foreach ( array_keys( $axes ) as $axis_name ) {
+					if ( ! isset( $combo[ $axis_name ] ) || '' === trim( (string) $combo[ $axis_name ] ) ) {
+						$complete = false;
+						break;
+					}
+				}
+				if ( $complete && $parent && $parent->is_type( 'variable' ) ) {
+					$storage = self::build_variation_storage_attributes( $parent, $combo );
+					if ( count( $storage ) === count( $axes ) ) {
+						$v->set_attributes( $storage );
+					}
+				}
+			} elseif ( array() !== $combo && $parent && $parent->is_type( 'variable' ) ) {
+				$storage = self::build_variation_storage_attributes( $parent, $combo );
+				if ( array() !== $storage ) {
+					$v->set_attributes( $storage );
+				}
+			}
 		}
 
 		$wfcp = $request->get_param( 'wfcp' );
@@ -4615,7 +5488,7 @@ class Webino_Dashboard_REST_Crud {
 	 * @param int $parent_id Parent product ID.
 	 * @return void
 	 */
-	private static function repair_variable_children_stock_status( $parent_id ) {
+	public static function repair_variable_children_stock_status( $parent_id ) {
 		$parent = wc_get_product( (int) $parent_id );
 		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
 			return;
@@ -4684,6 +5557,24 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
 			return new WP_Error( 'invalid_parent', __( 'Not a variable product.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
+		$parent = self::migrate_parent_variation_attributes_to_global( $parent );
+		$axes   = $parent->get_variation_attributes();
+		if ( is_array( $axes ) && array() !== $axes ) {
+			$req_attrs = $request->get_param( 'attributes' );
+			if ( ! is_array( $req_attrs ) ) {
+				$req_attrs = array();
+			}
+			foreach ( $axes as $tax => $_opts ) {
+				$tax = (string) $tax;
+				if ( ! isset( $req_attrs[ $tax ] ) || '' === trim( (string) $req_attrs[ $tax ] ) ) {
+					return new WP_Error(
+						'missing_attributes',
+						__( 'Select a value for every variation attribute before creating a variation.', 'webino-dashboard' ),
+						array( 'status' => 400 )
+					);
+				}
+			}
+		}
 		$v = new WC_Product_Variation();
 		$v->set_parent_id( $parent_id );
 		$v->set_status( 'publish' );
@@ -4728,6 +5619,39 @@ class Webino_Dashboard_REST_Crud {
 		$v->delete( true );
 		self::sync_variable_parent( $parent_id );
 		return new WP_REST_Response( array( 'deleted' => true ) );
+	}
+
+	/**
+	 * Delete all variations for a variable product.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function product_variations_delete_all( $request ) {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return new WP_Error( 'no_wc', __( 'Store module is not available.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$parent_id = (int) $request['id'];
+		$parent    = wc_get_product( $parent_id );
+		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
+			return new WP_Error( 'invalid_parent', __( 'Not a variable product.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$deleted = 0;
+		foreach ( $parent->get_children() as $vid ) {
+			$v = wc_get_product( (int) $vid );
+			if ( ! $v || ! $v->is_type( 'variation' ) ) {
+				continue;
+			}
+			if ( $v->delete( true ) ) {
+				++$deleted;
+			}
+		}
+		self::sync_variable_parent( $parent_id );
+		return new WP_REST_Response(
+			array(
+				'deleted' => $deleted,
+			)
+		);
 	}
 
 	/**
@@ -4844,13 +5768,41 @@ class Webino_Dashboard_REST_Crud {
 			return new WP_Error( 'invalid_parent', __( 'Not a variable product.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 
+		$parent = self::migrate_parent_variation_attributes_to_global( $parent );
+		$slug_map = self::prime_variation_attribute_slug_map( $parent );
+		if ( function_exists( 'wc_delete_product_transients' ) ) {
+			wc_delete_product_transients( $parent_id );
+		}
+		$parent = wc_get_product( $parent_id );
+		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
+			return new WP_Error( 'invalid_parent', __( 'Not a variable product.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( method_exists( $parent, 'set_variation_attributes' ) ) {
+			$parent->set_variation_attributes( null );
+		}
 		$axes = $parent->get_variation_attributes();
 		if ( ! is_array( $axes ) || empty( $axes ) ) {
 			return new WP_Error( 'no_attrs', __( 'No variation attributes found.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 
+		if ( function_exists( 'wc_array_cartesian' ) && ! empty( $slug_map ) ) {
+			$possible = wc_array_cartesian( $slug_map );
+		} else {
+			$possible = self::cartesian_variation_combos( ! empty( $slug_map ) ? $slug_map : $axes );
+		}
+		if ( ! is_array( $possible ) || empty( $possible ) ) {
+			return new WP_Error(
+				'no_combos',
+				__( 'No variation combinations to create. Assign attribute options on the parent product.', 'webino-dashboard' ),
+				array( 'status' => 400 )
+			);
+		}
+
 		$combos = self::cartesian_variation_combos( $axes );
 		$total  = count( $combos );
+		if ( $total < 1 ) {
+			$total = count( $possible );
+		}
 		if ( $total < 1 ) {
 			return new WP_Error( 'no_combos', __( 'No variation combinations to create.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
@@ -4869,14 +5821,10 @@ class Webino_Dashboard_REST_Crud {
 		$data_store = WC_Data_Store::load( 'product' );
 		$dry_run    = (bool) $request->get_param( 'dry_run' );
 
+		$existing = count( $parent->get_children() );
+		$missing  = max( 0, $total - $existing );
+
 		if ( $dry_run ) {
-			$existing = 0;
-			foreach ( $combos as $combo ) {
-				if ( self::find_variation_for_combo( $parent, $data_store, $combo ) ) {
-					++$existing;
-				}
-			}
-			$missing = $total - $existing;
 			return new WP_REST_Response(
 				array(
 					'created'   => 0,
@@ -4889,37 +5837,52 @@ class Webino_Dashboard_REST_Crud {
 			);
 		}
 
-		$offset  = max( 0, (int) $request->get_param( 'offset' ) );
-		$created = 0;
-		$skipped = 0;
-		$i       = $offset;
 		$batch   = 40;
-		while ( $i < $total && $created < $batch ) {
-			$combo = $combos[ $i ];
-			++$i;
-			if ( self::find_variation_for_combo( $parent, $data_store, $combo ) ) {
-				++$skipped;
-				continue;
-			}
-			$v = new WC_Product_Variation();
-			$v->set_parent_id( $parent_id );
-			$v->set_status( 'publish' );
-			$v->set_attributes( $combo );
-			$v->save();
-			++$created;
+		$created = 0;
+		if ( method_exists( $data_store, 'create_all_product_variations' ) ) {
+			$created = (int) $data_store->create_all_product_variations( $parent, $batch );
+		}
+		if ( 0 === $created && ! empty( $slug_map ) ) {
+			$created = self::create_variations_from_slug_map( $parent, $slug_map, $batch );
 		}
 
-		if ( $created > 0 ) {
+		$refreshed = wc_get_product( $parent_id );
+		if ( $refreshed && $refreshed->is_type( 'variable' ) ) {
+			$parent = $refreshed;
+		}
+		$existing_after = count( $parent->get_children() );
+
+		if ( 0 === $created && $existing_after < $total ) {
+			return new WP_Error(
+				'create_failed',
+				__( 'Could not create any variations. Check product attributes and term assignments.', 'webino-dashboard' ),
+				array(
+					'status' => 400,
+					'total'  => $total,
+				)
+			);
+		}
+
+		if ( $created >= $batch ) {
+			$remaining = max( 1, $total - $existing_after );
+		} else {
+			$remaining = 0;
+		}
+
+		if ( 0 === $remaining ) {
 			self::sync_variable_parent( $parent_id );
+			if ( function_exists( 'wc_delete_product_transients' ) ) {
+				wc_delete_product_transients( $parent_id );
+			}
 		}
 
 		return new WP_REST_Response(
 			array(
 				'created'     => $created,
-				'skipped'     => $skipped,
+				'skipped'     => max( 0, $batch - $created ),
 				'total'       => $total,
-				'remaining'   => max( 0, $total - $i ),
-				'next_offset' => $i,
+				'remaining'   => $remaining,
+				'next_offset' => $remaining > 0 ? 1 : $total,
 			)
 		);
 	}
@@ -4957,21 +5920,517 @@ class Webino_Dashboard_REST_Crud {
 	}
 
 	/**
+	 * Resolve pa_* storage taxonomy for a parent variation axis key.
+	 *
+	 * @param WC_Product $parent   Variable parent.
+	 * @param string     $axis_key Axis from get_variation_attributes().
+	 * @return string
+	 */
+	private static function resolve_variation_storage_taxonomy( $parent, $axis_key ) {
+		$axis_key = (string) $axis_key;
+		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
+			return '';
+		}
+		foreach ( $parent->get_attributes() as $attr ) {
+			if ( ! is_a( $attr, 'WC_Product_Attribute' ) || ! $attr->get_variation() ) {
+				continue;
+			}
+			$name  = (string) $attr->get_name();
+			$label = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $name ) : $name;
+			$label = is_string( $label ) ? $label : $name;
+			$match = ( $name === $axis_key || rawurldecode( $name ) === $axis_key
+				|| $label === $axis_key || rawurldecode( $label ) === $axis_key );
+			if ( ! $match ) {
+				continue;
+			}
+			if ( $attr->is_taxonomy() && self::attribute_key_is_sanitize_stable( $name ) ) {
+				self::register_global_attribute_taxonomy_if_needed( $name, $label );
+				if ( taxonomy_exists( $name ) ) {
+					return $name;
+				}
+			}
+			return self::ensure_global_attribute_taxonomy( $label ? $label : $axis_key, $name );
+		}
+		if ( taxonomy_exists( $axis_key ) ) {
+			return $axis_key;
+		}
+		return self::ensure_global_attribute_taxonomy( $axis_key, $axis_key );
+	}
+
+	/**
+	 * Ensure a taxonomy term exists and return its slug.
+	 *
+	 * @param string $taxonomy Global attribute taxonomy (pa_*).
+	 * @param string $raw_value Option label or slug.
+	 * @return string
+	 */
+	private static function ensure_term_slug( $taxonomy, $raw_value ) {
+		$raw_value = (string) $raw_value;
+		if ( '' === $raw_value || ! taxonomy_exists( (string) $taxonomy ) ) {
+			return '';
+		}
+		$taxonomy = (string) $taxonomy;
+		$slug     = self::canonicalize_variation_term_value( $taxonomy, $raw_value );
+		if ( '' !== $slug && get_term_by( 'slug', $slug, $taxonomy ) ) {
+			return $slug;
+		}
+		foreach ( array( $raw_value, rawurldecode( $raw_value ) ) as $probe ) {
+			$probe = (string) $probe;
+			if ( '' === $probe ) {
+				continue;
+			}
+			$term = get_term_by( 'name', $probe, $taxonomy );
+			if ( $term && ! is_wp_error( $term ) ) {
+				return (string) $term->slug;
+			}
+			$by_slug = sanitize_title( $probe );
+			if ( '' !== $by_slug ) {
+				$term = get_term_by( 'slug', $by_slug, $taxonomy );
+				if ( $term && ! is_wp_error( $term ) ) {
+					return (string) $term->slug;
+				}
+			}
+		}
+		$new_slug = sanitize_title( $raw_value );
+		if ( '' === $new_slug ) {
+			$new_slug = 't' . substr( md5( $raw_value ), 0, 8 );
+		}
+		$inserted = wp_insert_term( $raw_value, $taxonomy, array( 'slug' => $new_slug ) );
+		if ( is_wp_error( $inserted ) ) {
+			if ( 'term_exists' === $inserted->get_error_code() ) {
+				$term_id = (int) $inserted->get_error_data();
+				$term    = get_term( $term_id, $taxonomy );
+				if ( $term && ! is_wp_error( $term ) ) {
+					return (string) $term->slug;
+				}
+			}
+			return '';
+		}
+		return isset( $inserted['slug'] ) ? (string) $inserted['slug'] : $new_slug;
+	}
+
+	/**
+	 * Build WooCommerce-safe variation attribute map (pa_* keys + term slugs).
+	 *
+	 * @param WC_Product           $parent Variable parent.
+	 * @param array<string,string> $combo  Axis label => option value.
+	 * @return array<string,string>
+	 */
+	public static function build_variation_storage_attributes( $parent, $combo ) {
+		if ( ! $parent || ! $parent->is_type( 'variable' ) || ! is_array( $combo ) ) {
+			return array();
+		}
+		$axes = $parent->get_variation_attributes();
+		if ( ! is_array( $axes ) || array() === $axes ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $combo as $name => $value ) {
+			$axis_key = self::resolve_variation_axis_key( $axes, (string) $name );
+			if ( '' === $axis_key || '' === (string) $value ) {
+				return array();
+			}
+			$taxonomy = self::resolve_variation_storage_taxonomy( $parent, $axis_key );
+			if ( '' === $taxonomy || ! taxonomy_exists( $taxonomy ) || ! self::is_sanitize_stable_taxonomy_name( $taxonomy ) ) {
+				return array();
+			}
+			$term_slug = self::ensure_term_slug( $taxonomy, (string) $value );
+			if ( '' === $term_slug ) {
+				return array();
+			}
+			$out[ $taxonomy ] = $term_slug;
+		}
+		if ( count( $out ) !== count( $axes ) ) {
+			return array();
+		}
+		return $out;
+	}
+
+	/**
+	 * Post meta key WooCommerce uses when matching variation attributes.
+	 *
+	 * @param string $taxonomy pa_* taxonomy name.
+	 * @return string
+	 */
+	private static function variation_storage_meta_key( $taxonomy ) {
+		$taxonomy = (string) $taxonomy;
+		if ( 0 === strpos( $taxonomy, 'pa_' ) ) {
+			return 'attribute_' . $taxonomy;
+		}
+		$san = sanitize_title( $taxonomy );
+		return '' === $san ? '' : 'attribute_' . $san;
+	}
+
+	/**
+	 * Normalize variation attribute map to WooCommerce keys + term slugs (storefront-safe).
+	 *
+	 * @param WC_Product              $parent Variable parent.
+	 * @param WC_Product_Variation    $variation Variation.
+	 * @return void
+	 */
+	public static function canonicalize_variation_attributes( $parent, $variation ) {
+		if ( ! $parent || ! $variation || ! $parent->is_type( 'variable' ) || ! $variation->is_type( 'variation' ) ) {
+			return;
+		}
+		$axes = $parent->get_variation_attributes();
+		if ( ! is_array( $axes ) || array() === $axes ) {
+			return;
+		}
+		$attrs = $variation->get_attributes();
+		$combo = array();
+		foreach ( array_keys( $axes ) as $attr_name ) {
+			$raw = self::variation_axis_value( is_array( $attrs ) ? $attrs : array(), (string) $attr_name, $variation );
+			if ( '' === $raw ) {
+				return;
+			}
+			$combo[ (string) $attr_name ] = $raw;
+		}
+		$storage = self::build_variation_storage_attributes( $parent, $combo );
+		if ( count( $storage ) === count( $axes ) ) {
+			$variation->set_attributes( $storage );
+		}
+	}
+
+	/**
+	 * @param WC_Product                    $parent Variable parent.
+	 * @param array<string,string>          $combo Attribute map.
+	 * @return array<string,string>
+	 */
+	public static function canonicalize_variation_attribute_combo( $parent, $combo ) {
+		return self::build_variation_storage_attributes( $parent, $combo );
+	}
+
+	/**
+	 * @param array<string,string>       $axes Parent variation axes.
+	 * @param string                     $name Attribute name from combo.
+	 * @return string
+	 */
+	private static function resolve_variation_axis_key( $axes, $name ) {
+		if ( isset( $axes[ $name ] ) ) {
+			return $name;
+		}
+		$decoded = rawurldecode( $name );
+		if ( isset( $axes[ $decoded ] ) ) {
+			return $decoded;
+		}
+		$want = sanitize_title( $name );
+		foreach ( array_keys( $axes ) as $key ) {
+			$key = (string) $key;
+			if ( sanitize_title( $key ) === $want || rawurldecode( $key ) === $name || $key === $decoded ) {
+				return $key;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * @param string $attr_name Taxonomy or custom attribute name.
+	 * @param string $raw         Stored/raw value.
+	 * @return string
+	 */
+	private static function canonicalize_variation_term_value( $attr_name, $raw ) {
+		$raw = (string) $raw;
+		if ( '' === $raw ) {
+			return '';
+		}
+		if ( taxonomy_exists( $attr_name ) ) {
+			foreach ( array( $raw, rawurldecode( $raw ), sanitize_title( $raw ) ) as $probe ) {
+				$probe = (string) $probe;
+				if ( '' === $probe ) {
+					continue;
+				}
+				$term = get_term_by( 'slug', $probe, $attr_name );
+				if ( ! $term || is_wp_error( $term ) ) {
+					$term = get_term_by( 'name', $probe, $attr_name );
+				}
+				if ( ( ! $term || is_wp_error( $term ) ) && ctype_digit( $probe ) ) {
+					$term = get_term( (int) $probe, $attr_name );
+				}
+				if ( $term && ! is_wp_error( $term ) ) {
+					return (string) $term->slug;
+				}
+			}
+		}
+		return $raw;
+	}
+
+	/**
+	 * @param array<string,string>          $attrs Variation attributes.
+	 * @param string                      $attr_name Axis name.
+	 * @param WC_Product_Variation|null   $variation Optional variation for meta fallback.
+	 * @return string
+	 */
+	private static function variation_axis_value( $attrs, $attr_name, $variation = null ) {
+		$want_aliases = self::variation_axis_key_aliases( $attr_name );
+		if ( is_array( $attrs ) ) {
+			foreach ( $attrs as $key => $val ) {
+				if ( '' === (string) $val && '0' !== (string) $val ) {
+					continue;
+				}
+				$key_aliases = self::variation_axis_key_aliases( (string) $key );
+				foreach ( $want_aliases as $want ) {
+					if ( in_array( $want, $key_aliases, true ) ) {
+						return (string) $val;
+					}
+				}
+			}
+		}
+		if ( $variation && is_a( $variation, 'WC_Product_Variation' ) ) {
+			$vid = (int) $variation->get_id();
+			if ( $vid > 0 ) {
+				$all_meta = get_post_meta( $vid );
+				if ( is_array( $all_meta ) ) {
+					foreach ( $all_meta as $meta_key => $meta_vals ) {
+						if ( 0 !== strpos( (string) $meta_key, 'attribute_' ) ) {
+							continue;
+						}
+						$key_aliases = self::variation_axis_key_aliases( (string) $meta_key );
+						$matched     = false;
+						foreach ( $want_aliases as $want ) {
+							if ( in_array( $want, $key_aliases, true ) ) {
+								$matched = true;
+								break;
+							}
+						}
+						if ( ! $matched ) {
+							continue;
+						}
+						$val = is_array( $meta_vals ) ? (string) ( $meta_vals[0] ?? '' ) : (string) $meta_vals;
+						if ( '' !== $val ) {
+							return $val;
+						}
+					}
+				}
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * @param string $name Attribute name or meta key.
+	 * @return array<int,string>
+	 */
+	private static function variation_axis_key_aliases( $name ) {
+		$name     = (string) $name;
+		$seed     = array( $name );
+		$stripped = preg_replace( '/^attribute_/', '', $name );
+		if ( is_string( $stripped ) && $stripped !== $name ) {
+			$seed[] = $stripped;
+			$seed[] = 'attribute_' . sanitize_title( $stripped );
+		} else {
+			$seed[] = 'attribute_' . sanitize_title( $name );
+		}
+		$aliases = array();
+		foreach ( $seed as $candidate ) {
+			$candidate = (string) $candidate;
+			if ( '' === $candidate ) {
+				continue;
+			}
+			$decoded     = rawurldecode( $candidate );
+			$aliases[] = $candidate;
+			$aliases[] = $decoded;
+			$aliases[] = sanitize_title( $candidate );
+			$aliases[] = sanitize_title( $decoded );
+			if ( 0 === strpos( $candidate, 'pa_' ) ) {
+				$bare = substr( $candidate, 3 );
+				if ( '' !== $bare ) {
+					$aliases[] = $bare;
+					$san = sanitize_title( $bare );
+					if ( '' !== $san ) {
+						$aliases[] = $san;
+					}
+				}
+			} else {
+				$san = sanitize_title( $candidate );
+				if ( '' !== $san ) {
+					$aliases[] = 'pa_' . $san;
+				}
+			}
+		}
+		return array_values(
+			array_unique(
+				array_filter(
+					$aliases,
+					static function ( $value ) {
+						$value = (string) $value;
+						if ( '' === $value ) {
+							return false;
+						}
+						if ( in_array( $value, array( 'pa_', 'attribute_', 'attribute_pa_' ), true ) ) {
+							return false;
+						}
+						return true;
+					}
+				)
+			)
+		);
+	}
+
+	/**
+	 * True when the variation has no filled variation attributes.
+	 *
+	 * @param WC_Product_Variation $variation Variation.
+	 * @return bool
+	 */
+	private static function variation_attributes_are_empty( $variation ) {
+		if ( ! $variation || ! $variation->is_type( 'variation' ) ) {
+			return true;
+		}
+		$attrs = $variation->get_attributes();
+		if ( ! is_array( $attrs ) || array() === $attrs ) {
+			return true;
+		}
+		foreach ( $attrs as $val ) {
+			if ( '' !== (string) $val || '0' === (string) $val ) {
+				return false;
+			}
+		}
+		$vid = (int) $variation->get_id();
+		if ( $vid > 0 ) {
+			$all_meta = get_post_meta( $vid );
+			if ( is_array( $all_meta ) ) {
+				foreach ( $all_meta as $meta_key => $meta_vals ) {
+					if ( 0 !== strpos( (string) $meta_key, 'attribute_' ) ) {
+						continue;
+					}
+					$val = is_array( $meta_vals ) ? (string) ( $meta_vals[0] ?? '' ) : (string) $meta_vals;
+					if ( '' !== $val ) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * First child variation with no attribute values (repair slot).
+	 *
+	 * @param WC_Product $parent Variable parent.
+	 * @return int Variation ID or 0.
+	 */
+	private static function find_empty_variation_slot( $parent ) {
+		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
+			return 0;
+		}
+		foreach ( $parent->get_children() as $vid ) {
+			$v = wc_get_product( (int) $vid );
+			if ( $v && $v->is_type( 'variation' ) && self::variation_attributes_are_empty( $v ) ) {
+				return (int) $vid;
+			}
+		}
+		return 0;
+	}
+
+	/**
 	 * @param WC_Product $parent Parent variable product.
 	 * @param object     $data_store WC product data store.
 	 * @param array      $combo Attribute map.
 	 * @return int Matching variation ID or 0.
 	 */
 	private static function find_variation_for_combo( $parent, $data_store, $combo ) {
+		$storage = self::build_variation_storage_attributes( $parent, $combo );
+		if ( array() === $storage ) {
+			return 0;
+		}
 		$match = array();
-		foreach ( $combo as $name => $value ) {
-			$match[ 'attribute_' . sanitize_title( (string) $name ) ] = $value;
+		foreach ( $storage as $taxonomy => $slug ) {
+			$meta_key = self::variation_storage_meta_key( $taxonomy );
+			if ( '' === $meta_key ) {
+				return 0;
+			}
+			$match[ $meta_key ] = $slug;
 		}
 		if ( ! is_object( $data_store ) || ! method_exists( $data_store, 'find_matching_product_variation' ) ) {
 			return 0;
 		}
 		$found = $data_store->find_matching_product_variation( $parent, $match );
 		return $found ? (int) $found : 0;
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function order_put( $request ) {
+		if ( ! Webino_Dashboard_Orders::wc_active() ) {
+			return new WP_Error( 'no_wc', __( 'Store module is not available.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$data = $request->get_json_params();
+		if ( ! is_array( $data ) ) {
+			$data = $request->get_params();
+		}
+		$result = Webino_Dashboard_Order_Writer::update( (int) $request['id'], is_array( $data ) ? $data : array() );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return new WP_REST_Response( $result );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function order_returns_list( $request ) {
+		if ( ! class_exists( 'Webino_Dashboard_Order_Returns', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Returns module is not available.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$order_id = (int) $request['id'];
+		return new WP_REST_Response(
+			array(
+				'items'           => Webino_Dashboard_Order_Returns::list_for_order( $order_id ),
+				'return_address'  => Webino_Dashboard_Order_Returns::return_address_text(),
+			)
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function order_returns_create( $request ) {
+		if ( ! class_exists( 'Webino_Dashboard_Order_Returns', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Returns module is not available.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$order_id = (int) $request['id'];
+		$body     = $request->get_json_params();
+		if ( ! is_array( $body ) ) {
+			$body = $request->get_params();
+		}
+		if ( ! is_array( $body ) ) {
+			$body = array();
+		}
+		if ( ! Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' ) ) {
+			$body['source'] = 'portal';
+		} elseif ( empty( $body['source'] ) ) {
+			$body['source'] = 'staff';
+		}
+		$result = Webino_Dashboard_Order_Returns::create( $order_id, $body );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return new WP_REST_Response( $result, 201 );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function order_returns_action( $request ) {
+		if ( ! class_exists( 'Webino_Dashboard_Order_Returns', false ) ) {
+			return new WP_Error( 'unavailable', __( 'Returns module is not available.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$return_id = (int) $request['return_id'];
+		$action    = sanitize_key( (string) $request['action'] );
+		$row       = Webino_Dashboard_Order_Returns::get( $return_id );
+		if ( ! $row || (int) $row['order_id'] !== (int) $request['id'] ) {
+			return new WP_Error( 'not_found', __( 'Return not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
+		}
+		$result = Webino_Dashboard_Order_Returns::transition( $return_id, $action );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return new WP_REST_Response( $result );
 	}
 
 	/**
@@ -5186,6 +6645,31 @@ class Webino_Dashboard_REST_Crud {
 			},
 			$user_id
 		);
+	}
+
+	/**
+	 * Apply English slugs (+ Rank Math redirects) to products.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function products_apply_english_slugs( $request ) {
+		if ( ! class_exists( 'Webino_Dashboard_Product_Slugs', false ) ) {
+			return new WP_Error( 'missing', __( 'Slug helper unavailable.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		}
+		$body    = $request->get_json_params();
+		$body    = is_array( $body ) ? $body : array();
+		$ids     = isset( $body['ids'] ) && is_array( $body['ids'] ) ? $body['ids'] : array();
+		$with_ai = array_key_exists( 'with_ai', $body ) ? (bool) $body['with_ai'] : true;
+		$res     = Webino_Dashboard_Product_Slugs::apply_bulk(
+			array(
+				'ids'      => $ids,
+				'with_ai'  => $with_ai,
+				'limit'    => isset( $body['limit'] ) ? (int) $body['limit'] : 100,
+				'ai_limit' => isset( $body['ai_limit'] ) ? (int) $body['ai_limit'] : 50,
+			)
+		);
+		return new WP_REST_Response( $res );
 	}
 
 	/**

@@ -198,40 +198,11 @@ class Webino_Dashboard_Notifications {
 	}
 
 	/**
-	 * Hook order status changes for customer notifications.
+	 * Legacy hooks removed — Webino_Dashboard_Notify dispatches site notifications.
 	 *
 	 * @return void
 	 */
 	public static function init_hooks() {
-		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_order_status_changed' ), 20, 4 );
-	}
-
-	/**
-	 * @param int    $order_id Order ID.
-	 * @param string $from From status.
-	 * @param string $to To status.
-	 * @param WC_Order $order Order.
-	 * @return void
-	 */
-	public static function on_order_status_changed( $order_id, $from, $to, $order ) {
-		if ( ! $order instanceof WC_Order ) {
-			$order = wc_get_order( $order_id );
-		}
-		if ( ! $order ) {
-			return;
-		}
-		$uid = (int) $order->get_customer_id();
-		if ( $uid <= 0 ) {
-			return;
-		}
-		$label = function_exists( 'wc_get_order_status_name' ) ? wc_get_order_status_name( $to ) : $to;
-		self::create(
-			$uid,
-			'order_status',
-			/* translators: %s: order number */
-			sprintf( __( 'Order #%s updated', 'webino-dashboard' ), $order->get_order_number() ),
-			$label,
-			home_url( '/dashboard/account/orders/' . (int) $order_id )
-		);
+		// Intentionally empty; kept for bootstrap compatibility.
 	}
 }

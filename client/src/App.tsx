@@ -47,8 +47,12 @@ function LegacyModuleRedirect({
 }) {
   const bootstrap = useBootstrapQuery()
   const installed = bootstrap.data?.installedModuleSlugs ?? []
-  if (bootstrap.isPending || bootstrap.data === undefined) {
+  if ((bootstrap.isPending || bootstrap.isLoading) && bootstrap.data === undefined) {
     return <RoutePageSkeleton />
+  }
+  // Bootstrap unavailable after error — do not spin forever; send to marketplace.
+  if (bootstrap.data === undefined) {
+    return <Navigate to="/marketplace" replace state={{ missingModule: requiredSlug }} />
   }
   if (!installed.includes(requiredSlug)) {
     return <Navigate to="/marketplace" replace state={{ missingModule: requiredSlug }} />

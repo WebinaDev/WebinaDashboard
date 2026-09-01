@@ -13,6 +13,9 @@ export function useBootstrapQuery() {
   // Snapshot must be stable across renders — recreating it every render with
   // Date.now() as initialDataUpdatedAt caused query churn and cancelled module loads.
   const initial = useMemo(() => getBootstrapSnapshot(), [])
+  const embedMinimal = Boolean(
+    initial && (initial as BootstrapPayload & { embedMinimal?: boolean }).embedMinimal,
+  )
 
   return useQuery({
     queryKey: BOOTSTRAP_QUERY_KEY,
@@ -21,11 +24,13 @@ export function useBootstrapQuery() {
       return normalizeBootstrapPayload(data)
     },
     initialData: initial,
-    initialDataUpdatedAt: initial ? Date.now() : undefined,
-    staleTime: 120_000,
+    // Minimal embed has empty activeModuleClients — must refetch immediately, not after staleTime.
+    initialDataUpdatedAt: initial ? (embedMinimal ? 0 : Date.now()) : undefined,
+    staleTime: embedMinimal ? 0 : 120_000,
     gcTime: 600_000,
     placeholderData: (prev) => prev ?? initial,
-    // Snapshot is already embedded in the HTML — avoid an immediate REST round-trip.
-    refetchOnMount: initial ? false : true,
+    refetchOnMount: embedMinimal ? 'always' : Boolean(!initial),
+    refetchOnWindowFocus: false,
+    retry: 1,
   })
 }

@@ -13,7 +13,7 @@ export interface DashboardModule {
 
 export type ActiveModuleRoute = {
   path: string
-  capability: string
+  capability: string | string[]
   headerTitleKey?: string
   headerParamKeys?: Record<string, string> | string[]
 }
@@ -55,6 +55,10 @@ export interface BootstrapPayload {
     expiry?: string | null
     demo?: boolean
     domain?: string
+    nag_since?: number | null
+    force_license_page?: boolean
+    show_banner?: boolean
+    show_unreachable_banner?: boolean
   }
   marketplaceSettingsSections?: {
     slug: string

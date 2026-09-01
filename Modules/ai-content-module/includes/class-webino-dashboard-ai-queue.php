@@ -816,6 +816,21 @@ final class Webino_Dashboard_AI_Queue {
 			$last_gate = $gate;
 			$code      = $gate->get_error_code();
 			if ( $attempt >= $max || ! self::is_seo_retryable_error( $code ) ) {
+				if ( 'ai_seo' === $code ) {
+					$patched = Webino_Dashboard_AI_Seo_Gate::rescue_content_kw( $data, $gate_ctx, $gate );
+					if ( is_array( $patched ) ) {
+						$gate2 = Webino_Dashboard_AI_Seo_Gate::validate(
+							$patched,
+							$type,
+							(array) call_user_func( $make_gate_ctx, $patched, $ctx )
+						);
+						if ( ! is_wp_error( $gate2 ) ) {
+							$result['data'] = $patched;
+							return $result;
+						}
+						return $gate2;
+					}
+				}
 				return $gate;
 			}
 
@@ -881,7 +896,8 @@ final class Webino_Dashboard_AI_Queue {
 		} elseif ( 'ai_focus' === $code ) {
 			$lines[] = 'Provide a clear focus_keyword and use it in title and content.';
 		} else {
-			$lines[] = 'If title_kw or content_kw failed: put the exact focus_keyword in the product/post title (or seo.title) AND naturally in the body/description text.';
+			$lines[] = 'If title_kw failed: put the exact focus_keyword in the product/post title OR seo.title.';
+			$lines[] = 'If content_kw failed: put the exact focus_keyword at least once in description or short_description (body text). Putting it only in seo.title is NOT enough.';
 			$lines[] = 'If desc_kw failed: include the focus_keyword in seo.description.';
 		}
 		return implode( "\n", $lines );

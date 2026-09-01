@@ -187,7 +187,7 @@ class Webino_Dashboard_Assets {
 	}
 
 	/**
-	 * Admin JSON tools: ?wd_diag=1 and ?wd_sniff=1 on /dashboard.
+	 * Admin JSON tools: ?wd_diag=1, ?wd_sniff=1, and repair ?wd_repair=1 on /dashboard.
 	 *
 	 * @return void
 	 */
@@ -196,9 +196,10 @@ class Webino_Dashboard_Assets {
 			return;
 		}
 
-		$is_diag  = isset( $_GET['wd_diag'] ) && '1' === (string) wp_unslash( $_GET['wd_diag'] );
-		$is_sniff = isset( $_GET['wd_sniff'] ) && '1' === (string) wp_unslash( $_GET['wd_sniff'] );
-		if ( ! $is_diag && ! $is_sniff ) {
+		$is_diag   = isset( $_GET['wd_diag'] ) && '1' === (string) wp_unslash( $_GET['wd_diag'] );
+		$is_sniff  = isset( $_GET['wd_sniff'] ) && '1' === (string) wp_unslash( $_GET['wd_sniff'] );
+		$is_repair = isset( $_GET['wd_repair'] ) && '1' === (string) wp_unslash( $_GET['wd_repair'] );
+		if ( ! $is_diag && ! $is_sniff && ! $is_repair ) {
 			return;
 		}
 
@@ -207,12 +208,28 @@ class Webino_Dashboard_Assets {
 			wp_die( esc_html__( 'Forbidden', 'webino-dashboard' ), '', array( 'response' => 403 ) );
 		}
 
+		if ( $is_repair ) {
+			$this->run_dashboard_repair();
+			return;
+		}
+
 		if ( $is_sniff ) {
 			$this->send_html_sniff_json();
 			return;
 		}
 
 		$this->send_deploy_diag_json();
+	}
+
+	/**
+	 * One-click admin repair: flush bootstrap cache, clear false license nag, refresh rewrites.
+	 *
+	 * @return void
+	 */
+	private function run_dashboard_repair() {
+		Webino_Dashboard_Plugin::run_dashboard_repair();
+		wp_safe_redirect( Webino_Dashboard_Rewrite::url( '', array( 'repaired' => '1' ) ) );
+		exit;
 	}
 
 	/**
@@ -885,7 +902,7 @@ class Webino_Dashboard_Assets {
 		wp_register_script( 'webino-dashboard-app', false, array(), WEBINO_DASHBOARD_VERSION, true );
 		wp_enqueue_script( 'webino-dashboard-app' );
 
-		$base   = trailingslashit( home_url( '/dashboard' ) );
+		$base   = Webino_Dashboard_Rewrite::url();
 		$uid    = get_current_user_id();
 		$locale = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_locale', true ) : '';
 		if ( '' === $locale ) {
@@ -941,6 +958,12 @@ class Webino_Dashboard_Assets {
 			'license'      => Webino_Dashboard_License::instance()->get_bootstrap_payload(),
 			'bootstrap'    => $bootstrap,
 			'page'         => $page,
+			'otpAuth'      => class_exists( 'Webino_Dashboard_Auth_Otp', false )
+				? Webino_Dashboard_Auth_Otp::public_flags()
+				: array(
+					'login_enabled'    => false,
+					'register_enabled' => false,
+				),
 			'marketplaceSettingsSections' => apply_filters( 'webino_dashboard_marketplace_settings_sections', array() ),
 			'allowedRemoteHosts' => class_exists( 'Webino_Dashboard_Remote_Url', false ) ? Webino_Dashboard_Remote_Url::allowed_hosts() : array(),
 			'flags'        => array(
@@ -964,6 +987,10 @@ class Webino_Dashboard_Assets {
 	 * @return bool
 	 */
 	private static function bootstrap_has_stale_module_entries( $cached ) {
+		if ( ! empty( $cached['embedMinimal'] ) ) {
+			return false;
+		}
+
 		$clients = isset( $cached['activeModuleClients'] ) && is_array( $cached['activeModuleClients'] )
 			? $cached['activeModuleClients']
 			: array();
@@ -988,23 +1015,12 @@ class Webino_Dashboard_Assets {
 				}
 			}
 		}
+		if ( ! array_key_exists( 'activeModuleClients', $cached ) ) {
+			return true;
+		}
 		if ( empty( $clients ) && class_exists( 'Webino_Dashboard_Module_Registry', false )
 			&& Webino_Dashboard_Module_Registry::disk_has_readable_module_clients() ) {
 			return true;
-		}
-		if ( class_exists( 'Webino_Dashboard_Module_Registry', false ) ) {
-			$cached_slugs = array();
-			foreach ( $clients as $client ) {
-				if ( is_array( $client ) && ! empty( $client['slug'] ) ) {
-					$cached_slugs[ (string) $client['slug'] ] = true;
-				}
-			}
-			foreach ( Webino_Dashboard_Module_Registry::get_active_module_clients() as $live ) {
-				$slug = (string) ( $live['slug'] ?? '' );
-				if ( '' !== $slug && empty( $cached_slugs[ $slug ] ) ) {
-					return true;
-				}
-			}
 		}
 		return false;
 	}
@@ -1017,7 +1033,11 @@ class Webino_Dashboard_Assets {
 	 */
 	public static function get_or_build_bootstrap( $user_id ) {
 		$cached = self::get_cached_bootstrap( $user_id );
-		$stale  = is_array( $cached ) && self::bootstrap_has_stale_module_entries( $cached );
+		if ( is_array( $cached ) && ! empty( $cached['embedMinimal'] ) ) {
+			delete_transient( 'webino_dashboard_boot_' . (int) $user_id );
+			$cached = null;
+		}
+		$stale = is_array( $cached ) && self::bootstrap_has_stale_module_entries( $cached );
 		if ( is_array( $cached ) && ! empty( $cached['modules'] ) && ! $stale ) {
 			return $cached;
 		}
@@ -1032,16 +1052,19 @@ class Webino_Dashboard_Assets {
 		}
 
 		try {
-			$response = Webino_Dashboard_REST::bootstrap();
+			$data = Webino_Dashboard_REST::bootstrap_embed_minimal();
 		} catch ( Throwable $e ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( '[Webino Dashboard] bootstrap embed failed: ' . $e->getMessage() );
 			return is_array( $cached ) ? $cached : null;
 		}
 
-		if ( $response instanceof WP_REST_Response ) {
-			$data = $response->get_data();
-			return is_array( $data ) ? $data : null;
+		if ( is_array( $data ) && ! empty( $data['modules'] ) ) {
+			// Minimal embed is first-paint only — full bootstrap from ajax REST caches clients.
+			if ( empty( $data['embedMinimal'] ) ) {
+				self::set_cached_bootstrap( $user_id, $data );
+			}
+			return $data;
 		}
 
 		return is_array( $cached ) ? $cached : null;
@@ -1065,7 +1088,7 @@ class Webino_Dashboard_Assets {
 			$config    = self::build_runtime_config(
 				$uid,
 				$locale,
-				trailingslashit( home_url( '/dashboard' ) ),
+				Webino_Dashboard_Rewrite::url(),
 				$build_url,
 				(string) max( 1, (int) $ver )
 			);

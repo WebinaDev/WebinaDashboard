@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
+import { getBootstrapSnapshot } from '@/lib/bootstrapQuery'
 
 function LicenseLoading() {
   return (
@@ -14,26 +15,26 @@ function LicenseLoading() {
 }
 
 /**
- * Blocks dashboard chrome until bootstrap license state is known; redirects inactive licenses.
+ * License alarm only: soft banner while inactive; hard lock after server nag grace.
+ * Never blocks the SPA while bootstrap loads — license is always on window.
  */
 export function LicenseGate({ children }: { children?: ReactNode }) {
   const loc = useLocation()
   const bq = useBootstrapQuery()
+  const boot = bq.data ?? getBootstrapSnapshot()
+  const lic = boot?.license ?? window.webinoDashboard?.license
 
   const path = (loc.pathname.replace(/\/$/, '') || '/').replace(/^\/+/, '')
   if (path === 'license' || path.startsWith('license/')) {
     return children ? <>{children}</> : <Outlet />
   }
 
-  // Block only until bootstrap data exists. A server-embedded snapshot supplies
-  // initialData, which suppresses the initial fetch, so `isFetched` never flips
-  // true and would otherwise leave the skeleton stuck forever.
-  if (bq.isPending || bq.data === undefined) {
+  // Never block the whole app while bootstrap loads — license is always on window.
+  if ((bq.isPending || bq.isLoading) && !boot && !lic) {
     return <LicenseLoading />
   }
 
-  const lic = bq.data?.license ?? window.webinoDashboard?.license
-  if (lic && !lic.active && !lic.demo) {
+  if (lic?.force_license_page) {
     return <Navigate to="/license" replace />
   }
 

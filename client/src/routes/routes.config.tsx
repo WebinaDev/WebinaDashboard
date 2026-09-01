@@ -158,16 +158,41 @@ export const dashboardRoutes: DashboardRouteDef[] = [
   },
   {
     path: 'orders/list',
-    capability: ['edit_shop_orders', 'webino_partner_portal'],
+    capability: ['edit_shop_orders', 'webino_partner_portal', 'webino_view_own_shop_orders'],
     headerTitleKey: 'orders.title',
     Component: lazyPage(() => import('@/pages/orders/OrdersListPage')),
   },
   {
+    path: 'orders/new',
+    capability: ['edit_shop_orders', 'webino_create_shop_orders'],
+    headerTitleKey: 'orders.newOrder',
+    Component: lazyPage(() => import('@/pages/orders/OrderComposerPage')),
+  },
+  {
+    path: 'orders/list/:orderId/edit',
+    capability: ['edit_shop_orders', 'webino_create_shop_orders'],
+    headerTitleKey: 'orders.editOrder',
+    headerParamKeys: { orderId: 'id' },
+    Component: lazyPage(() => import('@/pages/orders/OrderComposerPage')),
+  },
+  {
     path: 'orders/list/:orderId',
-    capability: ['edit_shop_orders', 'webino_partner_portal'],
+    capability: ['edit_shop_orders', 'webino_partner_portal', 'webino_view_own_shop_orders'],
     headerTitleKey: 'orders.detailTitle',
     headerParamKeys: { orderId: 'id' },
     Component: lazyPage(() => import('@/pages/orders/OrderDetailPage')),
+  },
+  {
+    path: 'pos',
+    capability: ['webino_pos', 'edit_shop_orders'],
+    headerTitleKey: 'pos.title',
+    Component: lazyPage(() => import('@/pages/pos/PosSimplePage')),
+  },
+  {
+    path: 'pos/pay-link',
+    capability: ['webino_pos', 'edit_shop_orders'],
+    headerTitleKey: 'pos.payLink.title',
+    Component: lazyPage(() => import('@/pages/pos/PosPayLinkPage')),
   },
   {
     path: 'orders/reports',
@@ -285,6 +310,12 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     capability: ['webino_account_portal', 'webino_partner_portal'],
     headerTitleKey: 'account.ticketDetailTitle',
     Component: lazyPage(() => import('@/pages/account/AccountTicketDetailPage')),
+  },
+  {
+    path: 'notifications',
+    capability: 'manage_woocommerce',
+    headerTitleKey: 'notifications.inboxTitle',
+    Component: lazyPage(() => import('@/pages/notifications/NotificationsHubPage')),
   },
   {
     path: 'marketplace',

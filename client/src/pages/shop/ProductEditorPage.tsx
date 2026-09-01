@@ -5,7 +5,8 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { useProductEditorForm } from '@/hooks/useProductEditorForm'
 
 import { QueryErrorState } from '@/components/QueryErrorState'
-import { apiErrorMessage } from '@/lib/apiError'
+import { apiErrorMessage, toastApiError } from '@/lib/apiError'
+import { apiFetch } from '@/lib/api'
 import { ProductAttributesPanel } from '@/components/products/editor/ProductAttributesPanel'
 import { ProductDescriptionsSection } from '@/components/products/editor/ProductDescriptionsSection'
 import { ProductEditorLayout } from '@/components/products/editor/ProductEditorLayout'
@@ -23,13 +24,30 @@ import { ProductTaxonomyPanel } from '@/components/products/editor/ProductTaxono
 import { ProductTitleSection, ProductViewButton } from '@/components/products/editor/ProductTitleSection'
 import { ProductTypePanel } from '@/components/products/editor/ProductTypePanel'
 import { ProductVariationsPanel } from '@/components/products/editor/ProductVariationsPanel'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useCallback, useRef } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Trash2 } from 'lucide-react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 export default function ProductEditorPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const qc = useQueryClient()
   const form = useProductEditorForm()
   const boot = useBootstrapQuery()
   const coffeeProfileActive = (boot.data?.activeModuleClients ?? []).some((c) => c.slug === 'coffee-profile-module')
@@ -37,7 +55,41 @@ export default function ProductEditorPage() {
   const registerCoffeeSave = useCallback((fn: (() => Promise<void>) | null) => {
     coffeeSaveRef.current = fn
   }, [])
+  const [deleteOpen, setDeleteOpen] = useState(false)
   useQueryErrorToast(form.productQ)
+
+  const remove = useMutation({
+    mutationFn: () => apiFetch(`shop/products/${form.id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      toast.success(t('common.deleted'))
+      void qc.invalidateQueries({ queryKey: ['products'] })
+      navigate('/shop/products', { replace: true })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const variationAxes = useMemo(
+    () =>
+      (form.productQ.data?.product_attributes ?? [])
+        .filter(
+          (a) =>
+            Boolean(a.variation) &&
+            Array.isArray(a.options) &&
+            a.options.length > 0,
+        )
+        .map((a) => {
+          const name = String(a.name ?? '')
+          const label = String(
+            a.label ?? (name.startsWith('pa_') ? name.slice(3).replace(/-/g, ' ') : name),
+          )
+          return {
+            name,
+            label,
+            options: a.options.map(String),
+          }
+        }),
+    [form.productQ.data?.product_attributes],
+  )
   useQueryErrorToast(form.lookupQ)
 
   const lookup = form.lookupQ.data
@@ -211,12 +263,8 @@ export default function ProductEditorPage() {
             form.id && form.productQ.data?.type === 'variable' ? (
               <ProductVariationsPanel
                 productId={form.id}
-                hasSavedVariationAttributes={(form.productQ.data.product_attributes ?? []).some(
-                  (a) =>
-                    Boolean(a.variation) &&
-                    Array.isArray(a.options) &&
-                    a.options.length > 0,
-                )}
+                variationAxes={variationAxes}
+                hasSavedVariationAttributes={variationAxes.length > 0}
               />
             ) : (
               <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
@@ -249,7 +297,7 @@ export default function ProductEditorPage() {
         </TabsContent>
 
         {coffeeProfileActive ? (
-          <TabsContent value="coffee" forceMount className="space-y-3 outline-none data-[state=inactive]:hidden">
+          <TabsContent value="coffee" className="space-y-3 outline-none">
             <ModulePanel
               slug="coffee-profile-module"
               component="CoffeeProfileProductPanel"
@@ -350,28 +398,58 @@ export default function ProductEditorPage() {
   )
 
   return (
-    <ProductEditorLayout
-      productId={form.id}
-      loading={form.loading}
-      saving={form.save.isPending}
-      saveDisabled={form.loadFailed}
-      onSave={() => void handleSave()}
-      headerActions={
-        <>
-          <ProductViewButton href={form.permalink || (form.slug ? `${permalinkBase}${form.slug}/` : undefined)} />
-          {form.id ? (
-            <AiGenerateButton
-              type="product"
-              id={form.id}
-              onDone={() => {
-                void form.productQ.refetch()
-              }}
-            />
-          ) : null}
-        </>
-      }
-      main={main}
-      sidebar={sidebar}
-    />
+    <>
+      <ProductEditorLayout
+        productId={form.id}
+        loading={form.loading}
+        saving={form.save.isPending}
+        saveDisabled={form.loadFailed}
+        onSave={() => void handleSave()}
+        headerActions={
+          <>
+            <ProductViewButton href={form.permalink || (form.slug ? `${permalinkBase}${form.slug}/` : undefined)} />
+            {form.id ? (
+              <AiGenerateButton
+                type="product"
+                id={form.id}
+                onDone={() => {
+                  void form.productQ.refetch()
+                }}
+              />
+            ) : null}
+            {form.id ? (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={remove.isPending}
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="me-1 size-4" />
+                {t('common.delete')}
+              </Button>
+            ) : null}
+          </>
+        }
+        main={main}
+        sidebar={sidebar}
+      />
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('products.deleteConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('products.deleteConfirm', { name: form.name || t('products.untitled') })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction disabled={remove.isPending} onClick={() => void remove.mutateAsync()}>
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

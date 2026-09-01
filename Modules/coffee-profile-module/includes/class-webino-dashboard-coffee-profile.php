@@ -118,6 +118,58 @@ class Webino_Dashboard_Coffee_Profile {
 			'gap'            => 20,
 			'bar_height'     => 10,
 			'stroke_width'   => 2,
+			'grinds'         => array(
+				array(
+					'id'    => 'whole_bean',
+					'label' => 'دان کامل',
+				),
+				array(
+					'id'    => 'espresso',
+					'label' => 'اسپرسوساز',
+				),
+				array(
+					'id'    => 'moka',
+					'label' => 'موکاپات',
+				),
+				array(
+					'id'    => 'turkish',
+					'label' => 'قهوه ترک / جذوه',
+				),
+				array(
+					'id'    => 'v60',
+					'label' => 'V60 / دریپر',
+				),
+				array(
+					'id'    => 'french_press',
+					'label' => 'فرنچ پرس',
+				),
+				array(
+					'id'    => 'chemex',
+					'label' => 'کمکس',
+				),
+				array(
+					'id'    => 'aeropress',
+					'label' => 'ایروپرس',
+				),
+			),
+			'roasts'         => array(
+				array(
+					'id'    => 'light',
+					'label' => 'لایت',
+				),
+				array(
+					'id'    => 'medium',
+					'label' => 'مدیوم',
+				),
+				array(
+					'id'    => 'medium_dark',
+					'label' => 'مدیوم‌دارک',
+				),
+				array(
+					'id'    => 'dark',
+					'label' => 'دارک',
+				),
+			),
 		);
 	}
 
@@ -182,6 +234,15 @@ class Webino_Dashboard_Coffee_Profile {
 			$levels = $defaults['acidity_levels'];
 		}
 
+		$grinds = self::sanitize_id_label_list(
+			isset( $input['grinds'] ) && is_array( $input['grinds'] ) ? $input['grinds'] : $defaults['grinds'],
+			$defaults['grinds']
+		);
+		$roasts = self::sanitize_id_label_list(
+			isset( $input['roasts'] ) && is_array( $input['roasts'] ) ? $input['roasts'] : $defaults['roasts'],
+			$defaults['roasts']
+		);
+
 		$color_keys = array_keys( $defaults['colors'] );
 		$colors_in  = isset( $input['colors'] ) && is_array( $input['colors'] ) ? $input['colors'] : array();
 		$colors     = array();
@@ -206,6 +267,8 @@ class Webino_Dashboard_Coffee_Profile {
 			'caffeine_max'   => max( 1, min( 2000, (int) ( $input['caffeine_max'] ?? $defaults['caffeine_max'] ) ) ),
 			'use_flagcdn'    => ! empty( $input['use_flagcdn'] ),
 			'acidity_levels' => $levels,
+			'grinds'         => $grinds,
+			'roasts'         => $roasts,
 			'colors'         => $colors,
 			'font_title'     => max( 10, min( 32, (int) ( $input['font_title'] ?? $defaults['font_title'] ) ) ),
 			'font_label'     => max( 9, min( 24, (int) ( $input['font_label'] ?? $defaults['font_label'] ) ) ),
@@ -238,8 +301,8 @@ class Webino_Dashboard_Coffee_Profile {
 			'bitterness'    => 0,
 			'sweetness'     => 0,
 			'body'          => 0,
-			'pack_weight_g' => 1000,
-			'visible'       => array(
+			'pack_weight_g'  => 1000,
+			'visible'        => array(
 				'blend'      => true,
 				'acidity'    => true,
 				'caffeine'   => true,
@@ -379,16 +442,71 @@ class Webino_Dashboard_Coffee_Profile {
 		}
 
 		return array(
-			'blend_robusta' => $robusta,
-			'blend_arabica' => $arabica,
-			'acidity'       => $acidity,
-			'caffeine_mg'   => max( 0, min( 5000, (int) ( $input['caffeine_mg'] ?? 0 ) ) ),
-			'bitterness'    => max( $min, min( $max, (int) ( $input['bitterness'] ?? $min ) ) ),
-			'sweetness'     => max( $min, min( $max, (int) ( $input['sweetness'] ?? $min ) ) ),
-			'body'          => max( $min, min( $max, (int) ( $input['body'] ?? $min ) ) ),
-			'pack_weight_g' => max( 1, min( 50000, (int) ( $input['pack_weight_g'] ?? $defaults['pack_weight_g'] ) ) ),
-			'visible'       => $visible,
+			'blend_robusta'  => $robusta,
+			'blend_arabica'  => $arabica,
+			'acidity'        => $acidity,
+			'caffeine_mg'    => max( 0, min( 5000, (int) ( $input['caffeine_mg'] ?? 0 ) ) ),
+			'bitterness'     => max( $min, min( $max, (int) ( $input['bitterness'] ?? $min ) ) ),
+			'sweetness'      => max( $min, min( $max, (int) ( $input['sweetness'] ?? $min ) ) ),
+			'body'           => max( $min, min( $max, (int) ( $input['body'] ?? $min ) ) ),
+			'pack_weight_g'  => max( 1, min( 50000, (int) ( $input['pack_weight_g'] ?? $defaults['pack_weight_g'] ) ) ),
+			'visible'        => $visible,
 		);
+	}
+
+	/**
+	 * @param mixed               $rows     Raw rows.
+	 * @param array<int,mixed>    $fallback Fallback list.
+	 * @return array<int,array{id:string,label:string}>
+	 */
+	private static function sanitize_id_label_list( $rows, $fallback ) {
+		$out  = array();
+		$used = array();
+		if ( ! is_array( $rows ) ) {
+			return $fallback;
+		}
+		foreach ( $rows as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$label = sanitize_text_field( (string) ( $row['label'] ?? '' ) );
+			if ( '' === $label ) {
+				continue;
+			}
+			$id = sanitize_key( (string) ( $row['id'] ?? $label ) );
+			if ( '' === $id || isset( $used[ $id ] ) ) {
+				continue;
+			}
+			$used[ $id ] = true;
+			$out[]       = array(
+				'id'    => $id,
+				'label' => $label,
+			);
+		}
+		return $out ? $out : $fallback;
+	}
+
+	/**
+	 * Find label for an id in a settings list.
+	 *
+	 * @param array<int,array{id:string,label:string}> $list List.
+	 * @param string                                   $id   Id.
+	 * @return string
+	 */
+	public static function label_for_id( $list, $id ) {
+		$id = sanitize_key( (string) $id );
+		if ( '' === $id || ! is_array( $list ) ) {
+			return '';
+		}
+		foreach ( $list as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			if ( sanitize_key( (string) ( $row['id'] ?? '' ) ) === $id ) {
+				return sanitize_text_field( (string) ( $row['label'] ?? '' ) );
+			}
+		}
+		return '';
 	}
 
 	/**

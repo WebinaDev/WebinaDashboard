@@ -1,0 +1,33 @@
+.wcf-fulfillment--fallback,
+.wcf-fulfillment--standalone,
+.wcf-fulfillment--before-cart {
+	margin: 0 0 1rem;
+}
+
+.wcf-order-configs--visible {
+	width: 100%;
+}
+
+.variations .wcf-field,
+.wcf-fulfillment .wcf-field {
+	margin-bottom: 1rem;
+}
+
+.wcf-fulfillment .label label,
+.wcf-fulfillment .product-single--add-to-cart--form-label {
+	font-weight: 600;
+}
+
+.wcf-fulfillment.is-invalid .wcf-field:not(.is-valid) .label label,
+.wcf-fulfillment.is-invalid .wcf-field:not(.is-valid) .product-single--add-to-cart--form-label {
+	color: #b42318;
+}
+
+.wcf-fulfillment .value .wd-swatches,
+.wcf-fulfillment .wcf-field-value .wd-swatches {
+	margin: 0;
+}
+
+.wcf-fulfillment .wcf-plain-select {
+	min-width: 12rem;
+}

@@ -127,7 +127,7 @@ export function OverviewReportPanel() {
             </CardHeader>
             <CardContent>
               <ChartContainer
-                config={{ value: { label: t(`reports.metric.${metric}`), color: 'hsl(var(--chart-1))' } }}
+                config={{ value: { label: t(`reports.metric.${metric}`), color: 'var(--color-chart-1)' } }}
                 className="h-[280px] w-full"
               >
                 <ComposedChart data={chartData}>

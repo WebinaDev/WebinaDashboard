@@ -17,19 +17,19 @@ export function PaymentBarChart({ rows, locale }: PaymentBarChartProps) {
   const axisFmt = (v: number | string) => formatChartNumber(v, locale)
 
   return (
-    <Card className="shadow-sm">
+    <Card className="min-w-0 overflow-hidden shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t('reports.chart.byPayment')}</CardTitle>
       </CardHeader>
-      <CardContent className="h-64 pt-0">
+      <CardContent className="h-64 min-w-0 pt-0">
         {data.length === 0 ? (
           <p className="text-muted-foreground flex h-full items-center justify-center text-sm">{t('reports.emptyHint')}</p>
         ) : (
-          <ChartContainer config={{ revenue: { label: t('reports.revenue'), color: 'hsl(var(--chart-1))' } }} className="h-full w-full">
-            <BarChart data={data} layout="vertical" margin={{ left: 8, right: 8 }}>
+          <ChartContainer config={{ revenue: { label: t('reports.revenue'), color: 'var(--color-chart-1)' } }} className="h-full min-w-0 w-full">
+            <BarChart data={data} layout="vertical" margin={{ left: 4, right: 8 }}>
               <CartesianGrid horizontal={false} />
               <XAxis type="number" tickFormatter={axisFmt} hide />
-              <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
+              <YAxis type="category" dataKey="name" width={72} tickLine={false} axisLine={false} className="text-[10px]" />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
             </BarChart>

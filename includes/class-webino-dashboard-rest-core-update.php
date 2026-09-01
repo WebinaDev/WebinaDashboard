@@ -58,10 +58,7 @@ final class Webino_Dashboard_REST_Core_Update {
 	 * @return bool
 	 */
 	public static function perm_manage() {
-		if ( ! Webino_Dashboard_Rest_Base::can( 'manage_options' ) ) {
-			return false;
-		}
-		return Webino_Dashboard_License::instance()->is_license_active( false );
+		return Webino_Dashboard_Rest_Base::can( 'manage_options' );
 	}
 
 	/**

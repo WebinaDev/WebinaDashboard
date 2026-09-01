@@ -21,7 +21,31 @@ final class Webino_Dashboard_Core_Updater {
 	const CORE_SLUG      = 'webino-dashboard';
 
 	/**
-	 * @return array<string,mixed>|WP_Error
+	 * Bootstrap-safe status: transient only, never calls CRM.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function get_cached_update_status() {
+		$current = defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '0.0.0';
+		$cached  = get_transient( self::CHECK_CACHE_KEY );
+		if ( is_array( $cached ) ) {
+			$cached['version'] = $current;
+			return $cached;
+		}
+		return array(
+			'version'           => $current,
+			'latest_version'    => $current,
+			'update_available'  => false,
+			'release_notes'     => '',
+			'package_available' => false,
+			'license_active'    => true,
+			'unavailable'       => true,
+		);
+	}
+
+	/**
+	 * @param bool $force_refresh Bypass transient and hit CRM.
+	 * @return array<string,mixed>
 	 */
 	public static function get_update_status( $force_refresh = false ) {
 		$current = defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '0.0.0';
@@ -33,16 +57,6 @@ final class Webino_Dashboard_Core_Updater {
 			}
 		}
 		$license = Webino_Dashboard_License::instance();
-		if ( ! $license->is_license_active( false ) ) {
-			return array(
-				'version'           => $current,
-				'latest_version'    => $current,
-				'update_available'  => false,
-				'release_notes'     => '',
-				'package_available' => false,
-				'license_active'    => false,
-			);
-		}
 		$res = $license->crm_get(
 			'wp-json/webinocrm/v1/marketplace/core/check',
 			array(
@@ -88,9 +102,6 @@ final class Webino_Dashboard_Core_Updater {
 			return new WP_Error( 'forbidden', __( 'You do not have permission to update the dashboard.', 'webino-dashboard' ), array( 'status' => 403 ) );
 		}
 		$license = Webino_Dashboard_License::instance();
-		if ( ! $license->is_license_active( false ) ) {
-			return new WP_Error( 'license', __( 'An active license is required to update the dashboard core.', 'webino-dashboard' ), array( 'status' => 403 ) );
-		}
 		if ( ! class_exists( 'ZipArchive' ) ) {
 			return new WP_Error( 'zip', __( 'ZipArchive is not available on this server.', 'webino-dashboard' ), array( 'status' => 500 ) );
 		}

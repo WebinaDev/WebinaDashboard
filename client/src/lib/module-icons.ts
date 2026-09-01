@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   BarChart2,
   Bot,
+  Bell,
   Coffee,
   Circle,
   CircleDollarSign,
@@ -41,6 +42,7 @@ const MAP: Record<string, LucideIcon> = {
   'line-chart': LineChart,
   settings: Settings,
   bot: Bot,
+  bell: Bell,
   'message-square': MessageSquare,
   sparkles: Sparkles,
   coffee: Coffee,

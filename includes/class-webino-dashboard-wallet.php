@@ -165,7 +165,7 @@ class Webino_Dashboard_Wallet {
 					__( 'Wallet topped up', 'webino-dashboard' ),
 					/* translators: %s: amount */
 					sprintf( __( 'Your wallet was credited.', 'webino-dashboard' ) ),
-					home_url( '/dashboard/account/wallet' )
+					Webino_Dashboard_Rewrite::url( 'account/wallet' )
 				);
 			}
 		}
@@ -345,7 +345,7 @@ class Webino_Dashboard_Wallet {
 				'wallet',
 				__( 'Withdrawal requested', 'webino-dashboard' ),
 				__( 'Your withdrawal request is pending review.', 'webino-dashboard' ),
-				home_url( '/dashboard/account/wallet' )
+				Webino_Dashboard_Rewrite::url( 'account/wallet' )
 			);
 		}
 
@@ -478,7 +478,7 @@ class Webino_Dashboard_Wallet {
 				'wallet',
 				__( 'Withdrawal update', 'webino-dashboard' ),
 				$status,
-				home_url( '/dashboard/account/wallet' )
+				Webino_Dashboard_Rewrite::url( 'account/wallet' )
 			);
 		}
 

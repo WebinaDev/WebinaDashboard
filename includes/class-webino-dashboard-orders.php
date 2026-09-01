@@ -27,17 +27,135 @@ class Webino_Dashboard_Orders {
 	 */
 	public static function get_tracking_code( $o ) {
 		if ( class_exists( '\Webino_Dashboard_Bots_Telegram\Messaging\TemplateRenderer' ) ) {
-			return \Webino_Dashboard_Bots_Telegram\Messaging\TemplateRenderer::get_tracking_code( $o );
+			$code = \Webino_Dashboard_Bots_Telegram\Messaging\TemplateRenderer::get_tracking_code( $o );
+			if ( '' !== $code ) {
+				return (string) $code;
+			}
 		}
 		$v = apply_filters( 'wbdb_tg_tracking_value', '', $o );
 		if ( '' !== $v ) {
 			return (string) $v;
 		}
-		$m = $o->get_meta( 'woobale_tracking_code' );
-		if ( '' !== $m ) {
-			return (string) $m;
+		foreach ( array( 'woobale_tracking_code', '_tracking_code', 'tracking_code', '_tracking_number', '_post_barcode', 'post_barcode' ) as $meta_key ) {
+			$m = (string) $o->get_meta( $meta_key );
+			if ( '' !== $m ) {
+				return $m;
+			}
 		}
-		return (string) $o->get_meta( '_tracking_number' );
+		return '';
+	}
+
+	/**
+	 * Detect shipping carrier from order status, method title, or provider meta.
+	 *
+	 * @param WC_Order $o Order.
+	 * @return string courier|post|tipax|other
+	 */
+	public static function get_shipping_kind( $o ) {
+		if ( class_exists( 'Webino_Dashboard_Sms_Order_Map', false ) ) {
+			$from_status = Webino_Dashboard_Sms_Order_Map::event_for_status( $o->get_status() );
+			if ( in_array( $from_status, array( 'courier', 'post', 'tipax' ), true ) ) {
+				return $from_status;
+			}
+		}
+		$parts   = array();
+		$parts[] = strtolower( self::get_shipping_method_title( $o ) );
+		$parts[] = strtolower(
+			self::get_meta_first(
+				$o,
+				array( '_tracking_provider', 'tracking_provider' )
+			)
+		);
+		foreach ( $o->get_shipping_methods() as $method ) {
+			$parts[] = strtolower( (string) $method->get_method_id() );
+			$parts[] = strtolower( (string) $method->get_name() );
+		}
+		$haystack = implode( ' ', $parts );
+		if ( preg_match( '/tipax|تیپاکس/u', $haystack ) ) {
+			return 'tipax';
+		}
+		if ( preg_match( '/courier|peyk|pik|پیک/u', $haystack ) ) {
+			return 'courier';
+		}
+		if ( preg_match( '/post|postal|پست/u', $haystack ) ) {
+			return 'post';
+		}
+		return 'other';
+	}
+
+	/**
+	 * URL template for a shipping kind (shop SMS settings override defaults).
+	 *
+	 * @param string $kind courier|post|tipax|other.
+	 * @return string
+	 */
+	public static function get_tracking_url_template( $kind ) {
+		$defaults = array(
+			'post'    => 'https://tracking.post.ir/?id={code}',
+			'tipax'   => 'https://tipaxco.com/tracking?code={code}',
+			'courier' => '',
+			'other'   => '',
+		);
+		$kind = sanitize_key( (string) $kind );
+		if ( ! isset( $defaults[ $kind ] ) ) {
+			$kind = 'other';
+		}
+		$template = $defaults[ $kind ];
+		if ( class_exists( 'WebinoCRM_Sms_Settings_Service', false ) && class_exists( 'WebinoCRM_Sms_Constants', false ) ) {
+			$domain = '';
+			if ( class_exists( 'Webino_Dashboard_License', false ) ) {
+				$domain = (string) Webino_Dashboard_License::instance()->get_current_domain();
+			}
+			if ( '' === $domain ) {
+				$domain = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+			}
+			$shop = WebinoCRM_Sms_Settings_Service::get( $domain, WebinoCRM_Sms_Constants::SCOPE_SHOP );
+			if ( is_array( $shop ) && ! empty( $shop['tracking_urls'] ) && is_array( $shop['tracking_urls'] ) ) {
+				$custom = isset( $shop['tracking_urls'][ $kind ] ) ? trim( (string) $shop['tracking_urls'][ $kind ] ) : '';
+				if ( '' !== $custom ) {
+					$template = $custom;
+				}
+			}
+		}
+		/**
+		 * Filter tracking URL template for SMS / notifications.
+		 *
+		 * @param string   $template Template with {code} placeholder.
+		 * @param string   $kind     Shipping kind.
+		 */
+		return (string) apply_filters( 'webino_dashboard_tracking_url_template', $template, $kind );
+	}
+
+	/**
+	 * Build tracking URL from code and shipping kind.
+	 *
+	 * @param WC_Order $o    Order.
+	 * @param string   $code Tracking code.
+	 * @return string
+	 */
+	public static function resolve_tracking_url( $o, $code = '' ) {
+		$code = '' !== $code ? (string) $code : self::get_tracking_code( $o );
+		if ( '' === $code ) {
+			return '';
+		}
+		$kind     = self::get_shipping_kind( $o );
+		$template = self::get_tracking_url_template( $kind );
+		if ( '' === $template ) {
+			if ( in_array( $kind, array( 'courier', 'other' ), true ) ) {
+				return (string) $o->get_view_order_url();
+			}
+			$template = self::get_tracking_url_template( 'post' );
+		}
+		if ( '' === $template ) {
+			return '';
+		}
+		if ( false === strpos( $template, '{code}' ) && false === strpos( $template, '{code_raw}' ) ) {
+			$template = 'https://tracking.post.ir/?id={code}';
+		}
+		$url = str_replace( '{code_raw}', $code, $template );
+		$url = str_replace( '{code}', rawurlencode( $code ), $url );
+		$url = (string) apply_filters( 'webino_dashboard_tracking_url', $url, $o, $code );
+		return (string) apply_filters( 'wbdb_tg_tracking_url', $url, $o, $code );
 	}
 
 	/**
@@ -45,18 +163,7 @@ class Webino_Dashboard_Orders {
 	 * @return string
 	 */
 	public static function get_tracking_url( $o ) {
-		if ( class_exists( '\Webino_Dashboard_Bots_Telegram\Messaging\TemplateRenderer' ) ) {
-			return \Webino_Dashboard_Bots_Telegram\Messaging\TemplateRenderer::get_tracking_url( $o );
-		}
-		$code = self::get_tracking_code( $o );
-		if ( '' === $code ) {
-			return '';
-		}
-		$url = (string) apply_filters( 'webino_dashboard_tracking_url', '', $o, $code );
-		if ( '' === $url ) {
-			$url = 'https://tracking.post.ir/?id=' . rawurlencode( $code );
-		}
-		return (string) apply_filters( 'wbdb_tg_tracking_url', $url, $o, $code );
+		return self::resolve_tracking_url( $o );
 	}
 
 	/**
@@ -569,6 +676,10 @@ class Webino_Dashboard_Orders {
 			'state'                => $state_raw,
 			'state_label'          => $state_lbl && $state_lbl !== $state_raw ? $state_lbl : ( $state_lbl ?: '' ),
 			'customer_id'          => (int) $o->get_customer_id(),
+			'is_pos'               => '1' === (string) $o->get_meta( '_webino_pos_order' ) || 'webino_pos' === (string) $o->get_created_via(),
+			'sales_channel'        => (string) $o->get_meta( '_webino_sales_channel' ),
+			'created_by'           => (int) $o->get_meta( '_webino_created_by' ),
+			'payment_tender'       => (string) $o->get_meta( '_webino_payment_tender' ),
 		);
 	}
 
@@ -618,21 +729,30 @@ class Webino_Dashboard_Orders {
 				$image = $src ? esc_url_raw( (string) $src ) : '';
 			}
 			$attributes = array();
+			$staff_view = current_user_can( 'edit_shop_orders' );
 			if ( is_callable( array( $item, 'get_formatted_meta_data' ) ) ) {
 				foreach ( $item->get_formatted_meta_data( '_' ) as $meta ) {
 					$raw_key = isset( $meta->key ) ? (string) $meta->key : '';
 					if ( '' !== $raw_key && ( '_' === $raw_key[0] || 'reduced_stock' === $raw_key ) ) {
 						continue;
 					}
+					$formatted = self::format_order_item_meta_attribute( $raw_key, (string) $meta->value, $o, $staff_view );
+					if ( null === $formatted ) {
+						continue;
+					}
 					$attributes[] = array(
-						'key'   => wp_strip_all_tags( (string) ( $raw_key ? $raw_key : $meta->display_key ) ),
-						'value' => wp_strip_all_tags( (string) $meta->display_value ),
+						'key'   => $formatted['key'],
+						'value' => $formatted['value'],
 					);
 				}
 			}
 			$items_out[] = array(
+				'item_id'      => (int) $item->get_id(),
 				'name'         => $item->get_name(),
 				'quantity'     => $item->get_quantity(),
+				'returnable_qty' => class_exists( 'Webino_Dashboard_Order_Returns', false )
+					? Webino_Dashboard_Order_Returns::returnable_qty( $o, (int) $item->get_id() )
+					: (float) $item->get_quantity(),
 				'subtotal'     => $item->get_subtotal(),
 				'total'        => $item->get_total(),
 				'sku'          => $sku,
@@ -664,9 +784,13 @@ class Webino_Dashboard_Orders {
 				)
 			);
 			foreach ( $all_notes as $note ) {
+				$content = (string) $note->content;
+				if ( class_exists( 'Webino_Dashboard_Order_Notes', false ) ) {
+					$content = Webino_Dashboard_Order_Notes::format( $content );
+				}
 				$notes_out[] = array(
 					'id'            => (int) $note->id,
-					'content'       => $note->content,
+					'content'       => $content,
 					'date'          => $note->date_created ? $note->date_created->format( 'c' ) : null,
 					'customer_note' => (bool) $note->customer_note,
 					'added_by'      => $note->added_by,
@@ -689,7 +813,7 @@ class Webino_Dashboard_Orders {
 
 		$billing_parts  = self::format_address_parts( $o, 'billing' );
 		$shipping_parts = self::format_address_parts( $o, 'shipping' );
-		$sms_log        = self::get_sms_log( $o );
+		$sms_log        = self::get_sms_log( $o, true );
 
 		return array(
 			'id'                       => $o->get_id(),
@@ -773,9 +897,29 @@ class Webino_Dashboard_Orders {
 			'notes'                    => $notes_out,
 			'customer_history'         => self::get_customer_history( $customer_id ),
 			'sms_log'                  => $sms_log,
+			'returns'                  => class_exists( 'Webino_Dashboard_Order_Returns', false )
+				? Webino_Dashboard_Order_Returns::list_for_order( (int) $o->get_id() )
+				: array(),
+			'return_eligible'          => class_exists( 'Webino_Dashboard_Order_Returns', false )
+				? Webino_Dashboard_Order_Returns::order_eligible( $o )
+				: false,
+			'return_address'           => class_exists( 'Webino_Dashboard_Order_Returns', false )
+				? Webino_Dashboard_Order_Returns::return_address_text()
+				: '',
 			'date_created'             => $dc ? $dc->format( 'c' ) : null,
 			'date_modified'            => $dm ? $dm->format( 'c' ) : null,
 			'items'                    => $items_out,
+			'is_pos'                   => '1' === (string) $o->get_meta( '_webino_pos_order' ) || 'webino_pos' === (string) $o->get_created_via(),
+			'sales_channel'            => (string) $o->get_meta( '_webino_sales_channel' ),
+			'created_by'               => (int) $o->get_meta( '_webino_created_by' ),
+			'payment_tender'           => (string) $o->get_meta( '_webino_payment_tender' ),
+			'amount_paid'              => (float) $o->get_meta( '_webino_amount_paid' ),
+			'purchase_type'            => (string) $o->get_meta( '_wfcp_purchase_type' ),
+			'warehouse_id'             => (int) $o->get_meta( '_webino_warehouse_id' ),
+			'buyer_tax'                => ( static function ( $raw ) {
+				$decoded = json_decode( (string) $raw, true );
+				return is_array( $decoded ) ? $decoded : array();
+			} )( $o->get_meta( '_webino_buyer_tax' ) ),
 		);
 	}
 
@@ -971,6 +1115,30 @@ class Webino_Dashboard_Orders {
 		if ( '' !== $shipping_method ) {
 			// Filtered after fetch when possible; also try method title meta.
 			$args['_webino_shipping_method'] = $shipping_method;
+		}
+
+		$sales_channel = sanitize_key( (string) $request->get_param( 'sales_channel' ) );
+		if ( '' !== $sales_channel ) {
+			$meta_query[] = array(
+				'key'   => '_webino_sales_channel',
+				'value' => $sales_channel,
+			);
+		}
+
+		$created_by = (int) $request->get_param( 'created_by' );
+		if ( $created_by > 0 ) {
+			$meta_query[] = array(
+				'key'   => '_webino_created_by',
+				'value' => (string) $created_by,
+			);
+		}
+
+		$pos_only = $request->get_param( 'pos' );
+		if ( '1' === (string) $pos_only || 'true' === (string) $pos_only ) {
+			$meta_query[] = array(
+				'key'   => '_webino_pos_order',
+				'value' => '1',
+			);
 		}
 
 		if ( $meta_query ) {
@@ -1202,18 +1370,243 @@ class Webino_Dashboard_Orders {
 
 	/**
 	 * @param WC_Order $o Order.
+	 * @param bool     $sync When true, refresh from CRM when cache is empty or stale.
 	 * @return array<int,array<string,mixed>>
 	 */
-	public static function get_sms_log( $o ) {
+	public static function get_sms_log( $o, $sync = false ) {
 		$raw = $o->get_meta( '_webino_sms_log' );
 		if ( is_string( $raw ) && '' !== $raw ) {
 			$decoded = json_decode( $raw, true );
 			$raw     = is_array( $decoded ) ? $decoded : array();
 		}
 		if ( ! is_array( $raw ) ) {
-			return array();
+			$raw = array();
 		}
-		return array_values( $raw );
+		$log = array_values( $raw );
+		if ( ! $sync ) {
+			return $log;
+		}
+		return self::sync_sms_log_from_crm( $o, $log );
+	}
+
+	/**
+	 * Pull order SMS rows from CRM and merge into local order meta cache.
+	 *
+	 * @param WC_Order                         $o     Order.
+	 * @param array<int,array<string,mixed>> $local Local log.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function sync_sms_log_from_crm( $o, array $local ) {
+		if ( ! class_exists( 'Webino_Dashboard_License', false ) ) {
+			return $local;
+		}
+		$order_id  = (int) $o->get_id();
+		$cache_key = 'webino_order_sms_sync_' . $order_id;
+		$synced_at = (string) $o->get_meta( '_webino_sms_log_synced_at' );
+		$stale     = '' === $synced_at || ( time() - (int) strtotime( $synced_at ) ) > 120;
+		$empty     = empty( $local );
+		if ( ! $empty && ! $stale && get_transient( $cache_key ) ) {
+			return $local;
+		}
+
+		$license = Webino_Dashboard_License::instance();
+		if ( ! $license->is_license_active( false ) ) {
+			return $local;
+		}
+
+		$res = $license->crm_get(
+			'wp-json/webinocrm/v1/modirpayamak/orders/messages',
+			array( 'order_id' => $order_id ),
+			array( 'timeout' => 8 )
+		);
+		if ( empty( $res['ok'] ) ) {
+			set_transient( $cache_key, 1, 60 );
+			return $local;
+		}
+
+		$data  = is_array( $res['data'] ?? null ) ? $res['data'] : array();
+		$items = is_array( $data['items'] ?? null ) ? $data['items'] : array();
+		if ( empty( $items ) && $empty ) {
+			set_transient( $cache_key, 1, 60 );
+			return $local;
+		}
+
+		$merged = self::merge_sms_log_entries( $local, $items );
+		$o->update_meta_data( '_webino_sms_log', $merged );
+		$o->update_meta_data( '_webino_sms_log_synced_at', gmdate( 'c' ) );
+		if ( is_callable( array( $o, 'save_meta_data' ) ) ) {
+			$o->save_meta_data();
+		} else {
+			$o->save();
+		}
+		set_transient( $cache_key, 1, 60 );
+		return $merged;
+	}
+
+	/**
+	 * @param array<int,array<string,mixed>> $local Local entries.
+	 * @param array<int,array<string,mixed>> $crm   CRM entries.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function merge_sms_log_entries( array $local, array $crm ) {
+		$out = array();
+		foreach ( $crm as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$event = (string) ( $row['event_key'] ?? $row['event'] ?? '' );
+			$out[] = array(
+				'id'        => (int) ( $row['id'] ?? 0 ),
+				'time'      => (string) ( $row['time'] ?? $row['created_at'] ?? gmdate( 'c' ) ),
+				'status'    => sanitize_key( (string) ( $row['status'] ?? 'sent' ) ),
+				'event'     => $event,
+				'phone'     => (string) ( $row['phone'] ?? '' ),
+				'role'      => (string) ( $row['recipient_role'] ?? '' ),
+				'outbox_id' => (string) ( $row['outbox_id'] ?? '' ),
+				'source'    => 'crm',
+			);
+		}
+
+		foreach ( $local as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+			if ( self::sms_log_entry_has_crm_match( $entry, $out ) ) {
+				continue;
+			}
+			$out[] = $entry;
+		}
+
+		usort(
+			$out,
+			static function ( $a, $b ) {
+				return strcmp( (string) ( $a['time'] ?? '' ), (string) ( $b['time'] ?? '' ) );
+			}
+		);
+		if ( count( $out ) > 50 ) {
+			$out = array_slice( $out, -50 );
+		}
+		return array_values( $out );
+	}
+
+	/**
+	 * @param array<string,mixed>            $entry Local entry.
+	 * @param array<int,array<string,mixed>> $crm   CRM-mapped rows.
+	 * @return bool
+	 */
+	private static function sms_log_entry_has_crm_match( array $entry, array $crm ) {
+		$entry_id = (int) ( $entry['id'] ?? 0 );
+		if ( $entry_id > 0 ) {
+			foreach ( $crm as $crm_row ) {
+				if ( $entry_id === (int) ( $crm_row['id'] ?? 0 ) ) {
+					return true;
+				}
+			}
+		}
+		$event = (string) ( $entry['event'] ?? '' );
+		$phone = (string) ( $entry['phone'] ?? '' );
+		$time  = (string) ( $entry['time'] ?? '' );
+		if ( '' === $event ) {
+			return false;
+		}
+		foreach ( $crm as $crm_row ) {
+			if ( $event !== (string) ( $crm_row['event'] ?? '' ) ) {
+				continue;
+			}
+			if ( '' !== $phone && $phone !== (string) ( $crm_row['phone'] ?? '' ) ) {
+				continue;
+			}
+			if ( '' !== $time && abs( strtotime( $time ) - strtotime( (string) ( $crm_row['time'] ?? '' ) ) ) > 600 ) {
+				continue;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Format WFCP / line-item meta for dashboard order detail API.
+	 *
+	 * @param string   $key        Meta key.
+	 * @param string   $value      Raw value.
+	 * @param WC_Order $order      Order.
+	 * @param bool     $staff_view Staff can see gateway id resolved to title.
+	 * @return array{key:string,value:string}|null
+	 */
+	private static function format_order_item_meta_attribute( $key, $value, $order, $staff_view ) {
+		$slug = ltrim( (string) $key, '_' );
+		if ( '' === $slug || 'reduced_stock' === $slug ) {
+			return null;
+		}
+		if ( 'wfcp_gateway' === $slug ) {
+			if ( ! $staff_view ) {
+				return null;
+			}
+			$gid    = sanitize_key( (string) $value );
+			$title  = '';
+			if ( function_exists( 'WC' ) && WC()->payment_gateways() ) {
+				$gateways = WC()->payment_gateways()->payment_gateways();
+				if ( isset( $gateways[ $gid ] ) ) {
+					$title = (string) $gateways[ $gid ]->get_title();
+				}
+			}
+			if ( '' === $title ) {
+				return null;
+			}
+			return array(
+				'key'   => 'wfcp_gateway',
+				'value' => $title,
+			);
+		}
+		if ( 'wfcp_installment_months' === $slug ) {
+			$months = (int) $value;
+			if ( $months <= 0 ) {
+				return null;
+			}
+			return array(
+				'key'   => 'wfcp_installment_months',
+				'value' => sprintf(
+					/* translators: %d: installment month count */
+					_n( '%d month', '%d months', $months, 'webino-dashboard' ),
+					$months
+				),
+			);
+		}
+		if ( 'wfcp_installment_total' === $slug ) {
+			$amount = (float) $value;
+			if ( $amount <= 0 ) {
+				return null;
+			}
+			return array(
+				'key'   => 'wfcp_installment_total',
+				'value' => wp_strip_all_tags( wc_price( $amount, array( 'currency' => $order->get_currency() ) ) ),
+			);
+		}
+		if ( 'wfcp_purchase_type' === $slug ) {
+			$labels = array(
+				'cash'        => __( 'نقدی', 'webino-dashboard' ),
+				'credit'      => __( 'اعتباری', 'webino-dashboard' ),
+				'installment' => __( 'اقساطی', 'webino-dashboard' ),
+				'wholesale'   => __( 'عمده', 'webino-dashboard' ),
+			);
+			$type = sanitize_key( (string) $value );
+			return array(
+				'key'   => 'wfcp_purchase_type',
+				'value' => $labels[ $type ] ?? (string) $value,
+			);
+		}
+		return array(
+			'key'   => $slug,
+			'value' => wp_strip_all_tags( (string) $value ),
+		);
+	}
+
+	/**
+	 * @param WC_Order $o Order.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function get_sms_log_local( $o ) {
+		return self::get_sms_log( $o, false );
 	}
 
 	/**
@@ -1228,7 +1621,7 @@ class Webino_Dashboard_Orders {
 		if ( ! $o ) {
 			return;
 		}
-		$log   = self::get_sms_log( $o );
+		$log   = self::get_sms_log( $o, false );
 		$log[] = array_merge(
 			array(
 				'time'   => gmdate( 'c' ),

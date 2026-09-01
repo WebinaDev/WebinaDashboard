@@ -1329,7 +1329,7 @@ final class Webino_Dashboard_Module_Registry {
 				}
 				$normalized_routes[] = array(
 					'path'           => ltrim( (string) $route['path'], '/' ),
-					'capability'     => (string) ( $route['capability'] ?? 'read' ),
+					'capability'     => self::normalize_route_capability( $route['capability'] ?? 'read' ),
 					'headerTitleKey' => (string) ( $route['headerTitleKey'] ?? '' ),
 					'headerParamKeys'=> isset( $route['headerParamKeys'] ) && is_array( $route['headerParamKeys'] ) ? $route['headerParamKeys'] : array(),
 				);
@@ -1343,6 +1343,27 @@ final class Webino_Dashboard_Module_Registry {
 			);
 		}
 		return $out;
+	}
+
+	/**
+	 * Normalize route capability from manifest (string or OR-list array).
+	 *
+	 * @param mixed $capability Capability from manifest route.
+	 * @return string|array<int,string>
+	 */
+	private static function normalize_route_capability( $capability ) {
+		if ( is_array( $capability ) ) {
+			$out = array();
+			foreach ( $capability as $cap ) {
+				$cap = sanitize_key( (string) $cap );
+				if ( '' !== $cap ) {
+					$out[] = $cap;
+				}
+			}
+			return ! empty( $out ) ? array_values( array_unique( $out ) ) : 'read';
+		}
+		$cap = sanitize_key( (string) $capability );
+		return '' !== $cap ? $cap : 'read';
 	}
 
 	/**

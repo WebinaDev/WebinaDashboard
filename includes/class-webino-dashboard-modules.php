@@ -149,6 +149,19 @@ class Webino_Dashboard_Modules {
 				'icon'       => 'package',
 				'children'   => array(
 					array( 'id' => 'order-list', 'title' => __( 'Orders', 'webino-dashboard' ), 'path' => '/orders/list', 'capability' => 'edit_shop_orders' ),
+					array( 'id' => 'order-new', 'title' => __( 'New order', 'webino-dashboard' ), 'path' => '/orders/new', 'capability' => 'webino_create_shop_orders' ),
+				),
+			),
+			array(
+				'id'         => 'pos',
+				'nav_group'  => self::NAV_GROUP_SHOP,
+				'title'      => __( 'Cashier', 'webino-dashboard' ),
+				'path'       => '/pos',
+				'capability' => 'webino_pos',
+				'icon'       => 'shopping-cart',
+				'children'   => array(
+					array( 'id' => 'pos-register', 'title' => __( 'Register', 'webino-dashboard' ), 'path' => '/pos', 'capability' => 'webino_pos' ),
+					array( 'id' => 'pos-my-orders', 'title' => __( 'My POS orders', 'webino-dashboard' ), 'path' => '/orders/list', 'capability' => 'webino_view_own_shop_orders' ),
 				),
 			),
 			array(
@@ -216,6 +229,15 @@ class Webino_Dashboard_Modules {
 				// Children come from bale-bot-module / telegram-bot-module manifests.
 				// Hardcoded bots-bale / bots-telegram caused duplicate sidebar entries.
 				'children'             => array(),
+			),
+			array(
+				'id'                   => 'notifications-hub',
+				'nav_group'            => self::NAV_GROUP_TOOLS,
+				'title'                => __( 'Notification system', 'webino-dashboard' ),
+				'path'                 => '/notifications',
+				'capability'           => 'manage_woocommerce',
+				'icon'                 => 'bell',
+				'requires_woocommerce' => true,
 			),
 			array(
 				'id'         => 'marketplace',

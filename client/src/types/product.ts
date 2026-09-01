@@ -1,10 +1,13 @@
 export type ProductAttribute = {
   name: string
+  label?: string
   options: string[] | number[]
   variation?: boolean
   visible?: boolean
   attribute_id?: number
   taxonomy?: boolean
+  order_config?: boolean
+  order_config_default?: string
 }
 
 export type ProductTag = { id: number; name: string; slug?: string }
@@ -178,6 +181,8 @@ export type AttributeRow = {
   visible: boolean
   attribute_id?: number
   taxonomy?: boolean
+  order_config?: boolean
+  order_config_default?: string
 }
 
 export type IshopLabelOption = { key: string; label: string }

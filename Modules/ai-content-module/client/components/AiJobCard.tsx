@@ -48,6 +48,18 @@ function humanJobError(raw: string, t: (key: string) => string): { title: string
   if (/cURL error/i.test(s)) {
     return { title: t('aiContent.jobError.network'), detail: s }
   }
+  if (/content_kw|Focus keyword missing from product content|کلمه کلیدی در متن محصول/i.test(s)) {
+    return { title: t('aiContent.jobError.contentKw'), detail: s }
+  }
+  if (/title_kw|Focus keyword missing from title/i.test(s)) {
+    return { title: t('aiContent.jobError.titleKw'), detail: s }
+  }
+  if (/desc_kw|Focus keyword missing from SEO meta/i.test(s)) {
+    return { title: t('aiContent.jobError.descKw'), detail: s }
+  }
+  if (/SEO checks failed/i.test(s)) {
+    return { title: t('aiContent.jobError.seoGeneric'), detail: s }
+  }
   return { title: s, detail: '' }
 }
 

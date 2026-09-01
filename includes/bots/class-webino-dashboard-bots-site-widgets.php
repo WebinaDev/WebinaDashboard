@@ -177,6 +177,60 @@ final class Webino_Dashboard_Bots_Site_Widgets {
 	 */
 	public static function ajax_otp_request() {
 		$phone = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( $_POST['phone'] ) ) : '';
+		if ( class_exists( 'Webino_Dashboard_Auth_Otp', false ) ) {
+			$purpose = isset( $_POST['purpose'] ) ? sanitize_key( wp_unslash( $_POST['purpose'] ) ) : 'login';
+			if ( ! in_array( $purpose, array( 'login', 'register' ), true ) ) {
+				$purpose = 'login';
+			}
+			// Shortcode historically always allowed create-on-verify; prefer register when enabled.
+			$flags = Webino_Dashboard_Auth_Otp::public_flags();
+			if ( 'login' === $purpose && empty( $flags['login_enabled'] ) && ! empty( $flags['register_enabled'] ) ) {
+				$purpose = 'register';
+			}
+			if ( empty( $flags['login_enabled'] ) && empty( $flags['register_enabled'] ) ) {
+				// Legacy fallback when hub OTP is off: keep previous transient + hook behavior.
+				$phone_digits = preg_replace( '/\D+/', '', $phone );
+				if ( strlen( (string) $phone_digits ) < 10 ) {
+					wp_send_json( array( 'ok' => false, 'message' => __( 'شماره نامعتبر', 'webino-dashboard' ) ) );
+				}
+				$code = (string) wp_rand( 100000, 999999 );
+				set_transient( 'webino_bot_otp_' . $phone_digits, $code, 10 * MINUTE_IN_SECONDS );
+				$sent = (bool) apply_filters( 'webino_dashboard_bots_otp_deliver', false, $phone_digits, $code );
+				do_action( 'webino_sms_send', $phone_digits, sprintf( __( 'کد ورود: %s', 'webino-dashboard' ), $code ), null );
+				wp_send_json(
+					array(
+						'ok'      => true,
+						'message' => $sent ? __( 'کد ارسال شد', 'webino-dashboard' ) : __( 'کد تولید شد (ارسال از طریق هوک SMS)', 'webino-dashboard' ),
+					)
+				);
+			}
+			$result = Webino_Dashboard_Auth_Otp::send( $phone, $purpose );
+			if ( is_wp_error( $result ) ) {
+				wp_send_json(
+					array(
+						'ok'      => false,
+						'message' => $result->get_error_message(),
+					)
+				);
+			}
+			$channels = isset( $result['channels_sent'] ) && is_array( $result['channels_sent'] )
+				? $result['channels_sent']
+				: array();
+			$msg = isset( $result['message'] ) ? (string) $result['message'] : __( 'کد ارسال شد', 'webino-dashboard' );
+			if ( ! empty( $channels ) ) {
+				$msg .= ' (' . implode( ', ', $channels ) . ')';
+			}
+			wp_send_json(
+				array(
+					'ok'                  => true,
+					'message'             => $msg,
+					'channels_sent'       => $channels,
+					'masked_destinations' => $result['masked_destinations'] ?? array(),
+					'purpose'             => $purpose,
+				)
+			);
+		}
+
 		$phone = preg_replace( '/\D+/', '', $phone );
 		if ( strlen( $phone ) < 10 ) {
 			wp_send_json( array( 'ok' => false, 'message' => __( 'شماره نامعتبر', 'webino-dashboard' ) ) );
@@ -204,8 +258,52 @@ final class Webino_Dashboard_Bots_Site_Widgets {
 	 * @return void
 	 */
 	public static function ajax_otp_verify() {
-		$phone = isset( $_POST['phone'] ) ? preg_replace( '/\D+/', '', sanitize_text_field( wp_unslash( $_POST['phone'] ) ) ) : '';
+		$phone = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( $_POST['phone'] ) ) : '';
 		$code  = isset( $_POST['code'] ) ? sanitize_text_field( wp_unslash( $_POST['code'] ) ) : '';
+
+		if ( class_exists( 'Webino_Dashboard_Auth_Otp', false ) ) {
+			$flags = Webino_Dashboard_Auth_Otp::public_flags();
+			if ( ! empty( $flags['login_enabled'] ) || ! empty( $flags['register_enabled'] ) ) {
+				$purpose = isset( $_POST['purpose'] ) ? sanitize_key( wp_unslash( $_POST['purpose'] ) ) : 'login';
+				if ( ! in_array( $purpose, array( 'login', 'register' ), true ) ) {
+					$purpose = ! empty( $flags['register_enabled'] ) ? 'register' : 'login';
+				}
+				$result = Webino_Dashboard_Auth_Otp::verify( $phone, $code, $purpose, true );
+				if ( is_wp_error( $result ) ) {
+					// Retry opposite purpose when shortcode omits it.
+					$alt = 'login' === $purpose ? 'register' : 'login';
+					if ( ( 'register' === $alt && ! empty( $flags['register_enabled'] ) )
+						|| ( 'login' === $alt && ! empty( $flags['login_enabled'] ) )
+					) {
+						$result = Webino_Dashboard_Auth_Otp::verify( $phone, $code, $alt, true );
+					}
+				}
+				if ( is_wp_error( $result ) ) {
+					wp_send_json( array( 'ok' => false, 'message' => $result->get_error_message() ) );
+				}
+				$user = get_userdata( (int) $result['user']['id'] );
+				if ( ! $user ) {
+					wp_send_json( array( 'ok' => false, 'message' => __( 'ورود ناموفق', 'webino-dashboard' ) ) );
+				}
+				$payload = self::create_account_link_token( $user->ID );
+				$s       = self::settings();
+				$out     = array(
+					'ok'                => true,
+					'message'           => __( 'ورود موفق', 'webino-dashboard' ),
+					'bot_start_payload' => $payload,
+				);
+				$deep    = self::build_bot_deep_links( $payload, $s );
+				if ( ! empty( $deep['bale'] ) ) {
+					$out['bale_deep_link'] = $deep['bale'];
+				}
+				if ( ! empty( $deep['telegram'] ) ) {
+					$out['telegram_deep_link'] = $deep['telegram'];
+				}
+				wp_send_json( $out );
+			}
+		}
+
+		$phone = preg_replace( '/\D+/', '', $phone );
 		$saved = (string) get_transient( 'webino_bot_otp_' . $phone );
 		if ( $saved === '' || ! hash_equals( $saved, $code ) ) {
 			wp_send_json( array( 'ok' => false, 'message' => __( 'کد نادرست', 'webino-dashboard' ) ) );

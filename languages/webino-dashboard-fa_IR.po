@@ -519,6 +519,27 @@ msgstr "جمع کل"
 msgid "Orders"
 msgstr "سفارش‌ها"
 
+msgid "New order"
+msgstr "سفارش جدید"
+
+msgid "Notification system"
+msgstr "سیستم اعلان"
+
+msgid "Your login code: {code} — {site_name}"
+msgstr "کد ورود به {site_name}: {code}"
+
+msgid "Your registration code: {code} — {site_name}"
+msgstr "کد ثبت‌نام در {site_name}: {code}"
+
+msgid "کد ورود به {site_name}: {code}"
+msgstr "کد ورود به {site_name}: {code}"
+
+msgid "کد ثبت‌نام در {site_name}: {code}"
+msgstr "کد ثبت‌نام در {site_name}: {code}"
+
+msgid "[%s] Store notification"
+msgstr "[%s] اعلان فروشگاه"
+
 msgid "Overview"
 msgstr "نمای کلی"
 
@@ -800,6 +821,15 @@ msgstr "نام منطقه الزامی است."
 
 msgid "Zone not found."
 msgstr "منطقه یافت نشد."
+
+msgid "Focus keyword missing from product content."
+msgstr "کلمه کلیدی در متن محصول نیست."
+
+msgid "Focus keyword missing from title."
+msgstr "کلمه کلیدی در عنوان نیست."
+
+msgid "Focus keyword missing from SEO meta description."
+msgstr "کلمه کلیدی در توضیح متای SEO نیست."
 
 msgid "bootstrap.php is missing in the module package."
 msgstr "bootstrap.php در بسته ماژول موجود نیست."

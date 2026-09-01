@@ -21,6 +21,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 			'class-webino-dashboard-rest-coffee-profile.php',
 			'class-webino-dashboard-rest-coffee-blend.php',
 			'class-webino-dashboard-coffee-storefront.php',
+			'class-webino-dashboard-coffee-fulfillment.php',
 		),
 		'coffee-profile-module'
 	) ) {

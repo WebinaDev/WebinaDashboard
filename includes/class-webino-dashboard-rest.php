@@ -285,6 +285,26 @@ class Webino_Dashboard_REST {
 
 		register_rest_route(
 			self::NS,
+			'/auth/otp/send',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'auth_otp_send' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/auth/otp/verify',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'auth_otp_verify' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/auth/logout',
 			array(
 				'methods'             => 'POST',
@@ -396,25 +416,7 @@ class Webino_Dashboard_REST {
 			)
 		);
 
-		register_rest_route(
-			self::NS,
-			'/accounting/summary',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( __CLASS__, 'accounting_summary' ),
-				'permission_callback' => array( 'Webino_Dashboard_Rest_Base', 'can_view_accounting' ),
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/accounting/(?P<resource>[a-z\-]+)',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( __CLASS__, 'accounting_list' ),
-				'permission_callback' => array( 'Webino_Dashboard_Rest_Base', 'can_view_accounting' ),
-			)
-		);
+		// Accounting REST is owned by accounting-module (Webino_Dashboard_REST_Accounting).
 
 		register_rest_route(
 			self::NS,
@@ -456,10 +458,43 @@ class Webino_Dashboard_REST {
 			self::NS,
 			'/shop/orders',
 			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'shop_orders' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can_access_orders();
+					},
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'shop_orders_create' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can_create_orders();
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shop/products/pos-search',
+			array(
 				'methods'             => 'GET',
-				'callback'            => array( __CLASS__, 'shop_orders' ),
+				'callback'            => array( __CLASS__, 'shop_products_pos_search' ),
 				'permission_callback' => function () {
-					return Webino_Dashboard_Rest_Base::can_access_orders();
+					return Webino_Dashboard_Rest_Base::can_create_orders();
+				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shop/pos/customers',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'shop_pos_customers' ),
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can_create_orders();
 				},
 			)
 		);
@@ -611,7 +646,8 @@ class Webino_Dashboard_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function bootstrap() {
-		Webino_Dashboard_License::instance()->maybe_sync_if_stale( 'bootstrap' );
+		// No outbound CRM here — keep bootstrap local/fast. License sync is cron + remote-check;
+		// core update check lives in CoreUpdatePanel / its REST endpoint.
 
 		$uid    = get_current_user_id();
 		$ui_loc = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_locale', true ) : '';
@@ -638,6 +674,10 @@ class Webino_Dashboard_REST {
 			'edit_shop_orders',
 			'webino_partner_portal',
 			'webino_account_portal',
+			'webino_pos',
+			'webino_create_shop_orders',
+			'webino_view_own_shop_orders',
+			'webino_manage_accounting',
 			'view_woocommerce_reports',
 			'edit_shop_coupons',
 			'manage_woocommerce',
@@ -647,6 +687,7 @@ class Webino_Dashboard_REST {
 			'delete_users',
 			'moderate_comments',
 			'manage_options',
+			'promote_users',
 		);
 		$capabilities = array();
 		foreach ( $cap_whitelist as $c ) {
@@ -698,7 +739,7 @@ class Webino_Dashboard_REST {
 			'marketplaceSettingsSections' => apply_filters( 'webino_dashboard_marketplace_settings_sections', array() ),
 			'activeModuleClients'         => Webino_Dashboard_Module_Registry::get_active_module_clients(),
 			'installedModuleSlugs'        => Webino_Dashboard_Module_Registry::list_installed_module_slugs(),
-			'coreUpdate'                  => Webino_Dashboard_Core_Updater::get_update_status(),
+			'coreUpdate'                  => Webino_Dashboard_Core_Updater::get_cached_update_status(),
 		);
 
 		if ( $uid > 0 ) {
@@ -706,6 +747,117 @@ class Webino_Dashboard_REST {
 		}
 
 		return new WP_REST_Response( $payload );
+	}
+
+	/**
+	 * Fast bootstrap for HTML embed — no module client scan, no CRM. Client/ajax fills full payload later.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function bootstrap_embed_minimal() {
+		$uid    = get_current_user_id();
+		$ui_loc = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_locale', true ) : '';
+		$locale = $ui_loc ? $ui_loc : determine_locale();
+
+		$modules = Webino_Dashboard_Modules::get_default_modules();
+		$modules = self::filter_modules_by_capabilities( $modules );
+		$modules = self::filter_modules_without_wfcp( $modules );
+		$modules = self::filter_modules_without_woocommerce( $modules );
+		$modules = self::filter_inactive_modules( $modules );
+
+		$ui_theme = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_theme', true ) : '';
+		$ui_accent = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_accent', true ) : '';
+		$ui_fs     = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_fullscreen', true ) : '';
+
+		$cap_whitelist = array(
+			'read',
+			'edit_posts',
+			'delete_posts',
+			'manage_categories',
+			'upload_files',
+			'edit_pages',
+			'delete_pages',
+			'edit_products',
+			'manage_product_terms',
+			'edit_shop_orders',
+			'webino_partner_portal',
+			'webino_account_portal',
+			'webino_pos',
+			'webino_create_shop_orders',
+			'webino_view_own_shop_orders',
+			'webino_manage_accounting',
+			'view_woocommerce_reports',
+			'edit_shop_coupons',
+			'manage_woocommerce',
+			'list_users',
+			'create_users',
+			'edit_users',
+			'delete_users',
+			'moderate_comments',
+			'manage_options',
+			'promote_users',
+		);
+		$capabilities = array();
+		foreach ( $cap_whitelist as $c ) {
+			if ( current_user_can( $c ) ) {
+				$capabilities[] = $c;
+			}
+		}
+
+		$wp_user = wp_get_current_user();
+		$user    = array(
+			'name'   => ( $wp_user && $wp_user->exists() ) ? (string) $wp_user->display_name : '',
+			'email'  => ( $wp_user && $wp_user->exists() ) ? (string) $wp_user->user_email : '',
+			'avatar' => ( $wp_user && $wp_user->exists() ) ? self::dashboard_avatar_url( (int) $wp_user->ID, 64 ) : '',
+		);
+
+		$site = array(
+			'name' => get_bloginfo( 'name' ),
+			'url'  => home_url( '/' ),
+			'icon' => self::site_icon_url(),
+		);
+		if ( function_exists( 'get_woocommerce_currency' ) ) {
+			$wc_currency = get_woocommerce_currency();
+			$site['currency']        = $wc_currency;
+			$site['currency_symbol'] = function_exists( 'get_woocommerce_currency_symbol' )
+				? html_entity_decode( get_woocommerce_currency_symbol( $wc_currency ), ENT_QUOTES, 'UTF-8' )
+				: '';
+		}
+
+		return array(
+			'embedMinimal'                => true,
+			'modules'                     => $modules,
+			'locale'                      => $locale,
+			'uiTheme'                     => $ui_theme ? $ui_theme : 'light',
+			'uiAccent'                    => $ui_accent ? $ui_accent : 'colorful',
+			'uiFullscreen'                => ( '1' === $ui_fs || 'true' === $ui_fs ),
+			'capabilities'                => $capabilities,
+			'user'                        => $user,
+			'site'                        => $site,
+			'flags'                       => array(
+				'woocommerce' => class_exists( 'WooCommerce' ),
+				'wfcp'        => class_exists( 'Webino_Dashboard_Module_Registry', false )
+					? Webino_Dashboard_Module_Registry::wfcp_ready()
+					: class_exists( 'WFCP_Helper', false ),
+				'wnc'         => class_exists( 'WNC_Settings', false ) || ( class_exists( 'Webino_Dashboard_WNC_Loader', false ) && Webino_Dashboard_WNC_Loader::ready() ),
+				'baleBot'     => self::bot_ui_ready( 'bale' ),
+				'telegramBot' => self::bot_ui_ready( 'telegram' ),
+			),
+			'license'                     => Webino_Dashboard_License::instance()->get_bootstrap_payload(),
+			'marketplaceSettingsSections' => apply_filters( 'webino_dashboard_marketplace_settings_sections', array() ),
+			'activeModuleClients'         => array(),
+			'installedModuleSlugs'        => class_exists( 'Webino_Dashboard_Module_Registry', false )
+				? Webino_Dashboard_Module_Registry::list_installed_module_slugs()
+				: array(),
+			'coreUpdate'                  => class_exists( 'Webino_Dashboard_Core_Updater', false )
+				? Webino_Dashboard_Core_Updater::get_cached_update_status()
+				: array(
+					'version'           => defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '0.0.0',
+					'latest_version'    => defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '0.0.0',
+					'update_available'  => false,
+					'unavailable'       => true,
+				),
+		);
 	}
 
 	/**
@@ -1031,6 +1183,77 @@ class Webino_Dashboard_REST {
 					'name'  => $signon->display_name,
 				),
 			)
+		);
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function auth_otp_send( $request ) {
+		if ( ! Webino_Dashboard_Rest_Base::rate_limit_ok( 'otp_send', 20, 300 ) ) {
+			return new WP_Error( 'too_many', __( 'Too many attempts.', 'webino-dashboard' ), array( 'status' => 429 ) );
+		}
+		if ( ! Webino_Dashboard_Rest_Base::verify_login_nonce( (string) $request->get_param( 'login_nonce' ) ) ) {
+			return new WP_Error( 'invalid_nonce', __( 'Invalid login token. Refresh the page and try again.', 'webino-dashboard' ), array( 'status' => 403 ) );
+		}
+		if ( ! class_exists( 'Webino_Dashboard_Auth_Otp', false ) ) {
+			return new WP_Error( 'unavailable', __( 'OTP service unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$identifier = (string) $request->get_param( 'identifier' );
+		if ( '' === $identifier ) {
+			$identifier = (string) $request->get_param( 'login' );
+		}
+		$purpose = sanitize_key( (string) $request->get_param( 'purpose' ) );
+		if ( '' === $purpose ) {
+			$purpose = 'login';
+		}
+		$result = Webino_Dashboard_Auth_Otp::send( $identifier, $purpose );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function auth_otp_verify( $request ) {
+		if ( ! Webino_Dashboard_Rest_Base::rate_limit_ok( 'otp_verify', 40, 300 ) ) {
+			return new WP_Error( 'too_many', __( 'Too many attempts.', 'webino-dashboard' ), array( 'status' => 429 ) );
+		}
+		if ( ! Webino_Dashboard_Rest_Base::verify_login_nonce( (string) $request->get_param( 'login_nonce' ) ) ) {
+			return new WP_Error( 'invalid_nonce', __( 'Invalid login token. Refresh the page and try again.', 'webino-dashboard' ), array( 'status' => 403 ) );
+		}
+		if ( ! class_exists( 'Webino_Dashboard_Auth_Otp', false ) ) {
+			return new WP_Error( 'unavailable', __( 'OTP service unavailable.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$identifier = (string) $request->get_param( 'identifier' );
+		if ( '' === $identifier ) {
+			$identifier = (string) $request->get_param( 'login' );
+		}
+		$purpose = sanitize_key( (string) $request->get_param( 'purpose' ) );
+		if ( '' === $purpose ) {
+			$purpose = 'login';
+		}
+		$result = Webino_Dashboard_Auth_Otp::verify(
+			$identifier,
+			(string) $request->get_param( 'code' ),
+			$purpose,
+			(bool) $request->get_param( 'remember' )
+		);
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'ok'      => true,
+				'created' => ! empty( $result['created'] ),
+				'user'    => $result['user'],
+			),
+			200
 		);
 	}
 
@@ -1517,7 +1740,7 @@ class Webino_Dashboard_REST {
 		$body = array(
 			'name'               => get_bloginfo( 'name' ) . ' — ' . __( 'Dashboard', 'webino-dashboard' ),
 			'short_name'         => 'Dashboard',
-			'start_url'          => home_url( '/dashboard/' ),
+			'start_url'          => Webino_Dashboard_Rewrite::url(),
 			'display'            => 'standalone',
 			'background_color'   => '#ffffff',
 			'theme_color'        => '#0f172a',
@@ -1991,6 +2214,9 @@ class Webino_Dashboard_REST {
 			'name'                => $p->get_name(),
 			'slug'                => $p->get_slug(),
 			'sku'                 => $p->get_sku(),
+			'moadian_sstid'       => (string) get_post_meta( $id, '_webino_moadian_sstid', true ),
+			'moadian_vat_rate'    => (float) get_post_meta( $id, '_webino_moadian_vat_rate', true ),
+			'moadian_tax_exempt'  => '1' === (string) get_post_meta( $id, '_webino_moadian_tax_exempt', true ),
 			'status'              => $p->get_status(),
 			'type'                => $p->get_type(),
 			'price'               => $p->get_price(),
@@ -2019,7 +2245,19 @@ class Webino_Dashboard_REST {
 			$row['brand_ids'] = is_wp_error( $bids ) ? array() : array_map( 'intval', $bids );
 		}
 
-		foreach ( $p->get_attributes() as $attr ) {
+		$product_attrs = $p->get_attributes();
+		if ( ! empty( $product_attrs ) ) {
+			uasort(
+				$product_attrs,
+				static function ( $a, $b ) {
+					if ( ! is_a( $a, 'WC_Product_Attribute' ) || ! is_a( $b, 'WC_Product_Attribute' ) ) {
+						return 0;
+					}
+					return (int) $a->get_position() <=> (int) $b->get_position();
+				}
+			);
+		}
+		foreach ( $product_attrs as $attr ) {
 			if ( ! is_a( $attr, 'WC_Product_Attribute' ) ) {
 				continue;
 			}
@@ -2031,13 +2269,17 @@ class Webino_Dashboard_REST {
 				}
 			}
 			$row['product_attributes'][] = array(
-				'name'       => $attr->get_name(),
-				'options'    => $options,
-				'variation'  => $attr->get_variation(),
-				'visible'    => $attr->get_visible(),
-				'taxonomy'   => $attr->is_taxonomy(),
+				'name'         => $attr->get_name(),
+				'label'        => function_exists( 'wc_attribute_label' ) ? (string) wc_attribute_label( $attr->get_name(), $p ) : (string) $attr->get_name(),
+				'options'      => $options,
+				'variation'    => $attr->get_variation(),
+				'visible'      => $attr->get_visible(),
+				'taxonomy'     => $attr->is_taxonomy(),
 				'attribute_id' => $attr->get_id(),
 			);
+		}
+		if ( class_exists( 'Webino_Dashboard_Order_Configs', false ) && ! empty( $row['product_attributes'] ) ) {
+			$row['product_attributes'] = Webino_Dashboard_Order_Configs::merge_into_attribute_rows( $id, $row['product_attributes'] );
 		}
 
 		$row['virtual']             = $p->get_virtual();
@@ -2728,6 +2970,9 @@ class Webino_Dashboard_REST {
 			$request->set_param( 'customer', (string) $portal_uid );
 			$request->set_param( 'customer_role', '' );
 		}
+		if ( Webino_Dashboard_Rest_Base::is_seller_only() ) {
+			$request->set_param( 'created_by', (string) get_current_user_id() );
+		}
 		$args            = Webino_Dashboard_Orders::query_args_from_request( $request );
 		$shipping_filter = '';
 		if ( isset( $args['_webino_shipping_method'] ) ) {
@@ -2770,6 +3015,89 @@ class Webino_Dashboard_REST {
 				'stats'         => Webino_Dashboard_Orders::get_list_stats( $request ),
 			)
 		);
+	}
+
+	/**
+	 * Create a manual / POS WooCommerce order.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function shop_orders_create( $request ) {
+		if ( ! Webino_Dashboard_Orders::wc_active() ) {
+			return new WP_Error( 'no_wc', __( 'Store module is not available.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$data = $request->get_json_params();
+		if ( ! is_array( $data ) ) {
+			$data = $request->get_params();
+		}
+		if ( ! is_array( $data ) ) {
+			$data = array();
+		}
+		$result = Webino_Dashboard_Order_Writer::create( $data );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return new WP_REST_Response( $result, 201 );
+	}
+
+	/**
+	 * POS product search (name / SKU / barcode).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function shop_products_pos_search( $request ) {
+		$q     = (string) $request->get_param( 'q' );
+		$limit = (int) ( $request->get_param( 'limit' ) ?: 30 );
+		return new WP_REST_Response(
+			array(
+				'items' => Webino_Dashboard_Order_Writer::pos_search( $q, $limit ),
+			)
+		);
+	}
+
+	/**
+	 * Quick customer lookup for POS.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function shop_pos_customers( $request ) {
+		$q = trim( (string) $request->get_param( 'q' ) );
+		if ( strlen( $q ) < 2 ) {
+			return new WP_REST_Response( array( 'items' => array() ) );
+		}
+		$phone = preg_replace( '/\D+/', '', $q );
+		$args  = array(
+			'number'  => 20,
+			'orderby' => 'registered',
+			'order'   => 'DESC',
+			'fields'  => array( 'ID', 'user_email', 'display_name' ),
+		);
+		if ( $phone && strlen( $phone ) >= 4 ) {
+			$args['meta_query'] = array(
+				'relation' => 'OR',
+				array( 'key' => 'billing_phone', 'value' => $phone, 'compare' => 'LIKE' ),
+				array( 'key' => 'phone', 'value' => $phone, 'compare' => 'LIKE' ),
+			);
+		} else {
+			$args['search']         = '*' . esc_attr( $q ) . '*';
+			$args['search_columns'] = array( 'user_login', 'user_email', 'display_name' );
+		}
+		$users = get_users( $args );
+		$items = array();
+		foreach ( $users as $u ) {
+			$items[] = array(
+				'id'         => (int) $u->ID,
+				'name'       => (string) $u->display_name,
+				'email'      => (string) $u->user_email,
+				'phone'      => (string) ( get_user_meta( $u->ID, 'billing_phone', true ) ?: get_user_meta( $u->ID, 'phone', true ) ),
+				'first_name' => (string) get_user_meta( $u->ID, 'first_name', true ),
+				'last_name'  => (string) get_user_meta( $u->ID, 'last_name', true ),
+			);
+		}
+		return new WP_REST_Response( array( 'items' => $items ) );
 	}
 
 	/**

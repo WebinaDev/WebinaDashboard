@@ -47,7 +47,7 @@ export function OrdersFiltersBar({ filters, options, onChange }: OrdersFiltersBa
   }
 
   return (
-    <div className="bg-muted/30 space-y-3 rounded-lg border p-3">
+    <div className="bg-transparent space-y-3">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
         <div className="space-y-1">
           <Label className="text-muted-foreground text-xs">{t('orders.dateFrom')}</Label>

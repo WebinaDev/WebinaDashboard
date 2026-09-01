@@ -19,6 +19,8 @@ export type CoffeeColors = {
   value: string
 }
 
+export type IdLabel = { id: string; label: string }
+
 export type CoffeeSettings = {
   placement: 'summary' | 'before_cart' | 'after_cart' | 'before_tabs' | 'after_tabs' | 'none'
   robusta_label: string
@@ -29,6 +31,8 @@ export type CoffeeSettings = {
   caffeine_max: number
   use_flagcdn: boolean
   acidity_levels: AcidityLevel[]
+  grinds: IdLabel[]
+  roasts: IdLabel[]
   colors: CoffeeColors
   font_title: number
   font_label: number
@@ -47,6 +51,13 @@ export type CoffeeVisible = {
   sweetness: boolean
   body: boolean
   origin: boolean
+}
+
+export type CoffeeFulfillmentTerm = {
+  id: number
+  slug: string
+  name: string
+  image_url: string
 }
 
 export type CoffeeProfile = {

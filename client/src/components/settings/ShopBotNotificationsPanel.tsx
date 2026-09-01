@@ -85,10 +85,14 @@ function filterShortcodes(shortcodes: Shortcode[], eventKey: string, catalog: Ev
   })
 }
 
-export function ShopBotNotificationsPanel() {
+export function ShopBotNotificationsPanel({ lockedProvider }: { lockedProvider?: BotProvider }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const [provider, setProvider] = useState<BotProvider>('bale')
+  const [provider, setProvider] = useState<BotProvider>(lockedProvider ?? 'bale')
+
+  useEffect(() => {
+    if (lockedProvider) setProvider(lockedProvider)
+  }, [lockedProvider])
   const [tab, setTab] = useState('admin')
   const [sn, setSn] = useState<ShopNotify | null>(null)
   const [adminChatsText, setAdminChatsText] = useState('')
@@ -341,7 +345,9 @@ export function ShopBotNotificationsPanel() {
             <CardDescription className="mt-1">{t('settings.shopBots.hint')}</CardDescription>
           </div>
           <div className="flex flex-col items-end gap-3">
-            <BotProviderSwitcher provider={provider} onChange={setProvider} />
+            {lockedProvider ? null : (
+              <BotProviderSwitcher provider={provider} onChange={setProvider} />
+            )}
             <div className="flex items-center gap-2">
               <Switch checked={!!sn.enabled} onCheckedChange={(v) => setSn({ ...sn, enabled: v })} />
               <Label className="text-xs">{t('settings.shopSms.enabled')}</Label>

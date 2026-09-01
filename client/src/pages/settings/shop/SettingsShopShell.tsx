@@ -4,9 +4,6 @@ import { OrderDocumentsSettingsPanel } from '@/components/settings/OrderDocument
 import { PaymentHubPanel } from '@/components/settings/PaymentHubPanel'
 import { SettingsModulesChrome } from '@/components/settings/SettingsModulesChrome'
 import { ShippingZonesPanel } from '@/components/settings/ShippingZonesPanel'
-import { ShopBotNotificationsPanel } from '@/components/settings/ShopBotNotificationsPanel'
-import { ShopSmsNotificationsPanel } from '@/components/settings/ShopSmsNotificationsPanel'
-import { WcEmailsPanel } from '@/components/settings/WcEmailsPanel'
 import { WcSettingsSectionPanel } from '@/components/settings/WcSettingsSectionPanel'
 import { isShopSection } from '@/lib/settings-nav'
 
@@ -16,8 +13,18 @@ const PRODUCT_SUBSECTIONS = [
   { id: 'downloadable', labelKey: 'settings.shop.productsDownloadable' },
 ]
 
+const NOTIFY_REDIRECT: Record<string, string> = {
+  sms: '/settings/site/notifications?tab=sms',
+  bots: '/settings/site/notifications?tab=bale',
+  emails: '/settings/site/notifications?tab=email',
+}
+
 export default function SettingsShopShell() {
   const { section } = useParams<{ section: string }>()
+
+  if (section && NOTIFY_REDIRECT[section]) {
+    return <Navigate to={NOTIFY_REDIRECT[section]} replace />
+  }
 
   if (!isShopSection(section) || section === 'pricing') {
     return <Navigate to="/settings/shop/general" replace />
@@ -31,9 +38,6 @@ export default function SettingsShopShell() {
       {section === 'shipping' ? <ShippingZonesPanel /> : null}
       {section === 'payments' ? <PaymentHubPanel /> : null}
       {section === 'invoices' ? <OrderDocumentsSettingsPanel /> : null}
-      {section === 'sms' ? <ShopSmsNotificationsPanel /> : null}
-      {section === 'bots' ? <ShopBotNotificationsPanel /> : null}
-      {section === 'emails' ? <WcEmailsPanel /> : null}
       {section === 'advanced' ? <WcSettingsSectionPanel page="advanced" /> : null}
     </SettingsModulesChrome>
   )

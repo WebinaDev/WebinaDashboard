@@ -43,8 +43,8 @@ export function HomeTrafficStatCard({ traffic, locale }: HomeTrafficStatCardProp
           ) : (
             <ChartContainer
               config={{
-                visitors: { label: t('analytics.kpi.visitors'), color: 'hsl(var(--chart-1))' },
-                views: { label: t('analytics.kpi.views'), color: 'hsl(var(--chart-2))' },
+                visitors: { label: t('analytics.kpi.visitors'), color: 'var(--color-chart-1)' },
+                views: { label: t('analytics.kpi.views'), color: 'var(--color-chart-2)' },
               }}
               className="h-full min-h-[6rem] w-full"
               initialDimension={{ width: 280, height: 112 }}

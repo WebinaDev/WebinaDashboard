@@ -9,6 +9,7 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { toastApiError } from '@/lib/apiError'
 import {
   applyAiProposal,
+  applyAllCatalogProposals,
   applyCategorySuggestions,
   enqueueAiProposals,
   fetchAiCostEstimate,
@@ -89,6 +90,15 @@ export default function AiTaxonomiesPage() {
     onError: (e: Error) => toastApiError(t, e),
   })
 
+  const catalogApplyAll = useMutation({
+    mutationFn: () => applyAllCatalogProposals(500),
+    onSuccess: (res) => {
+      toast.success(t('aiContent.catalogAppliedAll', { applied: res.applied, failed: res.failed }))
+      void qc.invalidateQueries({ queryKey: ['ai-content', 'proposals', 'catalog'] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
   const catalogSkip = useMutation({
     mutationFn: (id: number) => skipAiProposal(id),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['ai-content', 'proposals', 'catalog'] }),
@@ -159,9 +169,21 @@ export default function AiTaxonomiesPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-muted-foreground text-sm">{t('aiContent.catalogAssignHint')}</p>
-          <Button size="sm" onClick={() => void catalogEnqueue.mutateAsync()} disabled={catalogEnqueue.isPending}>
-            {t('aiContent.catalogSuggestProducts')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => void catalogEnqueue.mutateAsync()} disabled={catalogEnqueue.isPending}>
+              {t('aiContent.catalogSuggestProducts')}
+            </Button>
+            {(catalogQ.data?.items?.length ?? 0) > 0 ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={catalogApplyAll.isPending || catalogApply.isPending}
+                onClick={() => void catalogApplyAll.mutateAsync()}
+              >
+                {t('aiContent.catalogApplyAll')}
+              </Button>
+            ) : null}
+          </div>
           <div className="space-y-2">
             {(catalogQ.data?.items ?? []).map((row) => {
               const proposed = row.proposed as {

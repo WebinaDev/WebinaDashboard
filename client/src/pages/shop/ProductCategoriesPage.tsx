@@ -8,6 +8,7 @@ import { toastApiError } from '@/lib/apiError'
 
 import { ProductCategoriesTable } from '@/components/product-categories/ProductCategoriesTable'
 import type { ProductCategoryColumnId, ProductCategoryColumnVisibility, ProductCategoryRow } from '@/components/product-categories/types'
+import { ListFiltersCollapsible } from '@/components/ListFiltersCollapsible'
 import { PageShell } from '@/components/PageShell'
 import { TableListSkeleton } from '@/components/TableListSkeleton'
 import { Button } from '@/components/ui/button'
@@ -139,61 +140,62 @@ export default function ProductCategoriesPage() {
         </Button>
       </div>
 
-      <Card className="mb-4 shadow-sm">
-        <CardContent className="space-y-4 pt-6">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="relative min-w-[200px] flex-1">
-              <Search className="text-muted-foreground pointer-events-none absolute top-2.5 start-3 size-4" aria-hidden />
-              <Input
-                className="ps-9"
-                placeholder={t('productCats.searchPlaceholder')}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>{t('productCats.filterParent')}</Label>
-              <Select value={parentFilter} onValueChange={setParentFilter}>
-                <SelectTrigger className="w-[min(100%,14rem)]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_all">{t('productCats.filterAll')}</SelectItem>
-                  <SelectItem value="_root">{t('productCats.filterParentRoot')}</SelectItem>
-                  {parentOptions.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <ListFiltersCollapsible
+        className="mb-4"
+        activeCount={(search.trim() ? 1 : 0) + (parentFilter !== '_all' ? 1 : 0)}
+      >
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="text-muted-foreground pointer-events-none absolute top-2.5 start-3 size-4" aria-hidden />
+            <Input
+              className="ps-9"
+              placeholder={t('productCats.searchPlaceholder')}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            {found > 0 ? (
-              <p className="text-muted-foreground text-sm">{t('productCats.foundCount', { count: formatNumber(found, locale) })}</p>
-            ) : (
-              <span />
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" size="sm">
-                  <Columns3 className="size-4" />
-                  {t('productCats.toggleColumns')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>{t('productCats.toggleColumns')}</DropdownMenuLabel>
-                {(Object.keys(COLUMN_LABELS) as ProductCategoryColumnId[]).map((id) => (
-                  <DropdownMenuCheckboxItem key={id} checked={columns[id]} onCheckedChange={(v) => toggleColumn(id, v === true)}>
-                    {t(COLUMN_LABELS[id])}
-                  </DropdownMenuCheckboxItem>
+          <div className="space-y-1">
+            <Label>{t('productCats.filterParent')}</Label>
+            <Select value={parentFilter} onValueChange={setParentFilter}>
+              <SelectTrigger className="w-[min(100%,14rem)]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">{t('productCats.filterAll')}</SelectItem>
+                <SelectItem value="_root">{t('productCats.filterParentRoot')}</SelectItem>
+                {parentOptions.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </SelectItem>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </SelectContent>
+            </Select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+          {found > 0 ? (
+            <p className="text-muted-foreground text-sm">{t('productCats.foundCount', { count: formatNumber(found, locale) })}</p>
+          ) : (
+            <span />
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" size="sm">
+                <Columns3 className="size-4" />
+                {t('productCats.toggleColumns')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>{t('productCats.toggleColumns')}</DropdownMenuLabel>
+              {(Object.keys(COLUMN_LABELS) as ProductCategoryColumnId[]).map((id) => (
+                <DropdownMenuCheckboxItem key={id} checked={columns[id]} onCheckedChange={(v) => toggleColumn(id, v === true)}>
+                  {t(COLUMN_LABELS[id])}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </ListFiltersCollapsible>
 
       <Card className="shadow-sm">
         <CardContent className="overflow-x-auto p-0">

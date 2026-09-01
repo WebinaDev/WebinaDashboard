@@ -149,6 +149,8 @@ export function useProductEditorForm() {
       visible: a.visible !== false,
       attribute_id: a.attribute_id,
       taxonomy: a.taxonomy,
+      order_config: Boolean(a.order_config),
+      order_config_default: a.order_config_default ?? '',
     }))
   }
 
@@ -340,6 +342,12 @@ export function useProductEditorForm() {
       variation: row.variation,
       visible: row.visible,
       ...(row.attribute_id ? { attribute_id: row.attribute_id } : {}),
+      ...(row.order_config
+        ? {
+            order_config: true,
+            order_config_default: row.order_config_default ?? '',
+          }
+        : { order_config: false }),
     }))
 
   function buildPayload() {

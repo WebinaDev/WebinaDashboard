@@ -18,6 +18,12 @@ final class Webino_Dashboard_License {
 
 	const TABLE_ROW_ID = 1;
 
+	/** Soft nag option: first time license became inactive (unix timestamp). */
+	const NAG_SINCE_OPTION = 'webino_dashboard_license_nag_since';
+
+	/** Days of soft banner before forcing the license page. */
+	const NAG_FORCE_DAYS = 2;
+
 	/**
 	 * @var self|null
 	 */
@@ -92,12 +98,13 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
-	 * TTL (seconds) before bootstrap/gate triggers an outbound CRM sync.
+	 * TTL (seconds) before bootstrap triggers an outbound CRM sync.
+	 * Default 12h — aligned with cron; avoid CRM spam on every dashboard load.
 	 *
 	 * @return int
 	 */
 	public function bootstrap_sync_ttl() {
-		return max( 60, (int) apply_filters( 'webino_dashboard_license_bootstrap_sync_ttl', 300 ) );
+		return max( 60, (int) apply_filters( 'webino_dashboard_license_bootstrap_sync_ttl', 12 * HOUR_IN_SECONDS ) );
 	}
 
 	/**
@@ -1130,6 +1137,7 @@ final class Webino_Dashboard_License {
 			) {
 				$out['warning'] = 'crm_unreachable';
 			}
+			$this->sync_nag_clock();
 			return $out;
 		}
 
@@ -1166,6 +1174,7 @@ final class Webino_Dashboard_License {
 		} elseif ( ! empty( $root['code'] ) ) {
 			$out['error_code'] = (string) $root['code'];
 		}
+		$this->sync_nag_clock();
 		return $out;
 	}
 
@@ -1289,6 +1298,176 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
+	 * CRM-confirmed inactive statuses (not transport/unreachable errors).
+	 *
+	 * @return list<string>
+	 */
+	private function definitive_inactive_statuses() {
+		return array( 'inactive', 'expired', 'invalid', 'disabled', 'not_found', 'cancelled', 'canceled', 'revoked' );
+	}
+
+	/**
+	 * Row reflects transport/CRM unreachable — not a definitive license decision.
+	 *
+	 * @param array<string,mixed>|null $row License row.
+	 * @return bool
+	 */
+	private function is_row_transport_unreachable( $row = null ) {
+		if ( null === $row ) {
+			$row = $this->get_row();
+		}
+		$msg = isset( $row['message'] ) ? trim( (string) $row['message'] ) : '';
+		if ( 0 === strpos( $msg, '[diag]' ) || 0 === strpos( $msg, '[unreachable]' ) ) {
+			return true;
+		}
+		$st = isset( $row['status'] ) ? strtolower( (string) $row['status'] ) : '';
+		// Transport failures persist status=error without a definitive inactive CRM status.
+		if ( 'error' === $st && ! in_array( $st, $this->definitive_inactive_statuses(), true ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * License is definitively inactive (CRM confirmed or locally expired), not merely unreachable.
+	 *
+	 * @param array<string,mixed>|null $row License row.
+	 * @return bool
+	 */
+	private function is_row_definitively_inactive( $row = null ) {
+		if ( $this->is_license_active( false ) || $this->is_demo_mode() ) {
+			return false;
+		}
+		if ( null === $row ) {
+			$row = $this->get_row();
+		}
+		if ( $this->is_row_transport_unreachable( $row ) ) {
+			return false;
+		}
+		$st = isset( $row['status'] ) ? strtolower( (string) $row['status'] ) : '';
+		if ( in_array( $st, $this->definitive_inactive_statuses(), true ) ) {
+			return true;
+		}
+		if ( ! empty( $row['expiry_date'] ) ) {
+			$ex = strtotime( (string) $row['expiry_date'] );
+			if ( $ex && time() > $ex ) {
+				return true;
+			}
+		}
+		if ( in_array( $st, array( 'active', 'valid', 'ok', 'licensed' ), true ) ) {
+			$dom = isset( $row['domain'] ) ? $this->normalize_site_domain( (string) $row['domain'] ) : '';
+			$cur = $this->get_current_domain();
+			if ( $dom && $dom !== $cur ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Clear transport-only license noise and nag clock (admin repair tool).
+	 *
+	 * @return void
+	 */
+	public function repair_transport_state() {
+		delete_option( self::NAG_SINCE_OPTION );
+		$this->row_cache = null;
+		$row             = $this->get_row();
+		if ( ! $this->is_row_transport_unreachable( $row ) ) {
+			return;
+		}
+		$this->save_row(
+			array(
+				'message' => '',
+			)
+		);
+	}
+
+	/**
+	 * Keep nag_since in sync with current license activity.
+	 *
+	 * @return void
+	 */
+	public function sync_nag_clock() {
+		if ( $this->is_license_active( false ) || $this->is_demo_mode() ) {
+			if ( get_option( self::NAG_SINCE_OPTION, null ) !== null ) {
+				delete_option( self::NAG_SINCE_OPTION );
+			}
+			return;
+		}
+		if ( ! $this->is_row_definitively_inactive() ) {
+			if ( get_option( self::NAG_SINCE_OPTION, null ) !== null ) {
+				delete_option( self::NAG_SINCE_OPTION );
+			}
+			return;
+		}
+		$since = (int) get_option( self::NAG_SINCE_OPTION, 0 );
+		if ( $since <= 0 ) {
+			update_option( self::NAG_SINCE_OPTION, time(), false );
+		}
+	}
+
+	/**
+	 * @return int Unix timestamp or 0.
+	 */
+	public function get_nag_since() {
+		$this->sync_nag_clock();
+		return (int) get_option( self::NAG_SINCE_OPTION, 0 );
+	}
+
+	/**
+	 * Soft banner while inactive (before or after force redirect is handled by gates).
+	 *
+	 * @return bool
+	 */
+	public function should_show_license_banner() {
+		if ( $this->is_license_active( false ) || $this->is_demo_mode() ) {
+			return false;
+		}
+		if ( $this->should_force_license_page() ) {
+			return false;
+		}
+		return $this->is_row_definitively_inactive();
+	}
+
+	/**
+	 * Informational banner when CRM is unreachable — no nag timer, no dashboard lock.
+	 *
+	 * @return bool
+	 */
+	public function should_show_unreachable_banner() {
+		if ( $this->is_demo_mode() ) {
+			return false;
+		}
+		return $this->is_row_transport_unreachable();
+	}
+
+	/**
+	 * After NAG_FORCE_DAYS of inactivity, hard-redirect to the license page.
+	 *
+	 * @return bool
+	 */
+	public function should_force_license_page() {
+		if ( $this->is_license_active( false ) || $this->is_demo_mode() ) {
+			return false;
+		}
+		if ( ! $this->is_row_definitively_inactive() ) {
+			return false;
+		}
+		$since = $this->get_nag_since();
+		if ( $since <= 0 ) {
+			return false;
+		}
+		$grace = (int) apply_filters(
+			'webino_dashboard_license_nag_force_seconds',
+			self::NAG_FORCE_DAYS * DAY_IN_SECONDS
+		);
+		return ( time() - $since ) >= max( DAY_IN_SECONDS, $grace );
+	}
+
+	/**
+	 * Hard dashboard lock — only after the soft nag grace period.
+	 *
 	 * @return bool
 	 */
 	public function should_gate_dashboard() {
@@ -1298,7 +1477,7 @@ final class Webino_Dashboard_License {
 		if ( apply_filters( 'webino_dashboard_skip_license_gate', false ) ) {
 			return false;
 		}
-		return ! $this->is_license_active( true );
+		return $this->should_force_license_page();
 	}
 
 	/**
@@ -1324,14 +1503,20 @@ final class Webino_Dashboard_License {
 	 * @return array<string,mixed>
 	 */
 	public function get_bootstrap_payload() {
-		$row = $this->get_row();
+		$this->sync_nag_clock();
+		$row   = $this->get_row();
+		$since = (int) get_option( self::NAG_SINCE_OPTION, 0 );
 		return array(
-			'active'  => $this->is_license_active( false ),
-			'status'  => isset( $row['status'] ) ? (string) $row['status'] : 'unknown',
-			'message' => $this->public_message_for_bootstrap( isset( $row['message'] ) ? (string) $row['message'] : '' ),
-			'expiry'  => isset( $row['expiry_date'] ) && $row['expiry_date'] ? (string) $row['expiry_date'] : null,
-			'demo'    => $this->is_demo_mode(),
-			'domain'  => $this->get_current_domain(),
+			'active'                   => $this->is_license_active( false ),
+			'status'                   => isset( $row['status'] ) ? (string) $row['status'] : 'unknown',
+			'message'                  => $this->public_message_for_bootstrap( isset( $row['message'] ) ? (string) $row['message'] : '' ),
+			'expiry'                   => isset( $row['expiry_date'] ) && $row['expiry_date'] ? (string) $row['expiry_date'] : null,
+			'demo'                     => $this->is_demo_mode(),
+			'domain'                   => $this->get_current_domain(),
+			'nag_since'                => $since > 0 ? $since : null,
+			'force_license_page'       => $this->should_force_license_page(),
+			'show_banner'              => $this->should_show_license_banner(),
+			'show_unreachable_banner'  => $this->should_show_unreachable_banner(),
 		);
 	}
 

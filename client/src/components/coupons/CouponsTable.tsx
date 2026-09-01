@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { CouponRowActions, type CouponListRow } from '@/components/coupons/CouponRowActions'
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
+import { MobileListCard } from '@/components/MobileListCard'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
@@ -85,68 +86,122 @@ export function CouponsTable({
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-10">
-            <Checkbox
-              checked={allSelected ? true : someSelected ? 'indeterminate' : false}
-              onCheckedChange={(v) => toggleAll(v === true)}
-              aria-label={t('coupons.selectAll')}
-            />
-          </TableHead>
-          <TableHead>{t('coupons.colCode')}</TableHead>
-          <TableHead>{t('coupons.colType')}</TableHead>
-          <TableHead>{t('coupons.colAmount')}</TableHead>
-          <TableHead className="hidden md:table-cell">{t('coupons.colDescription')}</TableHead>
-          <TableHead className="hidden lg:table-cell">{t('coupons.colProductIds')}</TableHead>
-          <TableHead>{t('coupons.colUsage')}</TableHead>
-          <TableHead className="hidden sm:table-cell">{t('coupons.colExpiry')}</TableHead>
-          <TableHead className="w-[7rem]">{t('coupons.colActions')}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <div className="space-y-3 p-3 md:hidden">
         {items.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={9} className="text-muted-foreground p-8 text-center text-sm">
-              {t('coupons.emptyList')}
-            </TableCell>
-          </TableRow>
+          <p className="text-muted-foreground py-8 text-center text-sm">{t('coupons.emptyList')}</p>
         ) : (
           items.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>
+            <MobileListCard
+              key={row.id}
+              leading={
                 <Checkbox
                   checked={selectedIds.includes(row.id)}
                   onCheckedChange={(v) => toggleRow(row.id, v === true)}
                   aria-label={row.code}
                 />
-              </TableCell>
-              <TableCell className="font-medium">
-                <Link to={`/marketing/coupons/${row.id}`} className="hover:underline">
-                  {row.code}
-                </Link>
-              </TableCell>
-              <TableCell>{translateCouponType(t, row.type)}</TableCell>
-              <TableCell>{amountCell(row)}</TableCell>
-              <TableCell className="hidden max-w-[12rem] truncate md:table-cell">{row.description || '—'}</TableCell>
-              <TableCell className="hidden max-w-[10rem] truncate font-mono text-xs lg:table-cell">
-                {productIdsCell(row.product_ids)}
-              </TableCell>
-              <TableCell>{usageCell(row)}</TableCell>
-              <TableCell className="hidden sm:table-cell">{expiryCell(row.date_expires)}</TableCell>
-              <TableCell>
+              }
+              media={
+                <div className="min-w-0 space-y-1">
+                  <Link to={`/marketing/coupons/${row.id}`} className="font-medium hover:underline">
+                    {row.code}
+                  </Link>
+                  <p className="text-muted-foreground text-xs">{translateCouponType(t, row.type)}</p>
+                </div>
+              }
+              actions={
                 <CouponRowActions
                   row={row}
                   onTrash={onTrash}
                   isTrashing={trashingId === row.id}
                   onTrashed={onTrashed}
                 />
-              </TableCell>
-            </TableRow>
+              }
+            >
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+                <div>
+                  <dt className="text-muted-foreground text-xs">{t('coupons.colAmount')}</dt>
+                  <dd>{amountCell(row)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">{t('coupons.colUsage')}</dt>
+                  <dd>{usageCell(row)}</dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-muted-foreground text-xs">{t('coupons.colExpiry')}</dt>
+                  <dd>{expiryCell(row.date_expires)}</dd>
+                </div>
+              </dl>
+            </MobileListCard>
           ))
         )}
-      </TableBody>
-    </Table>
+      </div>
+
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                  onCheckedChange={(v) => toggleAll(v === true)}
+                  aria-label={t('coupons.selectAll')}
+                />
+              </TableHead>
+              <TableHead>{t('coupons.colCode')}</TableHead>
+              <TableHead>{t('coupons.colType')}</TableHead>
+              <TableHead>{t('coupons.colAmount')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('coupons.colDescription')}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t('coupons.colProductIds')}</TableHead>
+              <TableHead>{t('coupons.colUsage')}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t('coupons.colExpiry')}</TableHead>
+              <TableHead className="w-[7rem]">{t('coupons.colActions')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-muted-foreground p-8 text-center text-sm">
+                  {t('coupons.emptyList')}
+                </TableCell>
+              </TableRow>
+            ) : (
+              items.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.includes(row.id)}
+                      onCheckedChange={(v) => toggleRow(row.id, v === true)}
+                      aria-label={row.code}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    <Link to={`/marketing/coupons/${row.id}`} className="hover:underline">
+                      {row.code}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{translateCouponType(t, row.type)}</TableCell>
+                  <TableCell>{amountCell(row)}</TableCell>
+                  <TableCell className="hidden max-w-[12rem] truncate md:table-cell">{row.description || '—'}</TableCell>
+                  <TableCell className="hidden max-w-[10rem] truncate font-mono text-xs lg:table-cell">
+                    {productIdsCell(row.product_ids)}
+                  </TableCell>
+                  <TableCell>{usageCell(row)}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{expiryCell(row.date_expires)}</TableCell>
+                  <TableCell>
+                    <CouponRowActions
+                      row={row}
+                      onTrash={onTrash}
+                      isTrashing={trashingId === row.id}
+                      onTrashed={onTrashed}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   )
 }

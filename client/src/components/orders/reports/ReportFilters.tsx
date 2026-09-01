@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
+import { ListFiltersCollapsible } from '@/components/ListFiltersCollapsible'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -70,75 +71,82 @@ export function ReportFilters({
   onStatusesChange,
 }: ReportFiltersProps) {
   const { t } = useTranslation()
+  const activeCount =
+    (preset !== 'last30' ? 1 : 0) +
+    (compare ? 1 : 0) +
+    (interval !== 'day' ? 1 : 0) +
+    (statuses.length !== 2 || !statuses.includes('completed') || !statuses.includes('processing') ? 1 : 0)
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-card p-4 shadow-sm">
-      <div className="flex flex-wrap gap-2">
-        {PRESETS.map((p) => (
-          <Button
-            key={p}
-            type="button"
-            size="sm"
-            variant={preset === p ? 'default' : 'outline'}
-            onClick={() => onPresetChange(p)}
-          >
-            {t(`reports.preset.${p}`)}
-          </Button>
-        ))}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-2">
-          <Label htmlFor="report-from">{t('reports.dateFrom')}</Label>
-          <DatePicker
-            id="report-from"
-            value={toInputDate(from)}
-            onChange={onFromChange}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="report-to">{t('reports.dateTo')}</Label>
-          <DatePicker
-            id="report-to"
-            value={toInputDate(to)}
-            onChange={onToChange}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>{t('reports.interval')}</Label>
-          <Select value={interval} onValueChange={(v) => onIntervalChange(v as ReportInterval)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">{t('reports.intervalDay')}</SelectItem>
-              <SelectItem value="week">{t('reports.intervalWeek')}</SelectItem>
-              <SelectItem value="month">{t('reports.intervalMonth')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-end pb-2">
-          <label className="flex cursor-pointer items-center gap-2">
-            <Checkbox checked={compare} onCheckedChange={(v) => onCompareChange(v === true)} />
-            <span className="text-sm">{t('reports.comparePrevious')}</span>
-          </label>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>{t('reports.statusFilter')}</Label>
-        <div className="flex flex-wrap gap-3">
-          {STATUS_OPTIONS.map((slug) => (
-            <label key={slug} className="flex cursor-pointer items-center gap-2 text-sm">
-              <Checkbox
-                checked={statuses.includes(slug)}
-                onCheckedChange={(v) => onStatusesChange(toggleStatus(statuses, slug, v === true))}
-              />
-              <span>{t(`reports.status.${slug}`)}</span>
-            </label>
+    <ListFiltersCollapsible activeCount={activeCount}>
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((p) => (
+            <Button
+              key={p}
+              type="button"
+              size="sm"
+              variant={preset === p ? 'default' : 'outline'}
+              onClick={() => onPresetChange(p)}
+            >
+              {t(`reports.preset.${p}`)}
+            </Button>
           ))}
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-2">
+            <Label htmlFor="report-from">{t('reports.dateFrom')}</Label>
+            <DatePicker
+              id="report-from"
+              value={toInputDate(from)}
+              onChange={onFromChange}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="report-to">{t('reports.dateTo')}</Label>
+            <DatePicker
+              id="report-to"
+              value={toInputDate(to)}
+              onChange={onToChange}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('reports.interval')}</Label>
+            <Select value={interval} onValueChange={(v) => onIntervalChange(v as ReportInterval)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">{t('reports.intervalDay')}</SelectItem>
+                <SelectItem value="week">{t('reports.intervalWeek')}</SelectItem>
+                <SelectItem value="month">{t('reports.intervalMonth')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end pb-2">
+            <label className="flex cursor-pointer items-center gap-2">
+              <Checkbox checked={compare} onCheckedChange={(v) => onCompareChange(v === true)} />
+              <span className="text-sm">{t('reports.comparePrevious')}</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>{t('reports.statusFilter')}</Label>
+          <div className="flex flex-wrap gap-3">
+            {STATUS_OPTIONS.map((slug) => (
+              <label key={slug} className="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox
+                  checked={statuses.includes(slug)}
+                  onCheckedChange={(v) => onStatusesChange(toggleStatus(statuses, slug, v === true))}
+                />
+                <span>{t(`reports.status.${slug}`)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </ListFiltersCollapsible>
   )
 }

@@ -193,6 +193,50 @@ final class Webino_Dashboard_AI_Proposals {
 	}
 
 	/**
+	 * Apply all pending proposals of a kind.
+	 *
+	 * @param string $kind  title|catalog.
+	 * @param int    $limit Max rows.
+	 * @return array{applied:int,failed:int,errors:list<array{id:int,message:string}>}
+	 */
+	public static function apply_all_pending( $kind = 'catalog', $limit = 500 ) {
+		$kind  = sanitize_key( (string) $kind );
+		$limit = min( 500, max( 1, (int) $limit ) );
+		$list  = self::list_proposals(
+			$kind,
+			array(
+				'status' => 'pending',
+				'limit'  => $limit,
+				'offset' => 0,
+			)
+		);
+		$applied = 0;
+		$failed  = 0;
+		$errors  = array();
+		foreach ( (array) ( $list['items'] ?? array() ) as $row ) {
+			$id = (int) ( $row['id'] ?? 0 );
+			if ( $id < 1 ) {
+				continue;
+			}
+			$res = self::apply( $id );
+			if ( is_wp_error( $res ) ) {
+				++$failed;
+				$errors[] = array(
+					'id'      => $id,
+					'message' => $res->get_error_message(),
+				);
+				continue;
+			}
+			++$applied;
+		}
+		return array(
+			'applied' => $applied,
+			'failed'  => $failed,
+			'errors'  => $errors,
+		);
+	}
+
+	/**
 	 * @param int $id Proposal.
 	 * @return array<string,mixed>|WP_Error
 	 */
@@ -234,10 +278,30 @@ final class Webino_Dashboard_AI_Proposals {
 			return new WP_Error( 'ai_title', __( 'Empty title.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 		$p->set_name( $name );
-		if ( Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', 'slug' ) && ! empty( $proposed['slug'] ) ) {
-			$p->set_slug( sanitize_title( (string) $proposed['slug'] ) );
-		} elseif ( Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', 'slug' ) ) {
-			$p->set_slug( sanitize_title( $name ) );
+		if ( Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', 'slug' ) ) {
+			$english = trim( (string) $p->get_meta( '_ishop_english_name', true ) );
+			if ( '' === $english && ! empty( $proposed['english_name'] ) ) {
+				$english = sanitize_text_field( (string) $proposed['english_name'] );
+				$p->update_meta_data( '_ishop_english_name', $english );
+			}
+			$new_slug = class_exists( 'Webino_Dashboard_Product_Slugs', false )
+				? Webino_Dashboard_Product_Slugs::slug_from_english_name( $english )
+				: '';
+			if ( '' !== $new_slug && $new_slug !== (string) $p->get_slug() ) {
+				$old_path = class_exists( 'Webino_Dashboard_Product_Slugs', false )
+					? Webino_Dashboard_Product_Slugs::permalink_path( (int) $product_id )
+					: '';
+				$p->set_slug( $new_slug );
+				$p->save();
+				if ( $old_path && class_exists( 'Webino_Dashboard_Product_Slugs', false ) ) {
+					$new_url = get_permalink( (int) $product_id );
+					if ( is_string( $new_url ) && $new_url ) {
+						Webino_Dashboard_Product_Slugs::add_rank_math_redirect( $old_path, $new_url );
+					}
+				}
+				self::merge_glossary_from_title( $name, $proposed );
+				return true;
+			}
 		}
 		$p->save();
 		self::merge_glossary_from_title( $name, $proposed );

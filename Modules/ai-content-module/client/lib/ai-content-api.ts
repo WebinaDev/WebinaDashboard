@@ -500,6 +500,17 @@ export function applyAiProposal(id: number, body?: { name?: string; proposed?: R
   })
 }
 
+export function applyAllCatalogProposals(limit = 500) {
+  return apiFetch<{ applied: number; failed: number; errors: { id: number; message: string }[] }>(
+    'ai-content/proposals/catalog/apply-all',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ limit }),
+    },
+  )
+}
+
 export function skipAiProposal(id: number) {
   return apiFetch<AiProposal>(`ai-content/proposals/${id}/skip`, {
     method: 'POST',

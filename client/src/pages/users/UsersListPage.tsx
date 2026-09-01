@@ -6,6 +6,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { ListFiltersCollapsible } from '@/components/ListFiltersCollapsible'
 import { ListStatsStrip } from '@/components/ListStatsStrip'
 import type { BotProvider } from '@/types/bots'
 import { PostsPagination } from '@/components/magazine/PostsPagination'
@@ -211,8 +212,11 @@ export default function UsersListPage() {
           </Button>
         </div>
       ) : null}
-      <Card className="mb-4 shadow-sm">
-        <CardContent className="flex flex-wrap items-end gap-3 pt-6">
+      <ListFiltersCollapsible
+        className="mb-4"
+        activeCount={(search.trim() ? 1 : 0) + (roleFilter !== 'all' ? 1 : 0) + (botFilter !== 'all' ? 1 : 0)}
+      >
+        <div className="flex flex-wrap items-end gap-3">
           <div className="inline-flex rounded-lg border border-border p-1" role="tablist" aria-label={t('users.botFilterLabel')}>
             {botFilters.map(({ id, label }) => {
               const tabId = `users-bot-filter-${id}`
@@ -272,8 +276,8 @@ export default function UsersListPage() {
           {found > 0 ? (
             <p className="text-muted-foreground text-sm">{t('users.foundCount', { count: formatNumber(found, i18n.language) })}</p>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+      </ListFiltersCollapsible>
 
       {isBotMode ? (
         <Card id="users-bot-filter-panel" className="mb-4 shadow-sm" role="tabpanel">

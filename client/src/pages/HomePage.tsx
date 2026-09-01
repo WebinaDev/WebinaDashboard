@@ -5,8 +5,10 @@ import { Navigate } from 'react-router-dom'
 
 import { HomeActionBar } from '@/components/home/HomeActionBar'
 import { HomeCommentsQueue } from '@/components/home/HomeCommentsQueue'
+import { HomeFulfillmentTodos } from '@/components/home/HomeFulfillmentTodos'
 import { HomeKpiStrip } from '@/components/home/HomeKpiStrip'
 import { HomeMiniCardsStrip } from '@/components/home/HomeMiniCardsStrip'
+import { HomeOrderWorkflow } from '@/components/home/HomeOrderWorkflow'
 import { HomeOrdersTable } from '@/components/home/HomeOrdersTable'
 import { HomeOverviewSkeleton } from '@/components/home/HomeOverviewSkeleton'
 import { HomeProductStatsCard } from '@/components/home/HomeProductStatsCard'
@@ -179,38 +181,60 @@ export function HomePage() {
             />
           ) : null}
 
+          {hasSection('fulfillment') && data?.fulfillment ? (
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold tracking-tight">{t('home.sections.fulfillment')}</h2>
+              <div className="grid gap-4 lg:grid-cols-5 lg:gap-6">
+                <div className="min-w-0 lg:col-span-3">
+                  <HomeFulfillmentTodos fulfillment={data.fulfillment} />
+                </div>
+                <div className="min-w-0 lg:col-span-2">
+                  <HomeOrderWorkflow />
+                </div>
+              </div>
+            </section>
+          ) : null}
+
           <section className="space-y-2">
             <h2 className="text-sm font-semibold tracking-tight">{t('home.sections.charts')}</h2>
-            <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+            <div className="grid min-w-0 gap-4 sm:gap-6 lg:grid-cols-2">
               {hasSection('sales') && data?.sales ? (
-                <Suspense fallback={<HomeChartFallback />}>
-                  <HomeSalesStatCard
-                    sales={data.sales}
-                    currency={currency}
-                    currencySymbol={store.currencySymbol}
-                    locale={i18n.language}
-                  />
-                </Suspense>
+                <div className="min-w-0 overflow-hidden">
+                  <Suspense fallback={<HomeChartFallback />}>
+                    <HomeSalesStatCard
+                      sales={data.sales}
+                      currency={currency}
+                      currencySymbol={store.currencySymbol}
+                      locale={i18n.language}
+                    />
+                  </Suspense>
+                </div>
               ) : null}
 
               {hasSection('traffic') && data?.traffic ? (
-                <Suspense fallback={<HomeChartFallback />}>
-                  <HomeTrafficAnalyticsPanel traffic={data.traffic} locale={i18n.language} />
-                </Suspense>
+                <div className="min-w-0 overflow-hidden">
+                  <Suspense fallback={<HomeChartFallback />}>
+                    <HomeTrafficAnalyticsPanel traffic={data.traffic} locale={i18n.language} />
+                  </Suspense>
+                </div>
               ) : null}
 
               {hasSection('sales') && data?.sales ? (
-                <Suspense fallback={<HomeChartFallback />}>
-                  <ProfitChart
-                    series={data.sales.series}
-                    compareSeries={data.sales.compare_series}
-                    locale={i18n.language}
-                  />
-                </Suspense>
+                <div className="min-w-0 overflow-hidden">
+                  <Suspense fallback={<HomeChartFallback />}>
+                    <ProfitChart
+                      series={data.sales.series}
+                      compareSeries={data.sales.compare_series}
+                      locale={i18n.language}
+                    />
+                  </Suspense>
+                </div>
               ) : null}
 
               {hasSection('products') && data?.products ? (
-                <HomeProductStatsCard stats={data.products} locale={i18n.language} />
+                <div className="min-w-0 overflow-hidden">
+                  <HomeProductStatsCard stats={data.products} locale={i18n.language} />
+                </div>
               ) : null}
             </div>
           </section>

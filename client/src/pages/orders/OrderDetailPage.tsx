@@ -16,6 +16,7 @@ import { OrderCustomerProfilePanel } from '@/components/orders/OrderCustomerProf
 import { OrderNotesPanel, type OrderNote } from '@/components/orders/OrderNotesPanel'
 import { OrderPrintActions } from '@/components/orders/OrderPrintActions'
 import { OrderSidebarPanel } from '@/components/orders/OrderSidebarPanel'
+import { OrderReturnsPanel } from '@/components/orders/OrderReturnsPanel'
 import { OrderSmsHistoryPanel, type SmsLogEntry } from '@/components/orders/OrderSmsHistoryPanel'
 import { OrderTrackingPanel } from '@/components/orders/OrderTrackingPanel'
 import { DetailTwoColumnSkeleton } from '@/components/skeletons'
@@ -48,8 +49,10 @@ import { notifyOrderSms } from '@/lib/modirpayamak-api'
 import type { TFunction } from 'i18next'
 
 type LineItem = {
+  item_id?: number
   name: string
   quantity: number
+  returnable_qty?: number
   subtotal: string
   total: string
   sku?: string
@@ -112,6 +115,21 @@ type Order = {
   billing_formatted?: OrderAddress
   shipping_formatted?: OrderAddress
   items: LineItem[]
+  returns?: Array<{
+    id: number
+    order_item_id: number
+    item_name: string
+    qty: number
+    reason: string
+    status: string
+    status_label: string
+    resolution: string
+    exchange_order_id?: number
+  }>
+  return_eligible?: boolean
+  return_address?: string
+  is_pos?: boolean
+  sales_channel?: string
 }
 
 type StatusOption = { slug: string; label: string }
@@ -141,7 +159,7 @@ function paymentBadgeVariant(method: string): 'default' | 'secondary' | 'destruc
   return method ? 'default' : 'outline'
 }
 
-const HIDDEN_ITEM_META = new Set(['_reduced_stock', 'reduced_stock'])
+const HIDDEN_ITEM_META = new Set(['_reduced_stock', 'reduced_stock', 'wfcp_gateway'])
 
 function formatOrderItemMetaKey(t: TFunction, key: string): string {
   const slug = key.replace(/^_/, '')
@@ -153,22 +171,49 @@ function formatOrderItemMetaKey(t: TFunction, key: string): string {
   return translated === i18nKey ? key : translated
 }
 
-function formatOrderItemMetaValue(t: TFunction, key: string, value: string): string {
+function formatOrderItemMetaValue(
+  t: TFunction,
+  key: string,
+  value: string,
+  currency?: string,
+): string {
   const slug = key.replace(/^_/, '')
   if (slug === 'wfcp_purchase_type' || key === 'wfcp_purchase_type') {
     const typeKey = `orders.purchaseType.${value.trim().toLowerCase()}`
     const translated = t(typeKey)
     return translated === typeKey ? value : translated
   }
+  if (slug === 'wfcp_installment_months') {
+    const months = parseInt(value, 10)
+    if (!Number.isNaN(months) && months > 0) {
+      return t('orders.installmentMonths', { count: months })
+    }
+  }
+  if (slug === 'wfcp_installment_total') {
+    const amount = parseFloat(value.replace(/[^\d.-]/g, ''))
+    if (!Number.isNaN(amount) && amount > 0 && currency) {
+      try {
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount)
+      } catch {
+        return value
+      }
+    }
+  }
   return value
 }
 
-function visibleItemAttributes(attrs: { key: string; value: string }[] | undefined) {
+function visibleItemAttributes(
+  attrs: { key: string; value: string }[] | undefined,
+  canManageOrders: boolean,
+) {
   if (!attrs?.length) return []
   return attrs.filter((a) => {
     const k = (a.key || '').trim()
     if (!k) return false
-    if (HIDDEN_ITEM_META.has(k) || HIDDEN_ITEM_META.has(k.replace(/^_/, ''))) return false
+    const slug = k.replace(/^_/, '')
+    if (HIDDEN_ITEM_META.has(k) || HIDDEN_ITEM_META.has(slug)) {
+      return canManageOrders && slug === 'wfcp_gateway'
+    }
     if (k.startsWith('_')) return false
     return true
   })
@@ -192,7 +237,15 @@ export default function OrderDetailPage() {
   const locale = i18n.language
   const boot = useBootstrapQuery()
   const canManageOrders = normalizeCapabilities(boot.data?.capabilities).includes('edit_shop_orders')
+  const canCreateOrders =
+    canManageOrders ||
+    normalizeCapabilities(boot.data?.capabilities).includes('webino_create_shop_orders')
+  const canAccounting =
+    normalizeCapabilities(boot.data?.capabilities).includes('manage_woocommerce') ||
+    normalizeCapabilities(boot.data?.capabilities).includes('webino_manage_accounting') ||
+    normalizeCapabilities(boot.data?.capabilities).includes('manage_options')
   const listHref = useMatch('/account/orders/:orderId') ? '/account/orders' : '/orders/list'
+  const isPortalOrder = Boolean(useMatch('/account/orders/:orderId'))
   const [status, setStatus] = useState('')
   const [bots, setBots] = useState<
     { bale?: { connected?: boolean; username?: string }; telegram?: { connected?: boolean; username?: string } } | undefined
@@ -243,6 +296,15 @@ export default function OrderDetailPage() {
       }),
     onSuccess: () => {
       toast.success(t('orders.sms.sent'))
+      void qc.invalidateQueries({ queryKey: ['order', id] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const syncMoadian = useMutation({
+    mutationFn: () => apiFetch(`accounting/sync/order/${id}`, { method: 'POST' }),
+    onSuccess: () => {
+      toast.success(t('orders.moadianSynced'))
       void qc.invalidateQueries({ queryKey: ['order', id] })
     },
     onError: (e: Error) => toastApiError(t, e),
@@ -328,6 +390,10 @@ export default function OrderDetailPage() {
                     #{localizeDigits(String(order.number ?? order.id), locale)}
                   </h2>
                   <Badge variant={statusBadgeVariant(order.status)}>{translateOrderStatus(t, order.status)}</Badge>
+                  {order.is_pos ? <Badge variant="outline">{t('pos.badge')}</Badge> : null}
+                  {order.sales_channel ? (
+                    <Badge variant="secondary">{t(`pos.channel.${order.sales_channel}`, { defaultValue: order.sales_channel })}</Badge>
+                  ) : null}
                   {order.marketplace ? <MarketplaceBadge slug={order.marketplace} /> : null}
                   {order.payment_method || order.payment_method_title ? (
                     <Badge variant={paymentBadgeVariant(order.payment_method || '')}>{paymentTitle}</Badge>
@@ -352,7 +418,27 @@ export default function OrderDetailPage() {
                   <p className="text-muted-foreground text-sm">{t('orders.notEditable')}</p>
                 ) : null}
               </div>
-              <OrderPrintActions orderId={order.id} />
+              <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                <OrderPrintActions orderId={order.id} />
+                <div className="flex flex-wrap gap-2">
+                  {canCreateOrders && order.is_editable ? (
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <Link to={`/orders/list/${order.id}/edit`}>{t('orders.editOrder')}</Link>
+                    </Button>
+                  ) : null}
+                  {canAccounting ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={syncMoadian.isPending}
+                      onClick={() => void syncMoadian.mutateAsync()}
+                    >
+                      {t('orders.moadianSync')}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -548,14 +634,14 @@ export default function OrderDetailPage() {
                                 × {formatNumber(it.quantity, locale)}
                               </span>
                               {(() => {
-                                const attrs = visibleItemAttributes(it.attributes)
+                                const attrs = visibleItemAttributes(it.attributes, canManageOrders)
                                 if (!attrs.length) return null
                                 return (
                                   <ul className="text-muted-foreground mt-1 space-y-0.5 text-xs">
                                     {attrs.map((a) => (
                                       <li key={`${a.key}-${a.value}`}>
                                         {formatOrderItemMetaKey(t, a.key)}:{' '}
-                                        {formatOrderItemMetaValue(t, a.key, a.value)}
+                                        {formatOrderItemMetaValue(t, a.key, a.value, order.currency)}
                                       </li>
                                     ))}
                                   </ul>
@@ -586,6 +672,18 @@ export default function OrderDetailPage() {
                   </Table>
                 </CardContent>
               </Card>
+
+              {(canManageOrders || isPortalOrder) && (order.return_eligible || (order.returns?.length ?? 0) > 0) ? (
+                <OrderReturnsPanel
+                  orderId={order.id}
+                  items={order.items}
+                  returns={order.returns ?? []}
+                  returnEligible={order.return_eligible}
+                  returnAddress={order.return_address}
+                  staffMode={canManageOrders}
+                  orderBasePath={isPortalOrder ? '/account/orders' : '/orders/list'}
+                />
+              ) : null}
 
               <Card className="shadow-sm">
                 <CardHeader className="pb-2">

@@ -372,9 +372,6 @@ final class Webino_Dashboard_REST_Site_Settings {
 	 */
 	public static function site_sms_get() {
 		$license = Webino_Dashboard_License::instance();
-		if ( ! $license->is_license_active( false ) ) {
-			return new WP_Error( 'license_inactive', __( 'License is not active.', 'webino-dashboard' ), array( 'status' => 403 ) );
-		}
 		$res = $license->crm_get(
 			'wp-json/webinocrm/v1/modirpayamak/settings/site',
 			array(),
@@ -409,9 +406,6 @@ final class Webino_Dashboard_REST_Site_Settings {
 			$data = $request->get_params();
 		}
 		$license = Webino_Dashboard_License::instance();
-		if ( ! $license->is_license_active() ) {
-			return new WP_Error( 'license_inactive', __( 'License is not active.', 'webino-dashboard' ), array( 'status' => 403 ) );
-		}
 		$res = $license->crm_post(
 			'wp-json/webinocrm/v1/modirpayamak/settings/site',
 			array( 'settings' => is_array( $data['settings'] ?? null ) ? $data['settings'] : $data )

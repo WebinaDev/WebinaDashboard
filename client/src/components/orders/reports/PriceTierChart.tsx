@@ -36,8 +36,8 @@ export function PriceTierChart({ rows, locale }: PriceTierChartProps) {
         ) : (
           <ChartContainer
             config={{
-              revenue: { label: t('reports.revenue'), color: 'hsl(var(--chart-1))' },
-              profit: { label: t('reports.table.profit'), color: 'hsl(var(--chart-3))' },
+              revenue: { label: t('reports.revenue'), color: 'var(--color-chart-1)' },
+              profit: { label: t('reports.table.profit'), color: 'var(--color-chart-3)' },
             }}
             className="h-full w-full"
           >

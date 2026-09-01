@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { ListFiltersCollapsible } from '@/components/ListFiltersCollapsible'
 import { BrandsTable } from '@/components/brands/BrandsTable'
 import type { BrandColumnId, BrandColumnVisibility, BrandRow } from '@/components/brands/types'
 import { PageShell } from '@/components/PageShell'
@@ -139,61 +140,62 @@ export default function BrandsPage() {
         </Button>
       </div>
 
-      <Card className="mb-4 shadow-sm">
-        <CardContent className="space-y-4 pt-6">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="relative min-w-[200px] flex-1">
-              <Search className="text-muted-foreground pointer-events-none absolute top-2.5 start-3 size-4" aria-hidden />
-              <Input
-                className="ps-9"
-                placeholder={t('brands.searchPlaceholder')}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>{t('brands.filterParent')}</Label>
-              <Select value={parentFilter} onValueChange={setParentFilter}>
-                <SelectTrigger className="w-[min(100%,14rem)]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_all">{t('brands.filterAll')}</SelectItem>
-                  <SelectItem value="_root">{t('brands.filterParentRoot')}</SelectItem>
-                  {parentOptions.map((b) => (
-                    <SelectItem key={b.id} value={String(b.id)}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <ListFiltersCollapsible
+        className="mb-4"
+        activeCount={(search.trim() ? 1 : 0) + (parentFilter !== '_all' ? 1 : 0)}
+      >
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="text-muted-foreground pointer-events-none absolute top-2.5 start-3 size-4" aria-hidden />
+            <Input
+              className="ps-9"
+              placeholder={t('brands.searchPlaceholder')}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            {found > 0 ? (
-              <p className="text-muted-foreground text-sm">{t('brands.foundCount', { count: formatNumber(found, locale) })}</p>
-            ) : (
-              <span />
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" size="sm">
-                  <Columns3 className="size-4" />
-                  {t('brands.toggleColumns')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>{t('brands.toggleColumns')}</DropdownMenuLabel>
-                {(Object.keys(COLUMN_LABELS) as BrandColumnId[]).map((id) => (
-                  <DropdownMenuCheckboxItem key={id} checked={columns[id]} onCheckedChange={(v) => toggleColumn(id, v === true)}>
-                    {t(COLUMN_LABELS[id])}
-                  </DropdownMenuCheckboxItem>
+          <div className="space-y-1">
+            <Label>{t('brands.filterParent')}</Label>
+            <Select value={parentFilter} onValueChange={setParentFilter}>
+              <SelectTrigger className="w-[min(100%,14rem)]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">{t('brands.filterAll')}</SelectItem>
+                <SelectItem value="_root">{t('brands.filterParentRoot')}</SelectItem>
+                {parentOptions.map((b) => (
+                  <SelectItem key={b.id} value={String(b.id)}>
+                    {b.name}
+                  </SelectItem>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </SelectContent>
+            </Select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+          {found > 0 ? (
+            <p className="text-muted-foreground text-sm">{t('brands.foundCount', { count: formatNumber(found, locale) })}</p>
+          ) : (
+            <span />
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" size="sm">
+                <Columns3 className="size-4" />
+                {t('brands.toggleColumns')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>{t('brands.toggleColumns')}</DropdownMenuLabel>
+              {(Object.keys(COLUMN_LABELS) as BrandColumnId[]).map((id) => (
+                <DropdownMenuCheckboxItem key={id} checked={columns[id]} onCheckedChange={(v) => toggleColumn(id, v === true)}>
+                  {t(COLUMN_LABELS[id])}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </ListFiltersCollapsible>
 
       <Card className="shadow-sm">
         <CardContent className="overflow-x-auto p-0">

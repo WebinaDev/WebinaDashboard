@@ -18,6 +18,7 @@ const react = requireFromClient('@vitejs/plugin-react').default
 const { defineConfig } = requireFromClient('vite')
 
 const MODULE_SLUGS = [
+  'accounting-module',
   'ai-content-module',
   'analytics-module',
   'bale-bot-module',
@@ -40,6 +41,7 @@ const MODULE_SLUGS = [
 
 /** @type {Record<string, string>} */
 const MODULE_ALIAS_PREFIX = {
+  'accounting-module': '@module-accounting',
   'ai-content-module': '@module-ai-content',
   'analytics-module': '@module-analytics',
   'bale-bot-module': '@module-bale-bot',

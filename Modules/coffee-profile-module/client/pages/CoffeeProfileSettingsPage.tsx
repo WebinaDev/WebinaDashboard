@@ -24,7 +24,7 @@ import { toastApiError } from '@/lib/apiError'
 
 import { CoffeeBlendSettingsPanel } from '../components/CoffeeBlendSettingsPanel'
 import { CoffeeProfilePreview } from '../components/CoffeeProfilePreview'
-import type { AcidityLevel, CoffeeColors, CoffeeProfile, CoffeeSettings } from '../types'
+import type { AcidityLevel, CoffeeColors, CoffeeProfile, CoffeeSettings, IdLabel } from '../types'
 
 const COLOR_KEYS: (keyof CoffeeColors)[] = [
   'card_bg',
@@ -127,6 +127,77 @@ export default function CoffeeProfileSettingsPage() {
       next[j] = tmp
       return { ...d, acidity_levels: next }
     })
+  }
+
+  function updateIdLabelList(key: 'grinds' | 'roasts', index: number, patch: Partial<IdLabel>) {
+    setDraft((d) => {
+      if (!d) return d
+      const list = d[key].map((row, i) => (i === index ? { ...row, ...patch } : row))
+      return { ...d, [key]: list }
+    })
+  }
+
+  function moveIdLabelList(key: 'grinds' | 'roasts', index: number, dir: -1 | 1) {
+    setDraft((d) => {
+      if (!d) return d
+      const next = [...d[key]]
+      const j = index + dir
+      if (j < 0 || j >= next.length) return d
+      const tmp = next[index]
+      next[index] = next[j]
+      next[j] = tmp
+      return { ...d, [key]: next }
+    })
+  }
+
+  function renderIdLabelCard(listKey: 'grinds' | 'roasts', titleKey: string) {
+    if (!draft) return null
+    const items = draft[listKey]
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t(titleKey)}</CardTitle>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setDraft({
+                ...draft,
+                [listKey]: [...items, { id: `${listKey}_${Date.now()}`, label: '' }],
+              })
+            }
+          >
+            <Plus className="size-4" />
+            {t('coffeeProfile.addLevel')}
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {items.map((level, index) => (
+            <div key={`${level.id}-${index}`} className="flex flex-wrap items-center gap-2">
+              <Input className="max-w-[8rem] font-mono text-xs" value={level.id} onChange={(e) => updateIdLabelList(listKey, index, { id: e.target.value })} />
+              <Input className="min-w-[8rem] flex-1" value={level.label} onChange={(e) => updateIdLabelList(listKey, index, { label: e.target.value })} />
+              <Button type="button" size="icon" variant="ghost" className="size-8" onClick={() => moveIdLabelList(listKey, index, -1)} disabled={index === 0}>
+                <ArrowUp className="size-4" />
+              </Button>
+              <Button type="button" size="icon" variant="ghost" className="size-8" onClick={() => moveIdLabelList(listKey, index, 1)} disabled={index === items.length - 1}>
+                <ArrowDown className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="size-8"
+                onClick={() => setDraft({ ...draft, [listKey]: items.filter((_, i) => i !== index) })}
+                disabled={items.length <= 1}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -263,6 +334,9 @@ export default function CoffeeProfileSettingsPage() {
               ))}
             </CardContent>
           </Card>
+
+          {renderIdLabelCard('grinds', 'coffeeProfile.grindOptions')}
+          {renderIdLabelCard('roasts', 'coffeeProfile.roastOptions')}
 
           <Card>
             <CardHeader>

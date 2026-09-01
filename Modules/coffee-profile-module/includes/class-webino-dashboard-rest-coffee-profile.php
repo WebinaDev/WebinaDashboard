@@ -270,43 +270,18 @@ class Webino_Dashboard_REST_Coffee_Profile {
 		$axes = self::variation_axes( $parent );
 		$attr = self::resolve_price_attribute( $axes, $attr );
 
-		$by_term = array();
-		foreach ( (array) ( $body['rows'] ?? array() ) as $row ) {
-			if ( ! is_array( $row ) ) {
-				continue;
-			}
-			$term = sanitize_title( (string) ( $row['term'] ?? '' ) );
-			if ( '' === $term ) {
-				$term = sanitize_text_field( (string) ( $row['term'] ?? '' ) );
-			}
-			$raw_term = (string) ( $row['term'] ?? '' );
-			if ( '' === $raw_term ) {
-				continue;
-			}
-			$by_term[ $raw_term ] = $row;
-			$by_term[ sanitize_title( $raw_term ) ] = $row;
-		}
+		$by_term = self::index_price_rows_by_term( (array) ( $body['rows'] ?? array() ), $attr );
 		if ( empty( $by_term ) ) {
 			return new WP_Error( 'invalid', __( 'No price rows provided.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 
-		$children = $parent->get_children();
-		$matches  = array();
-		foreach ( $children as $vid ) {
+		$matches = array();
+		foreach ( self::variation_children( $parent ) as $vid ) {
 			$v = wc_get_product( (int) $vid );
 			if ( ! $v || ! $v->is_type( 'variation' ) ) {
 				continue;
 			}
-			$val = self::variation_attr_value( $v, $attr );
-			if ( '' === $val ) {
-				continue;
-			}
-			$row = null;
-			if ( isset( $by_term[ $val ] ) ) {
-				$row = $by_term[ $val ];
-			} elseif ( isset( $by_term[ sanitize_title( $val ) ] ) ) {
-				$row = $by_term[ sanitize_title( $val ) ];
-			}
+			$row = self::match_variation_to_row( $v, $attr, $by_term );
 			if ( ! $row ) {
 				continue;
 			}
@@ -326,6 +301,9 @@ class Webino_Dashboard_REST_Coffee_Profile {
 				continue;
 			}
 			$row = $item['row'];
+			if ( class_exists( 'Webino_Dashboard_Rest_Crud', false ) ) {
+				Webino_Dashboard_Rest_Crud::canonicalize_variation_attributes( $parent, $v );
+			}
 			if ( array_key_exists( 'purchase_price', $row ) && '' !== (string) $row['purchase_price'] && null !== $row['purchase_price'] ) {
 				$pp = class_exists( 'WFCP_Helper' ) ? WFCP_Helper::sanitize_price( $row['purchase_price'] ) : (float) $row['purchase_price'];
 				$v->update_meta_data( '_wfcp_purchase_price', $pp );
@@ -350,8 +328,13 @@ class Webino_Dashboard_REST_Coffee_Profile {
 		}
 
 		$next = $offset + count( $slice );
-		if ( $updated > 0 && class_exists( 'WC_Product_Variable' ) ) {
-			WC_Product_Variable::sync( (int) $parent->get_id() );
+		if ( $updated > 0 ) {
+			if ( class_exists( 'Webino_Dashboard_Rest_Crud', false ) ) {
+				Webino_Dashboard_Rest_Crud::repair_variable_children_stock_status( (int) $parent->get_id() );
+			}
+			if ( class_exists( 'WC_Product_Variable' ) ) {
+				WC_Product_Variable::sync( (int) $parent->get_id() );
+			}
 			if ( function_exists( 'wc_delete_product_transients' ) ) {
 				wc_delete_product_transients( (int) $parent->get_id() );
 			}
@@ -450,41 +433,46 @@ class Webino_Dashboard_REST_Coffee_Profile {
 	 * @return array<int,array<string,mixed>>
 	 */
 	private static function price_rows_for_attribute( $parent, $attr, $terms ) {
-		$samples = array();
-		foreach ( $parent->get_children() as $vid ) {
+		$children = self::variation_children( $parent );
+		$samples  = array();
+		foreach ( $children as $vid ) {
 			$v = wc_get_product( (int) $vid );
 			if ( ! $v || ! $v->is_type( 'variation' ) ) {
 				continue;
 			}
 			$val = self::variation_attr_value( $v, $attr );
-			if ( '' === $val || isset( $samples[ $val ] ) ) {
+			if ( '' === $val ) {
 				continue;
 			}
 			$pp = $v->get_meta( '_wfcp_purchase_price', true );
-			$samples[ $val ] = array(
+			$sample = array(
 				'purchase_price' => ( '' === $pp || false === $pp ) ? '' : (string) $pp,
 				'stock_quantity' => $v->get_manage_stock() ? (string) (int) $v->get_stock_quantity() : '',
 			);
-			$samples[ sanitize_title( $val ) ] = $samples[ $val ];
+			foreach ( self::term_aliases( $attr, $val ) as $alias ) {
+				if ( ! isset( $samples[ $alias ] ) ) {
+					$samples[ $alias ] = $sample;
+				}
+			}
 		}
 
 		$rows = array();
 		foreach ( $terms as $term ) {
-			$slug = (string) $term['slug'];
+			$slug   = (string) $term['slug'];
 			$sample = array();
-			if ( isset( $samples[ $slug ] ) ) {
-				$sample = $samples[ $slug ];
-			} elseif ( isset( $samples[ sanitize_title( $slug ) ] ) ) {
-				$sample = $samples[ sanitize_title( $slug ) ];
+			foreach ( self::term_aliases( $attr, $slug ) as $alias ) {
+				if ( isset( $samples[ $alias ] ) ) {
+					$sample = $samples[ $alias ];
+					break;
+				}
 			}
 			$count = 0;
-			foreach ( $parent->get_children() as $vid ) {
+			foreach ( $children as $vid ) {
 				$v = wc_get_product( (int) $vid );
 				if ( ! $v || ! $v->is_type( 'variation' ) ) {
 					continue;
 				}
-				$val = self::variation_attr_value( $v, $attr );
-				if ( $val === $slug || sanitize_title( $val ) === sanitize_title( $slug ) ) {
+				if ( self::variation_matches_term( $v, $attr, $slug ) ) {
 					++$count;
 				}
 			}
@@ -500,22 +488,231 @@ class Webino_Dashboard_REST_Coffee_Profile {
 	}
 
 	/**
+	 * Variation IDs for a variable product (fallback when cached children are empty).
+	 *
+	 * @param WC_Product $parent Variable product.
+	 * @return array<int,int>
+	 */
+	private static function variation_children( $parent ) {
+		$children = $parent->get_children();
+		if ( ! empty( $children ) ) {
+			return array_map( 'intval', $children );
+		}
+		$posts = get_posts(
+			array(
+				'post_parent'    => (int) $parent->get_id(),
+				'post_type'      => 'product_variation',
+				'post_status'    => array( 'publish', 'private' ),
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'orderby'        => 'menu_order ID',
+				'order'          => 'ASC',
+			)
+		);
+		return array_map( 'intval', is_array( $posts ) ? $posts : array() );
+	}
+
+	/**
+	 * @param array<int,array<string,mixed>> $rows Price rows from client.
+	 * @param string                         $attr Attribute taxonomy/name.
+	 * @return array<string,array<string,mixed>>
+	 */
+	private static function index_price_rows_by_term( $rows, $attr ) {
+		$by_term = array();
+		foreach ( $rows as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$raw_term = (string) ( $row['term'] ?? '' );
+			if ( '' === $raw_term ) {
+				continue;
+			}
+			foreach ( self::term_aliases( $attr, $raw_term ) as $alias ) {
+				$by_term[ $alias ] = $row;
+			}
+		}
+		return $by_term;
+	}
+
+	/**
+	 * @param WC_Product                      $variation Variation.
+	 * @param string                          $attr      Attribute name.
+	 * @param array<string,array<string,mixed>> $by_term Indexed rows.
+	 * @return array<string,mixed>|null
+	 */
+	private static function match_variation_to_row( $variation, $attr, $by_term ) {
+		$val = self::variation_attr_value( $variation, $attr );
+		if ( '' === $val ) {
+			return null;
+		}
+		foreach ( self::term_aliases( $attr, $val ) as $alias ) {
+			if ( isset( $by_term[ $alias ] ) ) {
+				return $by_term[ $alias ];
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * @param WC_Product $variation Variation.
+	 * @param string     $attr      Attribute name.
+	 * @param string     $term_slug Term slug from parent axis.
+	 * @return bool
+	 */
+	private static function variation_matches_term( $variation, $attr, $term_slug ) {
+		$val = self::variation_attr_value( $variation, $attr );
+		if ( '' === $val ) {
+			return false;
+		}
+		$term_aliases = self::term_aliases( $attr, $term_slug );
+		$val_aliases  = self::term_aliases( $attr, $val );
+		foreach ( $term_aliases as $alias ) {
+			if ( in_array( $alias, $val_aliases, true ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Possible keys for matching a variation attribute name.
+	 *
+	 * @param string $name Attribute name or meta key.
+	 * @return array<int,string>
+	 */
+	private static function attr_key_aliases( $name ) {
+		$name     = (string) $name;
+		$seed     = array( $name );
+		$stripped = preg_replace( '/^attribute_/', '', $name );
+		if ( is_string( $stripped ) && $stripped !== $name ) {
+			$seed[] = $stripped;
+			$seed[] = 'attribute_' . sanitize_title( $stripped );
+		} else {
+			$seed[] = 'attribute_' . sanitize_title( $name );
+		}
+		$aliases = array();
+		foreach ( $seed as $candidate ) {
+			$candidate = (string) $candidate;
+			if ( '' === $candidate ) {
+				continue;
+			}
+			$decoded = rawurldecode( $candidate );
+			$aliases[] = $candidate;
+			$aliases[] = $decoded;
+			$aliases[] = sanitize_title( $candidate );
+			$aliases[] = sanitize_title( $decoded );
+			if ( 0 === strpos( $candidate, 'pa_' ) ) {
+				$aliases[] = substr( $candidate, 3 );
+				$aliases[] = sanitize_title( substr( $candidate, 3 ) );
+			} else {
+				$aliases[] = 'pa_' . sanitize_title( $candidate );
+			}
+		}
+		return array_values( array_unique( array_filter( $aliases ) ) );
+	}
+
+	/**
+	 * Possible values for matching a variation attribute term.
+	 *
+	 * @param string $attr Attribute taxonomy/name.
+	 * @param string $raw  Raw stored value.
+	 * @return array<int,string>
+	 */
+	private static function term_aliases( $attr, $raw ) {
+		$raw = (string) $raw;
+		if ( '' === $raw ) {
+			return array();
+		}
+		$aliases = array(
+			$raw,
+			rawurldecode( $raw ),
+			sanitize_title( $raw ),
+			sanitize_title( rawurldecode( $raw ) ),
+		);
+		$tax = taxonomy_exists( $attr ) ? $attr : '';
+		if ( '' === $tax && taxonomy_exists( rawurldecode( $attr ) ) ) {
+			$tax = rawurldecode( $attr );
+		}
+		if ( '' !== $tax ) {
+			foreach ( array( $raw, rawurldecode( $raw ), sanitize_title( $raw ) ) as $probe ) {
+				$probe = (string) $probe;
+				if ( '' === $probe ) {
+					continue;
+				}
+				$term = get_term_by( 'slug', $probe, $tax );
+				if ( ! $term || is_wp_error( $term ) ) {
+					$term = get_term_by( 'name', $probe, $tax );
+				}
+				if ( ( ! $term || is_wp_error( $term ) ) && ctype_digit( $probe ) ) {
+					$term = get_term( (int) $probe, $tax );
+				}
+				if ( $term && ! is_wp_error( $term ) ) {
+					$aliases[] = (string) $term->slug;
+					$aliases[] = (string) $term->name;
+					$aliases[] = (string) $term->term_id;
+					$aliases[] = sanitize_title( $term->slug );
+					$aliases[] = sanitize_title( $term->name );
+				}
+			}
+		}
+		return array_values(
+			array_unique(
+				array_filter(
+					$aliases,
+					static function ( $value ) {
+						return '' !== (string) $value;
+					}
+				)
+			)
+		);
+	}
+
+	/**
 	 * @param WC_Product $variation Variation.
 	 * @param string     $attr_name Attribute name.
 	 * @return string
 	 */
 	private static function variation_attr_value( $variation, $attr_name ) {
-		$attrs = $variation->get_attributes();
-		if ( ! is_array( $attrs ) ) {
-			return '';
+		$want_aliases = self::attr_key_aliases( $attr_name );
+		$attrs        = $variation->get_attributes();
+		if ( is_array( $attrs ) ) {
+			foreach ( $attrs as $key => $val ) {
+				if ( '' === (string) $val && '0' !== (string) $val ) {
+					continue;
+				}
+				$key_aliases = self::attr_key_aliases( (string) $key );
+				foreach ( $want_aliases as $want ) {
+					if ( in_array( $want, $key_aliases, true ) ) {
+						return (string) $val;
+					}
+				}
+			}
 		}
-		if ( isset( $attrs[ $attr_name ] ) ) {
-			return (string) $attrs[ $attr_name ];
-		}
-		$want = sanitize_title( $attr_name );
-		foreach ( $attrs as $key => $val ) {
-			if ( sanitize_title( (string) $key ) === $want ) {
-				return (string) $val;
+
+		$vid = (int) $variation->get_id();
+		if ( $vid > 0 ) {
+			$all_meta = get_post_meta( $vid );
+			if ( is_array( $all_meta ) ) {
+				foreach ( $all_meta as $meta_key => $meta_vals ) {
+					if ( 0 !== strpos( (string) $meta_key, 'attribute_' ) ) {
+						continue;
+					}
+					$key_aliases = self::attr_key_aliases( (string) $meta_key );
+					$matched     = false;
+					foreach ( $want_aliases as $want ) {
+						if ( in_array( $want, $key_aliases, true ) ) {
+							$matched = true;
+							break;
+						}
+					}
+					if ( ! $matched ) {
+						continue;
+					}
+					$val = is_array( $meta_vals ) ? (string) ( $meta_vals[0] ?? '' ) : (string) $meta_vals;
+					if ( '' !== $val ) {
+						return $val;
+					}
+				}
 			}
 		}
 		return '';

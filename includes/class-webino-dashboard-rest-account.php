@@ -30,6 +30,14 @@ class Webino_Dashboard_REST_Account {
 		$portal = static function () {
 			return Webino_Dashboard_Rest_Base::has_account_portal();
 		};
+		$notifications = static function () {
+			return is_user_logged_in() && (
+				Webino_Dashboard_Rest_Base::has_account_portal()
+				|| Webino_Dashboard_Rest_Base::can( 'manage_woocommerce' )
+				|| Webino_Dashboard_Rest_Base::can( 'manage_options' )
+				|| Webino_Dashboard_Rest_Base::can( 'moderate_comments' )
+			);
+		};
 
 		register_rest_route(
 			self::NS,
@@ -48,12 +56,12 @@ class Webino_Dashboard_REST_Account {
 				array(
 					'methods'             => 'GET',
 					'callback'            => array( __CLASS__, 'notifications_list' ),
-					'permission_callback' => $portal,
+					'permission_callback' => $notifications,
 				),
 				array(
 					'methods'             => 'POST',
 					'callback'            => array( __CLASS__, 'notifications_mark_all' ),
-					'permission_callback' => $portal,
+					'permission_callback' => $notifications,
 				),
 			)
 		);
@@ -64,7 +72,7 @@ class Webino_Dashboard_REST_Account {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'notification_mark_read' ),
-				'permission_callback' => $portal,
+				'permission_callback' => $notifications,
 			)
 		);
 
@@ -276,9 +284,11 @@ class Webino_Dashboard_REST_Account {
 	 * @return WP_REST_Response
 	 */
 	public static function notifications_list( WP_REST_Request $request ) {
-		$page = max( 1, (int) $request->get_param( 'page' ) );
+		$page     = max( 1, (int) $request->get_param( 'page' ) );
+		$per_page = (int) ( $request->get_param( 'per_page' ) ?: 20 );
+		$per_page = max( 1, min( 50, $per_page ) );
 		return new WP_REST_Response(
-			Webino_Dashboard_Notifications::list_for_user( get_current_user_id(), $page, 20 )
+			Webino_Dashboard_Notifications::list_for_user( get_current_user_id(), $page, $per_page )
 		);
 	}
 

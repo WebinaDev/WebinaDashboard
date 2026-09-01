@@ -28,15 +28,22 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-modules.php',
 			'includes/class-webino-dashboard-taxonomies.php',
 			'includes/class-webino-dashboard-rest-base.php',
+			'includes/class-webino-dashboard-roles.php',
 			'includes/class-webino-dashboard-zip.php',
 			'includes/class-webino-dashboard-remote-url.php',
 			'includes/class-webino-dashboard-rest.php',
 			'includes/class-webino-dashboard-rest-crud.php',
+			'includes/class-webino-dashboard-product-slugs.php',
 			'includes/class-webino-dashboard-attribute-groups.php',
 			'includes/class-webino-dashboard-variation-swatches.php',
+			'includes/class-webino-dashboard-order-configs.php',
 			'includes/class-webino-dashboard-home-overview.php',
 			'includes/class-webino-dashboard-marketplace.php',
 			'includes/class-webino-dashboard-orders.php',
+			'includes/class-webino-dashboard-order-notes.php',
+			'includes/class-webino-dashboard-order-writer.php',
+			'includes/class-webino-dashboard-order-returns.php',
+			'includes/class-webino-dashboard-pay-order.php',
 			'includes/class-webino-dashboard-order-reports.php',
 			'includes/class-webino-dashboard-inventory-reports.php',
 			'includes/class-webino-dashboard-order-aggregates.php',
@@ -46,6 +53,11 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-addresses.php',
 			'includes/class-webino-dashboard-account-portal.php',
 			'includes/class-webino-dashboard-notifications.php',
+			'includes/class-webino-dashboard-notify-copy.php',
+			'includes/class-webino-dashboard-notify.php',
+			'includes/class-webino-dashboard-auth-otp.php',
+			'includes/class-webino-dashboard-mailer.php',
+			'includes/class-webino-dashboard-rest-notify.php',
 			'includes/class-webino-dashboard-support-tickets.php',
 			'includes/class-webino-dashboard-wallet.php',
 			'includes/class-webino-dashboard-rest-account.php',
@@ -171,13 +183,20 @@ final class Webino_Dashboard_Bootstrap {
 		}
 		if ( class_exists( 'Webino_Dashboard_Notifications', false ) ) {
 			Webino_Dashboard_Notifications::init_hooks();
+			Webino_Dashboard_Notifications::ensure_table();
+		}
+		if ( class_exists( 'Webino_Dashboard_Notify', false ) ) {
+			Webino_Dashboard_Notify::init();
+		}
+		if ( class_exists( 'Webino_Dashboard_Mailer', false ) ) {
+			Webino_Dashboard_Mailer::init();
+		}
+		if ( class_exists( 'Webino_Dashboard_REST_Notify', false ) ) {
+			Webino_Dashboard_REST_Notify::init();
 		}
 		if ( class_exists( 'Webino_Dashboard_Wallet', false ) ) {
 			Webino_Dashboard_Wallet::init_hooks();
 			Webino_Dashboard_Wallet::ensure_tables();
-		}
-		if ( class_exists( 'Webino_Dashboard_Notifications', false ) ) {
-			Webino_Dashboard_Notifications::ensure_table();
 		}
 		if ( class_exists( 'Webino_Dashboard_Support_Tickets', false ) ) {
 			Webino_Dashboard_Support_Tickets::ensure_tables();

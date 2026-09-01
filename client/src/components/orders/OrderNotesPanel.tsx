@@ -67,9 +67,9 @@ export function OrderNotesPanel({ orderId, notes, locale, onChanged }: OrderNote
           <li className="text-muted-foreground text-sm">{t('orders.noNotes')}</li>
         ) : (
           notes.map((note) => (
-            <li key={note.id} className="border-b pb-3 last:border-0">
+            <li key={note.id} className="rounded-md border bg-muted/20 p-3 last:border-0">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{note.content}</p>
                 <Button
                   type="button"
                   variant="ghost"

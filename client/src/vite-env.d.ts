@@ -15,6 +15,11 @@ export interface WebinoDashboardConfig {
   nonce: string
   /** CSRF token for POST /auth/login (guest-safe). */
   loginNonce: string
+  /** Public OTP auth flags for login UI. */
+  otpAuth?: {
+    login_enabled?: boolean
+    register_enabled?: boolean
+  }
   locale: string
   isLogged: boolean
   userId: number
@@ -30,6 +35,10 @@ export interface WebinoDashboardConfig {
     expiry?: string | null
     demo?: boolean
     domain?: string
+    nag_since?: number | null
+    force_license_page?: boolean
+    show_banner?: boolean
+    show_unreachable_banner?: boolean
   }
   allowedRemoteHosts?: string[]
   /** Optional server-injected bootstrap snapshot for first paint / placeholderData. */

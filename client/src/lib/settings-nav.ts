@@ -1,4 +1,4 @@
-export type SettingsSiteSectionId = 'general' | 'privacy' | 'license' | 'dashboard' | 'modules' | 'bots' | 'system-logs' | 'analytics' | 'sms'
+export type SettingsSiteSectionId = 'general' | 'privacy' | 'license' | 'dashboard' | 'modules' | 'bots' | 'system-logs' | 'analytics' | 'sms' | 'notifications'
 
 export type SettingsShopSectionId =
   | 'general'
@@ -13,7 +13,7 @@ export type SettingsShopSectionId =
   | 'advanced'
   | 'pricing'
 
-export const SITE_SECTIONS: SettingsSiteSectionId[] = ['general', 'privacy', 'license', 'dashboard', 'modules', 'bots', 'system-logs', 'analytics', 'sms']
+export const SITE_SECTIONS: SettingsSiteSectionId[] = ['general', 'privacy', 'license', 'dashboard', 'modules', 'bots', 'system-logs', 'analytics', 'sms', 'notifications']
 
 export const SHOP_SECTIONS: SettingsShopSectionId[] = [
   'general',

@@ -33,15 +33,34 @@ final class Webino_Dashboard_AI_Writer {
 			return Webino_Dashboard_AI_Content_Settings::field_enabled( 'product', $field );
 		};
 		$name   = $on( 'name' ) ? sanitize_text_field( (string) ( $data['name'] ?? $p->get_name() ) ) : $p->get_name();
-		$slug   = $on( 'slug' ) ? sanitize_title( (string) ( $data['slug'] ?? $name ) ) : $p->get_slug();
 		$short  = $on( 'short_description' ) ? (string) ( $data['short_description'] ?? '' ) : '';
 		$desc   = $on( 'description' ) ? (string) ( $data['description'] ?? '' ) : '';
+		$english = '';
+		if ( $on( 'english_name' ) && ! empty( $data['english_name'] ) ) {
+			$english = sanitize_text_field( (string) $data['english_name'] );
+		} else {
+			$english = trim( (string) $p->get_meta( '_ishop_english_name', true ) );
+		}
+
+		$old_path = '';
+		$new_slug = '';
+		if ( $on( 'slug' ) && class_exists( 'Webino_Dashboard_Product_Slugs', false ) ) {
+			$new_slug = Webino_Dashboard_Product_Slugs::slug_from_english_name( $english );
+			if ( '' === $new_slug && ! empty( $data['slug'] ) ) {
+				// Last resort: only if payload slug is already ASCII english.
+				$candidate = Webino_Dashboard_Product_Slugs::slug_from_english_name( (string) $data['slug'] );
+				$new_slug  = $candidate;
+			}
+			if ( '' !== $new_slug && $new_slug !== (string) $p->get_slug() ) {
+				$old_path = Webino_Dashboard_Product_Slugs::permalink_path( (int) $product_id );
+			}
+		}
 
 		if ( $on( 'name' ) && $name ) {
 			$p->set_name( $name );
 		}
-		if ( $on( 'slug' ) && $slug ) {
-			$p->set_slug( $slug );
+		if ( $on( 'slug' ) && $new_slug ) {
+			$p->set_slug( $new_slug );
 		}
 		if ( $short ) {
 			$p->set_short_description( wp_kses_post( $short ) );
@@ -56,13 +75,17 @@ final class Webino_Dashboard_AI_Writer {
 		}
 
 		$seo = $on( 'seo' ) ? self::normalize_seo( $data, 'product', $name ) : array();
+		// Prefer auto canonical from new English permalink — clear custom canonical if present in payload empty.
+		if ( $seo && array_key_exists( 'canonical_url', $seo ) && '' === trim( (string) $seo['canonical_url'] ) ) {
+			unset( $seo['canonical_url'] );
+		}
 		if ( class_exists( 'Webino_Dashboard_REST', false ) ) {
 			if ( $seo ) {
 				Webino_Dashboard_REST::apply_product_seo( $p, $seo );
 			}
 			$ishop = array();
-			if ( $on( 'english_name' ) && ! empty( $data['english_name'] ) ) {
-				$ishop['english_name'] = sanitize_text_field( (string) $data['english_name'] );
+			if ( $english ) {
+				$ishop['english_name'] = $english;
 			}
 			if ( $on( 'ai_review_summary' ) && ! empty( $data['ai_review_summary'] ) ) {
 				$ishop['ai_review_summary'] = sanitize_textarea_field( (string) $data['ai_review_summary'] );
@@ -114,6 +137,13 @@ final class Webino_Dashboard_AI_Writer {
 
 		$p->save();
 
+		if ( $old_path && class_exists( 'Webino_Dashboard_Product_Slugs', false ) ) {
+			$new_url = get_permalink( (int) $product_id );
+			if ( is_string( $new_url ) && $new_url ) {
+				Webino_Dashboard_Product_Slugs::add_rank_math_redirect( $old_path, $new_url );
+			}
+		}
+
 		$coffee = self::apply_coffee_profile( (int) $product_id, $data );
 		if ( is_wp_error( $coffee ) ) {
 			return $coffee;
@@ -137,7 +167,7 @@ final class Webino_Dashboard_AI_Writer {
 		$title   = $on( 'title' ) ? sanitize_text_field( (string) ( $data['title'] ?? '' ) ) : '';
 		$content = $on( 'content' ) ? wp_kses_post( (string) ( $data['content'] ?? '' ) ) : '';
 		$excerpt = $on( 'excerpt' ) ? sanitize_textarea_field( (string) ( $data['excerpt'] ?? '' ) ) : '';
-		$slug    = $on( 'slug' ) ? sanitize_title( (string) ( $data['slug'] ?? $title ) ) : '';
+		$slug    = $on( 'slug' ) ? self::normalize_slug( (string) ( $data['slug'] ?? $title ) ) : '';
 		$focus   = sanitize_text_field( (string) ( $data['focus_keyword'] ?? ( $data['seo']['focus_keyword'] ?? '' ) ) );
 
 		$post_id = (int) ( $opts['post_id'] ?? 0 );
@@ -334,7 +364,7 @@ final class Webino_Dashboard_AI_Writer {
 		};
 
 		$title   = $on( 'title' ) ? sanitize_text_field( (string) ( $data['title'] ?? $post->post_title ) ) : $post->post_title;
-		$slug    = $on( 'slug' ) ? sanitize_title( (string) ( $data['slug'] ?? $title ) ) : $post->post_name;
+		$slug    = $on( 'slug' ) ? self::normalize_slug( (string) ( $data['slug'] ?? $title ) ) : $post->post_name;
 		$excerpt = $on( 'excerpt' ) ? sanitize_textarea_field( (string) ( $data['excerpt'] ?? '' ) ) : $post->post_excerpt;
 		$h1      = sanitize_text_field( (string) ( $data['h1'] ?? $title ) );
 
@@ -591,5 +621,25 @@ final class Webino_Dashboard_AI_Writer {
 		if ( $objects ) {
 			$p->set_attributes( $objects );
 		}
+	}
+
+	/**
+	 * Sanitize slug and insert hyphens at Persian/Arabic ↔ Latin script boundaries.
+	 * Prevents Rank Math self-redirect loops on glued mixed-script slugs (e.g. شیگلمcamera).
+	 *
+	 * @param string $raw Raw slug or title.
+	 * @return string
+	 */
+	public static function normalize_slug( $raw ) {
+		$slug = sanitize_title( (string) $raw );
+		if ( '' === $slug ) {
+			return '';
+		}
+		// Arabic / Persian letter ranges ↔ Latin alnum.
+		$fa = '\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}';
+		$slug = (string) preg_replace( '/([' . $fa . '])([A-Za-z0-9])/u', '$1-$2', $slug );
+		$slug = (string) preg_replace( '/([A-Za-z0-9])([' . $fa . '])/u', '$1-$2', $slug );
+		$slug = (string) preg_replace( '/-+/', '-', $slug );
+		return trim( $slug, '-' );
 	}
 }

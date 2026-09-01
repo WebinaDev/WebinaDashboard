@@ -28,7 +28,7 @@ class Webino_Dashboard_Home_Overview {
 	public static function rest_get() {
 		$user_id = get_current_user_id();
 		$locale  = self::dashboard_locale();
-		$key     = 'webino_dashboard_overview_v3_' . (int) $user_id . '_' . md5( $locale );
+		$key     = 'webino_dashboard_overview_v4_' . (int) $user_id . '_' . md5( $locale );
 
 		if ( $user_id > 0 ) {
 			$cached = get_transient( $key );
@@ -145,6 +145,14 @@ class Webino_Dashboard_Home_Overview {
 				$sections[]       = 'tasks';
 			}
 		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		}
+
+		if ( self::can_sales() && Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' ) ) {
+			try {
+				$payload['fulfillment'] = self::fulfillment_section();
+				$sections[]             = 'fulfillment';
+			} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			}
 		}
 
 		if ( Webino_Dashboard_Rest_Base::can( 'moderate_comments' ) ) {
@@ -896,6 +904,323 @@ class Webino_Dashboard_Home_Overview {
 			'preview' => $preview,
 			'href'    => '/orders/list?status=' . rawurlencode( $status ),
 		);
+	}
+
+	/**
+	 * Order fulfillment todo buckets for the home dashboard.
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	private static function fulfillment_section() {
+		return array(
+			'pack'     => self::fulfillment_bucket( 'pack' ),
+			'ship'     => self::fulfillment_bucket( 'ship' ),
+			'tracking' => self::fulfillment_bucket( 'tracking' ),
+			'refund'   => self::fulfillment_bucket( 'refund' ),
+			'returns'  => self::fulfillment_bucket( 'returns' ),
+		);
+	}
+
+	/**
+	 * @param string $bucket pack|ship|tracking|refund|returns.
+	 * @return array{count:int,items:array<int,array<string,mixed>>,href:string}
+	 */
+	private static function fulfillment_bucket( $bucket ) {
+		$limit = 8;
+		$items = array();
+		$href  = '/orders/list';
+
+		switch ( $bucket ) {
+			case 'pack':
+				$statuses = self::fulfillment_status_slugs( array( 'processing', 'sent-to-warehouse' ) );
+				$href     = '/orders/list?status=' . rawurlencode( 'processing' );
+				$orders   = self::fulfillment_query_orders( $statuses, $limit );
+				foreach ( $orders as $order ) {
+					$items[] = self::fulfillment_row( $order, 'pack' );
+				}
+				$count = self::fulfillment_count_orders( $statuses );
+				break;
+
+			case 'ship':
+				$statuses = self::fulfillment_status_slugs( array( 'packaged' ) );
+				$href     = '/orders/list?status=' . rawurlencode( 'packaged' );
+				$orders   = self::fulfillment_query_orders( $statuses, $limit );
+				foreach ( $orders as $order ) {
+					$items[] = self::fulfillment_row( $order, 'ship' );
+				}
+				$count = self::fulfillment_count_orders( $statuses );
+				break;
+
+			case 'tracking':
+				$href   = '/orders/list?status=completed';
+				$orders = self::fulfillment_query_orders( array( 'completed' ), 40 );
+				foreach ( $orders as $order ) {
+					if ( '' !== Webino_Dashboard_Orders::get_tracking_code( $order ) ) {
+						continue;
+					}
+					$items[] = self::fulfillment_row( $order, 'tracking' );
+					if ( count( $items ) >= $limit ) {
+						break;
+					}
+				}
+				$count = self::fulfillment_count_tracking_needed();
+				break;
+
+			case 'refund':
+				$href   = '/orders/list?status=cancelled';
+				$after  = gmdate( 'Y-m-d H:i:s', time() - ( 14 * DAY_IN_SECONDS ) );
+				$orders = wc_get_orders(
+					array(
+						'status'       => array( 'cancelled' ),
+						'limit'        => $limit,
+						'orderby'      => 'date',
+						'order'        => 'DESC',
+						'date_created' => '>' . $after,
+					)
+				);
+				foreach ( $orders as $order ) {
+					if ( ! $order instanceof WC_Order ) {
+						continue;
+					}
+					$items[] = self::fulfillment_row( $order, 'refund' );
+				}
+				$count = self::fulfillment_count_cancelled_recent();
+				break;
+
+			case 'returns':
+				$href = '/orders/list';
+				if ( class_exists( 'Webino_Dashboard_Order_Returns', false ) ) {
+					$pending = Webino_Dashboard_Order_Returns::list_by_statuses(
+						array( 'requested', 'approved' ),
+						$limit
+					);
+					foreach ( $pending as $ret ) {
+						$items[] = self::fulfillment_return_row( $ret );
+					}
+					$count = Webino_Dashboard_Order_Returns::count_by_statuses( array( 'requested', 'approved' ) );
+				} else {
+					$count = 0;
+				}
+				break;
+
+			default:
+				$count = 0;
+		}
+
+		return array(
+			'count' => (int) $count,
+			'items' => $items,
+			'href'  => $href,
+		);
+	}
+
+	/**
+	 * @param array<int,string> $canonical_events Event keys.
+	 * @return array<int,string>
+	 */
+	private static function fulfillment_status_slugs( array $canonical_events ) {
+		$slugs = array();
+		if ( class_exists( 'Webino_Dashboard_Sms_Order_Map', false ) ) {
+			$map = array_merge(
+				Webino_Dashboard_Sms_Order_Map::status_to_event(),
+				Webino_Dashboard_Sms_Order_Map::custom_status_to_event()
+			);
+			foreach ( $map as $slug => $mapped ) {
+				$canonical = Webino_Dashboard_Sms_Order_Map::normalize_event_key( (string) $mapped );
+				if ( in_array( $canonical, $canonical_events, true ) ) {
+					$slugs[] = sanitize_key( (string) $slug );
+				}
+			}
+		}
+		foreach ( $canonical_events as $event ) {
+			$slugs[] = sanitize_key( (string) $event );
+		}
+		return array_values( array_unique( array_filter( $slugs ) ) );
+	}
+
+	/**
+	 * @param array<int,string> $statuses Status slugs.
+	 * @param int               $limit    Limit.
+	 * @return WC_Order[]
+	 */
+	private static function fulfillment_query_orders( array $statuses, $limit ) {
+		if ( empty( $statuses ) || ! function_exists( 'wc_get_orders' ) ) {
+			return array();
+		}
+		$orders = wc_get_orders(
+			array(
+				'status'  => $statuses,
+				'limit'   => max( 1, (int) $limit ),
+				'orderby' => 'date',
+				'order'   => 'DESC',
+			)
+		);
+		$out = array();
+		foreach ( (array) $orders as $order ) {
+			if ( $order instanceof WC_Order ) {
+				$out[] = $order;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * @param array<int,string> $statuses Status slugs.
+	 * @return int
+	 */
+	private static function fulfillment_count_orders( array $statuses ) {
+		if ( empty( $statuses ) ) {
+			return 0;
+		}
+		if ( function_exists( 'wc_orders_count' ) ) {
+			$total = 0;
+			foreach ( $statuses as $status ) {
+				$total += (int) wc_orders_count( $status );
+			}
+			return $total;
+		}
+		$result = wc_get_orders(
+			array(
+				'status'   => $statuses,
+				'limit'    => 1,
+				'paginate' => true,
+			)
+		);
+		return ( is_object( $result ) && isset( $result->total ) ) ? (int) $result->total : 0;
+	}
+
+	/**
+	 * @return int
+	 */
+	private static function fulfillment_count_tracking_needed() {
+		$orders = self::fulfillment_query_orders( array( 'completed' ), 100 );
+		$count  = 0;
+		foreach ( $orders as $order ) {
+			if ( '' === Webino_Dashboard_Orders::get_tracking_code( $order ) ) {
+				++$count;
+			}
+		}
+		if ( count( $orders ) < 100 ) {
+			return $count;
+		}
+		$all = self::fulfillment_count_orders( array( 'completed' ) );
+		return max( $count, $all > 100 ? $count : $all );
+	}
+
+	/**
+	 * @return int
+	 */
+	private static function fulfillment_count_cancelled_recent() {
+		$after = gmdate( 'Y-m-d H:i:s', time() - ( 14 * DAY_IN_SECONDS ) );
+		$result = wc_get_orders(
+			array(
+				'status'       => array( 'cancelled' ),
+				'limit'        => 1,
+				'paginate'     => true,
+				'date_created' => '>' . $after,
+			)
+		);
+		return ( is_object( $result ) && isset( $result->total ) ) ? (int) $result->total : 0;
+	}
+
+	/**
+	 * @param array<string,mixed> $ret Return row from Order_Returns.
+	 * @return array<string,mixed>
+	 */
+	private static function fulfillment_return_row( array $ret ) {
+		$order_id = (int) ( $ret['order_id'] ?? 0 );
+		$order    = $order_id > 0 ? wc_get_order( $order_id ) : null;
+		$name     = '';
+		if ( $order instanceof WC_Order ) {
+			$name = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
+		}
+		return array(
+			'id'             => $order_id,
+			'number'         => (string) ( $ret['order_number'] ?? $order_id ),
+			'customer_name'  => $name,
+			'action'         => 'return',
+			'href'           => '/orders/' . $order_id,
+			'return_status'  => (string) ( $ret['status'] ?? '' ),
+			'return_item'    => (string) ( $ret['item_name'] ?? '' ),
+			'return_qty'     => (float) ( $ret['qty'] ?? 0 ),
+		);
+	}
+
+	/**
+	 * @param WC_Order $order  Order.
+	 * @param string   $action pack|ship|tracking|refund.
+	 * @return array<string,mixed>
+	 */
+	private static function fulfillment_row( $order, $action ) {
+		$row = self::order_row( $order );
+		$row['action']                = sanitize_key( $action );
+		$row['href']                  = '/orders/' . $order->get_id();
+		$row['purchase_type']         = self::fulfillment_purchase_type( $order );
+		$row['payment_method_title']  = (string) $order->get_payment_method_title();
+		$row['shipping_kind']         = '';
+		$row['shipping_label']        = '';
+		if ( 'ship' === $action ) {
+			$row['shipping_kind']  = self::fulfillment_shipping_kind( $order );
+			$row['shipping_label'] = Webino_Dashboard_Orders::get_shipping_method_title( $order );
+		}
+		return $row;
+	}
+
+	/**
+	 * @param WC_Order $order Order.
+	 * @return string cash|credit|installment|wholesale
+	 */
+	private static function fulfillment_purchase_type( $order ) {
+		$type = sanitize_key( (string) $order->get_meta( '_wfcp_purchase_type' ) );
+		if ( '' === $type ) {
+			foreach ( $order->get_items() as $item ) {
+				if ( ! is_a( $item, 'WC_Order_Item_Product' ) ) {
+					continue;
+				}
+				$line_type = sanitize_key( (string) $item->get_meta( 'wfcp_purchase_type' ) );
+				if ( '' !== $line_type ) {
+					$type = $line_type;
+					break;
+				}
+			}
+		}
+		return '' !== $type ? $type : 'cash';
+	}
+
+	/**
+	 * @param WC_Order $order Order.
+	 * @return string courier|post|tipax|other
+	 */
+	private static function fulfillment_shipping_kind( $order ) {
+		if ( class_exists( 'Webino_Dashboard_Sms_Order_Map', false ) ) {
+			$from_status = Webino_Dashboard_Sms_Order_Map::event_for_status( $order->get_status() );
+			if ( in_array( $from_status, array( 'courier', 'post', 'tipax' ), true ) ) {
+				return $from_status;
+			}
+		}
+		$parts = array();
+		$parts[] = strtolower( Webino_Dashboard_Orders::get_shipping_method_title( $order ) );
+		$parts[] = strtolower(
+			Webino_Dashboard_Orders::get_meta_first(
+				$order,
+				array( '_tracking_provider', 'tracking_provider' )
+			)
+		);
+		foreach ( $order->get_shipping_methods() as $method ) {
+			$parts[] = strtolower( (string) $method->get_method_id() );
+			$parts[] = strtolower( (string) $method->get_name() );
+		}
+		$haystack = implode( ' ', $parts );
+		if ( preg_match( '/tipax|تیپاکس/u', $haystack ) ) {
+			return 'tipax';
+		}
+		if ( preg_match( '/courier|peyk|pik|پیک/u', $haystack ) ) {
+			return 'courier';
+		}
+		if ( preg_match( '/post|postal|پست/u', $haystack ) ) {
+			return 'post';
+		}
+		return 'other';
 	}
 
 	/**

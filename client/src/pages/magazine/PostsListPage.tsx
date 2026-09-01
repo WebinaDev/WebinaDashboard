@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 
 import { PostsPagination } from '@/components/magazine/PostsPagination'
 import { ListStatsStrip } from '@/components/ListStatsStrip'
+import { MobileListCard } from '@/components/MobileListCard'
 import { PageShell } from '@/components/PageShell'
 import { TableListSkeleton } from '@/components/TableListSkeleton'
 import { Button } from '@/components/ui/button'
@@ -185,6 +186,40 @@ export default function PostsListPage() {
             <TableListSkeleton rows={8} columns={visibleColumnCount} />
           ) : (
             <>
+              <div className="space-y-3 p-3 md:hidden">
+                {items.length === 0 ? (
+                  <div className="text-muted-foreground py-8 text-center text-sm">
+                    <p className="mb-3">{t('posts.emptyHint')}</p>
+                    <Button asChild size="sm">
+                      <Link to="/magazine/new">{t('posts.add')}</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  items.map((row) => (
+                    <MobileListCard
+                      key={row.id}
+                      media={
+                        <div className="space-y-1">
+                          <p className="font-medium">{row.title}</p>
+                          <p className="text-muted-foreground text-xs">
+                            {translatePostStatus(t, row.status)} · {formatDisplayDate(row.date, locale)}
+                          </p>
+                        </div>
+                      }
+                      actions={
+                        <Button asChild variant="outline" size="sm" className="w-full">
+                          <Link to={`/magazine/posts/${row.id}`}>{t('common.edit')}</Link>
+                        </Button>
+                      }
+                    >
+                      {row.excerpt?.trim() ? (
+                        <p className="text-muted-foreground line-clamp-2 text-sm">{row.excerpt}</p>
+                      ) : null}
+                    </MobileListCard>
+                  ))
+                )}
+              </div>
+              <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -255,6 +290,7 @@ export default function PostsListPage() {
                   )}
                 </TableBody>
               </Table>
+              </div>
               <PostsPagination
                 page={page}
                 perPage={perPage}

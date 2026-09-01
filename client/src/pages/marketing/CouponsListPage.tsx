@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
+import { ListFiltersCollapsible } from '@/components/ListFiltersCollapsible'
 import { ListStatsStrip } from '@/components/ListStatsStrip'
 import { CouponsBulkActions } from '@/components/coupons/CouponsBulkActions'
 import { CouponsTable, type CouponTableRow } from '@/components/coupons/CouponsTable'
@@ -123,8 +124,8 @@ export default function CouponsListPage() {
         </Button>
       </div>
 
-      <Card className="mb-4 shadow-sm">
-        <CardContent className="flex flex-wrap items-end gap-4 pt-6">
+      <ListFiltersCollapsible className="mb-4" activeCount={search.trim() ? 1 : 0}>
+        <div className="flex flex-wrap items-end gap-4">
           <div className="min-w-[12rem] flex-1">
             <div className="relative">
               <Search className="text-muted-foreground pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2" />
@@ -137,8 +138,8 @@ export default function CouponsListPage() {
             </div>
           </div>
           <CouponsBulkActions selectedIds={selectedIds} onDone={handleBulkDone} />
-        </CardContent>
-      </Card>
+        </div>
+      </ListFiltersCollapsible>
 
       {selectedLabel ? <p className="text-muted-foreground mb-2 text-sm">{selectedLabel}</p> : null}
 

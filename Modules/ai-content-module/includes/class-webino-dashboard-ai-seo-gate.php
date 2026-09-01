@@ -51,6 +51,7 @@ final class Webino_Dashboard_AI_Seo_Gate {
 		$seo_on  = Webino_Dashboard_AI_Content_Settings::field_enabled( $entity, 'seo' );
 
 		$text_plain = self::strip( $title . ' ' . $short . ' ' . $content );
+		$body_plain = self::strip( $short . ' ' . $content );
 		$words      = self::word_count( $text_plain );
 
 		$min = (int) ( $ctx['min_words'] ?? 0 );
@@ -71,7 +72,7 @@ final class Webino_Dashboard_AI_Seo_Gate {
 		}
 
 		if ( $main_on && ! empty( $settings['require_site_name'] ) && '' !== $site_name ) {
-			if ( false === mb_stripos( $text_plain, $site_name ) ) {
+			if ( ! self::contains_kw( $text_plain, $site_name ) ) {
 				return new WP_Error( 'ai_site_name', __( 'Site name missing from content.', 'webino-dashboard' ) );
 			}
 		}
@@ -92,15 +93,16 @@ final class Webino_Dashboard_AI_Seo_Gate {
 		);
 
 		$checks = array(
-			'title_kw'   => false !== mb_stripos( $resolved_title, $focus ) || false !== mb_stripos( $title, $focus ),
-			'slug_kw'    => '' === $slug || false !== mb_stripos( $slug, self::slugify_kw( $focus ) ),
+			'title_kw' => self::contains_kw( $resolved_title, $focus ) || self::contains_kw( $title, $focus ),
+			'slug_kw'  => '' === $slug || self::contains_kw( $slug, self::slugify_kw( $focus ) ),
 		);
 		if ( $main_on ) {
-			$checks['content_kw'] = false !== mb_stripos( $text_plain, $focus );
+			// Rank Math–style: keyword must appear in short/body, not only product title / seo.title.
+			$checks['content_kw'] = self::contains_kw( $body_plain, $focus );
 		}
 
 		if ( $seo_desc !== '' ) {
-			$checks['desc_kw'] = false !== mb_stripos( $seo_desc, $focus );
+			$checks['desc_kw'] = self::contains_kw( $seo_desc, $focus );
 		}
 
 		$title_len = mb_strlen( self::strip( $resolved_title ) );
@@ -116,9 +118,13 @@ final class Webino_Dashboard_AI_Seo_Gate {
 		}
 
 		// Allow at most one soft fail among length checks.
-		$hard = array_diff( $failed, array( 'title_len', 'desc_len', 'slug_kw' ) );
+		$hard = array_values( array_diff( $failed, array( 'title_len', 'desc_len', 'slug_kw' ) ) );
 		if ( count( $hard ) > 0 ) {
-			return new WP_Error( 'ai_seo', __( 'SEO checks failed: ', 'webino-dashboard' ) . implode( ', ', $hard ) );
+			return new WP_Error(
+				'ai_seo',
+				self::humanize_hard_fails( $hard ),
+				array( 'failed' => $hard )
+			);
 		}
 
 		$dup = self::check_duplicate_focus( $focus, (string) ( $ctx['exclude_type'] ?? '' ), (int) ( $ctx['exclude_id'] ?? 0 ) );
@@ -127,6 +133,112 @@ final class Webino_Dashboard_AI_Seo_Gate {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Case-insensitive substring match with Persian/Arabic letter normalization.
+	 *
+	 * @param string $haystack Text.
+	 * @param string $needle   Keyword.
+	 * @return bool
+	 */
+	public static function contains_kw( $haystack, $needle ) {
+		$needle = self::normalize_fa( $needle );
+		if ( '' === $needle ) {
+			return false;
+		}
+		return false !== mb_stripos( self::normalize_fa( $haystack ), $needle );
+	}
+
+	/**
+	 * Normalize Persian/Arabic ye/kaf and whitespace for keyword matching.
+	 *
+	 * @param string $text Text.
+	 * @return string
+	 */
+	public static function normalize_fa( $text ) {
+		$text = mb_strtolower( trim( (string) $text ) );
+		$text = str_replace( array( 'ي', 'ك', 'ۀ', 'ة' ), array( 'ی', 'ک', 'ه', 'ه' ), $text );
+		$text = preg_replace( '/\s+/u', ' ', $text );
+		return (string) $text;
+	}
+
+	/**
+	 * Human-readable SEO hard-fail messages.
+	 *
+	 * @param array<int,string> $hard Failed check ids.
+	 * @return string
+	 */
+	public static function humanize_hard_fails( array $hard ) {
+		$map = array(
+			'title_kw'   => __( 'Focus keyword missing from title.', 'webino-dashboard' ),
+			'content_kw' => __( 'Focus keyword missing from product content.', 'webino-dashboard' ),
+			'desc_kw'    => __( 'Focus keyword missing from SEO meta description.', 'webino-dashboard' ),
+		);
+		$parts = array();
+		foreach ( $hard as $id ) {
+			$id = (string) $id;
+			$parts[] = isset( $map[ $id ] ) ? $map[ $id ] : $id;
+		}
+		return implode( ' ', $parts );
+	}
+
+	/**
+	 * Inject exact focus keyword into short/body when only content_kw failed.
+	 *
+	 * @param array<string,mixed> $data     Payload.
+	 * @param array<string,mixed> $gate_ctx Gate context.
+	 * @param WP_Error            $gate     Gate error.
+	 * @return array<string,mixed>|null Patched data or null if not applicable.
+	 */
+	public static function rescue_content_kw( array $data, array $gate_ctx, $gate ) {
+		if ( ! ( $gate instanceof WP_Error ) || 'ai_seo' !== $gate->get_error_code() ) {
+			return null;
+		}
+		$err_data = $gate->get_error_data( 'ai_seo' );
+		$failed   = is_array( $err_data ) && isset( $err_data['failed'] ) && is_array( $err_data['failed'] )
+			? array_values( $err_data['failed'] )
+			: array();
+		if ( array( 'content_kw' ) !== $failed ) {
+			return null;
+		}
+
+		$focus = trim(
+			(string) (
+				$gate_ctx['focus_keyword']
+				?? $data['focus_keyword']
+				?? ( is_array( $data['seo'] ?? null ) ? ( $data['seo']['focus_keyword'] ?? '' ) : '' )
+			)
+		);
+		if ( '' === $focus ) {
+			return null;
+		}
+
+		if ( array_key_exists( 'short_description', $data ) || ( ! isset( $data['excerpt'] ) && ! isset( $data['description'] ) && ! isset( $data['content'] ) ) ) {
+			$short = (string) ( $data['short_description'] ?? '' );
+			$data['short_description'] = '' === $short
+				? $focus
+				: ( self::contains_kw( $short, $focus ) ? $short : ( $focus . '. ' . $short ) );
+		} elseif ( array_key_exists( 'excerpt', $data ) ) {
+			$excerpt = (string) $data['excerpt'];
+			$data['excerpt'] = '' === $excerpt
+				? $focus
+				: ( self::contains_kw( $excerpt, $focus ) ? $excerpt : ( $focus . '. ' . $excerpt ) );
+		} elseif ( array_key_exists( 'description', $data ) ) {
+			$desc = (string) $data['description'];
+			$data['description'] = '' === trim( wp_strip_all_tags( $desc ) )
+				? '<p>' . esc_html( $focus ) . '</p>'
+				: ( self::contains_kw( $desc, $focus ) ? $desc : ( '<p>' . esc_html( $focus ) . '</p>' . $desc ) );
+		} elseif ( array_key_exists( 'content', $data ) ) {
+			$body = (string) $data['content'];
+			$data['content'] = '' === trim( wp_strip_all_tags( $body ) )
+				? '<p>' . esc_html( $focus ) . '</p>'
+				: ( self::contains_kw( $body, $focus ) ? $body : ( '<p>' . esc_html( $focus ) . '</p>' . $body ) );
+		} else {
+			$data['short_description'] = $focus;
+		}
+
+		return $data;
 	}
 
 	/**

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { MarketplaceBadge } from '@/components/data/MarketplaceBadge'
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
+import { MobileListCard } from '@/components/MobileListCard'
 import { ProductRowActions } from '@/components/products/ProductRowActions'
 import type { ProductColumnVisibility, ProductListRow } from '@/components/products/types'
 import { Badge } from '@/components/ui/badge'
@@ -76,6 +77,104 @@ export function ProductsTable({
   }
 
   return (
+    <>
+      <div className="space-y-3 p-3 md:hidden">
+        {items.length === 0 ? (
+          <p className="text-muted-foreground py-8 text-center text-sm">{emptyMessage}</p>
+        ) : (
+          items.map((row) => {
+            const currency = row.wfcp?.settings_currency ?? store.currency
+            const wfcp = row.wfcp
+            const checked = selectedIds.includes(row.id)
+            return (
+              <MobileListCard
+                key={row.id}
+                leading={
+                  selectable ? (
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => toggleRow(row.id, v === true)}
+                      aria-label={t('products.selectProduct', { name: row.name })}
+                    />
+                  ) : null
+                }
+                media={
+                  <div className="flex gap-3">
+                    {row.image_url ? (
+                      <LazyImage
+                        src={row.image_url}
+                        alt={row.name || t('a11y.thumbnail')}
+                        className="size-16 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="bg-muted text-muted-foreground flex size-16 shrink-0 items-center justify-center rounded-lg text-xs">
+                        —
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <Link to={`/shop/products/${row.id}`} className="line-clamp-2 font-medium hover:underline">
+                        {row.name}
+                      </Link>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant="secondary">{translateEnum(t, 'products.status', row.status)}</Badge>
+                        {row.sku ? <span className="text-muted-foreground text-xs">{row.sku}</span> : null}
+                      </div>
+                    </div>
+                  </div>
+                }
+                actions={
+                  <ProductRowActions
+                    row={row}
+                    busy={busyId === row.id}
+                    onDuplicate={() => onDuplicate(row.id)}
+                    onDelete={() => onDelete(row.id)}
+                    onSyncChannel={(provider) => onSyncChannel(row.id, provider)}
+                  />
+                }
+              >
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+                  <div>
+                    <dt className="text-muted-foreground text-xs">{t('products.colPrice')}</dt>
+                    <dd>
+                      <MoneyDisplay
+                        amount={parseFloat(row.price || '0')}
+                        currency={currency}
+                        currencySymbol={store.currencySymbol}
+                        locale={locale}
+                      />
+                    </dd>
+                  </div>
+                  {columns.retail ? (
+                    <div>
+                      <dt className="text-muted-foreground text-xs">{t('products.colRetail')}</dt>
+                      <dd>{moneyCell(wfcp?.retail ?? null, currency, store.currencySymbol, locale)}</dd>
+                    </div>
+                  ) : null}
+                  <div>
+                    <dt className="text-muted-foreground text-xs">{t('products.colStock')}</dt>
+                    <dd>
+                      {row.manage_stock
+                        ? (row.stock ?? '—')
+                        : translateEnum(t, 'products.stockStatus', row.stock_status)}
+                    </dd>
+                  </div>
+                  {row.brand?.name ? (
+                    <div>
+                      <dt className="text-muted-foreground text-xs">{t('products.colBrand')}</dt>
+                      <dd>{row.brand.name}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+                {row.marketplace_badges && row.marketplace_badges.length > 0 ? (
+                  <MarketplaceBadge slugs={row.marketplace_badges} />
+                ) : null}
+              </MobileListCard>
+            )
+          })
+        )}
+      </div>
+
+      <div className="hidden md:block">
     <Table>
       <TableHeader>
         <TableRow>
@@ -254,5 +353,7 @@ export function ProductsTable({
         )}
       </TableBody>
     </Table>
+      </div>
+    </>
   )
 }

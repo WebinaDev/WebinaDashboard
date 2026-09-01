@@ -187,10 +187,7 @@ final class Webino_Dashboard_REST_Marketplace {
 	 * @return bool
 	 */
 	public static function perm_manage() {
-		if ( ! Webino_Dashboard_Rest_Base::can( 'manage_options' ) ) {
-			return false;
-		}
-		return Webino_Dashboard_License::instance()->is_license_active( false );
+		return Webino_Dashboard_Rest_Base::can( 'manage_options' );
 	}
 
 	/**
@@ -741,7 +738,7 @@ final class Webino_Dashboard_REST_Marketplace {
 	public static function purchase_url( WP_REST_Request $request ) {
 		$slug    = sanitize_key( (string) $request['slug'] );
 		$license = Webino_Dashboard_License::instance();
-		$callback = home_url( '/dashboard/marketplace/payment-callback' );
+		$callback = Webino_Dashboard_Rewrite::url( 'marketplace/payment-callback' );
 		$callback = add_query_arg(
 			array(
 				'module_slug' => rawurlencode( $slug ),

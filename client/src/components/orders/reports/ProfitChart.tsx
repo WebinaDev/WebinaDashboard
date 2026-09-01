@@ -31,22 +31,22 @@ export function ProfitChart({ series, compareSeries, locale }: ProfitChartProps)
   const hasCompare = Boolean(compareSeries?.length)
 
   return (
-    <Card className="shadow-sm">
+    <Card className="min-w-0 overflow-hidden shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t('reports.chart.profit')}</CardTitle>
       </CardHeader>
-      <CardContent className="h-80 pt-0">
+      <CardContent className="h-64 min-w-0 pt-0 sm:h-80">
         {empty ? (
           <p className="text-muted-foreground flex h-full items-center justify-center text-sm">{t('reports.emptyHint')}</p>
         ) : (
           <ChartContainer
             config={{
-              revenue: { label: t('reports.revenue'), color: 'hsl(var(--chart-1))' },
-              cogs: { label: t('reports.table.cogs'), color: 'hsl(var(--chart-2))' },
-              profit: { label: t('reports.table.profit'), color: 'hsl(var(--chart-3))' },
-              compareProfit: { label: t('reports.comparePeriod'), color: 'hsl(var(--chart-4))' },
+              revenue: { label: t('reports.revenue'), color: 'var(--color-chart-1)' },
+              cogs: { label: t('reports.table.cogs'), color: 'var(--color-chart-2)' },
+              profit: { label: t('reports.table.profit'), color: 'var(--color-chart-3)' },
+              compareProfit: { label: t('reports.comparePeriod'), color: 'var(--color-chart-4)' },
             }}
-            className="h-full w-full"
+            className="h-full min-w-0 w-full"
           >
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} />

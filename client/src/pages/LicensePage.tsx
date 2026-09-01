@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, LayoutDashboard, RefreshCw, ShieldCheck, Stethoscope } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -35,6 +35,7 @@ type LicenseSnap = {
   message?: string
   expiry?: string | null
   domain?: string
+  force_license_page?: boolean
 }
 
 type DiagnosticProbe = {
@@ -79,7 +80,6 @@ export default function LicensePage() {
   const bq = useBootstrapQuery()
   const canManage = Boolean(bq.data?.capabilities?.includes('manage_options'))
   const [diagReport, setDiagReport] = useState<DiagnosticsResponse | null>(null)
-  const autoSynced = useRef(false)
 
   const lic = useMemo(
     (): LicenseSnap | undefined => bq.data?.license ?? window.webinoDashboard.license,
@@ -127,15 +127,6 @@ export default function LicensePage() {
     onError: (e: Error) => toastApiError(t, e),
   })
 
-  useEffect(() => {
-    if (bq.isLoading || autoSynced.current) return
-    const snap = bq.data?.license ?? window.webinoDashboard?.license
-    if (!snap || snap.active || snap.demo) return
-    autoSynced.current = true
-    void check.mutateAsync()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot auto sync when bootstrap shows inactive
-  }, [bq.isLoading, bq.data?.license])
-
   const diagnostics = useMutation({
     mutationFn: () =>
       apiFetch<DiagnosticsResponse>('license/diagnostics', {
@@ -151,9 +142,21 @@ export default function LicensePage() {
   const baseDash = window.webinoDashboard.baseUrl.replace(/\/$/, '')
   const actionsBusy = check.isPending || diagnostics.isPending
   const blockedStatus = (lic?.status ?? '').toLowerCase()
-  const showInactiveHint = !lic?.active && !lic?.demo && (blockedStatus === 'inactive' || blockedStatus === 'not_found')
+  const licFull = bq.data?.license ?? window.webinoDashboard?.license
+  const isLocked = Boolean(licFull?.force_license_page)
+  const showInactiveHint =
+    isLocked ||
+    (!lic?.active &&
+      !lic?.demo &&
+      (blockedStatus === 'inactive' ||
+        blockedStatus === 'not_found' ||
+        blockedStatus === 'expired' ||
+        blockedStatus === 'invalid' ||
+        blockedStatus === 'cancelled'))
 
-  if (bq.isError) {
+  // Fail-open: refetch can set isError while snapshot/data still exists — keep the page usable.
+  const hasBootstrap = Boolean(bq.data) || Boolean(window.webinoDashboard?.license)
+  if (bq.isError && !hasBootstrap) {
     return (
       <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
         <Card className="border-destructive/40 w-full max-w-lg shadow-md">
@@ -186,6 +189,15 @@ export default function LicensePage() {
             {t('license.heroSubtitle')}
           </p>
         </header>
+
+        {bq.isError && hasBootstrap ? (
+          <p
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-sm"
+            role="alert"
+          >
+            {t('license.bootstrapErrorBody')}
+          </p>
+        ) : null}
 
         <Card className="overflow-hidden border shadow-lg">
           <div className="from-primary/[0.07] relative border-b bg-gradient-to-br to-transparent px-6 pb-5 pt-6">
@@ -271,7 +283,11 @@ export default function LicensePage() {
                     {t('license.helpTitle')}
                   </h3>
                   <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                    {showInactiveHint ? t('license.zeroTouchBlocked') : t('license.helpBody')}
+                    {isLocked
+                      ? t('license.lockedBody')
+                      : showInactiveHint
+                        ? t('license.zeroTouchBlocked')
+                        : t('license.helpBody')}
                   </p>
                 </section>
               </>
@@ -305,15 +321,17 @@ export default function LicensePage() {
               </Button>
             ) : null}
 
-            <div className="flex w-full flex-col gap-2 sm:flex-row">
-              <Button variant="outline" className="gap-2 sm:flex-1" asChild>
-                <Link to="/">
-                  <LayoutDashboard className="size-4 shrink-0" aria-hidden />
-                  {t('license.goDashboard')}
-                  <ArrowRight className="ms-auto size-4 shrink-0 opacity-70 rtl:rotate-180" aria-hidden />
-                </Link>
-              </Button>
-            </div>
+            {!isLocked ? (
+              <div className="flex w-full flex-col gap-2 sm:flex-row">
+                <Button variant="outline" className="gap-2 sm:flex-1" asChild>
+                  <Link to="/">
+                    <LayoutDashboard className="size-4 shrink-0" aria-hidden />
+                    {t('license.goDashboard')}
+                    <ArrowRight className="ms-auto size-4 shrink-0 opacity-70 rtl:rotate-180" aria-hidden />
+                  </Link>
+                </Button>
+              </div>
+            ) : null}
 
             {bq.isSuccess ? (
               <p className="text-muted-foreground text-center text-sm leading-relaxed sm:text-start">{t('license.zeroTouchHint')}</p>

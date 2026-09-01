@@ -315,6 +315,12 @@ final class Webino_Dashboard_REST_AI_Content {
 
 		register_rest_route(
 			self::NS,
+			'/ai-content/proposals/catalog/apply-all',
+			array_merge( $products, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'proposals_catalog_apply_all' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
 			'/ai-content/proposals/(?P<id>\d+)/apply',
 			array_merge( $products, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'proposals_apply' ) ) )
 		);
@@ -1171,6 +1177,19 @@ final class Webino_Dashboard_REST_AI_Content {
 		if ( is_wp_error( $res ) ) {
 			return $res;
 		}
+		return new WP_REST_Response( $res );
+	}
+
+	/**
+	 * Apply all pending catalog proposals.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function proposals_catalog_apply_all( $request ) {
+		$body  = $request->get_json_params();
+		$limit = is_array( $body ) && isset( $body['limit'] ) ? (int) $body['limit'] : 500;
+		$res   = Webino_Dashboard_AI_Proposals::apply_all_pending( 'catalog', $limit );
 		return new WP_REST_Response( $res );
 	}
 

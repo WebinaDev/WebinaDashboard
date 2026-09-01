@@ -10,7 +10,6 @@ const loadedLocales = new Set<string>()
 
 async function loadLocaleBundle(lng: string): Promise<Record<string, string>> {
   if (lng === 'fa') {
-    await import('../fonts-fa.css')
     return (await import('./locales/fa.json')).default
   }
   return (await import('./locales/en.json')).default

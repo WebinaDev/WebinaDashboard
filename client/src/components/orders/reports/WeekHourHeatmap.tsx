@@ -74,7 +74,7 @@ export function WeekHourHeatmap({ cells, currency, currencySymbol, locale }: Wee
                             <div
                               className="aspect-square min-h-5 rounded-sm border border-border/40"
                               style={{
-                                backgroundColor: orders > 0 ? `hsl(var(--chart-1) / ${alpha})` : 'hsl(var(--muted))',
+                                backgroundColor: orders > 0 ? `color-mix(in oklab, var(--color-chart-1) ${Math.round(alpha * 100)}%, transparent)` : 'var(--color-muted)',
                               }}
                             />
                           </TooltipTrigger>
@@ -101,7 +101,7 @@ export function WeekHourHeatmap({ cells, currency, currencySymbol, locale }: Wee
               <span>{t('reports.heatmap.legendMin')}</span>
               <div className="flex gap-0.5">
                 {[0.15, 0.35, 0.55, 0.75, 1].map((a) => (
-                  <div key={a} className="size-3 rounded-sm" style={{ backgroundColor: `hsl(var(--chart-1) / ${a})` }} />
+                  <div key={a} className="size-3 rounded-sm" style={{ backgroundColor: `color-mix(in oklab, var(--color-chart-1) ${Math.round(a * 100)}%, transparent)` }} />
                 ))}
               </div>
               <span>{t('reports.heatmap.legendMax')}</span>

@@ -48,12 +48,45 @@ class Webino_Dashboard_Rest_Base {
 	}
 
 	/**
-	 * List or view shop orders (staff or account portal).
+	 * List or view shop orders (staff, seller own-orders, or account portal).
 	 *
 	 * @return bool
 	 */
 	public static function can_access_orders() {
-		return self::can( 'edit_shop_orders' ) || self::has_account_portal();
+		return self::can( 'edit_shop_orders' )
+			|| self::can( 'webino_view_own_shop_orders' )
+			|| self::has_account_portal();
+	}
+
+	/**
+	 * Create POS / manual shop orders.
+	 *
+	 * @return bool
+	 */
+	public static function can_create_orders() {
+		return self::can( 'edit_shop_orders' )
+			|| self::can( 'webino_create_shop_orders' )
+			|| self::can( 'webino_pos' );
+	}
+
+	/**
+	 * Use the cashier / POS UI.
+	 *
+	 * @return bool
+	 */
+	public static function can_use_pos() {
+		return self::can( 'webino_pos' ) || self::can( 'edit_shop_orders' );
+	}
+
+	/**
+	 * Seller sees only orders they created (not full shop staff).
+	 *
+	 * @return bool
+	 */
+	public static function is_seller_only() {
+		return self::can( 'webino_view_own_shop_orders' )
+			&& ! self::can( 'edit_shop_orders' )
+			&& ! self::has_account_portal();
 	}
 
 	/**
@@ -62,7 +95,9 @@ class Webino_Dashboard_Rest_Base {
 	 * @return bool
 	 */
 	public static function is_portal_only() {
-		return self::has_account_portal() && ! self::can( 'edit_shop_orders' );
+		return self::has_account_portal()
+			&& ! self::can( 'edit_shop_orders' )
+			&& ! self::can( 'webino_view_own_shop_orders' );
 	}
 
 	/**
@@ -81,11 +116,20 @@ class Webino_Dashboard_Rest_Base {
 		if ( self::can( 'edit_shop_orders' ) ) {
 			return true;
 		}
-		if ( ! self::has_account_portal() || ! function_exists( 'wc_get_order' ) ) {
+		if ( ! function_exists( 'wc_get_order' ) ) {
 			return false;
 		}
 		$o = wc_get_order( (int) $order_id );
 		if ( ! $o ) {
+			return false;
+		}
+		if ( self::can( 'webino_view_own_shop_orders' ) ) {
+			$created_by = (int) $o->get_meta( '_webino_created_by', true );
+			if ( $created_by === get_current_user_id() ) {
+				return true;
+			}
+		}
+		if ( ! self::has_account_portal() ) {
 			return false;
 		}
 		return (int) $o->get_customer_id() === get_current_user_id();
@@ -109,7 +153,9 @@ class Webino_Dashboard_Rest_Base {
 	 * @return bool
 	 */
 	public static function can_view_accounting() {
-		return self::can( 'manage_options' );
+		return self::can( 'webino_manage_accounting' )
+			|| self::can( 'manage_woocommerce' )
+			|| self::can( 'manage_options' );
 	}
 
 	/**
