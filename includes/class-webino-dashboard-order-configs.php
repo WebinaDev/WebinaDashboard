@@ -18,6 +18,53 @@ class Webino_Dashboard_Order_Configs {
 	const CART_KEY  = 'webino_order_cfg';
 	const POST_KEY  = 'webino_cfg';
 
+	// #region agent log
+	/**
+	 * @param string              $message       Log message.
+	 * @param array<string,mixed> $data          Payload.
+	 * @param string              $hypothesis_id Hypothesis id.
+	 * @return void
+	 */
+	private static function agent_debug_log( $message, array $data, $hypothesis_id ) {
+		$line = wp_json_encode(
+			array(
+				'sessionId'    => 'ff9619',
+				'timestamp'    => (int) round( microtime( true ) * 1000 ),
+				'location'     => 'order-configs.php',
+				'message'      => (string) $message,
+				'data'         => $data,
+				'hypothesisId' => (string) $hypothesis_id,
+			),
+			JSON_UNESCAPED_UNICODE
+		);
+		if ( ! is_string( $line ) ) {
+			return;
+		}
+		$paths = array(
+			dirname( WEBINO_DASHBOARD_DIR ) . '/.cursor/debug-ff9619.log',
+		);
+		if ( defined( 'WP_CONTENT_DIR' ) ) {
+			$paths[] = WP_CONTENT_DIR . '/uploads/webino-debug-ff9619.log';
+		}
+		foreach ( $paths as $path ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			@file_put_contents( $path, $line . "\n", FILE_APPEND | LOCK_EX );
+		}
+	}
+	// #endregion
+
+	/**
+	 * Public wrapper for cross-class debug logging during investigation.
+	 *
+	 * @param string              $message       Log message.
+	 * @param array<string,mixed> $data          Payload.
+	 * @param string              $hypothesis_id Hypothesis id.
+	 * @return void
+	 */
+	public static function agent_debug_log_public( $message, array $data, $hypothesis_id ) {
+		self::agent_debug_log( $message, $data, $hypothesis_id );
+	}
+
 	/**
 	 * Keep WooCommerce taxonomy keys intact (Persian pa_* names break sanitize_key).
 	 *
@@ -135,6 +182,17 @@ class Webino_Dashboard_Order_Configs {
 			return;
 		}
 		update_post_meta( $product_id, self::META_KEY, $clean );
+		// #region agent log
+		self::agent_debug_log(
+			'save_configs',
+			array(
+				'product_id' => $product_id,
+				'count'      => count( $clean ),
+				'configs'    => $clean,
+			),
+			'H-save'
+		);
+		// #endregion
 	}
 
 	/**
@@ -345,13 +403,28 @@ class Webino_Dashboard_Order_Configs {
 		if ( ! $product ) {
 			return array();
 		}
-		$axes = array();
-		foreach ( self::get_configs( $product_id ) as $cfg ) {
+		$axes    = array();
+		$configs = self::get_configs( $product_id );
+		foreach ( $configs as $cfg ) {
 			$axis = self::axis_for_config( $product, $cfg );
 			if ( is_array( $axis ) ) {
 				$axes[] = $axis;
 			}
 		}
+		// #region agent log
+		if ( is_product() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			self::agent_debug_log(
+				'storefront_axes',
+				array(
+					'product_id'   => $product_id,
+					'config_count' => count( $configs ),
+					'axis_count'   => count( $axes ),
+					'configs'      => $configs,
+				),
+				'H-render'
+			);
+		}
+		// #endregion
 		return $axes;
 	}
 
@@ -753,6 +826,16 @@ class Webino_Dashboard_Order_Configs {
 		$parent_id = $product->is_type( 'variation' ) ? (int) $product->get_parent_id() : (int) $product->get_id();
 		$axes      = self::storefront_axes( $parent_id );
 		if ( array() === $axes ) {
+			// #region agent log
+			self::agent_debug_log(
+				'render_picker_skipped',
+				array(
+					'product_id' => $parent_id,
+					'reason'     => 'no_axes',
+				),
+				'H-render'
+			);
+			// #endregion
 			return;
 		}
 
@@ -779,6 +862,17 @@ class Webino_Dashboard_Order_Configs {
 		}
 
 		self::$picker_rendered = true;
+		// #region agent log
+		self::agent_debug_log(
+			'render_picker_ok',
+			array(
+				'product_id' => $parent_id,
+				'axis_count' => count( $axes ),
+				'standalone' => (bool) $standalone,
+			),
+			'H-render'
+		);
+		// #endregion
 	}
 
 	/**
