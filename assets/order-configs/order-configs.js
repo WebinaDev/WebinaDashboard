@@ -1,6 +1,23 @@
 (function ($) {
   'use strict';
 
+  function decodeValue(value) {
+    try {
+      return decodeURIComponent(String(value || ''));
+    } catch (e) {
+      return String(value || '');
+    }
+  }
+
+  function valuesMatch(a, b) {
+    a = String(a || '');
+    b = String(b || '');
+    if (a === b) {
+      return true;
+    }
+    return decodeValue(a) === decodeValue(b);
+  }
+
   function syncSelected($root) {
     $root.find('.wd-swatches[data-wcf-select]').each(function () {
       var $wrap = $(this);
@@ -10,7 +27,7 @@
       }
       var selected = String($select.val() || '');
       $wrap.find('.wd-swatch').each(function () {
-        var isSelected = (this.getAttribute('data-value') || '') === selected && selected !== '';
+        var isSelected = valuesMatch(this.getAttribute('data-value') || '', selected) && selected !== '';
         this.classList.toggle('is-selected', isSelected);
         this.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
       });
@@ -31,25 +48,26 @@
     }
     $root.data('wcfBound', true);
 
-    $root.on('click.wcf', '.wd-swatch', function (e) {
+    $root.on('click.wcf', '.wd-swatches[data-wcf-select] .wd-swatch', function (e) {
       e.preventDefault();
+      e.stopPropagation();
       if (this.classList.contains('is-disabled')) {
         return;
       }
-      var $wrap = $(this).closest('.wd-swatches');
-      var $select = $wrap.find('select');
+      var $wrap = $(this).closest('.wd-swatches[data-wcf-select]');
+      var $select = $wrap.find('select').first();
       var value = this.getAttribute('data-value') || '';
       if (!$select.length) {
         return;
       }
-      $select.val(value);
+      $select.val(value).trigger('change');
       syncSelected($root);
       $root.removeClass('is-invalid');
     });
 
     $root.on(
       'change.wcf',
-      'select.wcf-plain-select, .wd-swatch-select-hidden select, .wd-swatches[data-wcf-select] select',
+      'select.wcf-plain-select, .wd-swatches[data-wcf-select] .wd-swatch-select-hidden select, .wd-swatches[data-wcf-select] select',
       function () {
         syncSelected($root);
       }
@@ -62,11 +80,9 @@
     if (!$form.length) {
       return;
     }
-    bindRoot($form);
-    if ($form.data('wcfFormBound')) {
-      return;
-    }
-    $form.data('wcfFormBound', true);
+    $form.find('.wcf-order-config-fields, table.webino-order-configs, .wcf-order-configs').each(function () {
+      bindRoot($(this));
+    });
   }
 
   function rowNodes($block) {
@@ -119,13 +135,12 @@
 
       if ($tbody.length) {
         if ($blockTable.length && $blockTable.get(0) === $tbody.closest('table').get(0)) {
-          $tbody.addClass('wcf-fulfillment');
+          $block.addClass('wcf-order-config-fields');
           bindForm($form);
           $block.data('wcfInjected', true);
           return;
         }
 
-        $tbody.addClass('wcf-fulfillment');
         $rows.appendTo($tbody);
         $block.remove();
         bindForm($form);
@@ -135,17 +150,17 @@
 
       var $divVariations = $form.find('.variations').not('table').first();
       if ($divVariations.length) {
-        $divVariations.addClass('wcf-fulfillment');
+        var $configWrap = $('<div class="wcf-order-config-fields wcf-fulfillment"></div>');
         $rows.each(function () {
           var $node = $(this);
           if ($node.is('tr')) {
             $node = convertRowToDiv($node);
           }
-          $divVariations.append($node);
+          $configWrap.append($node);
         });
+        $divVariations.before($configWrap);
         $block.remove();
-        bindRoot($divVariations);
-        bindForm($form);
+        bindRoot($configWrap);
         $block.data('wcfInjected', true);
         return;
       }
@@ -163,7 +178,8 @@
 
   function init() {
     injectOrderConfigs();
-    $('.wcf-fulfillment').each(function () {
+    $('.wd-swatches[data-wcf-select] .wd-swatch').removeClass('is-disabled').attr('aria-disabled', 'false');
+    $('.wcf-order-config-fields, table.webino-order-configs, .wcf-order-configs').each(function () {
       bindRoot($(this));
     });
     $('form.variations_form, form.cart').each(function () {
@@ -183,7 +199,7 @@
     if (!form || !form.classList || !form.classList.contains('cart')) {
       return;
     }
-    var fields = form.querySelectorAll('.wcf-field, tr.wcf-field');
+    var fields = form.querySelectorAll('.wcf-order-config-fields .wcf-field');
     if (!fields.length) {
       return;
     }

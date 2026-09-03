@@ -19,6 +19,13 @@ class Webino_Dashboard_Variation_Swatches {
 	const YITH_MIGRATE_OPTION = 'webino_dashboard_yith_swatch_meta_migrated';
 
 	/**
+	 * Prevents infinite recursion with Order_Configs::enqueue_for_product().
+	 *
+	 * @var bool
+	 */
+	private static $storefront_enqueue_running = false;
+
+	/**
 	 * @return void
 	 */
 	public static function init() {
@@ -549,6 +556,9 @@ class Webino_Dashboard_Variation_Swatches {
 	 * @return void
 	 */
 	public static function enqueue() {
+		if ( self::$storefront_enqueue_running ) {
+			return;
+		}
 		if ( is_admin() || ! function_exists( 'is_product' ) || ! is_product() ) {
 			return;
 		}
@@ -557,6 +567,7 @@ class Webino_Dashboard_Variation_Swatches {
 		if ( ! is_readable( $css ) ) {
 			return;
 		}
+		self::$storefront_enqueue_running = true;
 		$ver = defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '1.0';
 		if ( is_readable( $css ) ) {
 			$ver = $ver . '-' . (string) filemtime( $css );
@@ -575,7 +586,39 @@ class Webino_Dashboard_Variation_Swatches {
 				(string) filemtime( $js ),
 				true
 			);
+			$product_id = (int) get_queried_object_id();
+			if ( $product_id <= 0 && function_exists( 'get_the_ID' ) ) {
+				$product_id = (int) get_the_ID();
+			}
+			$oc_css = WEBINO_DASHBOARD_DIR . 'assets/order-configs/order-configs.css';
+			$oc_js  = WEBINO_DASHBOARD_DIR . 'assets/order-configs/order-configs.js';
+			if ( $product_id > 0 && class_exists( 'Webino_Dashboard_Order_Configs', false ) ) {
+				$configs = Webino_Dashboard_Order_Configs::get_configs( $product_id );
+				if ( array() !== $configs ) {
+					Webino_Dashboard_Order_Configs::enqueue_order_config_assets();
+				}
+			}
+			wp_localize_script(
+				'webino-variation-swatches',
+				'webinoStorefront',
+				array(
+					'productId'            => $product_id,
+					'orderConfigPickerUrl' => $product_id > 0
+						? rest_url( 'webino-dashboard/v1/products/' . $product_id . '/order-config-picker' )
+						: '',
+					'orderConfigPickerUrlAlt' => $product_id > 0
+						? rest_url( 'webino-dashboard/v1/storefront/products/' . $product_id . '/order-config-picker' )
+						: '',
+					'orderConfigsCss'      => is_readable( $oc_css )
+						? plugins_url( 'assets/order-configs/order-configs.css', WEBINO_DASHBOARD_FILE )
+						: '',
+					'orderConfigsJs'       => is_readable( $oc_js )
+						? plugins_url( 'assets/order-configs/order-configs.js', WEBINO_DASHBOARD_FILE )
+						: '',
+				)
+			);
 		}
+		self::$storefront_enqueue_running = false;
 	}
 
 	/**
@@ -601,11 +644,16 @@ class Webino_Dashboard_Variation_Swatches {
 		if ( '' === $select_name || ! is_array( $options ) || array() === $options ) {
 			return '';
 		}
-		$ctx = '' !== $taxonomy ? self::context_for_taxonomy( $taxonomy ) : array(
+		$is_order_config = false !== strpos( $select_name, 'webino_cfg' );
+		$ctx             = '' !== $taxonomy ? self::context_for_taxonomy( $taxonomy ) : array(
 			'id'         => 0,
 			'type'       => 'select',
 			'show_label' => true,
 		);
+		if ( $is_order_config && ! in_array( $ctx['type'], array( 'color', 'image', 'button' ), true ) ) {
+			$ctx['type']       = 'button';
+			$ctx['show_label'] = true;
+		}
 		if ( ! in_array( $ctx['type'], array( 'color', 'image', 'button' ), true ) ) {
 			return self::render_plain_select( $taxonomy, $options, $selected, $select_name, $product, $select_id );
 		}
@@ -768,11 +816,15 @@ class Webino_Dashboard_Variation_Swatches {
 		$items = array();
 		foreach ( $options as $option ) {
 			$option = (string) $option;
+			$value  = $option;
 			$name   = $option;
 			$slug   = $option;
 			$term   = null;
 			if ( taxonomy_exists( $taxonomy ) ) {
 				$term = get_term_by( 'slug', $option, $taxonomy );
+				if ( ! $term ) {
+					$term = get_term_by( 'slug', rawurldecode( $option ), $taxonomy );
+				}
 				if ( ! $term ) {
 					$term = get_term_by( 'name', $option, $taxonomy );
 				}
@@ -780,16 +832,17 @@ class Webino_Dashboard_Variation_Swatches {
 			$color = '';
 			$image = '';
 			if ( $term instanceof WP_Term ) {
-				$name  = $term->name;
-				$slug  = $term->slug;
+				$name = $term->name;
+				$slug = rawurldecode( (string) $term->slug );
 				$color = self::term_color( (int) $term->term_id );
 				$img   = self::term_image( (int) $term->term_id );
 				$image = $img['url'];
 			} elseif ( $product instanceof WC_Product ) {
 				$name = rawurldecode( $option );
+				$slug = rawurldecode( $option );
 			}
 			$items[] = array(
-				'value' => $slug,
+				'value' => $value,
 				'slug'  => $slug,
 				'name'  => $name,
 				'color' => $color,

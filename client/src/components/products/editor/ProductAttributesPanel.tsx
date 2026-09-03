@@ -18,7 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronUp, ChevronsUpDown, GripVertical } from 'lucide-react'
-import { useMemo, useState, useEffect, useRef, type Dispatch, type SetStateAction } from 'react'
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -62,10 +62,17 @@ type ProductAttributesPanelProps = {
 const CREATE_TYPES: AttributeType[] = ['select', 'text', 'color', 'image', 'button']
 
 function parseOptions(value: string): string[] {
-  return value
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const part of value.split(',')) {
+    const s = part.trim()
+    if (!s || seen.has(s)) {
+      continue
+    }
+    seen.add(s)
+    out.push(s)
+  }
+  return out
 }
 
 function joinOptions(values: string[]): string {
@@ -119,8 +126,17 @@ function OrderConfigDefaultSelect({
   const selected = useMemo(() => new Set(selectedOptionNames.map((s) => s.trim()).filter(Boolean)), [selectedOptionNames])
   const terms = useMemo(() => {
     const items = q.data?.items ?? []
-    if (selected.size === 0) return items
-    return items.filter(
+    const seen = new Set<number>()
+    const unique = items.filter((term) => {
+      const id = Number(term.id)
+      if (!Number.isFinite(id) || id < 1 || seen.has(id)) {
+        return false
+      }
+      seen.add(id)
+      return true
+    })
+    if (selected.size === 0) return unique
+    return unique.filter(
       (term) =>
         selected.has(term.name) ||
         selected.has(term.slug) ||
@@ -128,24 +144,7 @@ function OrderConfigDefaultSelect({
     )
   }, [q.data?.items, selected])
   const matchedValue = useMemo(() => resolveDefaultTermSlug(value, terms), [value, terms])
-  const selectValue = matchedValue || terms[0]?.slug || terms[0]?.id?.toString() || ''
-  const seededRef = useRef(false)
-  useEffect(() => {
-    seededRef.current = false
-  }, [attributeId])
-  useEffect(() => {
-    if (value.trim() !== '' || terms.length === 0) {
-      return
-    }
-    if (seededRef.current) {
-      return
-    }
-    seededRef.current = true
-    const first = terms[0]?.slug || (terms[0]?.id != null ? String(terms[0].id) : '')
-    if (first) {
-      onChange(first)
-    }
-  }, [value, terms, onChange, attributeId])
+  const selectValue = matchedValue
   if (terms.length === 0) {
     return (
       <p className="text-muted-foreground text-xs">{t('products.editor.noAttributesSelected')}</p>
@@ -315,7 +314,14 @@ function SortableAttributeRow({
             disabled={row.variation}
             onCheckedChange={(v) => {
               if (v === true) {
-                onUpdate({ order_config: true, variation: false })
+                const first = selectedTerms[0] ?? ''
+                onUpdate({
+                  order_config: true,
+                  variation: false,
+                  order_config_default: row.order_config_default?.trim()
+                    ? row.order_config_default
+                    : first,
+                })
               } else {
                 onUpdate({ order_config: false, order_config_default: '' })
               }

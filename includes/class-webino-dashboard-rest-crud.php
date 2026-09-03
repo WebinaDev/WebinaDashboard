@@ -29,6 +29,16 @@ class Webino_Dashboard_REST_Crud {
 	public static function register() {
 		register_rest_route(
 			self::NS,
+			'/products/(?P<id>\d+)/order-config-picker',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'order_config_picker' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/dashboard/home',
 			array(
 				'methods'             => 'GET',
@@ -7071,5 +7081,18 @@ class Webino_Dashboard_REST_Crud {
 			return new WP_Error( 'fail', __( 'Could not delete comment.', 'webino-dashboard' ), array( 'status' => 500 ) );
 		}
 		return new WP_REST_Response( array( 'deleted' => true ) );
+	}
+
+	/**
+	 * Public storefront picker HTML (order-config attributes on PDP).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function order_config_picker( $request ) {
+		if ( ! class_exists( 'Webino_Dashboard_Order_Configs', false ) ) {
+			return new WP_REST_Response( array( 'html' => '' ), 200 );
+		}
+		return Webino_Dashboard_Order_Configs::rest_storefront_picker( $request );
 	}
 }

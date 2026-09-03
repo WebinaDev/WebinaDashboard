@@ -85,7 +85,18 @@ export function ProductAttributeTermsPicker({
     onError: (e: Error) => toastApiError(t, e),
   })
 
-  const terms = q.data?.items ?? []
+  const terms = useMemo(() => {
+    const items = q.data?.items ?? []
+    const seen = new Set<number>()
+    return items.filter((term) => {
+      const id = Number(term.id)
+      if (!Number.isFinite(id) || id < 1 || seen.has(id)) {
+        return false
+      }
+      seen.add(id)
+      return true
+    })
+  }, [q.data?.items])
   const selectedSet = useMemo(() => new Set(selected.map(String)), [selected])
 
   function isSelected(term: AttributeTerm): boolean {

@@ -149,6 +149,12 @@ final class Webino_Dashboard_Plugin {
 				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				@opcache_reset();
 			}
+			if ( function_exists( 'litespeed_purge_all' ) ) {
+				litespeed_purge_all();
+			}
+			if ( has_action( 'litespeed_purge_all' ) ) {
+				do_action( 'litespeed_purge_all' );
+			}
 		}
 	}
 
