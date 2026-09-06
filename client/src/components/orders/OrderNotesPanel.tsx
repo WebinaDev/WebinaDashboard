@@ -67,13 +67,16 @@ export function OrderNotesPanel({ orderId, notes, locale, onChanged }: OrderNote
           <li className="text-muted-foreground text-sm">{t('orders.noNotes')}</li>
         ) : (
           notes.map((note) => (
-            <li key={note.id} className="rounded-md border bg-muted/20 p-3 last:border-0">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{note.content}</p>
+            <li key={note.id} className="bg-muted/20 last:border-0 rounded-md border p-3">
+              <div className="flex min-w-0 items-start justify-between gap-2">
+                <p className="min-w-0 flex-1 text-sm leading-relaxed break-words whitespace-pre-wrap">
+                  {note.content}
+                </p>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
+                  className="shrink-0"
                   disabled={deleteNote.isPending}
                   onClick={() => void deleteNote.mutateAsync(note.id)}
                   title={t('common.delete')}

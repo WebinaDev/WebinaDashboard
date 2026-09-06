@@ -1,8 +1,14 @@
 (function ($) {
   'use strict';
 
+  /**
+   * Coffee-profile fulfillment helpers only.
+   * Order-config PDP injection / webinoOrderConfigsInit lives in assets/order-configs/order-configs.js
+   * — do not overwrite it or move rows into WC .variations.
+   */
+
   function syncSelected($root) {
-    $root.find('.wd-swatches[data-wcf-select]').each(function () {
+    $root.find('.wd-swatches[data-wcf-select], .wd-swatches[data-webino-order-config]').each(function () {
       var $wrap = $(this);
       var $select = $wrap.find('select');
       if (!$select.length) {
@@ -12,9 +18,11 @@
       $wrap.find('.wd-swatch').each(function () {
         var isSelected = (this.getAttribute('data-value') || '') === selected && selected !== '';
         this.classList.toggle('is-selected', isSelected);
+        this.classList.remove('is-disabled');
         this.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+        this.setAttribute('aria-disabled', 'false');
       });
-      var $field = $wrap.closest('.wcf-field, [class*="variation-pa_"]');
+      var $field = $wrap.closest('.wcf-field');
       if (selected) {
         $field.addClass('is-valid');
       }
@@ -25,125 +33,44 @@
     if (!$root || !$root.length) {
       return;
     }
-    if ($root.data('wcfBound')) {
+    if ($root.data('wcfCoffeeBound')) {
       syncSelected($root);
       return;
     }
-    $root.data('wcfBound', true);
+    $root.data('wcfCoffeeBound', true);
 
-    $root.on('click.wcf', '.wd-swatch', function (e) {
+    $root.on('click.wcfCoffee', '.wd-swatches[data-wcf-select] .wd-swatch, .wd-swatches[data-webino-order-config] .wd-swatch', function (e) {
       e.preventDefault();
-      if (this.classList.contains('is-disabled')) {
-        return;
-      }
+      e.stopPropagation();
       var $wrap = $(this).closest('.wd-swatches');
       var $select = $wrap.find('select');
       var value = this.getAttribute('data-value') || '';
       if (!$select.length) {
         return;
       }
-      $select.val(value);
+      $select.val(value).trigger('change');
       syncSelected($root);
       $root.removeClass('is-invalid');
     });
 
-    $root.on('change.wcf', 'select.wcf-plain-select, .wd-swatch-select-hidden select, .wd-swatches[data-wcf-select] select', function () {
+    $root.on('change.wcfCoffee', 'select.wcf-plain-select, .wd-swatch-select-hidden select, .wd-swatches[data-wcf-select] select, .wd-swatches[data-webino-order-config] select', function () {
       syncSelected($root);
     });
 
     syncSelected($root);
   }
 
-  function bindForm($form) {
-    if (!$form.length) {
-      return;
-    }
-    bindRoot($form);
-    if ($form.data('wcfFormBound')) {
-      return;
-    }
-    $form.data('wcfFormBound', true);
-  }
-
-  function injectOrderConfigs() {
-    $('.wcf-order-configs').each(function () {
-      var $block = $(this);
-      if ($block.data('wcfInjected')) {
-        return;
-      }
-      var $rows = $block.children('.wcf-field, [class*="variation-pa_"]');
-      if (!$rows.length) {
-        $block.remove();
-        $block.data('wcfInjected', true);
-        return;
-      }
-
-      var $form = $block.closest('form.variations_form');
-      if (!$form.length) {
-        $form = $('form.variations_form').first();
-      }
-
-      var $target = $form.find('.variations').first();
-      if (!$target.length) {
-        $target = $form.find('table.variations tbody').first();
-      }
-
-      if ($target.length) {
-        $target.addClass('wcf-fulfillment');
-        $rows.appendTo($target);
-        $block.remove();
-        if ($form.length) {
-          bindForm($form);
-        }
-      } else {
-        $block.attr('data-wcf-inject-failed', '1');
-        bindRoot($block);
-      }
-
-      $block.data('wcfInjected', true);
-    });
-  }
-
   function init() {
-    injectOrderConfigs();
-    $('.wcf-fulfillment').each(function () {
+    $('.wcf-order-config-fields, .wcf-fulfillment').each(function () {
       bindRoot($(this));
     });
-    $('form.variations_form').each(function () {
-      bindForm($(this));
-    });
+    $('.wcf-order-config-fields .wd-swatch, .wd-swatches[data-webino-order-config] .wd-swatch')
+      .removeClass('is-disabled')
+      .attr('aria-disabled', 'false');
   }
-
-  window.webinoOrderConfigsInit = init;
 
   $(document).ready(init);
   $(window).on('load', init);
   $(document).on('wc_variation_form', 'form.variations_form', init);
   $(window).on('elementor/frontend/init', init);
-
-  document.addEventListener('submit', function (e) {
-    var form = e.target;
-    if (!form || !form.classList || !form.classList.contains('cart')) {
-      return;
-    }
-    var fields = form.querySelectorAll('.wcf-field');
-    if (!fields.length) {
-      return;
-    }
-    var ok = true;
-    fields.forEach(function (field) {
-      var select = field.querySelector('select');
-      if (select && !select.value) {
-        ok = false;
-        field.classList.remove('is-valid');
-      }
-    });
-    if (!ok) {
-      e.preventDefault();
-      var root = form.querySelector('.wcf-fulfillment') || form;
-      if (root && root.classList) {
-        root.classList.add('is-invalid');
-      }
-    }
-  });
 })(jQuery);

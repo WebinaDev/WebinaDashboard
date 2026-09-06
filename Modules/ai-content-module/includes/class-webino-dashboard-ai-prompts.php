@@ -173,6 +173,22 @@ final class Webino_Dashboard_AI_Prompts {
 	/**
 	 * @return array<string,mixed>
 	 */
+	public static function blog_topics_schema() {
+		return array(
+			'topics' => array(
+				array(
+					'topic'         => 'string',
+					'focus_keyword' => 'string',
+					'angle'         => 'string',
+					'category_name' => 'string-or-empty',
+				),
+			),
+		);
+	}
+
+	/**
+	 * @return array<string,mixed>
+	 */
 	public static function catalog_classify_schema() {
 		return array(
 			'items' => array(
@@ -773,6 +789,34 @@ final class Webino_Dashboard_AI_Prompts {
 				'existing'        => $ctx['existing'] ?? array(),
 				'product_samples' => $ctx['product_samples'] ?? array(),
 				'regenerate_hint' => (string) ( $ctx['regenerate_hint'] ?? '' ),
+			),
+			JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
+		);
+	}
+
+	/**
+	 * @param array<string,mixed> $ctx Context.
+	 * @return string
+	 */
+	public static function suggest_blog_topics_user( $ctx ) {
+		$count = min( 20, max( 1, (int) ( $ctx['count'] ?? 8 ) ) );
+		return wp_json_encode(
+			array(
+				'task' => 'Suggest original, SEO-friendly blog post topics for this e-commerce site. Topics must fit the site niche and product categories. Avoid duplicating recent post titles. Prefer practical, helpful angles that can drive organic traffic and support product discovery. Prefer assigning an existing blog category when a good match exists; otherwise leave category_name empty.',
+				'count'              => $count,
+				'site_name'          => (string) ( $ctx['site_name'] ?? '' ),
+				'site_topic'         => (string) ( $ctx['site_topic'] ?? '' ),
+				'blog_categories'    => $ctx['blog_categories'] ?? array(),
+				'product_categories' => $ctx['product_categories'] ?? array(),
+				'recent_posts'       => $ctx['recent_posts'] ?? array(),
+				'product_samples'    => $ctx['product_samples'] ?? array(),
+				'rules'              => array(
+					'Return exactly ' . $count . ' topics when possible.',
+					'Each topic needs topic, focus_keyword, angle, category_name.',
+					'focus_keyword should be a natural search phrase, not stuffed.',
+					'angle is a short 1-sentence brief for the writer.',
+					'Do not invent medical/legal claims.',
+				),
 			),
 			JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
 		);

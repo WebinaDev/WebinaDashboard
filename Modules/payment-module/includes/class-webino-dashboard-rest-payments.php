@@ -32,9 +32,16 @@ final class Webino_Dashboard_REST_Payments {
 			self::NS,
 			'/payments/hub',
 			array(
-				'methods'             => 'GET',
-				'permission_callback' => array( __CLASS__, 'can_manage' ),
-				'callback'            => array( __CLASS__, 'hub_get' ),
+				array(
+					'methods'             => 'GET',
+					'permission_callback' => array( __CLASS__, 'can_manage' ),
+					'callback'            => array( __CLASS__, 'hub_get' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'permission_callback' => array( __CLASS__, 'can_manage' ),
+					'callback'            => array( __CLASS__, 'hub_post' ),
+				),
 			)
 		);
 	}
@@ -174,11 +181,46 @@ final class Webino_Dashboard_REST_Payments {
 			);
 		}
 
+		$geo = class_exists( 'Webino_Dashboard_Checkout_Geo', false )
+			? Webino_Dashboard_Checkout_Geo::get_settings()
+			: array(
+				'enabled'  => true,
+				'services' => array(),
+				'colors'   => array(),
+			);
+
 		return new WP_REST_Response(
 			array(
-				'items'              => $items,
+				'items'               => $items,
 				'curated_gateway_ids' => self::curated_gateway_ids(),
+				'geo_notice'          => $geo,
+				// Legacy field for older clients.
+				'geo_notice_enabled'  => ! empty( $geo['enabled'] ),
 			)
 		);
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function hub_post( $request ) {
+		$params = $request->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = $request->get_params();
+		}
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+		if ( class_exists( 'Webino_Dashboard_Checkout_Geo', false ) ) {
+			if ( isset( $params['geo_notice'] ) && is_array( $params['geo_notice'] ) ) {
+				$current = Webino_Dashboard_Checkout_Geo::get_settings();
+				$merged  = array_replace_recursive( $current, $params['geo_notice'] );
+				Webino_Dashboard_Checkout_Geo::set_settings( $merged );
+			} elseif ( array_key_exists( 'geo_notice_enabled', $params ) ) {
+				Webino_Dashboard_Checkout_Geo::set_enabled( ! empty( $params['geo_notice_enabled'] ) );
+			}
+		}
+		return self::hub_get();
 	}
 }

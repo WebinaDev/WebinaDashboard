@@ -8,7 +8,7 @@ FAIL=0
 
 echo "== Modules structure smoke =="
 
-for slug in ai-content-module wfcp-module sms-panel-module bale-bot-module telegram-bot-module analytics-module digipay-upg-module digikala-sellers-module torob-products-extractor-module torobpay-gateway-module snapppay-gateway-module basalam-module zarinpal-gateway-module coffee-profile-module bale-pay-gateway-module card-to-card-gateway-module payment-module wallet-gateway-module; do
+for slug in ai-content-module wfcp-module sms-panel-module bale-bot-module telegram-bot-module analytics-module digipay-upg-module digikala-sellers-module torob-products-extractor-module torobpay-gateway-module snapppay-gateway-module basalam-module zarinpal-gateway-module coffee-profile-module bale-pay-gateway-module card-to-card-gateway-module payment-module wallet-gateway-module security-module; do
   if [[ ! -f "$MODULES/$slug/manifest.json" ]]; then
     echo "FAIL: missing $MODULES/$slug/manifest.json"
     FAIL=1
@@ -56,6 +56,13 @@ if ! grep -q "analytics_ready" "$ROOT/includes/class-webino-dashboard-module-reg
   FAIL=1
 else
   echo "OK: core module guards (analytics_ready) present"
+fi
+
+if ! grep -q "security_ready" "$ROOT/includes/class-webino-dashboard-module-registry.php"; then
+  echo "FAIL: Module_Registry missing security_ready helper"
+  FAIL=1
+else
+  echo "OK: core module guards (security_ready) present"
 fi
 
 if ! grep -q "get_active_module_clients" "$ROOT/includes/class-webino-dashboard-module-registry.php"; then

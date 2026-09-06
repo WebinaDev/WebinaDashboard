@@ -281,6 +281,54 @@ final class Webino_Dashboard_REST_AI_Content {
 
 		register_rest_route(
 			self::NS,
+			'/ai-content/blog-topics',
+			array_merge(
+				$edit,
+				array(
+					'methods'  => 'GET',
+					'callback' => array( __CLASS__, 'blog_topics_list' ),
+					'args'     => array(
+						'status' => array(
+							'type'    => 'string',
+							'default' => 'all',
+						),
+					),
+				)
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/blog-topics/suggest',
+			array_merge( $edit, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'blog_topics_suggest' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/blog-topics/approve',
+			array_merge( $edit, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'blog_topics_approve_many' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/blog-topics/(?P<id>[a-zA-Z0-9_-]+)/approve',
+			array_merge( $edit, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'blog_topics_approve' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/blog-topics/(?P<id>[a-zA-Z0-9_-]+)/skip',
+			array_merge( $edit, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'blog_topics_skip' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
+			'/ai-content/blog-image/(?P<post_id>\d+)',
+			array_merge( $edit, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'blog_image_generate' ) ) )
+		);
+
+		register_rest_route(
+			self::NS,
 			'/ai-content/terms/fill-batch',
 			array_merge( $terms, array( 'methods' => 'POST', 'callback' => array( __CLASS__, 'terms_fill_batch' ) ) )
 		);
@@ -1077,6 +1125,129 @@ final class Webino_Dashboard_REST_AI_Content {
 			}
 		}
 		return new WP_REST_Response( array( 'ok' => true, 'created_ids' => $created, 'count' => count( $created ) ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function blog_topics_list( $request ) {
+		$status = (string) $request->get_param( 'status' );
+		if ( '' === $status ) {
+			$status = 'all';
+		}
+		return new WP_REST_Response( Webino_Dashboard_AI_Blog_Topics::list_topics( $status ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function blog_topics_suggest( $request ) {
+		$ready = self::assert_ready();
+		if ( is_wp_error( $ready ) ) {
+			return $ready;
+		}
+		$ent = Webino_Dashboard_AI_Content_Settings::assert_entity( 'blog' );
+		if ( is_wp_error( $ent ) ) {
+			return $ent;
+		}
+		$body  = $request->get_json_params();
+		$count = min( 20, max( 1, (int) ( is_array( $body ) ? ( $body['count'] ?? 8 ) : 8 ) ) );
+		$job_id = Webino_Dashboard_AI_Queue::enqueue(
+			'suggest_blog_topics',
+			'blog_topics',
+			0,
+			array( 'count' => $count )
+		);
+		if ( is_wp_error( $job_id ) ) {
+			return $job_id;
+		}
+		return new WP_REST_Response( array( 'ok' => true, 'job_id' => $job_id, 'count' => $count ), 202 );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function blog_topics_approve( $request ) {
+		$ready = self::assert_ready();
+		if ( is_wp_error( $ready ) ) {
+			return $ready;
+		}
+		$body = $request->get_json_params();
+		if ( ! is_array( $body ) ) {
+			$body = array();
+		}
+		$row = Webino_Dashboard_AI_Blog_Topics::approve( (string) $request['id'], $body );
+		if ( is_wp_error( $row ) ) {
+			return $row;
+		}
+		return new WP_REST_Response( array( 'ok' => true, 'item' => $row ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function blog_topics_approve_many( $request ) {
+		$ready = self::assert_ready();
+		if ( is_wp_error( $ready ) ) {
+			return $ready;
+		}
+		$body  = $request->get_json_params();
+		$ids   = isset( $body['ids'] ) && is_array( $body['ids'] ) ? array_map( 'strval', $body['ids'] ) : array();
+		$edits = isset( $body['edits'] ) && is_array( $body['edits'] ) ? $body['edits'] : array();
+		if ( ! $ids ) {
+			return new WP_Error( 'ai_blog_topic', __( 'No topics selected.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		return new WP_REST_Response( Webino_Dashboard_AI_Blog_Topics::approve_many( $ids, $edits ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function blog_topics_skip( $request ) {
+		$row = Webino_Dashboard_AI_Blog_Topics::skip( (string) $request['id'] );
+		if ( is_wp_error( $row ) ) {
+			return $row;
+		}
+		return new WP_REST_Response( array( 'ok' => true, 'item' => $row ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function blog_image_generate( $request ) {
+		$ready = self::assert_ready();
+		if ( is_wp_error( $ready ) ) {
+			return $ready;
+		}
+		$post_id = (int) $request['post_id'];
+		if ( $post_id < 1 ) {
+			return new WP_Error( 'ai_blog_image', __( 'Post id required.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$body = $request->get_json_params();
+		if ( ! is_array( $body ) ) {
+			$body = array();
+		}
+		$job_id = Webino_Dashboard_AI_Queue::enqueue(
+			'blog_image',
+			'post',
+			$post_id,
+			array(
+				'post_id'       => $post_id,
+				'force'         => true,
+				'topic'         => sanitize_text_field( (string) ( $body['topic'] ?? '' ) ),
+				'focus_keyword' => sanitize_text_field( (string) ( $body['focus_keyword'] ?? '' ) ),
+			)
+		);
+		if ( is_wp_error( $job_id ) ) {
+			return $job_id;
+		}
+		return new WP_REST_Response( array( 'ok' => true, 'job_id' => $job_id ), 202 );
 	}
 
 	/**

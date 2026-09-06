@@ -660,13 +660,28 @@ class Webino_Dashboard_Variation_Swatches {
 		$show  = ! empty( $ctx['show_label'] ) || 'button' === $ctx['type'];
 		$items = self::option_items( $taxonomy, $options, $product );
 		$select_id = '' !== $select_id ? $select_id : $select_name;
+		$selected_norm = rawurldecode( (string) $selected );
 
 		ob_start();
 		?>
-		<div class="wd-swatches wd-swatches--<?php echo esc_attr( $ctx['type'] ); ?><?php echo $show ? ' wd-swatches--labels' : ''; ?>" data-attribute="<?php echo esc_attr( $taxonomy ); ?>" data-wcf-select="<?php echo esc_attr( $select_name ); ?>">
+		<div
+			class="wd-swatches wd-swatches--<?php echo esc_attr( $ctx['type'] ); ?><?php echo $show ? ' wd-swatches--labels' : ''; ?>"
+			<?php if ( $is_order_config ) : ?>
+				data-webino-order-config="1"
+				data-wcf-select="<?php echo esc_attr( $select_name ); ?>"
+			<?php else : ?>
+				data-attribute="<?php echo esc_attr( $taxonomy ); ?>"
+				data-wcf-select="<?php echo esc_attr( $select_name ); ?>"
+			<?php endif; ?>
+		>
 			<?php foreach ( $items as $item ) : ?>
 				<?php
-				$is_selected = (string) $item['value'] === $selected || (string) $item['slug'] === $selected;
+				$item_value  = (string) $item['value'];
+				$item_slug   = (string) $item['slug'];
+				$is_selected = $item_value === $selected
+					|| $item_slug === $selected
+					|| rawurldecode( $item_value ) === $selected_norm
+					|| rawurldecode( $item_slug ) === $selected_norm;
 				$classes     = array( 'wd-swatch', 'wd-swatch--' . $ctx['type'] );
 				if ( $is_selected ) {
 					$classes[] = 'is-selected';
@@ -681,6 +696,7 @@ class Webino_Dashboard_Variation_Swatches {
 					data-value="<?php echo esc_attr( $item['value'] ); ?>"
 					aria-label="<?php echo esc_attr( $item['name'] ); ?>"
 					aria-pressed="<?php echo $is_selected ? 'true' : 'false'; ?>"
+					aria-disabled="false"
 					title="<?php echo esc_attr( $item['name'] ); ?>"
 					<?php echo $item['color'] ? 'style="--wd-swatch-color:' . esc_attr( $item['color'] ) . '"' : ''; ?>
 				>
@@ -700,7 +716,13 @@ class Webino_Dashboard_Variation_Swatches {
 				<select id="<?php echo esc_attr( $select_id ); ?>" name="<?php echo esc_attr( $select_name ); ?>">
 					<option value=""><?php echo esc_html__( 'Choose an option', 'woocommerce' ); ?></option>
 					<?php foreach ( $items as $item ) : ?>
-						<option value="<?php echo esc_attr( $item['value'] ); ?>" <?php selected( $selected, $item['value'] ); ?>><?php echo esc_html( $item['name'] ); ?></option>
+						<?php
+						$opt_selected = (string) $item['value'] === $selected
+							|| (string) $item['slug'] === $selected
+							|| rawurldecode( (string) $item['value'] ) === $selected_norm
+							|| rawurldecode( (string) $item['slug'] ) === $selected_norm;
+						?>
+						<option value="<?php echo esc_attr( $item['value'] ); ?>" <?php selected( $opt_selected ); ?>><?php echo esc_html( $item['name'] ); ?></option>
 					<?php endforeach; ?>
 				</select>
 			</div>

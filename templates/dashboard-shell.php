@@ -12,15 +12,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $wd_uid         = get_current_user_id();
 $wd_ui_theme    = $wd_uid ? (string) get_user_meta( $wd_uid, 'webino_dashboard_theme', true ) : '';
-$wd_ui_accent   = $wd_uid ? (string) get_user_meta( $wd_uid, 'webino_dashboard_accent', true ) : '';
 $wd_ui_theme    = $wd_ui_theme ? $wd_ui_theme : 'light';
-$wd_ui_accent   = $wd_ui_accent ? $wd_ui_accent : 'colorful';
-$wd_accents_ok  = array( 'colorful', 'default', 'red', 'rose', 'orange', 'green', 'blue', 'yellow', 'violet' );
+$wd_brand       = class_exists( 'Webino_Dashboard_Brand_Style', false ) ? Webino_Dashboard_Brand_Style::get() : null;
+$wd_ui_accent   = ( is_array( $wd_brand ) && ! empty( $wd_brand['accent'] ) ) ? (string) $wd_brand['accent'] : 'colorful';
+$wd_accents_ok  = array( 'colorful', 'default', 'red', 'rose', 'orange', 'green', 'blue', 'yellow', 'violet', 'cafe', 'cosmetics', 'mobile', 'electronics' );
 if ( 'amber' === $wd_ui_accent ) {
 	$wd_ui_accent = 'orange';
 }
 if ( ! in_array( $wd_ui_accent, $wd_accents_ok, true ) ) {
 	$wd_ui_accent = 'colorful';
+}
+$wd_font_style  = class_exists( 'Webino_Dashboard_Brand_Style', false )
+	? Webino_Dashboard_Brand_Style::inline_font_css()
+	: "--wd-font-body:'Yekan Bakh',Tahoma,sans-serif;--wd-font-heading:'Yekan Bakh',Tahoma,sans-serif;--wd-font-ui:'Yekan Bakh',Tahoma,sans-serif;";
+$wd_favicon_url = class_exists( 'Webino_Dashboard_Brand_Style', false )
+	? Webino_Dashboard_Brand_Style::favicon_url()
+	: '';
+if ( '' === $wd_favicon_url ) {
+	$wd_favicon_url = (string) get_site_icon_url( 192 );
 }
 $wd_html_class = ( 'dark' === $wd_ui_theme ) ? 'dark' : '';
 $wd_asset_ver  = class_exists( 'Webino_Dashboard_Assets' )
@@ -37,12 +46,15 @@ if ( class_exists( 'Webino_Dashboard_SSR' ) ) {
 }
 
 ?><!DOCTYPE html>
-<html <?php language_attributes(); ?> class="<?php echo esc_attr( $wd_html_class ); ?>" data-accent="<?php echo esc_attr( $wd_ui_accent ); ?>" data-wd-asset-version="<?php echo esc_attr( $wd_asset_ver ); ?>" data-wd-plugin-version="<?php echo esc_attr( WEBINO_DASHBOARD_VERSION ); ?>">
+<html <?php language_attributes(); ?> class="<?php echo esc_attr( $wd_html_class ); ?>" data-accent="<?php echo esc_attr( $wd_ui_accent ); ?>" data-wd-asset-version="<?php echo esc_attr( $wd_asset_ver ); ?>" data-wd-plugin-version="<?php echo esc_attr( WEBINO_DASHBOARD_VERSION ); ?>" style="<?php echo esc_attr( $wd_font_style ); ?>">
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<meta name="description" content="<?php echo esc_attr( get_bloginfo( 'description', 'display' ) ?: __( 'Store dashboard', 'webino-dashboard' ) ); ?>">
 	<title><?php echo esc_html( get_bloginfo( 'name' ) . ' — ' . __( 'Dashboard', 'webino-dashboard' ) ); ?></title>
+	<?php if ( $wd_favicon_url ) : ?>
+	<link rel="icon" href="<?php echo esc_url( $wd_favicon_url ); ?>" />
+	<?php endif; ?>
 	<style id="webino-dashboard-chrome-guard">
 		body.webino-dashboard-body { margin: 0; }
 		body.webino-dashboard-body #root { min-height: 100vh; }
@@ -81,13 +93,6 @@ if ( class_exists( 'Webino_Dashboard_SSR' ) ) {
 			}
 			localStorage.setItem('wd_asset_version', ver);
 		} catch (e) {}
-		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.getRegistrations().then(function (regs) {
-				regs.forEach(function (reg) {
-					reg.unregister();
-				});
-			});
-		}
 	})();
 	</script>
 	<script>

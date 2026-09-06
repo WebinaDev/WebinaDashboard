@@ -4,35 +4,57 @@
 	margin: 0 0 1rem;
 }
 
+.wcf-order-config-fields,
 .webino-order-configs,
 .wcf-order-configs--visible {
 	width: 100%;
+	margin: 0.75rem 0 1rem;
 }
 
-table.variations.webino-order-configs {
-	margin-top: 0;
+.wcf-order-configs-inner {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
 }
 
 .variations .wcf-field,
-.wcf-fulfillment .wcf-field {
-	margin-bottom: 1rem;
+.wcf-fulfillment .wcf-field,
+.wcf-order-config-fields .wcf-field {
+	margin-bottom: 0.75rem;
 }
 
 .wcf-fulfillment .label label,
-.wcf-fulfillment .product-single--add-to-cart--form-label {
+.wcf-fulfillment .product-single--add-to-cart--form-label,
+.wcf-order-config-fields .label label,
+.wcf-order-config-fields .product-single--add-to-cart--form-label {
 	font-weight: 600;
 }
 
+.wcf-selected-name {
+	font-weight: 500;
+	opacity: 0.9;
+}
+
 .wcf-fulfillment.is-invalid .wcf-field:not(.is-valid) .label label,
-.wcf-fulfillment.is-invalid .wcf-field:not(.is-valid) .product-single--add-to-cart--form-label {
+.wcf-fulfillment.is-invalid .wcf-field:not(.is-valid) .product-single--add-to-cart--form-label,
+.wcf-order-config-fields.is-invalid .wcf-field:not(.is-valid) .label label {
 	color: #b42318;
 }
 
 .wcf-fulfillment .value .wd-swatches,
-.wcf-fulfillment .wcf-field-value .wd-swatches {
+.wcf-fulfillment .wcf-field-value .wd-swatches,
+.wcf-order-config-fields .value .wd-swatches {
 	margin: 0;
 }
 
-.wcf-fulfillment .wcf-plain-select {
+.wcf-fulfillment .wcf-plain-select,
+.wcf-order-config-fields .wcf-plain-select {
 	min-width: 12rem;
+}
+
+/* Order-config swatches must never look like disabled variation options. */
+.wcf-order-config-fields .wd-swatch.is-disabled,
+.wd-swatches[data-webino-order-config] .wd-swatch.is-disabled {
+	cursor: pointer;
+	opacity: 1;
 }

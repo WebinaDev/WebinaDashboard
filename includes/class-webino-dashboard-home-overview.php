@@ -312,9 +312,24 @@ class Webino_Dashboard_Home_Overview {
 		$lookup = $wpdb->prefix . 'wc_product_meta_lookup';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $lookup ) ) === $lookup ) {
+			// Count publish simple + variations only (skip variable parents — matches list UX).
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$rows = $wpdb->get_results(
-				"SELECT stock_status, COUNT(*) AS cnt FROM {$lookup} GROUP BY stock_status",
+				"SELECT l.stock_status, COUNT(*) AS cnt
+				FROM {$lookup} l
+				INNER JOIN {$wpdb->posts} p ON p.ID = l.product_id
+				WHERE p.post_status = 'publish'
+					AND p.post_type IN ( 'product', 'product_variation' )
+					AND NOT EXISTS (
+						SELECT 1
+						FROM {$wpdb->term_relationships} tr
+						INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+						INNER JOIN {$wpdb->terms} t ON t.term_id = tt.term_id
+						WHERE tr.object_id = l.product_id
+							AND tt.taxonomy = 'product_type'
+							AND t.slug = 'variable'
+					)
+				GROUP BY l.stock_status",
 				ARRAY_A
 			);
 			if ( is_array( $rows ) ) {
@@ -684,7 +699,59 @@ class Webino_Dashboard_Home_Overview {
 		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 		}
 
+		try {
+			$panels['security'] = self::security_panel_for_overview();
+		} catch ( Throwable $e ) {
+			$panels['security'] = array(
+				'active'        => false,
+				'score'         => null,
+				'waf_mode'      => 'off',
+				'open_findings' => 0,
+			);
+		}
+
 		return $panels;
+	}
+
+	/**
+	 * Security (Webino Shield) mini-card payload.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function security_panel_for_overview() {
+		$active = class_exists( 'Webino_Dashboard_Module_Registry', false )
+			&& Webino_Dashboard_Module_Registry::security_ready();
+		if ( ! $active ) {
+			return array(
+				'active'        => false,
+				'score'         => null,
+				'waf_mode'      => 'off',
+				'open_findings' => 0,
+			);
+		}
+
+		$score    = null;
+		$waf_mode = 'off';
+		$open     = 0;
+
+		if ( class_exists( 'Webino_Shield_Reports', false ) ) {
+			$kpis = Webino_Shield_Reports::overview_kpis();
+			if ( is_array( $kpis ) ) {
+				$score    = isset( $kpis['score'] ) ? (int) $kpis['score'] : null;
+				$waf_mode = (string) ( $kpis['waf_mode'] ?? 'off' );
+				$open     = (int) ( $kpis['open_findings'] ?? 0 );
+			}
+		} elseif ( class_exists( 'Webino_Dashboard_Security_Settings', false ) ) {
+			$s        = Webino_Dashboard_Security_Settings::get();
+			$waf_mode = (string) ( $s['waf']['mode'] ?? 'off' );
+		}
+
+		return array(
+			'active'        => true,
+			'score'         => $score,
+			'waf_mode'      => $waf_mode,
+			'open_findings' => $open,
+		);
 	}
 
 	/**
@@ -857,7 +924,7 @@ class Webino_Dashboard_Home_Overview {
 			$prod_section = self::products_section();
 			$tasks['products_outofstock'] = array(
 				'count' => (int) ( $prod_section['by_stock']['outofstock'] ?? 0 ),
-				'href'  => '/shop/products',
+				'href'  => '/shop/products?stock_status=outofstock',
 			);
 		}
 

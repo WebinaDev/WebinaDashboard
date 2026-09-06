@@ -32,6 +32,71 @@ class Webino_Dashboard_Coffee_Profile {
 	public static function init() {
 		add_shortcode( 'webino_coffee_profile', array( 'Webino_Dashboard_Coffee_Storefront', 'shortcode' ) );
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_ishop_placement' ), 1 );
+		add_action( 'pre_get_posts', array( __CLASS__, 'harden_frontend_product_query' ), 50 );
+	}
+
+	/**
+	 * Tax query clause excluding hidden catalog products.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public static function storefront_visibility_tax_clause() {
+		if ( ! taxonomy_exists( 'product_visibility' ) ) {
+			return null;
+		}
+		return array(
+			'taxonomy' => 'product_visibility',
+			'field'    => 'name',
+			'terms'    => array( 'exclude-from-catalog', 'exclude-from-search' ),
+			'operator' => 'NOT IN',
+		);
+	}
+
+	/**
+	 * Keep storefront product loops on published, catalog-visible products.
+	 *
+	 * @param WP_Query $query Query.
+	 * @return void
+	 */
+	public static function harden_frontend_product_query( $query ) {
+		if ( ! $query instanceof WP_Query || is_admin() ) {
+			return;
+		}
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return;
+		}
+		$pt         = $query->get( 'post_type' );
+		$is_product = ( 'product' === $pt ) || ( is_array( $pt ) && in_array( 'product', $pt, true ) );
+		if ( ! $is_product ) {
+			return;
+		}
+		// Allow editors to preview a single draft/private product.
+		if ( $query->is_singular( 'product' ) && current_user_can( 'edit_products' ) ) {
+			return;
+		}
+
+		$status = $query->get( 'post_status' );
+		$bad    = array( 'draft', 'pending', 'private', 'future', 'trash', 'any' );
+		if ( empty( $status ) || 'any' === $status || ( is_array( $status ) && array_intersect( $status, $bad ) ) ) {
+			$query->set( 'post_status', 'publish' );
+		}
+
+		$clause = self::storefront_visibility_tax_clause();
+		if ( ! $clause ) {
+			return;
+		}
+		$tax = $query->get( 'tax_query' );
+		if ( ! is_array( $tax ) ) {
+			$tax = array();
+		}
+		foreach ( $tax as $item ) {
+			if ( is_array( $item ) && isset( $item['taxonomy'] ) && 'product_visibility' === $item['taxonomy'] ) {
+				return;
+			}
+		}
+		$tax[]             = $clause;
+		$tax['relation']   = 'AND';
+		$query->set( 'tax_query', $tax );
 	}
 
 	/**
@@ -294,15 +359,20 @@ class Webino_Dashboard_Coffee_Profile {
 	 */
 	public static function default_profile() {
 		return array(
-			'blend_robusta' => 0,
-			'blend_arabica' => 0,
-			'acidity'       => array(),
-			'caffeine_mg'   => 0,
-			'bitterness'    => 0,
-			'sweetness'     => 0,
-			'body'          => 0,
-			'pack_weight_g'  => 1000,
-			'visible'        => array(
+			'blend_robusta'     => 0,
+			'blend_arabica'     => 0,
+			'acidity'           => array(),
+			'caffeine_mg'       => 0,
+			'bitterness'        => 0,
+			'sweetness'         => 0,
+			'body'              => 0,
+			'pack_weight_g'     => 1000,
+			'price_mode'        => 'none',
+			'price_bean_id'     => '',
+			'price_mix_id'      => '',
+			'price_shop_style'  => 'classic',
+			'price_parts'       => array(),
+			'visible'           => array(
 				'blend'      => true,
 				'acidity'    => true,
 				'caffeine'   => true,
@@ -441,16 +511,57 @@ class Webino_Dashboard_Coffee_Profile {
 			}
 		}
 
+		$price_mode = sanitize_key( (string) ( $input['price_mode'] ?? $defaults['price_mode'] ) );
+		$allowed_modes = array( 'none', 'single', 'base_mix', 'shop', 'economy', 'custom' );
+		if ( ! in_array( $price_mode, $allowed_modes, true ) ) {
+			$price_mode = 'none';
+		}
+
+		$shop_style = sanitize_key( (string) ( $input['price_shop_style'] ?? 'classic' ) );
+		if ( ! in_array( $shop_style, array( 'classic', 'luxury' ), true ) ) {
+			$shop_style = 'classic';
+		}
+
+		$parts_in = isset( $input['price_parts'] ) && is_array( $input['price_parts'] ) ? $input['price_parts'] : array();
+		$parts    = array();
+		foreach ( $parts_in as $p ) {
+			if ( ! is_array( $p ) ) {
+				continue;
+			}
+			$bid = sanitize_key( (string) ( $p['bean_id'] ?? '' ) );
+			$pct = max( 0, min( 100, (float) ( $p['percent'] ?? 0 ) ) );
+			if ( '' === $bid || $pct <= 0 ) {
+				continue;
+			}
+			$parts[] = array(
+				'bean_id' => $bid,
+				'percent' => $pct,
+			);
+		}
+
+		// Composition drives pricing; mark as custom when parts exist.
+		if ( ! empty( $parts ) ) {
+			$price_mode = 'custom';
+			if ( 1 === count( $parts ) && abs( (float) $parts[0]['percent'] - 100 ) < 0.5 ) {
+				$input['price_bean_id'] = $parts[0]['bean_id'];
+			}
+		}
+
 		return array(
-			'blend_robusta'  => $robusta,
-			'blend_arabica'  => $arabica,
-			'acidity'        => $acidity,
-			'caffeine_mg'    => max( 0, min( 5000, (int) ( $input['caffeine_mg'] ?? 0 ) ) ),
-			'bitterness'     => max( $min, min( $max, (int) ( $input['bitterness'] ?? $min ) ) ),
-			'sweetness'      => max( $min, min( $max, (int) ( $input['sweetness'] ?? $min ) ) ),
-			'body'           => max( $min, min( $max, (int) ( $input['body'] ?? $min ) ) ),
-			'pack_weight_g'  => max( 1, min( 50000, (int) ( $input['pack_weight_g'] ?? $defaults['pack_weight_g'] ) ) ),
-			'visible'        => $visible,
+			'blend_robusta'    => $robusta,
+			'blend_arabica'    => $arabica,
+			'acidity'          => $acidity,
+			'caffeine_mg'      => max( 0, min( 5000, (int) ( $input['caffeine_mg'] ?? 0 ) ) ),
+			'bitterness'       => max( $min, min( $max, (int) ( $input['bitterness'] ?? $min ) ) ),
+			'sweetness'        => max( $min, min( $max, (int) ( $input['sweetness'] ?? $min ) ) ),
+			'body'             => max( $min, min( $max, (int) ( $input['body'] ?? $min ) ) ),
+			'pack_weight_g'    => max( 1, min( 50000, (int) ( $input['pack_weight_g'] ?? $defaults['pack_weight_g'] ) ) ),
+			'price_mode'       => $price_mode,
+			'price_bean_id'    => sanitize_key( (string) ( $input['price_bean_id'] ?? '' ) ),
+			'price_mix_id'     => sanitize_key( (string) ( $input['price_mix_id'] ?? '' ) ),
+			'price_shop_style' => $shop_style,
+			'price_parts'      => $parts,
+			'visible'          => $visible,
 		);
 	}
 

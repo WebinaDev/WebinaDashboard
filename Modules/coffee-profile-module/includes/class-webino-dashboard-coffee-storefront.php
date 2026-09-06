@@ -134,19 +134,28 @@ class Webino_Dashboard_Coffee_Storefront {
 		if ( is_admin() ) {
 			return;
 		}
-		$need = is_product() || ( is_singular() && has_shortcode( (string) get_post_field( 'post_content', get_the_ID() ), 'webino_coffee_profile' ) );
-		if ( ! $need ) {
-			return;
-		}
-		$css = dirname( __DIR__ ) . '/public/coffee-profile.css';
+		$dir = dirname( __DIR__ ) . '/public/';
+		$css = $dir . 'coffee-profile.css';
 		if ( ! is_readable( $css ) ) {
 			return;
 		}
-		$ver = (string) filemtime( $css );
-		$url = defined( 'WEBINO_DASHBOARD_FILE' )
-			? plugins_url( 'Modules/coffee-profile-module/public/coffee-profile.css', WEBINO_DASHBOARD_FILE )
-			: plugins_url( 'public/coffee-profile.css', dirname( __DIR__ ) . '/bootstrap.php' );
-		wp_enqueue_style( 'webino-coffee-profile', $url, array(), $ver );
+		$base = defined( 'WEBINO_DASHBOARD_FILE' )
+			? plugins_url( 'Modules/coffee-profile-module/public/', WEBINO_DASHBOARD_FILE )
+			: plugins_url( 'public/', dirname( __DIR__ ) . '/bootstrap.php' );
+		wp_enqueue_style( 'webino-coffee-profile', $base . 'coffee-profile.css', array(), (string) filemtime( $css ) );
+
+		$js  = $dir . 'card-flags.js';
+		$map = Webino_Dashboard_Coffee_Origins::card_flags_path_map();
+		if ( is_readable( $js ) && array() !== $map ) {
+			wp_enqueue_script( 'webino-coffee-card-flags', $base . 'card-flags.js', array(), (string) filemtime( $js ), true );
+			wp_localize_script(
+				'webino-coffee-card-flags',
+				'webinoCoffeeCardFlags',
+				array(
+					'paths' => $map,
+				)
+			);
+		}
 	}
 
 	/**

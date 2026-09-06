@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
+import { translateOrderStatus } from '@/lib/enumLabels'
 import { formatNumber } from '@/lib/formatNumber'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +23,8 @@ export function OrderStatusTabs({ counts, active, onChange, locale }: OrderStatu
     <div className="flex flex-wrap gap-1 border-b border-border pb-3">
       {counts.map((item, idx) => {
         const isActive = active === item.slug || (active === '' && item.slug === 'all')
+        const label =
+          item.slug === 'all' ? t('orders.tabAll') : translateOrderStatus(t, item.slug, item.label)
         return (
           <span key={item.slug} className="inline-flex items-center gap-1">
             {idx > 0 ? <span className="text-muted-foreground px-1">|</span> : null}
@@ -33,7 +36,7 @@ export function OrderStatusTabs({ counts, active, onChange, locale }: OrderStatu
               )}
               onClick={() => onChange(item.slug === 'all' ? '' : item.slug)}
             >
-              {item.slug === 'all' ? t('orders.tabAll') : item.label}{' '}
+              {label}{' '}
               <span className="opacity-80">({formatNumber(item.count, loc)})</span>
             </button>
           </span>

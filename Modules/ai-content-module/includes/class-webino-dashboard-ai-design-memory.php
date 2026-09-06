@@ -154,7 +154,7 @@ final class Webino_Dashboard_AI_Design_Memory {
 		}
 		if ( isset( $raw['source'] ) ) {
 			$src = sanitize_key( (string) $raw['source'] );
-			$out['source'] = in_array( $src, array( 'extracted', 'suggested', '' ), true ) ? $src : $out['source'];
+			$out['source'] = in_array( $src, array( 'extracted', 'suggested', 'brand', '' ), true ) ? $src : $out['source'];
 		}
 		if ( array_key_exists( 'locked', $raw ) ) {
 			$out['locked'] = (bool) $raw['locked'];
@@ -291,6 +291,31 @@ final class Webino_Dashboard_AI_Design_Memory {
 			),
 			true
 		);
+	}
+
+	/**
+	 * Seed palette from site brand style settings.
+	 *
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public static function apply_from_brand_style() {
+		if ( ! class_exists( 'Webino_Dashboard_Brand_Style', false ) ) {
+			return new WP_Error( 'no_brand', __( 'Brand style unavailable.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$palette = Webino_Dashboard_Brand_Style::palette();
+		$clean   = self::sanitize_palette( is_array( $palette ) ? $palette : array() );
+		$saved   = self::save(
+			array(
+				'palette' => $clean,
+				'source'  => 'brand',
+				'locked'  => false,
+			),
+			true
+		);
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+		return self::get();
 	}
 
 	/**

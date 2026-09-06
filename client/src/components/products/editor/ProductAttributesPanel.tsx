@@ -86,7 +86,8 @@ type OrderConfigDefaultSelectProps = {
   onChange: (slug: string) => void
 }
 
-function resolveDefaultTermSlug(value: string, terms: AttributeTerm[]): string {
+/** Resolve a saved default (slug / name / id / encoded slug) to a term id string for Radix Select. */
+function resolveDefaultTermId(value: string, terms: AttributeTerm[]): string {
   const trimmed = value.trim()
   if (!trimmed || terms.length === 0) {
     return ''
@@ -101,14 +102,22 @@ function resolveDefaultTermSlug(value: string, terms: AttributeTerm[]): string {
     const slug = term.slug ?? ''
     const name = term.name ?? ''
     const id = String(term.id ?? '')
-    if (trimmed === slug || trimmed === name || trimmed === id) {
-      return slug || id
+    if (!id) continue
+    if (trimmed === id || trimmed === slug || trimmed === name) {
+      return id
     }
     if (decoded === slug || decoded === name) {
-      return slug || id
+      return id
+    }
+    try {
+      if (slug && decodeURIComponent(slug) === decoded) {
+        return id
+      }
+    } catch {
+      /* ignore */
     }
   }
-  return trimmed
+  return ''
 }
 
 function OrderConfigDefaultSelect({
@@ -126,13 +135,19 @@ function OrderConfigDefaultSelect({
   const selected = useMemo(() => new Set(selectedOptionNames.map((s) => s.trim()).filter(Boolean)), [selectedOptionNames])
   const terms = useMemo(() => {
     const items = q.data?.items ?? []
-    const seen = new Set<number>()
+    const seenIds = new Set<number>()
+    const seenNames = new Set<string>()
     const unique = items.filter((term) => {
       const id = Number(term.id)
-      if (!Number.isFinite(id) || id < 1 || seen.has(id)) {
+      if (!Number.isFinite(id) || id < 1 || seenIds.has(id)) {
         return false
       }
-      seen.add(id)
+      const nameKey = (term.name ?? '').trim().toLowerCase()
+      if (nameKey && seenNames.has(nameKey)) {
+        return false
+      }
+      seenIds.add(id)
+      if (nameKey) seenNames.add(nameKey)
       return true
     })
     if (selected.size === 0) return unique
@@ -143,22 +158,33 @@ function OrderConfigDefaultSelect({
         selected.has(String(term.id)),
     )
   }, [q.data?.items, selected])
-  const matchedValue = useMemo(() => resolveDefaultTermSlug(value, terms), [value, terms])
-  const selectValue = matchedValue
-  if (terms.length === 0) {
+  const selectValue = useMemo(() => resolveDefaultTermId(value, terms), [value, terms])
+
+  if (q.isLoading) {
     return (
-      <p className="text-muted-foreground text-xs">{t('products.editor.noAttributesSelected')}</p>
+      <div className="space-y-1 sm:col-span-2 sm:ps-12">
+        <Label className="text-xs">{t('products.attrOrderConfigDefault')}</Label>
+        <p className="text-muted-foreground text-xs">{t('common.loading')}</p>
+      </div>
     )
   }
+
+  if (terms.length === 0) {
+    return (
+      <div className="space-y-1 sm:col-span-2 sm:ps-12">
+        <Label className="text-xs">{t('products.attrOrderConfigDefault')}</Label>
+        <p className="text-muted-foreground text-xs">{t('products.editor.noAttributesSelected')}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-1 sm:col-span-2 sm:ps-12">
       <Label className="text-xs">{t('products.attrOrderConfigDefault')}</Label>
       <Select
         value={selectValue || undefined}
         onValueChange={(next) => {
-          const term = terms.find(
-            (item) => item.slug === next || String(item.id) === next,
-          )
+          const term = terms.find((item) => String(item.id) === next)
           onChange(term?.slug || term?.id?.toString() || next)
         }}
       >
@@ -167,10 +193,7 @@ function OrderConfigDefaultSelect({
         </SelectTrigger>
         <SelectContent>
           {terms.map((term) => (
-            <SelectItem
-              key={term.slug || String(term.id)}
-              value={term.slug || String(term.id)}
-            >
+            <SelectItem key={String(term.id)} value={String(term.id)}>
               {term.name}
             </SelectItem>
           ))}

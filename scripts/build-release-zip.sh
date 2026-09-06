@@ -29,6 +29,7 @@ AI_JOBS_SRC="$ROOT/Modules/ai-content-module/client/pages/AiJobsPage.tsx"
 AI_TITLES_SRC="$ROOT/Modules/ai-content-module/client/pages/AiTitlesPage.tsx"
 AI_TAX_SRC="$ROOT/Modules/ai-content-module/client/pages/AiTaxonomiesPage.tsx"
 AI_PAGES_SRC="$ROOT/Modules/ai-content-module/client/pages/AiPagesPage.tsx"
+AI_BLOG_SRC="$ROOT/Modules/ai-content-module/client/pages/AiBlogPage.tsx"
 AI_MODULE_JS="$ROOT/Modules/ai-content-module/client/dist/module.js"
 if [[ -f "$AI_SETTINGS_SRC" ]]; then
   if [[ ! -s "$AI_MODULE_JS" ]]; then
@@ -59,6 +60,10 @@ if [[ -f "$AI_SETTINGS_SRC" ]]; then
     echo "FAIL: AiPagesPage.tsx is newer than module.js — run: bash scripts/build-module-client.sh ai-content-module" >&2
     exit 1
   fi
+  if [[ -f "$AI_BLOG_SRC" && "$AI_BLOG_SRC" -nt "$AI_MODULE_JS" ]]; then
+    echo "FAIL: AiBlogPage.tsx is newer than module.js — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
   if ! grep -q 'ai-sec-tones' "$AI_MODULE_JS"; then
     echo "FAIL: module.js missing ai-sec-tones UI — run: bash scripts/build-module-client.sh ai-content-module" >&2
     exit 1
@@ -77,6 +82,10 @@ if [[ -f "$AI_SETTINGS_SRC" ]]; then
   fi
   if ! grep -q 'pagesTitle\|pagePromptPlaceholder' "$AI_MODULE_JS"; then
     echo "FAIL: module.js missing Elementor pages AI UI — run: bash scripts/build-module-client.sh ai-content-module" >&2
+    exit 1
+  fi
+  if ! grep -q 'blogPageTitle\|blogSuggest' "$AI_MODULE_JS"; then
+    echo "FAIL: module.js missing blog topics UI — run: bash scripts/build-module-client.sh ai-content-module" >&2
     exit 1
   fi
   echo "OK: ai-content-module client is up to date"

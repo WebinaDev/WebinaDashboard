@@ -30,6 +30,7 @@ function AppSidebarComponent({
   brandTitle,
   brandSubtitle,
   brandTo,
+  brandLogoUrl,
   homeNavItem,
   navGroups,
   projects = [],
@@ -44,6 +45,7 @@ function AppSidebarComponent({
   brandTitle: string
   brandSubtitle: string
   brandTo: string
+  brandLogoUrl?: string
   homeNavItem?: Sidebar08MainNavItem
   navGroups: AppSidebarNavGroup[]
   projects?: AppSidebarProject[]
@@ -57,7 +59,7 @@ function AppSidebarComponent({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <SiteBrand title={brandTitle} subtitle={brandSubtitle} homeTo={brandTo} />
+        <SiteBrand title={brandTitle} subtitle={brandSubtitle} homeTo={brandTo} logoUrl={brandLogoUrl} />
       </SidebarHeader>
       <SidebarContent>
         {navLoading ? (

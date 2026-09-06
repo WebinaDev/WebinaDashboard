@@ -52,6 +52,7 @@
       weight_g: cfg.weights && cfg.weights[0] ? cfg.weights[0] : 250,
       purchase_type: 'cash',
       installment_months: 0,
+      blend_name: '',
       quote: null,
       error: '',
       busy: false,
@@ -114,7 +115,17 @@
         weight_g: state.weight_g,
         purchase_type: state.purchase_type,
         installment_months: state.installment_months,
+        blend_name: String(state.blend_name || '').trim(),
       };
+    }
+
+    function nameOk() {
+      var n = String(state.blend_name || '').trim();
+      return n.length >= 2 && n.length <= 40;
+    }
+
+    function canBuy() {
+      return canQuote() && nameOk();
     }
 
     function canQuote() {
@@ -190,20 +201,47 @@
       if (state.step < 0) state.step = 0;
     }
 
+    function originFlagsHtml(origins) {
+      var list = (origins || []).slice(0, 3);
+      var flags = [];
+      var names = [];
+      list.forEach(function (o) {
+        if (o && o.name) names.push(o.name);
+        if (o && o.flag_url) {
+          flags.push(
+            '<span class="wcp-card-flag" style="background-image:url(\'' +
+              esc(o.flag_url) +
+              '\')" aria-hidden="true"></span>'
+          );
+        } else if (o && o.flag_emoji) {
+          flags.push(
+            '<span class="wcp-card-flag-emoji" aria-hidden="true">' + esc(o.flag_emoji) + '</span>'
+          );
+        }
+      });
+      if (!flags.length) return '';
+      var label = names.map(esc).join('، ');
+      return (
+        '<span class="wcp-card-flags"' +
+        (label ? ' aria-label="' + label + '"' : '') +
+        '>' +
+        flags.join('') +
+        '</span>'
+      );
+    }
+
     function cardHtml(b, on) {
-      var origins = (b.origins || [])
+      var originNames = (b.origins || [])
         .map(function (o) {
-          var flag = o.flag_url
-            ? '<img class="wcb-flag" src="' + esc(o.flag_url) + '" alt=""> '
-            : o.flag_emoji
-              ? esc(o.flag_emoji) + ' '
-              : '';
-          return flag + esc(o.name);
+          return esc(o.name);
         })
+        .filter(Boolean)
         .join('، ');
       var img = b.image
         ? '<img src="' + esc(b.image) + '" alt="">'
         : '<span class="wcb-card-ph"></span>';
+      var media =
+        '<span class="wcb-card-media">' + img + originFlagsHtml(b.origins) + '</span>';
       return (
         '<button type="button" class="wcb-card' +
         (on ? ' is-on' : '') +
@@ -213,12 +251,12 @@
         '"' +
         (b.in_stock ? '' : ' disabled') +
         '>' +
-        img +
+        media +
         '<span class="wcb-card-body">' +
         '<strong>' +
         esc(b.name) +
         '</strong>' +
-        (origins ? '<span class="wcb-chip">' + origins + '</span>' : '') +
+        (originNames ? '<span class="wcb-chip">' + originNames + '</span>' : '') +
         '<span class="wcb-meta">' +
         (b.blend_arabica ? '<span class="wcb-chip">' + esc((cfg.labels && cfg.labels.arabica) || 'عربیکا') + ' ' + fa(b.blend_arabica) + '٪</span>' : '') +
         (b.blend_robusta ? '<span class="wcb-chip">' + esc((cfg.labels && cfg.labels.robusta) || 'روبوستا') + ' ' + fa(b.blend_robusta) + '٪</span>' : '') +
@@ -325,7 +363,7 @@
       if (state.step === steps().length - 1) {
         html +=
           '<button type="button" class="wcb-btn wcb-btn-main" data-act="buy"' +
-          (!canQuote() || state.busy ? ' disabled' : '') +
+          (!canBuy() || state.busy ? ' disabled' : '') +
           '>افزودن به سبد</button>';
       } else {
         html +=
@@ -616,6 +654,17 @@
         html += '</div>';
         html += '<p class="wcb-hint">' + esc(state.quote.title || '') + '</p>';
       }
+      html +=
+        '<div class="wcb-name">' +
+        '<label class="wcb-name-label" for="wcb-blend-name">نام ترکیب</label>' +
+        '<input id="wcb-blend-name" class="wcb-name-input" type="text" maxlength="40" placeholder="قهوه..." data-act="name" value="' +
+        esc(state.blend_name) +
+        '" autocomplete="off" />' +
+        '<p class="wcb-name-hint">برای ذخیره ترکیب، انتخاب یک نام ضروری است. این نام به شما کمک می‌کند تا ترکیب دلخواهتان را در آینده به‌راحتی پیدا و مجدداً سفارش دهید. همچنین، با انتخاب یک نام، مشتریان دیگر می‌توانند ترکیب شما را جستجو و سفارش دهند. (این نام روی بسته‌بندی قهوه شما چاپ خواهد شد.)</p>' +
+        (!nameOk() && String(state.blend_name || '').trim() !== ''
+          ? '<p class="wcb-error">نام ترکیب باید بین ۲ تا ۴۰ کاراکتر باشد.</p>'
+          : '') +
+        '</div>';
       return html;
     }
 
@@ -777,7 +826,16 @@
 
     mount.addEventListener('input', function (e) {
       var t = e.target;
-      if (!t || t.getAttribute('data-act') !== 'pct') return;
+      if (!t) return;
+      if (t.getAttribute('data-act') === 'name') {
+        state.blend_name = t.value;
+        var btn = mount.querySelector('[data-act="buy"]');
+        if (btn) {
+          btn.disabled = !canBuy() || state.busy;
+        }
+        return;
+      }
+      if (t.getAttribute('data-act') !== 'pct') return;
       var id = t.getAttribute('data-id');
       var val = Number(t.value) || 0;
       var list = currentBeans();
@@ -793,7 +851,12 @@
     });
 
     function addToCart() {
-      if (!canQuote() || state.busy) return;
+      if (!canBuy() || state.busy) return;
+      if (!nameOk()) {
+        state.error = 'برای افزودن به سبد، نام ترکیب را وارد کنید.';
+        render();
+        return;
+      }
       state.busy = true;
       render();
       var body = new FormData();

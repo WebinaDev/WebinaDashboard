@@ -1,4 +1,4 @@
-export type DashboardNavGroup = 'content' | 'shop' | 'tools' | 'reports' | 'admin'
+export type DashboardNavGroup = 'content' | 'shop' | 'users' | 'tools' | 'reports' | 'admin'
 
 export interface DashboardModule {
   id: string
@@ -44,6 +44,15 @@ export interface BootstrapPayload {
   uiAccent?: string
   /** User preference: prefer fullscreen when opening dashboard. */
   uiFullscreen?: boolean
+  brandStyle?: {
+    accent?: string
+    colors?: Record<string, string>
+    fonts?: { body?: string; heading?: string; ui?: string }
+    logoUrl?: string
+    faviconUrl?: string
+    logo_id?: number
+    favicon_id?: number
+  }
   capabilities?: string[]
   user?: { name: string; email: string; avatar?: string }
   site: { name: string; url: string; icon?: string; currency?: string; currency_symbol?: string }

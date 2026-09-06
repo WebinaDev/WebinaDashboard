@@ -127,6 +127,24 @@ export function ProductFiltersBar({ draft, lookup, onChange, onApply, onReset }:
         </Select>
       </div>
       <div className="space-y-1">
+        <Label>{t('products.filterCatalogVisibility')}</Label>
+        <Select
+          value={draft.catalog_visibility || '_all'}
+          onValueChange={(v) => set('catalog_visibility', v === '_all' ? '' : v)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_all">{t('products.filterAll')}</SelectItem>
+            <SelectItem value="visible">{t('products.catalogVisibility.visible')}</SelectItem>
+            <SelectItem value="catalog">{t('products.catalogVisibility.catalog')}</SelectItem>
+            <SelectItem value="search">{t('products.catalogVisibility.search')}</SelectItem>
+            <SelectItem value="hidden">{t('products.catalogVisibility.hidden')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
         <Label>{t('products.filterSort')}</Label>
         <Select value={draft.sort} onValueChange={(v) => set('sort', v)}>
           <SelectTrigger className="w-full">

@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 
 import AiAttributesPage from './pages/AiAttributesPage'
+import AiBlogPage from './pages/AiBlogPage'
 import AiCalendarPage from './pages/AiCalendarPage'
 import AiJobsPage from './pages/AiJobsPage'
 import AiOverviewPage from './pages/AiOverviewPage'
@@ -14,6 +15,7 @@ export const routes: Record<string, ComponentType> = {
   'ai-content': AiOverviewPage,
   'ai-content/jobs': AiJobsPage,
   'ai-content/calendar': AiCalendarPage,
+  'ai-content/blog': AiBlogPage,
   'ai-content/products': AiProductsPage,
   'ai-content/titles': AiTitlesPage,
   'ai-content/pages': AiPagesPage,

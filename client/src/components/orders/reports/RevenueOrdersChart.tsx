@@ -30,11 +30,11 @@ export function RevenueOrdersChart({ series, compareSeries, locale }: RevenueOrd
   const hasCompare = Boolean(compareSeries?.length)
 
   return (
-    <Card className="shadow-sm" variant="stat">
+    <Card className="min-w-0 overflow-hidden shadow-sm" variant="stat">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t('reports.chart.revenueOrders')}</CardTitle>
       </CardHeader>
-      <CardContent className="h-56 pt-0 sm:h-72 lg:h-80">
+      <CardContent className="h-56 min-w-0 overflow-hidden pt-0 sm:h-72 lg:h-80">
         {empty ? (
           <p className="text-muted-foreground flex h-full items-center justify-center text-sm">{t('reports.emptyHint')}</p>
         ) : (
@@ -44,7 +44,7 @@ export function RevenueOrdersChart({ series, compareSeries, locale }: RevenueOrd
               compareRevenue: { label: t('reports.comparePeriod'), color: 'var(--color-chart-2)' },
               orders: { label: t('reports.orders'), color: 'var(--color-chart-3)' },
             }}
-            className="h-full w-full"
+            className="h-full min-w-0 w-full max-w-full"
           >
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>

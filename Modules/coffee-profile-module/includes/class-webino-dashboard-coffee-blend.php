@@ -40,7 +40,7 @@ class Webino_Dashboard_Coffee_Blend {
 	 */
 	public static function default_settings() {
 		return array(
-			'source'               => 'profile',
+			'source'               => 'pricing',
 			'category_ids'         => array(),
 			'product_ids'          => array(),
 			'min_beans'            => 2,
@@ -192,9 +192,9 @@ class Webino_Dashboard_Coffee_Blend {
 		if ( ! is_array( $input ) ) {
 			return $defaults;
 		}
-		$source = sanitize_key( (string) ( $input['source'] ?? 'profile' ) );
-		if ( ! in_array( $source, array( 'profile', 'category', 'products' ), true ) ) {
-			$source = 'profile';
+		$source = sanitize_key( (string) ( $input['source'] ?? 'pricing' ) );
+		if ( ! in_array( $source, array( 'pricing', 'profile', 'category', 'products' ), true ) ) {
+			$source = 'pricing';
 		}
 		$mode = sanitize_key( (string) ( $input['default_mode'] ?? 'both' ) );
 		if ( ! in_array( $mode, array( 'both', 'simple', 'advanced' ), true ) ) {
@@ -317,48 +317,85 @@ class Webino_Dashboard_Coffee_Blend {
 	public static function catalog_product_ids() {
 		$settings = self::get_settings();
 		$holder   = (int) $settings['holder_product_id'];
+		$source   = sanitize_key( (string) ( $settings['source'] ?? 'pricing' ) );
+		$bean_ids = class_exists( 'Webino_Dashboard_Coffee_Pricing', false )
+			? Webino_Dashboard_Coffee_Pricing::bean_product_ids()
+			: array();
 		$ids      = array();
-		if ( 'products' === $settings['source'] && $settings['product_ids'] ) {
+
+		if ( 'pricing' === $source || '' === $source ) {
+			$ids = $bean_ids;
+		} elseif ( 'products' === $source && $settings['product_ids'] ) {
 			$ids = $settings['product_ids'];
-		} elseif ( 'category' === $settings['source'] && $settings['category_ids'] ) {
-			$q = new WP_Query(
-				array(
-					'post_type'      => 'product',
-					'post_status'    => 'publish',
-					'posts_per_page' => 80,
-					'fields'         => 'ids',
-					'orderby'        => 'title',
-					'order'          => 'ASC',
-					'tax_query'      => array(
-						array(
-							'taxonomy' => 'product_cat',
-							'field'    => 'term_id',
-							'terms'    => $settings['category_ids'],
-						),
+		} elseif ( 'category' === $source && $settings['category_ids'] ) {
+			$q_args = array(
+				'post_type'      => 'product',
+				'post_status'    => 'publish',
+				'posts_per_page' => 80,
+				'fields'         => 'ids',
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'tax_query'      => array(
+					array(
+						'taxonomy' => 'product_cat',
+						'field'    => 'term_id',
+						'terms'    => $settings['category_ids'],
 					),
-				)
+				),
 			);
+			$vis = Webino_Dashboard_Coffee_Profile::storefront_visibility_tax_clause();
+			if ( $vis ) {
+				$q_args['tax_query'][]           = $vis;
+				$q_args['tax_query']['relation'] = 'AND';
+			}
+			$q   = new WP_Query( $q_args );
 			$ids = array_map( 'intval', $q->posts );
 		} else {
-			$q = new WP_Query(
-				array(
-					'post_type'      => 'product',
-					'post_status'    => 'publish',
-					'posts_per_page' => 80,
-					'fields'         => 'ids',
-					'orderby'        => 'title',
-					'order'          => 'ASC',
-					'meta_query'     => array(
-						array(
-							'key'     => Webino_Dashboard_Coffee_Profile::META_KEY,
-							'compare' => 'EXISTS',
-						),
+			// Legacy "profile" source: still intersect with pricing beans so mixes never leak.
+			$q_args = array(
+				'post_type'      => 'product',
+				'post_status'    => 'publish',
+				'posts_per_page' => 80,
+				'fields'         => 'ids',
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'meta_query'     => array(
+					array(
+						'key'     => Webino_Dashboard_Coffee_Profile::META_KEY,
+						'compare' => 'EXISTS',
 					),
-				)
+				),
 			);
+			$vis = Webino_Dashboard_Coffee_Profile::storefront_visibility_tax_clause();
+			if ( $vis ) {
+				$q_args['tax_query'] = array( $vis );
+			}
+			$q   = new WP_Query( $q_args );
 			$ids = array_map( 'intval', $q->posts );
 		}
-		$ids = array_values( array_unique( array_filter( $ids ) ) );
+
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ) ) ) );
+
+		// Always restrict to beans linked in coffee pricing (excludes shop mix SKUs).
+		if ( $bean_ids ) {
+			$allowed = array_fill_keys( $bean_ids, true );
+			$ids     = array_values(
+				array_filter(
+					$ids,
+					static function ( $id ) use ( $allowed ) {
+						return isset( $allowed[ (int) $id ] );
+					}
+				)
+			);
+			// Preserve pricing table order when source is pricing.
+			if ( 'pricing' === $source || '' === $source ) {
+				$ids = array_values( array_intersect( $bean_ids, $ids ) );
+			}
+		} else {
+			// No beans linked yet — empty catalog rather than showing mixes.
+			$ids = array();
+		}
+
 		if ( $holder > 0 ) {
 			$ids = array_values( array_diff( $ids, array( $holder ) ) );
 		}
@@ -609,14 +646,23 @@ class Webino_Dashboard_Coffee_Blend {
 		}
 		$months = max( 0, (int) ( $raw['installment_months'] ?? 0 ) );
 
+		$blend_name = sanitize_text_field( (string) ( $raw['blend_name'] ?? '' ) );
+		$blend_name = trim( $blend_name );
+		if ( function_exists( 'mb_substr' ) ) {
+			$blend_name = mb_substr( $blend_name, 0, 40 );
+		} else {
+			$blend_name = substr( $blend_name, 0, 40 );
+		}
+
 		return array(
-			'mode'                => $mode,
-			'beans'               => $beans,
-			'grind'               => $grind,
-			'grind_device'        => $device,
-			'weight_g'            => $weight,
-			'purchase_type'       => $type,
-			'installment_months'  => $months,
+			'mode'               => $mode,
+			'beans'              => $beans,
+			'grind'              => $grind,
+			'grind_device'       => $device,
+			'weight_g'           => $weight,
+			'purchase_type'      => $type,
+			'installment_months' => $months,
+			'blend_name'         => $blend_name,
 		);
 	}
 
@@ -634,7 +680,24 @@ class Webino_Dashboard_Coffee_Blend {
 			if ( (int) $settings['arabica_product_id'] > 0 ) {
 				$ids[] = (int) $settings['arabica_product_id'];
 			}
-			return array_values( array_unique( $ids ) );
+			$ids = array_values( array_unique( $ids ) );
+			$bean_ids = class_exists( 'Webino_Dashboard_Coffee_Pricing', false )
+				? Webino_Dashboard_Coffee_Pricing::bean_product_ids()
+				: array();
+			if ( $bean_ids ) {
+				$allowed = array_fill_keys( $bean_ids, true );
+				$ids     = array_values(
+					array_filter(
+						$ids,
+						static function ( $id ) use ( $allowed ) {
+							return isset( $allowed[ (int) $id ] );
+						}
+					)
+				);
+			} else {
+				$ids = array();
+			}
+			return $ids;
 		}
 		return self::catalog_product_ids();
 	}
@@ -787,6 +850,13 @@ class Webino_Dashboard_Coffee_Blend {
 		if ( is_wp_error( $quote ) ) {
 			return $item_data;
 		}
+		$blend_name = isset( $quote['recipe']['blend_name'] ) ? trim( (string) $quote['recipe']['blend_name'] ) : '';
+		if ( '' !== $blend_name ) {
+			$item_data[] = array(
+				'key'   => __( 'نام ترکیب', 'webino-dashboard' ),
+				'value' => $blend_name,
+			);
+		}
 		foreach ( $quote['lines'] as $line ) {
 			$item_data[] = array(
 				'key'   => $line['name'],
@@ -880,6 +950,10 @@ class Webino_Dashboard_Coffee_Blend {
 		}
 		$item->add_meta_data( '_webino_coffee_blend', wp_json_encode( $quote['recipe'] ), true );
 		$item->set_name( (string) $quote['title'] );
+		$blend_name = isset( $quote['recipe']['blend_name'] ) ? trim( (string) $quote['recipe']['blend_name'] ) : '';
+		if ( '' !== $blend_name ) {
+			$item->add_meta_data( __( 'نام ترکیب', 'webino-dashboard' ), $blend_name, false );
+		}
 		foreach ( $quote['lines'] as $line ) {
 			$item->add_meta_data( $line['name'], (int) round( $line['percent'] ) . '٪ · ' . $line['roast_label'], false );
 		}
@@ -906,6 +980,11 @@ class Webino_Dashboard_Coffee_Blend {
 		$quote = self::quote( $raw );
 		if ( is_wp_error( $quote ) ) {
 			wp_send_json_error( array( 'message' => $quote->get_error_message() ), 400 );
+		}
+		$blend_name = isset( $quote['recipe']['blend_name'] ) ? trim( (string) $quote['recipe']['blend_name'] ) : '';
+		$name_len   = function_exists( 'mb_strlen' ) ? mb_strlen( $blend_name ) : strlen( $blend_name );
+		if ( $name_len < 2 ) {
+			wp_send_json_error( array( 'message' => __( 'برای افزودن به سبد، نام ترکیب را وارد کنید.', 'webino-dashboard' ) ), 400 );
 		}
 		$holder = self::ensure_holder_product();
 		if ( $holder < 1 ) {
@@ -1197,6 +1276,14 @@ class Webino_Dashboard_Coffee_Blend {
 	 * @return string
 	 */
 	private static function recipe_title( $lines, $recipe ) {
+		$name = isset( $recipe['blend_name'] ) ? trim( (string) $recipe['blend_name'] ) : '';
+		if ( '' !== $name ) {
+			$prefix = 'قهوه';
+			$starts = function_exists( 'mb_stripos' )
+				? ( 0 === mb_stripos( $name, $prefix ) )
+				: ( 0 === stripos( $name, $prefix ) );
+			return $starts ? $name : $prefix . ' ' . $name;
+		}
 		$bits = array();
 		foreach ( $lines as $line ) {
 			$bits[] = $line['name'] . ' ' . (int) round( $line['percent'] ) . '٪';

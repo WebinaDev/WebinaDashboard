@@ -28,6 +28,8 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 			'class-webino-dashboard-ai-elementor.php',
 			'class-webino-dashboard-ai-writer.php',
 			'class-webino-dashboard-ai-proposals.php',
+			'class-webino-dashboard-ai-blog-topics.php',
+			'class-webino-dashboard-ai-blog-images.php',
 			'class-webino-dashboard-ai-queue.php',
 			'class-webino-dashboard-ai-calendar.php',
 			'class-webino-dashboard-ai-attributes.php',

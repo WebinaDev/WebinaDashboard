@@ -41,16 +41,16 @@ export function WeekHourHeatmap({ cells, currency, currencySymbol, locale }: Wee
   const hasData = maxOrders > 0
 
   return (
-    <Card className="shadow-sm">
+    <Card className="min-w-0 max-w-full overflow-hidden shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t('reports.chart.heatmap')}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="min-w-0 max-w-full pt-0">
         {!hasData ? (
           <p className="text-muted-foreground py-8 text-center text-sm">{t('reports.emptyHint')}</p>
         ) : (
           <TooltipProvider delayDuration={100}>
-            <div className="overflow-x-auto pb-2">
+            <div className="max-w-full overflow-x-auto pb-2">
               <div className="min-w-[640px]">
                 <div className="mb-2 grid grid-cols-[4rem_repeat(24,minmax(0,1fr))] gap-0.5 text-muted-foreground text-[10px]">
                   <div />

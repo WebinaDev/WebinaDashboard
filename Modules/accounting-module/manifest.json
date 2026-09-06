@@ -24,7 +24,7 @@
     "path": "/accounting/overview",
     "capability": "manage_woocommerce",
     "icon": "calculator",
-    "nav_group": "reports",
+    "nav_group": "shop",
     "children": [
       { "id": "accounting-overview", "title": "Overview", "path": "/accounting/overview", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
       { "id": "accounting-chart", "title": "Chart of accounts", "path": "/accounting/chart", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },

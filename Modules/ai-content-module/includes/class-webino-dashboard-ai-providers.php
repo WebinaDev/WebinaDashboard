@@ -850,6 +850,228 @@ final class Webino_Dashboard_AI_Providers {
 	}
 
 	/**
+	 * Generate an image via GapGPT / OpenAI images API.
+	 *
+	 * @param string              $prompt Prompt.
+	 * @param array<string,mixed> $opts provider, model, size, quality, n.
+	 * @return array{ok:bool,url?:string,b64?:string,provider?:string,model?:string}|WP_Error
+	 */
+	public static function generate_image( $prompt, $opts = array() ) {
+		$prompt = trim( (string) $prompt );
+		if ( '' === $prompt ) {
+			return new WP_Error( 'ai_image', __( 'Empty image prompt.', 'webino-dashboard' ) );
+		}
+
+		$settings = Webino_Dashboard_AI_Content_Settings::get();
+		$provider = sanitize_key( (string) ( $opts['provider'] ?? $settings['blog_image_provider'] ?? 'gapgpt' ) );
+		if ( ! in_array( $provider, array( 'gapgpt', 'openai' ), true ) ) {
+			$provider = 'gapgpt';
+		}
+
+		$key_field = 'gapgpt' === $provider ? 'gapgpt_api_key' : 'openai_api_key';
+		$api_key   = trim( (string) ( $settings[ $key_field ] ?? '' ) );
+		if ( '' === $api_key ) {
+			return new WP_Error(
+				'ai_image',
+				'gapgpt' === $provider
+					? __( 'GapGPT API key required for blog images.', 'webino-dashboard' )
+					: __( 'OpenAI API key required for blog images.', 'webino-dashboard' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$model   = sanitize_text_field( (string) ( $opts['model'] ?? $settings['blog_image_model'] ?? 'gpt-image-1' ) );
+		$size    = self::normalize_image_size( (string) ( $opts['size'] ?? '1536x1024' ) );
+		$quality = sanitize_key( (string) ( $opts['quality'] ?? 'hd' ) );
+		// gpt-image models: low|medium|high; dall-e-3: standard|hd.
+		$quality_map = array(
+			'standard' => 'medium',
+			'hd'       => 'high',
+			'low'      => 'low',
+			'medium'   => 'medium',
+			'high'     => 'high',
+		);
+		$quality = isset( $quality_map[ $quality ] ) ? $quality_map[ $quality ] : 'high';
+		$n = max( 1, min( 1, (int) ( $opts['n'] ?? 1 ) ) );
+
+		$base = 'gapgpt' === $provider ? 'https://api.gapgpt.app/v1/images/generations' : 'https://api.openai.com/v1/images/generations';
+		$body = array(
+			'model'  => $model,
+			'prompt' => $prompt,
+			'n'      => $n,
+			'size'   => $size,
+		);
+		// Prefer URL when supported; some models only return b64.
+		$body['response_format'] = 'url';
+		if ( false !== stripos( $model, 'dall-e' ) ) {
+			$body['quality'] = ( 'high' === $quality ) ? 'hd' : 'standard';
+		} else {
+			$body['quality'] = $quality;
+		}
+
+		$result = self::post_image_json( $base, $api_key, $body );
+		if ( empty( $result['ok'] ) && 'gapgpt' === $provider ) {
+			$fallback = self::post_image_json( 'https://api.gapapi.com/v1/images/generations', $api_key, $body );
+			if ( ! empty( $fallback['ok'] ) ) {
+				$result = $fallback;
+			}
+		}
+
+		// Retry without response_format / quality if rejected.
+		if ( empty( $result['ok'] ) ) {
+			$retry_body = array(
+				'model'  => $model,
+				'prompt' => $prompt,
+				'n'      => $n,
+				'size'   => $size,
+			);
+			$result = self::post_image_json( $base, $api_key, $retry_body );
+			if ( empty( $result['ok'] ) && 'gapgpt' === $provider ) {
+				$result = self::post_image_json( 'https://api.gapapi.com/v1/images/generations', $api_key, $retry_body );
+			}
+		}
+
+		if ( empty( $result['ok'] ) ) {
+			return new WP_Error( 'ai_image', (string) ( $result['error'] ?? 'Image generation failed' ), array( 'status' => 502 ) );
+		}
+
+		return array(
+			'ok'       => true,
+			'url'      => (string) ( $result['url'] ?? '' ),
+			'b64'      => (string) ( $result['b64'] ?? '' ),
+			'provider' => $provider,
+			'model'    => $model,
+		);
+	}
+
+	/**
+	 * Normalize to sizes supported by gpt-image / GapGPT image API.
+	 *
+	 * @param string $size Requested size.
+	 * @return string
+	 */
+	private static function normalize_image_size( $size ) {
+		$size = strtolower( trim( (string) $size ) );
+		$allowed = array( '1024x1024', '1024x1536', '1536x1024', 'auto' );
+		if ( in_array( $size, $allowed, true ) ) {
+			return $size;
+		}
+		// Legacy DALL·E 3 sizes → closest gpt-image size.
+		$legacy = array(
+			'1792x1024' => '1536x1024',
+			'1024x1792' => '1024x1536',
+			'512x512'   => '1024x1024',
+			'256x256'   => '1024x1024',
+		);
+		if ( isset( $legacy[ $size ] ) ) {
+			return $legacy[ $size ];
+		}
+		return '1536x1024';
+	}
+
+	/**
+	 * @param string              $url URL.
+	 * @param string              $api_key Key.
+	 * @param array<string,mixed> $body Body.
+	 * @return array{ok:bool,url?:string,b64?:string,error?:string}
+	 */
+	private static function post_image_json( $url, $api_key, $body ) {
+		$prev_timeout        = self::$http_timeout;
+		self::$http_timeout  = self::GAPGPT_HTTP_TIMEOUT;
+		$payload             = wp_json_encode( $body );
+		$raw                 = '';
+		$code                = 0;
+
+		if ( self::is_gapgpt_url( $url ) && function_exists( 'curl_init' ) ) {
+			$ch = curl_init( $url );
+			if ( false !== $ch ) {
+				$opts = array(
+					CURLOPT_RETURNTRANSFER => true,
+					CURLOPT_POST           => true,
+					CURLOPT_POSTFIELDS     => $payload,
+					CURLOPT_TIMEOUT        => self::effective_timeout( self::GAPGPT_HTTP_TIMEOUT ),
+					CURLOPT_CONNECTTIMEOUT => self::GAPGPT_CONNECT_TIMEOUT,
+					CURLOPT_SSL_VERIFYPEER => true,
+					CURLOPT_SSL_VERIFYHOST => 2,
+					CURLOPT_HTTPHEADER     => array(
+						'Authorization: Bearer ' . $api_key,
+						'Content-Type: application/json',
+						'Accept: application/json',
+						'Expect:',
+					),
+				);
+				if ( defined( 'CURL_HTTP_VERSION_1_1' ) ) {
+					$opts[ CURLOPT_HTTP_VERSION ] = CURL_HTTP_VERSION_1_1;
+				}
+				if ( defined( 'CURL_IPRESOLVE_V4' ) ) {
+					$opts[ CURLOPT_IPRESOLVE ] = CURL_IPRESOLVE_V4;
+				}
+				curl_setopt_array( $ch, $opts );
+				$exec = curl_exec( $ch );
+				$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+				$err  = curl_error( $ch );
+				curl_close( $ch );
+				if ( false === $exec ) {
+					self::$http_timeout = $prev_timeout;
+					return array( 'ok' => false, 'error' => $err ? $err : 'cURL failed' );
+				}
+				$raw = (string) $exec;
+			}
+		}
+
+		if ( '' === $raw ) {
+			$response = wp_remote_post(
+				$url,
+				array(
+					'timeout' => self::wp_http_timeout( self::GAPGPT_HTTP_TIMEOUT ),
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $api_key,
+						'Content-Type'  => 'application/json',
+						'Expect'        => '',
+					),
+					'body'    => $payload,
+				)
+			);
+			self::$http_timeout = $prev_timeout;
+			if ( is_wp_error( $response ) ) {
+				return array( 'ok' => false, 'error' => $response->get_error_message() );
+			}
+			$code = (int) wp_remote_retrieve_response_code( $response );
+			$raw  = (string) wp_remote_retrieve_body( $response );
+		} else {
+			self::$http_timeout = $prev_timeout;
+		}
+
+		$data = json_decode( $raw, true );
+		if ( $code < 200 || $code >= 300 ) {
+			$msg = is_array( $data ) && isset( $data['error']['message'] ) ? (string) $data['error']['message'] : 'HTTP ' . $code;
+			return array( 'ok' => false, 'error' => $msg );
+		}
+
+		$url_out = '';
+		$b64     = '';
+		if ( is_array( $data ) && isset( $data['data'][0] ) && is_array( $data['data'][0] ) ) {
+			$row     = $data['data'][0];
+			$url_out = (string) ( $row['url'] ?? '' );
+			$b64     = (string) ( $row['b64_json'] ?? '' );
+		}
+		if ( '' === $url_out && '' === $b64 && is_array( $data ) ) {
+			$url_out = (string) ( $data['url'] ?? $data['image_url'] ?? '' );
+			$b64     = (string) ( $data['b64_json'] ?? $data['image_base64'] ?? '' );
+		}
+
+		if ( '' === $url_out && '' === $b64 ) {
+			return array( 'ok' => false, 'error' => 'Empty image response' );
+		}
+
+		return array(
+			'ok'  => true,
+			'url' => $url_out,
+			'b64' => $b64,
+		);
+	}
+
+	/**
 	 * Fallback to another provider only when the call did not reach a billed completion.
 	 *
 	 * @param string $error Error.

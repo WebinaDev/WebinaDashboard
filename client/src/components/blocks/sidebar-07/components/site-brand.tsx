@@ -6,23 +6,30 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { LazyImage } from '@/components/ui/lazy-image'
 
 export function SiteBrand({
   title,
   subtitle,
   homeTo,
+  logoUrl,
 }: {
   title: string
   subtitle: string
   homeTo: string
+  logoUrl?: string
 }) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton size="lg" asChild>
           <Link to={homeTo}>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              <Command className="size-4" />
+            <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              {logoUrl ? (
+                <LazyImage src={logoUrl} alt="" className="size-full object-cover" eager />
+              ) : (
+                <Command className="size-4" />
+              )}
             </div>
             <div className="grid flex-1 text-start text-sm leading-tight">
               <span className="truncate font-semibold">{title}</span>

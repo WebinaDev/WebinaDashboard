@@ -1,7 +1,7 @@
 {
   "slug": "coffee-profile-module",
   "name": "Coffee Profile",
-  "version": "1.1.7",
+  "version": "1.1.16",
   "is_builtin": true,
   "is_first_party": true,
   "default_active": true,
@@ -27,6 +27,12 @@
         "title": "Coffee origins",
         "path": "/shop/coffee-origins",
         "capability": "manage_product_terms"
+      },
+      {
+        "id": "coffee-profile-pricing",
+        "title": "Coffee pricing",
+        "path": "/shop/coffee-pricing",
+        "capability": "edit_products"
       }
     ]
   },
@@ -47,6 +53,11 @@
         "path": "shop/coffee-origins/:originId",
         "capability": "manage_product_terms",
         "headerTitleKey": "coffeeProfile.originEditTitle"
+      },
+      {
+        "path": "shop/coffee-pricing",
+        "capability": "edit_products",
+        "headerTitleKey": "coffeeProfile.pricingTitle"
       },
       {
         "path": "settings/shop/coffee-profile",

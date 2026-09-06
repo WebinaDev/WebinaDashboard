@@ -52,7 +52,7 @@ export function OrderAttributionPanel({ attribution }: OrderAttributionPanelProp
           {rows.map((row) => (
             <div key={row.label}>
               <dt className="text-muted-foreground text-xs">{row.label}</dt>
-              <dd className="mt-0.5 font-medium" dir="auto">
+              <dd className="mt-0.5 break-all font-medium" dir="auto">
                 {row.value}
               </dd>
             </div>

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { LoginForm } from '@/components/blocks/login-04/components/login-form'
+import { PwaInstallBanner } from '@/components/PwaInstallBanner'
 import { applyDashboardDocumentSeo } from '@/lib/dashboard-seo'
 
 export function LoginPage() {
@@ -24,6 +25,7 @@ export function LoginPage() {
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm md:max-w-4xl">
+        <PwaInstallBanner variant="login" />
         <LoginForm />
       </div>
     </div>

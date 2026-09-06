@@ -80,6 +80,7 @@ export function CoffeeBlendSettingsPanel() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="pricing">{t('coffeeProfile.blendSourcePricing')}</SelectItem>
                 <SelectItem value="profile">{t('coffeeProfile.blendSourceProfile')}</SelectItem>
                 <SelectItem value="category">{t('coffeeProfile.blendSourceCategory')}</SelectItem>
                 <SelectItem value="products">{t('coffeeProfile.blendSourceProducts')}</SelectItem>

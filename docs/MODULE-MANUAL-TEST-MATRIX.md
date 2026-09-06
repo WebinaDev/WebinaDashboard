@@ -15,6 +15,7 @@ Run on a staging WordPress site with WooCommerce, WebinoDashboard, sibling `Modu
 
 | Module | Install from marketplace | Sidebar appears | Key REST (200) | E2E scenario |
 |--------|--------------------------|-----------------|----------------|--------------|
+| security-module | Yes (builtin) | Security nav (tools) | `GET /security/overview` | Wizard → firewall live → quick scan → heal preview |
 | analytics-module | Yes | Analytics nav | `GET /analytics/overview` | Open overview + visitors panels |
 | bale-bot-module | Yes | Bots > Bale | bots REST context | Connect bot, send test broadcast |
 | telegram-bot-module | Yes (requires bale) | Bots > Telegram | shared bots REST | Webhook + shop panel |

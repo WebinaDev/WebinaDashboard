@@ -130,13 +130,14 @@ export function ShopSmsNotificationsPanel() {
   const setEventToggle = (key: string, role: 'customer' | 'admin', value: boolean) => {
     if (!settings) return
     const events = settings.events ?? {}
-    setSettings({
+    const next = {
       ...settings,
       events: {
         ...events,
         [key]: { ...(events[key] ?? { admin: false, customer: false }), [role]: value },
       },
-    })
+    }
+    setSettings(next)
   }
 
   const save = useMutation({
@@ -157,7 +158,12 @@ export function ShopSmsNotificationsPanel() {
         event_catalog: catalog,
         require_pattern: true,
       }
-      await saveShopSmsSettings({ settings: nextSettings, templates })
+      const syncedTemplates = (templates ?? []).map((tpl) => {
+        const role = String(tpl.scope).includes('admin') ? 'admin' : 'customer'
+        const on = !!nextSettings.events?.[tpl.event_key]?.[role]
+        return { ...tpl, enabled: on }
+      })
+      await saveShopSmsSettings({ settings: nextSettings, templates: syncedTemplates })
     },
     onSuccess: async () => {
       toast.success(t('common.saved'))

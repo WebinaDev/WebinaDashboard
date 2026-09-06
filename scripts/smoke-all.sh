@@ -17,6 +17,7 @@ echo "== Webino Dashboard smoke-all =="
 "$ROOT/scripts/smoke-hygiene.sh"
 "$ROOT/scripts/smoke-page-dod.sh"
 "$ROOT/scripts/smoke-i18n.sh"
+"$ROOT/scripts/smoke-security-module.sh"
 
 if command -v msgfmt >/dev/null 2>&1; then
   "$ROOT/scripts/compile-languages.sh"

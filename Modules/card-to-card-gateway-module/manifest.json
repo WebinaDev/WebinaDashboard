@@ -20,7 +20,7 @@
     ]
   },
   "sidebar": {
-    "parent_id": "shop",
+    "parent_id": "orders",
     "nodes": [
       {
         "id": "c2c-receipts",

@@ -187,7 +187,7 @@ class Webino_Dashboard_REST_Coffee_Profile {
 		if ( isset( $body['profile'] ) && is_array( $body['profile'] ) ) {
 			$body = array_merge( $body['profile'], array_intersect_key( $body, array( 'origin_ids' => true ) ) );
 		}
-		$keys = array( 'blend_robusta', 'blend_arabica', 'acidity', 'caffeine_mg', 'bitterness', 'sweetness', 'body', 'visible', 'origin_ids', 'pack_weight_g' );
+		$keys = array( 'blend_robusta', 'blend_arabica', 'acidity', 'caffeine_mg', 'bitterness', 'sweetness', 'body', 'visible', 'origin_ids', 'pack_weight_g', 'price_mode', 'price_bean_id', 'price_mix_id', 'price_shop_style', 'price_parts' );
 		$has  = false;
 		foreach ( $keys as $key ) {
 			if ( array_key_exists( $key, $body ) ) {
@@ -202,11 +202,20 @@ class Webino_Dashboard_REST_Coffee_Profile {
 		if ( is_wp_error( $saved ) ) {
 			return $saved;
 		}
+		$pricing = null;
+		$mode    = sanitize_key( (string) ( $saved['price_mode'] ?? '' ) );
+		if ( '' !== $mode && 'none' !== $mode && class_exists( 'Webino_Dashboard_Coffee_Pricing', false ) ) {
+			$res = Webino_Dashboard_Coffee_Pricing::apply_to_product( $id );
+			if ( ! is_wp_error( $res ) ) {
+				$pricing = $res;
+			}
+		}
 		return new WP_REST_Response(
 			array(
 				'profile'  => $saved,
 				'settings' => Webino_Dashboard_Coffee_Profile::get_settings(),
 				'origins'  => self::origin_items_all(),
+				'pricing'  => $pricing,
 			)
 		);
 	}

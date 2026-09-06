@@ -559,6 +559,7 @@ class Webino_Dashboard_Order_Configs {
 	 * @return string
 	 */
 	public static function build_picker_html( $product_id, $standalone = true ) {
+		unset( $standalone );
 		if ( self::$building_picker ) {
 			return '';
 		}
@@ -583,16 +584,12 @@ class Webino_Dashboard_Order_Configs {
 			self::$building_picker = false;
 			return '';
 		}
+		// Always emit a standalone block (never class "variations") so WC variation JS ignores these selects.
 		ob_start();
-		if ( $standalone ) {
-			echo '<div class="wcf-fulfillment wcf-fulfillment--fallback wcf-order-config-fields">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		}
-		echo '<table class="variations wcf-variations webino-order-configs wcf-order-configs" cellspacing="0" role="presentation"><tbody class="wcf-fulfillment">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div class="wcf-fulfillment wcf-fulfillment--fallback wcf-order-config-fields webino-order-configs wcf-order-configs">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div class="wcf-order-configs-inner" role="group">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $rows; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '</tbody></table>';
-		if ( $standalone ) {
-			echo '</div>';
-		}
+		echo '</div></div>';
 		$html = (string) ob_get_clean();
 		self::$building_picker = false;
 		return $html;
@@ -1276,6 +1273,7 @@ class Webino_Dashboard_Order_Configs {
 		$selected = (string) ( $axis['default_slug'] ?? '' );
 		$field    = (string) ( $axis['field_name'] ?? '' );
 		$field_id = (string) ( $axis['field_id'] ?? self::field_dom_id( (string) ( $axis['name'] ?? 'cfg' ) ) );
+		$terms    = isset( $axis['terms'] ) && is_array( $axis['terms'] ) ? $axis['terms'] : array();
 		if ( '' === $label || '' === $field || array() === $options ) {
 			return '';
 		}
@@ -1291,22 +1289,24 @@ class Webino_Dashboard_Order_Configs {
 			);
 		}
 		if ( '' === $swatches ) {
-			$swatches = self::plain_select_html( $options, $axis['terms'] ?? array(), $selected, $field, $field_id );
+			$swatches = self::plain_select_html( $options, $terms, $selected, $field, $field_id );
 		}
-		$attr_key        = $taxonomy ? $taxonomy : $field_id;
-		$variation_class = 'variation-webino-' . sanitize_html_class( self::post_field_key( $attr_key ) );
+		$selected_label = self::label_for_term_slug( $terms, $selected );
+		$attr_key       = $taxonomy ? $taxonomy : $field_id;
+		$row_class      = 'wcf-field webino-order-config-field variation-webino-' . sanitize_html_class( self::post_field_key( $attr_key ) );
 		ob_start();
 		?>
-		<tr class="<?php echo esc_attr( $variation_class ); ?> wcf-field" data-wcf-field="<?php echo esc_attr( $field_id ); ?>">
-			<th class="label">
+		<div class="<?php echo esc_attr( $row_class ); ?>" data-wcf-field="<?php echo esc_attr( $field_id ); ?>">
+			<div class="label">
 				<label class="product-single--add-to-cart--form-label" for="<?php echo esc_attr( $field_id ); ?>">
-					<?php echo esc_html( $label ); ?> <abbr class="required" title="<?php echo esc_attr__( 'required', 'woocommerce' ); ?>">*</abbr>
+					<span class="wcf-field-title"><?php echo esc_html( $label ); ?></span><?php if ( '' !== $selected_label ) : ?><span data-wcf-selected-sep class="wcf-selected-sep">: </span><span class="wcf-selected-name" data-wcf-selected-name><?php echo esc_html( $selected_label ); ?></span><?php else : ?><span data-wcf-selected-sep class="wcf-selected-sep" style="display:none">: </span><span class="wcf-selected-name" data-wcf-selected-name style="display:none"></span><?php endif; ?>
+					<abbr class="required" title="<?php echo esc_attr__( 'required', 'woocommerce' ); ?>">*</abbr>
 				</label>
-			</th>
-			<td class="value wcf-field-value">
+			</div>
+			<div class="value wcf-field-value">
 				<?php echo $swatches; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			</td>
-		</tr>
+			</div>
+		</div>
 		<?php
 		return (string) ob_get_clean();
 	}

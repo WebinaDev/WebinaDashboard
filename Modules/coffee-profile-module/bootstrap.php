@@ -17,9 +17,11 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 			'class-webino-dashboard-coffee-profile.php',
 			'class-webino-dashboard-coffee-origins.php',
 			'class-webino-dashboard-coffee-blend.php',
+			'class-webino-dashboard-coffee-pricing.php',
 			'class-webino-dashboard-coffee-search.php',
 			'class-webino-dashboard-rest-coffee-profile.php',
 			'class-webino-dashboard-rest-coffee-blend.php',
+			'class-webino-dashboard-rest-coffee-pricing.php',
 			'class-webino-dashboard-coffee-storefront.php',
 			'class-webino-dashboard-coffee-fulfillment.php',
 		),
@@ -31,7 +33,9 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 Webino_Dashboard_Coffee_Profile::init();
 Webino_Dashboard_Coffee_Origins::init();
 Webino_Dashboard_Coffee_Blend::init();
+Webino_Dashboard_Coffee_Pricing::init();
 Webino_Dashboard_Coffee_Search::init();
 Webino_Dashboard_REST_Coffee_Profile::init();
 Webino_Dashboard_REST_Coffee_Blend::init();
+Webino_Dashboard_REST_Coffee_Pricing::init();
 Webino_Dashboard_Coffee_Storefront::init();

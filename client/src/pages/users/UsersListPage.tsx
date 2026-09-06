@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useMatch, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
@@ -57,10 +57,12 @@ export default function UsersListPage() {
   const canEdit = caps.includes('edit_users')
   const canPromote = caps.includes('promote_users')
   const canCreate = caps.includes('create_users')
+  const isEmployees = Boolean(useMatch('/users/employees'))
+  const staffRoles = 'administrator,shop_manager'
 
   const [params, setParams] = useSearchParams()
   const botFilter = parseBotFilter(params.get('bot'))
-  const isBotMode = botFilter !== 'all'
+  const isBotMode = !isEmployees && botFilter !== 'all'
 
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
@@ -95,11 +97,15 @@ export default function UsersListPage() {
   }, [searchInput])
 
   const usersQ = useQuery({
-    queryKey: ['users', page, perPage, search, roleFilter],
+    queryKey: ['users', page, perPage, search, roleFilter, isEmployees],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), per_page: String(perPage) })
       if (search.trim()) p.set('search', search.trim())
-      if (roleFilter && roleFilter !== 'all') p.set('role', roleFilter)
+      if (isEmployees) {
+        p.set('role_in', staffRoles)
+      } else if (roleFilter && roleFilter !== 'all') {
+        p.set('role', roleFilter)
+      }
       return apiFetch<{
         items: UserListRow[]
         page: number
@@ -198,10 +204,12 @@ export default function UsersListPage() {
   ]
 
   return (
-    <PageShell title={t('users.title')}>
-      <div className="mb-4">
-        <ListStatsStrip items={statItems} locale={i18n.language} />
-      </div>
+    <PageShell title={isEmployees ? t('users.employeesTitle') : t('users.title')}>
+      {!isEmployees ? (
+        <div className="mb-4">
+          <ListStatsStrip items={statItems} locale={i18n.language} />
+        </div>
+      ) : null}
       {canCreate ? (
         <div className="flex justify-end">
           <Button asChild size="sm">
@@ -214,32 +222,38 @@ export default function UsersListPage() {
       ) : null}
       <ListFiltersCollapsible
         className="mb-4"
-        activeCount={(search.trim() ? 1 : 0) + (roleFilter !== 'all' ? 1 : 0) + (botFilter !== 'all' ? 1 : 0)}
+        activeCount={
+          (search.trim() ? 1 : 0) +
+          (!isEmployees && roleFilter !== 'all' ? 1 : 0) +
+          (!isEmployees && botFilter !== 'all' ? 1 : 0)
+        }
       >
         <div className="flex flex-wrap items-end gap-3">
-          <div className="inline-flex rounded-lg border border-border p-1" role="tablist" aria-label={t('users.botFilterLabel')}>
-            {botFilters.map(({ id, label }) => {
-              const tabId = `users-bot-filter-${id}`
-              return (
-              <button
-                key={id}
-                id={tabId}
-                type="button"
-                role="tab"
-                aria-selected={botFilter === id}
-                aria-controls="users-bot-filter-panel"
-                className={cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                  botFilter === id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
-                )}
-                onClick={() => setBotFilter(id)}
-              >
-                {label}
-              </button>
-            )})}
-          </div>
+          {!isEmployees ? (
+            <div className="inline-flex rounded-lg border border-border p-1" role="tablist" aria-label={t('users.botFilterLabel')}>
+              {botFilters.map(({ id, label }) => {
+                const tabId = `users-bot-filter-${id}`
+                return (
+                <button
+                  key={id}
+                  id={tabId}
+                  type="button"
+                  role="tab"
+                  aria-selected={botFilter === id}
+                  aria-controls="users-bot-filter-panel"
+                  className={cn(
+                    'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                    botFilter === id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+                  )}
+                  onClick={() => setBotFilter(id)}
+                >
+                  {label}
+                </button>
+              )})}
+            </div>
+          ) : null}
           <div className="relative min-w-[200px] flex-1">
             <Search className="text-muted-foreground pointer-events-none absolute top-2.5 start-3 size-4" aria-hidden />
             <Input
@@ -249,7 +263,7 @@ export default function UsersListPage() {
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
-          {!isBotMode ? (
+          {!isBotMode && !isEmployees ? (
             <div className="w-44 space-y-1">
               <Label className="text-muted-foreground text-xs">{t('users.fieldRole')}</Label>
               <Select

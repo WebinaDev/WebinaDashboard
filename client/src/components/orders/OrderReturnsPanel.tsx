@@ -107,12 +107,12 @@ export function OrderReturnsPanel({
   const maxQty = selected ? (selected.returnable_qty ?? selected.quantity) : 1
 
   return (
-    <Card className="shadow-sm">
+    <Card className="min-w-0 overflow-hidden shadow-sm">
       <CardHeader>
         <CardTitle className="text-base">{t('orders.returns.title')}</CardTitle>
         <CardDescription>{t('orders.returns.subtitle')}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="min-w-0 space-y-4">
         {returnEligible && eligibleItems.length > 0 ? (
           <div className="space-y-3 rounded-lg border p-4">
             <p className="text-sm font-medium">{t('orders.returns.newRequest')}</p>
@@ -164,18 +164,20 @@ export function OrderReturnsPanel({
         ) : (
           <ul className="space-y-3">
             {returns.map((row) => (
-              <li key={row.id} className="rounded-lg border p-3">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{row.item_name}</p>
-                    <p className="text-muted-foreground text-sm">
+              <li key={row.id} className="min-w-0 rounded-lg border p-3">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words font-medium">{row.item_name}</p>
+                    <p className="text-muted-foreground break-words text-sm">
                       ×{row.qty} — {row.reason}
                     </p>
                   </div>
-                  <Badge variant="secondary">{row.status_label}</Badge>
+                  <Badge variant="secondary" className="shrink-0">
+                    {row.status_label}
+                  </Badge>
                 </div>
                 {row.status === 'approved' && returnAddress ? (
-                  <p className="text-muted-foreground mt-2 text-xs">
+                  <p className="text-muted-foreground mt-2 break-words text-xs">
                     {t('orders.returns.shipTo')}: {returnAddress}
                   </p>
                 ) : null}

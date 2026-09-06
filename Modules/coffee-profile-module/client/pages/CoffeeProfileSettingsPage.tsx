@@ -2,11 +2,12 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,23 +25,7 @@ import { toastApiError } from '@/lib/apiError'
 
 import { CoffeeBlendSettingsPanel } from '../components/CoffeeBlendSettingsPanel'
 import { CoffeeProfilePreview } from '../components/CoffeeProfilePreview'
-import type { AcidityLevel, CoffeeColors, CoffeeProfile, CoffeeSettings, IdLabel } from '../types'
-
-const COLOR_KEYS: (keyof CoffeeColors)[] = [
-  'card_bg',
-  'card_text',
-  'card_border',
-  'track',
-  'blend_fill',
-  'acidity_line',
-  'acidity_dot',
-  'caffeine_fill',
-  'bitterness_fill',
-  'sweetness_fill',
-  'body_fill',
-  'label',
-  'value',
-]
+import type { AcidityLevel, CoffeeProfile, CoffeeSettings, IdLabel } from '../types'
 
 function demoProfile(settings: CoffeeSettings): CoffeeProfile {
   const acidity: Record<string, number> = {}
@@ -341,49 +326,12 @@ export default function CoffeeProfileSettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>{t('coffeeProfile.sectionStyle')}</CardTitle>
+              <CardDescription>
+                <Link to="/settings/site/style" className="text-primary underline-offset-2 hover:underline">
+                  {t('settings.style.movedHint')}
+                </Link>
+              </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              {COLOR_KEYS.map((key) => (
-                <div key={key} className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={draft.colors[key]}
-                    onChange={(e) => setDraft({ ...draft, colors: { ...draft.colors, [key]: e.target.value } })}
-                    className="size-8 cursor-pointer rounded border bg-transparent"
-                    aria-label={t(`coffeeProfile.color.${key}`)}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <Label className="text-xs">{t(`coffeeProfile.color.${key}`)}</Label>
-                    <Input
-                      value={draft.colors[key]}
-                      onChange={(e) => setDraft({ ...draft, colors: { ...draft.colors, [key]: e.target.value } })}
-                      className="h-8 font-mono text-xs"
-                    />
-                  </div>
-                </div>
-              ))}
-              {(
-                [
-                  ['font_title', 'fontTitle'],
-                  ['font_label', 'fontLabel'],
-                  ['font_value', 'fontValue'],
-                  ['radius', 'radius'],
-                  ['gap', 'gap'],
-                  ['bar_height', 'barHeight'],
-                  ['stroke_width', 'strokeWidth'],
-                ] as const
-              ).map(([key, labelKey]) => (
-                <div key={key} className="space-y-1">
-                  <Label htmlFor={`style-${key}`}>{t(`coffeeProfile.${labelKey}`)}</Label>
-                  <Input
-                    id={`style-${key}`}
-                    type="number"
-                    value={draft[key]}
-                    onChange={(e) => setDraft({ ...draft, [key]: Number(e.target.value) || 0 })}
-                  />
-                </div>
-              ))}
-            </CardContent>
           </Card>
         </div>
 

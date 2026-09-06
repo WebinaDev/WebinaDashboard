@@ -270,6 +270,7 @@ export default function AiSettingsPage() {
       { id: 'cost', label: t('aiContent.settingsCost') },
       { id: 'site', label: t('aiContent.settingsProfile') },
       { id: 'design', label: t('aiContent.settingsDesign') },
+      { id: 'blog-image', label: t('aiContent.settingsBlogImage') },
       { id: 'tones', label: t('aiContent.settingsTones') },
       { id: 'system', label: t('aiContent.settingsSystemPrompt') },
       ...entities.map((ent) => ({ id: ent.id, label: t(ent.navKey) })),
@@ -605,6 +606,255 @@ export default function AiSettingsPage() {
             <Button type="button" size="sm" variant="ghost" disabled={resetMem.isPending} onClick={() => void resetMem.mutateAsync()}>
               {t('aiContent.resetDesign')}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card id="ai-sec-blog-image">
+        <CardHeader>
+          <CardTitle>{t('aiContent.settingsBlogImage')}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <p className="text-muted-foreground text-sm md:col-span-2">{t('aiContent.settingsBlogImageHint')}</p>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2">
+            <div>
+              <Label htmlFor="do_blog_image">{t('aiContent.blogImageEnabled')}</Label>
+              <p className="text-muted-foreground text-xs">{t('aiContent.blogImageEnabledHint')}</p>
+            </div>
+            <Switch
+              id="do_blog_image"
+              checked={draft.do_blog_image !== false}
+              onCheckedChange={(v) => set('do_blog_image', Boolean(v))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageProvider')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_provider ?? 'gapgpt'}
+              onChange={(e) => set('blog_image_provider', e.target.value)}
+            >
+              <option value="gapgpt">{t('aiContent.gapgpt')}</option>
+              <option value="openai">OpenAI</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageModel')}</Label>
+            <Input
+              list="blog-image-models"
+              value={draft.blog_image_model ?? 'gpt-image-1'}
+              onChange={(e) => set('blog_image_model', e.target.value)}
+              placeholder="gpt-image-1"
+            />
+            <datalist id="blog-image-models">
+              {(modelsQ.data?.models ?? [])
+                .filter((m) => /dall-e|gpt-image|flux|imagen|image/i.test(m.id))
+                .map((m) => (
+                  <option key={m.id} value={m.id} />
+                ))}
+              <option value="gpt-image-1" />
+              <option value="dall-e-3" />
+            </datalist>
+            <p className="text-muted-foreground text-xs">{t('aiContent.blogImageModelHint')}</p>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageAesthetic')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_aesthetic ?? 'vintage'}
+              onChange={(e) => set('blog_image_aesthetic', e.target.value)}
+            >
+              {[
+                'vintage',
+                'retro',
+                'modern',
+                'minimal',
+                'luxury',
+                'rustic',
+                'industrial',
+                'art_deco',
+                'mid_century',
+                'scandinavian',
+                'bohemian',
+                'editorial',
+                'cinematic',
+                'dark_moody',
+                'bright_airy',
+                'persian_traditional',
+              ].map((a) => (
+                <option key={a} value={a}>
+                  {t(`aiContent.blogAesthetic.${a}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageEra')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_era ?? 'generic'}
+              onChange={(e) => set('blog_image_era', e.target.value)}
+              disabled={!['vintage', 'retro'].includes(draft.blog_image_aesthetic ?? 'vintage')}
+            >
+              {['generic', '1950s', '1960s', '1970s', '1980s', '1990s'].map((e) => (
+                <option key={e} value={e}>
+                  {t(`aiContent.blogEra.${e}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageMedium')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_medium ?? 'photorealistic'}
+              onChange={(e) => set('blog_image_medium', e.target.value)}
+            >
+              {[
+                'photorealistic',
+                'cinematic_photo',
+                'film_photography',
+                'illustration',
+                'watercolor',
+                'cartoon',
+                '3d_render',
+                'flat_vector',
+                'collage',
+                'analog_film',
+              ].map((m) => (
+                <option key={m} value={m}>
+                  {t(`aiContent.blogMedium.${m}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageSubject')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_subject ?? 'product_lifestyle'}
+              onChange={(e) => set('blog_image_subject', e.target.value)}
+            >
+              {['product_lifestyle', 'still_life', 'scene', 'people', 'abstract'].map((s) => (
+                <option key={s} value={s}>
+                  {t(`aiContent.blogSubject.${s}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 md:col-span-2">
+            <div>
+              <Label htmlFor="blog_image_use_palette">{t('aiContent.blogImageUsePalette')}</Label>
+              <p className="text-muted-foreground text-xs">{t('aiContent.blogImageUsePaletteHint')}</p>
+            </div>
+            <Switch
+              id="blog_image_use_palette"
+              checked={draft.blog_image_use_palette !== false}
+              onCheckedChange={(v) => set('blog_image_use_palette', Boolean(v))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImagePaletteWeight')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_palette_weight ?? 'dominant'}
+              onChange={(e) => set('blog_image_palette_weight', e.target.value)}
+              disabled={draft.blog_image_use_palette === false}
+            >
+              {['subtle', 'dominant', 'overlay'].map((w) => (
+                <option key={w} value={w}>
+                  {t(`aiContent.blogPaletteWeight.${w}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageAspect')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_aspect ?? '16:9'}
+              onChange={(e) => set('blog_image_aspect', e.target.value)}
+            >
+              <option value="16:9">16:9</option>
+              <option value="4:3">4:3</option>
+              <option value="1:1">1:1</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageQuality')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_quality ?? 'hd'}
+              onChange={(e) => set('blog_image_quality', e.target.value)}
+            >
+              <option value="standard">{t('aiContent.blogQuality.standard')}</option>
+              <option value="hd">{t('aiContent.blogQuality.hd')}</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageLighting')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_lighting ?? 'natural'}
+              onChange={(e) => set('blog_image_lighting', e.target.value)}
+            >
+              {['natural', 'studio', 'golden_hour', 'moody', 'high_key'].map((l) => (
+                <option key={l} value={l}>
+                  {t(`aiContent.blogLighting.${l}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageCamera')}</Label>
+            <select
+              className="flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+              value={draft.blog_image_camera ?? '50mm'}
+              onChange={(e) => set('blog_image_camera', e.target.value)}
+            >
+              {['35mm', '50mm', 'overhead', 'closeup', 'wide'].map((c) => (
+                <option key={c} value={c}>
+                  {t(`aiContent.blogCamera.${c}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{t('aiContent.blogImageInlineCount')}</Label>
+            <Input
+              type="number"
+              min={0}
+              max={3}
+              value={draft.blog_image_inline_count ?? 0}
+              onChange={(e) => set('blog_image_inline_count', Math.min(3, Math.max(0, Number(e.target.value) || 0)))}
+            />
+            <p className="text-muted-foreground text-xs">{t('aiContent.blogImageInlineCountHint')}</p>
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+            <Label htmlFor="blog_image_no_text">{t('aiContent.blogImageNoText')}</Label>
+            <Switch
+              id="blog_image_no_text"
+              checked={draft.blog_image_no_text !== false}
+              onCheckedChange={(v) => set('blog_image_no_text', Boolean(v))}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+            <div>
+              <Label htmlFor="blog_image_skip_if_thumb">{t('aiContent.blogImageSkipIfThumb')}</Label>
+            </div>
+            <Switch
+              id="blog_image_skip_if_thumb"
+              checked={draft.blog_image_skip_if_thumb !== false}
+              onCheckedChange={(v) => set('blog_image_skip_if_thumb', Boolean(v))}
+            />
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <Label>{t('aiContent.promptBlogImage')}</Label>
+            <Textarea
+              rows={3}
+              value={draft.prompt_blog_image ?? ''}
+              onChange={(e) => set('prompt_blog_image', e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>

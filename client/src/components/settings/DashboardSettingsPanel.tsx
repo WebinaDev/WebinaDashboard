@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Moon, Palette, Sun, Monitor } from 'lucide-react'
+import { Moon, Sun, Monitor } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { setDashboardLanguage } from '@/i18n'
 import { apiFetch } from '@/lib/api'
-import { ACCENT_MENU_ITEMS, ACCENT_SWATCH, normalizeAccent, type AccentPreset } from '@/lib/accent'
 import { toastApiError } from '@/lib/apiError'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/theme/ThemeProvider'
@@ -26,13 +25,10 @@ type DashboardSettings = {
   ui_fullscreen_default: boolean
 }
 
-const ACCENTS = ACCENT_MENU_ITEMS.map((i) => i.value)
-
 export function DashboardSettingsPanel() {
   const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const { theme, setTheme } = useTheme()
-  const [accent, setAccent] = useState<AccentPreset>('colorful')
   const themeValue = theme ?? 'light'
   const [fullscreenDef, setFullscreenDef] = useState(false)
 
@@ -42,13 +38,8 @@ export function DashboardSettingsPanel() {
   })
 
   useEffect(() => {
-    if (q.data?.ui_accent) setAccent(normalizeAccent(q.data.ui_accent))
     if (q.data) setFullscreenDef(Boolean(q.data.ui_fullscreen_default))
   }, [q.data])
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-accent', normalizeAccent(accent))
-  }, [accent])
 
   const save = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -82,9 +73,6 @@ export function DashboardSettingsPanel() {
       {!q.isLoading && !q.isError ? (
         <Card variant="hero" className="overflow-hidden">
           <CardHeader>
-            <div className="bg-primary/10 text-primary mb-2 flex size-11 items-center justify-center rounded-2xl">
-              <Palette className="size-5" aria-hidden />
-            </div>
             <CardTitle className="text-base">{t('settings.appearanceTitle')}</CardTitle>
             <CardDescription>{t('settings.appearanceHint')}</CardDescription>
           </CardHeader>
@@ -124,32 +112,7 @@ export function DashboardSettingsPanel() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>{t('settings.accent')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {ACCENTS.map((a) => {
-                  const item = ACCENT_MENU_ITEMS.find((i) => i.value === a)!
-                  const labelKey = item.labelKey
-                  const swatch = ACCENT_SWATCH[a]
-                  return (
-                    <button
-                      key={a}
-                      type="button"
-                      aria-label={t(labelKey)}
-                      className={cn(
-                        'size-8 rounded-full border-2 transition-transform',
-                        accent === a ? 'border-foreground scale-110' : 'border-transparent',
-                      )}
-                      style={{ background: swatch }}
-                      onClick={() => {
-                        setAccent(a)
-                        void save.mutateAsync({ ui_accent: a })
-                      }}
-                    />
-                  )
-                })}
-              </div>
-            </div>
+            <p className="text-muted-foreground text-xs">{t('settings.style.accentLockedHint')}</p>
 
             <div className="bg-background/50 flex items-center gap-2 rounded-xl border px-3 py-3">
               <Checkbox

@@ -7,15 +7,15 @@ import * as v from "react-dom";
 import y from "react-dom";
 import { Fragment as b, jsx as x, jsxs as S } from "react/jsx-runtime";
 import { Link as C, useMatch as w, useNavigate as T, useParams as E } from "react-router-dom";
-import ee from "i18next";
+import D from "i18next";
 //#region \0rolldown/runtime.js
-var D = Object.defineProperty, O = (e, t) => () => (e && (t = e(e = 0)), t), k = (e, t) => {
+var O = Object.defineProperty, ee = (e, t) => () => (e && (t = e(e = 0)), t), k = (e, t) => {
 	let n = {};
-	for (var r in e) D(n, r, {
+	for (var r in e) O(n, r, {
 		get: e[r],
 		enumerable: !0
 	});
-	return t || D(n, Symbol.toStringTag, { value: "Module" }), n;
+	return t || O(n, Symbol.toStringTag, { value: "Module" }), n;
 };
 //#endregion
 //#region node_modules/clsx/dist/clsx.mjs
@@ -34,7 +34,7 @@ function j() {
 }
 //#endregion
 //#region node_modules/class-variance-authority/dist/index.mjs
-var M = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, N = j, te = (e, t) => (n) => {
+var M = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, N = j, P = (e, t) => (n) => {
 	if (t?.variants == null) return N(e, n?.class, n?.className);
 	let { variants: r, defaultVariants: i } = t, a = Object.keys(r).map((e) => {
 		let t = n?.[e], a = i?.[e];
@@ -65,33 +65,33 @@ var M = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, N = j, te = (
 };
 //#endregion
 //#region node_modules/@radix-ui/react-compose-refs/dist/index.mjs
-function P(e, t) {
+function F(e, t) {
 	if (typeof e == "function") return e(t);
 	e != null && (e.current = t);
 }
-function ne(...e) {
+function te(...e) {
 	return (t) => {
 		let n = !1, r = e.map((e) => {
-			let r = P(e, t);
+			let r = F(e, t);
 			return !n && typeof r == "function" && (n = !0), r;
 		});
 		if (n) return () => {
 			for (let t = 0; t < r.length; t++) {
 				let n = r[t];
-				typeof n == "function" ? n() : P(e[t], null);
+				typeof n == "function" ? n() : F(e[t], null);
 			}
 		};
 	};
 }
-function F(...e) {
-	return r.useCallback(ne(...e), e);
+function I(...e) {
+	return r.useCallback(te(...e), e);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function re(e) {
-	let t = /* @__PURE__ */ ie(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(L);
+function ne(e) {
+	let t = /* @__PURE__ */ re(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(ie);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ x(t, {
@@ -109,20 +109,20 @@ function re(e) {
 	return n.displayName = `${e}.Slot`, n;
 }
 /* @__NO_SIDE_EFFECTS__ */
-function ie(e) {
+function re(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = oe(n), a = ae(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? ne(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var I = Symbol("radix.slottable");
-function L(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === I;
+var L = Symbol("radix.slottable");
+function ie(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === L;
 }
 function ae(e, t) {
 	let n = { ...t };
@@ -166,7 +166,7 @@ var R = [
 	"svg",
 	"ul"
 ].reduce((e, t) => {
-	let n = /* @__PURE__ */ re(`Primitive.${t}`), i = r.forwardRef((e, r) => {
+	let n = /* @__PURE__ */ ne(`Primitive.${t}`), i = r.forwardRef((e, r) => {
 		let { asChild: i, ...a } = e, o = i ? n : t;
 		return typeof window < "u" && (window[Symbol.for("radix-ui")] = !0), /* @__PURE__ */ x(o, {
 			...a,
@@ -304,7 +304,7 @@ function he(e) {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = ye(n), a = ve(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? ne(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
@@ -352,13 +352,13 @@ function be(e) {
 	let c = e + "CollectionSlot", l = /* @__PURE__ */ me(c), u = i.forwardRef((e, t) => {
 		let { scope: n, children: r } = e;
 		return /* @__PURE__ */ x(l, {
-			ref: F(t, o(c, n).collectionRef),
+			ref: I(t, o(c, n).collectionRef),
 			children: r
 		});
 	});
 	u.displayName = c;
 	let d = e + "CollectionItemSlot", f = "data-radix-collection-item", p = /* @__PURE__ */ me(d), m = i.forwardRef((e, t) => {
-		let { scope: n, children: r, ...a } = e, s = i.useRef(null), c = F(t, s), l = o(d, n);
+		let { scope: n, children: r, ...a } = e, s = i.useRef(null), c = I(t, s), l = o(d, n);
 		return i.useEffect(() => (l.itemMap.set(s, {
 			ref: s,
 			...a
@@ -442,7 +442,7 @@ function Ee(e, t) {
 	return r.useReducer((e, n) => t[e][n] ?? e, e);
 }
 var De = (e) => {
-	let { present: t, children: n } = e, i = Oe(t), a = typeof n == "function" ? n({ present: i.isPresent }) : r.Children.only(n), o = F(i.ref, Ae(a));
+	let { present: t, children: n } = e, i = Oe(t), a = typeof n == "function" ? n({ present: i.isPresent }) : r.Children.only(n), o = I(i.ref, Ae(a));
 	return typeof n == "function" || i.isPresent ? r.cloneElement(a, { ref: o }) : null;
 };
 De.displayName = "Presence";
@@ -540,7 +540,7 @@ var Re = "DismissableLayer", ze = "dismissableLayer.update", Be = "dismissableLa
 	layersWithOutsidePointerEventsDisabled: /* @__PURE__ */ new Set(),
 	branches: /* @__PURE__ */ new Set()
 }), We = r.forwardRef((e, t) => {
-	let { disableOutsidePointerEvents: n = !1, onEscapeKeyDown: i, onPointerDownOutside: a, onFocusOutside: o, onInteractOutside: s, onDismiss: c, ...l } = e, u = r.useContext(Ue), [d, f] = r.useState(null), p = d?.ownerDocument ?? globalThis?.document, [, m] = r.useState({}), h = F(t, (e) => f(e)), g = Array.from(u.layers), [_] = [...u.layersWithOutsidePointerEventsDisabled].slice(-1), v = g.indexOf(_), y = d ? g.indexOf(d) : -1, b = u.layersWithOutsidePointerEventsDisabled.size > 0, S = y >= v, C = qe((e) => {
+	let { disableOutsidePointerEvents: n = !1, onEscapeKeyDown: i, onPointerDownOutside: a, onFocusOutside: o, onInteractOutside: s, onDismiss: c, ...l } = e, u = r.useContext(Ue), [d, f] = r.useState(null), p = d?.ownerDocument ?? globalThis?.document, [, m] = r.useState({}), h = I(t, (e) => f(e)), g = Array.from(u.layers), [_] = [...u.layersWithOutsidePointerEventsDisabled].slice(-1), v = g.indexOf(_), y = d ? g.indexOf(d) : -1, b = u.layersWithOutsidePointerEventsDisabled.size > 0, S = y >= v, C = qe((e) => {
 		let t = e.target, n = [...u.branches].some((e) => e.contains(t));
 		!S || n || (a?.(e), s?.(e), e.defaultPrevented || c?.());
 	}, p), w = Je((e) => {
@@ -577,7 +577,7 @@ var Re = "DismissableLayer", ze = "dismissableLayer.update", Be = "dismissableLa
 });
 We.displayName = Re;
 var Ge = "DismissableLayerBranch", Ke = r.forwardRef((e, t) => {
-	let n = r.useContext(Ue), i = r.useRef(null), a = F(t, i);
+	let n = r.useContext(Ue), i = r.useRef(null), a = I(t, i);
 	return r.useEffect(() => {
 		let e = i.current;
 		if (e) return n.branches.add(e), () => {
@@ -638,7 +638,7 @@ var Ze = "focusScope.autoFocusOnMount", Qe = "focusScope.autoFocusOnUnmount", $e
 	bubbles: !1,
 	cancelable: !0
 }, et = "FocusScope", tt = r.forwardRef((e, t) => {
-	let { loop: n = !1, trapped: i = !1, onMountAutoFocus: a, onUnmountAutoFocus: o, ...s } = e, [c, l] = r.useState(null), u = Ie(a), d = Ie(o), f = r.useRef(null), p = F(t, (e) => l(e)), m = r.useRef({
+	let { loop: n = !1, trapped: i = !1, onMountAutoFocus: a, onUnmountAutoFocus: o, ...s } = e, [c, l] = r.useState(null), u = Ie(a), d = Ie(o), f = r.useRef(null), p = I(t, (e) => l(e)), m = r.useRef({
 		paused: !1,
 		pause() {
 			this.paused = !0;
@@ -1389,7 +1389,7 @@ function Hn(e) {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = Kn(n), a = Gn(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? ne(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
@@ -1445,7 +1445,7 @@ var qn = "Dialog", [Jn, Yn] = fe(qn), [Xn, Zn] = Jn(qn), Qn = (e) => {
 };
 Qn.displayName = qn;
 var $n = "DialogTrigger", er = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, ...r } = e, i = Zn($n, n), a = F(t, i.triggerRef);
+	let { __scopeDialog: n, ...r } = e, i = Zn($n, n), a = I(t, i.triggerRef);
 	return /* @__PURE__ */ x(R.button, {
 		type: "button",
 		"aria-haspopup": "dialog",
@@ -1516,7 +1516,7 @@ var sr = /* @__PURE__ */ Vn("DialogOverlay.RemoveScroll"), cr = r.forwardRef((e,
 });
 ur.displayName = lr;
 var dr = r.forwardRef((e, t) => {
-	let n = Zn(lr, e.__scopeDialog), i = r.useRef(null), a = F(t, n.contentRef, i);
+	let n = Zn(lr, e.__scopeDialog), i = r.useRef(null), a = I(t, n.contentRef, i);
 	return r.useEffect(() => {
 		let e = i.current;
 		if (e) return Bn(e);
@@ -1551,7 +1551,7 @@ var dr = r.forwardRef((e, t) => {
 		}
 	});
 }), pr = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, trapFocus: i, onOpenAutoFocus: a, onCloseAutoFocus: o, ...s } = e, c = Zn(lr, n), l = r.useRef(null), u = F(t, l);
+	let { __scopeDialog: n, trapFocus: i, onOpenAutoFocus: a, onCloseAutoFocus: o, ...s } = e, c = Zn(lr, n), l = r.useRef(null), u = I(t, l);
 	return gt(), /* @__PURE__ */ S(b, { children: [/* @__PURE__ */ x(tt, {
 		asChild: !0,
 		loop: !0,
@@ -1670,7 +1670,7 @@ var Kr = "AlertDialogOverlay", qr = r.forwardRef((e, t) => {
 });
 qr.displayName = Kr;
 var Jr = "AlertDialogContent", [Yr, Xr] = Rr(Jr), Zr = /* @__PURE__ */ Ir("AlertDialogContent"), Qr = r.forwardRef((e, t) => {
-	let { __scopeAlertDialog: n, children: i, ...a } = e, o = Br(n), s = r.useRef(null), c = F(t, s), l = r.useRef(null);
+	let { __scopeAlertDialog: n, children: i, ...a } = e, o = Br(n), s = r.useRef(null), c = I(t, s), l = r.useRef(null);
 	return /* @__PURE__ */ x(Sr, {
 		contentName: Jr,
 		titleName: $r,
@@ -1722,7 +1722,7 @@ var ri = "AlertDialogAction", ii = r.forwardRef((e, t) => {
 });
 ii.displayName = ri;
 var ai = "AlertDialogCancel", oi = r.forwardRef((e, t) => {
-	let { __scopeAlertDialog: n, ...r } = e, { cancelRef: i } = Xr(ai, n), a = Br(n), o = F(t, i);
+	let { __scopeAlertDialog: n, ...r } = e, { cancelRef: i } = Xr(ai, n), a = Br(n), o = I(t, i);
 	return /* @__PURE__ */ x(Pr, {
 		...a,
 		...r,
@@ -1809,7 +1809,7 @@ function Ci(e) {
 	});
 }
 var wi = "CheckboxTrigger", Ti = r.forwardRef(({ __scopeCheckbox: e, onKeyDown: t, onClick: n, ...i }, a) => {
-	let { control: o, value: s, disabled: c, checked: l, required: u, setControl: d, setChecked: f, hasConsumerStoppedPropagationRef: p, isFormControl: m, bubbleInput: h } = Si(wi, e), g = F(a, d), _ = r.useRef(l);
+	let { control: o, value: s, disabled: c, checked: l, required: u, setControl: d, setChecked: f, hasConsumerStoppedPropagationRef: p, isFormControl: m, bubbleInput: h } = Si(wi, e), g = I(a, d), _ = r.useRef(l);
 	return r.useEffect(() => {
 		let e = o?.form;
 		if (e) {
@@ -1874,7 +1874,7 @@ var Di = "CheckboxIndicator", Oi = r.forwardRef((e, t) => {
 });
 Oi.displayName = Di;
 var ki = "CheckboxBubbleInput", Ai = r.forwardRef(({ __scopeCheckbox: e, ...t }, n) => {
-	let { control: i, hasConsumerStoppedPropagationRef: a, checked: o, defaultChecked: s, required: c, disabled: l, name: u, value: d, form: f, bubbleInput: p, setBubbleInput: m } = Si(ki, e), h = F(n, m), g = gi(o), _ = _i(i);
+	let { control: i, hasConsumerStoppedPropagationRef: a, checked: o, defaultChecked: s, required: c, disabled: l, name: u, value: d, form: f, bubbleInput: p, setBubbleInput: m } = Si(ki, e), h = I(n, m), g = gi(o), _ = _i(i);
 	r.useEffect(() => {
 		let e = p;
 		if (!e) return;
@@ -2153,7 +2153,7 @@ var ua = 50, da = async (e, t, n) => {
 			y: r
 		}, p = Ji(i), m = Ki(p), h = await o.getDimensions(l), g = p === "y", _ = g ? "top" : "left", v = g ? "bottom" : "right", y = g ? "clientHeight" : "clientWidth", b = a.reference[m] + a.reference[p] - f[p] - a.floating[m], x = f[p] - a.reference[p], S = await (o.getOffsetParent == null ? void 0 : o.getOffsetParent(l)), C = S ? S[y] : 0;
 		(!C || !await (o.isElement == null ? void 0 : o.isElement(S))) && (C = s.floating[y] || a.floating[m]);
-		let w = b / 2 - x / 2, T = C / 2 - h[m] / 2 - 1, E = Fi(d[_], T), ee = Fi(d[v], T), D = E, O = C - h[m] - ee, k = C / 2 - h[m] / 2 + w, A = Vi(D, k, O), j = !c.arrow && Wi(i) != null && k !== A && a.reference[m] / 2 - (k < D ? E : ee) - h[m] / 2 < 0, M = j ? k < D ? k - D : k - O : 0;
+		let w = b / 2 - x / 2, T = C / 2 - h[m] / 2 - 1, E = Fi(d[_], T), D = Fi(d[v], T), O = E, ee = C - h[m] - D, k = C / 2 - h[m] / 2 + w, A = Vi(O, k, ee), j = !c.arrow && Wi(i) != null && k !== A && a.reference[m] / 2 - (k < O ? E : D) - h[m] / 2 < 0, M = j ? k < O ? k - O : k - ee : 0;
 		return {
 			[p]: f[p] + M,
 			data: {
@@ -2854,14 +2854,14 @@ function Ro(e) {
 		e !== w.current && (w.current = e, g(e));
 	}, []), x = r.useCallback((e) => {
 		e !== T.current && (T.current = e, y(e));
-	}, []), S = o || h, C = s || _, w = r.useRef(null), T = r.useRef(null), E = r.useRef(d), ee = l != null, D = Lo(l), O = Lo(a), k = Lo(u), A = r.useCallback(() => {
+	}, []), S = o || h, C = s || _, w = r.useRef(null), T = r.useRef(null), E = r.useRef(d), D = l != null, O = Lo(l), ee = Lo(a), k = Lo(u), A = r.useCallback(() => {
 		if (!w.current || !T.current) return;
 		let e = {
 			placement: t,
 			strategy: n,
 			middleware: p
 		};
-		O.current && (e.platform = O.current), Mo(w.current, T.current, e).then((e) => {
+		ee.current && (e.platform = ee.current), Mo(w.current, T.current, e).then((e) => {
 			let t = {
 				...e,
 				isPositioned: k.current !== !1
@@ -2874,7 +2874,7 @@ function Ro(e) {
 		p,
 		t,
 		n,
-		O,
+		ee,
 		k
 	]);
 	No(() => {
@@ -2888,15 +2888,15 @@ function Ro(e) {
 		j.current = !1;
 	}), []), No(() => {
 		if (S && (w.current = S), C && (T.current = C), S && C) {
-			if (D.current) return D.current(S, C, A);
+			if (O.current) return O.current(S, C, A);
 			A();
 		}
 	}, [
 		S,
 		C,
 		A,
-		D,
-		ee
+		O,
+		D
 	]);
 	let M = r.useMemo(() => ({
 		reference: w,
@@ -2906,7 +2906,7 @@ function Ro(e) {
 	}), [b, x]), N = r.useMemo(() => ({
 		reference: S,
 		floating: C
-	}), [S, C]), te = r.useMemo(() => {
+	}), [S, C]), P = r.useMemo(() => {
 		let e = {
 			position: n,
 			left: 0,
@@ -2935,13 +2935,13 @@ function Ro(e) {
 		update: A,
 		refs: M,
 		elements: N,
-		floatingStyles: te
+		floatingStyles: P
 	}), [
 		d,
 		A,
 		M,
 		N,
-		te
+		P
 	]);
 }
 var zo = (e) => {
@@ -3031,7 +3031,7 @@ var Yo = Jo, Xo = "Popper", [Zo, Qo] = fe(Xo), [$o, es] = Zo(Xo), ts = (e) => {
 };
 ts.displayName = Xo;
 var ns = "PopperAnchor", rs = r.forwardRef((e, t) => {
-	let { __scopePopper: n, virtualRef: i, ...a } = e, o = es(ns, n), s = r.useRef(null), c = F(t, s), l = r.useRef(null);
+	let { __scopePopper: n, virtualRef: i, ...a } = e, o = es(ns, n), s = r.useRef(null), c = I(t, s), l = r.useRef(null);
 	return r.useEffect(() => {
 		let e = l.current;
 		l.current = i?.current || s.current, e !== l.current && o.onAnchorChange(l.current);
@@ -3042,19 +3042,19 @@ var ns = "PopperAnchor", rs = r.forwardRef((e, t) => {
 });
 rs.displayName = ns;
 var is = "PopperContent", [as, os] = Zo(is), ss = r.forwardRef((e, t) => {
-	let { __scopePopper: n, side: i = "bottom", sideOffset: a = 0, align: o = "center", alignOffset: s = 0, arrowPadding: c = 0, avoidCollisions: l = !0, collisionBoundary: u = [], collisionPadding: d = 0, sticky: f = "partial", hideWhenDetached: p = !1, updatePositionStrategy: m = "optimized", onPlaced: h, ...g } = e, _ = es(is, n), [v, y] = r.useState(null), b = F(t, (e) => y(e)), [S, C] = r.useState(null), w = _i(S), T = w?.width ?? 0, E = w?.height ?? 0, ee = i + (o === "center" ? "" : "-" + o), D = typeof d == "number" ? d : {
+	let { __scopePopper: n, side: i = "bottom", sideOffset: a = 0, align: o = "center", alignOffset: s = 0, arrowPadding: c = 0, avoidCollisions: l = !0, collisionBoundary: u = [], collisionPadding: d = 0, sticky: f = "partial", hideWhenDetached: p = !1, updatePositionStrategy: m = "optimized", onPlaced: h, ...g } = e, _ = es(is, n), [v, y] = r.useState(null), b = I(t, (e) => y(e)), [S, C] = r.useState(null), w = _i(S), T = w?.width ?? 0, E = w?.height ?? 0, D = i + (o === "center" ? "" : "-" + o), O = typeof d == "number" ? d : {
 		top: 0,
 		right: 0,
 		bottom: 0,
 		left: 0,
 		...d
-	}, O = Array.isArray(u) ? u : [u], k = O.length > 0, A = {
-		padding: D,
-		boundary: O.filter(ds),
+	}, ee = Array.isArray(u) ? u : [u], k = ee.length > 0, A = {
+		padding: O,
+		boundary: ee.filter(ds),
 		altBoundary: k
-	}, { refs: j, floatingStyles: M, placement: N, isPositioned: te, middlewareData: P } = Ro({
+	}, { refs: j, floatingStyles: M, placement: N, isPositioned: P, middlewareData: F } = Ro({
 		strategy: "fixed",
-		placement: ee,
+		placement: D,
 		whileElementsMounted: (...e) => wo(...e, { animationFrame: m === "always" }),
 		elements: { reference: _.anchor },
 		middleware: [
@@ -3089,11 +3089,11 @@ var is = "PopperContent", [as, os] = Zo(is), ss = r.forwardRef((e, t) => {
 				...A
 			})
 		]
-	}), [ne, re] = ps(N), ie = Ie(h);
+	}), [te, ne] = ps(N), re = Ie(h);
 	xe(() => {
-		te && ie?.();
-	}, [te, ie]);
-	let I = P.arrow?.x, L = P.arrow?.y, ae = P.arrow?.centerOffset !== 0, [oe, se] = r.useState();
+		P && re?.();
+	}, [P, re]);
+	let L = F.arrow?.x, ie = F.arrow?.y, ae = F.arrow?.centerOffset !== 0, [oe, se] = r.useState();
 	return xe(() => {
 		v && se(window.getComputedStyle(v).zIndex);
 	}, [v]), /* @__PURE__ */ x("div", {
@@ -3101,11 +3101,11 @@ var is = "PopperContent", [as, os] = Zo(is), ss = r.forwardRef((e, t) => {
 		"data-radix-popper-content-wrapper": "",
 		style: {
 			...M,
-			transform: te ? M.transform : "translate(0, -200%)",
+			transform: P ? M.transform : "translate(0, -200%)",
 			minWidth: "max-content",
 			zIndex: oe,
-			"--radix-popper-transform-origin": [P.transformOrigin?.x, P.transformOrigin?.y].join(" "),
-			...P.hide?.referenceHidden && {
+			"--radix-popper-transform-origin": [F.transformOrigin?.x, F.transformOrigin?.y].join(" "),
+			...F.hide?.referenceHidden && {
 				visibility: "hidden",
 				pointerEvents: "none"
 			}
@@ -3113,19 +3113,19 @@ var is = "PopperContent", [as, os] = Zo(is), ss = r.forwardRef((e, t) => {
 		dir: e.dir,
 		children: /* @__PURE__ */ x(as, {
 			scope: n,
-			placedSide: ne,
+			placedSide: te,
 			onArrowChange: C,
-			arrowX: I,
-			arrowY: L,
+			arrowX: L,
+			arrowY: ie,
 			shouldHideArrow: ae,
 			children: /* @__PURE__ */ x(R.div, {
-				"data-side": ne,
-				"data-align": re,
+				"data-side": te,
+				"data-align": ne,
 				...g,
 				ref: b,
 				style: {
 					...g.style,
-					animation: te ? void 0 : "none"
+					animation: P ? void 0 : "none"
 				}
 			})
 		})
@@ -3208,7 +3208,7 @@ var ms = ts, hs = rs, gs = ss, _s = us, vs = "rovingFocusGroup.onEntryFocus", ys
 }));
 Os.displayName = bs;
 var ks = r.forwardRef((e, t) => {
-	let { __scopeRovingFocusGroup: n, orientation: i, loop: a = !1, dir: o, currentTabStopId: s, defaultCurrentTabStopId: c, onCurrentTabStopIdChange: l, onEntryFocus: u, preventScrollOnEntryFocus: d = !1, ...f } = e, p = r.useRef(null), m = F(t, p), h = Fe(o), [g, _] = Ce({
+	let { __scopeRovingFocusGroup: n, orientation: i, loop: a = !1, dir: o, currentTabStopId: s, defaultCurrentTabStopId: c, onCurrentTabStopIdChange: l, onEntryFocus: u, preventScrollOnEntryFocus: d = !1, ...f } = e, p = r.useRef(null), m = I(t, p), h = Fe(o), [g, _] = Ce({
 		prop: s,
 		defaultProp: c ?? null,
 		onChange: l,
@@ -3373,7 +3373,7 @@ function Ws(e) {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = Js(n), a = qs(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? ne(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
@@ -3412,12 +3412,12 @@ var Ys = [
 	"ArrowUp",
 	"ArrowDown"
 ], Xs = [" ", "Enter"], Zs = "Select", [Qs, $s, ec] = be(Zs), [tc, nc] = fe(Zs, [ec, Qo]), rc = Qo(), [ic, ac] = tc(Zs), [oc, sc] = tc(Zs), cc = (e) => {
-	let { __scopeSelect: t, children: n, open: i, defaultOpen: a, onOpenChange: o, value: s, defaultValue: c, onValueChange: l, dir: u, name: d, autoComplete: f, disabled: p, required: m, form: h } = e, g = rc(t), [_, v] = r.useState(null), [y, b] = r.useState(null), [C, w] = r.useState(!1), T = Fe(u), [E, ee] = Ce({
+	let { __scopeSelect: t, children: n, open: i, defaultOpen: a, onOpenChange: o, value: s, defaultValue: c, onValueChange: l, dir: u, name: d, autoComplete: f, disabled: p, required: m, form: h } = e, g = rc(t), [_, v] = r.useState(null), [y, b] = r.useState(null), [C, w] = r.useState(!1), T = Fe(u), [E, D] = Ce({
 		prop: i,
 		defaultProp: a ?? !1,
 		onChange: o,
 		caller: Zs
-	}), [D, O] = Ce({
+	}), [O, ee] = Ce({
 		prop: s,
 		defaultProp: c,
 		onChange: l,
@@ -3435,10 +3435,10 @@ var Ys = [
 			valueNodeHasChildren: C,
 			onValueNodeHasChildrenChange: w,
 			contentId: Ne(),
-			value: D,
-			onValueChange: O,
+			value: O,
+			onValueChange: ee,
 			open: E,
-			onOpenChange: ee,
+			onOpenChange: D,
 			dir: T,
 			triggerPointerDownPosRef: k,
 			disabled: p,
@@ -3463,18 +3463,18 @@ var Ys = [
 				tabIndex: -1,
 				name: d,
 				autoComplete: f,
-				value: D,
-				onChange: (e) => O(e.target.value),
+				value: O,
+				onChange: (e) => ee(e.target.value),
 				disabled: p,
 				form: h,
-				children: [D === void 0 ? /* @__PURE__ */ x("option", { value: "" }) : null, Array.from(j)]
+				children: [O === void 0 ? /* @__PURE__ */ x("option", { value: "" }) : null, Array.from(j)]
 			}, N) : null]
 		})
 	});
 };
 cc.displayName = Zs;
 var lc = "SelectTrigger", uc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, disabled: i = !1, ...a } = e, o = rc(n), s = ac(lc, n), c = s.disabled || i, l = F(t, s.onTriggerChange), u = $s(n), d = r.useRef("touch"), [f, p, m] = al((e) => {
+	let { __scopeSelect: n, disabled: i = !1, ...a } = e, o = rc(n), s = ac(lc, n), c = s.disabled || i, l = I(t, s.onTriggerChange), u = $s(n), d = r.useRef("touch"), [f, p, m] = al((e) => {
 		let t = u().filter((e) => !e.disabled), n = ol(t, e, t.find((e) => e.value === s.value));
 		n !== void 0 && s.onValueChange(n.value);
 	}), h = (e) => {
@@ -3517,7 +3517,7 @@ var lc = "SelectTrigger", uc = r.forwardRef((e, t) => {
 });
 uc.displayName = lc;
 var dc = "SelectValue", fc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, className: r, style: i, children: a, placeholder: o = "", ...s } = e, c = ac(dc, n), { onValueNodeHasChildrenChange: l } = c, u = a !== void 0, d = F(t, c.onValueNodeChange);
+	let { __scopeSelect: n, className: r, style: i, children: a, placeholder: o = "", ...s } = e, c = ac(dc, n), { onValueNodeHasChildrenChange: l } = c, u = a !== void 0, d = I(t, c.onValueNodeChange);
 	return xe(() => {
 		l(u);
 	}, [l, u]), /* @__PURE__ */ x(R.span, {
@@ -3564,22 +3564,22 @@ var _c = "SelectContent", vc = r.forwardRef((e, t) => {
 });
 vc.displayName = _c;
 var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ Us("SelectContent.RemoveScroll"), wc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, position: i = "item-aligned", onCloseAutoFocus: a, onEscapeKeyDown: o, onPointerDownOutside: s, side: c, sideOffset: l, align: u, alignOffset: d, arrowPadding: f, collisionBoundary: p, collisionPadding: m, sticky: h, hideWhenDetached: g, avoidCollisions: _, ...v } = e, y = ac(_c, n), [b, S] = r.useState(null), [C, w] = r.useState(null), T = F(t, (e) => S(e)), [E, ee] = r.useState(null), [D, O] = r.useState(null), k = $s(n), [A, j] = r.useState(!1), M = r.useRef(!1);
+	let { __scopeSelect: n, position: i = "item-aligned", onCloseAutoFocus: a, onEscapeKeyDown: o, onPointerDownOutside: s, side: c, sideOffset: l, align: u, alignOffset: d, arrowPadding: f, collisionBoundary: p, collisionPadding: m, sticky: h, hideWhenDetached: g, avoidCollisions: _, ...v } = e, y = ac(_c, n), [b, S] = r.useState(null), [C, w] = r.useState(null), T = I(t, (e) => S(e)), [E, D] = r.useState(null), [O, ee] = r.useState(null), k = $s(n), [A, j] = r.useState(!1), M = r.useRef(!1);
 	r.useEffect(() => {
 		if (b) return Bn(b);
 	}, [b]), gt();
 	let N = r.useCallback((e) => {
 		let [t, ...n] = k().map((e) => e.ref.current), [r] = n.slice(-1), i = document.activeElement;
 		for (let n of e) if (n === i || (n?.scrollIntoView({ block: "nearest" }), n === t && C && (C.scrollTop = 0), n === r && C && (C.scrollTop = C.scrollHeight), n?.focus(), document.activeElement !== i)) return;
-	}, [k, C]), te = r.useCallback(() => N([E, b]), [
+	}, [k, C]), P = r.useCallback(() => N([E, b]), [
 		N,
 		E,
 		b
 	]);
 	r.useEffect(() => {
-		A && te();
-	}, [A, te]);
-	let { onOpenChange: P, triggerPointerDownPosRef: ne } = y;
+		A && P();
+	}, [A, P]);
+	let { onOpenChange: F, triggerPointerDownPosRef: te } = y;
 	r.useEffect(() => {
 		if (b) {
 			let e = {
@@ -3587,13 +3587,13 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 				y: 0
 			}, t = (t) => {
 				e = {
-					x: Math.abs(Math.round(t.pageX) - (ne.current?.x ?? 0)),
-					y: Math.abs(Math.round(t.pageY) - (ne.current?.y ?? 0))
+					x: Math.abs(Math.round(t.pageX) - (te.current?.x ?? 0)),
+					y: Math.abs(Math.round(t.pageY) - (te.current?.y ?? 0))
 				};
 			}, n = (n) => {
-				e.x <= 10 && e.y <= 10 ? n.preventDefault() : b.contains(n.target) || P(!1), document.removeEventListener("pointermove", t), ne.current = null;
+				e.x <= 10 && e.y <= 10 ? n.preventDefault() : b.contains(n.target) || F(!1), document.removeEventListener("pointermove", t), te.current = null;
 			};
-			return ne.current !== null && (document.addEventListener("pointermove", t), document.addEventListener("pointerup", n, {
+			return te.current !== null && (document.addEventListener("pointermove", t), document.addEventListener("pointerup", n, {
 				capture: !0,
 				once: !0
 			})), () => {
@@ -3602,23 +3602,23 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 		}
 	}, [
 		b,
-		P,
-		ne
+		F,
+		te
 	]), r.useEffect(() => {
-		let e = () => P(!1);
+		let e = () => F(!1);
 		return window.addEventListener("blur", e), window.addEventListener("resize", e), () => {
 			window.removeEventListener("blur", e), window.removeEventListener("resize", e);
 		};
-	}, [P]);
-	let [re, ie] = al((e) => {
+	}, [F]);
+	let [ne, re] = al((e) => {
 		let t = k().filter((e) => !e.disabled), n = ol(t, e, t.find((e) => e.ref.current === document.activeElement));
 		n && setTimeout(() => n.ref.current.focus());
-	}), I = r.useCallback((e, t, n) => {
+	}), L = r.useCallback((e, t, n) => {
 		let r = !M.current && !n;
-		(y.value !== void 0 && y.value === t || r) && (ee(e), r && (M.current = !0));
-	}, [y.value]), L = r.useCallback(() => b?.focus(), [b]), ae = r.useCallback((e, t, n) => {
+		(y.value !== void 0 && y.value === t || r) && (D(e), r && (M.current = !0));
+	}, [y.value]), ie = r.useCallback(() => b?.focus(), [b]), ae = r.useCallback((e, t, n) => {
 		let r = !M.current && !n;
-		(y.value !== void 0 && y.value === t || r) && O(e);
+		(y.value !== void 0 && y.value === t || r) && ee(e);
 	}, [y.value]), oe = i === "popper" ? Oc : Ec, R = oe === Oc ? {
 		side: c,
 		sideOffset: l,
@@ -3636,15 +3636,15 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 		content: b,
 		viewport: C,
 		onViewportChange: w,
-		itemRefCallback: I,
+		itemRefCallback: L,
 		selectedItem: E,
-		onItemLeave: L,
+		onItemLeave: ie,
 		itemTextRefCallback: ae,
-		focusSelectedItem: te,
-		selectedItemText: D,
+		focusSelectedItem: P,
+		selectedItemText: O,
 		position: i,
 		isPositioned: A,
-		searchRef: re,
+		searchRef: ne,
 		children: /* @__PURE__ */ x(jn, {
 			as: Cc,
 			allowPinchZoom: !0,
@@ -3682,7 +3682,7 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 						},
 						onKeyDown: z(v.onKeyDown, (e) => {
 							let t = e.ctrlKey || e.altKey || e.metaKey;
-							if (e.key === "Tab" && e.preventDefault(), !t && e.key.length === 1 && ie(e.key), [
+							if (e.key === "Tab" && e.preventDefault(), !t && e.key.length === 1 && re(e.key), [
 								"ArrowUp",
 								"ArrowDown",
 								"Home",
@@ -3704,7 +3704,7 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 });
 wc.displayName = Sc;
 var Tc = "SelectItemAlignedPosition", Ec = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, onPlaced: i, ...a } = e, o = ac(_c, n), s = xc(_c, n), [c, l] = r.useState(null), [u, d] = r.useState(null), f = F(t, (e) => d(e)), p = $s(n), m = r.useRef(!1), h = r.useRef(!0), { viewport: g, selectedItem: _, selectedItemText: v, focusSelectedItem: y } = s, b = r.useCallback(() => {
+	let { __scopeSelect: n, onPlaced: i, ...a } = e, o = ac(_c, n), s = xc(_c, n), [c, l] = r.useState(null), [u, d] = r.useState(null), f = I(t, (e) => d(e)), p = $s(n), m = r.useRef(!1), h = r.useRef(!0), { viewport: g, selectedItem: _, selectedItemText: v, focusSelectedItem: y } = s, b = r.useCallback(() => {
 		if (o.trigger && o.valueNode && c && u && g && _ && v) {
 			let e = o.trigger.getBoundingClientRect(), t = u.getBoundingClientRect(), n = o.valueNode.getBoundingClientRect(), r = v.getBoundingClientRect();
 			if (o.dir !== "rtl") {
@@ -3714,16 +3714,16 @@ var Tc = "SelectItemAlignedPosition", Ec = r.forwardRef((e, t) => {
 				let i = t.right - r.right, a = window.innerWidth - n.right - i, o = window.innerWidth - e.right - a, s = e.width + o, l = Math.max(s, t.width), u = window.innerWidth - yc, d = Hs(a, [yc, Math.max(yc, u - l)]);
 				c.style.minWidth = s + "px", c.style.right = d + "px";
 			}
-			let a = p(), s = window.innerHeight - yc * 2, l = g.scrollHeight, d = window.getComputedStyle(u), f = parseInt(d.borderTopWidth, 10), h = parseInt(d.paddingTop, 10), y = parseInt(d.borderBottomWidth, 10), b = parseInt(d.paddingBottom, 10), x = f + h + l + b + y, S = Math.min(_.offsetHeight * 5, x), C = window.getComputedStyle(g), w = parseInt(C.paddingTop, 10), T = parseInt(C.paddingBottom, 10), E = e.top + e.height / 2 - yc, ee = s - E, D = _.offsetHeight / 2, O = _.offsetTop + D, k = f + h + O, A = x - k;
+			let a = p(), s = window.innerHeight - yc * 2, l = g.scrollHeight, d = window.getComputedStyle(u), f = parseInt(d.borderTopWidth, 10), h = parseInt(d.paddingTop, 10), y = parseInt(d.borderBottomWidth, 10), b = parseInt(d.paddingBottom, 10), x = f + h + l + b + y, S = Math.min(_.offsetHeight * 5, x), C = window.getComputedStyle(g), w = parseInt(C.paddingTop, 10), T = parseInt(C.paddingBottom, 10), E = e.top + e.height / 2 - yc, D = s - E, O = _.offsetHeight / 2, ee = _.offsetTop + O, k = f + h + ee, A = x - k;
 			if (k <= E) {
 				let e = a.length > 0 && _ === a[a.length - 1].ref.current;
 				c.style.bottom = "0px";
-				let t = u.clientHeight - g.offsetTop - g.offsetHeight, n = k + Math.max(ee, D + (e ? T : 0) + t + y);
+				let t = u.clientHeight - g.offsetTop - g.offsetHeight, n = k + Math.max(D, O + (e ? T : 0) + t + y);
 				c.style.height = n + "px";
 			} else {
 				let e = a.length > 0 && _ === a[0].ref.current;
 				c.style.top = "0px";
-				let t = Math.max(E, f + g.offsetTop + (e ? w : 0) + D) + A;
+				let t = Math.max(E, f + g.offsetTop + (e ? w : 0) + O) + A;
 				c.style.height = t + "px", g.scrollTop = k - E + g.offsetTop;
 			}
 			c.style.margin = `${yc}px 0`, c.style.minHeight = S + "px", c.style.maxHeight = s + "px", i?.(), requestAnimationFrame(() => m.current = !0);
@@ -3793,7 +3793,7 @@ var Dc = "SelectPopperPosition", Oc = r.forwardRef((e, t) => {
 });
 Oc.displayName = Dc;
 var [kc, Ac] = tc(_c, {}), jc = "SelectViewport", Mc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, nonce: i, ...a } = e, o = xc(jc, n), s = Ac(jc, n), c = F(t, o.onViewportChange), l = r.useRef(0);
+	let { __scopeSelect: n, nonce: i, ...a } = e, o = xc(jc, n), s = Ac(jc, n), c = I(t, o.onViewportChange), l = r.useRef(0);
 	return /* @__PURE__ */ S(b, { children: [/* @__PURE__ */ x("style", {
 		dangerouslySetInnerHTML: { __html: "[data-radix-select-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-select-viewport]::-webkit-scrollbar{display:none}" },
 		nonce: i
@@ -3852,7 +3852,7 @@ var Lc = "SelectLabel", Rc = r.forwardRef((e, t) => {
 });
 Rc.displayName = Lc;
 var zc = "SelectItem", [Bc, Vc] = tc(zc), Hc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, value: i, disabled: a = !1, textValue: o, ...s } = e, c = ac(zc, n), l = xc(zc, n), u = c.value === i, [d, f] = r.useState(o ?? ""), [p, m] = r.useState(!1), h = F(t, (e) => l.itemRefCallback?.(e, i, a)), g = Ne(), _ = r.useRef("touch"), v = () => {
+	let { __scopeSelect: n, value: i, disabled: a = !1, textValue: o, ...s } = e, c = ac(zc, n), l = xc(zc, n), u = c.value === i, [d, f] = r.useState(o ?? ""), [p, m] = r.useState(!1), h = I(t, (e) => l.itemRefCallback?.(e, i, a)), g = Ne(), _ = r.useRef("touch"), v = () => {
 		a || (c.onValueChange(i), c.onOpenChange(!1));
 	};
 	if (i === "") throw Error("A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.");
@@ -3907,7 +3907,7 @@ var zc = "SelectItem", [Bc, Vc] = tc(zc), Hc = r.forwardRef((e, t) => {
 });
 Hc.displayName = zc;
 var Uc = "SelectItemText", Wc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, className: i, style: a, ...o } = e, s = ac(Uc, n), c = xc(Uc, n), l = Vc(Uc, n), u = sc(Uc, n), [d, f] = r.useState(null), p = F(t, (e) => f(e), l.onItemTextChange, (e) => c.itemTextRefCallback?.(e, l.value, l.disabled)), m = d?.textContent, h = r.useMemo(() => /* @__PURE__ */ x("option", {
+	let { __scopeSelect: n, className: i, style: a, ...o } = e, s = ac(Uc, n), c = xc(Uc, n), l = Vc(Uc, n), u = sc(Uc, n), [d, f] = r.useState(null), p = I(t, (e) => f(e), l.onItemTextChange, (e) => c.itemTextRefCallback?.(e, l.value, l.disabled)), m = d?.textContent, h = r.useMemo(() => /* @__PURE__ */ x("option", {
 		value: l.value,
 		disabled: l.disabled,
 		children: m
@@ -3937,7 +3937,7 @@ var Gc = "SelectItemIndicator", Kc = r.forwardRef((e, t) => {
 });
 Kc.displayName = Gc;
 var qc = "SelectScrollUpButton", Jc = r.forwardRef((e, t) => {
-	let n = xc(qc, e.__scopeSelect), i = Ac(qc, e.__scopeSelect), [a, o] = r.useState(!1), s = F(t, i.onScrollButtonChange);
+	let n = xc(qc, e.__scopeSelect), i = Ac(qc, e.__scopeSelect), [a, o] = r.useState(!1), s = I(t, i.onScrollButtonChange);
 	return xe(() => {
 		if (n.viewport && n.isPositioned) {
 			let e = function() {
@@ -3956,7 +3956,7 @@ var qc = "SelectScrollUpButton", Jc = r.forwardRef((e, t) => {
 });
 Jc.displayName = qc;
 var Yc = "SelectScrollDownButton", Xc = r.forwardRef((e, t) => {
-	let n = xc(Yc, e.__scopeSelect), i = Ac(Yc, e.__scopeSelect), [a, o] = r.useState(!1), s = F(t, i.onScrollButtonChange);
+	let n = xc(Yc, e.__scopeSelect), i = Ac(Yc, e.__scopeSelect), [a, o] = r.useState(!1), s = I(t, i.onScrollButtonChange);
 	return xe(() => {
 		if (n.viewport && n.isPositioned) {
 			let e = function() {
@@ -4018,7 +4018,7 @@ var el = "SelectArrow", tl = r.forwardRef((e, t) => {
 });
 tl.displayName = el;
 var nl = "SelectBubbleInput", rl = r.forwardRef(({ __scopeSelect: e, value: t, ...n }, i) => {
-	let a = r.useRef(null), o = F(i, a), s = gi(t);
+	let a = r.useRef(null), o = I(i, a), s = gi(t);
 	return r.useEffect(() => {
 		let e = a.current;
 		if (!e) return;
@@ -4095,7 +4095,7 @@ function Sl(e) {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = El(n), a = Tl(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? ne(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
@@ -4129,7 +4129,7 @@ function El(e) {
 //#endregion
 //#region node_modules/@radix-ui/react-switch/dist/index.mjs
 var Dl = "Switch", [Ol, kl] = fe(Dl), [Al, jl] = Ol(Dl), Ml = r.forwardRef((e, t) => {
-	let { __scopeSwitch: n, name: i, checked: a, defaultChecked: o, required: s, disabled: c, value: l = "on", onCheckedChange: u, form: d, ...f } = e, [p, m] = r.useState(null), h = F(t, (e) => m(e)), g = r.useRef(!1), _ = p ? d || !!p.closest("form") : !0, [v, y] = Ce({
+	let { __scopeSwitch: n, name: i, checked: a, defaultChecked: o, required: s, disabled: c, value: l = "on", onCheckedChange: u, form: d, ...f } = e, [p, m] = r.useState(null), h = I(t, (e) => m(e)), g = r.useRef(!1), _ = p ? d || !!p.closest("form") : !0, [v, y] = Ce({
 		prop: a,
 		defaultProp: o ?? !1,
 		onChange: u,
@@ -4178,7 +4178,7 @@ var Nl = "SwitchThumb", Pl = r.forwardRef((e, t) => {
 });
 Pl.displayName = Nl;
 var Fl = "SwitchBubbleInput", Il = r.forwardRef(({ __scopeSwitch: e, control: t, checked: n, bubbles: i = !0, ...a }, o) => {
-	let s = r.useRef(null), c = F(s, o), l = gi(n), u = _i(t);
+	let s = r.useRef(null), c = I(s, o), l = gi(n), u = _i(t);
 	return r.useEffect(() => {
 		let e = s.current;
 		if (!e) return;
@@ -4595,7 +4595,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		"subgrid",
 		U,
 		H
-	], ee = () => [
+	], D = () => [
 		"auto",
 		{ span: [
 			"full",
@@ -4606,12 +4606,12 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		Ku,
 		U,
 		H
-	], D = () => [
+	], O = () => [
 		Ku,
 		"auto",
 		U,
 		H
-	], O = () => [
+	], ee = () => [
 		"auto",
 		"min",
 		"max",
@@ -4661,7 +4661,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		"max",
 		"fit",
 		...w()
-	], te = () => [
+	], P = () => [
 		Gu,
 		"screen",
 		"full",
@@ -4673,40 +4673,40 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		"max",
 		"fit",
 		...w()
-	], P = () => [
+	], F = () => [
 		e,
 		U,
 		H
-	], ne = () => [
+	], te = () => [
 		...b(),
 		dd,
 		od,
 		{ position: [U, H] }
-	], F = () => ["no-repeat", { repeat: [
+	], I = () => ["no-repeat", { repeat: [
 		"",
 		"x",
 		"y",
 		"space",
 		"round"
-	] }], re = () => [
+	] }], ne = () => [
 		"auto",
 		"cover",
 		"contain",
 		fd,
 		td,
 		{ size: [U, H] }
-	], ie = () => [
+	], re = () => [
 		qu,
 		ld,
 		nd
-	], I = () => [
+	], L = () => [
 		"",
 		"none",
 		"full",
 		l,
 		U,
 		H
-	], L = () => [
+	], ie = () => [
 		"",
 		V,
 		ld,
@@ -4988,13 +4988,13 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				H
 			] }],
 			"grid-cols": [{ "grid-cols": E() }],
-			"col-start-end": [{ col: ee() }],
-			"col-start": [{ "col-start": D() }],
-			"col-end": [{ "col-end": D() }],
+			"col-start-end": [{ col: D() }],
+			"col-start": [{ "col-start": O() }],
+			"col-end": [{ "col-end": O() }],
 			"grid-rows": [{ "grid-rows": E() }],
-			"row-start-end": [{ row: ee() }],
-			"row-start": [{ "row-start": D() }],
-			"row-end": [{ "row-end": D() }],
+			"row-start-end": [{ row: D() }],
+			"row-start": [{ "row-start": O() }],
+			"row-end": [{ "row-end": O() }],
 			"grid-flow": [{ "grid-flow": [
 				"row",
 				"col",
@@ -5002,8 +5002,8 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"row-dense",
 				"col-dense"
 			] }],
-			"auto-cols": [{ "auto-cols": O() }],
-			"auto-rows": [{ "auto-rows": O() }],
+			"auto-cols": [{ "auto-cols": ee() }],
+			"auto-rows": [{ "auto-rows": ee() }],
 			gap: [{ gap: w() }],
 			"gap-x": [{ "gap-x": w() }],
 			"gap-y": [{ "gap-y": w() }],
@@ -5050,9 +5050,9 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 			"inline-size": [{ inline: ["auto", ...N()] }],
 			"min-inline-size": [{ "min-inline": ["auto", ...N()] }],
 			"max-inline-size": [{ "max-inline": ["none", ...N()] }],
-			"block-size": [{ block: ["auto", ...te()] }],
-			"min-block-size": [{ "min-block": ["auto", ...te()] }],
-			"max-block-size": [{ "max-block": ["none", ...te()] }],
+			"block-size": [{ block: ["auto", ...P()] }],
+			"min-block-size": [{ "min-block": ["auto", ...P()] }],
+			"max-block-size": [{ "max-block": ["none", ...P()] }],
 			w: [{ w: [
 				s,
 				"screen",
@@ -5159,8 +5159,8 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"start",
 				"end"
 			] }],
-			"placeholder-color": [{ placeholder: P() }],
-			"text-color": [{ text: P() }],
+			"placeholder-color": [{ placeholder: F() }],
+			"text-color": [{ text: F() }],
 			"text-decoration": [
 				"underline",
 				"overline",
@@ -5175,7 +5175,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				U,
 				nd
 			] }],
-			"text-decoration-color": [{ decoration: P() }],
+			"text-decoration-color": [{ decoration: F() }],
 			"underline-offset": [{ "underline-offset": [
 				V,
 				"auto",
@@ -5257,9 +5257,9 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"padding",
 				"content"
 			] }],
-			"bg-position": [{ bg: ne() }],
-			"bg-repeat": [{ bg: F() }],
-			"bg-size": [{ bg: re() }],
+			"bg-position": [{ bg: te() }],
+			"bg-repeat": [{ bg: I() }],
+			"bg-size": [{ bg: ne() }],
 			"bg-image": [{ bg: [
 				"none",
 				{
@@ -5292,42 +5292,42 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				pd,
 				sd
 			] }],
-			"bg-color": [{ bg: P() }],
-			"gradient-from-pos": [{ from: ie() }],
-			"gradient-via-pos": [{ via: ie() }],
-			"gradient-to-pos": [{ to: ie() }],
-			"gradient-from": [{ from: P() }],
-			"gradient-via": [{ via: P() }],
-			"gradient-to": [{ to: P() }],
-			rounded: [{ rounded: I() }],
-			"rounded-s": [{ "rounded-s": I() }],
-			"rounded-e": [{ "rounded-e": I() }],
-			"rounded-t": [{ "rounded-t": I() }],
-			"rounded-r": [{ "rounded-r": I() }],
-			"rounded-b": [{ "rounded-b": I() }],
-			"rounded-l": [{ "rounded-l": I() }],
-			"rounded-ss": [{ "rounded-ss": I() }],
-			"rounded-se": [{ "rounded-se": I() }],
-			"rounded-ee": [{ "rounded-ee": I() }],
-			"rounded-es": [{ "rounded-es": I() }],
-			"rounded-tl": [{ "rounded-tl": I() }],
-			"rounded-tr": [{ "rounded-tr": I() }],
-			"rounded-br": [{ "rounded-br": I() }],
-			"rounded-bl": [{ "rounded-bl": I() }],
-			"border-w": [{ border: L() }],
-			"border-w-x": [{ "border-x": L() }],
-			"border-w-y": [{ "border-y": L() }],
-			"border-w-s": [{ "border-s": L() }],
-			"border-w-e": [{ "border-e": L() }],
-			"border-w-bs": [{ "border-bs": L() }],
-			"border-w-be": [{ "border-be": L() }],
-			"border-w-t": [{ "border-t": L() }],
-			"border-w-r": [{ "border-r": L() }],
-			"border-w-b": [{ "border-b": L() }],
-			"border-w-l": [{ "border-l": L() }],
-			"divide-x": [{ "divide-x": L() }],
+			"bg-color": [{ bg: F() }],
+			"gradient-from-pos": [{ from: re() }],
+			"gradient-via-pos": [{ via: re() }],
+			"gradient-to-pos": [{ to: re() }],
+			"gradient-from": [{ from: F() }],
+			"gradient-via": [{ via: F() }],
+			"gradient-to": [{ to: F() }],
+			rounded: [{ rounded: L() }],
+			"rounded-s": [{ "rounded-s": L() }],
+			"rounded-e": [{ "rounded-e": L() }],
+			"rounded-t": [{ "rounded-t": L() }],
+			"rounded-r": [{ "rounded-r": L() }],
+			"rounded-b": [{ "rounded-b": L() }],
+			"rounded-l": [{ "rounded-l": L() }],
+			"rounded-ss": [{ "rounded-ss": L() }],
+			"rounded-se": [{ "rounded-se": L() }],
+			"rounded-ee": [{ "rounded-ee": L() }],
+			"rounded-es": [{ "rounded-es": L() }],
+			"rounded-tl": [{ "rounded-tl": L() }],
+			"rounded-tr": [{ "rounded-tr": L() }],
+			"rounded-br": [{ "rounded-br": L() }],
+			"rounded-bl": [{ "rounded-bl": L() }],
+			"border-w": [{ border: ie() }],
+			"border-w-x": [{ "border-x": ie() }],
+			"border-w-y": [{ "border-y": ie() }],
+			"border-w-s": [{ "border-s": ie() }],
+			"border-w-e": [{ "border-e": ie() }],
+			"border-w-bs": [{ "border-bs": ie() }],
+			"border-w-be": [{ "border-be": ie() }],
+			"border-w-t": [{ "border-t": ie() }],
+			"border-w-r": [{ "border-r": ie() }],
+			"border-w-b": [{ "border-b": ie() }],
+			"border-w-l": [{ "border-l": ie() }],
+			"divide-x": [{ "divide-x": ie() }],
 			"divide-x-reverse": ["divide-x-reverse"],
-			"divide-y": [{ "divide-y": L() }],
+			"divide-y": [{ "divide-y": ie() }],
 			"divide-y-reverse": ["divide-y-reverse"],
 			"border-style": [{ border: [
 				...ae(),
@@ -5339,18 +5339,18 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"hidden",
 				"none"
 			] }],
-			"border-color": [{ border: P() }],
-			"border-color-x": [{ "border-x": P() }],
-			"border-color-y": [{ "border-y": P() }],
-			"border-color-s": [{ "border-s": P() }],
-			"border-color-e": [{ "border-e": P() }],
-			"border-color-bs": [{ "border-bs": P() }],
-			"border-color-be": [{ "border-be": P() }],
-			"border-color-t": [{ "border-t": P() }],
-			"border-color-r": [{ "border-r": P() }],
-			"border-color-b": [{ "border-b": P() }],
-			"border-color-l": [{ "border-l": P() }],
-			"divide-color": [{ divide: P() }],
+			"border-color": [{ border: F() }],
+			"border-color-x": [{ "border-x": F() }],
+			"border-color-y": [{ "border-y": F() }],
+			"border-color-s": [{ "border-s": F() }],
+			"border-color-e": [{ "border-e": F() }],
+			"border-color-bs": [{ "border-bs": F() }],
+			"border-color-be": [{ "border-be": F() }],
+			"border-color-t": [{ "border-t": F() }],
+			"border-color-r": [{ "border-r": F() }],
+			"border-color-b": [{ "border-b": F() }],
+			"border-color-l": [{ "border-l": F() }],
+			"divide-color": [{ divide: F() }],
 			"outline-style": [{ outline: [
 				...ae(),
 				"none",
@@ -5367,7 +5367,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				ld,
 				nd
 			] }],
-			"outline-color": [{ outline: P() }],
+			"outline-color": [{ outline: F() }],
 			shadow: [{ shadow: [
 				"",
 				"none",
@@ -5375,28 +5375,28 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				md,
 				cd
 			] }],
-			"shadow-color": [{ shadow: P() }],
+			"shadow-color": [{ shadow: F() }],
 			"inset-shadow": [{ "inset-shadow": [
 				"none",
 				d,
 				md,
 				cd
 			] }],
-			"inset-shadow-color": [{ "inset-shadow": P() }],
-			"ring-w": [{ ring: L() }],
+			"inset-shadow-color": [{ "inset-shadow": F() }],
+			"ring-w": [{ ring: ie() }],
 			"ring-w-inset": ["ring-inset"],
-			"ring-color": [{ ring: P() }],
+			"ring-color": [{ ring: F() }],
 			"ring-offset-w": [{ "ring-offset": [V, nd] }],
-			"ring-offset-color": [{ "ring-offset": P() }],
-			"inset-ring-w": [{ "inset-ring": L() }],
-			"inset-ring-color": [{ "inset-ring": P() }],
+			"ring-offset-color": [{ "ring-offset": F() }],
+			"inset-ring-w": [{ "inset-ring": ie() }],
+			"inset-ring-color": [{ "inset-ring": F() }],
 			"text-shadow": [{ "text-shadow": [
 				"none",
 				f,
 				md,
 				cd
 			] }],
-			"text-shadow-color": [{ "text-shadow": P() }],
+			"text-shadow-color": [{ "text-shadow": F() }],
 			opacity: [{ opacity: [
 				V,
 				U,
@@ -5425,37 +5425,37 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 			"mask-image-linear-pos": [{ "mask-linear": [V] }],
 			"mask-image-linear-from-pos": [{ "mask-linear-from": R() }],
 			"mask-image-linear-to-pos": [{ "mask-linear-to": R() }],
-			"mask-image-linear-from-color": [{ "mask-linear-from": P() }],
-			"mask-image-linear-to-color": [{ "mask-linear-to": P() }],
+			"mask-image-linear-from-color": [{ "mask-linear-from": F() }],
+			"mask-image-linear-to-color": [{ "mask-linear-to": F() }],
 			"mask-image-t-from-pos": [{ "mask-t-from": R() }],
 			"mask-image-t-to-pos": [{ "mask-t-to": R() }],
-			"mask-image-t-from-color": [{ "mask-t-from": P() }],
-			"mask-image-t-to-color": [{ "mask-t-to": P() }],
+			"mask-image-t-from-color": [{ "mask-t-from": F() }],
+			"mask-image-t-to-color": [{ "mask-t-to": F() }],
 			"mask-image-r-from-pos": [{ "mask-r-from": R() }],
 			"mask-image-r-to-pos": [{ "mask-r-to": R() }],
-			"mask-image-r-from-color": [{ "mask-r-from": P() }],
-			"mask-image-r-to-color": [{ "mask-r-to": P() }],
+			"mask-image-r-from-color": [{ "mask-r-from": F() }],
+			"mask-image-r-to-color": [{ "mask-r-to": F() }],
 			"mask-image-b-from-pos": [{ "mask-b-from": R() }],
 			"mask-image-b-to-pos": [{ "mask-b-to": R() }],
-			"mask-image-b-from-color": [{ "mask-b-from": P() }],
-			"mask-image-b-to-color": [{ "mask-b-to": P() }],
+			"mask-image-b-from-color": [{ "mask-b-from": F() }],
+			"mask-image-b-to-color": [{ "mask-b-to": F() }],
 			"mask-image-l-from-pos": [{ "mask-l-from": R() }],
 			"mask-image-l-to-pos": [{ "mask-l-to": R() }],
-			"mask-image-l-from-color": [{ "mask-l-from": P() }],
-			"mask-image-l-to-color": [{ "mask-l-to": P() }],
+			"mask-image-l-from-color": [{ "mask-l-from": F() }],
+			"mask-image-l-to-color": [{ "mask-l-to": F() }],
 			"mask-image-x-from-pos": [{ "mask-x-from": R() }],
 			"mask-image-x-to-pos": [{ "mask-x-to": R() }],
-			"mask-image-x-from-color": [{ "mask-x-from": P() }],
-			"mask-image-x-to-color": [{ "mask-x-to": P() }],
+			"mask-image-x-from-color": [{ "mask-x-from": F() }],
+			"mask-image-x-to-color": [{ "mask-x-to": F() }],
 			"mask-image-y-from-pos": [{ "mask-y-from": R() }],
 			"mask-image-y-to-pos": [{ "mask-y-to": R() }],
-			"mask-image-y-from-color": [{ "mask-y-from": P() }],
-			"mask-image-y-to-color": [{ "mask-y-to": P() }],
+			"mask-image-y-from-color": [{ "mask-y-from": F() }],
+			"mask-image-y-to-color": [{ "mask-y-to": F() }],
 			"mask-image-radial": [{ "mask-radial": [U, H] }],
 			"mask-image-radial-from-pos": [{ "mask-radial-from": R() }],
 			"mask-image-radial-to-pos": [{ "mask-radial-to": R() }],
-			"mask-image-radial-from-color": [{ "mask-radial-from": P() }],
-			"mask-image-radial-to-color": [{ "mask-radial-to": P() }],
+			"mask-image-radial-from-color": [{ "mask-radial-from": F() }],
+			"mask-image-radial-to-color": [{ "mask-radial-to": F() }],
 			"mask-image-radial-shape": [{ "mask-radial": ["circle", "ellipse"] }],
 			"mask-image-radial-size": [{ "mask-radial": [{
 				closest: ["side", "corner"],
@@ -5465,8 +5465,8 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 			"mask-image-conic-pos": [{ "mask-conic": [V] }],
 			"mask-image-conic-from-pos": [{ "mask-conic-from": R() }],
 			"mask-image-conic-to-pos": [{ "mask-conic-to": R() }],
-			"mask-image-conic-from-color": [{ "mask-conic-from": P() }],
-			"mask-image-conic-to-color": [{ "mask-conic-to": P() }],
+			"mask-image-conic-from-color": [{ "mask-conic-from": F() }],
+			"mask-image-conic-to-color": [{ "mask-conic-to": F() }],
 			"mask-mode": [{ mask: [
 				"alpha",
 				"luminance",
@@ -5480,9 +5480,9 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"stroke",
 				"view"
 			] }],
-			"mask-position": [{ mask: ne() }],
-			"mask-repeat": [{ mask: F() }],
-			"mask-size": [{ mask: re() }],
+			"mask-position": [{ mask: te() }],
+			"mask-repeat": [{ mask: I() }],
+			"mask-size": [{ mask: ne() }],
 			"mask-type": [{ "mask-type": ["alpha", "luminance"] }],
 			"mask-image": [{ mask: [
 				"none",
@@ -5513,7 +5513,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				md,
 				cd
 			] }],
-			"drop-shadow-color": [{ "drop-shadow": P() }],
+			"drop-shadow-color": [{ "drop-shadow": F() }],
 			grayscale: [{ grayscale: [
 				"",
 				V,
@@ -5668,9 +5668,9 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 			"translate-y": [{ "translate-y": de() }],
 			"translate-z": [{ "translate-z": de() }],
 			"translate-none": ["translate-none"],
-			accent: [{ accent: P() }],
+			accent: [{ accent: F() }],
 			appearance: [{ appearance: ["none", "auto"] }],
-			"caret-color": [{ caret: P() }],
+			"caret-color": [{ caret: F() }],
 			"color-scheme": [{ scheme: [
 				"normal",
 				"dark",
@@ -5794,14 +5794,14 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				U,
 				H
 			] }],
-			fill: [{ fill: ["none", ...P()] }],
+			fill: [{ fill: ["none", ...F()] }],
 			"stroke-w": [{ stroke: [
 				V,
 				ld,
 				nd,
 				rd
 			] }],
-			stroke: [{ stroke: ["none", ...P()] }],
+			stroke: [{ stroke: ["none", ...F()] }],
 			"forced-color-adjust": [{ "forced-color-adjust": ["auto", "none"] }]
 		},
 		conflictingClassGroups: {
@@ -5993,7 +5993,7 @@ function W(...e) {
 }
 //#endregion
 //#region src/components/ui/button.tsx
-var Dd = te("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
+var Dd = P("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
 	variants: {
 		variant: {
 			default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
@@ -6062,6 +6062,13 @@ function J({ className: e, ...t }) {
 		...t
 	});
 }
+function kd({ className: e, ...t }) {
+	return /* @__PURE__ */ x("div", {
+		"data-slot": "card-description",
+		className: W("text-sm text-muted-foreground", e),
+		...t
+	});
+}
 function Y({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "card-content",
@@ -6071,10 +6078,10 @@ function Y({ className: e, ...t }) {
 }
 //#endregion
 //#region node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
-var kd = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), Ad = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), jd = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), Md = (e) => {
-	let t = jd(e);
+var Ad = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), jd = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), Md = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), Nd = (e) => {
+	let t = Md(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, Nd = {
+}, Pd = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -6084,64 +6091,64 @@ var kd = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, Pd = (e) => {
+}, Fd = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, Fd = a({}), Id = () => l(Fd), Ld = s(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: s, ...c }, l) => {
-	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = Id() ?? {}, h = r ?? f ? Number(n ?? d) * 24 / Number(t ?? u) : n ?? d;
+}, Id = a({}), Ld = () => l(Id), Rd = s(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: s, ...c }, l) => {
+	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = Ld() ?? {}, h = r ?? f ? Number(n ?? d) * 24 / Number(t ?? u) : n ?? d;
 	return o("svg", {
 		ref: l,
-		...Nd,
-		width: t ?? u ?? Nd.width,
-		height: t ?? u ?? Nd.height,
+		...Pd,
+		width: t ?? u ?? Pd.width,
+		height: t ?? u ?? Pd.height,
 		stroke: e ?? p,
 		strokeWidth: h,
-		className: kd("lucide", m, i),
-		...!a && !Pd(c) && { "aria-hidden": "true" },
+		className: Ad("lucide", m, i),
+		...!a && !Fd(c) && { "aria-hidden": "true" },
 		...c
 	}, [...s.map(([e, t]) => o(e, t)), ...Array.isArray(a) ? a : [a]]);
-}), Rd = (e, t) => {
-	let n = s(({ className: n, ...r }, i) => o(Ld, {
+}), zd = (e, t) => {
+	let n = s(({ className: n, ...r }, i) => o(Rd, {
 		ref: i,
 		iconNode: t,
-		className: kd(`lucide-${Ad(Md(e))}`, `lucide-${e}`, n),
+		className: Ad(`lucide-${jd(Nd(e))}`, `lucide-${e}`, n),
 		...r
 	}));
-	return n.displayName = Md(e), n;
-}, zd = Rd("arrow-down", [["path", {
+	return n.displayName = Nd(e), n;
+}, Bd = zd("arrow-down", [["path", {
 	d: "M12 5v14",
 	key: "s699le"
 }], ["path", {
 	d: "m19 12-7 7-7-7",
 	key: "1idqje"
-}]]), Bd = Rd("arrow-up", [["path", {
+}]]), Vd = zd("arrow-up", [["path", {
 	d: "m5 12 7-7 7 7",
 	key: "hav0vg"
 }], ["path", {
 	d: "M12 19V5",
 	key: "x0mq9r"
-}]]), Vd = Rd("check", [["path", {
+}]]), Hd = zd("check", [["path", {
 	d: "M20 6 9 17l-5-5",
 	key: "1gmf2c"
-}]]), Hd = Rd("chevron-down", [["path", {
+}]]), Ud = zd("chevron-down", [["path", {
 	d: "m6 9 6 6 6-6",
 	key: "qrunsl"
-}]]), Ud = Rd("chevron-up", [["path", {
+}]]), Wd = zd("chevron-up", [["path", {
 	d: "m18 15-6-6-6 6",
 	key: "153udz"
-}]]), Wd = Rd("pencil", [["path", {
+}]]), Gd = zd("pencil", [["path", {
 	d: "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
 	key: "1a8usu"
 }], ["path", {
 	d: "m15 5 4 4",
 	key: "1mk7zo"
-}]]), Gd = Rd("plus", [["path", {
+}]]), Kd = zd("plus", [["path", {
 	d: "M5 12h14",
 	key: "1ays0h"
 }], ["path", {
 	d: "M12 5v14",
 	key: "s699le"
-}]]), Kd = Rd("search", [["path", {
+}]]), qd = zd("search", [["path", {
 	d: "m21 21-4.34-4.34",
 	key: "14j7rj"
 }], ["circle", {
@@ -6149,7 +6156,7 @@ var kd = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 	cy: "11",
 	r: "8",
 	key: "4ej97u"
-}]]), qd = Rd("sparkles", [
+}]]), Jd = zd("sparkles", [
 	["path", {
 		d: "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z",
 		key: "1s2grr"
@@ -6168,7 +6175,7 @@ var kd = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 		r: "2",
 		key: "6kqj1y"
 	}]
-]), Jd = Rd("trash-2", [
+]), Yd = zd("trash-2", [
 	["path", {
 		d: "M10 11v6",
 		key: "nco0om"
@@ -6189,7 +6196,7 @@ var kd = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 		d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
 		key: "e791ji"
 	}]
-]), Yd = Rd("x", [["path", {
+]), Xd = zd("x", [["path", {
 	d: "M18 6 6 18",
 	key: "1bl5f8"
 }], ["path", {
@@ -6198,7 +6205,7 @@ var kd = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 }]]);
 //#endregion
 //#region src/components/ui/checkbox.tsx
-function Xd({ className: e, ...t }) {
+function Zd({ className: e, ...t }) {
 	return /* @__PURE__ */ x(Ei, {
 		"data-slot": "checkbox",
 		className: W("peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary", e),
@@ -6206,7 +6213,7 @@ function Xd({ className: e, ...t }) {
 		children: /* @__PURE__ */ x(Oi, {
 			"data-slot": "checkbox-indicator",
 			className: "grid place-content-center text-current transition-none",
-			children: /* @__PURE__ */ x(Vd, { className: "size-3.5" })
+			children: /* @__PURE__ */ x(Hd, { className: "size-3.5" })
 		})
 	});
 }
@@ -6230,8 +6237,90 @@ function Z({ className: e, ...t }) {
 	});
 }
 //#endregion
+//#region src/hooks/use-text-direction.ts
+function Qd() {
+	let { i18n: e } = g();
+	return e.dir() === "rtl" ? "rtl" : "ltr";
+}
+//#endregion
+//#region src/components/ui/select.tsx
+function $d({ ...e }) {
+	return /* @__PURE__ */ x(cl, {
+		"data-slot": "select",
+		...e
+	});
+}
+function ef({ ...e }) {
+	return /* @__PURE__ */ x(ul, {
+		"data-slot": "select-value",
+		...e
+	});
+}
+function tf({ className: e, size: t = "default", children: n, ...r }) {
+	return /* @__PURE__ */ S(ll, {
+		"data-slot": "select-trigger",
+		"data-size": t,
+		dir: Qd(),
+		className: W("flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap text-start shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", e),
+		...r,
+		children: [n, /* @__PURE__ */ x(dl, {
+			asChild: !0,
+			children: /* @__PURE__ */ x(Ud, { className: "size-4 opacity-50" })
+		})]
+	});
+}
+function nf({ className: e, children: t, position: n = "popper", align: r = "start", ...i }) {
+	return /* @__PURE__ */ x(kn, {
+		allowBodyScroll: !0,
+		children: /* @__PURE__ */ x(fl, { children: /* @__PURE__ */ S(pl, {
+			"data-slot": "select-content",
+			dir: Qd(),
+			className: W("relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-start text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", n === "popper" && "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1", e),
+			position: n,
+			align: r,
+			...i,
+			children: [
+				/* @__PURE__ */ x(rf, {}),
+				/* @__PURE__ */ x(ml, {
+					className: W("p-1", n === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"),
+					children: t
+				}),
+				/* @__PURE__ */ x(af, {})
+			]
+		}) })
+	});
+}
+function Q({ className: e, children: t, ...n }) {
+	return /* @__PURE__ */ S(hl, {
+		"data-slot": "select-item",
+		className: W("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pe-8 ps-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2", e),
+		...n,
+		children: [/* @__PURE__ */ x("span", {
+			"data-slot": "select-item-indicator",
+			className: "absolute end-2 flex size-3.5 items-center justify-center",
+			children: /* @__PURE__ */ x(_l, { children: /* @__PURE__ */ x(Hd, { className: "size-4" }) })
+		}), /* @__PURE__ */ x(gl, { children: t })]
+	});
+}
+function rf({ className: e, ...t }) {
+	return /* @__PURE__ */ x(vl, {
+		"data-slot": "select-scroll-up-button",
+		className: W("flex cursor-default items-center justify-center py-1", e),
+		...t,
+		children: /* @__PURE__ */ x(Wd, { className: "size-4" })
+	});
+}
+function af({ className: e, ...t }) {
+	return /* @__PURE__ */ x(yl, {
+		"data-slot": "select-scroll-down-button",
+		className: W("flex cursor-default items-center justify-center py-1", e),
+		...t,
+		children: /* @__PURE__ */ x(Ud, { className: "size-4" })
+	});
+}
+//#endregion
 //#region src/components/ui/switch.tsx
-function Zd({ className: e, size: t = "default", ...n }) {
+function of({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ x(Rl, {
 		"data-slot": "switch",
 		"data-size": t,
@@ -6246,41 +6335,41 @@ function Zd({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region src/lib/marketplace-api.ts
-function Qd(e) {
+function sf(e) {
 	return `marketplace.installStep.${e}`;
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/typeof.js
-function $d(e) {
+function cf(e) {
 	"@babel/helpers - typeof";
-	return $d = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
+	return cf = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
 		return typeof e;
 	} : function(e) {
 		return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
-	}, $d(e);
+	}, cf(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPrimitive.js
-function ef(e, t) {
-	if ($d(e) != "object" || !e) return e;
+function lf(e, t) {
+	if (cf(e) != "object" || !e) return e;
 	var n = e[Symbol.toPrimitive];
 	if (n !== void 0) {
 		var r = n.call(e, t || "default");
-		if ($d(r) != "object") return r;
+		if (cf(r) != "object") return r;
 		throw TypeError("@@toPrimitive must return a primitive value.");
 	}
 	return (t === "string" ? String : Number)(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPropertyKey.js
-function tf(e) {
-	var t = ef(e, "string");
-	return $d(t) == "symbol" ? t : t + "";
+function uf(e) {
+	var t = lf(e, "string");
+	return cf(t) == "symbol" ? t : t + "";
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/defineProperty.js
-function nf(e, t, n) {
-	return (t = tf(t)) in e ? Object.defineProperty(e, t, {
+function df(e, t, n) {
+	return (t = uf(t)) in e ? Object.defineProperty(e, t, {
 		value: n,
 		enumerable: !0,
 		configurable: !0,
@@ -6289,11 +6378,11 @@ function nf(e, t, n) {
 }
 //#endregion
 //#region src/lib/apiError.ts
-var rf = class extends Error {
+var ff = class extends Error {
 	constructor(e, t) {
-		super(e), nf(this, "code", void 0), nf(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
+		super(e), df(this, "code", void 0), df(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
 	}
-}, af = {
+}, pf = {
 	invalid: "errors.api.invalid",
 	ai_disabled: "aiContent.errDisabled",
 	ai_entity_off: "aiContent.errEntityOff",
@@ -6323,22 +6412,22 @@ var rf = class extends Error {
 	install_job_start_failed: "marketplace.installJobStartFailed",
 	build_dev_only: "buildPipeline.devOnly"
 };
-function of(e) {
+function mf(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 28") || t.includes("timed out") || t.includes("did not respond in time") || t.includes("زمان") && t.includes("پاسخ");
 }
-function sf(e) {
+function hf(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 52") || t.includes("empty reply") || t.includes("closed the connection without a response") || t.includes("پاسخ") && t.includes("خالی");
 }
-function cf(e, t) {
-	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(Qd(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
+function gf(e, t) {
+	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(sf(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
 }
-function lf(e, t) {
+function _f(e, t) {
 	let n = t;
-	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return cf(e, n);
-	if (t instanceof rf && t.code) {
-		let n = af[t.code];
+	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return gf(e, n);
+	if (t instanceof ff && t.code) {
+		let n = pf[t.code];
 		if (n === "marketplace.installFailedGeneric") {
 			let n = t.message?.trim();
 			return n ? e("marketplace.installFailed", { message: n }) : e("marketplace.installFailedGeneric");
@@ -6346,21 +6435,21 @@ function lf(e, t) {
 		if (n) return e(n);
 	}
 	if (t && typeof t == "object" && "code" in t) {
-		let n = af[String(t.code)];
+		let n = pf[String(t.code)];
 		if (n) return e(n);
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return of(n) ? e("errors.api.timeout") : sf(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return mf(n) ? e("errors.api.timeout") : hf(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
-function uf(e, t) {
-	_.error(lf(e, t));
+function vf(e, t) {
+	_.error(_f(e, t));
 }
 //#endregion
 //#region src/lib/safeUrl.ts
-function df(e) {
+function yf(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -6372,38 +6461,38 @@ function df(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function ff() {
+function bf() {
 	return window.webinoDashboard;
 }
-var pf = 3e4;
-function mf(e) {
+var xf = 3e4;
+function Sf(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function hf(e) {
-	let t = ff();
+function Cf(e) {
+	let t = bf();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (mf(e) || df(e)) return e;
-	throw new rf("Request blocked: URL not allowed", {
+	if (Sf(e) || yf(e)) return e;
+	throw new ff("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function gf(e, t) {
+function wf(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function _f(e) {
+function Tf(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
 	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : null;
 }
-function vf(e, t) {
+function Ef(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -6419,13 +6508,13 @@ function vf(e, t) {
 		code: "invalid_json"
 	};
 }
-function yf(e, t) {
+function Df(e, t) {
 	let n = e.toLowerCase();
 	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
 }
-async function bf(e, t, n = {}) {
-	let r = _f(e), i = ff();
-	if (!r || !i.ajaxUrl) throw new rf("AJAX fallback unavailable", {
+async function Of(e, t, n = {}) {
+	let r = Tf(e), i = bf();
+	if (!r || !i.ajaxUrl) throw new ff("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
 	});
@@ -6438,7 +6527,7 @@ async function bf(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = gf({}, t);
+	let { signal: l, clear: u } = wf({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -6450,21 +6539,21 @@ async function bf(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new rf(yf(t, e.status), {
+			throw new ff(Df(t, e.status), {
 				code: "invalid_json",
 				status: e.status
 			});
 		}
-		if (!n.success) throw new rf(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+		if (!n.success) throw new ff(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
 			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
 			status: e.status
 		});
 		return n.data;
 	} catch (e) {
-		throw e instanceof rf ? e : e instanceof DOMException && e.name === "AbortError" ? new rf("Request timed out", {
+		throw e instanceof ff ? e : e instanceof DOMException && e.name === "AbortError" ? new ff("Request timed out", {
 			code: "timeout",
 			status: 0
-		}) : e instanceof TypeError ? new rf("Network unavailable", {
+		}) : e instanceof TypeError ? new ff("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -6472,11 +6561,11 @@ async function bf(e, t, n = {}) {
 		u();
 	}
 }
-async function Q(e, t = {}, n = pf) {
-	if (_f(e) && ff().ajaxUrl) return bf(e, n, t);
-	let r = hf(e), i = ff(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+async function $(e, t = {}, n = xf) {
+	if (Tf(e) && bf().ajaxUrl) return Of(e, n, t);
+	let r = Cf(e), i = bf(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
 	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce);
-	let { signal: s, clear: c } = gf(t, n);
+	let { signal: s, clear: c } = wf(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -6487,25 +6576,25 @@ async function Q(e, t = {}, n = pf) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = vf(n, e.status);
-			throw new rf(t.message, {
+			let t = Ef(n, e.status);
+			throw new ff(t.message, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		if (!e.ok) {
 			let t = i;
-			throw new rf(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			throw new ff(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof rf ? e : e instanceof DOMException && e.name === "AbortError" ? new rf("Request timed out", {
+		throw e instanceof ff ? e : e instanceof DOMException && e.name === "AbortError" ? new ff("Request timed out", {
 			code: "timeout",
 			status: 0
-		}) : e instanceof TypeError ? new rf("Network unavailable", {
+		}) : e instanceof TypeError ? new ff("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -6515,40 +6604,40 @@ async function Q(e, t = {}, n = pf) {
 }
 //#endregion
 //#region src/lib/bootstrapQuery.ts
-function xf(e) {
+function kf(e) {
 	let { nav_group: t, children: n, navGroup: r, ...i } = e;
 	return {
 		...i,
 		navGroup: r ?? t,
-		children: n?.map((e) => xf(e))
+		children: n?.map((e) => kf(e))
 	};
 }
-function Sf(e) {
-	return e?.length ? e.map((e) => xf(e)) : e;
+function Af(e) {
+	return e?.length ? e.map((e) => kf(e)) : e;
 }
-var Cf = ["bootstrap"];
-function wf(e) {
+var jf = ["bootstrap"];
+function Mf(e) {
 	return Array.isArray(e) ? e.filter((e) => typeof e == "string" && e.length > 0) : [];
 }
-function Tf(e) {
+function Nf(e) {
 	return {
 		...e,
-		capabilities: wf(e.capabilities),
-		modules: Sf(e.modules) ?? e.modules,
+		capabilities: Mf(e.capabilities),
+		modules: Af(e.modules) ?? e.modules,
 		installedModuleSlugs: Array.isArray(e.installedModuleSlugs) ? e.installedModuleSlugs.filter((e) => typeof e == "string" && e.length > 0) : e.installedModuleSlugs
 	};
 }
-function Ef() {
+function Pf() {
 	let e = window.webinoDashboard.bootstrap;
-	if (e) return Tf(e);
+	if (e) return Nf(e);
 }
 //#endregion
 //#region src/hooks/useBootstrapQuery.ts
-function Df() {
-	let e = f(() => Ef(), []), n = !!(e && e.embedMinimal);
+function Ff() {
+	let e = f(() => Pf(), []), n = !!(e && e.embedMinimal);
 	return t({
-		queryKey: Cf,
-		queryFn: async () => Tf(await Q("bootstrap")),
+		queryKey: jf,
+		queryFn: async () => Nf(await $("bootstrap")),
 		initialData: e,
 		initialDataUpdatedAt: e ? n ? 0 : Date.now() : void 0,
 		staleTime: n ? 0 : 12e4,
@@ -6561,7 +6650,7 @@ function Df() {
 }
 //#endregion
 //#region src/lib/aiJobProgress.ts
-var Of = [
+var If = [
 	"queued",
 	"layout",
 	"visual",
@@ -6570,15 +6659,15 @@ var Of = [
 	"writing",
 	"done"
 ];
-function kf(e) {
+function Lf(e) {
 	if (!e) return "queued";
 	if (e.status === "done") return "done";
 	if (e.status === "failed") return "failed";
 	if (e.status === "cancelled") return "cancelled";
 	let t = String(e.result_summary || "").toLowerCase();
-	return Of.includes(t) ? t : e.status === "running" ? "provider" : "queued";
+	return If.includes(t) ? t : e.status === "running" ? "provider" : "queued";
 }
-function Af(e) {
+function Rf(e) {
 	return {
 		queued: 8,
 		layout: 22,
@@ -6591,17 +6680,17 @@ function Af(e) {
 		cancelled: 100
 	}[e] ?? 15;
 }
-function jf(e) {
+function zf(e) {
 	return new Promise((t) => window.setTimeout(t, e));
 }
 //#endregion
 //#region src/components/AiGenerateButton.tsx
-var Mf = 2e3, Nf = 480 * 1e3;
-function Pf(e) {
+var Bf = 2e3, Vf = 480 * 1e3;
+function Hf(e) {
 	return e === "done" || e === "failed" || e === "cancelled";
 }
-function Ff({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant: s = "outline", className: c }) {
-	let { t: l } = g(), u = n(), d = (Df().data?.activeModuleClients ?? []).some((e) => e.slug === "ai-content-module"), [f, p] = m(null), [h, v] = m(!1), y = (e) => {
+function Uf({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant: s = "outline", className: c }) {
+	let { t: l } = g(), u = n(), d = (Ff().data?.activeModuleClients ?? []).some((e) => e.slug === "ai-content-module"), [f, p] = m(null), [h, v] = m(!1), y = (e) => {
 		_.success(l("aiContent.generateDone")), u.invalidateQueries({ queryKey: ["ai-content"] }), t === "product" && r && (u.invalidateQueries({ queryKey: ["coffee-profile", r] }), u.invalidateQueries({ queryKey: ["product", r] }), u.invalidateQueries({ queryKey: [
 			"shop",
 			"products",
@@ -6610,7 +6699,7 @@ function Ff({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 	}, C = e({
 		mutationFn: async () => {
 			v(!0);
-			let e = await Q("ai-content/generate", {
+			let e = await $("ai-content/generate", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -6620,7 +6709,7 @@ function Ff({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 					payload: i
 				})
 			});
-			if (!e?.job_id || e.job_id < 1) throw new rf(l("aiContent.jobQueueFailed"), {
+			if (!e?.job_id || e.job_id < 1) throw new ff(l("aiContent.jobQueueFailed"), {
 				code: "ai_enqueue",
 				status: 500
 			});
@@ -6629,26 +6718,26 @@ function Ff({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 				id: n,
 				status: "pending",
 				result_summary: "queued"
-			}), Q(`ai-content/jobs/${n}/run`, {
+			}), $(`ai-content/jobs/${n}/run`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: "{}"
 			}, 3e4).then((e) => {
 				e?.job && p(e.job);
 			}).catch(() => {});
-			let a = Date.now() + Nf, o = e.job ?? {
+			let a = Date.now() + Vf, o = e.job ?? {
 				id: n,
 				status: "pending",
 				result_summary: "queued"
 			};
 			for (; Date.now() < a;) {
-				await jf(Mf);
+				await zf(Bf);
 				try {
-					if (o = await Q(`ai-content/jobs/${n}`), p(o), Pf(o.status)) return o;
+					if (o = await $(`ai-content/jobs/${n}`), p(o), Hf(o.status)) return o;
 				} catch {}
 			}
 			try {
-				o = await Q(`ai-content/jobs/${n}`), p(o);
+				o = await $(`ai-content/jobs/${n}`), p(o);
 			} catch {}
 			return o;
 		},
@@ -6672,21 +6761,21 @@ function Ff({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 				_.error(f.error_message || l("aiContent.generateFailed"));
 				return;
 			}
-			if (e instanceof rf && e.code === "invalid_json") {
+			if (e instanceof ff && e.code === "invalid_json") {
 				_.error(l("aiContent.generateFailed"));
 				return;
 			}
-			uf(l, e), p(null);
+			vf(l, e), p(null);
 		}
 	}), w = e({
-		mutationFn: async () => f?.id ? Q(`ai-content/jobs/${f.id}/cancel`, { method: "POST" }) : null,
+		mutationFn: async () => f?.id ? $(`ai-content/jobs/${f.id}/cancel`, { method: "POST" }) : null,
 		onSuccess: (e) => {
 			e?.job && p(e.job), _.message(l("aiContent.jobCancelRequested")), u.invalidateQueries({ queryKey: ["ai-content"] });
 		},
-		onError: (e) => uf(l, e)
+		onError: (e) => vf(l, e)
 	});
 	if (!d) return null;
-	let T = kf(f), E = Af(T), ee = !!f && (h || f?.status === "done" || f?.status === "failed" || f?.status === "cancelled"), D = f ? Pf(f.status) : !1;
+	let T = Lf(f), E = Rf(T), D = !!f && (h || f?.status === "done" || f?.status === "failed" || f?.status === "cancelled"), O = f ? Hf(f.status) : !1;
 	return /* @__PURE__ */ S(b, { children: [/* @__PURE__ */ S(G, {
 		type: "button",
 		size: o,
@@ -6694,15 +6783,15 @@ function Ff({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 		className: c,
 		disabled: h || t !== "blog" && !r,
 		onClick: () => void C.mutateAsync(),
-		children: [/* @__PURE__ */ x(qd, { className: "me-1 size-4" }), l(h ? "aiContent.generating" : "aiContent.generate")]
-	}), ee ? /* @__PURE__ */ x("div", {
+		children: [/* @__PURE__ */ x(Jd, { className: "me-1 size-4" }), l(h ? "aiContent.generating" : "aiContent.generate")]
+	}), D ? /* @__PURE__ */ x("div", {
 		className: "bg-background/80 fixed inset-0 z-50 flex items-center justify-center p-4",
 		children: /* @__PURE__ */ S("div", {
 			className: "bg-card w-full max-w-md space-y-4 rounded-xl border p-6 shadow-lg",
 			children: [
 				/* @__PURE__ */ S("div", {
 					className: "flex items-center gap-2 text-sm font-medium",
-					children: [/* @__PURE__ */ x(qd, { className: "size-4" }), l("aiContent.generateProgress")]
+					children: [/* @__PURE__ */ x(Jd, { className: "size-4" }), l("aiContent.generateProgress")]
 				}),
 				/* @__PURE__ */ x("div", {
 					className: "bg-muted h-2 overflow-hidden rounded-full",
@@ -6721,7 +6810,7 @@ function Ff({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 				}) : null,
 				/* @__PURE__ */ x("div", {
 					className: "flex justify-end gap-2",
-					children: D ? /* @__PURE__ */ x(G, {
+					children: O ? /* @__PURE__ */ x(G, {
 						type: "button",
 						size: "sm",
 						variant: "outline",
@@ -6741,12 +6830,27 @@ function Ff({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 	}) : null] });
 }
 //#endregion
+//#region src/lib/digits.ts
+var Wf = "۰۱۲۳۴۵۶۷۸۹";
+function Gf(e) {
+	return e.toLowerCase().startsWith("fa");
+}
+function Kf(e) {
+	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
+}
+//#endregion
+//#region src/lib/formatNumber.ts
+function qf(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = Gf(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return Gf(t) ? Kf(i) : i;
+}
+//#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeFlag.tsx
-function If(e) {
+function Jf(e) {
 	let t = e.toUpperCase();
 	return /^[A-Z]{2}$/.test(t) ? String.fromCodePoint(...[...t].map((e) => 127397 + e.charCodeAt(0))) : "";
 }
-function Lf({ origin: e, useFlagcdn: t = !0, className: n = "size-5 rounded-sm object-cover" }) {
+function Yf({ origin: e, useFlagcdn: t = !0, className: n = "size-5 rounded-sm object-cover" }) {
 	let r = (e.iso_code || "").toLowerCase();
 	if (e.thumbnail_url) return /* @__PURE__ */ x("img", {
 		src: e.thumbnail_url,
@@ -6763,7 +6867,7 @@ function Lf({ origin: e, useFlagcdn: t = !0, className: n = "size-5 rounded-sm o
 		alt: "",
 		className: n
 	});
-	let i = e.flag_emoji || If(r);
+	let i = e.flag_emoji || Jf(r);
 	return i ? /* @__PURE__ */ x("span", {
 		className: "text-base leading-none",
 		"aria-hidden": !0,
@@ -6775,7 +6879,7 @@ function Lf({ origin: e, useFlagcdn: t = !0, className: n = "size-5 rounded-sm o
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeProfileProductPanel.tsx
-function Rf() {
+function Xf() {
 	return {
 		blend_robusta: 0,
 		blend_arabica: 0,
@@ -6785,6 +6889,11 @@ function Rf() {
 		sweetness: 0,
 		body: 0,
 		pack_weight_g: 1e3,
+		price_mode: "none",
+		price_bean_id: "",
+		price_mix_id: "",
+		price_shop_style: "classic",
+		price_parts: [],
 		visible: {
 			blend: !0,
 			acidity: !0,
@@ -6797,59 +6906,71 @@ function Rf() {
 		origin_ids: []
 	};
 }
-function zf(e) {
-	let t = Rf().visible, n = {
+function Zf(e) {
+	let t = Xf().visible, n = {
 		...t,
 		...e ?? {}
 	};
 	return Object.values(n).every((e) => !e) ? t : n;
 }
-function Bf({ productId: r, registerSave: i }) {
-	let { t: a } = g(), o = n(), [s, l] = m(Rf), d = p(s);
-	d.current = s;
-	let h = p(null), v = p(!1), y = t({
+function Qf({ productId: r, registerSave: i }) {
+	let { t: a, i18n: o } = g(), s = n(), [l, d] = m(Xf), h = p(l);
+	h.current = l;
+	let v = p(null), y = p(!1), b = t({
 		queryKey: ["coffee-profile", r],
 		enabled: !!r,
-		queryFn: () => Q(`shop/products/${r}/coffee-profile`)
+		queryFn: () => $(`shop/products/${r}/coffee-profile`)
+	}), C = t({
+		queryKey: ["coffee-pricing"],
+		queryFn: () => $("shop/coffee-pricing"),
+		staleTime: 6e4
 	});
 	u(() => {
-		h.current = null, v.current = !1, l(Rf());
+		v.current = null, y.current = !1, d(Xf());
 	}, [r]), u(() => {
-		!y.data?.profile || !r || h.current === r && v.current || (h.current = r, v.current = !1, l({
-			...Rf(),
-			...y.data.profile,
-			visible: zf(y.data.profile.visible)
-		}));
-	}, [y.data, r]);
-	let b = y.data?.settings, C = y.data?.origins ?? [], w = b?.scale_min ?? 0, T = b?.scale_max ?? 10, E = c(async (e) => {
-		if (!r || h.current !== r) return;
-		let t = await Q(`shop/products/${r}/coffee-profile`, {
+		!b.data?.profile || !r || v.current === r && y.current || (v.current = r, y.current = !1, d($f({
+			...Xf(),
+			...b.data.profile,
+			visible: Zf(b.data.profile.visible)
+		}, C.data?.base_mixes ?? [])));
+	}, [
+		b.data,
+		r,
+		C.data?.base_mixes
+	]);
+	let w = b.data?.settings, T = b.data?.origins ?? [], E = w?.scale_min ?? 0, D = w?.scale_max ?? 10, O = c(async (e) => {
+		if (!r || v.current !== r) return;
+		let t = await $(`shop/products/${r}/coffee-profile`, {
 			method: "PUT",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(d.current)
+			body: JSON.stringify(h.current)
 		});
-		v.current = !1, t.profile && l({
-			...Rf(),
+		y.current = !1, t.profile && d({
+			...Xf(),
 			...t.profile,
-			visible: zf(t.profile.visible)
-		}), o.setQueryData(["coffee-profile", r], t), e?.toast !== !1 && _.success(a("common.saved"));
+			visible: Zf(t.profile.visible)
+		}), s.setQueryData(["coffee-profile", r], t), e?.toast !== !1 && _.success(a("common.saved"));
 	}, [
 		r,
-		o,
+		s,
 		a
 	]);
 	u(() => {
-		if (i) return i(() => E({ toast: !1 })), () => i(null);
-	}, [i, E]);
+		if (i) return i(() => O({ toast: !1 })), () => i(null);
+	}, [i, O]);
 	let ee = e({
-		mutationFn: () => E(),
-		onError: (e) => uf(a, e)
-	}), D = f(() => new Map(C.map((e) => [e.id, e])), [C]);
+		mutationFn: () => O(),
+		onError: (e) => vf(a, e)
+	}), k = f(() => new Map(T.map((e) => [e.id, e])), [T]), A = f(() => {
+		let e = /* @__PURE__ */ new Map();
+		for (let t of C.data?.beans ?? []) typeof t.after_roast == "number" && e.set(t.id, t.after_roast);
+		return e;
+	}, [C.data?.beans]), j = f(() => ep(l.price_parts, A), [l.price_parts, A]), M = f(() => tp(l.price_parts, C.data?.base_mixes ?? []), [l.price_parts, C.data?.base_mixes]);
 	if (!r) return /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: a("coffeeProfile.productTitle") }) }), /* @__PURE__ */ x(Y, { children: /* @__PURE__ */ x("p", {
 		className: "text-muted-foreground text-sm",
 		children: a("coffeeProfile.saveProductFirst")
 	}) })] });
-	if (y.isError) return /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: a("coffeeProfile.productTitle") }) }), /* @__PURE__ */ S(Y, { children: [/* @__PURE__ */ x("p", {
+	if (b.isError) return /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: a("coffeeProfile.productTitle") }) }), /* @__PURE__ */ S(Y, { children: [/* @__PURE__ */ x("p", {
 		className: "text-destructive text-sm",
 		children: a("common.loadFailed")
 	}), /* @__PURE__ */ x(G, {
@@ -6857,18 +6978,18 @@ function Bf({ productId: r, registerSave: i }) {
 		variant: "outline",
 		size: "sm",
 		className: "mt-3",
-		onClick: () => void y.refetch(),
+		onClick: () => void b.refetch(),
 		children: a("license.retry")
 	})] })] });
-	if (y.isPending || !b) return /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: a("coffeeProfile.productTitle") }) }), /* @__PURE__ */ x(Y, { children: /* @__PURE__ */ x("p", {
+	if (b.isPending || !w) return /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: a("coffeeProfile.productTitle") }) }), /* @__PURE__ */ x(Y, { children: /* @__PURE__ */ x("p", {
 		className: "text-muted-foreground text-sm",
 		children: a("common.loading")
 	}) })] });
-	function O(e) {
-		v.current = !0, l(e);
+	function N(e) {
+		y.current = !0, d(e);
 	}
-	function k(e, t) {
-		O((n) => {
+	function P(e, t) {
+		N((n) => {
 			let r = {
 				...n,
 				visible: {
@@ -6879,9 +7000,9 @@ function Bf({ productId: r, registerSave: i }) {
 			return e === "blend" && t && n.blend_robusta + n.blend_arabica === 0 && (r.blend_robusta = 70, r.blend_arabica = 30), r;
 		});
 	}
-	function A(e) {
+	function F(e) {
 		let t = Math.max(0, Math.min(100, Math.round(e)));
-		O((e) => ({
+		N((e) => ({
 			...e,
 			blend_robusta: t,
 			blend_arabica: 100 - t,
@@ -6891,8 +7012,8 @@ function Bf({ productId: r, registerSave: i }) {
 			}
 		}));
 	}
-	function j(e, t) {
-		O((n) => ({
+	function te(e, t) {
+		N((n) => ({
 			...n,
 			acidity: {
 				...n.acidity,
@@ -6904,8 +7025,8 @@ function Bf({ productId: r, registerSave: i }) {
 			}
 		}));
 	}
-	function M(e, t) {
-		O((n) => {
+	function I(e, t) {
+		N((n) => {
 			let r = e === "caffeine_mg" ? "caffeine" : e;
 			return {
 				...n,
@@ -6917,8 +7038,8 @@ function Bf({ productId: r, registerSave: i }) {
 			};
 		});
 	}
-	function N(e, t) {
-		O((n) => {
+	function ne(e, t) {
+		N((n) => {
 			let r = new Set(n.origin_ids);
 			t ? r.add(e) : r.delete(e);
 			let i = [...r];
@@ -6936,11 +7057,11 @@ function Bf({ productId: r, registerSave: i }) {
 		className: "flex flex-row items-center justify-between gap-3",
 		children: [/* @__PURE__ */ x(J, { children: a("coffeeProfile.productTitle") }), /* @__PURE__ */ S("div", {
 			className: "flex items-center gap-2",
-			children: [/* @__PURE__ */ x(Ff, {
+			children: [/* @__PURE__ */ x(Uf, {
 				type: "product",
 				id: r,
 				onDone: () => {
-					v.current = !1, o.invalidateQueries({ queryKey: ["coffee-profile", r] });
+					y.current = !1, s.invalidateQueries({ queryKey: ["coffee-profile", r] });
 				}
 			}), /* @__PURE__ */ x(G, {
 				type: "button",
@@ -6953,63 +7074,63 @@ function Bf({ productId: r, registerSave: i }) {
 	}), /* @__PURE__ */ S(Y, {
 		className: "space-y-6",
 		children: [
-			/* @__PURE__ */ S(Vf, {
+			/* @__PURE__ */ S(np, {
 				id: "blend",
 				label: a("coffeeProfile.showBlend"),
-				checked: s.visible.blend,
-				onCheckedChange: (e) => k("blend", e),
+				checked: l.visible.blend,
+				onCheckedChange: (e) => P("blend", e),
 				children: [/* @__PURE__ */ S("div", {
 					className: "flex justify-between text-sm",
 					children: [/* @__PURE__ */ S("span", { children: [
-						b.robusta_label,
+						w.robusta_label,
 						" ",
-						/* @__PURE__ */ S("strong", { children: [s.blend_robusta, "٪"] })
+						/* @__PURE__ */ S("strong", { children: [l.blend_robusta, "٪"] })
 					] }), /* @__PURE__ */ S("span", { children: [
-						b.arabica_label,
+						w.arabica_label,
 						" ",
-						/* @__PURE__ */ S("strong", { children: [s.blend_arabica, "٪"] })
+						/* @__PURE__ */ S("strong", { children: [l.blend_arabica, "٪"] })
 					] })]
 				}), /* @__PURE__ */ x("input", {
 					type: "range",
 					min: 0,
 					max: 100,
-					value: s.blend_robusta,
-					onChange: (e) => A(Number(e.target.value)),
+					value: l.blend_robusta,
+					onChange: (e) => F(Number(e.target.value)),
 					className: "w-full accent-primary"
 				})]
 			}),
-			/* @__PURE__ */ x(Vf, {
+			/* @__PURE__ */ x(np, {
 				id: "acidity",
 				label: a("coffeeProfile.showAcidity"),
-				checked: s.visible.acidity,
-				onCheckedChange: (e) => k("acidity", e),
+				checked: l.visible.acidity,
+				onCheckedChange: (e) => P("acidity", e),
 				children: /* @__PURE__ */ x("div", {
 					className: "grid gap-3 sm:grid-cols-2",
-					children: b.acidity_levels.map((e) => /* @__PURE__ */ S("div", {
+					children: w.acidity_levels.map((e) => /* @__PURE__ */ S("div", {
 						className: "space-y-1",
 						children: [/* @__PURE__ */ S("div", {
 							className: "flex justify-between text-sm",
 							children: [/* @__PURE__ */ x(Z, {
 								htmlFor: `acid-${e.id}`,
 								children: e.label
-							}), /* @__PURE__ */ x("span", { children: s.acidity[e.id] ?? w })]
+							}), /* @__PURE__ */ x("span", { children: l.acidity[e.id] ?? E })]
 						}), /* @__PURE__ */ x("input", {
 							id: `acid-${e.id}`,
 							type: "range",
-							min: w,
-							max: T,
-							value: s.acidity[e.id] ?? w,
-							onChange: (t) => j(e.id, Number(t.target.value)),
+							min: E,
+							max: D,
+							value: l.acidity[e.id] ?? E,
+							onChange: (t) => te(e.id, Number(t.target.value)),
 							className: "w-full accent-primary"
 						})]
 					}, e.id))
 				})
 			}),
-			/* @__PURE__ */ x(Vf, {
+			/* @__PURE__ */ x(np, {
 				id: "caffeine",
 				label: a("coffeeProfile.showCaffeine"),
-				checked: s.visible.caffeine,
-				onCheckedChange: (e) => k("caffeine", e),
+				checked: l.visible.caffeine,
+				onCheckedChange: (e) => P("caffeine", e),
 				children: /* @__PURE__ */ S("div", {
 					className: "flex flex-wrap items-end gap-3",
 					children: [/* @__PURE__ */ S("div", {
@@ -7022,16 +7143,16 @@ function Bf({ productId: r, registerSave: i }) {
 							type: "number",
 							min: 0,
 							max: 5e3,
-							value: s.caffeine_mg,
-							onChange: (e) => M("caffeine_mg", Number(e.target.value) || 0),
+							value: l.caffeine_mg,
+							onChange: (e) => I("caffeine_mg", Number(e.target.value) || 0),
 							className: "w-32"
 						})]
 					}), /* @__PURE__ */ S("p", {
 						className: "text-muted-foreground pb-2 text-sm",
 						children: [
-							s.caffeine_mg,
+							l.caffeine_mg,
 							" ",
-							b.caffeine_unit
+							w.caffeine_unit
 						]
 					})]
 				})
@@ -7040,20 +7161,20 @@ function Bf({ productId: r, registerSave: i }) {
 				["bitterness", "showBitterness"],
 				["sweetness", "showSweetness"],
 				["body", "showBody"]
-			].map(([e, t]) => /* @__PURE__ */ S(Vf, {
+			].map(([e, t]) => /* @__PURE__ */ S(np, {
 				id: e,
 				label: a(`coffeeProfile.${t}`),
-				checked: s.visible[e],
-				onCheckedChange: (t) => k(e, t),
+				checked: l.visible[e],
+				onCheckedChange: (t) => P(e, t),
 				children: [/* @__PURE__ */ S("div", {
 					className: "flex justify-between text-sm",
-					children: [/* @__PURE__ */ x("span", { children: a(`coffeeProfile.${e}`) }), /* @__PURE__ */ x("span", { children: s[e] })]
+					children: [/* @__PURE__ */ x("span", { children: a(`coffeeProfile.${e}`) }), /* @__PURE__ */ x("span", { children: l[e] })]
 				}), /* @__PURE__ */ x("input", {
 					type: "range",
-					min: w,
-					max: T,
-					value: s[e],
-					onChange: (t) => M(e, Number(t.target.value)),
+					min: E,
+					max: D,
+					value: l[e],
+					onChange: (t) => I(e, Number(t.target.value)),
 					className: "w-full accent-primary"
 				})]
 			}, e)),
@@ -7068,8 +7189,8 @@ function Bf({ productId: r, registerSave: i }) {
 						id: "coffee-pack",
 						type: "number",
 						min: 1,
-						value: s.pack_weight_g,
-						onChange: (e) => O((t) => ({
+						value: l.pack_weight_g,
+						onChange: (e) => N((t) => ({
 							...t,
 							pack_weight_g: Number(e.target.value) || 1e3
 						})),
@@ -7081,26 +7202,128 @@ function Bf({ productId: r, registerSave: i }) {
 					})
 				]
 			}),
-			/* @__PURE__ */ x(Vf, {
+			/* @__PURE__ */ S("div", {
+				className: "space-y-3 rounded-lg border p-4",
+				children: [
+					/* @__PURE__ */ S("div", {
+						className: "flex flex-wrap items-start justify-between gap-2",
+						children: [/* @__PURE__ */ S("div", { children: [/* @__PURE__ */ x(Z, { children: a("coffeeProfile.priceComposition") }), /* @__PURE__ */ x("p", {
+							className: "text-muted-foreground mt-1 text-xs",
+							children: a("coffeeProfile.priceCompositionHint")
+						})] }), /* @__PURE__ */ x(G, {
+							type: "button",
+							size: "sm",
+							variant: "outline",
+							onClick: () => N((e) => ({
+								...e,
+								price_mode: "custom",
+								price_parts: [...e.price_parts, {
+									bean_id: C.data?.beans?.[0]?.id ?? "",
+									percent: e.price_parts.length === 0 ? 100 : 0
+								}]
+							})),
+							children: a("coffeeProfile.pricingAddPart")
+						})]
+					}),
+					l.price_parts.length === 0 ? /* @__PURE__ */ x("p", {
+						className: "text-muted-foreground text-sm",
+						children: a("coffeeProfile.priceCompositionEmpty")
+					}) : null,
+					l.price_parts.map((e, t) => /* @__PURE__ */ S("div", {
+						className: "flex flex-wrap items-center gap-2",
+						children: [
+							/* @__PURE__ */ S($d, {
+								value: e.bean_id || void 0,
+								onValueChange: (e) => N((n) => ({
+									...n,
+									price_mode: "custom",
+									price_parts: n.price_parts.map((n, r) => r === t ? {
+										...n,
+										bean_id: e
+									} : n),
+									price_bean_id: n.price_parts.length === 1 ? e : n.price_bean_id
+								})),
+								children: [/* @__PURE__ */ x(tf, {
+									className: "w-40",
+									children: /* @__PURE__ */ x(ef, { placeholder: a("coffeeProfile.pricePickBean") })
+								}), /* @__PURE__ */ x(nf, { children: (C.data?.beans ?? []).map((e) => /* @__PURE__ */ x(Q, {
+									value: e.id,
+									children: e.name
+								}, e.id)) })]
+							}),
+							/* @__PURE__ */ x(X, {
+								type: "number",
+								className: "w-24",
+								min: 0,
+								max: 100,
+								value: e.percent,
+								onChange: (e) => N((n) => ({
+									...n,
+									price_mode: "custom",
+									price_parts: n.price_parts.map((n, r) => r === t ? {
+										...n,
+										percent: Number(e.target.value) || 0
+									} : n)
+								}))
+							}),
+							/* @__PURE__ */ x("span", {
+								className: "text-muted-foreground text-sm",
+								children: "%"
+							}),
+							/* @__PURE__ */ x(G, {
+								type: "button",
+								size: "sm",
+								variant: "ghost",
+								onClick: () => N((e) => {
+									let n = e.price_parts.filter((e, n) => n !== t);
+									return {
+										...e,
+										price_parts: n,
+										price_mode: n.length ? "custom" : "none"
+									};
+								}),
+								children: a("common.delete")
+							})
+						]
+					}, `part-${t}`)),
+					M ? /* @__PURE__ */ x("p", {
+						className: "text-sm",
+						children: a("coffeeProfile.pricePatternDetected", { name: M.name })
+					}) : null,
+					l.price_parts.length > 0 ? /* @__PURE__ */ S("p", {
+						className: "text-muted-foreground text-sm",
+						children: [
+							a("coffeeProfile.pricePreviewKg"),
+							":",
+							" ",
+							/* @__PURE__ */ x("span", {
+								className: "text-foreground font-medium",
+								children: qf(Math.round(j), o.language)
+							})
+						]
+					}) : null
+				]
+			}),
+			/* @__PURE__ */ x(np, {
 				id: "origin",
 				label: a("coffeeProfile.showOrigin"),
-				checked: s.visible.origin,
-				onCheckedChange: (e) => k("origin", e),
-				children: C.length === 0 ? /* @__PURE__ */ x("p", {
+				checked: l.visible.origin,
+				onCheckedChange: (e) => P("origin", e),
+				children: T.length === 0 ? /* @__PURE__ */ x("p", {
 					className: "text-muted-foreground text-sm",
 					children: a("coffeeProfile.noOrigins")
 				}) : /* @__PURE__ */ x("div", {
 					className: "grid gap-2 sm:grid-cols-2",
-					children: C.map((e) => /* @__PURE__ */ S("label", {
+					children: T.map((e) => /* @__PURE__ */ S("label", {
 						className: "flex items-center gap-2 rounded-md border px-3 py-2 text-sm",
 						children: [
-							/* @__PURE__ */ x(Xd, {
-								checked: s.origin_ids.includes(e.id),
-								onCheckedChange: (t) => N(e.id, t === !0)
+							/* @__PURE__ */ x(Zd, {
+								checked: l.origin_ids.includes(e.id),
+								onCheckedChange: (t) => ne(e.id, t === !0)
 							}),
-							/* @__PURE__ */ x(Lf, {
-								origin: D.get(e.id) ?? e,
-								useFlagcdn: b.use_flagcdn
+							/* @__PURE__ */ x(Yf, {
+								origin: k.get(e.id) ?? e,
+								useFlagcdn: w.use_flagcdn
 							}),
 							/* @__PURE__ */ x("span", { children: e.name })
 						]
@@ -7110,7 +7333,67 @@ function Bf({ productId: r, registerSave: i }) {
 		]
 	})] });
 }
-function Vf({ id: e, label: t, checked: n, onCheckedChange: r, children: i }) {
+function $f(e, t) {
+	if (e.price_parts?.length) return {
+		...e,
+		price_mode: "custom"
+	};
+	if (e.price_mode === "single" && e.price_bean_id) return {
+		...e,
+		price_mode: "custom",
+		price_parts: [{
+			bean_id: e.price_bean_id,
+			percent: 100
+		}]
+	};
+	if (e.price_mode === "base_mix" && e.price_mix_id) {
+		let n = t.find((t) => t.id === e.price_mix_id);
+		if (n?.parts?.length) return {
+			...e,
+			price_mode: "custom",
+			price_parts: n.parts.map((e) => ({
+				bean_id: e.bean_id,
+				percent: e.percent
+			}))
+		};
+	}
+	return e;
+}
+function ep(e, t) {
+	let n = 0, r = 0;
+	for (let i of e) {
+		let e = t.get(i.bean_id);
+		e == null || i.percent <= 0 || (n += e * (i.percent / 100), r += i.percent);
+	}
+	return r <= 0 ? 0 : (Math.abs(r - 100) > .5 && (n *= 100 / r), n);
+}
+function tp(e, t) {
+	let n = /* @__PURE__ */ new Map();
+	for (let t of e) !t.bean_id || t.percent <= 0 || n.set(t.bean_id, (n.get(t.bean_id) ?? 0) + t.percent);
+	if (!n.size) return null;
+	let r = 0;
+	for (let e of n.values()) r += e;
+	if (r > 0 && Math.abs(r - 100) > .01) for (let [e, t] of n) n.set(e, t * 100 / r);
+	for (let e of t) {
+		let t = /* @__PURE__ */ new Map();
+		for (let n of e.parts ?? []) !n.bean_id || n.percent <= 0 || t.set(n.bean_id, (t.get(n.bean_id) ?? 0) + n.percent);
+		if (t.size !== n.size) continue;
+		let r = !0;
+		for (let [e, i] of t) {
+			let t = n.get(e);
+			if (t == null || Math.abs(t - i) > 1) {
+				r = !1;
+				break;
+			}
+		}
+		if (r) return {
+			id: e.id,
+			name: e.name
+		};
+	}
+	return null;
+}
+function np({ id: e, label: t, checked: n, onCheckedChange: r, children: i }) {
 	return /* @__PURE__ */ S("div", {
 		className: "space-y-3 rounded-lg border p-4",
 		children: [/* @__PURE__ */ S("div", {
@@ -7118,7 +7401,7 @@ function Vf({ id: e, label: t, checked: n, onCheckedChange: r, children: i }) {
 			children: [/* @__PURE__ */ x(Z, {
 				htmlFor: `vis-${e}`,
 				children: t
-			}), /* @__PURE__ */ x(Zd, {
+			}), /* @__PURE__ */ x(of, {
 				id: `vis-${e}`,
 				checked: n,
 				onCheckedChange: r
@@ -7127,22 +7410,13 @@ function Vf({ id: e, label: t, checked: n, onCheckedChange: r, children: i }) {
 	});
 }
 //#endregion
-//#region src/lib/digits.ts
-var Hf = "۰۱۲۳۴۵۶۷۸۹";
-function Uf(e) {
-	return e.toLowerCase().startsWith("fa");
-}
-function Wf(e) {
-	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
-}
-//#endregion
 //#region src/components/ui/formatted-number-input.tsx
-var Gf = Object.fromEntries([...Hf].map((e, t) => [e, String(t)]));
-function Kf(e) {
+var rp = Object.fromEntries([...Wf].map((e, t) => [e, String(t)]));
+function ip(e) {
 	let t = "", n = !1;
 	for (let r of e) {
-		if (Gf[r] != null) {
-			t += Gf[r];
+		if (rp[r] != null) {
+			t += rp[r];
 			continue;
 		}
 		if (r >= "0" && r <= "9") {
@@ -7153,126 +7427,44 @@ function Kf(e) {
 	}
 	return t;
 }
-function qf(e, t) {
+function ap(e, t) {
 	if (!e) return "";
 	let n = e.startsWith("-"), r = n ? e.slice(1) : e, i = r.endsWith("."), [a, o] = r.split("."), s = Number(a || "0");
 	if (!Number.isFinite(s) && a !== "") return e;
-	let c = Uf(t) ? "fa-IR" : "en-US", l = new Intl.NumberFormat(c, { maximumFractionDigits: 0 }).format(a === "" ? 0 : s);
+	let c = Gf(t) ? "fa-IR" : "en-US", l = new Intl.NumberFormat(c, { maximumFractionDigits: 0 }).format(a === "" ? 0 : s);
 	if (o != null || i) {
-		let e = Uf(t) ? "٫" : ".", n = o ?? "";
-		l += e + (Uf(t) ? n.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e) : n);
+		let e = Gf(t) ? "٫" : ".", n = o ?? "";
+		l += e + (Gf(t) ? n.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e) : n);
 	}
 	return n ? `-${l}` : l;
 }
-function Jf({ value: e, onChange: t, className: n, onBlur: r, ...i }) {
-	let { i18n: a } = g(), o = a.language, s = f(() => qf(e, o), [e, o]);
+function op({ value: e, onChange: t, className: n, onBlur: r, ...i }) {
+	let { i18n: a } = g(), o = a.language, s = f(() => ap(e, o), [e, o]);
 	return /* @__PURE__ */ x(X, {
 		...i,
 		inputMode: "decimal",
 		className: W(n),
 		value: s,
-		onChange: (e) => t(Kf(e.target.value)),
+		onChange: (e) => t(ip(e.target.value)),
 		onBlur: r
 	});
 }
 //#endregion
-//#region src/hooks/use-text-direction.ts
-function Yf() {
-	let { i18n: e } = g();
-	return e.dir() === "rtl" ? "rtl" : "ltr";
-}
-//#endregion
-//#region src/components/ui/select.tsx
-function Xf({ ...e }) {
-	return /* @__PURE__ */ x(cl, {
-		"data-slot": "select",
-		...e
-	});
-}
-function Zf({ ...e }) {
-	return /* @__PURE__ */ x(ul, {
-		"data-slot": "select-value",
-		...e
-	});
-}
-function Qf({ className: e, size: t = "default", children: n, ...r }) {
-	return /* @__PURE__ */ S(ll, {
-		"data-slot": "select-trigger",
-		"data-size": t,
-		dir: Yf(),
-		className: W("flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap text-start shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", e),
-		...r,
-		children: [n, /* @__PURE__ */ x(dl, {
-			asChild: !0,
-			children: /* @__PURE__ */ x(Hd, { className: "size-4 opacity-50" })
-		})]
-	});
-}
-function $f({ className: e, children: t, position: n = "popper", align: r = "start", ...i }) {
-	return /* @__PURE__ */ x(kn, {
-		allowBodyScroll: !0,
-		children: /* @__PURE__ */ x(fl, { children: /* @__PURE__ */ S(pl, {
-			"data-slot": "select-content",
-			dir: Yf(),
-			className: W("relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-start text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", n === "popper" && "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1", e),
-			position: n,
-			align: r,
-			...i,
-			children: [
-				/* @__PURE__ */ x(ep, {}),
-				/* @__PURE__ */ x(ml, {
-					className: W("p-1", n === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"),
-					children: t
-				}),
-				/* @__PURE__ */ x(tp, {})
-			]
-		}) })
-	});
-}
-function $({ className: e, children: t, ...n }) {
-	return /* @__PURE__ */ S(hl, {
-		"data-slot": "select-item",
-		className: W("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pe-8 ps-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2", e),
-		...n,
-		children: [/* @__PURE__ */ x("span", {
-			"data-slot": "select-item-indicator",
-			className: "absolute end-2 flex size-3.5 items-center justify-center",
-			children: /* @__PURE__ */ x(_l, { children: /* @__PURE__ */ x(Vd, { className: "size-4" }) })
-		}), /* @__PURE__ */ x(gl, { children: t })]
-	});
-}
-function ep({ className: e, ...t }) {
-	return /* @__PURE__ */ x(vl, {
-		"data-slot": "select-scroll-up-button",
-		className: W("flex cursor-default items-center justify-center py-1", e),
-		...t,
-		children: /* @__PURE__ */ x(Ud, { className: "size-4" })
-	});
-}
-function tp({ className: e, ...t }) {
-	return /* @__PURE__ */ x(yl, {
-		"data-slot": "select-scroll-down-button",
-		className: W("flex cursor-default items-center justify-center py-1", e),
-		...t,
-		children: /* @__PURE__ */ x(Hd, { className: "size-4" })
-	});
-}
-//#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeWeightPricingPanel.tsx
-function np({ productId: e }) {
+function sp({ productId: e }) {
 	let { t } = g(), [n, r] = m(""), [i, a] = m([]), [o, s] = m([]), [c, l] = m(!1), [d, f] = m(!1), [p, h] = m(!1);
 	async function v(n) {
 		if (e) {
 			l(!0), h(!1);
 			try {
-				let t = await Q(`shop/products/${e}/coffee-profile/price-by-attribute${n ? `?attribute=${encodeURIComponent(n)}` : ""}`);
+				let t = await $(`shop/products/${e}/coffee-profile/price-by-attribute${n ? `?attribute=${encodeURIComponent(n)}` : ""}`);
 				a(t.attributes ?? []), r(t.attribute ?? ""), s((t.rows ?? []).map((e) => ({
 					...e,
 					purchase_price: e.purchase_price == null ? "" : String(e.purchase_price),
 					stock_quantity: e.stock_quantity == null ? "" : String(e.stock_quantity)
 				})));
 			} catch (e) {
-				h(!0), uf(t, e);
+				h(!0), vf(t, e);
 			} finally {
 				l(!1);
 			}
@@ -7293,7 +7485,7 @@ function np({ productId: e }) {
 		let r = 0, i = 0;
 		try {
 			for (;;) {
-				let t = await Q(`shop/products/${e}/coffee-profile/price-by-attribute`, {
+				let t = await $(`shop/products/${e}/coffee-profile/price-by-attribute`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
@@ -7311,7 +7503,7 @@ function np({ productId: e }) {
 			}
 			_.success(t("coffeeProfile.priceByAttrDone", { count: i })), v(n);
 		} catch (e) {
-			uf(t, e);
+			vf(t, e);
 		} finally {
 			f(!1);
 		}
@@ -7341,12 +7533,12 @@ function np({ productId: e }) {
 			}) : null,
 			i.length > 0 ? /* @__PURE__ */ S("div", {
 				className: "max-w-xs space-y-1",
-				children: [/* @__PURE__ */ x(Z, { children: t("coffeeProfile.priceByAttrAttribute") }), /* @__PURE__ */ S(Xf, {
+				children: [/* @__PURE__ */ x(Z, { children: t("coffeeProfile.priceByAttrAttribute") }), /* @__PURE__ */ S($d, {
 					value: n,
 					onValueChange: (e) => {
 						r(e), v(e);
 					},
-					children: [/* @__PURE__ */ x(Qf, { children: /* @__PURE__ */ x(Zf, {}) }), /* @__PURE__ */ x($f, { children: i.map((e) => /* @__PURE__ */ x($, {
+					children: [/* @__PURE__ */ x(tf, { children: /* @__PURE__ */ x(ef, {}) }), /* @__PURE__ */ x(nf, { children: i.map((e) => /* @__PURE__ */ x(Q, {
 						value: e.name,
 						children: e.label
 					}, e.name)) })]
@@ -7372,7 +7564,7 @@ function np({ productId: e }) {
 							children: [/* @__PURE__ */ x(Z, {
 								className: "text-xs",
 								children: t("products.fieldPurchase")
-							}), /* @__PURE__ */ x(Jf, {
+							}), /* @__PURE__ */ x(op, {
 								value: e.purchase_price,
 								onChange: (t) => y(e.term, "purchase_price", t)
 							})]
@@ -7382,7 +7574,7 @@ function np({ productId: e }) {
 							children: [/* @__PURE__ */ x(Z, {
 								className: "text-xs",
 								children: t("products.fieldStock")
-							}), /* @__PURE__ */ x(Jf, {
+							}), /* @__PURE__ */ x(op, {
 								value: e.stock_quantity,
 								onChange: (t) => y(e.term, "stock_quantity", t)
 							})]
@@ -7398,7 +7590,7 @@ function np({ productId: e }) {
 }
 //#endregion
 //#region src/components/PageShell.tsx
-function rp({ title: e, description: t, eyebrow: n, children: r }) {
+function cp({ title: e, description: t, eyebrow: n, children: r }) {
 	return /* @__PURE__ */ S("div", {
 		className: "space-y-5",
 		children: [/* @__PURE__ */ S("header", {
@@ -7422,8 +7614,8 @@ function rp({ title: e, description: t, eyebrow: n, children: r }) {
 }
 //#endregion
 //#region src/i18n/locales/fa.json
-var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
-	ap = {
+var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
+	up = {
 		"app.title": "داشبورد",
 		"chart.totalVisitors": "کل بازدیدها",
 		"chart.descriptionLong": "جمع سه ماه اخیر",
@@ -7481,6 +7673,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.platform": "پلتفرم",
 		"nav.section.content": "مدیریت محتوا",
 		"nav.section.shop": "مدیریت فروشگاه",
+		"nav.section.users": "کاربران",
 		"nav.section.tools": "ابزار",
 		"nav.section.reports": "گزارشات",
 		"nav.section.admin": "مدیریت",
@@ -7528,6 +7721,8 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.module.sms-topup": "شارژ کیف پول",
 		"nav.module.orders": "سفارشات",
 		"nav.module.order-list": "سفارشات",
+		"nav.module.order-new": "سفارش جدید",
+		"nav.module.notifications-hub": "سیستم اعلان",
 		"nav.module.partner-orders": "سفارش‌های من",
 		"nav.module.partner-account": "حساب من",
 		"nav.module.account-portal": "حساب من",
@@ -7541,12 +7736,14 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.module.account-wallet": "کیف پول",
 		"nav.module.account-tickets": "پشتیبانی",
 		"nav.module.shop-tickets": "تیکت‌های پشتیبانی",
+		"nav.module.tickets": "تیکت",
 		"nav.module.order-reports": "گزارش‌ها",
 		"nav.module.marketing": "بازاریابی",
 		"nav.module.coupons": "کدهای تخفیف",
 		"nav.module.users": "کاربران",
 		"nav.module.user-list": "کاربران",
-		"nav.module.user-new": "افزودن کاربر",
+		"nav.module.user-new": "کاربر جدید",
+		"nav.module.user-employees": "کارمندان",
 		"nav.module.comments": "دیدگاه‌ها",
 		"nav.module.analytics": "آمار",
 		"nav.module.analytics-overview": "مرور کلی",
@@ -7628,6 +7825,42 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"home.sections.kpis": "نمای کلی این ماه",
 		"home.sections.charts": "نمودارها و بینش‌ها",
 		"home.sections.breakdown": "تفکیک سفارش‌ها",
+		"home.sections.fulfillment": "کارهای سفارش",
+		"home.fulfillment.title": "کارهای باز سفارشات",
+		"home.fulfillment.empty": "سفارشی در انتظار اقدام نیست.",
+		"home.fulfillment.viewAll": "مشاهده همه",
+		"home.fulfillment.group.pack": "بسته‌بندی",
+		"home.fulfillment.group.ship": "ارسال",
+		"home.fulfillment.group.tracking": "کد رهگیری",
+		"home.fulfillment.group.refund": "بازگشت وجه",
+		"home.fulfillment.group.returns": "مرجوعی",
+		"home.fulfillment.returnRequested": "بررسی درخواست مرجوعی سفارش {{number}} — {{item}} ×{{qty}}.",
+		"home.fulfillment.returnApproved": "دریافت مرسوله مرجوعی سفارش {{number}} — {{item}} ×{{qty}}.",
+		"home.fulfillment.pack": "سفارش شماره {{number}} — {{name}} را بسته‌بندی کن.",
+		"home.fulfillment.ship": "سفارش {{number}} را با {{method}} ارسال کن.",
+		"home.fulfillment.tracking": "کد رهگیری مرسوله سفارش {{number}} را برای مشتری بفرست.",
+		"home.fulfillment.refundInstallment": "سفارش {{number}} اقساطی است؛ بازگشت وجه به‌صورت خودکار انجام می‌شود.",
+		"home.fulfillment.refundCash": "مبلغ سفارش {{number}} را به شماره حسابی که با آن واریز شده برگردان{{gateway}}.",
+		"home.fulfillment.refundCashGateway": " (درگاه: {{gateway}})",
+		"home.fulfillment.shipping.courier": "پیک",
+		"home.fulfillment.shipping.post": "پست",
+		"home.fulfillment.shipping.tipax": "تیپاکس",
+		"home.fulfillment.shipping.other": "{{label}}",
+		"home.fulfillment.workflow.title": "روند کار سفارش",
+		"home.fulfillment.workflow.subtitle": "ترتیب مراحل از ثبت تا تحویل",
+		"home.fulfillment.workflow.pending": "در انتظار پرداخت",
+		"home.fulfillment.workflow.processing": "در حال پردازش / در حال انجام",
+		"home.fulfillment.workflow.warehouse": "ارسال شده به انبار",
+		"home.fulfillment.workflow.pack": "بسته‌بندی کن",
+		"home.fulfillment.workflow.shipBranch": "ارسال",
+		"home.fulfillment.workflow.courier": "پیک",
+		"home.fulfillment.workflow.post": "پست",
+		"home.fulfillment.workflow.tipax": "تیپاکس",
+		"home.fulfillment.workflow.completed": "تکمیل شده",
+		"home.fulfillment.workflow.tracking": "کد رهگیری برای مشتری",
+		"home.fulfillment.workflow.cancelled": "لغو شده",
+		"home.fulfillment.workflow.refundInstallment": "اقساطی: بازگشت خودکار",
+		"home.fulfillment.workflow.refundCash": "نقدی: برگشت دستی به حساب",
 		"home.products.total": "کل محصولات",
 		"home.products.byStatusTitle": "بر اساس وضعیت",
 		"home.products.byStockTitle": "بر اساس موجودی",
@@ -7725,6 +7958,45 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.site.sections.privacy": "حساب کاربری و حریم خصوصی",
 		"settings.site.sections.license": "لایسنس",
 		"settings.site.sections.dashboard": "داشبورد",
+		"settings.site.sections.style": "استایل",
+		"settings.site.sections.pwa": "اپلیکیشن (PWA)",
+		"settings.pwa.title": "اپلیکیشن پیش‌رونده (PWA)",
+		"settings.pwa.description": "نصب داشبورد به‌صورت اپ روی گوشی و دسکتاپ. محدوده نصب روی /dashboard/ می‌ماند.",
+		"settings.pwa.enabled": "فعال‌سازی PWA",
+		"settings.pwa.enabledHint": "در حالت خاموش، مانیفست و سرویس‌ورکر سرو نمی‌شوند.",
+		"settings.pwa.identityTitle": "نام و توضیحات",
+		"settings.pwa.identityHint": "خالی بگذارید تا از عنوان و شعار سایت به‌صورت خودکار استفاده شود.",
+		"settings.pwa.fieldName": "نام اپ",
+		"settings.pwa.nameAutoHint": "خالی = داشبورد (عنوان سایت)",
+		"settings.pwa.namePlaceholder": "داشبورد ({{site}})",
+		"settings.pwa.fieldShortName": "نام کوتاه",
+		"settings.pwa.shortNameDefault": "داشبورد",
+		"settings.pwa.fieldDescription": "توضیحات",
+		"settings.pwa.descriptionAutoHint": "خالی = شعار سایت",
+		"settings.pwa.appearanceTitle": "رنگ و آیکون",
+		"settings.pwa.appearanceHint": "رنگ تم برای نوار وضعیت؛ رنگ پس‌زمینه برای اسپلش.",
+		"settings.pwa.fieldThemeColor": "رنگ تم",
+		"settings.pwa.fieldBackgroundColor": "رنگ پس‌زمینه / اسپلش",
+		"settings.pwa.fieldDisplay": "حالت نمایش",
+		"settings.pwa.displayStandalone": "مستقل (Standalone)",
+		"settings.pwa.displayFullscreen": "تمام‌صفحه",
+		"settings.pwa.displayMinimal": "حداقلی",
+		"settings.pwa.fieldOrientation": "جهت صفحه",
+		"settings.pwa.orientationAny": "هر دو",
+		"settings.pwa.orientationPortrait": "عمودی",
+		"settings.pwa.orientationLandscape": "افقی",
+		"settings.pwa.fieldIcon": "آیکون اپ",
+		"settings.pwa.iconSite": "فاوآیکن سایت",
+		"settings.pwa.iconSiteHint": "از آیکون سایت وردپرس استفاده می‌کند.",
+		"settings.pwa.iconCustom": "آیکون سفارشی",
+		"settings.pwa.iconCustomHint": "یک تصویر مربعی انتخاب یا آپلود کنید (ترجیحاً PNG).",
+		"settings.pwa.pickIcon": "انتخاب آیکون",
+		"settings.pwa.behaviorTitle": "نصب و اسپلش",
+		"settings.pwa.showInstallBanner": "نمایش بنر نصب",
+		"settings.pwa.showInstallBannerHint": "پیشنهاد نصب داشبورد روی صفحهٔ اصلی دستگاه.",
+		"settings.pwa.splashEnabled": "صفحهٔ اسپلش",
+		"settings.pwa.splashEnabledHint": "تصویر راه‌اندازی iOS و پوشش کوتاه هنگام باز شدن اپ نصب‌شده.",
+		"settings.pwa.reloadHint": "بعد از ذخیره، داشبورد را یک‌بار بارگذاری مجدد کنید تا مانیفست و اسپلش جدید اعمال شود.",
 		"coreUpdate.title": "به‌روزرسانی هسته داشبورد",
 		"coreUpdate.description": "آخرین نسخه داشبورد را از کانال به‌روزرسانی مجاز نصب کنید. ماژول‌های نصب‌شده حذف نمی‌شوند.",
 		"coreUpdate.current": "نصب‌شده",
@@ -8249,6 +8521,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.site.sections.systemLogs": "لاگ‌های سیستم",
 		"settings.site.sections.analytics": "آمار و ردیابی",
 		"settings.site.sections.sms": "پیامک سایت",
+		"settings.site.sections.notifications": "سیستم اعلان",
 		"settings.siteSms.title": "تنظیمات پیامک (ورود و ثبت‌نام)",
 		"settings.siteSms.enabled": "فعال",
 		"settings.siteSms.serviceLine": "خط خدماتی",
@@ -8282,6 +8555,23 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.shopSms.patternStatus.pending": "در انتظار",
 		"settings.shopSms.patternStatus.failed": "خطا",
 		"settings.shopSms.patternStatus.none": "بدون پترن",
+		"orders.returns.title": "مرجوعی",
+		"orders.returns.subtitle": "درخواست یا مدیریت مرجوعی جزئی این سفارش.",
+		"orders.returns.newRequest": "درخواست مرجوعی جدید",
+		"orders.returns.selectItem": "انتخاب کالا",
+		"orders.returns.availableQty": "{{count}} عدد قابل برگشت",
+		"orders.returns.qty": "تعداد",
+		"orders.returns.reason": "دلیل",
+		"orders.returns.submit": "ثبت درخواست",
+		"orders.returns.created": "درخواست مرجوعی ثبت شد.",
+		"orders.returns.empty": "هنوز درخواست مرجوعی ثبت نشده.",
+		"orders.returns.shipTo": "ارسال مرسوله به",
+		"orders.returns.exchangeOrder": "سفارش تعویض #{{id}}",
+		"orders.returns.approve": "تأیید",
+		"orders.returns.reject": "رد",
+		"orders.returns.receive": "دریافت مرسوله",
+		"orders.returns.refund": "استرداد وجه",
+		"orders.returns.exchange": "تعویض کالا",
 		"orders.sms.sendCustomer": "پیامک به مشتری",
 		"orders.sms.sendAdmin": "پیامک به مدیر",
 		"orders.sms.sent": "درخواست ارسال پیامک ثبت شد.",
@@ -8306,6 +8596,13 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.shopSms.events.user-welcome": "پیام خوش آمدید",
 		"settings.shopSms.events.stock-low": "کم بودن موجودی",
 		"settings.shopSms.events.stock-out": "تمام شدن موجودی",
+		"settings.shopSms.events.pos-payment-link": "لینک پرداخت صندوق",
+		"settings.shopSms.events.return-requested": "درخواست مرجوعی",
+		"settings.shopSms.events.return-approved": "تأیید مرجوعی",
+		"settings.shopSms.events.return-rejected": "رد مرجوعی",
+		"settings.shopSms.events.return-parcel-received": "دریافت مرسوله مرجوعی",
+		"settings.shopSms.events.return-refund": "استرداد مرجوعی",
+		"settings.shopSms.events.return-exchange": "تعویض مرجوعی",
 		"settings.shopSms.recoveryTitle": "جذب / کوپن اختصاصی",
 		"settings.shopSms.recoveryDelay": "تأخیر ارسال (ساعت)",
 		"settings.shopSms.recoveryCoupon": "صدور کد تخفیف اختصاصی",
@@ -8327,6 +8624,42 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.site.licenseFullPage": "صفحه کامل لایسنس",
 		"settings.appearanceTitle": "استودیوی ظاهر",
 		"settings.appearanceHint": "زبان، پوسته و رنگ تأکید داشبورد.",
+		"settings.style.accentTitle": "اکسنت داشبورد",
+		"settings.style.accentHint": "این اکسنت برای همهٔ کاربران داشبورد قفل است.",
+		"settings.style.accentLockedHint": "اکسنت سایت از مسیر تنظیمات ← استایل مدیریت می‌شود.",
+		"settings.style.colorsTitle": "رنگ‌های برند",
+		"settings.style.colorsHint": "پالت مشترک برای صفحات AI، باکس قیمت WFCP و سایر ماژول‌ها.",
+		"settings.style.color.primary": "اصلی",
+		"settings.style.color.secondary": "ثانویه",
+		"settings.style.color.accent": "تأکید",
+		"settings.style.color.bg": "پس‌زمینه",
+		"settings.style.color.surface": "سطح",
+		"settings.style.color.text": "متن",
+		"settings.style.color.muted": "کمرنگ",
+		"settings.style.brandingTitle": "لوگو و فاوآیکن",
+		"settings.style.brandingHint": "آپلود یا انتخاب از رسانه. فاوآیکن آیکن سایت وردپرس را هم به‌روز می‌کند.",
+		"settings.style.logo": "لوگوی داشبورد",
+		"settings.style.logoHint": "در سایدبار و صفحه ورود نمایش داده می‌شود.",
+		"settings.style.favicon": "فاوآیکن",
+		"settings.style.faviconHint": "آیکن تب مرورگر و پشتیبان آیکن PWA.",
+		"settings.style.fontsTitle": "فونت‌ها",
+		"settings.style.fontsHint": "یکان‌بخ همراه یا فونت سیستم برای بدنه، عنوان‌ها و UI.",
+		"settings.style.font.body": "بدنه",
+		"settings.style.font.heading": "عنوان‌ها",
+		"settings.style.font.ui": "کنترل‌های UI",
+		"settings.style.fontYekan": "یکان‌بخ",
+		"settings.style.fontSystem": "سیستم",
+		"settings.style.geoTitle": "پاپ‌آپ فیلترشکن",
+		"settings.style.geoHint": "رنگ‌های هشدار تسویه وقتی بازدیدکننده خارج از ایران است.",
+		"settings.style.wfcpTitle": "باکس قیمت محصول",
+		"settings.style.wfcpHint": "رنگ‌ها و گردی گوشهٔ باکس قیمت‌گذاری WFCP در فروشگاه.",
+		"settings.style.pwaTitle": "رنگ‌های PWA",
+		"settings.style.pwaHint": "رنگ تم و پس‌زمینهٔ اپلیکیشن پیش‌رونده.",
+		"settings.style.docsTitle": "برند اسناد سفارش",
+		"settings.style.docsHint": "رنگ تأکید و لوگوی فاکتور، رسید و لیبل.",
+		"settings.style.coffeeTitle": "ویجت پروفایل قهوه",
+		"settings.style.coffeeHint": "رنگ و اندازه‌های کارت پروفایل قهوه در فروشگاه.",
+		"settings.style.movedHint": "ظاهر از مسیر تنظیمات ← استایل مدیریت می‌شود.",
 		"settings.moduleOn": "نمایش در نوار کناری",
 		"settings.moduleOff": "مخفی از نوار کناری",
 		"settings.enabled": "فعال",
@@ -8369,9 +8702,15 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.accentBlue": "آبی",
 		"settings.accentYellow": "زرد",
 		"settings.accentViolet": "بنفش",
+		"settings.accentCafe": "کافه",
+		"settings.accentCosmetics": "آرایشی",
+		"settings.accentMobile": "لوازم جانبی",
+		"settings.accentElectronics": "الکتریکی",
 		"settings.fullscreenDefault": "باز کردن داشبورد به‌صورت تمام‌صفحه",
 		"settings.licenseHint": "فعال‌سازی لایسنس از طریق اندپوینت‌های سرویس لایسنس این سایت انجام می‌شود.",
 		"common.loading": "در حال بارگذاری…",
+		"common.prev": "قبلی",
+		"common.next": "بعدی",
 		"common.noResults": "نتیجه‌ای نیست.",
 		"common.saving": "در حال ذخیره…",
 		"common.loadFailed": "بارگذاری داده ناموفق بود.",
@@ -8800,6 +9139,12 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"products.colType": "نوع",
 		"products.colMarketplaces": "بازارگاه",
 		"products.colStatus": "وضعیت",
+		"products.colCatalogVisibility": "نمایش در فروشگاه",
+		"products.filterCatalogVisibility": "نمایش در فروشگاه",
+		"products.catalogVisibility.visible": "قابل‌نمایش",
+		"products.catalogVisibility.catalog": "فقط کاتالوگ",
+		"products.catalogVisibility.search": "فقط جستجو",
+		"products.catalogVisibility.hidden": "مخفی",
 		"products.colActions": "عملیات",
 		"products.searchPlaceholder": "جستجو با نام یا SKU",
 		"products.filterCategory": "دسته",
@@ -9228,6 +9573,11 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"orders.wcStatus.completed": "تکمیل‌شده",
 		"orders.wcStatus.cancelled": "لغوشده",
 		"orders.wcStatus.refunded": "بازپرداخت‌شده",
+		"orders.wcStatus.packaged": "بسته‌بندی‌شده",
+		"orders.wcStatus.sent-to-warehouse": "ارسال‌شده به انبار",
+		"orders.wcStatus.courier": "پیک",
+		"orders.wcStatus.post": "پست",
+		"orders.wcStatus.tipax": "تیپاکس",
 		"orders.emptyHint": "هنوز سفارشی نیست. سفارش‌های فروشگاه اینجا نمایش داده می‌شوند.",
 		"orders.detailNotFound": "بارگذاری سفارش ناموفق بود.",
 		"orders.sectionTotals": "جمع و پرداخت",
@@ -9243,6 +9593,10 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"orders.addrPostcode": "کد پستی",
 		"orders.paymentMethod": "روش پرداخت",
 		"orders.itemMeta.wfcp_purchase_type": "نوع خرید",
+		"orders.itemMeta.wfcp_installment_months": "مدت اقساط",
+		"orders.itemMeta.wfcp_installment_total": "مبلغ اقساطی",
+		"orders.itemMeta.wfcp_gateway": "درگاه پرداخت",
+		"orders.installmentMonths": "{{count}} ماه",
 		"orders.purchaseType.cash": "نقدی",
 		"orders.purchaseType.credit": "اعتباری",
 		"orders.purchaseType.installment": "اقساطی",
@@ -9285,8 +9639,25 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"orders.bulkEmailCompleted": "ایمیل تکمیل‌شده",
 		"orders.bulkEmailOnHold": "ایمیل معلق",
 		"orders.wcStatus.pws-packaged": "بسته‌بندی‌شده",
+		"orders.wcStatus.pws-sent-to-warehouse": "ارسال‌شده به انبار",
 		"orders.wcStatus.pws-courier": "پیک",
+		"orders.wcStatus.pws-post": "پست",
+		"orders.wcStatus.pws-tipax": "تیپاکس",
 		"orders.wcStatus.failed": "ناموفق",
+		"orders.wcStatus.return-requested": "درخواست مرجوعی",
+		"orders.wcStatus.return-approved": "مرجوعی تأییدشده",
+		"orders.wcStatus.return-rejected": "مرجوعی ردشده",
+		"orders.wcStatus.return-parcel-received": "بسته مرجوعی دریافت شد",
+		"orders.wcStatus.return-refund": "بازپرداخت مرجوعی",
+		"orders.wcStatus.return-exchange": "تعویض مرجوعی",
+		"orders.wcStatus.checkout-draft": "پیش‌نویس تسویه",
+		"orders.wcStatus.draft": "پیش‌نویس",
+		"orders.wcStatus.pos-payment-link": "لینک پرداخت صندوق",
+		"orders.wcStatus.bslm-rejected": "باسلام — ردشده",
+		"orders.wcStatus.bslm-preparation": "باسلام — آماده‌سازی",
+		"orders.wcStatus.bslm-wait-vendor": "باسلام — انتظار فروشنده",
+		"orders.wcStatus.bslm-shipping": "باسلام — ارسال",
+		"orders.wcStatus.bslm-completed": "باسلام — تکمیل",
 		"orders.detailTitleNumber": "سفارش #{{number}}",
 		"orders.sectionGeneral": "عمومی",
 		"orders.paidVia": "پرداخت به وسیله {{method}}",
@@ -9414,6 +9785,9 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"orders.panelSmsHistory": "تاریخچه پیامک",
 		"orders.smsHistoryEmpty": "پیامکی برای این سفارش ثبت نشده.",
 		"orders.smsStatus.delivered": "رسیده",
+		"orders.smsStatus.sent": "ارسال‌شده",
+		"orders.smsStatus.queued": "در صف",
+		"orders.smsStatus.skipped": "رد شده",
 		"orders.smsStatus.failed": "ناموفق",
 		"orders.sms.manual": "دستی",
 		"orders.customerOrdersList": "سفارش‌ها",
@@ -9604,6 +9978,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"coupons.restrict.channelTelegram": "ربات تلگرام",
 		"coupons.publishPanel": "انتشار",
 		"users.title": "کاربران",
+		"users.employeesTitle": "کارمندان",
 		"users.editPanel": "ویرایش کاربر",
 		"users.pickRow": "یک کاربر را انتخاب کنید.",
 		"users.colLogin": "نام کاربری",
@@ -9989,6 +10364,12 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"license.check": "بررسی وضعیت",
 		"serviceWorker.registrationFailedTitle": "کش آفلاین در دسترس نیست",
 		"serviceWorker.registrationFailedBody": "پیشخوان همچنان کار می‌کند. پس از به‌روزرسانی صفحه را رفرش کنید یا در صورت خطای بارگذاری، کش مرورگر را پاک کنید.",
+		"pwa.installRegion": "نصب پیشخوان",
+		"pwa.installTitle": "نصب پیشخوان روی گوشی",
+		"pwa.installBodyAndroid": "با نصب، پیشخوان مثل یک اپ باز می‌شود و از صفحهٔ اصلی در دسترس است.",
+		"pwa.installBodyIos": "در Safari روی دکمهٔ Share بزنید و «Add to Home Screen» را انتخاب کنید.",
+		"pwa.installAction": "نصب پیشخوان",
+		"pwa.installDismiss": "بستن",
 		"license.refreshStatus": "بروزرسانی وضعیت",
 		"license.zeroTouchHint": "لایسنس وقتی دامنه در CRM فعال باشد خودکار همگام می‌شود. پس از ثبت دامنه، یک‌بار «بروزرسانی وضعیت» را بزنید.",
 		"license.zeroTouchBlocked": "این دامنه هنوز در CRM فعال نیست. با پشتیبانی تماس بگیرید — نیازی به وارد کردن کد روی این سایت نیست.",
@@ -10007,7 +10388,6 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"license.diagnostics.transport": "روش اتصال HTTP",
 		"license.diagnostics.error": "پیام خطا",
 		"license.diagnostics.body": "نمونهٔ پاسخ",
-		"license.diagnostics.sameServer": "همان سرور لایسنس — ابتدا IP محلی امتحان می‌شود:",
 		"license.activate": "فعال‌سازی",
 		"license.activated": "لایسنس فعال است. در حال هدایت…",
 		"license.statusTitle": "وضعیت لایسنس",
@@ -10216,6 +10596,15 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"wfcp.colRetail": "خرده (محاسبه)",
 		"wfcp.colWcRegular": "قیمت پایه فروشگاه",
 		"wfcp.colStock": "موجودی",
+		"wfcp.colImage": "تصویر",
+		"wfcp.colStockQty": "تعداد موجودی",
+		"wfcp.columns": "ستون‌ها",
+		"wfcp.filterType": "نوع محصول",
+		"wfcp.filterLocked": "قفل قیمت",
+		"wfcp.filterHasPurchase": "قیمت خرید",
+		"wfcp.hasPurchaseYes": "دارای قیمت خرید",
+		"wfcp.hasPurchaseNo": "بدون قیمت خرید",
+		"wfcp.stock.onbackorder": "پیش‌سفارش",
 		"wfcp.colBrand": "برند",
 		"wfcp.prev": "قبلی",
 		"wfcp.next": "بعدی",
@@ -10365,6 +10754,10 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"bots.settings.proxyTypeNone": "بدون پراکسی",
 		"bots.settings.proxyTypeHttp": "HTTP",
 		"bots.settings.proxyTypeSocks5": "SOCKS5",
+		"bots.settings.proxyTypeSocks4": "SOCKS4",
+		"bots.settings.proxyTest": "تست اتصال پراکسی",
+		"bots.settings.proxyTestOk": "اتصال موفق — ربات @{{user}}",
+		"bots.settings.proxyTestFail": "اتصال ناموفق: {{error}}",
 		"bots.settings.proxyHost": "میزبان",
 		"bots.settings.proxyPort": "پورت",
 		"bots.settings.proxyUsername": "نام کاربری (اختیاری)",
@@ -10730,6 +11123,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.module.ai-content-overview": "نمای کلی",
 		"nav.module.ai-content-jobs": "کارها",
 		"nav.module.ai-content-calendar": "تقویم محتوا",
+		"nav.module.ai-content-blog": "بلاگ",
 		"nav.module.ai-content-products": "محتوای محصول",
 		"nav.module.ai-content-titles": "عناوین محصول",
 		"nav.module.ai-content-pages": "صفحات سایت",
@@ -10738,6 +11132,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.module.ai-content-settings": "تنظیمات",
 		"aiContent.overviewTitle": "هوش مصنوعی محتوا",
 		"aiContent.calendarTitle": "تقویم محتوا",
+		"aiContent.blogPageTitle": "بلاگ",
 		"aiContent.productsTitle": "محتوای محصول",
 		"aiContent.titlesPageTitle": "اصلاح عناوین",
 		"aiContent.pagesTitle": "صفحات المنتور",
@@ -10746,6 +11141,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"aiContent.settingsTitle": "تنظیمات هوش مصنوعی محتوا",
 		"aiContent.jobsPageTitle": "کارهای هوش مصنوعی",
 		"aiContent.navCalendar": "تقویم",
+		"aiContent.navBlog": "بلاگ",
 		"aiContent.navJobs": "کارها",
 		"aiContent.navProducts": "محصولات",
 		"aiContent.navTaxonomies": "دسته‌ها",
@@ -10784,6 +11180,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"aiContent.jobType.attr_template": "قالب ویژگی",
 		"aiContent.jobType.suggest_blog_categories": "پیشنهاد دسته بلاگ",
 		"aiContent.jobType.suggest_product_categories": "پیشنهاد دسته محصول",
+		"aiContent.jobType.suggest_blog_topics": "پیشنهاد موضوع بلاگ",
 		"aiContent.jobsAttempts": "{{count}} تلاش",
 		"aiContent.jobsTokens": "توکن {{inCount}}/{{outCount}}",
 		"aiContent.jobId": "#{{id}}",
@@ -10842,6 +11239,104 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"aiContent.titleProposed": "نام پیشنهادی",
 		"aiContent.titleRedo": "پیشنهاد دوباره",
 		"aiContent.noTitleProposals": "پیشنهاد عنوانی نیست. دکمهٔ بالا را بزنید.",
+		"aiContent.blogPageHint": "موضوع‌ها را بر اساس موضوع سایت و دسته‌بندی‌ها پیشنهاد بگیرید؛ بعد از تأیید، محتوا نوشته می‌شود.",
+		"aiContent.blogSuggest": "پیشنهاد موضوع",
+		"aiContent.blogSuggestCount": "تعداد",
+		"aiContent.blogTopicsList": "موضوع‌های پیشنهادی",
+		"aiContent.blogApproveWrite": "تأیید و نوشتن",
+		"aiContent.blogApproveSelected": "تأیید انتخاب‌شده ({{count}})",
+		"aiContent.blogSelectTopic": "انتخاب موضوع",
+		"aiContent.blogOpenPost": "باز کردن پست",
+		"aiContent.blogTopicApproved": "موضوع تأیید شد و نوشتن در صف قرار گرفت",
+		"aiContent.blogTopicsApproved": "{{count}} موضوع در صف نوشتن قرار گرفت",
+		"aiContent.blogTopicSkipped": "موضوع رد شد",
+		"aiContent.noBlogTopics": "موضوعی نیست. ابتدا پیشنهاد موضوع را بزنید.",
+		"aiContent.blogFilter.all": "همه",
+		"aiContent.blogFilter.pending": "در انتظار",
+		"aiContent.blogFilter.queued": "در صف",
+		"aiContent.blogFilter.done": "نوشته‌شده",
+		"aiContent.blogTopicStatus.pending": "در انتظار",
+		"aiContent.blogTopicStatus.queued": "در صف نوشتن",
+		"aiContent.blogTopicStatus.done": "نوشته‌شده",
+		"aiContent.blogTopicStatus.skipped": "ردشده",
+		"aiContent.blogRegenImage": "تولید دوبارهٔ عکس",
+		"aiContent.blogImageQueued": "ساخت عکس در صف قرار گرفت",
+		"aiContent.settingsBlogImage": "عکس بلاگ",
+		"aiContent.settingsBlogImageHint": "همزمان با نوشتن پست، عکس شاخص با سبک یکسان برند ساخته می‌شود (مدل تصویر از GapGPT).",
+		"aiContent.blogImageEnabled": "ساخت خودکار عکس بلاگ",
+		"aiContent.blogImageEnabledHint": "بعد از نوشتن هر پست، عکس شاخص تولید شود.",
+		"aiContent.blogImageProvider": "پروایدر تصویر",
+		"aiContent.blogImageModel": "مدل تصویر",
+		"aiContent.blogImageModelHint": "مثلاً gpt-image-1 یا dall-e-3 — از لیست GapGPT یا دستی.",
+		"aiContent.blogImageAesthetic": "سبک تم",
+		"aiContent.blogImageEra": "دورهٔ وینتج/رترو",
+		"aiContent.blogImageMedium": "تکنیک",
+		"aiContent.blogImageSubject": "موضوع صحنه",
+		"aiContent.blogImageUsePalette": "استفاده از پالت برند",
+		"aiContent.blogImageUsePaletteHint": "رنگ غالب از حافظهٔ طراحی / کیت المنتور.",
+		"aiContent.blogImagePaletteWeight": "شدت رنگ برند",
+		"aiContent.blogImageAspect": "نسبت تصویر",
+		"aiContent.blogImageQuality": "کیفیت",
+		"aiContent.blogImageLighting": "نور",
+		"aiContent.blogImageCamera": "قاب دوربین",
+		"aiContent.blogImageInlineCount": "عکس داخل متن",
+		"aiContent.blogImageInlineCountHint": "۰ = فقط شاخص. حداکثر ۳ عکس داخل محتوا.",
+		"aiContent.blogImageNoText": "بدون متن/لوگو روی عکس",
+		"aiContent.blogImageSkipIfThumb": "اگر عکس شاخص دارد، نساز",
+		"aiContent.promptBlogImage": "دستور اضافهٔ عکس",
+		"aiContent.blogAesthetic.vintage": "وینتج",
+		"aiContent.blogAesthetic.retro": "رترو",
+		"aiContent.blogAesthetic.modern": "مدرن",
+		"aiContent.blogAesthetic.minimal": "مینیمال",
+		"aiContent.blogAesthetic.luxury": "لوکس",
+		"aiContent.blogAesthetic.rustic": "روستیک",
+		"aiContent.blogAesthetic.industrial": "صنعتی",
+		"aiContent.blogAesthetic.art_deco": "آرت‌دکو",
+		"aiContent.blogAesthetic.mid_century": "میدسنچری",
+		"aiContent.blogAesthetic.scandinavian": "اسکاندیناوی",
+		"aiContent.blogAesthetic.bohemian": "بوهمین",
+		"aiContent.blogAesthetic.editorial": "ادیتوریال",
+		"aiContent.blogAesthetic.cinematic": "سینمایی",
+		"aiContent.blogAesthetic.dark_moody": "تیره و مودی",
+		"aiContent.blogAesthetic.bright_airy": "روشن و هوایی",
+		"aiContent.blogAesthetic.persian_traditional": "سنتی ایرانی",
+		"aiContent.blogEra.generic": "عمومی",
+		"aiContent.blogEra.1950s": "دهه ۵۰",
+		"aiContent.blogEra.1960s": "دهه ۶۰",
+		"aiContent.blogEra.1970s": "دهه ۷۰",
+		"aiContent.blogEra.1980s": "دهه ۸۰",
+		"aiContent.blogEra.1990s": "دهه ۹۰",
+		"aiContent.blogMedium.photorealistic": "عکس واقعی",
+		"aiContent.blogMedium.cinematic_photo": "عکس سینمایی",
+		"aiContent.blogMedium.film_photography": "عکاسی فیلم",
+		"aiContent.blogMedium.illustration": "ایلوستریشن",
+		"aiContent.blogMedium.watercolor": "آبرنگ",
+		"aiContent.blogMedium.cartoon": "کارتونی",
+		"aiContent.blogMedium.3d_render": "رندر سه‌بعدی",
+		"aiContent.blogMedium.flat_vector": "وکتور تخت",
+		"aiContent.blogMedium.collage": "کلاژ",
+		"aiContent.blogMedium.analog_film": "فیلم آنالوگ",
+		"aiContent.blogSubject.product_lifestyle": "لایف‌استایل محصول",
+		"aiContent.blogSubject.still_life": "طبیعت بی‌جان",
+		"aiContent.blogSubject.scene": "صحنه محیطی",
+		"aiContent.blogSubject.people": "افراد",
+		"aiContent.blogSubject.abstract": "انتزاعی",
+		"aiContent.blogPaletteWeight.subtle": "ملایم",
+		"aiContent.blogPaletteWeight.dominant": "غالب",
+		"aiContent.blogPaletteWeight.overlay": "اورلی قوی",
+		"aiContent.blogQuality.standard": "استاندارد",
+		"aiContent.blogQuality.hd": "HD",
+		"aiContent.blogLighting.natural": "طبیعی",
+		"aiContent.blogLighting.studio": "استودیو",
+		"aiContent.blogLighting.golden_hour": "ساعت طلایی",
+		"aiContent.blogLighting.moody": "مودی",
+		"aiContent.blogLighting.high_key": "های‌کی",
+		"aiContent.blogCamera.35mm": "۳۵mm",
+		"aiContent.blogCamera.50mm": "۵۰mm",
+		"aiContent.blogCamera.overhead": "از بالا",
+		"aiContent.blogCamera.closeup": "کلوزآپ",
+		"aiContent.blogCamera.wide": "واید",
+		"aiContent.jobType.blog_image": "عکس بلاگ",
 		"aiContent.settingsCatalog": "دسته، برند و عنوان یکدست",
 		"aiContent.catalogAssignCats": "اختصاص دسته‌بندی محصول",
 		"aiContent.catalogAssignBrands": "اختصاص برند محصول",
@@ -11534,6 +12029,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"wnc.modules.snapppay-search.title": "اسنپ‌پی سرچ",
 		"wnc.modules.snapppay-search.subtitle": "تنظیمات اتصال فید جستجوی اسنپ‌پی (SearchWise)",
 		"nav.module.coffee-profile-origins": "خاستگاه قهوه",
+		"nav.module.coffee-profile-pricing": "قیمت‌گذاری دان",
 		"nav.module.coffee-profile-module": "پروفایل قهوه",
 		"marketplace.module.coffee-profile-module": "پروفایل قهوه",
 		"coffeeProfile.settingsTitle": "پروفایل قهوه",
@@ -11640,6 +12136,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"coffeeProfile.blendSectionPrice": "قیمت و وزن",
 		"coffeeProfile.blendSectionSimple": "حالت ساده (روبوستا / عربیکا)",
 		"coffeeProfile.blendSource": "منبع لیست دان‌ها",
+		"coffeeProfile.blendSourcePricing": "دان‌های جدول قیمت‌گذاری",
 		"coffeeProfile.blendSourceProfile": "همه محصولات دارای پروفایل قهوه",
 		"coffeeProfile.blendSourceCategory": "دسته‌های انتخاب‌شده",
 		"coffeeProfile.blendSourceProducts": "محصولات مشخص",
@@ -11669,6 +12166,67 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"coffeeProfile.blendGuide": "متن راهنمای ترکیب",
 		"coffeeProfile.packWeight": "وزن بسته این محصول (گرم)",
 		"coffeeProfile.packWeightHint": "وقتی مبنای قیمت «بسته» باشد، قیمت هر کیلو از روی این وزن حساب می‌شود.",
+		"coffeeProfile.pricingTitle": "قیمت‌گذاری دان قهوه",
+		"coffeeProfile.pricingHint": "قیمت سبز → رست؛ ترکیب دان در پروفایل محصول قیمت خرید/خرده را می‌سازد. بسته‌های وزن برای تقسیم خودکار روی ورییشن‌ها.",
+		"coffeeProfile.pricingApplyAll": "اعمال قیمت همهٔ محصولات",
+		"coffeeProfile.pricingQueued": "به‌روزرسانی قیمت‌ها در صف قرار گرفت.",
+		"coffeeProfile.pricingRecalcRunning": "در حال اعمال: {{done}} از {{total}} (ناموفق: {{failed}})",
+		"coffeeProfile.pricingRecalcDone": "اعمال تمام شد: {{done}} از {{total}} (ناموفق: {{failed}})",
+		"coffeeProfile.pricingRoastYield": "بازده رست",
+		"coffeeProfile.pricingRoastYieldHint": "پس از رست = سبز ÷ بازده (پیش‌فرض ۰٫۸۵)",
+		"coffeeProfile.pricingBeans": "دان‌های سبز",
+		"coffeeProfile.pricingColName": "نام",
+		"coffeeProfile.pricingColKind": "نوع",
+		"coffeeProfile.pricingColGreen": "سبز / کیلو",
+		"coffeeProfile.pricingColAfter": "بعد رست / کیلو",
+		"coffeeProfile.pricingColRetail": "خرده‌فروشی WFCP / کیلو",
+		"coffeeProfile.pricingColProduct": "محصول ووکامرس",
+		"coffeeProfile.pricingRobusta": "روبوستا",
+		"coffeeProfile.pricingArabica": "عربیکا",
+		"coffeeProfile.pricingBaseMixes": "میکس‌های پایه",
+		"coffeeProfile.pricingAfterKg": "بعد رست",
+		"coffeeProfile.pricingRetailKg": "خرده‌فروشی",
+		"coffeeProfile.pricingAddPart": "افزودن جزء",
+		"coffeeProfile.pricingWeightPacks": "بسته‌های وزن",
+		"coffeeProfile.pricingWeightPacksHint": "ویژگی وزن ووکامرس را انتخاب کنید؛ متغیرها فهرست می‌شوند و فقط گرم را وارد کنید تا قیمت کیلو تقسیم شود.",
+		"coffeeProfile.pricingWeightAttribute": "ویژگی وزن",
+		"coffeeProfile.pricingWeightAttributePick": "انتخاب ویژگی…",
+		"coffeeProfile.pricingWeightAttributeHint": "متغیرهای همین ویژگی از ووکامرس پر می‌شوند؛ برای هر کدام گرم را مشخص کنید.",
+		"coffeeProfile.pricingWeightNoAttribute": "اول یک ویژگی وزن انتخاب کنید.",
+		"coffeeProfile.pricingWeightNoTerms": "این ویژگی هنوز متغیری ندارد.",
+		"coffeeProfile.pricingAddPack": "افزودن بسته",
+		"coffeeProfile.pricingPackTerm": "مقدار اتریبیوت",
+		"coffeeProfile.pricingPackLabel": "برچسب",
+		"coffeeProfile.pricingPackGrams": "گرم",
+		"coffeeProfile.pricingShopStyles": "میکس مغازه",
+		"coffeeProfile.pricingStyleClassic": "کلاسیک",
+		"coffeeProfile.pricingStyleLuxury": "لوکس",
+		"coffeeProfile.pricingRobustaMix": "میکس روبوستا",
+		"coffeeProfile.pricingArabicaMix": "میکس عربیکا",
+		"coffeeProfile.pricingEconomy": "میکس اقتصادی",
+		"coffeeProfile.pricingEconomyRobusta": "دان روبوستا",
+		"coffeeProfile.pricingEconomyArabica": "دان عربیکا",
+		"coffeeProfile.priceComposition": "ترکیب دان برای قیمت",
+		"coffeeProfile.priceCompositionHint": "یک دان ۱۰۰٪ = تک‌منشأ؛ چند دان = میانگین وزنی بعد از رست. ذخیره پروفایل قیمت WFCP را اعمال می‌کند.",
+		"coffeeProfile.priceCompositionEmpty": "ردیفی اضافه کنید تا قیمت از ترکیب محاسبه شود.",
+		"coffeeProfile.pricePatternDetected": "الگوی شناخته‌شده: {{name}}",
+		"coffeeProfile.pricePreviewKg": "پیش‌نمایش قیمت خرید / کیلو",
+		"coffeeProfile.priceSource": "منبع قیمت (WFCP)",
+		"coffeeProfile.priceSourceHint": "با ذخیره، قیمت خرید و فروش از روی ترکیب دان محاسبه و سینک می‌شود.",
+		"coffeeProfile.priceModeNone": "بدون قیمت‌گذاری خودکار",
+		"coffeeProfile.priceModeSingle": "دان تک‌منشأ",
+		"coffeeProfile.priceModeBaseMix": "میکس پایه",
+		"coffeeProfile.priceModeShop": "میکس مغازه",
+		"coffeeProfile.priceModeEconomy": "میکس اقتصادی",
+		"coffeeProfile.priceModeCustom": "سفارشی",
+		"coffeeProfile.priceBean": "دان",
+		"coffeeProfile.priceMix": "میکس پایه",
+		"coffeeProfile.pricePickBean": "انتخاب دان…",
+		"coffeeProfile.pricePickMix": "انتخاب میکس…",
+		"coffeeProfile.priceShopStyle": "سبک میکس مغازه",
+		"coffeeProfile.priceShopHint": "نسبت از ترکیب روبوستا/عربیکا همین پروفایل گرفته می‌شود.",
+		"coffeeProfile.priceEconomyHint": "ویتنام/ریو (یا دان‌های تنظیم‌شده) با همان نسبت ترکیب پروفایل.",
+		"coffeeProfile.priceCustomParts": "اجزای سفارشی",
 		"balePay.title": "پرداخت بله",
 		"balePay.subtitle": "فاکتور یک‌بارمصرف کیف‌پول بله از طریق بازوی فروشگاه.",
 		"balePay.enabled": "فعال در چک‌اوت",
@@ -11715,6 +12273,25 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"paymentsHub.warnModule": "این ماژول فعال نیست.",
 		"paymentsHub.warnGateway": "درگاه ووکامرس ثبت نشده است.",
 		"paymentsHub.unavailable": "این درگاه در دسترس نیست.",
+		"paymentsHub.geoNotice": "هشدار فیلترشکن در تسویه",
+		"paymentsHub.geoNoticeHint": "اگر IP بازدیدکننده خارج از ایران باشد، قبل از پرداخت پاپ‌آپ خاموش‌کردن فیلترشکن نشان داده می‌شود.",
+		"paymentsHub.geoServicesTitle": "منابع GEOIP",
+		"paymentsHub.geoServicesHint": "فقط سرویس‌های روشن پرس‌وجو می‌شوند. اگر هیچ‌کدام روشن نباشد، پاپ‌آپ نمایش داده نمی‌شود.",
+		"paymentsHub.geoService.cloudflare": "کلادفلر (CF-IPCountry)",
+		"paymentsHub.geoService.woocommerce": "موقعیت‌یابی ووکامرس",
+		"paymentsHub.geoService.analytics": "جیو آنالیتیکس",
+		"paymentsHub.geoService.ip_api": "ip-api.com (سرور)",
+		"paymentsHub.geoService.ipwho": "ipwho.is",
+		"paymentsHub.geoService.geojs": "geojs.io",
+		"paymentsHub.geoService.country_is": "api.country.is (مرورگر)",
+		"paymentsHub.geoColorsTitle": "ظاهر پاپ‌آپ",
+		"paymentsHub.geoColorsHint": "رنگ‌های مودال هشدار فیلترشکن در تسویه.",
+		"paymentsHub.geoColor.overlay": "پس‌زمینه تیره",
+		"paymentsHub.geoColor.dialog": "پس‌زمینه باکس",
+		"paymentsHub.geoColor.title": "عنوان",
+		"paymentsHub.geoColor.text": "متن",
+		"paymentsHub.geoColor.button": "دکمه",
+		"paymentsHub.geoColor.button_text": "متن دکمه",
 		"paymentsHub.noOther": "درگاه دیگری ثبت نشده.",
 		"bazaarHub.basalam": "باسلام",
 		"bazaarHub.digikala": "دیجیکالا",
@@ -11770,6 +12347,13 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"wallet.reason.admin_adjust": "تنظیم ادمین",
 		"notifications.hubTitle": "سیستم اعلان",
 		"notifications.hubSubtitle": "اعلان‌های سایت، پیامک، بله، تلگرام، ایمیل و OTP ورود را از یکجا مدیریت کنید.",
+		"notifications.inboxTitle": "صندوق اعلان‌ها",
+		"notifications.inboxSubtitle": "همه اعلان‌های مدیریتی فروشگاه در یکجا.",
+		"notifications.inboxEmpty": "اعلانی برای نمایش نیست.",
+		"notifications.openSettings": "تنظیمات اعلان",
+		"notifications.openAction": "مشاهده و اقدام",
+		"notifications.unreadBadge": "خوانده نشده",
+		"notifications.pageOf": "صفحه {{page}} از {{total}}",
 		"notifications.tabs.site": "اعلان سایت",
 		"notifications.tabs.sms": "پیامک",
 		"notifications.tabs.bale": "بله",
@@ -11870,6 +12454,33 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"pos.remaining": "مانده",
 		"pos.checkout": "ثبت فروش",
 		"pos.orderCreated": "سفارش #{{id}} ثبت شد",
+		"pos.payLink.shortTitle": "سفارش با لینک پرداخت",
+		"pos.payLink.title": "سفارش با لینک پرداخت",
+		"pos.payLink.subtitle": "ثبت سفارش در انتظار پرداخت و ارسال لینک پرداخت به مشتری با پیامک.",
+		"pos.payLink.backToPos": "بازگشت به صندوق سریع",
+		"pos.payLink.customer": "مشتری",
+		"pos.payLink.firstName": "نام",
+		"pos.payLink.lastName": "نام خانوادگی",
+		"pos.payLink.phone": "موبایل",
+		"pos.payLink.phoneRequired": "شماره موبایل الزامی است.",
+		"pos.payLink.address": "آدرس",
+		"pos.payLink.city": "شهر",
+		"pos.payLink.state": "استان",
+		"pos.payLink.postcode": "کد پستی",
+		"pos.payLink.products": "محصولات",
+		"pos.payLink.shipping": "ارسال",
+		"pos.payLink.selectShipping": "روش ارسال را انتخاب کنید",
+		"pos.payLink.manualShipping": "هزینه ارسال دستی",
+		"pos.payLink.payment": "پرداخت",
+		"pos.payLink.purchaseType": "نوع خرید",
+		"pos.payLink.cash": "نقدی",
+		"pos.payLink.installment": "اقساطی",
+		"pos.payLink.allowBothTypes": "مشتری بتواند روی صفحه پرداخت نوع خرید را عوض کند",
+		"pos.payLink.gateways": "درگاه‌های پرداخت",
+		"pos.payLink.gatewayRequired": "حداقل یک درگاه پرداخت انتخاب کنید.",
+		"pos.payLink.submit": "ثبت و ارسال پیامک",
+		"pos.payLink.created": "سفارش ثبت شد و پیامک ارسال شد.",
+		"pos.payLink.linkCopied": "لینک پرداخت در کلیپ‌بورد کپی شد.",
 		"pos.simpleMode": "صندوق ساده",
 		"pos.qty": "تعداد",
 		"pos.price": "قیمت",
@@ -11913,8 +12524,8 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"accounting.calculator": "ماشین‌حساب نمونه ٪",
 		"accounting.moadianProxy": "پروکسی HTTP (هاست خارج)"
 	};
-})), sp = /* @__PURE__ */ k({ default: () => cp }), cp, lp = O((() => {
-	cp = {
+})), fp = /* @__PURE__ */ k({ default: () => pp }), pp, mp = ee((() => {
+	pp = {
 		"app.title": "Dashboard",
 		"chart.totalVisitors": "Total visitors",
 		"chart.descriptionLong": "Total for the last 3 months",
@@ -11972,6 +12583,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.platform": "Platform",
 		"nav.section.content": "Content",
 		"nav.section.shop": "Store",
+		"nav.section.users": "Users",
 		"nav.section.tools": "Tools",
 		"nav.section.reports": "Reports",
 		"nav.section.admin": "Admin",
@@ -12019,6 +12631,8 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.module.sms-topup": "Top up",
 		"nav.module.orders": "Orders",
 		"nav.module.order-list": "Orders",
+		"nav.module.order-new": "New order",
+		"nav.module.notifications-hub": "Notification system",
 		"nav.module.partner-orders": "My orders",
 		"nav.module.partner-account": "My account",
 		"nav.module.account-portal": "My account",
@@ -12032,12 +12646,14 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.module.account-wallet": "Wallet",
 		"nav.module.account-tickets": "Support",
 		"nav.module.shop-tickets": "Support tickets",
+		"nav.module.tickets": "Tickets",
 		"nav.module.order-reports": "Reports",
 		"nav.module.marketing": "Marketing",
 		"nav.module.coupons": "Coupons",
 		"nav.module.users": "Users",
 		"nav.module.user-list": "Users",
-		"nav.module.user-new": "Add user",
+		"nav.module.user-new": "New user",
+		"nav.module.user-employees": "Employees",
 		"nav.module.comments": "Comments",
 		"nav.module.analytics": "Analytics",
 		"nav.module.analytics-overview": "Overview",
@@ -12119,6 +12735,42 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"home.sections.kpis": "This month at a glance",
 		"home.sections.charts": "Charts & insights",
 		"home.sections.breakdown": "Orders breakdown",
+		"home.sections.fulfillment": "Order tasks",
+		"home.fulfillment.title": "Open order tasks",
+		"home.fulfillment.empty": "No orders waiting for action.",
+		"home.fulfillment.viewAll": "View all",
+		"home.fulfillment.group.pack": "Packaging",
+		"home.fulfillment.group.ship": "Shipping",
+		"home.fulfillment.group.tracking": "Tracking code",
+		"home.fulfillment.group.refund": "Refund",
+		"home.fulfillment.group.returns": "Returns",
+		"home.fulfillment.returnRequested": "Review return request for order {{number}} — {{item}} ×{{qty}}.",
+		"home.fulfillment.returnApproved": "Receive return parcel for order {{number}} — {{item}} ×{{qty}}.",
+		"home.fulfillment.pack": "Pack order #{{number}} — {{name}}.",
+		"home.fulfillment.ship": "Ship order {{number}} via {{method}}.",
+		"home.fulfillment.tracking": "Send the shipment tracking code for order {{number}} to the customer.",
+		"home.fulfillment.refundInstallment": "Order {{number}} is installment; refund is processed automatically.",
+		"home.fulfillment.refundCash": "Refund order {{number}} to the bank account used for payment{{gateway}}.",
+		"home.fulfillment.refundCashGateway": " (gateway: {{gateway}})",
+		"home.fulfillment.shipping.courier": "courier",
+		"home.fulfillment.shipping.post": "post",
+		"home.fulfillment.shipping.tipax": "Tipax",
+		"home.fulfillment.shipping.other": "{{label}}",
+		"home.fulfillment.workflow.title": "Order workflow",
+		"home.fulfillment.workflow.subtitle": "Steps from checkout to delivery",
+		"home.fulfillment.workflow.pending": "Pending payment",
+		"home.fulfillment.workflow.processing": "Processing",
+		"home.fulfillment.workflow.warehouse": "Sent to warehouse",
+		"home.fulfillment.workflow.pack": "Pack order",
+		"home.fulfillment.workflow.shipBranch": "Ship",
+		"home.fulfillment.workflow.courier": "Courier",
+		"home.fulfillment.workflow.post": "Post",
+		"home.fulfillment.workflow.tipax": "Tipax",
+		"home.fulfillment.workflow.completed": "Completed",
+		"home.fulfillment.workflow.tracking": "Tracking code to customer",
+		"home.fulfillment.workflow.cancelled": "Cancelled",
+		"home.fulfillment.workflow.refundInstallment": "Installment: auto refund",
+		"home.fulfillment.workflow.refundCash": "Cash: manual refund to account",
 		"home.products.total": "Total products",
 		"home.products.byStatusTitle": "By status",
 		"home.products.byStockTitle": "By stock",
@@ -12216,6 +12868,45 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.site.sections.privacy": "Accounts & privacy",
 		"settings.site.sections.license": "License",
 		"settings.site.sections.dashboard": "Dashboard",
+		"settings.site.sections.style": "Style",
+		"settings.site.sections.pwa": "App (PWA)",
+		"settings.pwa.title": "Progressive Web App",
+		"settings.pwa.description": "Install the dashboard as an app on phones and desktops. Scope stays on /dashboard/.",
+		"settings.pwa.enabled": "Enable PWA",
+		"settings.pwa.enabledHint": "When off, the manifest and service worker are not served.",
+		"settings.pwa.identityTitle": "Name & description",
+		"settings.pwa.identityHint": "Leave blank to use automatic defaults from the site title and tagline.",
+		"settings.pwa.fieldName": "App name",
+		"settings.pwa.nameAutoHint": "Empty = Dashboard (site title)",
+		"settings.pwa.namePlaceholder": "Dashboard ({{site}})",
+		"settings.pwa.fieldShortName": "Short name",
+		"settings.pwa.shortNameDefault": "Dashboard",
+		"settings.pwa.fieldDescription": "Description",
+		"settings.pwa.descriptionAutoHint": "Empty = site tagline",
+		"settings.pwa.appearanceTitle": "Colors & icon",
+		"settings.pwa.appearanceHint": "Theme color for the status bar; background for the splash screen.",
+		"settings.pwa.fieldThemeColor": "Theme color",
+		"settings.pwa.fieldBackgroundColor": "Background / splash color",
+		"settings.pwa.fieldDisplay": "Display mode",
+		"settings.pwa.displayStandalone": "Standalone",
+		"settings.pwa.displayFullscreen": "Fullscreen",
+		"settings.pwa.displayMinimal": "Minimal UI",
+		"settings.pwa.fieldOrientation": "Orientation",
+		"settings.pwa.orientationAny": "Any",
+		"settings.pwa.orientationPortrait": "Portrait",
+		"settings.pwa.orientationLandscape": "Landscape",
+		"settings.pwa.fieldIcon": "App icon",
+		"settings.pwa.iconSite": "Site favicon",
+		"settings.pwa.iconSiteHint": "Uses the WordPress site icon when available.",
+		"settings.pwa.iconCustom": "Custom icon",
+		"settings.pwa.iconCustomHint": "Pick or upload a square image (PNG recommended).",
+		"settings.pwa.pickIcon": "Choose icon",
+		"settings.pwa.behaviorTitle": "Install & splash",
+		"settings.pwa.showInstallBanner": "Show install banner",
+		"settings.pwa.showInstallBannerHint": "Prompt visitors to add the dashboard to their home screen.",
+		"settings.pwa.splashEnabled": "Splash screen",
+		"settings.pwa.splashEnabledHint": "iOS startup image and a short overlay when opening the installed app.",
+		"settings.pwa.reloadHint": "Reload the dashboard after saving so the new manifest and splash apply.",
 		"coreUpdate.title": "Dashboard core update",
 		"coreUpdate.description": "Install the latest dashboard release from your licensed update channel. Installed modules are not removed.",
 		"coreUpdate.current": "Installed",
@@ -12740,6 +13431,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.site.sections.systemLogs": "System logs",
 		"settings.site.sections.analytics": "Analytics & tracking",
 		"settings.site.sections.sms": "Site SMS",
+		"settings.site.sections.notifications": "Notification system",
 		"settings.siteSms.title": "Site SMS (login & register)",
 		"settings.siteSms.enabled": "Enabled",
 		"settings.siteSms.serviceLine": "Service line",
@@ -12773,6 +13465,23 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.shopSms.patternStatus.pending": "Pending",
 		"settings.shopSms.patternStatus.failed": "Failed",
 		"settings.shopSms.patternStatus.none": "No pattern",
+		"orders.returns.title": "Returns",
+		"orders.returns.subtitle": "Request or manage partial returns for this order.",
+		"orders.returns.newRequest": "New return request",
+		"orders.returns.selectItem": "Select item",
+		"orders.returns.availableQty": "{{count}} available",
+		"orders.returns.qty": "Quantity",
+		"orders.returns.reason": "Reason",
+		"orders.returns.submit": "Submit request",
+		"orders.returns.created": "Return request submitted.",
+		"orders.returns.empty": "No return requests yet.",
+		"orders.returns.shipTo": "Ship returns to",
+		"orders.returns.exchangeOrder": "Exchange order #{{id}}",
+		"orders.returns.approve": "Approve",
+		"orders.returns.reject": "Reject",
+		"orders.returns.receive": "Parcel received",
+		"orders.returns.refund": "Refund",
+		"orders.returns.exchange": "Exchange",
 		"orders.sms.sendCustomer": "SMS customer",
 		"orders.sms.sendAdmin": "SMS admin",
 		"orders.sms.sent": "SMS send requested.",
@@ -12797,6 +13506,13 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.shopSms.events.user-welcome": "Welcome after registration",
 		"settings.shopSms.events.stock-low": "Low stock",
 		"settings.shopSms.events.stock-out": "Out of stock",
+		"settings.shopSms.events.pos-payment-link": "POS payment link",
+		"settings.shopSms.events.return-requested": "Return requested",
+		"settings.shopSms.events.return-approved": "Return approved",
+		"settings.shopSms.events.return-rejected": "Return rejected",
+		"settings.shopSms.events.return-parcel-received": "Return parcel received",
+		"settings.shopSms.events.return-refund": "Return refunded",
+		"settings.shopSms.events.return-exchange": "Return exchanged",
 		"settings.shopSms.recoveryTitle": "Recovery / personal coupon",
 		"settings.shopSms.recoveryDelay": "Send delay (hours)",
 		"settings.shopSms.recoveryCoupon": "Issue personal discount code",
@@ -12818,6 +13534,42 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.site.licenseFullPage": "Full license page",
 		"settings.appearanceTitle": "Appearance studio",
 		"settings.appearanceHint": "Language, theme, and accent for the dashboard.",
+		"settings.style.accentTitle": "Dashboard accent",
+		"settings.style.accentHint": "This accent is locked for every dashboard user.",
+		"settings.style.accentLockedHint": "Site accent is managed under Settings → Style.",
+		"settings.style.colorsTitle": "Brand colors",
+		"settings.style.colorsHint": "Shared palette for AI pages, WFCP pricing box, and other modules.",
+		"settings.style.color.primary": "Primary",
+		"settings.style.color.secondary": "Secondary",
+		"settings.style.color.accent": "Accent",
+		"settings.style.color.bg": "Background",
+		"settings.style.color.surface": "Surface",
+		"settings.style.color.text": "Text",
+		"settings.style.color.muted": "Muted",
+		"settings.style.brandingTitle": "Logo & favicon",
+		"settings.style.brandingHint": "Upload or pick from the media library. Favicon also updates the WordPress site icon.",
+		"settings.style.logo": "Dashboard logo",
+		"settings.style.logoHint": "Shown in the sidebar and login screen.",
+		"settings.style.favicon": "Favicon",
+		"settings.style.faviconHint": "Browser tab icon and PWA site icon fallback.",
+		"settings.style.fontsTitle": "Fonts",
+		"settings.style.fontsHint": "Choose bundled Yekan Bakh or system fonts for body, headings, and UI.",
+		"settings.style.font.body": "Body",
+		"settings.style.font.heading": "Headings",
+		"settings.style.font.ui": "UI controls",
+		"settings.style.fontYekan": "Yekan Bakh",
+		"settings.style.fontSystem": "System UI",
+		"settings.style.geoTitle": "VPN / filter popup",
+		"settings.style.geoHint": "Colors for the checkout warning when the visitor is outside Iran.",
+		"settings.style.wfcpTitle": "Product pricing box",
+		"settings.style.wfcpHint": "Storefront WFCP pricing box colors and corner radius.",
+		"settings.style.pwaTitle": "PWA colors",
+		"settings.style.pwaHint": "Theme and background colors for the progressive web app.",
+		"settings.style.docsTitle": "Order documents branding",
+		"settings.style.docsHint": "Accent color and logos for invoices, receipts, and labels.",
+		"settings.style.coffeeTitle": "Coffee profile widget",
+		"settings.style.coffeeHint": "Storefront coffee profile card colors and sizing.",
+		"settings.style.movedHint": "Appearance is managed under Settings → Style.",
 		"settings.moduleOn": "Visible in sidebar",
 		"settings.moduleOff": "Hidden from sidebar",
 		"settings.enabled": "Enabled",
@@ -12860,9 +13612,15 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"settings.accentBlue": "Blue",
 		"settings.accentYellow": "Yellow",
 		"settings.accentViolet": "Violet",
+		"settings.accentCafe": "Café",
+		"settings.accentCosmetics": "Beauty",
+		"settings.accentMobile": "Accessories",
+		"settings.accentElectronics": "Electronics",
 		"settings.fullscreenDefault": "Open dashboard in fullscreen by default",
 		"settings.licenseHint": "License activation uses the license service endpoints configured for this site.",
 		"common.loading": "Loading…",
+		"common.prev": "Previous",
+		"common.next": "Next",
 		"common.noResults": "No results.",
 		"common.saving": "Saving…",
 		"common.loadFailed": "Failed to load data.",
@@ -13291,6 +14049,12 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"products.colType": "Type",
 		"products.colMarketplaces": "Marketplaces",
 		"products.colStatus": "Status",
+		"products.colCatalogVisibility": "Catalog visibility",
+		"products.filterCatalogVisibility": "Catalog visibility",
+		"products.catalogVisibility.visible": "Visible",
+		"products.catalogVisibility.catalog": "Catalog only",
+		"products.catalogVisibility.search": "Search only",
+		"products.catalogVisibility.hidden": "Hidden",
 		"products.colActions": "Actions",
 		"products.searchPlaceholder": "Search by name or SKU",
 		"products.filterCategory": "Category",
@@ -13719,6 +14483,11 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"orders.wcStatus.completed": "Completed",
 		"orders.wcStatus.cancelled": "Cancelled",
 		"orders.wcStatus.refunded": "Refunded",
+		"orders.wcStatus.packaged": "Packaged",
+		"orders.wcStatus.sent-to-warehouse": "Sent to warehouse",
+		"orders.wcStatus.courier": "Courier",
+		"orders.wcStatus.post": "Post",
+		"orders.wcStatus.tipax": "Tipax",
 		"orders.emptyHint": "No orders yet. New store orders will show up here.",
 		"orders.detailNotFound": "Order could not be loaded.",
 		"orders.sectionTotals": "Totals and payment",
@@ -13734,6 +14503,11 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"orders.addrPostcode": "Postcode",
 		"orders.paymentMethod": "Payment method",
 		"orders.itemMeta.wfcp_purchase_type": "Purchase type",
+		"orders.itemMeta.wfcp_installment_months": "Installment term",
+		"orders.itemMeta.wfcp_installment_total": "Installment amount",
+		"orders.itemMeta.wfcp_gateway": "Payment gateway",
+		"orders.installmentMonths_one": "{{count}} month",
+		"orders.installmentMonths_other": "{{count}} months",
 		"orders.purchaseType.cash": "Cash",
 		"orders.purchaseType.credit": "Credit",
 		"orders.purchaseType.installment": "Installment",
@@ -13776,8 +14550,25 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"orders.bulkEmailCompleted": "Completed order email",
 		"orders.bulkEmailOnHold": "On-hold order email",
 		"orders.wcStatus.pws-packaged": "Packaged",
+		"orders.wcStatus.pws-sent-to-warehouse": "Sent to warehouse",
 		"orders.wcStatus.pws-courier": "Courier",
+		"orders.wcStatus.pws-post": "Post",
+		"orders.wcStatus.pws-tipax": "Tipax",
 		"orders.wcStatus.failed": "Failed",
+		"orders.wcStatus.return-requested": "Return requested",
+		"orders.wcStatus.return-approved": "Return approved",
+		"orders.wcStatus.return-rejected": "Return rejected",
+		"orders.wcStatus.return-parcel-received": "Return parcel received",
+		"orders.wcStatus.return-refund": "Return refund",
+		"orders.wcStatus.return-exchange": "Return exchange",
+		"orders.wcStatus.checkout-draft": "Checkout draft",
+		"orders.wcStatus.draft": "Draft",
+		"orders.wcStatus.pos-payment-link": "POS payment link",
+		"orders.wcStatus.bslm-rejected": "Basalam — rejected",
+		"orders.wcStatus.bslm-preparation": "Basalam — preparation",
+		"orders.wcStatus.bslm-wait-vendor": "Basalam — waiting vendor",
+		"orders.wcStatus.bslm-shipping": "Basalam — shipping",
+		"orders.wcStatus.bslm-completed": "Basalam — completed",
 		"orders.detailTitleNumber": "Order #{{number}}",
 		"orders.sectionGeneral": "General",
 		"orders.paidVia": "Paid via {{method}}",
@@ -13905,6 +14696,9 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"orders.panelSmsHistory": "SMS history",
 		"orders.smsHistoryEmpty": "No SMS logs for this order.",
 		"orders.smsStatus.delivered": "Delivered",
+		"orders.smsStatus.sent": "Sent",
+		"orders.smsStatus.queued": "Queued",
+		"orders.smsStatus.skipped": "Skipped",
 		"orders.smsStatus.failed": "Failed",
 		"orders.sms.manual": "Manual",
 		"orders.customerOrdersList": "Orders",
@@ -14095,6 +14889,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"coupons.restrict.channelTelegram": "Telegram bot",
 		"coupons.publishPanel": "Publish",
 		"users.title": "Users",
+		"users.employeesTitle": "Employees",
 		"users.editPanel": "Edit user",
 		"users.pickRow": "Select a user row.",
 		"users.colLogin": "Username",
@@ -14480,6 +15275,12 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"license.check": "Check status",
 		"serviceWorker.registrationFailedTitle": "Offline cache unavailable",
 		"serviceWorker.registrationFailedBody": "The dashboard still works. Refresh after deploy or clear cache if pages fail to load.",
+		"pwa.installRegion": "Install dashboard",
+		"pwa.installTitle": "Install dashboard on your phone",
+		"pwa.installBodyAndroid": "Install to open the dashboard like an app from your home screen.",
+		"pwa.installBodyIos": "In Safari, tap Share, then choose Add to Home Screen.",
+		"pwa.installAction": "Install dashboard",
+		"pwa.installDismiss": "Dismiss",
 		"license.refreshStatus": "Refresh status",
 		"license.zeroTouchHint": "License syncs automatically from CRM when your domain is registered as active. Use refresh if you were just provisioned.",
 		"license.zeroTouchBlocked": "This domain is not active in CRM yet. Contact support to enable your license — no activation code is required on this site.",
@@ -14498,7 +15299,6 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"license.diagnostics.transport": "HTTP transport",
 		"license.diagnostics.error": "Error message",
 		"license.diagnostics.body": "Response sample",
-		"license.diagnostics.sameServer": "Same server detected — trying local IP first:",
 		"license.activate": "Activate",
 		"license.activated": "License is active. Redirecting…",
 		"license.statusTitle": "License status",
@@ -14707,6 +15507,15 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"wfcp.colRetail": "Retail (calc)",
 		"wfcp.colWcRegular": "Store base price",
 		"wfcp.colStock": "Stock",
+		"wfcp.colImage": "Image",
+		"wfcp.colStockQty": "Stock qty",
+		"wfcp.columns": "Columns",
+		"wfcp.filterType": "Product type",
+		"wfcp.filterLocked": "Price lock",
+		"wfcp.filterHasPurchase": "Purchase price",
+		"wfcp.hasPurchaseYes": "Has purchase price",
+		"wfcp.hasPurchaseNo": "Missing purchase price",
+		"wfcp.stock.onbackorder": "On backorder",
 		"wfcp.colBrand": "Brand",
 		"wfcp.prev": "Previous",
 		"wfcp.next": "Next",
@@ -14856,6 +15665,10 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"bots.settings.proxyTypeNone": "No proxy",
 		"bots.settings.proxyTypeHttp": "HTTP",
 		"bots.settings.proxyTypeSocks5": "SOCKS5",
+		"bots.settings.proxyTypeSocks4": "SOCKS4",
+		"bots.settings.proxyTest": "Test proxy connection",
+		"bots.settings.proxyTestOk": "Connected — bot @{{user}}",
+		"bots.settings.proxyTestFail": "Connection failed: {{error}}",
 		"bots.settings.proxyHost": "Host",
 		"bots.settings.proxyPort": "Port",
 		"bots.settings.proxyUsername": "Username (optional)",
@@ -15221,6 +16034,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.module.ai-content-overview": "Overview",
 		"nav.module.ai-content-jobs": "Jobs",
 		"nav.module.ai-content-calendar": "Content calendar",
+		"nav.module.ai-content-blog": "Blog",
 		"nav.module.ai-content-products": "Product content",
 		"nav.module.ai-content-titles": "Product titles",
 		"nav.module.ai-content-pages": "Site pages",
@@ -15229,6 +16043,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"nav.module.ai-content-settings": "Settings",
 		"aiContent.overviewTitle": "AI Content",
 		"aiContent.calendarTitle": "Content calendar",
+		"aiContent.blogPageTitle": "Blog",
 		"aiContent.productsTitle": "Product content",
 		"aiContent.titlesPageTitle": "Product titles",
 		"aiContent.pagesTitle": "Elementor pages",
@@ -15237,6 +16052,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"aiContent.settingsTitle": "AI Content settings",
 		"aiContent.jobsPageTitle": "AI jobs",
 		"aiContent.navCalendar": "Calendar",
+		"aiContent.navBlog": "Blog",
 		"aiContent.navJobs": "Jobs",
 		"aiContent.navProducts": "Products",
 		"aiContent.navTaxonomies": "Categories",
@@ -15275,6 +16091,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"aiContent.jobType.attr_template": "Attribute template",
 		"aiContent.jobType.suggest_blog_categories": "Suggest blog categories",
 		"aiContent.jobType.suggest_product_categories": "Suggest product categories",
+		"aiContent.jobType.suggest_blog_topics": "Suggest blog topics",
 		"aiContent.jobsAttempts": "{{count}} attempts",
 		"aiContent.jobsTokens": "tokens {{inCount}}/{{outCount}}",
 		"aiContent.jobId": "#{{id}}",
@@ -15333,6 +16150,104 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"aiContent.titleProposed": "Proposed name",
 		"aiContent.titleRedo": "Suggest again",
 		"aiContent.noTitleProposals": "No title proposals. Use the button above.",
+		"aiContent.blogPageHint": "Suggest topics from the site niche and categories; approve each one to write the post.",
+		"aiContent.blogSuggest": "Suggest topics",
+		"aiContent.blogSuggestCount": "Count",
+		"aiContent.blogTopicsList": "Suggested topics",
+		"aiContent.blogApproveWrite": "Approve & write",
+		"aiContent.blogApproveSelected": "Approve selected ({{count}})",
+		"aiContent.blogSelectTopic": "Select topic",
+		"aiContent.blogOpenPost": "Open post",
+		"aiContent.blogTopicApproved": "Topic approved and write job queued",
+		"aiContent.blogTopicsApproved": "{{count}} topics queued for writing",
+		"aiContent.blogTopicSkipped": "Topic skipped",
+		"aiContent.noBlogTopics": "No topics yet. Run suggest topics first.",
+		"aiContent.blogFilter.all": "All",
+		"aiContent.blogFilter.pending": "Pending",
+		"aiContent.blogFilter.queued": "Queued",
+		"aiContent.blogFilter.done": "Written",
+		"aiContent.blogTopicStatus.pending": "Pending",
+		"aiContent.blogTopicStatus.queued": "Writing queued",
+		"aiContent.blogTopicStatus.done": "Written",
+		"aiContent.blogTopicStatus.skipped": "Skipped",
+		"aiContent.blogRegenImage": "Regenerate image",
+		"aiContent.blogImageQueued": "Image generation queued",
+		"aiContent.settingsBlogImage": "Blog images",
+		"aiContent.settingsBlogImageHint": "When a post is written, generate a featured image in a consistent brand style (image model via GapGPT).",
+		"aiContent.blogImageEnabled": "Auto-generate blog images",
+		"aiContent.blogImageEnabledHint": "Create a featured image after each blog post is written.",
+		"aiContent.blogImageProvider": "Image provider",
+		"aiContent.blogImageModel": "Image model",
+		"aiContent.blogImageModelHint": "e.g. gpt-image-1 or dall-e-3 — from GapGPT list or custom.",
+		"aiContent.blogImageAesthetic": "Aesthetic",
+		"aiContent.blogImageEra": "Vintage/retro era",
+		"aiContent.blogImageMedium": "Medium / technique",
+		"aiContent.blogImageSubject": "Scene subject",
+		"aiContent.blogImageUsePalette": "Use brand palette",
+		"aiContent.blogImageUsePaletteHint": "Dominant colors from design memory / Elementor kit.",
+		"aiContent.blogImagePaletteWeight": "Palette strength",
+		"aiContent.blogImageAspect": "Aspect ratio",
+		"aiContent.blogImageQuality": "Quality",
+		"aiContent.blogImageLighting": "Lighting",
+		"aiContent.blogImageCamera": "Camera framing",
+		"aiContent.blogImageInlineCount": "Inline images",
+		"aiContent.blogImageInlineCountHint": "0 = featured only. Up to 3 images inside the post.",
+		"aiContent.blogImageNoText": "No text/logo on image",
+		"aiContent.blogImageSkipIfThumb": "Skip if featured image exists",
+		"aiContent.promptBlogImage": "Extra image instructions",
+		"aiContent.blogAesthetic.vintage": "Vintage",
+		"aiContent.blogAesthetic.retro": "Retro",
+		"aiContent.blogAesthetic.modern": "Modern",
+		"aiContent.blogAesthetic.minimal": "Minimal",
+		"aiContent.blogAesthetic.luxury": "Luxury",
+		"aiContent.blogAesthetic.rustic": "Rustic",
+		"aiContent.blogAesthetic.industrial": "Industrial",
+		"aiContent.blogAesthetic.art_deco": "Art Deco",
+		"aiContent.blogAesthetic.mid_century": "Mid-century",
+		"aiContent.blogAesthetic.scandinavian": "Scandinavian",
+		"aiContent.blogAesthetic.bohemian": "Bohemian",
+		"aiContent.blogAesthetic.editorial": "Editorial",
+		"aiContent.blogAesthetic.cinematic": "Cinematic",
+		"aiContent.blogAesthetic.dark_moody": "Dark moody",
+		"aiContent.blogAesthetic.bright_airy": "Bright airy",
+		"aiContent.blogAesthetic.persian_traditional": "Persian traditional",
+		"aiContent.blogEra.generic": "Generic",
+		"aiContent.blogEra.1950s": "1950s",
+		"aiContent.blogEra.1960s": "1960s",
+		"aiContent.blogEra.1970s": "1970s",
+		"aiContent.blogEra.1980s": "1980s",
+		"aiContent.blogEra.1990s": "1990s",
+		"aiContent.blogMedium.photorealistic": "Photorealistic",
+		"aiContent.blogMedium.cinematic_photo": "Cinematic photo",
+		"aiContent.blogMedium.film_photography": "Film photography",
+		"aiContent.blogMedium.illustration": "Illustration",
+		"aiContent.blogMedium.watercolor": "Watercolor",
+		"aiContent.blogMedium.cartoon": "Cartoon",
+		"aiContent.blogMedium.3d_render": "3D render",
+		"aiContent.blogMedium.flat_vector": "Flat vector",
+		"aiContent.blogMedium.collage": "Collage",
+		"aiContent.blogMedium.analog_film": "Analog film",
+		"aiContent.blogSubject.product_lifestyle": "Product lifestyle",
+		"aiContent.blogSubject.still_life": "Still life",
+		"aiContent.blogSubject.scene": "Scene",
+		"aiContent.blogSubject.people": "People",
+		"aiContent.blogSubject.abstract": "Abstract",
+		"aiContent.blogPaletteWeight.subtle": "Subtle",
+		"aiContent.blogPaletteWeight.dominant": "Dominant",
+		"aiContent.blogPaletteWeight.overlay": "Strong overlay",
+		"aiContent.blogQuality.standard": "Standard",
+		"aiContent.blogQuality.hd": "HD",
+		"aiContent.blogLighting.natural": "Natural",
+		"aiContent.blogLighting.studio": "Studio",
+		"aiContent.blogLighting.golden_hour": "Golden hour",
+		"aiContent.blogLighting.moody": "Moody",
+		"aiContent.blogLighting.high_key": "High key",
+		"aiContent.blogCamera.35mm": "35mm",
+		"aiContent.blogCamera.50mm": "50mm",
+		"aiContent.blogCamera.overhead": "Overhead",
+		"aiContent.blogCamera.closeup": "Close-up",
+		"aiContent.blogCamera.wide": "Wide",
+		"aiContent.jobType.blog_image": "Blog image",
 		"aiContent.settingsCatalog": "Catalog & consistent titles",
 		"aiContent.catalogAssignCats": "Assign product categories",
 		"aiContent.catalogAssignBrands": "Assign product brands",
@@ -16025,6 +16940,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"wnc.modules.snapppay-search.title": "SnappPay Search",
 		"wnc.modules.snapppay-search.subtitle": "SnappPay Search (SearchWise) feed connector settings",
 		"nav.module.coffee-profile-origins": "Coffee origins",
+		"nav.module.coffee-profile-pricing": "Coffee bean pricing",
 		"nav.module.coffee-profile-module": "Coffee profile",
 		"marketplace.module.coffee-profile-module": "Coffee profile",
 		"coffeeProfile.settingsTitle": "Coffee profile",
@@ -16131,6 +17047,7 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"coffeeProfile.blendSectionPrice": "Price and weight",
 		"coffeeProfile.blendSectionSimple": "Simple mode (Robusta / Arabica)",
 		"coffeeProfile.blendSource": "Bean list source",
+		"coffeeProfile.blendSourcePricing": "Beans from pricing table",
 		"coffeeProfile.blendSourceProfile": "All products with a coffee profile",
 		"coffeeProfile.blendSourceCategory": "Selected categories",
 		"coffeeProfile.blendSourceProducts": "Specific products",
@@ -16160,6 +17077,67 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"coffeeProfile.blendGuide": "Blend guide copy",
 		"coffeeProfile.packWeight": "This product’s pack weight (grams)",
 		"coffeeProfile.packWeightHint": "When price basis is pack, per-kg is computed from this weight.",
+		"coffeeProfile.pricingTitle": "Coffee bean pricing",
+		"coffeeProfile.pricingHint": "Green → roast; bean composition on the product profile drives purchase/retail. Weight packs split per-kg onto variations.",
+		"coffeeProfile.pricingApplyAll": "Apply prices to all products",
+		"coffeeProfile.pricingQueued": "Price updates have been queued.",
+		"coffeeProfile.pricingRecalcRunning": "Applying: {{done}} of {{total}} (failed: {{failed}})",
+		"coffeeProfile.pricingRecalcDone": "Done: {{done}} of {{total}} (failed: {{failed}})",
+		"coffeeProfile.pricingRoastYield": "Roast yield",
+		"coffeeProfile.pricingRoastYieldHint": "After roast = green ÷ yield (default 0.85)",
+		"coffeeProfile.pricingBeans": "Green beans",
+		"coffeeProfile.pricingColName": "Name",
+		"coffeeProfile.pricingColKind": "Kind",
+		"coffeeProfile.pricingColGreen": "Green / kg",
+		"coffeeProfile.pricingColAfter": "After roast / kg",
+		"coffeeProfile.pricingColRetail": "WFCP retail / kg",
+		"coffeeProfile.pricingColProduct": "WooCommerce product",
+		"coffeeProfile.pricingRobusta": "Robusta",
+		"coffeeProfile.pricingArabica": "Arabica",
+		"coffeeProfile.pricingBaseMixes": "Base mixes",
+		"coffeeProfile.pricingAfterKg": "After roast",
+		"coffeeProfile.pricingRetailKg": "Retail",
+		"coffeeProfile.pricingAddPart": "Add part",
+		"coffeeProfile.pricingWeightPacks": "Weight packs",
+		"coffeeProfile.pricingWeightPacksHint": "Pick the WooCommerce weight attribute; its terms are listed and you only enter grams so per-kg price splits onto variations.",
+		"coffeeProfile.pricingWeightAttribute": "Weight attribute",
+		"coffeeProfile.pricingWeightAttributePick": "Choose attribute…",
+		"coffeeProfile.pricingWeightAttributeHint": "Terms from this attribute are loaded automatically; set grams for each.",
+		"coffeeProfile.pricingWeightNoAttribute": "Select a weight attribute first.",
+		"coffeeProfile.pricingWeightNoTerms": "This attribute has no terms yet.",
+		"coffeeProfile.pricingAddPack": "Add pack",
+		"coffeeProfile.pricingPackTerm": "Attribute value",
+		"coffeeProfile.pricingPackLabel": "Label",
+		"coffeeProfile.pricingPackGrams": "Grams",
+		"coffeeProfile.pricingShopStyles": "Shop mixes",
+		"coffeeProfile.pricingStyleClassic": "Classic",
+		"coffeeProfile.pricingStyleLuxury": "Luxury",
+		"coffeeProfile.pricingRobustaMix": "Robusta mix",
+		"coffeeProfile.pricingArabicaMix": "Arabica mix",
+		"coffeeProfile.pricingEconomy": "Economy mix",
+		"coffeeProfile.pricingEconomyRobusta": "Robusta bean",
+		"coffeeProfile.pricingEconomyArabica": "Arabica bean",
+		"coffeeProfile.priceComposition": "Bean composition for pricing",
+		"coffeeProfile.priceCompositionHint": "One bean at 100% = single origin; multiple beans = weighted after-roast average. Saving the profile applies WFCP prices.",
+		"coffeeProfile.priceCompositionEmpty": "Add a row so price can be calculated from composition.",
+		"coffeeProfile.pricePatternDetected": "Known pattern: {{name}}",
+		"coffeeProfile.pricePreviewKg": "Purchase preview / kg",
+		"coffeeProfile.priceSource": "Price source (WFCP)",
+		"coffeeProfile.priceSourceHint": "On save, purchase and retail are calculated from bean composition and synced.",
+		"coffeeProfile.priceModeNone": "No automatic pricing",
+		"coffeeProfile.priceModeSingle": "Single-origin bean",
+		"coffeeProfile.priceModeBaseMix": "Base mix",
+		"coffeeProfile.priceModeShop": "Shop mix",
+		"coffeeProfile.priceModeEconomy": "Economy mix",
+		"coffeeProfile.priceModeCustom": "Custom",
+		"coffeeProfile.priceBean": "Bean",
+		"coffeeProfile.priceMix": "Base mix",
+		"coffeeProfile.pricePickBean": "Pick a bean…",
+		"coffeeProfile.pricePickMix": "Pick a mix…",
+		"coffeeProfile.priceShopStyle": "Shop mix style",
+		"coffeeProfile.priceShopHint": "Ratio comes from this profile’s robusta/arabica blend.",
+		"coffeeProfile.priceEconomyHint": "Vietnam/Rio (or configured beans) using the profile blend ratio.",
+		"coffeeProfile.priceCustomParts": "Custom parts",
 		"balePay.title": "Bale Pay",
 		"balePay.subtitle": "One-time Bale wallet invoice via the shop bot.",
 		"balePay.enabled": "Enable at checkout",
@@ -16206,6 +17184,25 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"paymentsHub.warnModule": "This module is not active.",
 		"paymentsHub.warnGateway": "WooCommerce gateway is not registered.",
 		"paymentsHub.unavailable": "This gateway is not available.",
+		"paymentsHub.geoNotice": "VPN / filter warning at checkout",
+		"paymentsHub.geoNoticeHint": "If the visitor’s IP is outside Iran, show a popup asking them to turn off VPN before paying.",
+		"paymentsHub.geoServicesTitle": "GEOIP sources",
+		"paymentsHub.geoServicesHint": "Only enabled sources are queried. If none are on, the popup never appears.",
+		"paymentsHub.geoService.cloudflare": "Cloudflare (CF-IPCountry)",
+		"paymentsHub.geoService.woocommerce": "WooCommerce Geolocation",
+		"paymentsHub.geoService.analytics": "Analytics Geo",
+		"paymentsHub.geoService.ip_api": "ip-api.com (server)",
+		"paymentsHub.geoService.ipwho": "ipwho.is",
+		"paymentsHub.geoService.geojs": "geojs.io",
+		"paymentsHub.geoService.country_is": "api.country.is (browser)",
+		"paymentsHub.geoColorsTitle": "Popup appearance",
+		"paymentsHub.geoColorsHint": "Colors for the checkout VPN warning modal.",
+		"paymentsHub.geoColor.overlay": "Overlay",
+		"paymentsHub.geoColor.dialog": "Dialog background",
+		"paymentsHub.geoColor.title": "Title",
+		"paymentsHub.geoColor.text": "Body text",
+		"paymentsHub.geoColor.button": "Button",
+		"paymentsHub.geoColor.button_text": "Button text",
 		"paymentsHub.noOther": "No other gateways registered.",
 		"bazaarHub.basalam": "Basalam",
 		"bazaarHub.digikala": "Digikala",
@@ -16261,6 +17258,13 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"wallet.reason.admin_adjust": "Staff adjustment",
 		"notifications.hubTitle": "Notification system",
 		"notifications.hubSubtitle": "Manage site, SMS, Bale, Telegram, email, and OTP login in one place.",
+		"notifications.inboxTitle": "Notifications inbox",
+		"notifications.inboxSubtitle": "All shop admin notifications in one place.",
+		"notifications.inboxEmpty": "No notifications to show.",
+		"notifications.openSettings": "Notification settings",
+		"notifications.openAction": "View and act",
+		"notifications.unreadBadge": "Unread",
+		"notifications.pageOf": "Page {{page}} of {{total}}",
 		"notifications.tabs.site": "Site",
 		"notifications.tabs.sms": "SMS",
 		"notifications.tabs.bale": "Bale",
@@ -16361,6 +17365,33 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"pos.remaining": "Remaining",
 		"pos.checkout": "Complete sale",
 		"pos.orderCreated": "Order #{{id}} created",
+		"pos.payLink.shortTitle": "Pay-link order",
+		"pos.payLink.title": "Order with payment link",
+		"pos.payLink.subtitle": "Create a pending order and send the customer an SMS with the payment link.",
+		"pos.payLink.backToPos": "Back to fast POS",
+		"pos.payLink.customer": "Customer",
+		"pos.payLink.firstName": "First name",
+		"pos.payLink.lastName": "Last name",
+		"pos.payLink.phone": "Mobile",
+		"pos.payLink.phoneRequired": "Mobile number is required.",
+		"pos.payLink.address": "Address",
+		"pos.payLink.city": "City",
+		"pos.payLink.state": "State",
+		"pos.payLink.postcode": "Postcode",
+		"pos.payLink.products": "Products",
+		"pos.payLink.shipping": "Shipping",
+		"pos.payLink.selectShipping": "Select shipping method",
+		"pos.payLink.manualShipping": "Manual shipping cost",
+		"pos.payLink.payment": "Payment",
+		"pos.payLink.purchaseType": "Purchase type",
+		"pos.payLink.cash": "Cash",
+		"pos.payLink.installment": "Installment",
+		"pos.payLink.allowBothTypes": "Let customer switch purchase type on the pay page",
+		"pos.payLink.gateways": "Payment gateways",
+		"pos.payLink.gatewayRequired": "Select at least one payment gateway.",
+		"pos.payLink.submit": "Create & send SMS",
+		"pos.payLink.created": "Order created and SMS sent.",
+		"pos.payLink.linkCopied": "Payment link copied to clipboard.",
 		"pos.simpleMode": "Simple cashier",
 		"pos.qty": "Qty",
 		"pos.price": "Price",
@@ -16404,28 +17435,28 @@ var ip = /* @__PURE__ */ k({ default: () => ap }), ap, op = O((() => {
 		"accounting.calculator": "Sample % calculator",
 		"accounting.moadianProxy": "HTTP proxy (foreign hosts)"
 	};
-})), up = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", dp = /* @__PURE__ */ new Set();
-async function fp(e) {
-	return e === "fa" ? (await Promise.resolve().then(() => (op(), ip))).default : (await Promise.resolve().then(() => (lp(), sp))).default;
+})), hp = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", gp = /* @__PURE__ */ new Set();
+async function _p(e) {
+	return e === "fa" ? (await Promise.resolve().then(() => (dp(), lp))).default : (await Promise.resolve().then(() => (mp(), fp))).default;
 }
-function pp(e) {
+function vp(e) {
 	return e === "fa" ? "rtl" : "ltr";
 }
-var mp = {
+var yp = {
 	type: "postProcessor",
 	name: "faDigits",
 	process(e, t, n) {
-		return n.lng !== "fa" && !n.lng?.startsWith("fa") ? e : Wf(e);
+		return n.lng !== "fa" && !n.lng?.startsWith("fa") ? e : Kf(e);
 	}
 };
 (async () => {
-	let e = up === "fa" ? "en" : "fa", [t, n] = await Promise.all([fp(up), fp(e)]);
-	dp.add(up), dp.add(e), await ee.use(mp).use(h).init({
+	let e = hp === "fa" ? "en" : "fa", [t, n] = await Promise.all([_p(hp), _p(e)]);
+	gp.add(hp), gp.add(e), await D.use(yp).use(h).init({
 		resources: {
-			[up]: { translation: t },
+			[hp]: { translation: t },
 			[e]: { translation: n }
 		},
-		lng: up,
+		lng: hp,
 		fallbackLng: "en",
 		keySeparator: !1,
 		nsSeparator: !1,
@@ -16435,58 +17466,58 @@ var mp = {
 			bindI18n: "languageChanged loaded added",
 			useSuspense: !1
 		}
-	}), document.documentElement.lang = up, document.documentElement.dir = pp(up);
+	}), document.documentElement.lang = hp, document.documentElement.dir = vp(hp);
 })();
 //#endregion
 //#region src/components/ui/dialog.tsx
-function hp({ ...e }) {
+function bp({ ...e }) {
 	return /* @__PURE__ */ x(Dr, {
 		"data-slot": "dialog",
 		...e
 	});
 }
-function gp({ ...e }) {
+function xp({ ...e }) {
 	return /* @__PURE__ */ x(kr, {
 		"data-slot": "dialog-portal",
 		...e
 	});
 }
-function _p({ className: e, ...t }) {
+function Sp({ className: e, ...t }) {
 	return /* @__PURE__ */ x(Ar, {
 		"data-slot": "dialog-overlay",
 		className: W("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", e),
 		...t
 	});
 }
-function vp({ className: e, children: t, showCloseButton: n = !0, ...r }) {
+function Cp({ className: e, children: t, showCloseButton: n = !0, ...r }) {
 	return /* @__PURE__ */ x(kn, {
 		allowBodyScroll: !0,
-		children: /* @__PURE__ */ S(gp, {
+		children: /* @__PURE__ */ S(xp, {
 			"data-slot": "dialog-portal",
-			children: [/* @__PURE__ */ x(_p, {}), /* @__PURE__ */ S(jr, {
+			children: [/* @__PURE__ */ x(Sp, {}), /* @__PURE__ */ S(jr, {
 				"data-slot": "dialog-content",
 				className: W("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg", e),
 				...r,
 				children: [t, n && /* @__PURE__ */ S(Pr, {
 					"data-slot": "dialog-close",
 					className: "absolute top-4 end-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-					children: [/* @__PURE__ */ x(Yd, {}), /* @__PURE__ */ x("span", {
+					children: [/* @__PURE__ */ x(Xd, {}), /* @__PURE__ */ x("span", {
 						className: "sr-only",
-						children: ee.t("a11y.close")
+						children: D.t("a11y.close")
 					})]
 				})]
 			})]
 		})
 	});
 }
-function yp({ className: e, ...t }) {
+function wp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "dialog-header",
 		className: W("flex flex-col gap-2 text-center sm:text-start", e),
 		...t
 	});
 }
-function bp({ className: e, showCloseButton: t = !1, children: n, ...r }) {
+function Tp({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 	return /* @__PURE__ */ S("div", {
 		"data-slot": "dialog-footer",
 		className: W("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", e),
@@ -16495,12 +17526,12 @@ function bp({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 			asChild: !0,
 			children: /* @__PURE__ */ x(G, {
 				variant: "outline",
-				children: ee.t("a11y.close")
+				children: D.t("a11y.close")
 			})
 		})]
 	});
 }
-function xp({ className: e, ...t }) {
+function Ep({ className: e, ...t }) {
 	return /* @__PURE__ */ x(Mr, {
 		"data-slot": "dialog-title",
 		className: W("text-lg leading-none font-semibold", e),
@@ -16509,7 +17540,7 @@ function xp({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/skeleton.tsx
-function Sp({ className: e, ...t }) {
+function Dp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "skeleton",
 		className: W("animate-pulse rounded-md bg-accent", e),
@@ -16518,10 +17549,10 @@ function Sp({ className: e, ...t }) {
 }
 //#endregion
 //#region src/lib/categoryTree.ts
-function Cp(e) {
+function Op(e) {
 	return e.trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^\p{L}\p{N}-]+/gu, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
 }
-function wp(e) {
+function kp(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) {
 		let e = n.parent || 0, r = t.get(e) ?? [];
@@ -16539,20 +17570,20 @@ function wp(e) {
 }
 //#endregion
 //#region src/components/magazine/MediaPickerDialog.tsx
-function Tp(e, t, n) {
+function Ap(e, t, n) {
 	let r = new URLSearchParams({
 		page: "1",
 		per_page: "60"
 	});
 	return e > 0 && r.set("folder", String(e)), t > 0 && r.set("category", String(t)), n.trim() && r.set("search", n.trim()), `content/media?${r.toString()}`;
 }
-function Ep(e) {
+function jp(e) {
 	return {
 		...e,
 		url: ""
 	};
 }
-function Dp({ open: e, onOpenChange: n, onSelect: r }) {
+function Mp({ open: e, onOpenChange: n, onSelect: r }) {
 	let { t: i } = g(), [a, o] = m(0), [s, c] = m(0), [l, d] = m(""), [p, h] = m("");
 	u(() => {
 		if (!e) return;
@@ -16561,7 +17592,7 @@ function Dp({ open: e, onOpenChange: n, onSelect: r }) {
 	}, [e, l]);
 	let _ = t({
 		queryKey: ["media-terms"],
-		queryFn: () => Q("content/media/terms"),
+		queryFn: () => $("content/media/terms"),
 		enabled: e
 	}), v = t({
 		queryKey: [
@@ -16571,31 +17602,31 @@ function Dp({ open: e, onOpenChange: n, onSelect: r }) {
 			s,
 			p
 		],
-		queryFn: () => Q(Tp(a, s, p)),
+		queryFn: () => $(Ap(a, s, p)),
 		enabled: e
-	}), y = f(() => wp((_.data?.folders ?? []).map(Ep)), [_.data?.folders]), b = f(() => wp((_.data?.categories ?? []).map(Ep)), [_.data?.categories]), C = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
-	return /* @__PURE__ */ x(hp, {
+	}), y = f(() => kp((_.data?.folders ?? []).map(jp)), [_.data?.folders]), b = f(() => kp((_.data?.categories ?? []).map(jp)), [_.data?.categories]), C = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
+	return /* @__PURE__ */ x(bp, {
 		open: e,
 		onOpenChange: n,
-		children: /* @__PURE__ */ S(vp, {
+		children: /* @__PURE__ */ S(Cp, {
 			className: "max-h-[85vh] overflow-hidden sm:max-w-3xl",
 			children: [
-				/* @__PURE__ */ x(yp, { children: /* @__PURE__ */ x(xp, { children: i("posts.selectFeaturedImage") }) }),
+				/* @__PURE__ */ x(wp, { children: /* @__PURE__ */ x(Ep, { children: i("posts.selectFeaturedImage") }) }),
 				/* @__PURE__ */ S("div", {
 					className: "grid gap-3 sm:grid-cols-3",
 					children: [
 						/* @__PURE__ */ S("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ x(Z, { children: i("media.filterFolder") }), /* @__PURE__ */ S(Xf, {
+							children: [/* @__PURE__ */ x(Z, { children: i("media.filterFolder") }), /* @__PURE__ */ S($d, {
 								value: String(a),
 								onValueChange: (e) => o(parseInt(e, 10) || 0),
-								children: [/* @__PURE__ */ x(Qf, {
+								children: [/* @__PURE__ */ x(tf, {
 									className: "w-full",
-									children: /* @__PURE__ */ x(Zf, {})
-								}), /* @__PURE__ */ S($f, { children: [/* @__PURE__ */ x($, {
+									children: /* @__PURE__ */ x(ef, {})
+								}), /* @__PURE__ */ S(nf, { children: [/* @__PURE__ */ x(Q, {
 									value: "0",
 									children: i("media.allFolders")
-								}), y.map(({ node: e, depth: t }) => /* @__PURE__ */ x($, {
+								}), y.map(({ node: e, depth: t }) => /* @__PURE__ */ x(Q, {
 									value: String(e.id),
 									children: `${"— ".repeat(t)}${e.name}`
 								}, e.id))] })]
@@ -16603,16 +17634,16 @@ function Dp({ open: e, onOpenChange: n, onSelect: r }) {
 						}),
 						/* @__PURE__ */ S("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ x(Z, { children: i("media.filterCategory") }), /* @__PURE__ */ S(Xf, {
+							children: [/* @__PURE__ */ x(Z, { children: i("media.filterCategory") }), /* @__PURE__ */ S($d, {
 								value: String(s),
 								onValueChange: (e) => c(parseInt(e, 10) || 0),
-								children: [/* @__PURE__ */ x(Qf, {
+								children: [/* @__PURE__ */ x(tf, {
 									className: "w-full",
-									children: /* @__PURE__ */ x(Zf, {})
-								}), /* @__PURE__ */ S($f, { children: [/* @__PURE__ */ x($, {
+									children: /* @__PURE__ */ x(ef, {})
+								}), /* @__PURE__ */ S(nf, { children: [/* @__PURE__ */ x(Q, {
 									value: "0",
 									children: i("media.allCategories")
-								}), b.map(({ node: e, depth: t }) => /* @__PURE__ */ x($, {
+								}), b.map(({ node: e, depth: t }) => /* @__PURE__ */ x(Q, {
 									value: String(e.id),
 									children: `${"— ".repeat(t)}${e.name}`
 								}, e.id))] })]
@@ -16636,7 +17667,7 @@ function Dp({ open: e, onOpenChange: n, onSelect: r }) {
 					className: "max-h-[50vh] overflow-y-auto",
 					children: v.isLoading ? /* @__PURE__ */ x("div", {
 						className: "grid grid-cols-3 gap-3 sm:grid-cols-4",
-						children: Array.from({ length: 8 }).map((e, t) => /* @__PURE__ */ x(Sp, { className: "aspect-square rounded-md" }, t))
+						children: Array.from({ length: 8 }).map((e, t) => /* @__PURE__ */ x(Dp, { className: "aspect-square rounded-md" }, t))
 					}) : C.length === 0 ? /* @__PURE__ */ x("p", {
 						className: "py-8 text-center text-sm text-muted-foreground",
 						children: i("media.empty")
@@ -16662,7 +17693,7 @@ function Dp({ open: e, onOpenChange: n, onSelect: r }) {
 						}, e.id))
 					})
 				}),
-				/* @__PURE__ */ x(bp, { children: /* @__PURE__ */ x(G, {
+				/* @__PURE__ */ x(Tp, { children: /* @__PURE__ */ x(G, {
 					type: "button",
 					variant: "outline",
 					onClick: () => n(!1),
@@ -16674,7 +17705,7 @@ function Dp({ open: e, onOpenChange: n, onSelect: r }) {
 }
 //#endregion
 //#region src/components/ui/lazy-image.tsx
-function Op({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i, ...a }) {
+function Np({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i, ...a }) {
 	return /* @__PURE__ */ x("img", {
 		className: W(e),
 		loading: n ?? (t ? "eager" : "lazy"),
@@ -16686,7 +17717,7 @@ function Op({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i,
 }
 //#endregion
 //#region src/components/magazine/PostFeaturedImagePanel.tsx
-function kp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
+function Pp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
 	let { t: i } = g(), [a, o] = m(!1);
 	return /* @__PURE__ */ S(b, { children: [/* @__PURE__ */ S(K, {
 		className: "gap-4 py-4 shadow-sm",
@@ -16700,7 +17731,7 @@ function kp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
 			className: "space-y-3 px-4",
 			children: [e > 0 && t ? /* @__PURE__ */ x("div", {
 				className: "overflow-hidden rounded-md border border-border",
-				children: /* @__PURE__ */ x(Op, {
+				children: /* @__PURE__ */ x(Np, {
 					src: t,
 					alt: i("a11y.thumbnail"),
 					className: "aspect-video w-full object-cover",
@@ -16726,7 +17757,7 @@ function kp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
 				}) : null]
 			})]
 		})]
-	}), /* @__PURE__ */ x(Dp, {
+	}), /* @__PURE__ */ x(Mp, {
 		open: a,
 		onOpenChange: o,
 		onSelect: (e) => n(e)
@@ -16734,29 +17765,29 @@ function kp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
 }
 //#endregion
 //#region src/components/ui/alert-dialog.tsx
-function Ap({ ...e }) {
+function Fp({ ...e }) {
 	return /* @__PURE__ */ x(ci, {
 		"data-slot": "alert-dialog",
 		...e
 	});
 }
-function jp({ ...e }) {
+function Ip({ ...e }) {
 	return /* @__PURE__ */ x(li, {
 		"data-slot": "alert-dialog-portal",
 		...e
 	});
 }
-function Mp({ className: e, ...t }) {
+function Lp({ className: e, ...t }) {
 	return /* @__PURE__ */ x(ui, {
 		"data-slot": "alert-dialog-overlay",
 		className: W("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", e),
 		...t
 	});
 }
-function Np({ className: e, size: t = "default", ...n }) {
+function Rp({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ x(kn, {
 		allowBodyScroll: !0,
-		children: /* @__PURE__ */ S(jp, { children: [/* @__PURE__ */ x(Mp, {}), /* @__PURE__ */ x(di, {
+		children: /* @__PURE__ */ S(Ip, { children: [/* @__PURE__ */ x(Lp, {}), /* @__PURE__ */ x(di, {
 			"data-slot": "alert-dialog-content",
 			"data-size": t,
 			className: W("group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[size=default]:sm:max-w-lg", e),
@@ -16764,35 +17795,35 @@ function Np({ className: e, size: t = "default", ...n }) {
 		})] })
 	});
 }
-function Pp({ className: e, ...t }) {
+function zp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "alert-dialog-header",
 		className: W("grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-6 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-start sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]", e),
 		...t
 	});
 }
-function Fp({ className: e, ...t }) {
+function Bp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "alert-dialog-footer",
 		className: W("flex flex-col-reverse gap-2 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end", e),
 		...t
 	});
 }
-function Ip({ className: e, ...t }) {
+function Vp({ className: e, ...t }) {
 	return /* @__PURE__ */ x(mi, {
 		"data-slot": "alert-dialog-title",
 		className: W("text-lg font-semibold sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2", e),
 		...t
 	});
 }
-function Lp({ className: e, ...t }) {
+function Hp({ className: e, ...t }) {
 	return /* @__PURE__ */ x(hi, {
 		"data-slot": "alert-dialog-description",
 		className: W("text-sm text-muted-foreground", e),
 		...t
 	});
 }
-function Rp({ className: e, variant: t = "default", size: n = "default", ...r }) {
+function Up({ className: e, variant: t = "default", size: n = "default", ...r }) {
 	return /* @__PURE__ */ x(G, {
 		variant: t,
 		size: n,
@@ -16804,7 +17835,7 @@ function Rp({ className: e, variant: t = "default", size: n = "default", ...r })
 		})
 	});
 }
-function zp({ className: e, variant: t = "outline", size: n = "default", ...r }) {
+function Wp({ className: e, variant: t = "outline", size: n = "default", ...r }) {
 	return /* @__PURE__ */ x(G, {
 		variant: t,
 		size: n,
@@ -16818,7 +17849,7 @@ function zp({ className: e, variant: t = "outline", size: n = "default", ...r })
 }
 //#endregion
 //#region src/components/ui/textarea.tsx
-function Bp({ className: e, ...t }) {
+function Gp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("textarea", {
 		"data-slot": "textarea",
 		className: W("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
@@ -16827,10 +17858,10 @@ function Bp({ className: e, ...t }) {
 }
 //#endregion
 //#region src/hooks/useQueryErrorToast.ts
-function Vp(e) {
+function Kp(e) {
 	let { t } = g(), n = p(!1);
 	u(() => {
-		e.isError && e.error ? n.current || (n.current = !0, _.error(lf(t, e.error))) : n.current = !1;
+		e.isError && e.error ? n.current || (n.current = !0, _.error(_f(t, e.error))) : n.current = !1;
 	}, [
 		e.isError,
 		e.error,
@@ -16840,7 +17871,7 @@ function Vp(e) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/pages/CoffeeOriginEditorPage.tsx
-function Hp() {
+function qp() {
 	return {
 		name: "",
 		slug: "",
@@ -16850,13 +17881,13 @@ function Hp() {
 		thumbnail_url: ""
 	};
 }
-function Up() {
-	let { t: r } = g(), i = n(), a = T(), o = !!w("/shop/coffee-origins/new"), { originId: s } = E(), c = !o && s ? parseInt(s, 10) : void 0, [l, d] = m(Hp), [f, p] = m(!0), [h, v] = m(!1), y = t({
+function Jp() {
+	let { t: r } = g(), i = n(), a = T(), o = !!w("/shop/coffee-origins/new"), { originId: s } = E(), c = !o && s ? parseInt(s, 10) : void 0, [l, d] = m(qp), [f, p] = m(!0), [h, v] = m(!1), y = t({
 		queryKey: ["coffee-origins", c],
-		queryFn: () => Q(`shop/coffee-origins/${c}`),
+		queryFn: () => $(`shop/coffee-origins/${c}`),
 		enabled: !o && !!c
 	});
-	Vp(y), u(() => {
+	Kp(y), u(() => {
 		y.data && (d({
 			name: y.data.name,
 			slug: y.data.slug,
@@ -16870,16 +17901,16 @@ function Up() {
 		mutationFn: async () => {
 			let e = {
 				name: l.name.trim(),
-				slug: l.slug.trim() || Cp(l.name),
+				slug: l.slug.trim() || Op(l.name),
 				description: l.description,
 				iso_code: l.iso_code.trim(),
 				thumbnail_id: l.thumbnail_id > 0 ? l.thumbnail_id : 0
 			};
-			return o ? Q("shop/coffee-origins", {
+			return o ? $("shop/coffee-origins", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(e)
-			}) : Q(`shop/coffee-origins/${c}`, {
+			}) : $(`shop/coffee-origins/${c}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(e)
@@ -16891,14 +17922,14 @@ function Up() {
 				t.id && a(`/shop/coffee-origins/${t.id}`, { replace: !0 });
 			}
 		},
-		onError: (e) => uf(r, e)
-	}), ee = e({
-		mutationFn: () => Q(`shop/coffee-origins/${c}`, { method: "DELETE" }),
+		onError: (e) => vf(r, e)
+	}), D = e({
+		mutationFn: () => $(`shop/coffee-origins/${c}`, { method: "DELETE" }),
 		onSuccess: () => {
 			_.success(r("common.deleted")), i.invalidateQueries({ queryKey: ["coffee-origins"] }), a("/shop/coffee-origins", { replace: !0 });
 		},
-		onError: (e) => uf(r, e)
-	}), D = {
+		onError: (e) => vf(r, e)
+	}), O = {
 		id: c ?? 0,
 		name: l.name,
 		slug: l.slug,
@@ -16911,7 +17942,7 @@ function Up() {
 		thumbnail_url: l.thumbnail_url,
 		url: ""
 	};
-	return /* @__PURE__ */ S(rp, {
+	return /* @__PURE__ */ S(cp, {
 		title: r(o ? "coffeeProfile.originNewTitle" : "coffeeProfile.originEditTitle"),
 		children: [
 			/* @__PURE__ */ S("div", {
@@ -16929,7 +17960,7 @@ function Up() {
 						variant: "destructive",
 						size: "sm",
 						onClick: () => v(!0),
-						children: [/* @__PURE__ */ x(Jd, { className: "me-1 size-4" }), r("common.delete")]
+						children: [/* @__PURE__ */ x(Yd, { className: "me-1 size-4" }), r("common.delete")]
 					}), /* @__PURE__ */ x(G, {
 						type: "button",
 						size: "sm",
@@ -16945,7 +17976,7 @@ function Up() {
 					className: "space-y-6 pt-6",
 					children: !o && y.isLoading ? /* @__PURE__ */ S("div", {
 						className: "space-y-4",
-						children: [/* @__PURE__ */ x(Sp, { className: "h-10 w-full max-w-md" }), /* @__PURE__ */ x(Sp, { className: "h-10 w-full max-w-md" })]
+						children: [/* @__PURE__ */ x(Dp, { className: "h-10 w-full max-w-md" }), /* @__PURE__ */ x(Dp, { className: "h-10 w-full max-w-md" })]
 					}) : /* @__PURE__ */ S(b, { children: [
 						/* @__PURE__ */ S("div", {
 							className: "grid gap-4 md:grid-cols-2",
@@ -16965,7 +17996,7 @@ function Up() {
 										onBlur: () => {
 											f && l.name.trim() && d((e) => ({
 												...e,
-												slug: Cp(e.name)
+												slug: Op(e.name)
 											}));
 										}
 									})]
@@ -17012,7 +18043,7 @@ function Up() {
 								}),
 								/* @__PURE__ */ S("div", {
 									className: "flex items-end gap-3 pb-1",
-									children: [/* @__PURE__ */ x(Lf, { origin: D }), /* @__PURE__ */ x("span", {
+									children: [/* @__PURE__ */ x(Yf, { origin: O }), /* @__PURE__ */ x("span", {
 										className: "text-muted-foreground text-sm",
 										children: r("coffeeProfile.flagPreview")
 									})]
@@ -17024,7 +18055,7 @@ function Up() {
 							children: [/* @__PURE__ */ x(Z, {
 								htmlFor: "origin-desc",
 								children: r("coffeeProfile.fieldDescription")
-							}), /* @__PURE__ */ x(Bp, {
+							}), /* @__PURE__ */ x(Gp, {
 								id: "origin-desc",
 								value: l.description,
 								onChange: (e) => d({
@@ -17043,7 +18074,7 @@ function Up() {
 								className: "text-muted-foreground mb-3 text-xs",
 								children: r("coffeeProfile.fieldFlagImageHint")
 							}),
-							/* @__PURE__ */ x(kp, {
+							/* @__PURE__ */ x(Pp, {
 								imageId: l.thumbnail_id,
 								imageUrl: l.thumbnail_url,
 								onChange: (e) => d({
@@ -17061,12 +18092,12 @@ function Up() {
 					] })
 				})
 			}),
-			/* @__PURE__ */ x(Ap, {
+			/* @__PURE__ */ x(Fp, {
 				open: h,
 				onOpenChange: v,
-				children: /* @__PURE__ */ S(Np, { children: [/* @__PURE__ */ S(Pp, { children: [/* @__PURE__ */ x(Ip, { children: r("coffeeProfile.originDeleteTitle") }), /* @__PURE__ */ x(Lp, { children: r("coffeeProfile.originDeleteConfirm", { name: l.name }) })] }), /* @__PURE__ */ S(Fp, { children: [/* @__PURE__ */ x(zp, { children: r("common.cancel") }), /* @__PURE__ */ x(Rp, {
-					disabled: ee.isPending,
-					onClick: () => void ee.mutateAsync(),
+				children: /* @__PURE__ */ S(Rp, { children: [/* @__PURE__ */ S(zp, { children: [/* @__PURE__ */ x(Vp, { children: r("coffeeProfile.originDeleteTitle") }), /* @__PURE__ */ x(Hp, { children: r("coffeeProfile.originDeleteConfirm", { name: l.name }) })] }), /* @__PURE__ */ S(Bp, { children: [/* @__PURE__ */ x(Wp, { children: r("common.cancel") }), /* @__PURE__ */ x(Up, {
+					disabled: D.isPending,
+					onClick: () => void D.mutateAsync(),
 					children: r("common.delete")
 				})] })] })
 			})
@@ -17075,19 +18106,19 @@ function Up() {
 }
 //#endregion
 //#region src/components/TableListSkeleton.tsx
-function Wp({ rows: e = 6, columns: t = 4 }) {
+function Yp({ rows: e = 6, columns: t = 4 }) {
 	return /* @__PURE__ */ x("div", {
 		className: "p-4 space-y-3",
 		"aria-hidden": !0,
 		children: Array.from({ length: e }).map((e, n) => /* @__PURE__ */ x("div", {
 			className: "flex gap-2",
-			children: Array.from({ length: t }).map((e, t) => /* @__PURE__ */ x(Sp, { className: "h-8 flex-1" }, t))
+			children: Array.from({ length: t }).map((e, t) => /* @__PURE__ */ x(Dp, { className: "h-8 flex-1" }, t))
 		}, n))
 	});
 }
 //#endregion
 //#region src/components/ui/table.tsx
-function Gp({ className: e, ...t }) {
+function Xp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "table-container",
 		className: "relative w-full overflow-x-auto",
@@ -17098,35 +18129,35 @@ function Gp({ className: e, ...t }) {
 		})
 	});
 }
-function Kp({ className: e, ...t }) {
+function Zp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("thead", {
 		"data-slot": "table-header",
 		className: W("[&_tr]:border-b", e),
 		...t
 	});
 }
-function qp({ className: e, ...t }) {
+function Qp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("tbody", {
 		"data-slot": "table-body",
 		className: W("[&_tr:last-child]:border-0", e),
 		...t
 	});
 }
-function Jp({ className: e, ...t }) {
+function $p({ className: e, ...t }) {
 	return /* @__PURE__ */ x("tr", {
 		"data-slot": "table-row",
 		className: W("border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted", e),
 		...t
 	});
 }
-function Yp({ className: e, ...t }) {
+function em({ className: e, ...t }) {
 	return /* @__PURE__ */ x("th", {
 		"data-slot": "table-head",
 		className: W("h-10 px-2 text-start align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]", e),
 		...t
 	});
 }
-function Xp({ className: e, ...t }) {
+function tm({ className: e, ...t }) {
 	return /* @__PURE__ */ x("td", {
 		"data-slot": "table-cell",
 		className: W("p-2 text-start align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]", e),
@@ -17134,14 +18165,8 @@ function Xp({ className: e, ...t }) {
 	});
 }
 //#endregion
-//#region src/lib/formatNumber.ts
-function Zp(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = Uf(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return Uf(t) ? Wf(i) : i;
-}
-//#endregion
 //#region ../Modules/coffee-profile-module/client/pages/CoffeeOriginsPage.tsx
-function Qp() {
+function nm() {
 	let { t: r, i18n: i } = g(), a = n(), [o, s] = m(""), [c, l] = m(""), [d, f] = m(null), [p, h] = m(null);
 	u(() => {
 		let e = window.setTimeout(() => l(o), 300);
@@ -17153,21 +18178,21 @@ function Qp() {
 			let e = new URLSearchParams();
 			c.trim() && e.set("search", c.trim());
 			let t = e.toString();
-			return Q(`shop/coffee-origins${t ? `?${t}` : ""}`);
+			return $(`shop/coffee-origins${t ? `?${t}` : ""}`);
 		}
 	});
-	Vp(v);
+	Kp(v);
 	let y = e({
-		mutationFn: (e) => (f(e), Q(`shop/coffee-origins/${e}`, { method: "DELETE" })),
+		mutationFn: (e) => (f(e), $(`shop/coffee-origins/${e}`, { method: "DELETE" })),
 		onSuccess: () => {
 			_.success(r("common.deleted")), a.invalidateQueries({ queryKey: ["coffee-origins"] });
 		},
-		onError: (e) => uf(r, e),
+		onError: (e) => vf(r, e),
 		onSettled: () => {
 			f(null), h(null);
 		}
 	}), b = v.data?.items ?? [], w = v.data?.found ?? 0, T = b.find((e) => e.id === p);
-	return /* @__PURE__ */ S(rp, {
+	return /* @__PURE__ */ S(cp, {
 		title: r("coffeeProfile.originsTitle"),
 		description: r("coffeeProfile.originsHint"),
 		children: [
@@ -17178,7 +18203,7 @@ function Qp() {
 					size: "sm",
 					children: /* @__PURE__ */ S(C, {
 						to: "/shop/coffee-origins/new",
-						children: [/* @__PURE__ */ x(Gd, { className: "size-4" }), r("coffeeProfile.originAdd")]
+						children: [/* @__PURE__ */ x(Kd, { className: "size-4" }), r("coffeeProfile.originAdd")]
 					})
 				})
 			}),
@@ -17188,7 +18213,7 @@ function Qp() {
 					className: "pt-6",
 					children: [/* @__PURE__ */ S("div", {
 						className: "relative min-w-[200px] max-w-md",
-						children: [/* @__PURE__ */ x(Kd, {
+						children: [/* @__PURE__ */ x(qd, {
 							className: "text-muted-foreground pointer-events-none absolute top-2.5 start-3 size-4",
 							"aria-hidden": !0
 						}), /* @__PURE__ */ x(X, {
@@ -17199,7 +18224,7 @@ function Qp() {
 						})]
 					}), w > 0 ? /* @__PURE__ */ x("p", {
 						className: "text-muted-foreground mt-3 text-sm",
-						children: r("coffeeProfile.originFound", { count: Zp(w, i.language) })
+						children: r("coffeeProfile.originFound", { count: qf(w, i.language) })
 					}) : null]
 				})
 			}),
@@ -17207,28 +18232,28 @@ function Qp() {
 				className: "shadow-sm",
 				children: /* @__PURE__ */ x(Y, {
 					className: "overflow-x-auto p-0",
-					children: v.isLoading ? /* @__PURE__ */ x(Wp, {
+					children: v.isLoading ? /* @__PURE__ */ x(Yp, {
 						rows: 8,
 						columns: 5
-					}) : /* @__PURE__ */ S(Gp, { children: [/* @__PURE__ */ x(Kp, { children: /* @__PURE__ */ S(Jp, { children: [
-						/* @__PURE__ */ x(Yp, {
+					}) : /* @__PURE__ */ S(Xp, { children: [/* @__PURE__ */ x(Zp, { children: /* @__PURE__ */ S($p, { children: [
+						/* @__PURE__ */ x(em, {
 							className: "w-14",
 							children: r("coffeeProfile.colFlag")
 						}),
-						/* @__PURE__ */ x(Yp, { children: r("coffeeProfile.colName") }),
-						/* @__PURE__ */ x(Yp, { children: r("coffeeProfile.colIso") }),
-						/* @__PURE__ */ x(Yp, { children: r("coffeeProfile.colCount") }),
-						/* @__PURE__ */ x(Yp, {
+						/* @__PURE__ */ x(em, { children: r("coffeeProfile.colName") }),
+						/* @__PURE__ */ x(em, { children: r("coffeeProfile.colIso") }),
+						/* @__PURE__ */ x(em, { children: r("coffeeProfile.colCount") }),
+						/* @__PURE__ */ x(em, {
 							className: "w-28",
 							children: r("coffeeProfile.colActions")
 						})
-					] }) }), /* @__PURE__ */ x(qp, { children: b.length === 0 ? /* @__PURE__ */ x(Jp, { children: /* @__PURE__ */ x(Xp, {
+					] }) }), /* @__PURE__ */ x(Qp, { children: b.length === 0 ? /* @__PURE__ */ x($p, { children: /* @__PURE__ */ x(tm, {
 						colSpan: 5,
 						className: "text-muted-foreground py-8 text-center text-sm",
 						children: r("coffeeProfile.originEmpty")
-					}) }) : b.map((e) => /* @__PURE__ */ S(Jp, { children: [
-						/* @__PURE__ */ x(Xp, { children: /* @__PURE__ */ x(Lf, { origin: e }) }),
-						/* @__PURE__ */ x(Xp, {
+					}) }) : b.map((e) => /* @__PURE__ */ S($p, { children: [
+						/* @__PURE__ */ x(tm, { children: /* @__PURE__ */ x(Yf, { origin: e }) }),
+						/* @__PURE__ */ x(tm, {
 							className: "font-medium",
 							children: /* @__PURE__ */ x(C, {
 								to: `/shop/coffee-origins/${e.id}`,
@@ -17236,12 +18261,12 @@ function Qp() {
 								children: e.name
 							})
 						}),
-						/* @__PURE__ */ x(Xp, {
+						/* @__PURE__ */ x(tm, {
 							className: "font-mono text-xs",
 							children: e.iso_code || "—"
 						}),
-						/* @__PURE__ */ x(Xp, { children: Zp(e.count, i.language) }),
-						/* @__PURE__ */ x(Xp, { children: /* @__PURE__ */ S("div", {
+						/* @__PURE__ */ x(tm, { children: qf(e.count, i.language) }),
+						/* @__PURE__ */ x(tm, { children: /* @__PURE__ */ S("div", {
 							className: "flex gap-1",
 							children: [/* @__PURE__ */ x(G, {
 								asChild: !0,
@@ -17250,7 +18275,7 @@ function Qp() {
 								className: "size-8",
 								children: /* @__PURE__ */ x(C, {
 									to: `/shop/coffee-origins/${e.id}`,
-									children: /* @__PURE__ */ x(Wd, { className: "size-4" })
+									children: /* @__PURE__ */ x(Gd, { className: "size-4" })
 								})
 							}), /* @__PURE__ */ x(G, {
 								type: "button",
@@ -17259,16 +18284,16 @@ function Qp() {
 								className: "size-8",
 								disabled: d === e.id,
 								onClick: () => h(e.id),
-								children: /* @__PURE__ */ x(Jd, { className: "size-4" })
+								children: /* @__PURE__ */ x(Yd, { className: "size-4" })
 							})]
 						}) })
 					] }, e.id)) })] })
 				})
 			}),
-			/* @__PURE__ */ x(Ap, {
+			/* @__PURE__ */ x(Fp, {
 				open: p != null,
 				onOpenChange: (e) => !e && h(null),
-				children: /* @__PURE__ */ S(Np, { children: [/* @__PURE__ */ S(Pp, { children: [/* @__PURE__ */ x(Ip, { children: r("coffeeProfile.originDeleteTitle") }), /* @__PURE__ */ x(Lp, { children: r("coffeeProfile.originDeleteConfirm", { name: T?.name ?? "" }) })] }), /* @__PURE__ */ S(Fp, { children: [/* @__PURE__ */ x(zp, { children: r("common.cancel") }), /* @__PURE__ */ x(Rp, {
+				children: /* @__PURE__ */ S(Rp, { children: [/* @__PURE__ */ S(zp, { children: [/* @__PURE__ */ x(Vp, { children: r("coffeeProfile.originDeleteTitle") }), /* @__PURE__ */ x(Hp, { children: r("coffeeProfile.originDeleteConfirm", { name: T?.name ?? "" }) })] }), /* @__PURE__ */ S(Bp, { children: [/* @__PURE__ */ x(Wp, { children: r("common.cancel") }), /* @__PURE__ */ x(Up, {
 					disabled: y.isPending || !p,
 					onClick: () => p && void y.mutateAsync(p),
 					children: r("common.delete")
@@ -17278,52 +18303,8 @@ function Qp() {
 	});
 }
 //#endregion
-//#region src/components/ui/tabs.tsx
-function $p({ className: e, orientation: t = "horizontal", dir: n, ...r }) {
-	let i = Yf();
-	return /* @__PURE__ */ x(tu, {
-		"data-slot": "tabs",
-		"data-orientation": t,
-		orientation: t,
-		dir: n ?? i,
-		className: W("group/tabs flex gap-2 data-[orientation=horizontal]:flex-col", e),
-		...r
-	});
-}
-var em = te("group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none", {
-	variants: { variant: {
-		default: "bg-muted",
-		line: "gap-1 bg-transparent"
-	} },
-	defaultVariants: { variant: "default" }
-});
-function tm({ className: e, variant: t = "default", dir: n, ...r }) {
-	let i = Yf();
-	return /* @__PURE__ */ x(nu, {
-		"data-slot": "tabs-list",
-		"data-variant": t,
-		dir: n ?? i,
-		className: W(em({ variant: t }), e),
-		...r
-	});
-}
-function nm({ className: e, ...t }) {
-	return /* @__PURE__ */ x(ru, {
-		"data-slot": "tabs-trigger",
-		className: W("relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm group-data-[variant=line]/tabs-list:data-[state=active]:shadow-none dark:text-muted-foreground dark:hover:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:border-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent", "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground", "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:inset-inline-end-0 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100", e),
-		...t
-	});
-}
-function rm({ className: e, ...t }) {
-	return /* @__PURE__ */ x(iu, {
-		"data-slot": "tabs-content",
-		className: W("flex-1 outline-none", e),
-		...t
-	});
-}
-//#endregion
 //#region src/components/ui/badge.tsx
-var im = te("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
+var rm = P("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
 	variants: { variant: {
 		default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
 		secondary: "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
@@ -17334,17 +18315,17 @@ var im = te("inline-flex w-fit shrink-0 items-center justify-center gap-1 overfl
 	} },
 	defaultVariants: { variant: "default" }
 });
-function am({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
+function im({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
 	return /* @__PURE__ */ x(n ? xl : "span", {
 		"data-slot": "badge",
 		"data-variant": t,
-		className: W(im({ variant: t }), e),
+		className: W(rm({ variant: t }), e),
 		...r
 	});
 }
 //#endregion
 //#region src/components/coupons/ProductMultiSelect.tsx
-function om({ id: e, label: n, value: r, onChange: i }) {
+function am({ id: e, label: n, value: r, onChange: i }) {
 	let { t: a } = g(), [o, s] = m(""), [c, l] = m(""), [d, f] = m({});
 	u(() => {
 		let e = window.setTimeout(() => l(o), 300);
@@ -17356,7 +18337,7 @@ function om({ id: e, label: n, value: r, onChange: i }) {
 			"search",
 			c
 		],
-		queryFn: () => Q(`shop/products?page=1&per_page=20${c.trim() ? `&search=${encodeURIComponent(c.trim())}` : ""}`),
+		queryFn: () => $(`shop/products?page=1&per_page=20${c.trim() ? `&search=${encodeURIComponent(c.trim())}` : ""}`),
 		enabled: c.trim().length >= 1
 	});
 	function h(e) {
@@ -17406,7 +18387,7 @@ function om({ id: e, label: n, value: r, onChange: i }) {
 			}) : null,
 			r.length > 0 ? /* @__PURE__ */ x("div", {
 				className: "flex flex-wrap gap-1",
-				children: r.map((e) => /* @__PURE__ */ S(am, {
+				children: r.map((e) => /* @__PURE__ */ S(im, {
 					variant: "secondary",
 					className: "gap-1 pe-1",
 					children: [d[e] ? `${d[e]} (#${e})` : `#${e}`, /* @__PURE__ */ S(G, {
@@ -17415,7 +18396,7 @@ function om({ id: e, label: n, value: r, onChange: i }) {
 						variant: "ghost",
 						className: "size-5",
 						onClick: () => _(e),
-						children: [/* @__PURE__ */ x(Yd, { className: "size-3" }), /* @__PURE__ */ x("span", {
+						children: [/* @__PURE__ */ x(Xd, { className: "size-3" }), /* @__PURE__ */ x("span", {
 							className: "sr-only",
 							children: a("common.delete")
 						})]
@@ -17426,17 +18407,430 @@ function om({ id: e, label: n, value: r, onChange: i }) {
 	});
 }
 //#endregion
+//#region ../Modules/coffee-profile-module/client/pages/CoffeePricingPage.tsx
+function om() {
+	return {
+		roast_yield: .85,
+		weight_attribute: "",
+		weight_packs: [],
+		beans: [],
+		base_mixes: [],
+		shop_styles: {
+			classic: {
+				robusta_mix_id: "classic_robusta",
+				arabica_mix_id: "classic_arabica"
+			},
+			luxury: {
+				robusta_mix_id: "base_arabica",
+				arabica_mix_id: "luxury_arabica"
+			}
+		},
+		economy_beans: {
+			robusta_bean_id: "vietnam",
+			arabica_bean_id: "rio"
+		}
+	};
+}
+function sm(e) {
+	return e.taxonomy ? e.taxonomy : e.slug ? `pa_${e.slug}` : "";
+}
+function cm(e, t) {
+	let n = `${e} ${t}`.trim(), r = n.match(/(\d+(?:[.,]\d+)?)\s*(kg|کیلو)/iu);
+	if (r) return Math.round(Number(String(r[1]).replace(",", ".")) * 1e3);
+	let i = n.match(/(\d+)/u);
+	return i ? Number(i[1]) : 0;
+}
+function lm(e, t) {
+	return e.map((e) => {
+		let n = e.slug || "", r = e.name || n, i = t.find((e) => {
+			let t = e.term.toLowerCase(), i = e.label.toLowerCase();
+			return t === n.toLowerCase() || t === r.toLowerCase() || i === r.toLowerCase() || i === n.toLowerCase();
+		}), a = i && i.grams > 0 ? i.grams : cm(r, n);
+		return {
+			term: n || r,
+			label: r,
+			grams: a
+		};
+	});
+}
+function um() {
+	let { t: r, i18n: i } = g(), a = n(), [o, s] = m(null), c = p(""), l = t({
+		queryKey: ["coffee-pricing"],
+		queryFn: () => $("shop/coffee-pricing"),
+		refetchInterval: (e) => e.state.data?.recalc?.status === "running" ? 2e3 : !1
+	});
+	Kp(l);
+	let d = t({
+		queryKey: ["shop-attributes"],
+		queryFn: () => $("shop/attributes"),
+		staleTime: 6e4
+	});
+	Kp(d);
+	let h = d.data?.items ?? [], v = f(() => {
+		let e = (o?.weight_attribute ?? "").trim().toLowerCase();
+		return e ? h.find((t) => {
+			let n = sm(t).toLowerCase(), r = (t.slug || "").toLowerCase();
+			return n === e || r === e || `pa_${r}` === e;
+		}) ?? null : null;
+	}, [h, o?.weight_attribute]), y = t({
+		queryKey: ["shop-attribute-terms", v?.id],
+		enabled: !!v?.id,
+		queryFn: () => $(`shop/global-attributes/${v.id}/terms`),
+		staleTime: 3e4
+	});
+	Kp(y), u(() => {
+		l.data?.settings && (c.current = "", s({
+			...om(),
+			...l.data.settings,
+			weight_packs: Array.isArray(l.data.settings.weight_packs) ? l.data.settings.weight_packs : [],
+			beans: l.data.beans?.length ? l.data.beans.map(dm) : l.data.settings.beans,
+			base_mixes: l.data.base_mixes?.length ? l.data.base_mixes.map(fm) : l.data.settings.base_mixes
+		}));
+	}, [l.data]), u(() => {
+		if (!v?.id || !y.data?.items) return;
+		let e = `${v.id}:${y.data.items.map((e) => e.slug).join(",")}`;
+		c.current !== e && (c.current = e, s((e) => {
+			if (!e) return e;
+			let t = lm(y.data.items, e.weight_packs);
+			return t.length === e.weight_packs.length && t.every((t, n) => t.term === e.weight_packs[n]?.term && t.label === e.weight_packs[n]?.label && t.grams === e.weight_packs[n]?.grams) ? e : {
+				...e,
+				weight_packs: t
+			};
+		}));
+	}, [v?.id, y.data]);
+	let b = e({
+		mutationFn: (e) => $("shop/coffee-pricing", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				settings: e.settings,
+				recalc: e.recalc === !0
+			})
+		}),
+		onSuccess: (e, t) => {
+			_.success(t.recalc ? r("coffeeProfile.pricingQueued") : r("common.saved")), a.setQueryData(["coffee-pricing"], e), e.settings && (c.current = "", s({
+				...om(),
+				...e.settings,
+				weight_packs: Array.isArray(e.settings.weight_packs) ? e.settings.weight_packs : [],
+				beans: e.beans?.length ? e.beans.map(dm) : e.settings.beans,
+				base_mixes: e.base_mixes?.length ? e.base_mixes.map(fm) : e.settings.base_mixes
+			}));
+		},
+		onError: (e) => vf(r, e)
+	}), C = e({
+		mutationFn: async () => (o && await $("shop/coffee-pricing", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ settings: o })
+		}), $("shop/coffee-pricing/apply-all", { method: "POST" })),
+		onSuccess: (e) => {
+			_.success(r("coffeeProfile.pricingQueued")), a.invalidateQueries({ queryKey: ["coffee-pricing"] }), e?.recalc && a.setQueryData(["coffee-pricing"], (t) => t && {
+				...t,
+				recalc: e.recalc
+			});
+		},
+		onError: (e) => vf(r, e)
+	}), w = f(() => {
+		if (!o) return /* @__PURE__ */ new Map();
+		let e = o.roast_yield > 0 ? o.roast_yield : .85, t = /* @__PURE__ */ new Map();
+		for (let n of o.beans) t.set(n.id, n.green_price / e);
+		return t;
+	}, [o]), T = f(() => {
+		let e = /* @__PURE__ */ new Map();
+		for (let t of l.data?.beans ?? []) typeof t.after_roast == "number" && typeof t.retail_preview == "number" && e.set(Math.round(t.after_roast * 100), t.retail_preview);
+		return e;
+	}, [l.data]);
+	if (!o) return /* @__PURE__ */ x(cp, {
+		title: r("coffeeProfile.pricingTitle"),
+		description: r("coffeeProfile.pricingHint"),
+		children: /* @__PURE__ */ x("p", {
+			className: "text-muted-foreground text-sm",
+			children: r("common.loading")
+		})
+	});
+	let E = l.data?.recalc, D = b.isPending || C.isPending || E?.status === "running";
+	function O(e, t) {
+		s((n) => n && {
+			...n,
+			beans: n.beans.map((n) => n.id === e ? {
+				...n,
+				...t
+			} : n)
+		});
+	}
+	function ee(e, t) {
+		s((n) => {
+			if (!n) return n;
+			let r = n.weight_packs.map((n, r) => r === e ? {
+				...n,
+				grams: t
+			} : n);
+			return {
+				...n,
+				weight_packs: r
+			};
+		});
+	}
+	function k(e) {
+		let t = h.find((t) => String(t.id) === e);
+		t && (c.current = "", s((e) => e && {
+			...e,
+			weight_attribute: sm(t),
+			weight_packs: []
+		}));
+	}
+	function A(e) {
+		return qf(Math.round(e), i.language);
+	}
+	function j(e) {
+		return T.get(Math.round(e * 100)) ?? e;
+	}
+	return /* @__PURE__ */ S(cp, {
+		title: r("coffeeProfile.pricingTitle"),
+		description: r("coffeeProfile.pricingHint"),
+		children: [
+			/* @__PURE__ */ S("div", {
+				className: "mb-4 flex flex-wrap items-center justify-end gap-2",
+				children: [/* @__PURE__ */ x(G, {
+					type: "button",
+					variant: "outline",
+					size: "sm",
+					disabled: D,
+					onClick: () => void b.mutateAsync({ settings: o }),
+					children: r("common.save")
+				}), /* @__PURE__ */ x(G, {
+					type: "button",
+					size: "sm",
+					disabled: D,
+					onClick: () => void C.mutateAsync(),
+					children: r("coffeeProfile.pricingApplyAll")
+				})]
+			}),
+			E && E.status !== "idle" ? /* @__PURE__ */ x(K, {
+				className: "mb-4",
+				children: /* @__PURE__ */ x(Y, {
+					className: "text-sm pt-4",
+					children: E.status === "running" ? r("coffeeProfile.pricingRecalcRunning", {
+						done: E.done,
+						total: E.total,
+						failed: E.failed
+					}) : r("coffeeProfile.pricingRecalcDone", {
+						done: E.done,
+						total: E.total,
+						failed: E.failed
+					})
+				})
+			}) : null,
+			/* @__PURE__ */ S("div", {
+				className: "space-y-6",
+				children: [
+					/* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: r("coffeeProfile.pricingRoastYield") }) }), /* @__PURE__ */ S(Y, {
+						className: "max-w-xs space-y-2",
+						children: [/* @__PURE__ */ x(Z, {
+							htmlFor: "roast-yield",
+							children: r("coffeeProfile.pricingRoastYieldHint")
+						}), /* @__PURE__ */ x(X, {
+							id: "roast-yield",
+							type: "number",
+							step: "0.01",
+							min: .5,
+							max: 1,
+							value: o.roast_yield,
+							onChange: (e) => s({
+								...o,
+								roast_yield: Math.min(1, Math.max(.5, Number(e.target.value) || .85))
+							})
+						})]
+					})] }),
+					/* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: r("coffeeProfile.pricingBeans") }) }), /* @__PURE__ */ x(Y, {
+						className: "overflow-x-auto",
+						children: /* @__PURE__ */ S(Xp, { children: [/* @__PURE__ */ x(Zp, { children: /* @__PURE__ */ S($p, { children: [
+							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColName") }),
+							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColKind") }),
+							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColGreen") }),
+							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColAfter") }),
+							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColRetail") }),
+							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColProduct") })
+						] }) }), /* @__PURE__ */ x(Qp, { children: o.beans.map((e) => {
+							let t = w.get(e.id) ?? 0;
+							return /* @__PURE__ */ S($p, { children: [
+								/* @__PURE__ */ x(tm, {
+									className: "font-medium",
+									children: e.name
+								}),
+								/* @__PURE__ */ x(tm, { children: /* @__PURE__ */ S($d, {
+									value: e.kind,
+									onValueChange: (t) => O(e.id, { kind: t }),
+									children: [/* @__PURE__ */ x(tf, {
+										className: "w-28",
+										children: /* @__PURE__ */ x(ef, {})
+									}), /* @__PURE__ */ S(nf, { children: [/* @__PURE__ */ x(Q, {
+										value: "robusta",
+										children: r("coffeeProfile.pricingRobusta")
+									}), /* @__PURE__ */ x(Q, {
+										value: "arabica",
+										children: r("coffeeProfile.pricingArabica")
+									})] })]
+								}) }),
+								/* @__PURE__ */ x(tm, { children: /* @__PURE__ */ x(X, {
+									type: "number",
+									className: "w-28",
+									value: e.green_price,
+									onChange: (t) => O(e.id, { green_price: Number(t.target.value) || 0 })
+								}) }),
+								/* @__PURE__ */ x(tm, { children: A(t) }),
+								/* @__PURE__ */ x(tm, { children: A(j(t)) }),
+								/* @__PURE__ */ x(tm, {
+									className: "min-w-[220px]",
+									children: /* @__PURE__ */ x(am, {
+										id: `bean-prod-${e.id}`,
+										label: "",
+										value: e.product_id ? [e.product_id] : [],
+										onChange: (t) => O(e.id, { product_id: t[t.length - 1] ?? 0 })
+									})
+								})
+							] }, e.id);
+						}) })] })
+					})] }),
+					/* @__PURE__ */ S(K, { children: [/* @__PURE__ */ S(q, { children: [/* @__PURE__ */ x(J, { children: r("coffeeProfile.pricingWeightPacks") }), /* @__PURE__ */ x("p", {
+						className: "text-muted-foreground mt-1 text-sm",
+						children: r("coffeeProfile.pricingWeightPacksHint")
+					})] }), /* @__PURE__ */ S(Y, {
+						className: "space-y-4",
+						children: [/* @__PURE__ */ S("div", {
+							className: "max-w-md space-y-2",
+							children: [
+								/* @__PURE__ */ x(Z, { children: r("coffeeProfile.pricingWeightAttribute") }),
+								/* @__PURE__ */ S($d, {
+									value: v ? String(v.id) : void 0,
+									onValueChange: k,
+									disabled: d.isPending,
+									children: [/* @__PURE__ */ x(tf, { children: /* @__PURE__ */ x(ef, { placeholder: r("coffeeProfile.pricingWeightAttributePick") }) }), /* @__PURE__ */ x(nf, { children: h.map((e) => /* @__PURE__ */ x(Q, {
+										value: String(e.id),
+										children: e.label || e.slug || sm(e)
+									}, e.id)) })]
+								}),
+								/* @__PURE__ */ x("p", {
+									className: "text-muted-foreground text-xs",
+									children: r("coffeeProfile.pricingWeightAttributeHint")
+								})
+							]
+						}), v ? y.isPending ? /* @__PURE__ */ x("p", {
+							className: "text-muted-foreground text-sm",
+							children: r("common.loading")
+						}) : o.weight_packs.length === 0 ? /* @__PURE__ */ x("p", {
+							className: "text-muted-foreground text-sm",
+							children: r("coffeeProfile.pricingWeightNoTerms")
+						}) : /* @__PURE__ */ x("div", {
+							className: "grid gap-3",
+							children: o.weight_packs.map((e, t) => /* @__PURE__ */ S("div", {
+								className: "flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3",
+								children: [/* @__PURE__ */ S("div", {
+									className: "min-w-0",
+									children: [/* @__PURE__ */ x("p", {
+										className: "font-medium",
+										children: e.label || e.term
+									}), /* @__PURE__ */ x("p", {
+										className: "text-muted-foreground text-xs",
+										children: e.term
+									})]
+								}), /* @__PURE__ */ S("div", {
+									className: "flex items-center gap-2",
+									children: [/* @__PURE__ */ x(Z, {
+										className: "text-muted-foreground text-sm whitespace-nowrap",
+										children: r("coffeeProfile.pricingPackGrams")
+									}), /* @__PURE__ */ x(X, {
+										type: "number",
+										className: "w-28",
+										min: 1,
+										value: e.grams || "",
+										onChange: (e) => ee(t, Number(e.target.value) || 0)
+									})]
+								})]
+							}, `${e.term}-${t}`))
+						}) : /* @__PURE__ */ x("p", {
+							className: "text-muted-foreground text-sm",
+							children: r("coffeeProfile.pricingWeightNoAttribute")
+						})]
+					})] })
+				]
+			})
+		]
+	});
+}
+function dm(e) {
+	return {
+		id: e.id,
+		name: e.name,
+		kind: e.kind,
+		green_price: e.green_price,
+		product_id: e.product_id
+	};
+}
+function fm(e) {
+	return {
+		id: e.id,
+		name: e.name,
+		kind: e.kind,
+		parts: e.parts ?? []
+	};
+}
+//#endregion
+//#region src/components/ui/tabs.tsx
+function pm({ className: e, orientation: t = "horizontal", dir: n, ...r }) {
+	let i = Qd();
+	return /* @__PURE__ */ x(tu, {
+		"data-slot": "tabs",
+		"data-orientation": t,
+		orientation: t,
+		dir: n ?? i,
+		className: W("group/tabs flex gap-2 data-[orientation=horizontal]:flex-col", e),
+		...r
+	});
+}
+var mm = P("group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none", {
+	variants: { variant: {
+		default: "bg-muted",
+		line: "gap-1 bg-transparent"
+	} },
+	defaultVariants: { variant: "default" }
+});
+function hm({ className: e, variant: t = "default", dir: n, ...r }) {
+	let i = Qd();
+	return /* @__PURE__ */ x(nu, {
+		"data-slot": "tabs-list",
+		"data-variant": t,
+		dir: n ?? i,
+		className: W(mm({ variant: t }), e),
+		...r
+	});
+}
+function gm({ className: e, ...t }) {
+	return /* @__PURE__ */ x(ru, {
+		"data-slot": "tabs-trigger",
+		className: W("relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm group-data-[variant=line]/tabs-list:data-[state=active]:shadow-none dark:text-muted-foreground dark:hover:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:border-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent", "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground", "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:inset-inline-end-0 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100", e),
+		...t
+	});
+}
+function _m({ className: e, ...t }) {
+	return /* @__PURE__ */ x(iu, {
+		"data-slot": "tabs-content",
+		className: W("flex-1 outline-none", e),
+		...t
+	});
+}
+//#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeBlendSettingsPanel.tsx
-function sm() {
+function vm() {
 	let { t: n } = g(), [r, i] = m(null), a = t({
 		queryKey: ["coffee-blend-settings"],
-		queryFn: () => Q("shop/coffee-blend/settings")
+		queryFn: () => $("shop/coffee-blend/settings")
 	});
-	Vp(a), u(() => {
+	Kp(a), u(() => {
 		a.data?.settings && i(a.data.settings);
 	}, [a.data]);
 	let o = e({
-		mutationFn: (e) => Q("shop/coffee-blend/settings", {
+		mutationFn: (e) => $("shop/coffee-blend/settings", {
 			method: "PUT",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ settings: e })
@@ -17444,7 +18838,7 @@ function sm() {
 		onSuccess: (e) => {
 			_.success(n("common.saved")), e.settings && i(e.settings);
 		},
-		onError: (e) => uf(n, e)
+		onError: (e) => vf(n, e)
 	});
 	if (!r) return /* @__PURE__ */ x("p", {
 		className: "text-muted-foreground text-sm",
@@ -17482,22 +18876,26 @@ function sm() {
 					}),
 					/* @__PURE__ */ S("div", {
 						className: "space-y-2",
-						children: [/* @__PURE__ */ x(Z, { children: n("coffeeProfile.blendSource") }), /* @__PURE__ */ S(Xf, {
+						children: [/* @__PURE__ */ x(Z, { children: n("coffeeProfile.blendSource") }), /* @__PURE__ */ S($d, {
 							value: r.source,
 							onValueChange: (e) => i({
 								...r,
 								source: e
 							}),
-							children: [/* @__PURE__ */ x(Qf, { children: /* @__PURE__ */ x(Zf, {}) }), /* @__PURE__ */ S($f, { children: [
-								/* @__PURE__ */ x($, {
+							children: [/* @__PURE__ */ x(tf, { children: /* @__PURE__ */ x(ef, {}) }), /* @__PURE__ */ S(nf, { children: [
+								/* @__PURE__ */ x(Q, {
+									value: "pricing",
+									children: n("coffeeProfile.blendSourcePricing")
+								}),
+								/* @__PURE__ */ x(Q, {
 									value: "profile",
 									children: n("coffeeProfile.blendSourceProfile")
 								}),
-								/* @__PURE__ */ x($, {
+								/* @__PURE__ */ x(Q, {
 									value: "category",
 									children: n("coffeeProfile.blendSourceCategory")
 								}),
-								/* @__PURE__ */ x($, {
+								/* @__PURE__ */ x(Q, {
 									value: "products",
 									children: n("coffeeProfile.blendSourceProducts")
 								})
@@ -17506,22 +18904,22 @@ function sm() {
 					}),
 					/* @__PURE__ */ S("div", {
 						className: "space-y-2",
-						children: [/* @__PURE__ */ x(Z, { children: n("coffeeProfile.blendMode") }), /* @__PURE__ */ S(Xf, {
+						children: [/* @__PURE__ */ x(Z, { children: n("coffeeProfile.blendMode") }), /* @__PURE__ */ S($d, {
 							value: r.default_mode,
 							onValueChange: (e) => i({
 								...r,
 								default_mode: e
 							}),
-							children: [/* @__PURE__ */ x(Qf, { children: /* @__PURE__ */ x(Zf, {}) }), /* @__PURE__ */ S($f, { children: [
-								/* @__PURE__ */ x($, {
+							children: [/* @__PURE__ */ x(tf, { children: /* @__PURE__ */ x(ef, {}) }), /* @__PURE__ */ S(nf, { children: [
+								/* @__PURE__ */ x(Q, {
 									value: "both",
 									children: n("coffeeProfile.blendModeBoth")
 								}),
-								/* @__PURE__ */ x($, {
+								/* @__PURE__ */ x(Q, {
 									value: "simple",
 									children: n("coffeeProfile.blendModeSimple")
 								}),
-								/* @__PURE__ */ x($, {
+								/* @__PURE__ */ x(Q, {
 									value: "advanced",
 									children: n("coffeeProfile.blendModeAdvanced")
 								})
@@ -17540,7 +18938,7 @@ function sm() {
 					}) : null,
 					r.source === "products" ? /* @__PURE__ */ x("div", {
 						className: "md:col-span-2",
-						children: /* @__PURE__ */ x(om, {
+						children: /* @__PURE__ */ x(am, {
 							id: "blend-products",
 							label: n("coffeeProfile.blendProductIds"),
 							value: r.product_ids,
@@ -17581,16 +18979,16 @@ function sm() {
 				children: [
 					/* @__PURE__ */ S("div", {
 						className: "space-y-2",
-						children: [/* @__PURE__ */ x(Z, { children: n("coffeeProfile.blendPriceBasis") }), /* @__PURE__ */ S(Xf, {
+						children: [/* @__PURE__ */ x(Z, { children: n("coffeeProfile.blendPriceBasis") }), /* @__PURE__ */ S($d, {
 							value: r.price_basis,
 							onValueChange: (e) => i({
 								...r,
 								price_basis: e
 							}),
-							children: [/* @__PURE__ */ x(Qf, { children: /* @__PURE__ */ x(Zf, {}) }), /* @__PURE__ */ S($f, { children: [/* @__PURE__ */ x($, {
+							children: [/* @__PURE__ */ x(tf, { children: /* @__PURE__ */ x(ef, {}) }), /* @__PURE__ */ S(nf, { children: [/* @__PURE__ */ x(Q, {
 								value: "per_kg",
 								children: n("coffeeProfile.blendPricePerKg")
-							}), /* @__PURE__ */ x($, {
+							}), /* @__PURE__ */ x(Q, {
 								value: "pack",
 								children: n("coffeeProfile.blendPricePack")
 							})] })]
@@ -17650,7 +19048,7 @@ function sm() {
 			})] }),
 			/* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: n("coffeeProfile.blendSectionSimple") }) }), /* @__PURE__ */ S(Y, {
 				className: "grid gap-4 md:grid-cols-2",
-				children: [/* @__PURE__ */ x(om, {
+				children: [/* @__PURE__ */ x(am, {
 					id: "blend-robusta",
 					label: n("coffeeProfile.blendRobustaProduct"),
 					value: r.robusta_product_id ? [r.robusta_product_id] : [],
@@ -17658,7 +19056,7 @@ function sm() {
 						...r,
 						robusta_product_id: e[e.length - 1] ?? 0
 					})
-				}), /* @__PURE__ */ x(om, {
+				}), /* @__PURE__ */ x(am, {
 					id: "blend-arabica",
 					label: n("coffeeProfile.blendArabicaProduct"),
 					value: r.arabica_product_id ? [r.arabica_product_id] : [],
@@ -17668,12 +19066,12 @@ function sm() {
 					})
 				})]
 			})] }),
-			/* @__PURE__ */ x(cm, {
+			/* @__PURE__ */ x(ym, {
 				title: n("coffeeProfile.blendRoasts"),
 				items: r.roasts,
 				onChange: (e) => s("roasts", e)
 			}),
-			/* @__PURE__ */ x(cm, {
+			/* @__PURE__ */ x(ym, {
 				title: n("coffeeProfile.blendDevices"),
 				items: r.grind_devices,
 				onChange: (e) => s("grind_devices", e)
@@ -17694,7 +19092,7 @@ function sm() {
 							hint: ""
 						}]
 					}),
-					children: [/* @__PURE__ */ x(Gd, { className: "size-4" }), n("coffeeProfile.addLevel")]
+					children: [/* @__PURE__ */ x(Kd, { className: "size-4" }), n("coffeeProfile.addLevel")]
 				})]
 			}), /* @__PURE__ */ x(Y, {
 				className: "space-y-3",
@@ -17738,7 +19136,7 @@ function sm() {
 							body: ""
 						}]
 					}),
-					children: [/* @__PURE__ */ x(Gd, { className: "size-4" }), n("coffeeProfile.addLevel")]
+					children: [/* @__PURE__ */ x(Kd, { className: "size-4" }), n("coffeeProfile.addLevel")]
 				})]
 			}), /* @__PURE__ */ x(Y, {
 				className: "space-y-3",
@@ -17757,7 +19155,7 @@ function sm() {
 								...r,
 								guide: r.guide.filter((e, n) => n !== t)
 							}),
-							children: /* @__PURE__ */ x(Jd, { className: "size-4" })
+							children: /* @__PURE__ */ x(Yd, { className: "size-4" })
 						})]
 					}), /* @__PURE__ */ x("textarea", {
 						className: "border-input min-h-20 w-full rounded-md border bg-transparent p-2 text-sm",
@@ -17787,7 +19185,7 @@ function sm() {
 		});
 	}
 }
-function cm({ title: e, items: t, onChange: n }) {
+function ym({ title: e, items: t, onChange: n }) {
 	let { t: r } = g();
 	return /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ S(q, {
 		className: "flex flex-row items-center justify-between",
@@ -17799,7 +19197,7 @@ function cm({ title: e, items: t, onChange: n }) {
 				id: `item_${Date.now()}`,
 				label: ""
 			}]),
-			children: [/* @__PURE__ */ x(Gd, { className: "size-4" }), r("coffeeProfile.addLevel")]
+			children: [/* @__PURE__ */ x(Kd, { className: "size-4" }), r("coffeeProfile.addLevel")]
 		})]
 	}), /* @__PURE__ */ x(Y, {
 		className: "space-y-2",
@@ -17827,7 +19225,7 @@ function cm({ title: e, items: t, onChange: n }) {
 					size: "icon",
 					variant: "ghost",
 					onClick: () => n(t.filter((e, t) => t !== r)),
-					children: /* @__PURE__ */ x(Jd, { className: "size-4" })
+					children: /* @__PURE__ */ x(Yd, { className: "size-4" })
 				})
 			]
 		}, `${e.id}-${r}`))
@@ -17835,11 +19233,11 @@ function cm({ title: e, items: t, onChange: n }) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeProfilePreview.tsx
-function lm(e, t, n) {
+function bm(e, t, n) {
 	let r = n - t;
 	return r <= 0 ? 0 : Math.max(0, Math.min(100, (e - t) / r * 100));
 }
-function um({ settings: e, profile: t }) {
+function xm({ settings: e, profile: t }) {
 	let { t: n } = g(), r = e.colors, i = {
 		background: r.card_bg,
 		color: r.card_text,
@@ -17894,7 +19292,7 @@ function um({ settings: e, profile: t }) {
 						})
 					] })]
 				}),
-				/* @__PURE__ */ x(dm, {
+				/* @__PURE__ */ x(Sm, {
 					track: r.track,
 					fill: r.blend_fill,
 					height: e.bar_height,
@@ -17973,7 +19371,7 @@ function um({ settings: e, profile: t }) {
 						e.caffeine_unit
 					]
 				}),
-				/* @__PURE__ */ x(dm, {
+				/* @__PURE__ */ x(Sm, {
 					track: r.track,
 					fill: r.caffeine_fill,
 					height: e.bar_height,
@@ -17997,7 +19395,7 @@ function um({ settings: e, profile: t }) {
 					r.body_fill
 				]
 			].map(([n, i, a]) => {
-				let c = t[n], l = lm(c, e.scale_min, e.scale_max);
+				let c = t[n], l = bm(c, e.scale_min, e.scale_max);
 				return /* @__PURE__ */ S("div", { children: [/* @__PURE__ */ S("div", {
 					style: {
 						display: "flex",
@@ -18016,7 +19414,7 @@ function um({ settings: e, profile: t }) {
 						position: "relative",
 						marginTop: 6
 					},
-					children: [/* @__PURE__ */ x(dm, {
+					children: [/* @__PURE__ */ x(Sm, {
 						track: r.track,
 						fill: a,
 						height: e.bar_height,
@@ -18037,7 +19435,7 @@ function um({ settings: e, profile: t }) {
 		]
 	});
 }
-function dm({ track: e, fill: t, height: n, width: r }) {
+function Sm({ track: e, fill: t, height: n, width: r }) {
 	return /* @__PURE__ */ x("div", {
 		style: {
 			height: n,
@@ -18055,22 +19453,7 @@ function dm({ track: e, fill: t, height: n, width: r }) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/pages/CoffeeProfileSettingsPage.tsx
-var fm = [
-	"card_bg",
-	"card_text",
-	"card_border",
-	"track",
-	"blend_fill",
-	"acidity_line",
-	"acidity_dot",
-	"caffeine_fill",
-	"bitterness_fill",
-	"sweetness_fill",
-	"body_fill",
-	"label",
-	"value"
-];
-function pm(e) {
+function Cm(e) {
 	let t = {};
 	return e.acidity_levels.forEach((n, r) => {
 		t[n.id] = Math.min(e.scale_max, e.scale_min + 2 + r);
@@ -18096,16 +19479,16 @@ function pm(e) {
 		pack_weight_g: 1e3
 	};
 }
-function mm() {
+function wm() {
 	let { t: n } = g(), [r, i] = m(null), a = t({
 		queryKey: ["coffee-profile-settings"],
-		queryFn: () => Q("shop/coffee-profile/settings")
+		queryFn: () => $("shop/coffee-profile/settings")
 	});
-	Vp(a), u(() => {
+	Kp(a), u(() => {
 		a.data?.settings && i(a.data.settings);
 	}, [a.data]);
 	let o = e({
-		mutationFn: (e) => Q("shop/coffee-profile/settings", {
+		mutationFn: (e) => $("shop/coffee-profile/settings", {
 			method: "PUT",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ settings: e })
@@ -18113,9 +19496,9 @@ function mm() {
 		onSuccess: (e) => {
 			_.success(n("common.saved")), e.settings && i(e.settings);
 		},
-		onError: (e) => uf(n, e)
-	}), s = f(() => r ? pm(r) : null, [r]);
-	if (!r) return /* @__PURE__ */ x(rp, {
+		onError: (e) => vf(n, e)
+	}), s = f(() => r ? Cm(r) : null, [r]);
+	if (!r) return /* @__PURE__ */ x(cp, {
 		title: n("coffeeProfile.settingsTitle"),
 		children: /* @__PURE__ */ x("p", {
 			className: "text-muted-foreground text-sm",
@@ -18188,7 +19571,7 @@ function mm() {
 						label: ""
 					}]
 				}),
-				children: [/* @__PURE__ */ x(Gd, { className: "size-4" }), n("coffeeProfile.addLevel")]
+				children: [/* @__PURE__ */ x(Kd, { className: "size-4" }), n("coffeeProfile.addLevel")]
 			})]
 		}), /* @__PURE__ */ x(Y, {
 			className: "space-y-2",
@@ -18212,7 +19595,7 @@ function mm() {
 						className: "size-8",
 						onClick: () => p(e, n, -1),
 						disabled: n === 0,
-						children: /* @__PURE__ */ x(Bd, { className: "size-4" })
+						children: /* @__PURE__ */ x(Vd, { className: "size-4" })
 					}),
 					/* @__PURE__ */ x(G, {
 						type: "button",
@@ -18221,7 +19604,7 @@ function mm() {
 						className: "size-8",
 						onClick: () => p(e, n, 1),
 						disabled: n === a.length - 1,
-						children: /* @__PURE__ */ x(zd, { className: "size-4" })
+						children: /* @__PURE__ */ x(Bd, { className: "size-4" })
 					}),
 					/* @__PURE__ */ x(G, {
 						type: "button",
@@ -18233,27 +19616,27 @@ function mm() {
 							[e]: a.filter((e, t) => t !== n)
 						}),
 						disabled: a.length <= 1,
-						children: /* @__PURE__ */ x(Jd, { className: "size-4" })
+						children: /* @__PURE__ */ x(Yd, { className: "size-4" })
 					})
 				]
 			}, `${t.id}-${n}`))
 		})] });
 	}
-	return /* @__PURE__ */ x(rp, {
+	return /* @__PURE__ */ x(cp, {
 		title: n("coffeeProfile.settingsTitle"),
 		description: n("coffeeProfile.settingsHint"),
-		children: /* @__PURE__ */ S($p, {
+		children: /* @__PURE__ */ S(pm, {
 			defaultValue: "profile",
 			className: "gap-4",
 			children: [
-				/* @__PURE__ */ S(tm, { children: [/* @__PURE__ */ x(nm, {
+				/* @__PURE__ */ S(hm, { children: [/* @__PURE__ */ x(gm, {
 					value: "profile",
 					children: n("coffeeProfile.tabProfile")
-				}), /* @__PURE__ */ x(nm, {
+				}), /* @__PURE__ */ x(gm, {
 					value: "blend",
 					children: n("coffeeProfile.tabBlend")
 				})] }),
-				/* @__PURE__ */ S(rm, {
+				/* @__PURE__ */ S(_m, {
 					value: "profile",
 					children: [/* @__PURE__ */ x("div", {
 						className: "mb-4 flex justify-end",
@@ -18274,37 +19657,37 @@ function mm() {
 									children: [
 										/* @__PURE__ */ S("div", {
 											className: "space-y-2 md:col-span-2",
-											children: [/* @__PURE__ */ x(Z, { children: n("coffeeProfile.placement") }), /* @__PURE__ */ S(Xf, {
+											children: [/* @__PURE__ */ x(Z, { children: n("coffeeProfile.placement") }), /* @__PURE__ */ S($d, {
 												value: r.placement,
 												onValueChange: (e) => i({
 													...r,
 													placement: e
 												}),
-												children: [/* @__PURE__ */ x(Qf, {
+												children: [/* @__PURE__ */ x(tf, {
 													className: "max-w-md",
-													children: /* @__PURE__ */ x(Zf, {})
-												}), /* @__PURE__ */ S($f, { children: [
-													/* @__PURE__ */ x($, {
+													children: /* @__PURE__ */ x(ef, {})
+												}), /* @__PURE__ */ S(nf, { children: [
+													/* @__PURE__ */ x(Q, {
 														value: "summary",
 														children: n("coffeeProfile.placementSummary")
 													}),
-													/* @__PURE__ */ x($, {
+													/* @__PURE__ */ x(Q, {
 														value: "before_cart",
 														children: n("coffeeProfile.placementBeforeCart")
 													}),
-													/* @__PURE__ */ x($, {
+													/* @__PURE__ */ x(Q, {
 														value: "after_cart",
 														children: n("coffeeProfile.placementAfterCart")
 													}),
-													/* @__PURE__ */ x($, {
+													/* @__PURE__ */ x(Q, {
 														value: "before_tabs",
 														children: n("coffeeProfile.placementBeforeTabs")
 													}),
-													/* @__PURE__ */ x($, {
+													/* @__PURE__ */ x(Q, {
 														value: "after_tabs",
 														children: n("coffeeProfile.placementAfterTabs")
 													}),
-													/* @__PURE__ */ x($, {
+													/* @__PURE__ */ x(Q, {
 														value: "none",
 														children: n("coffeeProfile.placementNone")
 													})
@@ -18401,7 +19784,7 @@ function mm() {
 										}),
 										/* @__PURE__ */ S("label", {
 											className: "flex items-center gap-2 md:col-span-2",
-											children: [/* @__PURE__ */ x(Xd, {
+											children: [/* @__PURE__ */ x(Zd, {
 												checked: r.use_flagcdn,
 												onCheckedChange: (e) => i({
 													...r,
@@ -18427,7 +19810,7 @@ function mm() {
 												label: n("coffeeProfile.newLevel")
 											}]
 										}),
-										children: [/* @__PURE__ */ x(Gd, { className: "size-4" }), n("coffeeProfile.addLevel")]
+										children: [/* @__PURE__ */ x(Kd, { className: "size-4" }), n("coffeeProfile.addLevel")]
 									})]
 								}), /* @__PURE__ */ x(Y, {
 									className: "space-y-2",
@@ -18451,7 +19834,7 @@ function mm() {
 												className: "size-8",
 												onClick: () => l(t, -1),
 												disabled: t === 0,
-												children: /* @__PURE__ */ x(Bd, { className: "size-4" })
+												children: /* @__PURE__ */ x(Vd, { className: "size-4" })
 											}),
 											/* @__PURE__ */ x(G, {
 												type: "button",
@@ -18460,7 +19843,7 @@ function mm() {
 												className: "size-8",
 												onClick: () => l(t, 1),
 												disabled: t === r.acidity_levels.length - 1,
-												children: /* @__PURE__ */ x(zd, { className: "size-4" })
+												children: /* @__PURE__ */ x(Bd, { className: "size-4" })
 											}),
 											/* @__PURE__ */ x(G, {
 												type: "button",
@@ -18472,83 +19855,31 @@ function mm() {
 													acidity_levels: r.acidity_levels.filter((e, n) => n !== t)
 												}),
 												disabled: r.acidity_levels.length <= 1,
-												children: /* @__PURE__ */ x(Jd, { className: "size-4" })
+												children: /* @__PURE__ */ x(Yd, { className: "size-4" })
 											})
 										]
 									}, `${e.id}-${t}`))
 								})] }),
 								h("grinds", "coffeeProfile.grindOptions"),
 								h("roasts", "coffeeProfile.roastOptions"),
-								/* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: n("coffeeProfile.sectionStyle") }) }), /* @__PURE__ */ S(Y, {
-									className: "grid gap-4 md:grid-cols-2",
-									children: [fm.map((e) => /* @__PURE__ */ S("div", {
-										className: "flex items-center gap-2",
-										children: [/* @__PURE__ */ x("input", {
-											type: "color",
-											value: r.colors[e],
-											onChange: (t) => i({
-												...r,
-												colors: {
-													...r.colors,
-													[e]: t.target.value
-												}
-											}),
-											className: "size-8 cursor-pointer rounded border bg-transparent",
-											"aria-label": n(`coffeeProfile.color.${e}`)
-										}), /* @__PURE__ */ S("div", {
-											className: "min-w-0 flex-1",
-											children: [/* @__PURE__ */ x(Z, {
-												className: "text-xs",
-												children: n(`coffeeProfile.color.${e}`)
-											}), /* @__PURE__ */ x(X, {
-												value: r.colors[e],
-												onChange: (t) => i({
-													...r,
-													colors: {
-														...r.colors,
-														[e]: t.target.value
-													}
-												}),
-												className: "h-8 font-mono text-xs"
-											})]
-										})]
-									}, e)), [
-										["font_title", "fontTitle"],
-										["font_label", "fontLabel"],
-										["font_value", "fontValue"],
-										["radius", "radius"],
-										["gap", "gap"],
-										["bar_height", "barHeight"],
-										["stroke_width", "strokeWidth"]
-									].map(([e, t]) => /* @__PURE__ */ S("div", {
-										className: "space-y-1",
-										children: [/* @__PURE__ */ x(Z, {
-											htmlFor: `style-${e}`,
-											children: n(`coffeeProfile.${t}`)
-										}), /* @__PURE__ */ x(X, {
-											id: `style-${e}`,
-											type: "number",
-											value: r[e],
-											onChange: (t) => i({
-												...r,
-												[e]: Number(t.target.value) || 0
-											})
-										})]
-									}, e))]
-								})] })
+								/* @__PURE__ */ x(K, { children: /* @__PURE__ */ S(q, { children: [/* @__PURE__ */ x(J, { children: n("coffeeProfile.sectionStyle") }), /* @__PURE__ */ x(kd, { children: /* @__PURE__ */ x(C, {
+									to: "/settings/site/style",
+									className: "text-primary underline-offset-2 hover:underline",
+									children: n("settings.style.movedHint")
+								}) })] }) })
 							]
 						}), /* @__PURE__ */ x("div", {
 							className: "xl:sticky xl:top-4 h-fit",
-							children: /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: n("coffeeProfile.livePreview") }) }), /* @__PURE__ */ x(Y, { children: s ? /* @__PURE__ */ x(um, {
+							children: /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: n("coffeeProfile.livePreview") }) }), /* @__PURE__ */ x(Y, { children: s ? /* @__PURE__ */ x(xm, {
 								settings: r,
 								profile: s
 							}) : null })] })
 						})]
 					})]
 				}),
-				/* @__PURE__ */ x(rm, {
+				/* @__PURE__ */ x(_m, {
 					value: "blend",
-					children: /* @__PURE__ */ x(sm, {})
+					children: /* @__PURE__ */ x(vm, {})
 				})
 			]
 		})
@@ -18556,17 +19887,18 @@ function mm() {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/module-entry.tsx
-var hm = {
-	"shop/coffee-origins": Qp,
-	"shop/coffee-origins/new": Up,
-	"shop/coffee-origins/:originId": Up,
-	"settings/shop/coffee-profile": mm
-}, gm = {
-	CoffeeProfileProductPanel: Bf,
-	CoffeeWeightPricingPanel: np
-}, _m = {
-	routes: hm,
-	components: gm
+var Tm = {
+	"shop/coffee-origins": nm,
+	"shop/coffee-origins/new": Jp,
+	"shop/coffee-origins/:originId": Jp,
+	"shop/coffee-pricing": um,
+	"settings/shop/coffee-profile": wm
+}, Em = {
+	CoffeeProfileProductPanel: Qf,
+	CoffeeWeightPricingPanel: sp
+}, Dm = {
+	routes: Tm,
+	components: Em
 };
 //#endregion
-export { gm as components, _m as default, hm as routes };
+export { Em as components, Dm as default, Tm as routes };

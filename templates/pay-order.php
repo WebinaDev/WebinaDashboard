@@ -127,6 +127,11 @@ $notices  = function_exists( 'wc_print_notices' ) ? wc_print_notices( true ) : '
 		</div>
 	<?php endif; ?>
 </div>
-<?php wp_footer(); ?>
+<?php
+if ( class_exists( 'Webino_Dashboard_Checkout_Geo', false ) && Webino_Dashboard_Checkout_Geo::is_enabled() ) {
+	Webino_Dashboard_Checkout_Geo::print_modal_markup( Webino_Dashboard_Checkout_Geo::should_show_notice() );
+}
+wp_footer();
+?>
 </body>
 </html>

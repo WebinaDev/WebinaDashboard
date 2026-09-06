@@ -66,6 +66,7 @@ final class Webino_Dashboard_Plugin {
 		Webino_Dashboard_Roles::init();
 		add_filter( 'query_vars', array( $this->rewrite, 'register_query_vars' ) );
 		add_filter( 'template_include', array( $this->rewrite, 'template_include' ), 99 );
+		add_action( 'template_redirect', array( 'Webino_Dashboard_PWA', 'maybe_serve' ), -5 );
 		add_action( 'template_redirect', array( $this, 'maybe_force_dashboard_trailing_slash' ), -1 );
 		add_action( 'template_redirect', array( $this, 'maybe_prevent_dashboard_html_cache' ), 0 );
 		add_action( 'template_redirect', array( $this, 'maybe_require_login' ), 1 );
@@ -107,6 +108,9 @@ final class Webino_Dashboard_Plugin {
 		}
 		if ( class_exists( 'Webino_Dashboard_Pay_Order', false ) ) {
 			Webino_Dashboard_Pay_Order::init();
+		}
+		if ( class_exists( 'Webino_Dashboard_Checkout_Geo', false ) ) {
+			Webino_Dashboard_Checkout_Geo::init();
 		}
 
 		add_action( 'woocommerce_new_order', array( __CLASS__, 'invalidate_dashboard_caches' ) );
@@ -440,6 +444,9 @@ final class Webino_Dashboard_Plugin {
 		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' !== strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) && 'HEAD' !== strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) ) {
 			return;
 		}
+		if ( class_exists( 'Webino_Dashboard_PWA', false ) && Webino_Dashboard_PWA::is_pwa_asset_path() ) {
+			return;
+		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$req = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
@@ -451,6 +458,11 @@ final class Webino_Dashboard_Plugin {
 			return;
 		}
 		if ( ! Webino_Dashboard_Rewrite::is_dashboard_path( $path ) ) {
+			return;
+		}
+		// Also skip when REQUEST_URI ends with PWA filenames (stale rewrite / no wd_path yet).
+		$rel = trim( (string) $path, '/' );
+		if ( preg_match( '#(?:^|/)dashboard/(?:manifest\.webmanifest|sw\.js|pwa-splash\.png)$#', $rel ) ) {
 			return;
 		}
 

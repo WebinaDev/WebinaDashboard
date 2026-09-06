@@ -15,15 +15,18 @@ type OrderSidebarPanelProps = {
 export function OrderSidebarPanel({ title, defaultOpen = true, children, className }: OrderSidebarPanelProps) {
   return (
     <Collapsible defaultOpen={defaultOpen}>
-      <Card className={cn('shadow-sm', className)}>
+      <Card className={cn('min-w-0 overflow-hidden shadow-sm', className)}>
         <CollapsibleTrigger asChild>
           <CardHeader className="flex cursor-pointer flex-row items-center justify-between space-y-0 pb-3 text-start">
-            <CardTitle className="text-sm font-semibold">{title}</CardTitle>
-            <ChevronDown className="text-muted-foreground size-4 shrink-0 transition-transform [[data-state=open]_&]:rotate-180" aria-hidden />
+            <CardTitle className="min-w-0 break-words text-sm font-semibold">{title}</CardTitle>
+            <ChevronDown
+              className="text-muted-foreground size-4 shrink-0 transition-transform [[data-state=open]_&]:rotate-180"
+              aria-hidden
+            />
           </CardHeader>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <CardContent className="pt-0 text-start">{children}</CardContent>
+          <CardContent className="min-w-0 break-words pt-0 text-start">{children}</CardContent>
         </CollapsibleContent>
       </Card>
     </Collapsible>

@@ -1,12 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
 import { QueryErrorState } from '@/components/QueryErrorState'
 import { FormSettingsSkeleton } from '@/components/skeletons'
-import { DocumentLogoField } from '@/components/settings/DocumentLogoField'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -251,61 +251,18 @@ export function OrderDocumentsSettingsPanel({ initial, onSaved }: OrderDocuments
                 <Label htmlFor="od-store-name">{t('settings.odStoreName')}</Label>
                 <Input id="od-store-name" value={draft.store_name} onChange={(e) => setField('store_name', e.target.value)} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="od-accent">{t('settings.odAccentColor')}</Label>
-                <Input id="od-accent" type="color" value={draft.accent_color} onChange={(e) => setField('accent_color', e.target.value)} />
+              <div className="space-y-2 sm:col-span-2">
+                <p className="text-muted-foreground text-xs">
+                  <Link to="/settings/site/style" className="text-primary underline-offset-2 hover:underline">
+                    {t('settings.style.movedHint')}
+                  </Link>
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="od-footer-site">{t('settings.odFooterSite')}</Label>
                 <Input id="od-footer-site" value={draft.footer_site} onChange={(e) => setField('footer_site', e.target.value)} />
               </div>
             </div>
-          </div>
-
-          <div className="space-y-4 border-t border-border pt-4">
-            <p className="text-sm font-medium">{t('settings.orderDocsLogos')}</p>
-            <DocumentLogoField
-              label={t('settings.odInvoiceLogo')}
-              hint={t('settings.odInvoiceLogoHint')}
-              imageId={draft.invoice_logo_id || 0}
-              imageUrl={draft.invoice_logo_url || ''}
-              onChange={(item) => {
-                setField('invoice_logo_id', item.id)
-                setField('invoice_logo_url', item.url)
-              }}
-              onRemove={() => {
-                setField('invoice_logo_id', 0)
-                setField('invoice_logo_url', '')
-              }}
-            />
-            <DocumentLogoField
-              label={t('settings.odLabelLogo')}
-              hint={t('settings.odLabelLogoHint')}
-              imageId={draft.label_logo_id || 0}
-              imageUrl={draft.label_logo_url || ''}
-              onChange={(item) => {
-                setField('label_logo_id', item.id)
-                setField('label_logo_url', item.url)
-              }}
-              onRemove={() => {
-                setField('label_logo_id', 0)
-                setField('label_logo_url', '')
-              }}
-            />
-            <DocumentLogoField
-              label={t('settings.odReceiptLogo')}
-              hint={t('settings.odReceiptLogoHint')}
-              imageId={draft.receipt_logo_id || 0}
-              imageUrl={draft.receipt_logo_url || ''}
-              onChange={(item) => {
-                setField('receipt_logo_id', item.id)
-                setField('receipt_logo_url', item.url)
-              }}
-              onRemove={() => {
-                setField('receipt_logo_id', 0)
-                setField('receipt_logo_url', '')
-              }}
-            />
           </div>
 
           <div className="space-y-3 border-t border-border pt-4">

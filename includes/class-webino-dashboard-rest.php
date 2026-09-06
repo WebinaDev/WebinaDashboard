@@ -372,6 +372,48 @@ class Webino_Dashboard_REST {
 
 		register_rest_route(
 			self::NS,
+			'/settings/pwa',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'settings_pwa_get' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'manage_options' );
+					},
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'settings_pwa_post' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'manage_options' );
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/settings/style',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'settings_style_get' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'manage_options' );
+					},
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'settings_style_post' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'manage_options' );
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/manifest.webmanifest',
 			array(
 				'methods'             => 'GET',
@@ -696,8 +738,13 @@ class Webino_Dashboard_REST {
 			}
 		}
 
-		$ui_accent = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_accent', true ) : '';
+		$ui_accent = class_exists( 'Webino_Dashboard_Brand_Style', false )
+			? Webino_Dashboard_Brand_Style::accent()
+			: 'colorful';
 		$ui_fs     = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_fullscreen', true ) : '';
+		$brand_style = class_exists( 'Webino_Dashboard_Brand_Style', false )
+			? Webino_Dashboard_Brand_Style::client_payload()
+			: null;
 
 		$wp_user = wp_get_current_user();
 		$user    = array(
@@ -725,6 +772,7 @@ class Webino_Dashboard_REST {
 			'uiTheme'      => $ui_theme ? $ui_theme : 'light',
 			'uiAccent'     => $ui_accent ? $ui_accent : 'colorful',
 			'uiFullscreen' => ( '1' === $ui_fs || 'true' === $ui_fs ),
+			'brandStyle'   => $brand_style,
 			'capabilities' => $capabilities,
 			'user'         => $user,
 			'site'         => $site,
@@ -766,8 +814,13 @@ class Webino_Dashboard_REST {
 		$modules = self::filter_inactive_modules( $modules );
 
 		$ui_theme = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_theme', true ) : '';
-		$ui_accent = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_accent', true ) : '';
+		$ui_accent = class_exists( 'Webino_Dashboard_Brand_Style', false )
+			? Webino_Dashboard_Brand_Style::accent()
+			: 'colorful';
 		$ui_fs     = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_fullscreen', true ) : '';
+		$brand_style = class_exists( 'Webino_Dashboard_Brand_Style', false )
+			? Webino_Dashboard_Brand_Style::client_payload()
+			: null;
 
 		$cap_whitelist = array(
 			'read',
@@ -831,6 +884,7 @@ class Webino_Dashboard_REST {
 			'uiTheme'                     => $ui_theme ? $ui_theme : 'light',
 			'uiAccent'                    => $ui_accent ? $ui_accent : 'colorful',
 			'uiFullscreen'                => ( '1' === $ui_fs || 'true' === $ui_fs ),
+			'brandStyle'                  => $brand_style,
 			'capabilities'                => $capabilities,
 			'user'                        => $user,
 			'site'                        => $site,
@@ -1520,10 +1574,13 @@ class Webino_Dashboard_REST {
 	 */
 	public static function settings_get() {
 		$user_id = get_current_user_id();
+		$accent  = class_exists( 'Webino_Dashboard_Brand_Style', false )
+			? Webino_Dashboard_Brand_Style::accent()
+			: 'colorful';
 		$body    = array(
 			'ui_locale'             => get_user_meta( $user_id, 'webino_dashboard_locale', true ) ?: '',
 			'ui_theme'              => get_user_meta( $user_id, 'webino_dashboard_theme', true ) ?: 'light',
-			'ui_accent'             => get_user_meta( $user_id, 'webino_dashboard_accent', true ) ?: 'colorful',
+			'ui_accent'             => $accent,
 			'ui_fullscreen_default' => ( '1' === (string) get_user_meta( $user_id, 'webino_dashboard_fullscreen', true ) ),
 		);
 		if ( current_user_can( 'manage_options' ) ) {
@@ -1604,19 +1661,13 @@ class Webino_Dashboard_REST {
 		$user_id = get_current_user_id();
 		$loc     = sanitize_text_field( (string) $request->get_param( 'ui_locale' ) );
 		$theme   = sanitize_key( (string) $request->get_param( 'ui_theme' ) );
-		$accent  = sanitize_key( (string) $request->get_param( 'ui_accent' ) );
 		if ( $loc ) {
 			update_user_meta( $user_id, 'webino_dashboard_locale', $loc );
 		}
 		if ( $theme ) {
 			update_user_meta( $user_id, 'webino_dashboard_theme', $theme );
 		}
-		if ( $accent ) {
-			$allowed = array( 'colorful', 'default', 'red', 'rose', 'orange', 'green', 'blue', 'yellow', 'violet' );
-			if ( in_array( $accent, $allowed, true ) ) {
-				update_user_meta( $user_id, 'webino_dashboard_accent', $accent );
-			}
-		}
+		// ui_accent is site-locked via settings/style (Brand_Style); ignore per-user writes.
 		if ( null !== $request->get_param( 'ui_fullscreen_default' ) ) {
 			update_user_meta( $user_id, 'webino_dashboard_fullscreen', ! empty( $request->get_param( 'ui_fullscreen_default' ) ) ? '1' : '0' );
 		}
@@ -1737,17 +1788,95 @@ class Webino_Dashboard_REST {
 	 * @return WP_REST_Response
 	 */
 	public static function manifest() {
-		$body = array(
-			'name'               => get_bloginfo( 'name' ) . ' — ' . __( 'Dashboard', 'webino-dashboard' ),
-			'short_name'         => 'Dashboard',
-			'start_url'          => Webino_Dashboard_Rewrite::url(),
-			'display'            => 'standalone',
-			'background_color'   => '#ffffff',
-			'theme_color'        => '#0f172a',
-		);
+		if ( class_exists( 'Webino_Dashboard_PWA', false ) && ! Webino_Dashboard_PWA::is_enabled() ) {
+			return new WP_REST_Response( array( 'error' => 'disabled' ), 404 );
+		}
+		$body = class_exists( 'Webino_Dashboard_PWA', false )
+			? Webino_Dashboard_PWA::manifest_body()
+			: array(
+				'name'             => get_bloginfo( 'name' ) . ' — ' . __( 'Dashboard', 'webino-dashboard' ),
+				'short_name'       => 'Dashboard',
+				'start_url'        => Webino_Dashboard_Rewrite::url(),
+				'scope'            => Webino_Dashboard_Rewrite::url(),
+				'display'          => 'standalone',
+				'background_color' => '#ffffff',
+				'theme_color'      => '#0f172a',
+			);
 		$res = new WP_REST_Response( $body );
 		$res->header( 'Content-Type', 'application/manifest+json; charset=' . get_option( 'blog_charset' ) );
+		$res->header( 'Cache-Control', 'no-cache, must-revalidate, max-age=0' );
 		return $res;
+	}
+
+	/**
+	 * GET settings/style
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function settings_style_get() {
+		if ( ! class_exists( 'Webino_Dashboard_Brand_Style', false ) ) {
+			return new WP_Error( 'no_style', __( 'Brand style unavailable.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		}
+		return new WP_REST_Response( Webino_Dashboard_Brand_Style::settings_response_full() );
+	}
+
+	/**
+	 * POST settings/style
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function settings_style_post( $request ) {
+		if ( ! class_exists( 'Webino_Dashboard_Brand_Style', false ) ) {
+			return new WP_Error( 'no_style', __( 'Brand style unavailable.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		}
+		$params = $request->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = $request->get_params();
+		}
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+		$out = Webino_Dashboard_Brand_Style::save_aggregate( $params );
+		$uid = get_current_user_id();
+		if ( $uid > 0 ) {
+			delete_transient( 'webino_dashboard_boot_' . $uid );
+		}
+		return new WP_REST_Response( $out );
+	}
+
+	/**
+	 * GET settings/pwa
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function settings_pwa_get() {
+		if ( ! class_exists( 'Webino_Dashboard_PWA', false ) ) {
+			return new WP_Error( 'no_pwa', __( 'PWA unavailable.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		}
+		return new WP_REST_Response( Webino_Dashboard_PWA::settings_response() );
+	}
+
+	/**
+	 * POST settings/pwa
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function settings_pwa_post( $request ) {
+		if ( ! class_exists( 'Webino_Dashboard_PWA', false ) ) {
+			return new WP_Error( 'no_pwa', __( 'PWA unavailable.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		}
+		$params = $request->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = $request->get_params();
+		}
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+		$clean = Webino_Dashboard_PWA::sanitize_settings( array_merge( Webino_Dashboard_PWA::get_settings(), $params ) );
+		update_option( Webino_Dashboard_PWA::OPTION, $clean, false );
+		return new WP_REST_Response( Webino_Dashboard_PWA::settings_response() );
 	}
 
 	public static function shop_products_lookup() {
@@ -1948,6 +2077,38 @@ class Webino_Dashboard_REST {
 				'terms'    => $brand,
 			);
 		}
+		$vis = sanitize_key( (string) $request->get_param( 'catalog_visibility' ) );
+		if ( in_array( $vis, array( 'visible', 'catalog', 'search', 'hidden' ), true ) && taxonomy_exists( 'product_visibility' ) ) {
+			if ( 'visible' === $vis ) {
+				$tax_query[] = array(
+					'taxonomy' => 'product_visibility',
+					'field'    => 'name',
+					'terms'    => array( 'exclude-from-catalog', 'exclude-from-search' ),
+					'operator' => 'NOT IN',
+				);
+			} elseif ( 'catalog' === $vis ) {
+				$tax_query[] = array(
+					'taxonomy' => 'product_visibility',
+					'field'    => 'name',
+					'terms'    => array( 'exclude-from-search' ),
+					'operator' => 'IN',
+				);
+			} elseif ( 'search' === $vis ) {
+				$tax_query[] = array(
+					'taxonomy' => 'product_visibility',
+					'field'    => 'name',
+					'terms'    => array( 'exclude-from-catalog' ),
+					'operator' => 'IN',
+				);
+			} else {
+				$tax_query[] = array(
+					'taxonomy' => 'product_visibility',
+					'field'    => 'name',
+					'terms'    => array( 'exclude-from-catalog', 'exclude-from-search' ),
+					'operator' => 'AND',
+				);
+			}
+		}
 		if ( ! empty( $tax_query ) ) {
 			$tax_query['relation'] = 'AND';
 			$args['tax_query']     = $tax_query;
@@ -2078,6 +2239,7 @@ class Webino_Dashboard_REST {
 			'sku'               => $p->get_sku(),
 			'type'              => $p->get_type(),
 			'status'            => $p->get_status(),
+			'catalog_visibility'=> $p->get_catalog_visibility(),
 			'image_url'         => $image_url,
 			'permalink'         => get_permalink( $id ),
 			'date'              => $date,
@@ -2104,37 +2266,103 @@ class Webino_Dashboard_REST {
 	 * @return array<string,mixed>
 	 */
 	public static function map_product_list_wfcp( $p ) {
-		$id = $p->get_id();
-		$purchase = null;
-		$locked   = false;
+		$id     = $p->get_id();
+		$locked = false;
 
 		if ( class_exists( 'WFCP_Helper' ) ) {
-			$purchase = WFCP_Helper::get_product_purchase_price( $id );
-			$locked   = WFCP_Helper::is_product_price_locked( $id );
+			$locked = WFCP_Helper::is_product_price_locked( $id );
 		} else {
-			$raw = get_post_meta( $id, '_wfcp_purchase_price', true );
-			if ( '' !== $raw && false !== $raw ) {
-				$purchase = (float) $raw;
-			}
 			$locked = (bool) get_post_meta( $id, '_wfcp_lock_price', true );
 		}
 
-		$purchase_f = $purchase ? (float) $purchase : 0.0;
-		$retail     = 0.0;
-		$credit     = 0.0;
-		$wholesale  = 0.0;
+		$purchase_values = array();
+		$calc_id         = $id;
+
+		if ( $p->is_type( 'variable' ) ) {
+			$children = $p->get_children();
+			if ( empty( $children ) ) {
+				$q = new WP_Query(
+					array(
+						'post_type'      => 'product_variation',
+						'post_parent'    => $id,
+						'posts_per_page' => -1,
+						'fields'         => 'ids',
+						'post_status'    => array( 'publish', 'private' ),
+					)
+				);
+				$children = $q->posts;
+			}
+			foreach ( (array) $children as $vid ) {
+				$vid = (int) $vid;
+				if ( $vid <= 0 ) {
+					continue;
+				}
+				$vp = null;
+				if ( class_exists( 'WFCP_Helper' ) ) {
+					$vp = WFCP_Helper::get_product_purchase_price( $vid );
+				} else {
+					$raw = get_post_meta( $vid, '_wfcp_purchase_price', true );
+					if ( '' !== $raw && false !== $raw ) {
+						$vp = (float) $raw;
+					}
+				}
+				if ( null !== $vp && (float) $vp > 0 ) {
+					$purchase_values[] = (float) $vp;
+				}
+			}
+			// Fallback to parent meta if no variation purchase prices.
+			if ( empty( $purchase_values ) ) {
+				$parent_purchase = null;
+				if ( class_exists( 'WFCP_Helper' ) ) {
+					$parent_purchase = WFCP_Helper::get_product_purchase_price( $id );
+				} else {
+					$raw = get_post_meta( $id, '_wfcp_purchase_price', true );
+					if ( '' !== $raw && false !== $raw ) {
+						$parent_purchase = (float) $raw;
+					}
+				}
+				if ( null !== $parent_purchase && (float) $parent_purchase > 0 ) {
+					$purchase_values[] = (float) $parent_purchase;
+				}
+			}
+		} else {
+			$purchase = null;
+			if ( class_exists( 'WFCP_Helper' ) ) {
+				$purchase = WFCP_Helper::get_product_purchase_price( $id );
+			} else {
+				$raw = get_post_meta( $id, '_wfcp_purchase_price', true );
+				if ( '' !== $raw && false !== $raw ) {
+					$purchase = (float) $raw;
+				}
+			}
+			if ( null !== $purchase && (float) $purchase > 0 ) {
+				$purchase_values[] = (float) $purchase;
+			}
+		}
+
+		$purchase_min = ! empty( $purchase_values ) ? min( $purchase_values ) : 0.0;
+		$purchase_max = ! empty( $purchase_values ) ? max( $purchase_values ) : 0.0;
+		$purchase_f   = $purchase_min;
+
+		$retail_min  = 0.0;
+		$retail_max  = 0.0;
+		$credit      = 0.0;
+		$wholesale   = 0.0;
 		$installment = null;
 		$marketplace = array();
 		$platforms   = array();
 		$slugs       = array( 'digikala', 'basalam', 'technolife', 'snappshop', 'tapsishop', 'zarehbin', 'emalls', 'snapppay-search', 'torob' );
 
-		if ( $purchase_f > 0 && class_exists( 'WFCP_Calculator' ) ) {
-			$retail      = (float) WFCP_Calculator::calculate_price( $purchase_f, 'retail', $id );
-			$credit      = (float) WFCP_Calculator::calculate_price( $purchase_f, 'credit', $id );
-			$wholesale   = (float) WFCP_Calculator::calculate_price( $purchase_f, 'wholesale', $id );
-			$installment = self::wfcp_list_installment_price( $purchase_f, $id );
+		if ( $purchase_min > 0 && class_exists( 'WFCP_Calculator' ) ) {
+			$retail_min  = (float) WFCP_Calculator::calculate_price( $purchase_min, 'retail', $calc_id );
+			$retail_max  = $purchase_max > 0
+				? (float) WFCP_Calculator::calculate_price( $purchase_max, 'retail', $calc_id )
+				: $retail_min;
+			$credit      = (float) WFCP_Calculator::calculate_price( $purchase_f, 'credit', $calc_id );
+			$wholesale   = (float) WFCP_Calculator::calculate_price( $purchase_f, 'wholesale', $calc_id );
+			$installment = self::wfcp_list_installment_price( $purchase_f, $calc_id );
 			foreach ( $slugs as $slug ) {
-				$marketplace[ $slug ] = (float) WFCP_Calculator::calculate_price( $purchase_f, $slug, $id );
+				$marketplace[ $slug ] = (float) WFCP_Calculator::calculate_price( $purchase_f, $slug, $calc_id );
 			}
 		}
 
@@ -2152,15 +2380,19 @@ class Webino_Dashboard_REST {
 		}
 
 		$out = array(
-			'purchase_price'  => $purchase_f > 0 ? $purchase_f : null,
-			'lock_price'      => $locked,
-			'retail'          => $retail > 0 ? $retail : null,
-			'credit'          => $credit > 0 ? $credit : null,
-			'wholesale'       => $wholesale > 0 ? $wholesale : null,
-			'installment'     => $installment,
-			'marketplace'     => $marketplace,
-			'platforms'       => $platforms,
-			'wholesale_rule'  => $wholesale_rule,
+			'purchase_price'     => $purchase_f > 0 ? $purchase_f : null,
+			'purchase_price_min' => $purchase_min > 0 ? $purchase_min : null,
+			'purchase_price_max' => $purchase_max > 0 ? $purchase_max : null,
+			'lock_price'         => $locked,
+			'retail'             => $retail_min > 0 ? $retail_min : null,
+			'retail_min'         => $retail_min > 0 ? $retail_min : null,
+			'retail_max'         => $retail_max > 0 ? $retail_max : null,
+			'credit'             => $credit > 0 ? $credit : null,
+			'wholesale'          => $wholesale > 0 ? $wholesale : null,
+			'installment'        => $installment,
+			'marketplace'        => $marketplace,
+			'platforms'          => $platforms,
+			'wholesale_rule'     => $wholesale_rule,
 		);
 
 		if ( class_exists( 'WFCP_Helper' ) ) {
@@ -3324,6 +3556,17 @@ class Webino_Dashboard_REST {
 		if ( 'all' === $role ) {
 			$role = '';
 		}
+		$role_in = array();
+		$raw_in  = $request->get_param( 'role_in' );
+		if ( is_string( $raw_in ) && '' !== trim( $raw_in ) ) {
+			foreach ( explode( ',', $raw_in ) as $r ) {
+				$r = sanitize_key( trim( $r ) );
+				if ( '' !== $r && 'all' !== $r ) {
+					$role_in[] = $r;
+				}
+			}
+			$role_in = array_values( array_unique( $role_in ) );
+		}
 
 		$meta_ids = array();
 		if ( '' !== $search ) {
@@ -3337,17 +3580,27 @@ class Webino_Dashboard_REST {
 				'number'         => 100,
 				'fields'         => 'ID',
 			);
-			if ( $role ) {
+			if ( $role_in ) {
+				$std_args['role__in'] = $role_in;
+			} elseif ( $role ) {
 				$std_args['role'] = $role;
 			}
 			$std_q = new WP_User_Query( $std_args );
 			$std_ids = array_map( 'intval', (array) $std_q->get_results() );
 			$all_ids = array_values( array_unique( array_merge( $std_ids, $meta_ids ) ) );
-			if ( $role ) {
+			if ( $role_in || $role ) {
 				$filtered = array();
 				foreach ( $all_ids as $uid ) {
 					$u = get_userdata( (int) $uid );
-					if ( $u && in_array( $role, (array) $u->roles, true ) ) {
+					if ( ! $u ) {
+						continue;
+					}
+					$user_roles = (array) $u->roles;
+					if ( $role_in ) {
+						if ( array_intersect( $role_in, $user_roles ) ) {
+							$filtered[] = (int) $uid;
+						}
+					} elseif ( in_array( $role, $user_roles, true ) ) {
 						$filtered[] = (int) $uid;
 					}
 				}
@@ -3392,7 +3645,9 @@ class Webino_Dashboard_REST {
 			'orderby' => 'registered',
 			'order'   => 'DESC',
 		);
-		if ( $role ) {
+		if ( $role_in ) {
+			$args['role__in'] = $role_in;
+		} elseif ( $role ) {
 			$args['role'] = $role;
 		}
 		if ( $search ) {

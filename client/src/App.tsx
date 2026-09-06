@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { PermissionGate } from '@/components/PermissionGate'
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary'
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister'
+import { PwaSplashOverlay } from '@/components/PwaSplashOverlay'
 import { DashboardPrefetch } from '@/components/DashboardPrefetch'
 import { RoutePageSkeleton } from '@/components/skeletons'
 import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
@@ -155,6 +156,7 @@ export default function App() {
     <ThemeProvider>
       <RuntimeErrorToasts />
       <ServiceWorkerRegister />
+      <PwaSplashOverlay />
       <DashboardPrefetch />
       <BrowserRouter basename={base}>
         <Routes>

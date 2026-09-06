@@ -109,11 +109,11 @@ export function OverviewReportPanel() {
             locale={i18n.language}
           />
 
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <Card className="min-w-0 overflow-hidden shadow-sm">
+            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
               <CardTitle className="text-base font-medium">{t('reports.chart.overview')}</CardTitle>
               <Select value={metric} onValueChange={(v) => setMetric(v as ChartMetric)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[min(100%,180px)]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -125,10 +125,10 @@ export function OverviewReportPanel() {
                 </SelectContent>
               </Select>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0 overflow-hidden">
               <ChartContainer
                 config={{ value: { label: t(`reports.metric.${metric}`), color: 'var(--color-chart-1)' } }}
-                className="h-[280px] w-full"
+                className="h-[280px] min-w-0 w-full max-w-full"
               >
                 <ComposedChart data={chartData}>
                   <CartesianGrid vertical={false} />

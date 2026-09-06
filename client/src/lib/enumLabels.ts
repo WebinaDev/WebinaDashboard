@@ -12,8 +12,11 @@ export function translatePostStatus(t: TFunction, status: string): string {
   return translateEnum(t, 'status.post', status)
 }
 
-export function translateOrderStatus(t: TFunction, status: string): string {
-  return translateEnum(t, 'orders.wcStatus', status)
+export function translateOrderStatus(t: TFunction, status: string, fallback?: string): string {
+  const translated = translateEnum(t, 'orders.wcStatus', status)
+  if (translated !== status) return translated
+  if (fallback && fallback.trim()) return fallback
+  return status
 }
 
 export function translateLicenseStatus(t: TFunction, status: string): string {

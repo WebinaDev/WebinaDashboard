@@ -27,6 +27,8 @@ export interface WebinoDashboardConfig {
   siteName?: string
   /** Site icon or bundled favicon for og:image. */
   siteIconUrl?: string
+  /** Optional brand logo from Style settings (login / sidebar). */
+  brandLogoUrl?: string
   /** Outbound CRM license snapshot (no secrets). */
   license?: {
     active: boolean
@@ -68,6 +70,17 @@ export interface WebinoDashboardConfig {
     elementor?: boolean
     /** When true, do not register dashboard-sw.js (avoids stale SW after deploy). */
     disableServiceWorker?: boolean
+  }
+  /** Site-level PWA runtime flags (install banner / splash). */
+  pwa?: {
+    enabled?: boolean
+    showInstallBanner?: boolean
+    splashEnabled?: boolean
+    name?: string
+    shortName?: string
+    themeColor?: string
+    backgroundColor?: string
+    iconUrl?: string
   }
 }
 

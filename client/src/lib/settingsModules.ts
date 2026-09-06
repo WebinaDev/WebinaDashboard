@@ -228,7 +228,7 @@ export function allSettingsUnits(): SettingsModuleGroup[] {
 const SHOP_CORE_PATH =
   /^\/settings\/shop\/(general|products|tax|shipping|payments|invoices|sms|emails|advanced)(\/|$)/
 const SITE_CORE_PATH =
-  /^\/settings\/site\/(general|privacy|license|dashboard|modules|bots|system-logs|analytics|sms)(\/|$)/
+  /^\/settings\/site\/(general|privacy|license|dashboard|style|pwa|modules|bots|system-logs|analytics|sms|notifications)(\/|$)/
 
 export function findModuleGroupByPath(
   groups: SettingsModuleGroup[],

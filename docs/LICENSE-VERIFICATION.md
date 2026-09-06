@@ -40,28 +40,7 @@ Only `domain` is required. The Dashboard plugin fills it from `home_url()` autom
 - HTTPS to `https://webina.dev` by default; optional HTTP via filter `webino_dashboard_license_allow_http_fallback`.
 - Sync UI timeouts: connect 2s, request 6s, no retry, 8s wall clock cap. Cron may retry once.
 - If CRM is unreachable and a good license was stored locally, UI shows last-known status with `warning: crm_unreachable`.
-
-## Same DirectAdmin server (auto)
-
-When the customer site and CRM resolve to the **same public IP**, the public HTTPS request from PHP can hairpin-NAT and time out. The plugin auto-detects this and tries:
-
-- `https://<SERVER_ADDR>/wp-json/webinocrm/v1/license/check` with header `Host: webina.dev` and `sslverify: false`
-
-`SERVER_ADDR` is the local NIC IP Apache bound the vhost to — connecting to it stays inside the host (no NAT). If that fails, it falls back to public HTTPS.
-
-### Rollback / configuration
-
-- `webino_dashboard_license_disable_local_bypass` — disable the bypass (public HTTPS only)
-- `webino_dashboard_license_server_urls` — override CRM base URL(s)
-
-### SSH check on same-server hosts
-
-```bash
-SADDR=$(hostname -I | awk '{print $1}')
-curl -vk --max-time 5 -H "Host: webina.dev" \
-  https://${SADDR}/wp-json/webinocrm/v1/license/check \
-  -H 'Content-Type: application/json' -d '{"domain":"parisma.ir"}'
-```
+- Filter `webino_dashboard_license_server_urls` — override CRM base URL(s). License checks always use the public domain (never IP / local NIC).
 
 ## Manual curl
 

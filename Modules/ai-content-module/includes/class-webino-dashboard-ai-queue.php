@@ -926,6 +926,12 @@ final class Webino_Dashboard_AI_Queue {
 		if ( 'suggest_product_categories' === $job_type ) {
 			return self::job_suggest_categories( 'product', $payload );
 		}
+		if ( 'suggest_blog_topics' === $job_type ) {
+			return self::job_suggest_blog_topics( $payload );
+		}
+		if ( 'blog_image' === $job_type ) {
+			return self::job_blog_image( $target_id, $payload );
+		}
 		if ( 'attr_template' === $job_type ) {
 			return self::job_attr_template( $target_id, $payload );
 		}
@@ -972,11 +978,16 @@ final class Webino_Dashboard_AI_Queue {
 		$settings = Webino_Dashboard_AI_Content_Settings::get();
 		$memory   = Webino_Dashboard_AI_Design_Memory::get();
 
-		// Ensure palette from kit when mode=site and memory empty.
+		// Prefer site brand style; fall back to Elementor kit when mode=site and memory empty.
 		if ( 'site' === ( $settings['palette_mode'] ?? 'site' ) && empty( $memory['source'] ) ) {
-			$extracted = Webino_Dashboard_AI_Design_Memory::extract_from_elementor_kit();
-			if ( ! is_wp_error( $extracted ) ) {
-				$memory = $extracted;
+			$from_brand = Webino_Dashboard_AI_Design_Memory::apply_from_brand_style();
+			if ( ! is_wp_error( $from_brand ) ) {
+				$memory = $from_brand;
+			} else {
+				$extracted = Webino_Dashboard_AI_Design_Memory::extract_from_elementor_kit();
+				if ( ! is_wp_error( $extracted ) ) {
+					$memory = $extracted;
+				}
 			}
 		}
 
@@ -1290,13 +1301,70 @@ final class Webino_Dashboard_AI_Queue {
 		if ( ! empty( $payload['calendar_id'] ) ) {
 			Webino_Dashboard_AI_Calendar::mark_done( (int) $payload['calendar_id'], (int) $post_id );
 		}
+		if ( ! empty( $payload['topic_id'] ) && class_exists( 'Webino_Dashboard_AI_Blog_Topics', false ) ) {
+			Webino_Dashboard_AI_Blog_Topics::mark_done( (string) $payload['topic_id'], (int) $post_id, (int) self::$current_job_id );
+		}
+
+		$image_note = '';
+		if ( class_exists( 'Webino_Dashboard_AI_Blog_Images', false ) ) {
+			self::set_phase( 'image' );
+			$img = Webino_Dashboard_AI_Blog_Images::generate_for_post(
+				(int) $post_id,
+				array(
+					'topic'         => (string) ( $payload['topic'] ?? ( $data['title'] ?? '' ) ),
+					'focus_keyword' => (string) ( $payload['focus_keyword'] ?? ( $data['focus_keyword'] ?? '' ) ),
+				)
+			);
+			if ( is_wp_error( $img ) ) {
+				$image_note = ' (image failed: ' . $img->get_error_message() . ')';
+			} elseif ( ! empty( $img['skipped'] ) ) {
+				$image_note = ' (image skipped)';
+			} elseif ( ! empty( $img['attachment_id'] ) ) {
+				$image_note = ' + image #' . (int) $img['attachment_id'];
+			}
+		}
 
 		return array(
 			'provider'   => $result['provider'] ?? '',
 			'tokens_in'  => $result['tokens_in'] ?? 0,
 			'tokens_out' => $result['tokens_out'] ?? 0,
-			'summary'    => 'Post #' . $post_id . ' created',
+			'summary'    => 'Post #' . $post_id . ' created' . $image_note,
 			'post_id'    => (int) $post_id,
+		);
+	}
+
+	/**
+	 * @param int                 $post_id Post ID.
+	 * @param array<string,mixed> $payload Payload.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function job_blog_image( $post_id, $payload ) {
+		$post_id = (int) $post_id;
+		if ( $post_id < 1 ) {
+			$post_id = (int) ( $payload['post_id'] ?? 0 );
+		}
+		if ( $post_id < 1 ) {
+			return new WP_Error( 'ai_blog_image', __( 'Post id required.', 'webino-dashboard' ) );
+		}
+		self::set_phase( 'image' );
+		$result = Webino_Dashboard_AI_Blog_Images::generate_for_post(
+			$post_id,
+			array(
+				'force'         => ! empty( $payload['force'] ),
+				'topic'         => (string) ( $payload['topic'] ?? '' ),
+				'focus_keyword' => (string) ( $payload['focus_keyword'] ?? '' ),
+			)
+		);
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return array(
+			'provider'   => (string) ( $result['provider'] ?? '' ),
+			'tokens_in'  => 0,
+			'tokens_out' => 0,
+			'summary'    => (string) ( $result['summary'] ?? ( ! empty( $result['skipped'] ) ? 'Image skipped' : 'Image done' ) ),
+			'post_id'    => $post_id,
+			'attachment_id' => (int) ( $result['attachment_id'] ?? 0 ),
 		);
 	}
 
@@ -1409,6 +1477,46 @@ final class Webino_Dashboard_AI_Queue {
 			'tokens_out' => $result['tokens_out'] ?? 0,
 			'summary'    => 'Category suggestions ready',
 			'suggestions'=> $result['data'],
+		);
+	}
+
+	/**
+	 * @param array<string,mixed> $payload Payload.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function job_suggest_blog_topics( $payload ) {
+		$ready = Webino_Dashboard_AI_Content_Settings::assert_entity( 'blog' );
+		if ( is_wp_error( $ready ) ) {
+			return $ready;
+		}
+
+		$count = (int) ( $payload['count'] ?? 8 );
+		$ctx   = Webino_Dashboard_AI_Blog_Topics::suggest_context( $count );
+		if ( ! empty( $payload['regenerate_hint'] ) ) {
+			$ctx['regenerate_hint'] = (string) $payload['regenerate_hint'];
+		}
+
+		self::set_phase( 'provider' );
+		$result = Webino_Dashboard_AI_Providers::complete(
+			Webino_Dashboard_AI_Prompts::system_rules(),
+			Webino_Dashboard_AI_Prompts::suggest_blog_topics_user( $ctx ),
+			Webino_Dashboard_AI_Prompts::blog_topics_schema()
+		);
+		self::remember_usage( $result );
+		if ( empty( $result['ok'] ) ) {
+			return new WP_Error( 'ai_provider', (string) ( $result['error'] ?? 'fail' ) );
+		}
+
+		$data   = is_array( $result['data'] ) ? $result['data'] : array();
+		$topics = isset( $data['topics'] ) && is_array( $data['topics'] ) ? $data['topics'] : array();
+		$saved  = Webino_Dashboard_AI_Blog_Topics::replace_pending( $topics );
+
+		return array(
+			'provider'   => $result['provider'] ?? '',
+			'tokens_in'  => $result['tokens_in'] ?? 0,
+			'tokens_out' => $result['tokens_out'] ?? 0,
+			'summary'    => count( $saved ) . ' blog topics suggested',
+			'count'      => count( $saved ),
 		);
 	}
 

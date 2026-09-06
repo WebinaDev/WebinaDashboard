@@ -2,8 +2,12 @@ export type ProductTaxTerm = { id: number; name: string; slug: string }
 
 export type ProductWfcp = {
   purchase_price?: number | null
+  purchase_price_min?: number | null
+  purchase_price_max?: number | null
   lock_price?: boolean
   retail?: number | null
+  retail_min?: number | null
+  retail_max?: number | null
   credit?: number | null
   wholesale?: number | null
   installment?: number | null
@@ -16,6 +20,7 @@ export type ProductListRow = {
   sku: string
   type: string
   status: string
+  catalog_visibility?: string
   image_url: string
   permalink: string
   date: string | null
@@ -50,7 +55,6 @@ export type ProductColumnId =
   | 'credit'
   | 'wholesale'
   | 'discount'
-  | 'price'
   | 'sale'
   | 'stock'
   | 'brand'
@@ -59,6 +63,7 @@ export type ProductColumnId =
   | 'date'
   | 'views'
   | 'status'
+  | 'catalog_visibility'
   | 'type'
   | 'marketplaces'
 
@@ -72,6 +77,7 @@ export type ProductFilters = {
   type: string
   stock_status: string
   status: string
+  catalog_visibility: string
   sort: string
   date_from: string
   date_to: string

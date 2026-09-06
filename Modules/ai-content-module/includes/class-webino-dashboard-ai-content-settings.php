@@ -78,6 +78,22 @@ final class Webino_Dashboard_AI_Content_Settings {
 				'do_product_brand'       => true,
 				'do_blog'                => true,
 				'do_blog_cat'            => true,
+				'do_blog_image'          => true,
+				'blog_image_provider'    => 'gapgpt',
+				'blog_image_model'       => 'gpt-image-1',
+				'blog_image_aesthetic'   => 'vintage',
+				'blog_image_era'         => 'generic',
+				'blog_image_medium'      => 'photorealistic',
+				'blog_image_use_palette' => true,
+				'blog_image_palette_weight' => 'dominant',
+				'blog_image_aspect'      => '16:9',
+				'blog_image_quality'     => 'hd',
+				'blog_image_lighting'    => 'natural',
+				'blog_image_camera'      => '50mm',
+				'blog_image_subject'     => 'product_lifestyle',
+				'blog_image_inline_count'=> 0,
+				'blog_image_no_text'     => true,
+				'blog_image_skip_if_thumb' => true,
 				'do_page'                => true,
 				'do_coffee'              => true,
 				'catalog_assign_categories' => true,
@@ -156,6 +172,7 @@ final class Webino_Dashboard_AI_Content_Settings {
 			'prompt_product_brand' => 'Write archive/landing content for a product brand. Cover brand story, range, and why to buy from this site.',
 			'prompt_blog' => 'Write a helpful, original blog post for this site niche. Use H2/H3, cover the topic thoroughly, and include the focus keyword naturally.',
 			'prompt_blog_cat' => 'Write archive/landing content for a blog category. Explain what readers will find in this category.',
+			'prompt_blog_image' => 'Hero featured image for a blog post. Match site niche, cohesive brand look, no text overlays.',
 			'prompt_coffee' => 'Fill the coffee tasting profile. blend_arabica + blend_robusta must sum to 100 (use 0/0 only if this is not coffee). Pick origin_ids only from the provided origin list. Keep scale fields inside scale_min/scale_max. caffeine_mg must not exceed caffeine_max. Set visible flags for sections that have meaningful values. Do not invent origins or change pack weight.',
 			'prompt_catalog' => 'Assign WooCommerce product_cat and product_brand using the existing site tree. Prefer existing category ids/paths. Create a new category only when nothing in the tree fits, and always attach it under a real parent when possible. Return every selected leaf AND its parents conceptually (server will add ancestors). Prefer existing brand names; create a brand only if it is genuinely missing. One primary brand per product.',
 			'prompt_title' => 'Rewrite each product title to match the pattern and be consistent across the catalog. Reuse glossary product_type phrases exactly (never mix synonyms like holder vs phone stand). Write all brand names in the requested script (all Persian or all English). Feature/size is optional. Keep model codes as-is. Return JSON only.',
@@ -577,7 +594,7 @@ final class Webino_Dashboard_AI_Content_Settings {
 			}
 		}
 
-		foreach ( array( 'grok_model', 'gemini_model', 'openai_model', 'gapgpt_model', 'site_topic', 'tone', 'seo_sep', 'site_name', 'title_pattern', 'page_model' ) as $key ) {
+		foreach ( array( 'grok_model', 'gemini_model', 'openai_model', 'gapgpt_model', 'site_topic', 'tone', 'seo_sep', 'site_name', 'title_pattern', 'page_model', 'blog_image_model' ) as $key ) {
 			if ( array_key_exists( $key, $raw ) ) {
 				$out[ $key ] = sanitize_text_field( (string) $raw[ $key ] );
 			}
@@ -590,6 +607,97 @@ final class Webino_Dashboard_AI_Content_Settings {
 		if ( isset( $raw['palette_mode'] ) ) {
 			$pm = sanitize_key( (string) $raw['palette_mode'] );
 			$out['palette_mode'] = in_array( $pm, array( 'site', 'suggest' ), true ) ? $pm : 'site';
+		}
+
+		if ( isset( $raw['blog_image_provider'] ) ) {
+			$bip = sanitize_key( (string) $raw['blog_image_provider'] );
+			$out['blog_image_provider'] = in_array( $bip, array( 'gapgpt', 'openai' ), true ) ? $bip : 'gapgpt';
+		}
+
+		$aesthetics = array(
+			'vintage',
+			'retro',
+			'modern',
+			'minimal',
+			'luxury',
+			'rustic',
+			'industrial',
+			'art_deco',
+			'mid_century',
+			'scandinavian',
+			'bohemian',
+			'editorial',
+			'cinematic',
+			'dark_moody',
+			'bright_airy',
+			'persian_traditional',
+		);
+		if ( isset( $raw['blog_image_aesthetic'] ) ) {
+			$a = sanitize_key( (string) $raw['blog_image_aesthetic'] );
+			$out['blog_image_aesthetic'] = in_array( $a, $aesthetics, true ) ? $a : 'vintage';
+		}
+
+		$eras = array( 'generic', '1950s', '1960s', '1970s', '1980s', '1990s' );
+		if ( isset( $raw['blog_image_era'] ) ) {
+			$e = sanitize_key( (string) $raw['blog_image_era'] );
+			$out['blog_image_era'] = in_array( $e, $eras, true ) ? $e : 'generic';
+		}
+
+		$media = array(
+			'photorealistic',
+			'cinematic_photo',
+			'film_photography',
+			'illustration',
+			'watercolor',
+			'cartoon',
+			'3d_render',
+			'flat_vector',
+			'collage',
+			'analog_film',
+		);
+		if ( isset( $raw['blog_image_medium'] ) ) {
+			$m = sanitize_key( (string) $raw['blog_image_medium'] );
+			$out['blog_image_medium'] = in_array( $m, $media, true ) ? $m : 'photorealistic';
+		}
+
+		$weights = array( 'subtle', 'dominant', 'overlay' );
+		if ( isset( $raw['blog_image_palette_weight'] ) ) {
+			$w = sanitize_key( (string) $raw['blog_image_palette_weight'] );
+			$out['blog_image_palette_weight'] = in_array( $w, $weights, true ) ? $w : 'dominant';
+		}
+
+		$aspects = array( '16:9', '1:1', '4:3' );
+		if ( isset( $raw['blog_image_aspect'] ) ) {
+			$as = sanitize_text_field( (string) $raw['blog_image_aspect'] );
+			$out['blog_image_aspect'] = in_array( $as, $aspects, true ) ? $as : '16:9';
+		}
+
+		$qualities = array( 'standard', 'hd' );
+		if ( isset( $raw['blog_image_quality'] ) ) {
+			$q = sanitize_key( (string) $raw['blog_image_quality'] );
+			$out['blog_image_quality'] = in_array( $q, $qualities, true ) ? $q : 'hd';
+		}
+
+		$lights = array( 'natural', 'studio', 'golden_hour', 'moody', 'high_key' );
+		if ( isset( $raw['blog_image_lighting'] ) ) {
+			$l = sanitize_key( (string) $raw['blog_image_lighting'] );
+			$out['blog_image_lighting'] = in_array( $l, $lights, true ) ? $l : 'natural';
+		}
+
+		$cameras = array( '35mm', '50mm', 'overhead', 'closeup', 'wide' );
+		if ( isset( $raw['blog_image_camera'] ) ) {
+			$c = sanitize_key( (string) $raw['blog_image_camera'] );
+			$out['blog_image_camera'] = in_array( $c, $cameras, true ) ? $c : '50mm';
+		}
+
+		$subjects = array( 'product_lifestyle', 'still_life', 'scene', 'people', 'abstract' );
+		if ( isset( $raw['blog_image_subject'] ) ) {
+			$s = sanitize_key( (string) $raw['blog_image_subject'] );
+			$out['blog_image_subject'] = in_array( $s, $subjects, true ) ? $s : 'product_lifestyle';
+		}
+
+		if ( array_key_exists( 'blog_image_inline_count', $raw ) ) {
+			$out['blog_image_inline_count'] = min( 3, max( 0, (int) $raw['blog_image_inline_count'] ) );
 		}
 
 		if ( isset( $raw['language'] ) ) {
@@ -626,7 +734,7 @@ final class Webino_Dashboard_AI_Content_Settings {
 			$out['similarity_threshold'] = min( 0.99, max( 0.3, (float) $raw['similarity_threshold'] ) );
 		}
 
-		foreach ( array( 'auto_publish', 'require_site_name', 'enabled', 'do_product', 'do_product_cat', 'do_product_brand', 'do_blog', 'do_blog_cat', 'do_page', 'do_coffee', 'web_research', 'review_emojis', 'catalog_assign_categories', 'catalog_assign_brands', 'catalog_create_terms', 'catalog_only_missing', 'title_enabled', 'title_include_feature' ) as $bkey ) {
+		foreach ( array( 'auto_publish', 'require_site_name', 'enabled', 'do_product', 'do_product_cat', 'do_product_brand', 'do_blog', 'do_blog_cat', 'do_blog_image', 'do_page', 'do_coffee', 'web_research', 'review_emojis', 'catalog_assign_categories', 'catalog_assign_brands', 'catalog_create_terms', 'catalog_only_missing', 'title_enabled', 'title_include_feature', 'blog_image_use_palette', 'blog_image_no_text', 'blog_image_skip_if_thumb' ) as $bkey ) {
 			if ( array_key_exists( $bkey, $raw ) ) {
 				$out[ $bkey ] = (bool) $raw[ $bkey ];
 			}

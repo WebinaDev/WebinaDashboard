@@ -18,9 +18,26 @@
 		return decodeValue(a) === decodeValue(b);
 	}
 
+	function isOrderConfigSwatch(el) {
+		return Boolean(
+			el &&
+				(el.getAttribute('data-webino-order-config') ||
+					el.getAttribute('data-wcf-select') ||
+					$(el).closest('[data-webino-order-config], .wcf-order-config-fields, .webino-order-configs').length)
+		);
+	}
+
+	function enableOrderConfigSwatches($form) {
+		var $scope = $form && $form.length ? $form : $(document);
+		$scope
+			.find('.wd-swatches[data-webino-order-config] .wd-swatch, .wcf-order-config-fields .wd-swatch, .webino-order-configs .wd-swatch')
+			.removeClass('is-disabled')
+			.attr('aria-disabled', 'false');
+	}
+
 	function syncDisabled($form) {
 		$form.find('.wd-swatches').each(function () {
-			if (this.getAttribute('data-wcf-select')) {
+			if (isOrderConfigSwatch(this)) {
 				return;
 			}
 			var $wrap = $(this);
@@ -38,11 +55,12 @@
 				this.setAttribute('aria-disabled', enabled ? 'false' : 'true');
 			});
 		});
+		enableOrderConfigSwatches($form);
 	}
 
 	function syncSelected($form) {
 		$form.find('.wd-swatches').each(function () {
-			if (this.getAttribute('data-wcf-select')) {
+			if (isOrderConfigSwatch(this)) {
 				return;
 			}
 			var $wrap = $(this);
@@ -62,7 +80,7 @@
 		$form.data('wdSwatchesBound', true);
 
 		$form.on('click.wdSwatch', '.wd-swatch', function (e) {
-			if ($(this).closest('.wd-swatches[data-wcf-select]').length) {
+			if ($(this).closest('.wd-swatches[data-wcf-select], .wd-swatches[data-webino-order-config]').length) {
 				return;
 			}
 			e.preventDefault();
@@ -82,17 +100,20 @@
 		$form.on('woocommerce_update_variation_values.wdSwatch check_variations.wdSwatch', function () {
 			syncDisabled($form);
 			syncSelected($form);
+			enableOrderConfigSwatches($form);
 		});
 
 		$form.on('reset_data.wdSwatch click.wdSwatch', '.reset_variations', function () {
 			window.setTimeout(function () {
 				syncSelected($form);
 				syncDisabled($form);
+				enableOrderConfigSwatches($form);
 			}, 0);
 		});
 
 		syncDisabled($form);
 		syncSelected($form);
+		enableOrderConfigSwatches($form);
 	}
 
 	function loadStyle(href) {
@@ -123,6 +144,14 @@
 		});
 	}
 
+	function findVariationsAnchor($form) {
+		var $table = $form.find('table.variations').first();
+		if ($table.length) {
+			return $table;
+		}
+		return $form.find('.variations').first();
+	}
+
 	function mountOrderConfigHtml(html, cfg) {
 		var $form = $('form.variations_form, form.cart').first();
 		if (!$form.length || !html) {
@@ -130,11 +159,18 @@
 			return Promise.resolve();
 		}
 		var $html = $(html);
-		var $target = $form.find('.variations').not('table').first();
-		if ($target.length) {
-			$html.insertBefore($target);
+		var $anchor = findVariationsAnchor($form);
+		if ($anchor.length) {
+			$html.insertAfter($anchor);
 		} else {
-			$form.prepend($html);
+			var $button = $form.find('.single_add_to_cart_button, button[type="submit"]').first();
+			if ($button.length) {
+				$html.insertBefore($button.closest('.woocommerce-variation-add-to-cart, .quantity, p').length
+					? $button.closest('.woocommerce-variation-add-to-cart, .quantity, p')
+					: $button);
+			} else {
+				$form.append($html);
+			}
 		}
 		var chain = Promise.resolve();
 		if (cfg.orderConfigsCss) {
@@ -151,12 +187,14 @@
 			if (typeof window.webinoOrderConfigsInit === 'function') {
 				window.webinoOrderConfigsInit();
 			}
+			enableOrderConfigSwatches($form);
 			document.body.setAttribute('data-wd-order-config-bootstrap', 'done');
 		});
 	}
 
 	function bootstrapOrderConfigs() {
-		if (document.querySelector('.webino-order-configs, .wcf-order-configs')) {
+		if (document.querySelector('.webino-order-configs, .wcf-order-configs, .wcf-order-config-fields')) {
+			enableOrderConfigSwatches($('form.variations_form, form.cart').first());
 			return;
 		}
 		var cfg = window.webinoStorefront;
@@ -208,6 +246,7 @@
 	$(document).on('wc_variation_form', 'form.variations_form', function () {
 		bindForm($(this));
 		bootstrapOrderConfigs();
+		enableOrderConfigSwatches($(this));
 	});
 
 	$(init);

@@ -110,13 +110,18 @@ export function OrderTrackingPanel({
           ) : null}
         </div>
         {postBarcode ? (
-          <p className="text-muted-foreground text-xs">
-            {t('orders.postBarcode')}: <span className="font-mono text-foreground">{postBarcode}</span>
+          <p className="text-muted-foreground break-words text-xs">
+            {t('orders.postBarcode')}: <span className="text-foreground break-all">{postBarcode}</span>
           </p>
         ) : null}
         {trackingUrl && isSafeContentUrl(trackingUrl) ? (
-          <p className="text-sm">
-            <a href={trackingUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          <p className="min-w-0 text-sm">
+            <a
+              href={trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary break-all hover:underline"
+            >
               {t('orders.trackingLink')}
             </a>
           </p>

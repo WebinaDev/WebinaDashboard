@@ -62,6 +62,22 @@ export type AiSettings = {
   do_product_brand: boolean
   do_blog: boolean
   do_blog_cat: boolean
+  do_blog_image?: boolean
+  blog_image_provider?: string
+  blog_image_model?: string
+  blog_image_aesthetic?: string
+  blog_image_era?: string
+  blog_image_medium?: string
+  blog_image_use_palette?: boolean
+  blog_image_palette_weight?: string
+  blog_image_aspect?: string
+  blog_image_quality?: string
+  blog_image_lighting?: string
+  blog_image_camera?: string
+  blog_image_subject?: string
+  blog_image_inline_count?: number
+  blog_image_no_text?: boolean
+  blog_image_skip_if_thumb?: boolean
   do_page?: boolean
   do_coffee: boolean
   queue_paused?: boolean
@@ -71,6 +87,7 @@ export type AiSettings = {
   prompt_product_brand: string
   prompt_blog: string
   prompt_blog_cat: string
+  prompt_blog_image?: string
   prompt_coffee: string
   prompt_catalog?: string
   prompt_title?: string
@@ -524,5 +541,76 @@ export function requeueAiProposal(kind: 'title' | 'catalog', productId: number) 
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: '{}',
+  })
+}
+
+export type AiBlogTopic = {
+  id: string
+  topic: string
+  focus_keyword: string
+  angle: string
+  category_name: string
+  category_id: number
+  status: 'pending' | 'queued' | 'done' | 'skipped' | string
+  job_id: number
+  post_id: number
+  created_at: string
+  updated_at: string
+  edit_url?: string
+  view_url?: string
+}
+
+export function fetchAiBlogTopics(status = 'all') {
+  return apiFetch<{ items: AiBlogTopic[]; total: number }>(
+    `ai-content/blog-topics?status=${encodeURIComponent(status)}`,
+  )
+}
+
+export function suggestAiBlogTopics(count = 8) {
+  return apiFetch<{ ok: boolean; job_id: number; count: number }>('ai-content/blog-topics/suggest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ count }),
+  })
+}
+
+export function approveAiBlogTopic(
+  id: string,
+  body?: { topic?: string; focus_keyword?: string; angle?: string; category_id?: number; category_name?: string },
+) {
+  return apiFetch<{ ok: boolean; item: AiBlogTopic }>(`ai-content/blog-topics/${encodeURIComponent(id)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body ?? {}),
+  })
+}
+
+export function approveAiBlogTopicsMany(
+  ids: string[],
+  edits?: Record<string, { topic?: string; focus_keyword?: string }>,
+) {
+  return apiFetch<{ ok: boolean; approved: number; failed: number; items: AiBlogTopic[] }>(
+    'ai-content/blog-topics/approve',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, edits: edits ?? {} }),
+    },
+  )
+}
+
+export function skipAiBlogTopic(id: string) {
+  return apiFetch<{ ok: boolean; item: AiBlogTopic }>(`ai-content/blog-topics/${encodeURIComponent(id)}/skip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
+  })
+}
+
+export function regenerateAiBlogImage(postId: number, body?: { topic?: string; focus_keyword?: string }) {
+  return apiFetch<{ ok: boolean; job_id: number }>(`ai-content/blog-image/${postId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body ?? {}),
   })
 }

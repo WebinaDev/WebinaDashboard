@@ -1,7 +1,7 @@
 {
   "slug": "ai-content-module",
   "name": "AI Content",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "is_builtin": true,
   "bootstrap": "bootstrap.php",
   "settings": {
@@ -41,6 +41,13 @@
         "id": "ai-content-calendar",
         "title": "Content calendar",
         "path": "/ai-content/calendar",
+        "capability": "edit_posts",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "ai-content-blog",
+        "title": "Blog",
+        "path": "/ai-content/blog",
         "capability": "edit_posts",
         "exclude_from_module_toggle": true
       },
@@ -105,6 +112,11 @@
         "path": "ai-content/calendar",
         "capability": "edit_posts",
         "headerTitleKey": "aiContent.calendarTitle"
+      },
+      {
+        "path": "ai-content/blog",
+        "capability": "edit_posts",
+        "headerTitleKey": "aiContent.blogPageTitle"
       },
       {
         "path": "ai-content/products",

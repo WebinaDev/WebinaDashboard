@@ -106,7 +106,7 @@ export function OrdersBulkActions({ selectedIds, statuses, onDone }: OrdersBulkA
             <SelectContent>
               {statuses.map((s) => (
                 <SelectItem key={s.slug} value={s.slug}>
-                  {translateOrderStatus(t, s.slug) !== s.slug ? translateOrderStatus(t, s.slug) : s.label}
+                  {translateOrderStatus(t, s.slug, s.label)}
                 </SelectItem>
               ))}
             </SelectContent>

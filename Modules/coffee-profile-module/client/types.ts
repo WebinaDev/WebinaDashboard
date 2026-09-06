@@ -60,6 +60,10 @@ export type CoffeeFulfillmentTerm = {
   image_url: string
 }
 
+export type CoffeePriceMode = 'none' | 'single' | 'base_mix' | 'shop' | 'economy' | 'custom'
+
+export type CoffeePricePart = { bean_id: string; percent: number }
+
 export type CoffeeProfile = {
   blend_robusta: number
   blend_arabica: number
@@ -69,8 +73,79 @@ export type CoffeeProfile = {
   sweetness: number
   body: number
   pack_weight_g: number
+  price_mode: CoffeePriceMode
+  price_bean_id: string
+  price_mix_id: string
+  price_shop_style: 'classic' | 'luxury'
+  price_parts: CoffeePricePart[]
   visible: CoffeeVisible
   origin_ids: number[]
+}
+
+export type CoffeePricingBean = {
+  id: string
+  name: string
+  kind: 'robusta' | 'arabica'
+  green_price: number
+  product_id: number
+  after_roast?: number
+  product_name?: string
+  retail_preview?: number
+}
+
+export type CoffeePricingBaseMix = {
+  id: string
+  name: string
+  kind: 'robusta' | 'arabica'
+  parts: CoffeePricePart[]
+  after_roast?: number
+  retail_preview?: number
+}
+
+export type CoffeeWeightPack = {
+  term: string
+  label: string
+  grams: number
+}
+
+export type CoffeePricingSettings = {
+  roast_yield: number
+  weight_attribute: string
+  weight_packs: CoffeeWeightPack[]
+  beans: CoffeePricingBean[]
+  base_mixes: CoffeePricingBaseMix[]
+  shop_styles: {
+    classic: { robusta_mix_id: string; arabica_mix_id: string }
+    luxury: { robusta_mix_id: string; arabica_mix_id: string }
+  }
+  economy_beans: { robusta_bean_id: string; arabica_bean_id: string }
+}
+
+export type CoffeePricingRecalc = {
+  status: string
+  total: number
+  done: number
+  failed: number
+  offset: number
+  started_at?: string
+  updated_at?: string
+  finished_at?: string
+  errors?: { product_id: number; message: string }[]
+}
+
+export type CoffeePricingPayload = {
+  settings: CoffeePricingSettings
+  beans: CoffeePricingBean[]
+  base_mixes: CoffeePricingBaseMix[]
+  shop_styles: CoffeePricingSettings['shop_styles']
+  economy: {
+    robusta_bean_id: string
+    arabica_bean_id: string
+    robusta_after: number
+    arabica_after: number
+  }
+  recalc: CoffeePricingRecalc
+  queued?: { ok: boolean; total: number; queued: boolean }
 }
 
 export type CoffeeOrigin = {
@@ -106,7 +181,7 @@ export type BlendSuggestion = {
 export type BlendGuideItem = { title: string; body: string }
 
 export type CoffeeBlendSettings = {
-  source: 'profile' | 'category' | 'products'
+  source: 'pricing' | 'profile' | 'category' | 'products'
   category_ids: number[]
   product_ids: number[]
   min_beans: number

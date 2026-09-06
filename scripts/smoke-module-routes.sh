@@ -70,7 +70,8 @@ import re, sys
 text = open(sys.argv[1]).read()
 keys = re.findall(r"['\"]([^'\"]+)['\"]\s*:", text)
 array_paths = re.findall(r"path:\s*['\"]([^'\"]+)['\"]", text)
-route_keys = [k.lstrip("/") for k in keys if "/" in k or ":" in k]
+# Include bare segment keys (e.g. 'security', 'ai-content') and nested paths.
+route_keys = [k.lstrip("/") for k in keys if re.match(r'^[a-z][a-z0-9_/-]*', k)]
 for p in sorted(set(route_keys + [a.lstrip("/") for a in array_paths])):
     print(p)
 PY

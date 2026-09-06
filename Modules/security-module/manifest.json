@@ -1,0 +1,49 @@
+{
+  "slug": "security-module",
+  "name": "Security",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "default_active": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "site",
+    "title": "Security",
+    "sections": [
+      { "id": "overview", "route": "/security", "title": "Security" },
+      { "id": "settings", "route": "/security/settings", "title": "Security settings" }
+    ]
+  },
+  "sidebar": {
+    "module_id": "security-module",
+    "title": "Security",
+    "path": "/security",
+    "capability": "webino_view_security",
+    "icon": "shield",
+    "nav_group": "tools",
+    "children": [
+      { "id": "security-overview", "title": "Overview", "path": "/security", "capability": "webino_view_security", "exclude_from_module_toggle": true },
+      { "id": "security-firewall", "title": "Firewall", "path": "/security/firewall", "capability": "webino_manage_security", "exclude_from_module_toggle": true },
+      { "id": "security-scan", "title": "Site scan", "path": "/security/scan", "capability": "webino_manage_security", "exclude_from_module_toggle": true },
+      { "id": "security-tools", "title": "Tools", "path": "/security/tools", "capability": "webino_manage_security", "exclude_from_module_toggle": true },
+      { "id": "security-reports", "title": "Reports", "path": "/security/reports", "capability": "webino_view_security", "exclude_from_module_toggle": true },
+      { "id": "security-settings", "title": "Settings", "path": "/security/settings", "capability": "webino_manage_security", "exclude_from_module_toggle": true }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      { "path": "security", "capability": "webino_view_security", "headerTitleKey": "security.overviewTitle" },
+      { "path": "security/firewall", "capability": "webino_manage_security", "headerTitleKey": "security.firewallTitle" },
+      { "path": "security/firewall/live", "capability": "webino_manage_security", "headerTitleKey": "security.liveTrafficTitle" },
+      { "path": "security/firewall/rules", "capability": "webino_manage_security", "headerTitleKey": "security.rulesTitle" },
+      { "path": "security/firewall/blocking", "capability": "webino_manage_security", "headerTitleKey": "security.blockingTitle" },
+      { "path": "security/scan", "capability": "webino_manage_security", "headerTitleKey": "security.scanTitle" },
+      { "path": "security/scan/:jobid", "capability": "webino_manage_security", "headerTitleKey": "security.scanJobTitle", "headerParamKeys": { "jobid": "jobId" } },
+      { "path": "security/tools", "capability": "webino_manage_security", "headerTitleKey": "security.toolsTitle" },
+      { "path": "security/tools/:tool", "capability": "webino_manage_security", "headerTitleKey": "security.toolTitle", "headerParamKeys": { "tool": "tool" } },
+      { "path": "security/reports", "capability": "webino_view_security", "headerTitleKey": "security.reportsTitle" },
+      { "path": "security/reports/:reportid", "capability": "webino_view_security", "headerTitleKey": "security.reportDetailTitle", "headerParamKeys": { "reportid": "reportId" } },
+      { "path": "security/settings", "capability": "webino_manage_security", "headerTitleKey": "security.settingsTitle" }
+    ]
+  }
+}

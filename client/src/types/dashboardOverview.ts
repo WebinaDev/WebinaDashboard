@@ -102,12 +102,20 @@ export type DashboardOverviewBotPanel = {
   last_error: string
 }
 
+export type DashboardOverviewSecurityPanel = {
+  active: boolean
+  score: number | null
+  waf_mode: string
+  open_findings: number
+}
+
 export type DashboardOverviewPanels = {
   sms?: DashboardOverviewSmsPanel
   license: { active: boolean; demo: boolean; status: string }
   woocommerce: { active: boolean }
   analytics: { active: boolean; online: number }
   bots?: DashboardOverviewBotPanel[]
+  security?: DashboardOverviewSecurityPanel
 }
 
 export type DashboardTaskOrdersBlock = {

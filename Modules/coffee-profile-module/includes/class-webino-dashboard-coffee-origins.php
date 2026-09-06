@@ -245,6 +245,110 @@ class Webino_Dashboard_Coffee_Origins {
 	}
 
 	/**
+	 * Overlay badge HTML for product cards (max 3 flags).
+	 *
+	 * @param int $product_id Product ID.
+	 * @return string
+	 */
+	public static function flags_badge_html( $product_id ) {
+		$product_id = (int) $product_id;
+		if ( $product_id <= 0 ) {
+			return '';
+		}
+		static $cache = array();
+		if ( array_key_exists( $product_id, $cache ) ) {
+			return $cache[ $product_id ];
+		}
+		$cache[ $product_id ] = self::flags_badge_from_items( self::items_for_product( $product_id ) );
+		return $cache[ $product_id ];
+	}
+
+	/**
+	 * @param array<int,array<string,mixed>> $origins Origin rows.
+	 * @return string
+	 */
+	public static function flags_badge_from_items( $origins ) {
+		if ( ! is_array( $origins ) || array() === $origins ) {
+			return '';
+		}
+		$origins = array_slice( array_values( $origins ), 0, 3 );
+		$bits    = array();
+		$names   = array();
+		foreach ( $origins as $origin ) {
+			$name = isset( $origin['name'] ) ? (string) $origin['name'] : '';
+			if ( '' !== $name ) {
+				$names[] = $name;
+			}
+			$url   = isset( $origin['flag_url'] ) ? (string) $origin['flag_url'] : '';
+			$emoji = isset( $origin['flag_emoji'] ) ? (string) $origin['flag_emoji'] : '';
+			if ( '' !== $url ) {
+				$bits[] = '<span class="wcp-card-flag" style="background-image:url(\'' . esc_url( $url ) . '\')" aria-hidden="true"></span>';
+			} elseif ( '' !== $emoji ) {
+				$bits[] = '<span class="wcp-card-flag-emoji" aria-hidden="true">' . esc_html( $emoji ) . '</span>';
+			}
+		}
+		if ( array() === $bits ) {
+			return '';
+		}
+		$label = implode( '، ', $names );
+		$attr  = '' !== $label ? ' aria-label="' . esc_attr( $label ) . '"' : '';
+		return '<span class="wcp-card-flags"' . $attr . '>' . implode( '', $bits ) . '</span>';
+	}
+
+	/**
+	 * Permalink paths → badge HTML for storefront card injection.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function card_flags_path_map() {
+		static $map = null;
+		if ( is_array( $map ) ) {
+			return $map;
+		}
+		$map = array();
+		if ( ! taxonomy_exists( self::TAXONOMY ) ) {
+			return $map;
+		}
+		$q = new WP_Query(
+			array(
+				'post_type'              => 'product',
+				'post_status'            => 'publish',
+				'posts_per_page'         => 300,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'tax_query'              => array(
+					array(
+						'taxonomy' => self::TAXONOMY,
+						'operator' => 'EXISTS',
+					),
+				),
+			)
+		);
+		foreach ( array_map( 'intval', (array) $q->posts ) as $id ) {
+			$html = self::flags_badge_html( $id );
+			if ( '' === $html ) {
+				continue;
+			}
+			$permalink = get_permalink( $id );
+			if ( ! $permalink ) {
+				continue;
+			}
+			$path = wp_parse_url( $permalink, PHP_URL_PATH );
+			if ( ! is_string( $path ) || '' === $path ) {
+				continue;
+			}
+			$trimmed = untrailingslashit( $path );
+			$map[ $trimmed ] = $html;
+			$decoded         = rawurldecode( $trimmed );
+			if ( $decoded !== $trimmed ) {
+				$map[ $decoded ] = $html;
+			}
+		}
+		return $map;
+	}
+
+	/**
 	 * @param string $iso ISO 3166-1 alpha-2.
 	 * @return string
 	 */

@@ -3,6 +3,8 @@ import { Navigate, useParams } from 'react-router-dom'
 import { ModulePanel } from '@/components/ModulePanel'
 import { BotProviderSwitcher } from '@/components/bots/BotProviderSwitcher'
 import { DashboardSettingsPanel } from '@/components/settings/DashboardSettingsPanel'
+import { PwaSettingsPanel } from '@/components/settings/PwaSettingsPanel'
+import { StyleSettingsPanel } from '@/components/settings/StyleSettingsPanel'
 import { ModulesSettingsPanel } from '@/components/settings/ModulesSettingsPanel'
 import { SettingsModulesChrome } from '@/components/settings/SettingsModulesChrome'
 import { SiteGeneralSettingsPanel } from '@/components/settings/SiteGeneralSettingsPanel'
@@ -63,6 +65,8 @@ export default function SettingsSiteShell() {
       {section === 'privacy' ? <WcSettingsSectionPanel page="account" /> : null}
       {section === 'license' ? <LicenseSettingsPanel /> : null}
       {section === 'dashboard' ? <DashboardSettingsPanel /> : null}
+      {section === 'style' ? <StyleSettingsPanel /> : null}
+      {section === 'pwa' ? <PwaSettingsPanel /> : null}
       {section === 'modules' ? <ModulesSettingsPanel /> : null}
       {section === 'bots' ? <BotSettingsSection /> : null}
       {section === 'system-logs' ? <BotLogsSection /> : null}

@@ -397,8 +397,22 @@ class Webino_Dashboard_Assets {
 			echo '<link rel="stylesheet" id="webino-dashboard-app-css" href="' . esc_url( $entry_css_url ) . '?ver=' . esc_attr( $ver ) . '" media="all" />' . "\n";
 		}
 
-		$href = esc_url( rest_url( 'webino-dashboard/v1/manifest.webmanifest' ) );
-		echo '<link rel="manifest" href="' . $href . '" />' . "\n";
+		$manifest_href = class_exists( 'Webino_Dashboard_PWA', false )
+			? Webino_Dashboard_PWA::asset_url( Webino_Dashboard_PWA::MANIFEST_PATH )
+			: rest_url( 'webino-dashboard/v1/manifest.webmanifest' );
+		if ( class_exists( 'Webino_Dashboard_PWA', false ) && Webino_Dashboard_PWA::is_enabled() ) {
+			echo '<link rel="manifest" href="' . esc_url( $manifest_href ) . '" />' . "\n";
+			$theme = Webino_Dashboard_PWA::theme_color();
+			$apple = Webino_Dashboard_PWA::icon_url( 180, 'apple' );
+			$title = Webino_Dashboard_PWA::short_name();
+			echo '<meta name="theme-color" content="' . esc_attr( $theme ) . '" />' . "\n";
+			echo '<meta name="mobile-web-app-capable" content="yes" />' . "\n";
+			echo '<meta name="apple-mobile-web-app-capable" content="yes" />' . "\n";
+			echo '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />' . "\n";
+			echo '<meta name="apple-mobile-web-app-title" content="' . esc_attr( $title ) . '" />' . "\n";
+			echo '<link rel="apple-touch-icon" href="' . esc_url( $apple ) . '" />' . "\n";
+			Webino_Dashboard_PWA::print_splash_meta();
+		}
 
 		// Config MUST precede the module entry — modules are deferred but must not race footer localize.
 		self::print_runtime_config_script();
@@ -955,6 +969,9 @@ class Webino_Dashboard_Assets {
 			'userId'       => $uid,
 			'siteName'     => get_bloginfo( 'name' ),
 			'siteIconUrl'  => Webino_Dashboard_REST::site_icon_url(),
+			'brandLogoUrl' => class_exists( 'Webino_Dashboard_Brand_Style', false )
+				? Webino_Dashboard_Brand_Style::logo_url()
+				: '',
 			'license'      => Webino_Dashboard_License::instance()->get_bootstrap_payload(),
 			'bootstrap'    => $bootstrap,
 			'page'         => $page,
@@ -974,8 +991,17 @@ class Webino_Dashboard_Assets {
 				'baleBot'                => Webino_Dashboard_REST::bot_ui_ready( 'bale' ),
 				'telegramBot'            => Webino_Dashboard_REST::bot_ui_ready( 'telegram' ),
 				'elementor'              => defined( 'ELEMENTOR_VERSION' ),
-				'disableServiceWorker'   => true,
+				'disableServiceWorker'   => class_exists( 'Webino_Dashboard_PWA', false )
+					? ! Webino_Dashboard_PWA::is_enabled()
+					: false,
 			),
+			'pwa'          => class_exists( 'Webino_Dashboard_PWA', false )
+				? Webino_Dashboard_PWA::client_bootstrap()
+				: array(
+					'enabled'           => false,
+					'showInstallBanner' => false,
+					'splashEnabled'     => false,
+				),
 		);
 	}
 

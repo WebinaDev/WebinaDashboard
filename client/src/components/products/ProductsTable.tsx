@@ -47,6 +47,29 @@ function moneyCell(
   )
 }
 
+function moneyRangeCell(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  fallback: number | null | undefined,
+  currency: string,
+  currencySymbol: string,
+  locale: string,
+) {
+  const a = min ?? fallback
+  const b = max ?? fallback
+  if (a == null || Number.isNaN(a) || a <= 0) return '—'
+  if (b == null || Number.isNaN(b) || b <= 0 || Math.abs(b - a) < 0.0001) {
+    return moneyCell(a, currency, currencySymbol, locale)
+  }
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1 whitespace-nowrap">
+      {moneyCell(a, currency, currencySymbol, locale)}
+      <span className="text-muted-foreground">–</span>
+      {moneyCell(b, currency, currencySymbol, locale)}
+    </span>
+  )
+}
+
 export function ProductsTable({
   items,
   columns,
@@ -133,21 +156,34 @@ export function ProductsTable({
                 }
               >
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
-                  <div>
-                    <dt className="text-muted-foreground text-xs">{t('products.colPrice')}</dt>
-                    <dd>
-                      <MoneyDisplay
-                        amount={parseFloat(row.price || '0')}
-                        currency={currency}
-                        currencySymbol={store.currencySymbol}
-                        locale={locale}
-                      />
-                    </dd>
-                  </div>
+                  {columns.purchase_price ? (
+                    <div>
+                      <dt className="text-muted-foreground text-xs">{t('products.colPurchase')}</dt>
+                      <dd>
+                        {moneyRangeCell(
+                          wfcp?.purchase_price_min,
+                          wfcp?.purchase_price_max,
+                          wfcp?.purchase_price,
+                          currency,
+                          store.currencySymbol,
+                          locale
+                        )}
+                      </dd>
+                    </div>
+                  ) : null}
                   {columns.retail ? (
                     <div>
                       <dt className="text-muted-foreground text-xs">{t('products.colRetail')}</dt>
-                      <dd>{moneyCell(wfcp?.retail ?? null, currency, store.currencySymbol, locale)}</dd>
+                      <dd>
+                        {moneyRangeCell(
+                          wfcp?.retail_min,
+                          wfcp?.retail_max,
+                          wfcp?.retail,
+                          currency,
+                          store.currencySymbol,
+                          locale
+                        )}
+                      </dd>
                     </div>
                   ) : null}
                   <div>
@@ -162,6 +198,12 @@ export function ProductsTable({
                     <div>
                       <dt className="text-muted-foreground text-xs">{t('products.colBrand')}</dt>
                       <dd>{row.brand.name}</dd>
+                    </div>
+                  ) : null}
+                  {columns.catalog_visibility && row.catalog_visibility ? (
+                    <div>
+                      <dt className="text-muted-foreground text-xs">{t('products.colCatalogVisibility')}</dt>
+                      <dd>{translateEnum(t, 'products.catalogVisibility', row.catalog_visibility)}</dd>
                     </div>
                   ) : null}
                 </dl>
@@ -197,7 +239,6 @@ export function ProductsTable({
           {columns.credit ? <TableHead>{t('products.colCredit')}</TableHead> : null}
           {columns.wholesale ? <TableHead>{t('products.colWholesale')}</TableHead> : null}
           {columns.discount ? <TableHead>{t('products.colDiscount')}</TableHead> : null}
-          {columns.price ? <TableHead>{t('products.colPrice')}</TableHead> : null}
           {columns.sale ? <TableHead>{t('products.colSale')}</TableHead> : null}
           {columns.stock ? <TableHead>{t('products.colStock')}</TableHead> : null}
           {columns.brand ? <TableHead>{t('products.colBrand')}</TableHead> : null}
@@ -206,6 +247,7 @@ export function ProductsTable({
           {columns.date ? <TableHead>{t('products.colDate')}</TableHead> : null}
           {columns.views ? <TableHead>{t('products.colViews')}</TableHead> : null}
           {columns.status ? <TableHead>{t('products.colStatus')}</TableHead> : null}
+          {columns.catalog_visibility ? <TableHead>{t('products.colCatalogVisibility')}</TableHead> : null}
           {columns.type ? <TableHead>{t('products.colType')}</TableHead> : null}
           <TableHead className="w-52 min-w-52">{t('products.colActions')}</TableHead>
         </TableRow>
@@ -262,11 +304,27 @@ export function ProductsTable({
                 {columns.sku ? <TableCell className="text-xs">{row.sku || '—'}</TableCell> : null}
                 {columns.purchase_price ? (
                   <TableCell>
-                    {moneyCell(wfcp?.purchase_price ?? null, currency, store.currencySymbol, locale)}
+                    {moneyRangeCell(
+                      wfcp?.purchase_price_min,
+                      wfcp?.purchase_price_max,
+                      wfcp?.purchase_price,
+                      currency,
+                      store.currencySymbol,
+                      locale
+                    )}
                   </TableCell>
                 ) : null}
                 {columns.retail ? (
-                  <TableCell>{moneyCell(wfcp?.retail ?? null, currency, store.currencySymbol, locale)}</TableCell>
+                  <TableCell>
+                    {moneyRangeCell(
+                      wfcp?.retail_min,
+                      wfcp?.retail_max,
+                      wfcp?.retail,
+                      currency,
+                      store.currencySymbol,
+                      locale
+                    )}
+                  </TableCell>
                 ) : null}
                 {columns.installment ? (
                   <TableCell>{moneyCell(wfcp?.installment ?? null, currency, store.currencySymbol, locale)}</TableCell>
@@ -280,16 +338,6 @@ export function ProductsTable({
                 {columns.discount ? (
                   <TableCell>
                     {row.discount_percent != null ? `${formatNumber(row.discount_percent, locale)}%` : '—'}
-                  </TableCell>
-                ) : null}
-                {columns.price ? (
-                  <TableCell>
-                    <MoneyDisplay
-                      amount={parseFloat(row.price || '0')}
-                      currency={currency}
-                      currencySymbol={store.currencySymbol}
-                      locale={locale}
-                    />
                   </TableCell>
                 ) : null}
                 {columns.sale ? (
@@ -333,6 +381,13 @@ export function ProductsTable({
                 {columns.status ? (
                   <TableCell>
                     <Badge variant="secondary">{translateEnum(t, 'products.status', row.status)}</Badge>
+                  </TableCell>
+                ) : null}
+                {columns.catalog_visibility ? (
+                  <TableCell className="text-sm">
+                    {row.catalog_visibility
+                      ? translateEnum(t, 'products.catalogVisibility', row.catalog_visibility)
+                      : '—'}
                   </TableCell>
                 ) : null}
                 {columns.type ? (

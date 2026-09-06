@@ -3,6 +3,7 @@ import { Cell, Pie, PieChart } from 'recharts'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { translateOrderStatus } from '@/lib/enumLabels'
 import type { OrderReportStatusRow } from '@/types/orderReports'
 
 const COLORS = [
@@ -19,7 +20,12 @@ type StatusPieChartProps = {
 
 export function StatusPieChart({ rows }: StatusPieChartProps) {
   const { t } = useTranslation()
-  const data = rows.filter((r) => r.count > 0)
+  const data = rows
+    .filter((r) => r.count > 0)
+    .map((r) => ({
+      ...r,
+      label: translateOrderStatus(t, r.status, r.label),
+    }))
 
   return (
     <Card className="min-w-0 overflow-hidden shadow-sm">

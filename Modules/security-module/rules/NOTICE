@@ -1,0 +1,8 @@
+Webino Shield native ruleset
+============================
+
+- Native WordPress / WooCommerce probe rules are original to Webino.
+- OWASP CRS-inspired patterns (SQLi/XSS heuristics) are independently authored
+  for Shield and are not a verbatim copy of OWASP CRS or Wordfence signatures.
+- Community YARA / PHP Malware Finder subsets, when vendored later, keep their
+  upstream SPDX / license files alongside the rule files.

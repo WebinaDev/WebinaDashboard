@@ -112,6 +112,13 @@ final class Webino_Dashboard_Bots_Notify_Cascade {
 			}
 		}
 		if ( ! empty( $s['use_sms'] ) && '0' !== (string) $s['use_sms'] && $phone !== '' ) {
+			// Respect shop SMS event toggles — cascade must not bypass pattern gates.
+			if ( class_exists( 'Webino_Dashboard_Sms_Order_Map', false ) && class_exists( 'Webino_Dashboard_Sms_Order_Hooks', false ) ) {
+				$event_key = Webino_Dashboard_Sms_Order_Map::event_for_status( $order->get_status() );
+				if ( Webino_Dashboard_Sms_Order_Hooks::should_skip_notify( $event_key ) ) {
+					return false;
+				}
+			}
 			$ok = (bool) apply_filters( 'webino_dashboard_bots_sms_send', false, $phone, $text, $order );
 			do_action( (string) $s['sms_hook'], $phone, $text, $order );
 			return $ok;

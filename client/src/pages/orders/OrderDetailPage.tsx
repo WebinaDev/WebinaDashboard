@@ -42,6 +42,7 @@ import { normalizeCapabilities } from '@/lib/bootstrapQuery'
 import { formatDisplayDateTime } from '@/lib/date'
 import { translateOrderStatus } from '@/lib/enumLabels'
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
+import { MobileListCard } from '@/components/MobileListCard'
 import { LazyImage } from '@/components/ui/lazy-image'
 import { localizeDigits } from '@/lib/digits'
 import { formatNumber } from '@/lib/formatNumber'
@@ -482,36 +483,36 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-            <div className="space-y-6">
-              <Card className="shadow-sm">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
+            <div className="min-w-0 space-y-6">
+              <Card className="min-w-0 shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{t('orders.sectionGeneral')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <dl className="grid gap-3 sm:grid-cols-2">
-                    <div>
+                <CardContent className="min-w-0 space-y-4">
+                  <dl className="grid min-w-0 gap-3 sm:grid-cols-2">
+                    <div className="min-w-0">
                       <dt className="text-muted-foreground text-xs">{t('orders.orderDate')}</dt>
-                      <dd className="text-sm">{formatDisplayDateTime(order.date_created ?? undefined, locale)}</dd>
+                      <dd className="break-words text-sm">{formatDisplayDateTime(order.date_created ?? undefined, locale)}</dd>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <dt className="text-muted-foreground text-xs">{t('orders.customer')}</dt>
-                      <dd className="text-sm">
+                      <dd className="break-words text-sm">
                         {order.is_guest
                           ? t('orders.guestCustomer')
                           : order.billing?.email || t('common.emptyValue')}
                       </dd>
                     </div>
                     {order.shipping_method ? (
-                      <div>
+                      <div className="min-w-0">
                         <dt className="text-muted-foreground text-xs">{t('orders.shippingMethod')}</dt>
-                        <dd className="text-sm">{order.shipping_method}</dd>
+                        <dd className="break-words text-sm">{order.shipping_method}</dd>
                       </div>
                     ) : null}
                     {order.national_id ? (
-                      <div>
+                      <div className="min-w-0">
                         <dt className="text-muted-foreground text-xs">{t('orders.nationalId')}</dt>
-                        <dd className="font-mono text-sm">{localizeDigits(order.national_id, locale)}</dd>
+                        <dd className="break-all text-sm">{localizeDigits(order.national_id, locale)}</dd>
                       </div>
                     ) : null}
                   </dl>
@@ -537,9 +538,7 @@ export default function OrderDetailPage() {
                             : [{ slug: order.status, label: translateOrderStatus(t, order.status) }]
                           ).map((s) => (
                             <SelectItem key={s.slug} value={s.slug}>
-                              {translateOrderStatus(t, s.slug) !== s.slug
-                                ? translateOrderStatus(t, s.slug)
-                                : s.label}
+                              {translateOrderStatus(t, s.slug, s.label)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -590,86 +589,162 @@ export default function OrderDetailPage() {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-sm">
+              <Card className="min-w-0 shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{t('orders.itemsDetail')}</CardTitle>
                 </CardHeader>
-                <CardContent className="overflow-x-auto p-0 sm:p-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-14" />
-                        <TableHead>{t('products.fieldName')}</TableHead>
-                        <TableHead>{t('orders.colSku')}</TableHead>
-                        <TableHead className="text-end">{t('orders.colSubtotal')}</TableHead>
-                        <TableHead className="text-end">{t('orders.colTotalLine')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {order.items.map((it, i) => {
-                        const href =
-                          it.product_id && it.product_id > 0 ? `/shop/products/${it.product_id}` : ''
-                        return (
-                          <TableRow key={`${it.product_id}-${it.variation_id}-${i}`}>
-                            <TableCell>
+                <CardContent className="min-w-0 p-3 sm:p-6">
+                  <div className="space-y-3 md:hidden">
+                    {order.items.map((it, i) => {
+                      const href =
+                        it.product_id && it.product_id > 0 ? `/shop/products/${it.product_id}` : ''
+                      const attrs = visibleItemAttributes(it.attributes, canManageOrders)
+                      return (
+                        <MobileListCard
+                          key={`${it.product_id}-${it.variation_id}-${i}`}
+                          media={
+                            <div className="flex gap-3">
                               {it.image ? (
                                 <LazyImage
                                   src={it.image}
                                   alt={it.name}
-                                  className="size-10 rounded object-cover"
+                                  className="size-14 shrink-0 rounded-lg object-cover"
                                 />
                               ) : (
-                                <div className="bg-muted size-10 rounded" />
+                                <div className="bg-muted size-14 shrink-0 rounded-lg" />
                               )}
-                            </TableCell>
-                            <TableCell>
-                              {href ? (
-                                <Link to={href} className="text-primary font-medium hover:underline">
-                                  {it.name}
-                                </Link>
-                              ) : (
-                                <span className="font-medium">{it.name}</span>
-                              )}
-                              <span className="text-muted-foreground ms-2">
-                                × {formatNumber(it.quantity, locale)}
-                              </span>
-                              {(() => {
-                                const attrs = visibleItemAttributes(it.attributes, canManageOrders)
-                                if (!attrs.length) return null
-                                return (
-                                  <ul className="text-muted-foreground mt-1 space-y-0.5 text-xs">
+                              <div className="min-w-0 flex-1 space-y-1">
+                                {href ? (
+                                  <Link to={href} className="text-primary break-words font-medium hover:underline">
+                                    {it.name}
+                                  </Link>
+                                ) : (
+                                  <span className="break-words font-medium">{it.name}</span>
+                                )}
+                                <p className="text-muted-foreground text-xs">
+                                  × {formatNumber(it.quantity, locale)}
+                                  {it.sku ? ` · ${it.sku}` : ''}
+                                </p>
+                                {attrs.length ? (
+                                  <ul className="text-muted-foreground space-y-0.5 text-xs">
                                     {attrs.map((a) => (
-                                      <li key={`${a.key}-${a.value}`}>
+                                      <li key={`${a.key}-${a.value}`} className="break-words">
                                         {formatOrderItemMetaKey(t, a.key)}:{' '}
                                         {formatOrderItemMetaValue(t, a.key, a.value, order.currency)}
                                       </li>
                                     ))}
                                   </ul>
-                                )
-                              })()}
-                            </TableCell>
-                            <TableCell className="font-mono text-sm">{it.sku || '—'}</TableCell>
-                            <TableCell className="text-end">
-                              <MoneyDisplay
-                                amount={parseFloat(it.subtotal || it.total)}
-                                currency={order.currency}
-                                currencySymbol={store.currencySymbol}
-                                locale={locale}
-                              />
-                            </TableCell>
-                            <TableCell className="text-end font-medium">
-                              <MoneyDisplay
-                                amount={parseFloat(it.total)}
-                                currency={order.currency}
-                                currencySymbol={store.currencySymbol}
-                                locale={locale}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
+                                ) : null}
+                              </div>
+                            </div>
+                          }
+                        >
+                          <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+                            <div>
+                              <dt className="text-muted-foreground text-xs">{t('orders.colSubtotal')}</dt>
+                              <dd>
+                                <MoneyDisplay
+                                  amount={parseFloat(it.subtotal || it.total)}
+                                  currency={order.currency}
+                                  currencySymbol={store.currencySymbol}
+                                  locale={locale}
+                                />
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted-foreground text-xs">{t('orders.colTotalLine')}</dt>
+                              <dd className="font-medium">
+                                <MoneyDisplay
+                                  amount={parseFloat(it.total)}
+                                  currency={order.currency}
+                                  currencySymbol={store.currencySymbol}
+                                  locale={locale}
+                                />
+                              </dd>
+                            </div>
+                          </dl>
+                        </MobileListCard>
+                      )
+                    })}
+                  </div>
+
+                  <div className="hidden overflow-x-auto md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-14" />
+                          <TableHead>{t('products.fieldName')}</TableHead>
+                          <TableHead>{t('orders.colSku')}</TableHead>
+                          <TableHead className="text-end">{t('orders.colSubtotal')}</TableHead>
+                          <TableHead className="text-end">{t('orders.colTotalLine')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {order.items.map((it, i) => {
+                          const href =
+                            it.product_id && it.product_id > 0 ? `/shop/products/${it.product_id}` : ''
+                          return (
+                            <TableRow key={`${it.product_id}-${it.variation_id}-${i}`}>
+                              <TableCell>
+                                {it.image ? (
+                                  <LazyImage
+                                    src={it.image}
+                                    alt={it.name}
+                                    className="size-10 rounded object-cover"
+                                  />
+                                ) : (
+                                  <div className="bg-muted size-10 rounded" />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {href ? (
+                                  <Link to={href} className="text-primary font-medium hover:underline">
+                                    {it.name}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium">{it.name}</span>
+                                )}
+                                <span className="text-muted-foreground ms-2">
+                                  × {formatNumber(it.quantity, locale)}
+                                </span>
+                                {(() => {
+                                  const attrs = visibleItemAttributes(it.attributes, canManageOrders)
+                                  if (!attrs.length) return null
+                                  return (
+                                    <ul className="text-muted-foreground mt-1 space-y-0.5 text-xs">
+                                      {attrs.map((a) => (
+                                        <li key={`${a.key}-${a.value}`}>
+                                          {formatOrderItemMetaKey(t, a.key)}:{' '}
+                                          {formatOrderItemMetaValue(t, a.key, a.value, order.currency)}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )
+                                })()}
+                              </TableCell>
+                              <TableCell className="text-sm">{it.sku || '—'}</TableCell>
+                              <TableCell className="text-end">
+                                <MoneyDisplay
+                                  amount={parseFloat(it.subtotal || it.total)}
+                                  currency={order.currency}
+                                  currencySymbol={store.currencySymbol}
+                                  locale={locale}
+                                />
+                              </TableCell>
+                              <TableCell className="text-end font-medium">
+                                <MoneyDisplay
+                                  amount={parseFloat(it.total)}
+                                  currency={order.currency}
+                                  currencySymbol={store.currencySymbol}
+                                  locale={locale}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -685,81 +760,93 @@ export default function OrderDetailPage() {
                 />
               ) : null}
 
-              <Card className="shadow-sm">
+              <Card className="min-w-0 shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{t('orders.sectionTotals')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm">
+                <CardContent className="min-w-0 space-y-2 text-sm">
                   {order.subtotal != null ? (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('orders.subtotalOrder')}</span>
-                      <MoneyDisplay
-                        amount={parseFloat(order.subtotal)}
-                        currency={order.currency}
-                        currencySymbol={store.currencySymbol}
-                        locale={locale}
-                      />
+                    <div className="flex min-w-0 items-start justify-between gap-3">
+                      <span className="text-muted-foreground shrink-0">{t('orders.subtotalOrder')}</span>
+                      <span className="min-w-0 text-end">
+                        <MoneyDisplay
+                          amount={parseFloat(order.subtotal)}
+                          currency={order.currency}
+                          currencySymbol={store.currencySymbol}
+                          locale={locale}
+                        />
+                      </span>
                     </div>
                   ) : null}
                   {(order.shipping_items ?? []).map((si, idx) => {
                     const amt = parseFloat(si.total || '0')
                     return (
-                      <div key={`${si.name}-${idx}`} className="flex justify-between">
-                        <span className="text-muted-foreground">{si.name || t('orders.shippingLine')}</span>
+                      <div key={`${si.name}-${idx}`} className="flex min-w-0 items-start justify-between gap-3">
+                        <span className="text-muted-foreground min-w-0 break-words">
+                          {si.name || t('orders.shippingLine')}
+                        </span>
                         {amt <= 0 ? (
-                          <span>{t('orders.shippingFree')}</span>
+                          <span className="shrink-0">{t('orders.shippingFree')}</span>
                         ) : (
-                          <MoneyDisplay
-                            amount={amt}
-                            currency={order.currency}
-                            currencySymbol={store.currencySymbol}
-                            locale={locale}
-                          />
+                          <span className="min-w-0 shrink-0 text-end">
+                            <MoneyDisplay
+                              amount={amt}
+                              currency={order.currency}
+                              currencySymbol={store.currencySymbol}
+                              locale={locale}
+                            />
+                          </span>
                         )}
                       </div>
                     )
                   })}
                   {(!order.shipping_items || order.shipping_items.length === 0) && order.shipping_total != null ? (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('orders.shippingLine')}</span>
+                    <div className="flex min-w-0 items-start justify-between gap-3">
+                      <span className="text-muted-foreground shrink-0">{t('orders.shippingLine')}</span>
                       {shippingFree ? (
-                        <span>{t('orders.shippingFree')}</span>
+                        <span className="shrink-0">{t('orders.shippingFree')}</span>
                       ) : (
-                        <MoneyDisplay
-                          amount={shippingTotal}
-                          currency={order.currency}
-                          currencySymbol={store.currencySymbol}
-                          locale={locale}
-                        />
+                        <span className="min-w-0 shrink-0 text-end">
+                          <MoneyDisplay
+                            amount={shippingTotal}
+                            currency={order.currency}
+                            currencySymbol={store.currencySymbol}
+                            locale={locale}
+                          />
+                        </span>
                       )}
                     </div>
                   ) : null}
                   {order.total_discount != null && parseFloat(order.total_discount) > 0 ? (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('orders.discount')}</span>
-                      <MoneyDisplay
-                        amount={parseFloat(order.total_discount)}
-                        currency={order.currency}
-                        currencySymbol={store.currencySymbol}
-                        locale={locale}
-                        prefix={<span>-</span>}
-                      />
+                    <div className="flex min-w-0 items-start justify-between gap-3">
+                      <span className="text-muted-foreground shrink-0">{t('orders.discount')}</span>
+                      <span className="min-w-0 text-end">
+                        <MoneyDisplay
+                          amount={parseFloat(order.total_discount)}
+                          currency={order.currency}
+                          currencySymbol={store.currencySymbol}
+                          locale={locale}
+                          prefix={<span>-</span>}
+                        />
+                      </span>
                     </div>
                   ) : null}
                   <Separator />
-                  <div className="flex justify-between text-base font-semibold">
-                    <span>{t('orders.total')}</span>
-                    <MoneyDisplay
-                      amount={parseFloat(order.total)}
-                      currency={order.currency}
-                      currencySymbol={store.currencySymbol}
-                      locale={locale}
-                    />
+                  <div className="flex min-w-0 items-start justify-between gap-3 text-base font-semibold">
+                    <span className="shrink-0">{t('orders.total')}</span>
+                    <span className="min-w-0 text-end">
+                      <MoneyDisplay
+                        amount={parseFloat(order.total)}
+                        currency={order.currency}
+                        currencySymbol={store.currencySymbol}
+                        locale={locale}
+                      />
+                    </span>
                   </div>
                   {order.customer_note ? (
                     <div className="bg-muted/40 mt-4 rounded-lg border p-3">
                       <p className="text-muted-foreground text-xs font-medium">{t('orders.customerNote')}</p>
-                      <p className="mt-1 whitespace-pre-wrap">{order.customer_note}</p>
+                      <p className="mt-1 break-words whitespace-pre-wrap">{order.customer_note}</p>
                     </div>
                   ) : null}
                 </CardContent>
@@ -775,7 +862,7 @@ export default function OrderDetailPage() {
               ) : null}
             </div>
 
-            <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+            <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
               {canManageOrders ? (
                 <OrderNotesPanel
                   orderId={order.id}

@@ -232,6 +232,12 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     Component: lazyPage(() => import('@/pages/users/UsersListPage')),
   },
   {
+    path: 'users/employees',
+    capability: 'list_users',
+    headerTitleKey: 'users.employeesTitle',
+    Component: lazyPage(() => import('@/pages/users/UsersListPage')),
+  },
+  {
     path: 'users/new',
     capability: 'create_users',
     headerTitleKey: 'users.createTitle',

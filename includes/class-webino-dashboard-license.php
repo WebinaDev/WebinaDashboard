@@ -306,82 +306,12 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
-	 * CRM public hostname (for Host header on local-NIC bypass).
-	 *
-	 * @return string
-	 */
-	private function crm_public_host() {
-		foreach ( $this->get_server_urls() as $u ) {
-			$h = wp_parse_url( $u, PHP_URL_HOST );
-			if ( is_string( $h ) && '' !== $h ) {
-				return $h;
-			}
-		}
-		return WEBINO_DASHBOARD_VENDOR_HOST;
-	}
-
-	/**
-	 * Local NIC base when CRM and site share one server (avoids hairpin NAT).
-	 *
-	 * @return string Empty when bypass disabled or SERVER_ADDR unavailable.
-	 */
-	private function local_bypass_base() {
-		if ( (bool) apply_filters( 'webino_dashboard_license_disable_local_bypass', false ) ) {
-			return '';
-		}
-		$addr = isset( $_SERVER['SERVER_ADDR'] ) ? (string) $_SERVER['SERVER_ADDR'] : '';
-		if ( '' === $addr || ! filter_var( $addr, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
-			return '';
-		}
-		return 'https://' . $addr;
-	}
-
-	/**
-	 * @param string $base Request base URL.
-	 * @return bool
-	 */
-	private function is_local_bypass_base( $base ) {
-		$host = wp_parse_url( (string) $base, PHP_URL_HOST );
-		return is_string( $host ) && filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 );
-	}
-
-	/**
-	 * True when this WordPress install resolves to the same IP as the CRM host.
-	 *
-	 * @return bool
-	 */
-	private function is_same_server_as_crm() {
-		if ( (bool) apply_filters( 'webino_dashboard_license_disable_local_bypass', false ) ) {
-			return false;
-		}
-		$crm_host  = $this->crm_public_host();
-		$site_host = wp_parse_url( home_url(), PHP_URL_HOST );
-		if ( ! $crm_host || ! is_string( $site_host ) || '' === $site_host ) {
-			return false;
-		}
-		$crm_ip  = gethostbyname( $crm_host );
-		$site_ip = gethostbyname( $site_host );
-		if ( ! $crm_ip || ! $site_ip || $crm_ip === $crm_host || $site_ip === $site_host ) {
-			return false;
-		}
-		return $crm_ip === $site_ip;
-	}
-
-	/**
-	 * CRM bases to try: local NIC first on same server, then public HTTPS/HTTP.
+	 * CRM bases to try (public domain HTTPS/HTTP only — never IP or local NIC).
 	 *
 	 * @return list<string>
 	 */
 	private function get_request_bases() {
-		$public = $this->get_server_urls();
-		if ( ! $this->is_same_server_as_crm() ) {
-			return $public;
-		}
-		$local = $this->local_bypass_base();
-		if ( '' === $local ) {
-			return $public;
-		}
-		return array_values( array_unique( array_merge( array( $local ), $public ) ) );
+		return $this->get_server_urls();
 	}
 
 	/**
@@ -397,22 +327,10 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
-	 * Whether local NIC bypass may disable TLS verification (dev-only).
-	 *
-	 * @return bool
-	 */
-	private function allows_insecure_local_bypass() {
-		return (bool) apply_filters( 'webino_dashboard_license_allow_insecure_local', false );
-	}
-
-	/**
 	 * @param string $base Request base URL.
 	 * @return bool
 	 */
 	private function should_verify_ssl_for_base( $base ) {
-		if ( $this->is_local_bypass_base( $base ) && $this->allows_insecure_local_bypass() ) {
-			return false;
-		}
 		return 0 === strpos( (string) $base, 'https://' ) ? $this->verify_ssl() : false;
 	}
 
@@ -662,8 +580,7 @@ final class Webino_Dashboard_License {
 				break;
 			}
 
-			$is_local  = $this->is_local_bypass_base( $base );
-			$transport = $is_local ? 'local_bypass' : 'remote';
+			$transport = 'remote';
 			$url       = trailingslashit( $base ) . $path;
 			for ( $attempt = 0; $attempt <= $retries; $attempt++ ) {
 				if ( ( microtime( true ) - $wall_started ) >= $wall_cap ) {
@@ -679,9 +596,6 @@ final class Webino_Dashboard_License {
 					'Content-Type'            => 'application/json; charset=utf-8',
 					'X-Webino-Correlation-Id' => $correlation,
 				);
-				if ( $is_local ) {
-					$headers['Host'] = $this->crm_public_host();
-				}
 				$args = array(
 					'timeout'         => $request_timeout,
 					'connect_timeout' => $this->http_connect_timeout(),
@@ -817,25 +731,13 @@ final class Webino_Dashboard_License {
 	 * @return array<string,mixed>
 	 */
 	public function run_license_diagnostics() {
-		$domain      = $this->get_current_domain();
-		$bases       = $this->get_server_urls();
-		$base        = ! empty( $bases[0] ) ? (string) $bases[0] : WEBINO_DASHBOARD_VENDOR_URL;
-		$base        = trailingslashit( $base );
-		$same_server = $this->is_same_server_as_crm();
-		$local_base  = $this->local_bypass_base();
-		$check_body  = wp_json_encode( array( 'domain' => $domain ) );
+		$domain     = $this->get_current_domain();
+		$bases      = $this->get_server_urls();
+		$base       = ! empty( $bases[0] ) ? (string) $bases[0] : WEBINO_DASHBOARD_VENDOR_URL;
+		$base       = trailingslashit( $base );
+		$check_body = wp_json_encode( array( 'domain' => $domain ) );
 
-		$probes = array();
-		if ( $same_server && '' !== $local_base ) {
-			$probes[] = $this->diagnostic_probe(
-				'local_bypass_license_check',
-				'POST',
-				trailingslashit( $local_base ) . 'wp-json/webinocrm/v1/license/check',
-				6,
-				$check_body,
-				true
-			);
-		}
+		$probes   = array();
 		$probes[] = $this->diagnostic_probe( 'crm_home', 'GET', $base, 4 );
 		$probes[] = $this->diagnostic_probe( 'crm_rest_namespace', 'GET', $base . 'wp-json/webinocrm/v1/', 4 );
 		$probes[] = $this->diagnostic_probe(
@@ -852,33 +754,26 @@ final class Webino_Dashboard_License {
 		}
 
 		return array(
-			'site_domain'          => $domain,
-			'crm_base'             => rtrim( $base, '/' ),
-			'same_server_detected' => $same_server,
-			'local_bypass_base'    => ( $same_server && '' !== $local_base ) ? $local_base : null,
-			'crm_host'             => $this->crm_public_host(),
-			'wp_remote_transport'  => $transport,
-			'probes'               => $probes,
+			'site_domain'         => $domain,
+			'crm_base'            => rtrim( $base, '/' ),
+			'wp_remote_transport' => $transport,
+			'probes'              => $probes,
 		);
 	}
 
 	/**
-	 * @param string      $name     Probe id.
-	 * @param string      $method   HTTP method.
-	 * @param string      $url      Full URL.
-	 * @param int         $timeout  Seconds.
-	 * @param string|null $body     Request body for POST.
-	 * @param bool        $local_bypass Send Host header for CRM vhost via local NIC IP.
+	 * @param string      $name    Probe id.
+	 * @param string      $method  HTTP method.
+	 * @param string      $url     Full URL.
+	 * @param int         $timeout Seconds.
+	 * @param string|null $body    Request body for POST.
 	 * @return array<string,mixed>
 	 */
-	private function diagnostic_probe( $name, $method, $url, $timeout, $body = null, $local_bypass = false ) {
+	private function diagnostic_probe( $name, $method, $url, $timeout, $body = null ) {
 		$started = microtime( true );
 		$headers = array();
 		if ( null !== $body ) {
 			$headers['Content-Type'] = 'application/json; charset=utf-8';
-		}
-		if ( $local_bypass ) {
-			$headers['Host'] = $this->crm_public_host();
 		}
 		$args = array(
 			'method'          => $method,
@@ -1549,15 +1444,11 @@ final class Webino_Dashboard_License {
 		if ( ! $bases ) {
 			return;
 		}
-		$base     = $bases[0];
-		$url      = trailingslashit( $base ) . $path;
-		$is_local = $this->is_local_bypass_base( $base );
-		$headers  = array(
+		$base    = $bases[0];
+		$url     = trailingslashit( $base ) . $path;
+		$headers = array(
 			'Content-Type' => 'application/json; charset=utf-8',
 		);
-		if ( $is_local ) {
-			$headers['Host'] = $this->crm_public_host();
-		}
 		wp_remote_post(
 			$url,
 			array(
@@ -1592,12 +1483,8 @@ final class Webino_Dashboard_License {
 				$last_error = __( 'CRM request timed out.', 'webino-dashboard' );
 				break;
 			}
-			$url      = add_query_arg( $query, trailingslashit( $base ) . $path );
-			$is_local = $this->is_local_bypass_base( $base );
-			$headers  = array( 'Accept' => 'application/json' );
-			if ( $is_local ) {
-				$headers['Host'] = $this->crm_public_host();
-			}
+			$url     = add_query_arg( $query, trailingslashit( $base ) . $path );
+			$headers = array( 'Accept' => 'application/json' );
 			$response = wp_remote_get(
 				$url,
 				array(
@@ -1741,7 +1628,6 @@ final class Webino_Dashboard_License {
 			return $results;
 		}
 
-		$is_local  = $this->is_local_bypass_base( $base );
 		$sslverify = $this->should_verify_ssl_for_base( $base );
 		$mh        = curl_multi_init();
 		$handles   = array();
@@ -1754,9 +1640,6 @@ final class Webino_Dashboard_License {
 				continue;
 			}
 			$headers = array( 'Accept: application/json' );
-			if ( $is_local ) {
-				$headers[] = 'Host: ' . $this->crm_public_host();
-			}
 			curl_setopt_array(
 				$ch,
 				array(
@@ -1807,12 +1690,8 @@ final class Webino_Dashboard_License {
 	 * @return array{ ok: bool, code?: int, data?: mixed, error?: string }
 	 */
 	private function crm_get_single_on_base( $base, $path, array $query, $timeout ) {
-		$url      = add_query_arg( $query, trailingslashit( (string) $base ) . ltrim( (string) $path, '/' ) );
-		$is_local = $this->is_local_bypass_base( $base );
-		$headers  = array( 'Accept' => 'application/json' );
-		if ( $is_local ) {
-			$headers['Host'] = $this->crm_public_host();
-		}
+		$url     = add_query_arg( $query, trailingslashit( (string) $base ) . ltrim( (string) $path, '/' ) );
+		$headers = array( 'Accept' => 'application/json' );
 		$response = wp_remote_get(
 			$url,
 			array(

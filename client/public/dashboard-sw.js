@@ -1,4 +1,4 @@
-/* Webino Dashboard — cache only non-JS assets; JS/CSS always network (hashed chunk names). */
+/* Webino Dashboard PWA — network-first shell; never cache HTML/API. */
 const swUrl = new URL(self.location.href)
 const BUILD_ID = swUrl.searchParams.get('v') || '1'
 const CACHE = 'webino-dashboard-' + BUILD_ID
@@ -33,29 +33,79 @@ function isJsOrCss(url) {
   return p.endsWith('.js') || p.endsWith('.css')
 }
 
+function isApiOrAjax(url) {
+  const p = url.pathname
+  return (
+    p.includes('/wp-json/') ||
+    p.includes('/admin-ajax.php') ||
+    p.endsWith('/admin-ajax.php')
+  )
+}
+
+function isNavigation(req) {
+  return req.mode === 'navigate' || (req.method === 'GET' && req.headers.get('accept')?.includes('text/html'))
+}
+
+function isStaticPluginAsset(url) {
+  if (!isBuildAsset(url)) return false
+  const p = url.pathname
+  return (
+    p.endsWith('.png') ||
+    p.endsWith('.jpg') ||
+    p.endsWith('.jpeg') ||
+    p.endsWith('.gif') ||
+    p.endsWith('.webp') ||
+    p.endsWith('.svg') ||
+    p.endsWith('.woff') ||
+    p.endsWith('.woff2') ||
+    p.endsWith('.ttf')
+  )
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request
   if (req.method !== 'GET') return
-  const url = new URL(req.url)
-  if (!isBuildAsset(url)) return
 
-  if (isJsOrCss(url)) {
+  const url = new URL(req.url)
+
+  // Never intercept authenticated API traffic.
+  if (isApiOrAjax(url)) return
+
+  // HTML navigations: network only (avoid stale SPA shell after deploy).
+  if (isNavigation(req)) {
     event.respondWith(
-      fetch(req, { cache: 'reload' }).catch(() => fetch(req)),
+      fetch(req).catch(() =>
+        new Response('Dashboard is offline. Check your connection and try again.', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
+        }),
+      ),
     )
     return
   }
 
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached
-      return fetch(req).then((res) => {
-        const copy = res.clone()
-        if (res.ok) {
-          caches.open(CACHE).then((cache) => cache.put(req, copy))
-        }
-        return res
-      })
-    }),
-  )
+  if (!isBuildAsset(url)) return
+
+  // Hashed JS/CSS: always network.
+  if (isJsOrCss(url)) {
+    event.respondWith(fetch(req, { cache: 'reload' }).catch(() => fetch(req)))
+    return
+  }
+
+  // Images/fonts under dashboard-build: cache-first.
+  if (isStaticPluginAsset(url)) {
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        if (cached) return cached
+        return fetch(req).then((res) => {
+          const copy = res.clone()
+          if (res.ok) {
+            caches.open(CACHE).then((cache) => cache.put(req, copy))
+          }
+          return res
+        })
+      }),
+    )
+  }
 })

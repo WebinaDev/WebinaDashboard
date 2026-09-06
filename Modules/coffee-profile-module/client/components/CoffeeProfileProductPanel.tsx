@@ -8,13 +8,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { AiGenerateButton } from '@/components/AiGenerateButton'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
+import { formatNumber } from '@/lib/formatNumber'
 
 import { CoffeeFlag } from './CoffeeFlag'
-import type { CoffeeOrigin, CoffeeProductPayload, CoffeeProfile } from '../types'
+import type {
+  CoffeeOrigin,
+  CoffeePricePart,
+  CoffeePricingBaseMix,
+  CoffeePricingPayload,
+  CoffeeProductPayload,
+  CoffeeProfile,
+} from '../types'
 
 type Props = {
   productId?: number
@@ -31,6 +46,11 @@ function emptyProfile(): CoffeeProfile {
     sweetness: 0,
     body: 0,
     pack_weight_g: 1000,
+    price_mode: 'none',
+    price_bean_id: '',
+    price_mix_id: '',
+    price_shop_style: 'classic',
+    price_parts: [],
     visible: {
       blend: true,
       acidity: true,
@@ -54,7 +74,7 @@ function mergeVisible(fromServer?: CoffeeProfile['visible']): CoffeeProfile['vis
 }
 
 export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const [draft, setDraft] = useState<CoffeeProfile>(emptyProfile)
   const draftRef = useRef(draft)
@@ -66,6 +86,12 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
     queryKey: ['coffee-profile', productId],
     enabled: Boolean(productId),
     queryFn: () => apiFetch<CoffeeProductPayload>(`shop/products/${productId}/coffee-profile`),
+  })
+
+  const pricingQ = useQuery({
+    queryKey: ['coffee-pricing'],
+    queryFn: () => apiFetch<CoffeePricingPayload>('shop/coffee-pricing'),
+    staleTime: 60_000,
   })
 
   useEffect(() => {
@@ -83,8 +109,12 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
     }
     hydratedFor.current = productId
     dirty.current = false
-    setDraft({ ...emptyProfile(), ...q.data.profile, visible: mergeVisible(q.data.profile.visible) })
-  }, [q.data, productId])
+    const next = hydratePriceParts(
+      { ...emptyProfile(), ...q.data.profile, visible: mergeVisible(q.data.profile.visible) },
+      pricingQ.data?.base_mixes ?? []
+    )
+    setDraft(next)
+  }, [q.data, productId, pricingQ.data?.base_mixes])
 
   const settings = q.data?.settings
   const origins = q.data?.origins ?? []
@@ -127,6 +157,23 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
   })
 
   const originMap = useMemo(() => new Map(origins.map((o) => [o.id, o])), [origins])
+
+  const beanAfter = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const b of pricingQ.data?.beans ?? []) {
+      if (typeof b.after_roast === 'number') {
+        m.set(b.id, b.after_roast)
+      }
+    }
+    return m
+  }, [pricingQ.data?.beans])
+
+  const pricePreviewKg = useMemo(() => weightedParts(draft.price_parts, beanAfter), [draft.price_parts, beanAfter])
+
+  const detectedPattern = useMemo(
+    () => detectMixPattern(draft.price_parts, pricingQ.data?.base_mixes ?? []),
+    [draft.price_parts, pricingQ.data?.base_mixes]
+  )
 
   if (!productId) {
     return (
@@ -362,6 +409,115 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
           <p className="text-muted-foreground text-xs">{t('coffeeProfile.packWeightHint')}</p>
         </div>
 
+        <div className="space-y-3 rounded-lg border p-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <Label>{t('coffeeProfile.priceComposition')}</Label>
+              <p className="text-muted-foreground mt-1 text-xs">{t('coffeeProfile.priceCompositionHint')}</p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                patchDraft((d) => ({
+                  ...d,
+                  price_mode: 'custom',
+                  price_parts: [
+                    ...d.price_parts,
+                    {
+                      bean_id: pricingQ.data?.beans?.[0]?.id ?? '',
+                      percent: d.price_parts.length === 0 ? 100 : 0,
+                    },
+                  ],
+                }))
+              }
+            >
+              {t('coffeeProfile.pricingAddPart')}
+            </Button>
+          </div>
+
+          {draft.price_parts.length === 0 ? (
+            <p className="text-muted-foreground text-sm">{t('coffeeProfile.priceCompositionEmpty')}</p>
+          ) : null}
+
+          {draft.price_parts.map((part, idx) => (
+            <div key={`part-${idx}`} className="flex flex-wrap items-center gap-2">
+              <Select
+                value={part.bean_id || undefined}
+                onValueChange={(v) =>
+                  patchDraft((d) => ({
+                    ...d,
+                    price_mode: 'custom',
+                    price_parts: d.price_parts.map((p, i) => (i === idx ? { ...p, bean_id: v } : p)),
+                    price_bean_id: d.price_parts.length === 1 ? v : d.price_bean_id,
+                  }))
+                }
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder={t('coffeeProfile.pricePickBean')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(pricingQ.data?.beans ?? []).map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                className="w-24"
+                min={0}
+                max={100}
+                value={part.percent}
+                onChange={(e) =>
+                  patchDraft((d) => ({
+                    ...d,
+                    price_mode: 'custom',
+                    price_parts: d.price_parts.map((p, i) =>
+                      i === idx ? { ...p, percent: Number(e.target.value) || 0 } : p
+                    ),
+                  }))
+                }
+              />
+              <span className="text-muted-foreground text-sm">%</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  patchDraft((d) => {
+                    const price_parts = d.price_parts.filter((_, i) => i !== idx)
+                    return {
+                      ...d,
+                      price_parts,
+                      price_mode: price_parts.length ? 'custom' : 'none',
+                    }
+                  })
+                }
+              >
+                {t('common.delete')}
+              </Button>
+            </div>
+          ))}
+
+          {detectedPattern ? (
+            <p className="text-sm">
+              {t('coffeeProfile.pricePatternDetected', { name: detectedPattern.name })}
+            </p>
+          ) : null}
+
+          {draft.price_parts.length > 0 ? (
+            <p className="text-muted-foreground text-sm">
+              {t('coffeeProfile.pricePreviewKg')}:{' '}
+              <span className="text-foreground font-medium">
+                {formatNumber(Math.round(pricePreviewKg), i18n.language)}
+              </span>
+            </p>
+          ) : null}
+        </div>
+
         <VisibilityRow
           id="origin"
           label={t('coffeeProfile.showOrigin')}
@@ -388,6 +544,79 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
       </CardContent>
     </Card>
   )
+}
+
+function hydratePriceParts(profile: CoffeeProfile, mixes: CoffeePricingBaseMix[]): CoffeeProfile {
+  if (profile.price_parts?.length) {
+    return { ...profile, price_mode: 'custom' }
+  }
+  if (profile.price_mode === 'single' && profile.price_bean_id) {
+    return {
+      ...profile,
+      price_mode: 'custom',
+      price_parts: [{ bean_id: profile.price_bean_id, percent: 100 }],
+    }
+  }
+  if (profile.price_mode === 'base_mix' && profile.price_mix_id) {
+    const mix = mixes.find((m) => m.id === profile.price_mix_id)
+    if (mix?.parts?.length) {
+      return {
+        ...profile,
+        price_mode: 'custom',
+        price_parts: mix.parts.map((p) => ({ bean_id: p.bean_id, percent: p.percent })),
+      }
+    }
+  }
+  return profile
+}
+
+function weightedParts(parts: CoffeePricePart[], map: Map<string, number>) {
+  let sum = 0
+  let w = 0
+  for (const p of parts) {
+    const v = map.get(p.bean_id)
+    if (v == null || p.percent <= 0) continue
+    sum += v * (p.percent / 100)
+    w += p.percent
+  }
+  if (w <= 0) return 0
+  if (Math.abs(w - 100) > 0.5) sum *= 100 / w
+  return sum
+}
+
+function detectMixPattern(
+  parts: CoffeePricePart[],
+  mixes: CoffeePricingBaseMix[]
+): { id: string; name: string } | null {
+  const map = new Map<string, number>()
+  for (const p of parts) {
+    if (!p.bean_id || p.percent <= 0) continue
+    map.set(p.bean_id, (map.get(p.bean_id) ?? 0) + p.percent)
+  }
+  if (!map.size) return null
+  let sum = 0
+  for (const v of map.values()) sum += v
+  if (sum > 0 && Math.abs(sum - 100) > 0.01) {
+    for (const [k, v] of map) map.set(k, (v * 100) / sum)
+  }
+  for (const mix of mixes) {
+    const want = new Map<string, number>()
+    for (const p of mix.parts ?? []) {
+      if (!p.bean_id || p.percent <= 0) continue
+      want.set(p.bean_id, (want.get(p.bean_id) ?? 0) + p.percent)
+    }
+    if (want.size !== map.size) continue
+    let ok = true
+    for (const [bid, pct] of want) {
+      const got = map.get(bid)
+      if (got == null || Math.abs(got - pct) > 1) {
+        ok = false
+        break
+      }
+    }
+    if (ok) return { id: mix.id, name: mix.name }
+  }
+  return null
 }
 
 function VisibilityRow({

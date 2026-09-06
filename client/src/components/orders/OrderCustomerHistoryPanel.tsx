@@ -113,8 +113,8 @@ export function OrderCustomerHistoryPanel({
               <p className="text-sm font-medium">{t('orders.customerOrdersList')}</p>
               <ul className="space-y-2">
                 {items.map((row) => (
-                  <li key={row.id} className="flex items-center justify-between gap-2 text-sm">
-                    <div className="min-w-0">
+                  <li key={row.id} className="flex min-w-0 flex-wrap items-start justify-between gap-2 text-sm">
+                    <div className="min-w-0 flex-1">
                       <Link
                         to={`/orders/list/${row.id}`}
                         className={`text-primary font-medium hover:underline ${row.id === currentOrderId ? 'opacity-60' : ''}`}
@@ -125,7 +125,7 @@ export function OrderCustomerHistoryPanel({
                         {formatDisplayDateTime(row.date ?? undefined, locale)}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex min-w-0 shrink-0 flex-col items-end gap-1">
                       <Badge variant="outline">{translateOrderStatus(t, row.status)}</Badge>
                       <MoneyDisplay
                         amount={parseFloat(row.total || '0')}

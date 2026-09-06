@@ -87,13 +87,19 @@ export function ProductAttributeTermsPicker({
 
   const terms = useMemo(() => {
     const items = q.data?.items ?? []
-    const seen = new Set<number>()
+    const seenIds = new Set<number>()
+    const seenNames = new Set<string>()
     return items.filter((term) => {
       const id = Number(term.id)
-      if (!Number.isFinite(id) || id < 1 || seen.has(id)) {
+      if (!Number.isFinite(id) || id < 1 || seenIds.has(id)) {
         return false
       }
-      seen.add(id)
+      const nameKey = (term.name ?? '').trim().toLowerCase()
+      if (nameKey && seenNames.has(nameKey)) {
+        return false
+      }
+      seenIds.add(id)
+      if (nameKey) seenNames.add(nameKey)
       return true
     })
   }, [q.data?.items])

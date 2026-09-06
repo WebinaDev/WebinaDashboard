@@ -54,12 +54,14 @@ export function OrderSmsHistoryPanel({ entries = [], locale }: OrderSmsHistoryPa
       ) : (
         <ul className="space-y-2">
           {[...entries].reverse().map((e, i) => (
-            <li key={`${e.time}-${e.event}-${i}`} className="rounded-md border p-2 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium">{smsEventLabel(t, e.event)}</span>
-                <Badge variant={smsStatusVariant(e.status)}>{smsStatusLabel(t, e.status)}</Badge>
+            <li key={`${e.time}-${e.event}-${i}`} className="min-w-0 rounded-md border p-2 text-sm">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <span className="min-w-0 break-words font-medium">{smsEventLabel(t, e.event)}</span>
+                <Badge variant={smsStatusVariant(e.status)} className="shrink-0">
+                  {smsStatusLabel(t, e.status)}
+                </Badge>
               </div>
-              <p className="text-muted-foreground mt-1 text-xs">
+              <p className="text-muted-foreground mt-1 break-words text-xs">
                 {formatDisplayDateTime(e.time, locale)}
                 {e.phone ? ` · ${localizeDigits(e.phone, locale)}` : ''}
                 {e.role ? ` · ${e.role}` : ''}

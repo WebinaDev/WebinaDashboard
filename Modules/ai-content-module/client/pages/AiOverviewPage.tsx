@@ -61,6 +61,9 @@ export default function AiOverviewPage() {
           <Link to="/ai-content/calendar">{t('aiContent.navCalendar')}</Link>
         </Button>
         <Button asChild variant="outline" size="sm">
+          <Link to="/ai-content/blog">{t('aiContent.navBlog')}</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm">
           <Link to="/ai-content/products">{t('aiContent.navProducts')}</Link>
         </Button>
         <Button asChild variant="outline" size="sm">

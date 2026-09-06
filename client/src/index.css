@@ -163,6 +163,94 @@
   opacity: 0.55;
 }
 
+/* Café atmosphere — soft coffee-bean tile */
+[data-accent='cafe'] .wd-app-atmosphere::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 12% -8%, color-mix(in oklch, var(--color-primary) 24%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 92% 8%, color-mix(in oklch, var(--color-accent) 32%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 70% 88%, color-mix(in oklch, var(--color-chart-3) 20%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%236b4423' stroke-opacity='0.14' stroke-width='1.4'%3E%3Cellipse cx='14' cy='16' rx='6' ry='4' transform='rotate(-28 14 16)'/%3E%3Cpath d='M10.5 14.5c2.2 1.4 4.8 1.4 7 0'/%3E%3Cellipse cx='34' cy='34' rx='6' ry='4' transform='rotate(22 34 34)'/%3E%3Cpath d='M30.5 32.5c2.2 1.4 4.8 1.4 7 0'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 48px 48px;
+  opacity: 0.9;
+}
+
+.dark[data-accent='cafe'] .wd-app-atmosphere::before,
+.dark [data-accent='cafe'] .wd-app-atmosphere::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 12% -8%, color-mix(in oklch, var(--color-primary) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 92% 8%, color-mix(in oklch, var(--color-accent) 22%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 70% 88%, color-mix(in oklch, var(--color-chart-3) 14%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23d4a574' stroke-opacity='0.16' stroke-width='1.4'%3E%3Cellipse cx='14' cy='16' rx='6' ry='4' transform='rotate(-28 14 16)'/%3E%3Cpath d='M10.5 14.5c2.2 1.4 4.8 1.4 7 0'/%3E%3Cellipse cx='34' cy='34' rx='6' ry='4' transform='rotate(22 34 34)'/%3E%3Cpath d='M30.5 32.5c2.2 1.4 4.8 1.4 7 0'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 48px 48px;
+  opacity: 0.5;
+}
+
+/* Beauty atmosphere — pearl sparkles / petals */
+[data-accent='cosmetics'] .wd-app-atmosphere::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 12% -8%, color-mix(in oklch, var(--color-primary) 22%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 92% 8%, color-mix(in oklch, var(--color-chart-2) 26%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 70% 88%, color-mix(in oklch, var(--color-chart-3) 16%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='%23c45a8a' fill-opacity='0.12'%3E%3Cpath d='M10 8l1.2 3.2L14.4 12.4 11.2 13.6 10 16.8 8.8 13.6 5.6 12.4 8.8 11.2z'/%3E%3Ccircle cx='30' cy='28' r='1.6'/%3E%3Cpath d='M32 10c1.6 0.4 2.4 1.6 2 3.1-.5 1.6-1.8 2.2-3.4 1.8-1.5-.4-2.2-1.7-1.8-3.3.4-1.5 1.7-2.1 3.2-1.6z'/%3E%3Ccircle cx='14' cy='32' r='1.1'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 44px 44px;
+  opacity: 0.92;
+}
+
+.dark[data-accent='cosmetics'] .wd-app-atmosphere::before,
+.dark [data-accent='cosmetics'] .wd-app-atmosphere::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 12% -8%, color-mix(in oklch, var(--color-primary) 16%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 92% 8%, color-mix(in oklch, var(--color-chart-2) 18%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 70% 88%, color-mix(in oklch, var(--color-chart-3) 12%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='%23f0a0c0' fill-opacity='0.14'%3E%3Cpath d='M10 8l1.2 3.2L14.4 12.4 11.2 13.6 10 16.8 8.8 13.6 5.6 12.4 8.8 11.2z'/%3E%3Ccircle cx='30' cy='28' r='1.6'/%3E%3Cpath d='M32 10c1.6 0.4 2.4 1.6 2 3.1-.5 1.6-1.8 2.2-3.4 1.8-1.5-.4-2.2-1.7-1.8-3.3.4-1.5 1.7-2.1 3.2-1.6z'/%3E%3Ccircle cx='14' cy='32' r='1.1'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 44px 44px;
+  opacity: 0.48;
+}
+
+/* Mobile accessories — phone + signal rings */
+[data-accent='mobile'] .wd-app-atmosphere::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 12% -8%, color-mix(in oklch, var(--color-primary) 24%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 92% 8%, color-mix(in oklch, var(--color-chart-4) 22%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 70% 88%, color-mix(in oklch, var(--color-chart-3) 16%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Cg fill='none' stroke='%23e86a2a' stroke-opacity='0.15' stroke-width='1.3'%3E%3Crect x='8' y='10' width='12' height='20' rx='2.2'/%3E%3Cpath d='M12 27.5h4'/%3E%3Cpath d='M28 14a8 8 0 0 1 0 16'/%3E%3Cpath d='M31 17a4.5 4.5 0 0 1 0 10'/%3E%3Ccircle cx='40' cy='36' r='2.2'/%3E%3Cpath d='M36 36h-6'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 52px 52px;
+  opacity: 0.9;
+}
+
+.dark[data-accent='mobile'] .wd-app-atmosphere::before,
+.dark [data-accent='mobile'] .wd-app-atmosphere::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 12% -8%, color-mix(in oklch, var(--color-primary) 16%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 92% 8%, color-mix(in oklch, var(--color-chart-4) 16%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 70% 88%, color-mix(in oklch, var(--color-chart-3) 12%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Cg fill='none' stroke='%23ff9a5c' stroke-opacity='0.16' stroke-width='1.3'%3E%3Crect x='8' y='10' width='12' height='20' rx='2.2'/%3E%3Cpath d='M12 27.5h4'/%3E%3Cpath d='M28 14a8 8 0 0 1 0 16'/%3E%3Cpath d='M31 17a4.5 4.5 0 0 1 0 10'/%3E%3Ccircle cx='40' cy='36' r='2.2'/%3E%3Cpath d='M36 36h-6'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 52px 52px;
+  opacity: 0.48;
+}
+
+/* Electronics — lightning + circuit traces */
+[data-accent='electronics'] .wd-app-atmosphere::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 12% -8%, color-mix(in oklch, var(--color-primary) 26%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 92% 8%, color-mix(in oklch, var(--color-chart-3) 20%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 70% 88%, color-mix(in oklch, var(--color-chart-2) 14%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23c9a000' stroke-opacity='0.16' stroke-width='1.2'%3E%3Cpath d='M18 8l-4 14h8l-5 14 14-18h-8l5-10z'/%3E%3Cpath d='M34 30h10M39 30v8M44 38h-6'/%3E%3Ccircle cx='44' cy='38' r='1.5'/%3E%3Cpath d='M8 40h10M13 40v6'/%3E%3Ccircle cx='13' cy='46' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 56px 56px;
+  opacity: 0.9;
+}
+
+.dark[data-accent='electronics'] .wd-app-atmosphere::before,
+.dark [data-accent='electronics'] .wd-app-atmosphere::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 12% -8%, color-mix(in oklch, var(--color-primary) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 92% 8%, color-mix(in oklch, var(--color-chart-3) 16%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 70% 88%, color-mix(in oklch, var(--color-chart-2) 12%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23f5d76e' stroke-opacity='0.17' stroke-width='1.2'%3E%3Cpath d='M18 8l-4 14h8l-5 14 14-18h-8l5-10z'/%3E%3Cpath d='M34 30h10M39 30v8M44 38h-6'/%3E%3Ccircle cx='44' cy='38' r='1.5'/%3E%3Cpath d='M8 40h10M13 40v6'/%3E%3Ccircle cx='13' cy='46' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 56px 56px;
+  opacity: 0.48;
+}
+
 .wd-home-hero {
   position: relative;
   overflow: hidden;
@@ -240,6 +328,12 @@ body[data-scroll-locked] {
   --removed-body-scroll-bar-size: 0 !important;
 }
 
+html {
+  --wd-font-body: 'Yekan Bakh', Tahoma, sans-serif;
+  --wd-font-heading: 'Yekan Bakh', Tahoma, sans-serif;
+  --wd-font-ui: 'Yekan Bakh', Tahoma, sans-serif;
+}
+
 #root {
   box-sizing: border-box;
   height: 100%;
@@ -247,19 +341,29 @@ body[data-scroll-locked] {
   width: 100%;
 }
 
-html[lang='fa'] body {
-  font-family: 'Yekan Bakh', system-ui, sans-serif;
-}
-
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--wd-font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--wd-font-heading);
+}
+
+button,
+input,
+select,
+textarea,
+[data-slot='sidebar'],
+[data-slot='sidebar-menu-button'],
+.ui-button {
+  font-family: var(--wd-font-ui);
 }
 
 /* Neutral (legacy zinc) — opt-in via accent picker */
@@ -398,6 +502,154 @@ body {
   --color-sidebar-primary-foreground: oklch(99% 0 0);
   --color-sidebar-ring: oklch(48% 0.22 292);
   --color-chart-1: oklch(48% 0.22 292);
+}
+
+/* Café — warm espresso / milk paper */
+[data-accent='cafe'] {
+  --color-background: oklch(97.5% 0.012 75);
+  --color-foreground: oklch(28% 0.04 55);
+  --color-card: oklch(98.8% 0.01 80);
+  --color-card-foreground: oklch(28% 0.04 55);
+  --color-popover: oklch(98.8% 0.01 80);
+  --color-popover-foreground: oklch(28% 0.04 55);
+  --color-primary: oklch(42% 0.08 55);
+  --color-primary-foreground: oklch(97% 0.02 85);
+  --color-secondary: oklch(93% 0.03 75);
+  --color-secondary-foreground: oklch(38% 0.06 55);
+  --color-muted: oklch(94.5% 0.02 80);
+  --color-muted-foreground: oklch(48% 0.04 55);
+  --color-accent: oklch(92% 0.04 75);
+  --color-accent-foreground: oklch(40% 0.08 55);
+  --color-border: oklch(88% 0.03 70);
+  --color-input: oklch(88% 0.03 70);
+  --color-ring: oklch(42% 0.08 55);
+  --color-sidebar: oklch(95.5% 0.015 75);
+  --color-sidebar-foreground: oklch(28% 0.04 55);
+  --color-sidebar-primary: oklch(42% 0.08 55);
+  --color-sidebar-primary-foreground: oklch(97% 0.02 85);
+  --color-sidebar-border: oklch(88% 0.03 70);
+  --color-sidebar-accent: oklch(92% 0.04 75);
+  --color-sidebar-accent-foreground: oklch(40% 0.08 55);
+  --color-sidebar-ring: oklch(42% 0.08 55);
+  --color-chart-1: oklch(42% 0.08 55);
+  --color-chart-2: oklch(62% 0.12 55);
+  --color-chart-3: oklch(78% 0.08 85);
+  --color-chart-4: oklch(52% 0.06 130);
+  --color-chart-5: oklch(68% 0.1 45);
+  --shadow-soft: 0 1px 2px oklch(42% 0.08 55 / 8%), 0 6px 18px oklch(42% 0.08 55 / 10%);
+  --shadow-lift: 0 2px 6px oklch(42% 0.08 55 / 10%), 0 14px 32px oklch(42% 0.08 55 / 14%);
+  --shadow-glow: 0 0 0 1px oklch(42% 0.08 55 / 12%), 0 10px 28px oklch(55% 0.1 55 / 14%);
+}
+
+/* Beauty / cosmetics — blush pearl */
+[data-accent='cosmetics'] {
+  --color-background: oklch(98.5% 0.012 350);
+  --color-foreground: oklch(32% 0.05 350);
+  --color-card: oklch(99.4% 0.008 350);
+  --color-card-foreground: oklch(32% 0.05 350);
+  --color-popover: oklch(99.4% 0.008 350);
+  --color-popover-foreground: oklch(32% 0.05 350);
+  --color-primary: oklch(58% 0.18 350);
+  --color-primary-foreground: oklch(99% 0.01 350);
+  --color-secondary: oklch(94% 0.03 350);
+  --color-secondary-foreground: oklch(42% 0.1 350);
+  --color-muted: oklch(95.5% 0.02 350);
+  --color-muted-foreground: oklch(50% 0.04 350);
+  --color-accent: oklch(94% 0.04 350);
+  --color-accent-foreground: oklch(48% 0.14 350);
+  --color-border: oklch(90% 0.03 350);
+  --color-input: oklch(90% 0.03 350);
+  --color-ring: oklch(58% 0.18 350);
+  --color-sidebar: oklch(97% 0.015 350);
+  --color-sidebar-foreground: oklch(32% 0.05 350);
+  --color-sidebar-primary: oklch(58% 0.18 350);
+  --color-sidebar-primary-foreground: oklch(99% 0.01 350);
+  --color-sidebar-border: oklch(90% 0.03 350);
+  --color-sidebar-accent: oklch(94% 0.04 350);
+  --color-sidebar-accent-foreground: oklch(48% 0.14 350);
+  --color-sidebar-ring: oklch(58% 0.18 350);
+  --color-chart-1: oklch(58% 0.18 350);
+  --color-chart-2: oklch(72% 0.1 85);
+  --color-chart-3: oklch(55% 0.12 320);
+  --color-chart-4: oklch(78% 0.06 70);
+  --color-chart-5: oklch(65% 0.14 15);
+  --shadow-soft: 0 1px 2px oklch(58% 0.18 350 / 8%), 0 6px 18px oklch(58% 0.14 350 / 10%);
+  --shadow-lift: 0 2px 6px oklch(58% 0.18 350 / 10%), 0 14px 32px oklch(58% 0.14 350 / 14%);
+  --shadow-glow: 0 0 0 1px oklch(58% 0.18 350 / 12%), 0 10px 28px oklch(72% 0.1 85 / 12%);
+}
+
+/* Mobile accessories — bright orange gadget */
+[data-accent='mobile'] {
+  --color-background: oklch(97.8% 0.01 50);
+  --color-foreground: oklch(28% 0.04 250);
+  --color-card: oklch(99% 0.006 50);
+  --color-card-foreground: oklch(28% 0.04 250);
+  --color-popover: oklch(99% 0.006 50);
+  --color-popover-foreground: oklch(28% 0.04 250);
+  --color-primary: oklch(62% 0.18 50);
+  --color-primary-foreground: oklch(99% 0.01 50);
+  --color-secondary: oklch(94% 0.025 50);
+  --color-secondary-foreground: oklch(38% 0.08 50);
+  --color-muted: oklch(95.5% 0.015 250);
+  --color-muted-foreground: oklch(48% 0.03 250);
+  --color-accent: oklch(94% 0.04 50);
+  --color-accent-foreground: oklch(48% 0.14 50);
+  --color-border: oklch(90% 0.03 50);
+  --color-input: oklch(90% 0.03 50);
+  --color-ring: oklch(62% 0.18 50);
+  --color-sidebar: oklch(96.5% 0.012 50 / 82%);
+  --color-sidebar-foreground: oklch(28% 0.04 250);
+  --color-sidebar-primary: oklch(62% 0.18 50);
+  --color-sidebar-primary-foreground: oklch(99% 0.01 50);
+  --color-sidebar-border: oklch(90% 0.03 50);
+  --color-sidebar-accent: oklch(94% 0.04 50);
+  --color-sidebar-accent-foreground: oklch(48% 0.14 50);
+  --color-sidebar-ring: oklch(62% 0.18 50);
+  --color-chart-1: oklch(62% 0.18 50);
+  --color-chart-2: oklch(48% 0.04 250);
+  --color-chart-3: oklch(62% 0.12 210);
+  --color-chart-4: oklch(72% 0.14 70);
+  --color-chart-5: oklch(55% 0.1 30);
+  --shadow-soft: 0 1px 2px oklch(62% 0.18 50 / 8%), 0 6px 18px oklch(62% 0.14 50 / 10%);
+  --shadow-lift: 0 2px 6px oklch(62% 0.18 50 / 10%), 0 14px 32px oklch(62% 0.14 50 / 14%);
+  --shadow-glow: 0 0 0 1px oklch(62% 0.18 50 / 12%), 0 10px 28px oklch(55% 0.08 250 / 10%);
+}
+
+/* Electronics — amber / electric */
+[data-accent='electronics'] {
+  --color-background: oklch(98% 0.02 95);
+  --color-foreground: oklch(28% 0.04 95);
+  --color-card: oklch(99.2% 0.012 95);
+  --color-card-foreground: oklch(28% 0.04 95);
+  --color-popover: oklch(99.2% 0.012 95);
+  --color-popover-foreground: oklch(28% 0.04 95);
+  --color-primary: oklch(78% 0.16 95);
+  --color-primary-foreground: oklch(22% 0.04 95);
+  --color-secondary: oklch(94% 0.04 95);
+  --color-secondary-foreground: oklch(38% 0.08 95);
+  --color-muted: oklch(95.5% 0.025 95);
+  --color-muted-foreground: oklch(48% 0.04 95);
+  --color-accent: oklch(94% 0.05 95);
+  --color-accent-foreground: oklch(45% 0.1 95);
+  --color-border: oklch(90% 0.04 95);
+  --color-input: oklch(90% 0.04 95);
+  --color-ring: oklch(78% 0.16 95);
+  --color-sidebar: oklch(96.8% 0.02 95 / 82%);
+  --color-sidebar-foreground: oklch(28% 0.04 95);
+  --color-sidebar-primary: oklch(78% 0.16 95);
+  --color-sidebar-primary-foreground: oklch(22% 0.04 95);
+  --color-sidebar-border: oklch(90% 0.04 95);
+  --color-sidebar-accent: oklch(94% 0.05 95);
+  --color-sidebar-accent-foreground: oklch(45% 0.1 95);
+  --color-sidebar-ring: oklch(78% 0.16 95);
+  --color-chart-1: oklch(78% 0.16 95);
+  --color-chart-2: oklch(42% 0.03 250);
+  --color-chart-3: oklch(58% 0.16 250);
+  --color-chart-4: oklch(72% 0.12 85);
+  --color-chart-5: oklch(62% 0.14 55);
+  --shadow-soft: 0 1px 2px oklch(78% 0.16 95 / 10%), 0 6px 18px oklch(78% 0.12 95 / 12%);
+  --shadow-lift: 0 2px 6px oklch(78% 0.16 95 / 12%), 0 14px 32px oklch(58% 0.12 250 / 12%);
+  --shadow-glow: 0 0 0 1px oklch(78% 0.16 95 / 14%), 0 10px 28px oklch(58% 0.12 250 / 10%);
 }
 
 /* shadcn accent presets (dark) */
@@ -543,6 +795,230 @@ body {
   --color-sidebar-primary-foreground: oklch(99% 0 0);
   --color-sidebar-ring: oklch(58% 0.2 292);
   --color-chart-1: oklch(58% 0.2 292);
+}
+
+.dark[data-accent='cafe'],
+.dark [data-accent='cafe'] {
+  --color-background: oklch(18% 0.02 55);
+  --color-foreground: oklch(94% 0.02 80);
+  --color-card: oklch(22% 0.025 55);
+  --color-card-foreground: oklch(94% 0.02 80);
+  --color-popover: oklch(22% 0.025 55);
+  --color-popover-foreground: oklch(94% 0.02 80);
+  --color-primary: oklch(72% 0.1 65);
+  --color-primary-foreground: oklch(22% 0.03 55);
+  --color-secondary: oklch(28% 0.03 55);
+  --color-secondary-foreground: oklch(90% 0.03 80);
+  --color-muted: oklch(26% 0.025 55);
+  --color-muted-foreground: oklch(72% 0.03 70);
+  --color-accent: oklch(30% 0.04 55);
+  --color-accent-foreground: oklch(82% 0.06 70);
+  --color-border: oklch(100% 0 0 / 10%);
+  --color-input: oklch(100% 0 0 / 12%);
+  --color-ring: oklch(72% 0.1 65);
+  --color-sidebar: oklch(20% 0.025 55);
+  --color-sidebar-foreground: oklch(94% 0.02 80);
+  --color-sidebar-primary: oklch(72% 0.1 65);
+  --color-sidebar-primary-foreground: oklch(22% 0.03 55);
+  --color-sidebar-border: oklch(100% 0 0 / 10%);
+  --color-sidebar-accent: oklch(28% 0.035 55);
+  --color-sidebar-accent-foreground: oklch(88% 0.05 70);
+  --color-sidebar-ring: oklch(72% 0.1 65);
+  --color-chart-1: oklch(72% 0.1 65);
+  --color-chart-2: oklch(62% 0.1 45);
+  --color-chart-3: oklch(78% 0.08 85);
+  --color-chart-4: oklch(58% 0.06 130);
+  --color-chart-5: oklch(68% 0.09 40);
+  --shadow-soft: 0 1px 2px oklch(0% 0 0 / 30%), 0 6px 18px oklch(0% 0 0 / 34%);
+  --shadow-lift: 0 2px 6px oklch(0% 0 0 / 32%), 0 14px 32px oklch(0% 0 0 / 42%);
+  --shadow-glow: 0 0 0 1px oklch(72% 0.1 65 / 18%), 0 10px 28px oklch(0% 0 0 / 38%);
+}
+
+.dark[data-accent='cosmetics'],
+.dark [data-accent='cosmetics'] {
+  --color-background: oklch(17% 0.03 340);
+  --color-foreground: oklch(96% 0.015 350);
+  --color-card: oklch(22% 0.035 340);
+  --color-card-foreground: oklch(96% 0.015 350);
+  --color-popover: oklch(22% 0.035 340);
+  --color-popover-foreground: oklch(96% 0.015 350);
+  --color-primary: oklch(72% 0.14 350);
+  --color-primary-foreground: oklch(22% 0.04 350);
+  --color-secondary: oklch(28% 0.04 340);
+  --color-secondary-foreground: oklch(92% 0.03 350);
+  --color-muted: oklch(26% 0.03 340);
+  --color-muted-foreground: oklch(74% 0.04 350);
+  --color-accent: oklch(30% 0.05 340);
+  --color-accent-foreground: oklch(86% 0.08 350);
+  --color-border: oklch(100% 0 0 / 11%);
+  --color-input: oklch(100% 0 0 / 13%);
+  --color-ring: oklch(72% 0.14 350);
+  --color-sidebar: oklch(19% 0.03 340);
+  --color-sidebar-foreground: oklch(96% 0.015 350);
+  --color-sidebar-primary: oklch(72% 0.14 350);
+  --color-sidebar-primary-foreground: oklch(22% 0.04 350);
+  --color-sidebar-border: oklch(100% 0 0 / 11%);
+  --color-sidebar-accent: oklch(28% 0.045 340);
+  --color-sidebar-accent-foreground: oklch(90% 0.06 350);
+  --color-sidebar-ring: oklch(72% 0.14 350);
+  --color-chart-1: oklch(72% 0.14 350);
+  --color-chart-2: oklch(76% 0.1 85);
+  --color-chart-3: oklch(65% 0.12 320);
+  --color-chart-4: oklch(80% 0.06 70);
+  --color-chart-5: oklch(68% 0.12 15);
+  --shadow-soft: 0 1px 2px oklch(0% 0 0 / 30%), 0 6px 18px oklch(58% 0.1 350 / 18%);
+  --shadow-lift: 0 2px 6px oklch(0% 0 0 / 32%), 0 14px 32px oklch(58% 0.1 350 / 22%);
+  --shadow-glow: 0 0 0 1px oklch(72% 0.14 350 / 20%), 0 10px 28px oklch(0% 0 0 / 38%);
+}
+
+.dark[data-accent='mobile'],
+.dark [data-accent='mobile'] {
+  --color-background: oklch(17% 0.025 250);
+  --color-foreground: oklch(96% 0.015 50);
+  --color-card: oklch(22% 0.03 250);
+  --color-card-foreground: oklch(96% 0.015 50);
+  --color-popover: oklch(22% 0.03 250);
+  --color-popover-foreground: oklch(96% 0.015 50);
+  --color-primary: oklch(70% 0.16 50);
+  --color-primary-foreground: oklch(22% 0.04 50);
+  --color-secondary: oklch(28% 0.035 250);
+  --color-secondary-foreground: oklch(92% 0.03 50);
+  --color-muted: oklch(26% 0.03 250);
+  --color-muted-foreground: oklch(74% 0.03 50);
+  --color-accent: oklch(30% 0.05 50);
+  --color-accent-foreground: oklch(86% 0.1 50);
+  --color-border: oklch(100% 0 0 / 11%);
+  --color-input: oklch(100% 0 0 / 13%);
+  --color-ring: oklch(70% 0.16 50);
+  --color-sidebar: oklch(19% 0.03 250 / 78%);
+  --color-sidebar-foreground: oklch(96% 0.015 50);
+  --color-sidebar-primary: oklch(70% 0.16 50);
+  --color-sidebar-primary-foreground: oklch(22% 0.04 50);
+  --color-sidebar-border: oklch(100% 0 0 / 11%);
+  --color-sidebar-accent: oklch(28% 0.045 50);
+  --color-sidebar-accent-foreground: oklch(90% 0.08 50);
+  --color-sidebar-ring: oklch(70% 0.16 50);
+  --color-chart-1: oklch(70% 0.16 50);
+  --color-chart-2: oklch(62% 0.04 250);
+  --color-chart-3: oklch(68% 0.12 210);
+  --color-chart-4: oklch(76% 0.12 70);
+  --color-chart-5: oklch(64% 0.1 30);
+  --shadow-soft: 0 1px 2px oklch(0% 0 0 / 30%), 0 6px 18px oklch(62% 0.12 50 / 18%);
+  --shadow-lift: 0 2px 6px oklch(0% 0 0 / 32%), 0 14px 32px oklch(62% 0.12 50 / 22%);
+  --shadow-glow: 0 0 0 1px oklch(70% 0.16 50 / 20%), 0 10px 28px oklch(0% 0 0 / 38%);
+}
+
+.dark[data-accent='electronics'],
+.dark [data-accent='electronics'] {
+  --color-background: oklch(17% 0.03 95);
+  --color-foreground: oklch(96% 0.02 95);
+  --color-card: oklch(22% 0.035 95);
+  --color-card-foreground: oklch(96% 0.02 95);
+  --color-popover: oklch(22% 0.035 95);
+  --color-popover-foreground: oklch(96% 0.02 95);
+  --color-primary: oklch(82% 0.14 95);
+  --color-primary-foreground: oklch(20% 0.04 95);
+  --color-secondary: oklch(28% 0.04 95);
+  --color-secondary-foreground: oklch(92% 0.04 95);
+  --color-muted: oklch(26% 0.03 95);
+  --color-muted-foreground: oklch(74% 0.04 95);
+  --color-accent: oklch(30% 0.05 95);
+  --color-accent-foreground: oklch(88% 0.1 95);
+  --color-border: oklch(100% 0 0 / 11%);
+  --color-input: oklch(100% 0 0 / 13%);
+  --color-ring: oklch(82% 0.14 95);
+  --color-sidebar: oklch(19% 0.035 95 / 78%);
+  --color-sidebar-foreground: oklch(96% 0.02 95);
+  --color-sidebar-primary: oklch(82% 0.14 95);
+  --color-sidebar-primary-foreground: oklch(20% 0.04 95);
+  --color-sidebar-border: oklch(100% 0 0 / 11%);
+  --color-sidebar-accent: oklch(28% 0.05 95);
+  --color-sidebar-accent-foreground: oklch(90% 0.08 95);
+  --color-sidebar-ring: oklch(82% 0.14 95);
+  --color-chart-1: oklch(82% 0.14 95);
+  --color-chart-2: oklch(58% 0.04 250);
+  --color-chart-3: oklch(68% 0.14 250);
+  --color-chart-4: oklch(76% 0.1 85);
+  --color-chart-5: oklch(66% 0.12 55);
+  --shadow-soft: 0 1px 2px oklch(0% 0 0 / 30%), 0 6px 18px oklch(78% 0.12 95 / 18%);
+  --shadow-lift: 0 2px 6px oklch(0% 0 0 / 32%), 0 14px 32px oklch(58% 0.12 250 / 20%);
+  --shadow-glow: 0 0 0 1px oklch(82% 0.14 95 / 22%), 0 10px 28px oklch(0% 0 0 / 38%);
+}
+
+/* Business accents — glass cards + translucent sidebar surfaces */
+[data-accent='cafe'],
+[data-accent='cosmetics'],
+[data-accent='mobile'],
+[data-accent='electronics'] {
+  --color-sidebar: color-mix(in oklch, var(--color-sidebar) 82%, transparent);
+}
+
+[data-accent='cafe'] [data-slot='card'],
+[data-accent='cosmetics'] [data-slot='card'],
+[data-accent='mobile'] [data-slot='card'],
+[data-accent='electronics'] [data-slot='card'] {
+  background: color-mix(in oklch, var(--color-card) 82%, transparent);
+  border-color: color-mix(in oklch, var(--color-primary) 16%, var(--color-border));
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+[data-accent='cafe'] .wd-card-glass,
+[data-accent='cosmetics'] .wd-card-glass,
+[data-accent='mobile'] .wd-card-glass,
+[data-accent='electronics'] .wd-card-glass {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklch, var(--color-card) 62%, transparent) 0%,
+      color-mix(in oklch, var(--color-primary) 10%, transparent) 55%,
+      color-mix(in oklch, var(--color-accent) 14%, transparent) 100%
+    );
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-glow);
+}
+
+[data-accent='cafe'] .wd-card-hero,
+[data-accent='cosmetics'] .wd-card-hero,
+[data-accent='mobile'] .wd-card-hero,
+[data-accent='electronics'] .wd-card-hero {
+  background:
+    linear-gradient(
+      125deg,
+      color-mix(in oklch, var(--color-primary) 18%, transparent) 0%,
+      color-mix(in oklch, var(--color-accent) 32%, transparent) 48%,
+      color-mix(in oklch, var(--color-card) 70%, transparent) 100%
+    );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+[data-accent='cafe'] .wd-card-stat,
+[data-accent='cosmetics'] .wd-card-stat,
+[data-accent='mobile'] .wd-card-stat,
+[data-accent='electronics'] .wd-card-stat {
+  background:
+    linear-gradient(
+      155deg,
+      color-mix(in oklch, var(--color-primary) 14%, transparent) 0%,
+      color-mix(in oklch, var(--color-accent) 16%, transparent) 42%,
+      color-mix(in oklch, var(--color-card) 78%, transparent) 100%
+    );
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.dark[data-accent='cafe'] [data-slot='card'],
+.dark[data-accent='cosmetics'] [data-slot='card'],
+.dark[data-accent='mobile'] [data-slot='card'],
+.dark[data-accent='electronics'] [data-slot='card'],
+.dark [data-accent='cafe'] [data-slot='card'],
+.dark [data-accent='cosmetics'] [data-slot='card'],
+.dark [data-accent='mobile'] [data-slot='card'],
+.dark [data-accent='electronics'] [data-slot='card'] {
+  background: color-mix(in oklch, var(--color-card) 78%, transparent);
 }
 
 .webino-dashboard-body {

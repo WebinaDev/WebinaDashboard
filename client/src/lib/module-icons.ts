@@ -17,6 +17,7 @@ import {
   Puzzle,
   Settings,
   ShoppingBag,
+  Shield,
   Sparkles,
   Store,
   User,
@@ -46,6 +47,7 @@ const MAP: Record<string, LucideIcon> = {
   'message-square': MessageSquare,
   sparkles: Sparkles,
   coffee: Coffee,
+  shield: Shield,
 }
 
 export function moduleIcon(slug?: string): LucideIcon {

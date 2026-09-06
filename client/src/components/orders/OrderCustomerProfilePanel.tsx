@@ -5,6 +5,7 @@ import { OrderSidebarPanel } from '@/components/orders/OrderSidebarPanel'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { localizeDigits } from '@/lib/digits'
+import { cn } from '@/lib/utils'
 
 type UserProfile = {
   job?: string
@@ -58,7 +59,7 @@ export function OrderCustomerProfilePanel({
         {nationalIdFromOrder ? (
           <p className="mt-2 text-sm">
             {t('orders.nationalId')}:{' '}
-            <span className="font-mono">{localizeDigits(nationalIdFromOrder, locale)}</span>
+            <span className="break-all">{localizeDigits(nationalIdFromOrder, locale)}</span>
           </p>
         ) : null}
       </OrderSidebarPanel>
@@ -116,9 +117,11 @@ function Row({
     )
   }
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className={mono ? 'font-mono' : undefined}>{mono ? localizeDigits(value, locale) : value}</dd>
+      <dd className={cn(mono ? 'break-all' : 'break-words')}>
+        {mono ? localizeDigits(value, locale) : value}
+      </dd>
     </div>
   )
 }

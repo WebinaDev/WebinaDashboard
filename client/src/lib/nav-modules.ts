@@ -55,7 +55,7 @@ export function moduleNavTitle(t: TFunction, id: string, fallback: string): stri
   return fallback
 }
 
-export const NAV_GROUP_ORDER: DashboardNavGroup[] = ['content', 'shop', 'tools', 'reports', 'admin']
+export const NAV_GROUP_ORDER: DashboardNavGroup[] = ['content', 'shop', 'users', 'tools', 'reports', 'admin']
 
 export type SidebarNavGroup = {
   id: DashboardNavGroup

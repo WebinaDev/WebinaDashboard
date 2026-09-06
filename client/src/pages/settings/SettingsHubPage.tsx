@@ -1,4 +1,4 @@
-import { Building2, CreditCard, FileText, KeyRound, Settings2, Store } from 'lucide-react'
+import { Building2, CreditCard, FileText, KeyRound, Palette, Settings2, Smartphone, Store } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
@@ -12,6 +12,8 @@ export default function SettingsHubPage() {
     { to: '/settings/site/general', labelKey: 'settings.site.sections.general', icon: Settings2 },
     { to: '/settings/site/license', labelKey: 'settings.site.sections.license', icon: KeyRound },
     { to: '/settings/site/dashboard', labelKey: 'settings.site.sections.dashboard', icon: Settings2 },
+    { to: '/settings/site/style', labelKey: 'settings.site.sections.style', icon: Palette },
+    { to: '/settings/site/pwa', labelKey: 'settings.site.sections.pwa', icon: Smartphone },
   ] as const
 
   const shopShortcuts = [

@@ -39,7 +39,9 @@ export function LoginForm({
   const { t } = useTranslation()
   const homeUrl = window.webinoDashboard.homeUrl || '/'
   const siteName = window.webinoDashboard.siteName?.trim() || t('app.title')
-  const iconUrl = window.webinoDashboard.siteIconUrl?.trim()
+  const iconUrl =
+    window.webinoDashboard.brandLogoUrl?.trim() ||
+    window.webinoDashboard.siteIconUrl?.trim()
   const otpFlags = window.webinoDashboard.otpAuth
   const otpLoginEnabled = !!otpFlags?.login_enabled
   const otpRegisterEnabled = !!otpFlags?.register_enabled

@@ -1519,4 +1519,14 @@ final class Webino_Dashboard_Module_Registry {
 		return class_exists( 'Webino_Dashboard_Bots_Loader', false )
 			&& ( self::is_active( 'bale-bot-module' ) || self::is_active( 'telegram-bot-module' ) );
 	}
+
+	/**
+	 * Security (Webino Shield) module active and facade loaded.
+	 *
+	 * @return bool
+	 */
+	public static function security_ready() {
+		return class_exists( 'Webino_Dashboard_Security', false )
+			&& self::is_active( 'security-module' );
+	}
 }

@@ -1,4 +1,4 @@
-import { Activity, Bot, Package, Shield, ShoppingCart, Wallet } from 'lucide-react'
+import { Activity, Bot, Package, Shield, ShieldCheck, ShoppingCart, Wallet } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
@@ -159,6 +159,32 @@ export function HomeMiniCardsStrip({
         icon={Shield}
         variant={licenseActive ? 'default' : 'error'}
       />
+
+      {panels?.security ? (
+        <MiniCard
+          title={t('home.panels.security')}
+          value={
+            panels.security.active
+              ? panels.security.score !== null
+                ? formatNumber(panels.security.score, locale)
+                : t('home.panels.active')
+              : t('home.panels.inactive')
+          }
+          hint={
+            panels.security.active
+              ? t('home.panels.securityHint', {
+                  mode: panels.security.waf_mode,
+                  findings: panels.security.open_findings,
+                })
+              : t('home.panels.inactive')
+          }
+          href="/security"
+          icon={ShieldCheck}
+          variant={
+            !panels.security.active || panels.security.open_findings > 0 ? 'error' : 'default'
+          }
+        />
+      ) : null}
 
       <MiniCard
         title={t('home.sections.traffic')}

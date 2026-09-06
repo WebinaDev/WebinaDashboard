@@ -3,10 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
-import { AccentMenu } from '@/components/AccentMenu'
 import { AppSidebar } from '@/components/app-sidebar'
 import { LanguageMenu } from '@/components/LanguageMenu'
 import { NotificationBell } from '@/components/NotificationBell'
+import { PwaInstallBanner } from '@/components/PwaInstallBanner'
 import { ThemeMenu } from '@/components/ThemeMenu'
 import {
   Breadcrumb,
@@ -128,7 +128,18 @@ export function DashboardLayout() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-accent', normalizeAccent(bq.data?.uiAccent))
-  }, [bq.data?.uiAccent])
+    const fonts = bq.data?.brandStyle?.fonts
+    if (fonts) {
+      const map = (k?: string) =>
+        k === 'system'
+          ? "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif"
+          : "'Yekan Bakh',Tahoma,sans-serif"
+      const el = document.documentElement
+      el.style.setProperty('--wd-font-body', map(fonts.body))
+      el.style.setProperty('--wd-font-heading', map(fonts.heading))
+      el.style.setProperty('--wd-font-ui', map(fonts.ui))
+    }
+  }, [bq.data?.uiAccent, bq.data?.brandStyle?.fonts])
 
   const groupedNav = useMemo(() => {
     if (bq.data?.modules?.length) {
@@ -240,6 +251,7 @@ export function DashboardLayout() {
         brandTitle={siteName}
         brandSubtitle={t('nav.siteSubtitle')}
         brandTo="/"
+        brandLogoUrl={bq.data?.brandStyle?.logoUrl || ''}
         homeNavItem={homeNavItem}
         navGroups={navGroups}
         navLoading={bq.isPending}
@@ -288,7 +300,6 @@ export function DashboardLayout() {
                 </a>
               </Button>
               <LanguageMenu />
-              <AccentMenu />
               <ThemeMenu />
             </div>
             <div className="ms-auto flex items-center gap-1 md:hidden">
@@ -316,7 +327,6 @@ export function DashboardLayout() {
                   <DropdownMenuSeparator />
                   <div className="flex flex-col gap-2 px-2 py-1.5">
                     <LanguageMenu />
-                    <AccentMenu />
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -336,6 +346,7 @@ export function DashboardLayout() {
           <p className="text-center md:text-start">{siteName}</p>
         </footer>
       </SidebarInset>
+      <PwaInstallBanner variant="shell" />
     </SidebarProvider>
   )
 }

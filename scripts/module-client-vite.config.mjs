@@ -37,6 +37,7 @@ const MODULE_SLUGS = [
   'bale-pay-gateway-module',
   'card-to-card-gateway-module',
   'wallet-gateway-module',
+  'security-module',
 ]
 
 /** @type {Record<string, string>} */
@@ -60,6 +61,7 @@ const MODULE_ALIAS_PREFIX = {
   'bale-pay-gateway-module': '@module-bale-pay',
   'card-to-card-gateway-module': '@module-c2c',
   'wallet-gateway-module': '@module-wallet',
+  'security-module': '@module-security',
 }
 
 /** Force ESM for packages that still get inlined (not on the shared runtime list). */

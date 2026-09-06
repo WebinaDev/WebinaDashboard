@@ -53,9 +53,6 @@ type DiagnosticProbe = {
 type DiagnosticsResponse = {
   site_domain: string
   crm_base: string
-  same_server_detected?: boolean
-  local_bypass_base?: string | null
-  crm_host?: string
   wp_remote_transport: string
   probes: DiagnosticProbe[]
 }
@@ -346,12 +343,6 @@ export default function LicensePage() {
               <CardDescription className="font-mono text-xs break-all">
                 {diagReport.site_domain} → {diagReport.crm_base} ({t('license.diagnostics.transport')}:{' '}
                 {diagReport.wp_remote_transport})
-                {diagReport.same_server_detected && diagReport.local_bypass_base ? (
-                  <span className="mt-1 block text-foreground">
-                    {t('license.diagnostics.sameServer')} {diagReport.local_bypass_base} (Host:{' '}
-                    {diagReport.crm_host ?? 'webina.dev'})
-                  </span>
-                ) : null}
               </CardDescription>
             </CardHeader>
             <CardContent className="select-text space-y-4 text-xs font-mono">

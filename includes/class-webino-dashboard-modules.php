@@ -16,6 +16,7 @@ class Webino_Dashboard_Modules {
 
 	const NAV_GROUP_CONTENT = 'content';
 	const NAV_GROUP_SHOP    = 'shop';
+	const NAV_GROUP_USERS   = 'users';
 	const NAV_GROUP_TOOLS   = 'tools';
 	const NAV_GROUP_REPORTS = 'reports';
 	const NAV_GROUP_ADMIN   = 'admin';
@@ -137,7 +138,6 @@ class Webino_Dashboard_Modules {
 					array( 'id' => 'brands', 'title' => __( 'Brands', 'webino-dashboard' ), 'path' => '/shop/brands', 'capability' => 'manage_product_terms' ),
 					array( 'id' => 'product-cats', 'title' => __( 'Product categories', 'webino-dashboard' ), 'path' => '/shop/product-categories', 'capability' => 'manage_product_terms' ),
 					array( 'id' => 'attributes', 'title' => __( 'Attributes', 'webino-dashboard' ), 'path' => '/shop/attributes', 'capability' => 'manage_product_terms' ),
-					array( 'id' => 'shop-tickets', 'title' => __( 'Support tickets', 'webino-dashboard' ), 'path' => '/shop/tickets', 'capability' => 'edit_shop_orders' ),
 				),
 			),
 			array(
@@ -219,6 +219,31 @@ class Webino_Dashboard_Modules {
 				),
 			),
 			array(
+				'id'         => 'users',
+				'nav_group'  => self::NAV_GROUP_USERS,
+				'title'      => __( 'Users', 'webino-dashboard' ),
+				'path'       => '/users',
+				'capability' => 'list_users',
+				'icon'       => 'users',
+				'children'   => array(
+					array( 'id' => 'user-list', 'title' => __( 'Users', 'webino-dashboard' ), 'path' => '/users/list', 'capability' => 'list_users' ),
+					array( 'id' => 'user-new', 'title' => __( 'Add user', 'webino-dashboard' ), 'path' => '/users/new', 'capability' => 'create_users' ),
+					array( 'id' => 'user-employees', 'title' => __( 'Employees', 'webino-dashboard' ), 'path' => '/users/employees', 'capability' => 'list_users' ),
+					array( 'id' => 'comments', 'title' => __( 'Comments', 'webino-dashboard' ), 'path' => '/users/comments', 'capability' => 'moderate_comments' ),
+				),
+			),
+			array(
+				'id'         => 'tickets',
+				'nav_group'  => self::NAV_GROUP_USERS,
+				'title'      => __( 'Tickets', 'webino-dashboard' ),
+				'path'       => '/shop/tickets',
+				'capability' => 'edit_shop_orders',
+				'icon'       => 'message-square',
+				'children'   => array(
+					array( 'id' => 'shop-tickets', 'title' => __( 'Support tickets', 'webino-dashboard' ), 'path' => '/shop/tickets', 'capability' => 'edit_shop_orders' ),
+				),
+			),
+			array(
 				'id'                   => 'bots',
 				'nav_group'            => self::NAV_GROUP_TOOLS,
 				'title'                => __( 'Bots', 'webino-dashboard' ),
@@ -259,18 +284,6 @@ class Webino_Dashboard_Modules {
 						'path'       => '/marketplace/installed',
 						'capability' => 'manage_options',
 					),
-				),
-			),
-			array(
-				'id'         => 'users',
-				'nav_group'  => self::NAV_GROUP_ADMIN,
-				'title'      => __( 'Users', 'webino-dashboard' ),
-				'path'       => '/users',
-				'capability' => 'list_users',
-				'icon'       => 'users',
-				'children'   => array(
-					array( 'id' => 'user-list', 'title' => __( 'Users', 'webino-dashboard' ), 'path' => '/users/list', 'capability' => 'list_users' ),
-					array( 'id' => 'comments', 'title' => __( 'Comments', 'webino-dashboard' ), 'path' => '/users/comments', 'capability' => 'moderate_comments' ),
 				),
 			),
 			array(

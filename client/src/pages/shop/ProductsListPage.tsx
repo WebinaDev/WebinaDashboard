@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Columns3, Printer } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
@@ -56,6 +56,7 @@ const DEFAULT_FILTERS: ProductFilters = {
   type: '',
   stock_status: '',
   status: '',
+  catalog_visibility: '',
   sort: 'date_desc',
   date_from: '',
   date_to: '',
@@ -71,7 +72,6 @@ const DEFAULT_COLUMNS: ProductColumnVisibility = {
   credit: false,
   wholesale: false,
   discount: false,
-  price: true,
   sale: false,
   stock: true,
   brand: true,
@@ -80,6 +80,7 @@ const DEFAULT_COLUMNS: ProductColumnVisibility = {
   date: true,
   views: false,
   status: false,
+  catalog_visibility: false,
   type: false,
   marketplaces: true,
 }
@@ -94,7 +95,6 @@ const COLUMN_LABELS: Record<ProductColumnId, string> = {
   credit: 'products.colCredit',
   wholesale: 'products.colWholesale',
   discount: 'products.colDiscount',
-  price: 'products.colPrice',
   sale: 'products.colSale',
   stock: 'products.colStock',
   brand: 'products.colBrand',
@@ -103,6 +103,7 @@ const COLUMN_LABELS: Record<ProductColumnId, string> = {
   date: 'products.colDate',
   views: 'products.colViews',
   status: 'products.colStatus',
+  catalog_visibility: 'products.colCatalogVisibility',
   type: 'products.colType',
   marketplaces: 'products.colMarketplaces',
 }
@@ -145,6 +146,7 @@ function buildQueryParams(filters: ProductFilters, page: number, perPage: number
   if (filters.type) p.set('type', filters.type)
   if (filters.stock_status) p.set('stock_status', filters.stock_status)
   if (filters.status) p.set('status', filters.status)
+  if (filters.catalog_visibility) p.set('catalog_visibility', filters.catalog_visibility)
   if (filters.date_from) p.set('date_from', filters.date_from)
   if (filters.date_to) p.set('date_to', filters.date_to)
   return p.toString()
@@ -154,12 +156,24 @@ export default function ProductsListPage() {
   const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const locale = i18n.language
+
+  const initialFromUrl = useMemo((): ProductFilters => {
+    const stock = searchParams.get('stock_status') || ''
+    const status = searchParams.get('status') || ''
+    if (!stock && !status) return DEFAULT_FILTERS
+    return {
+      ...DEFAULT_FILTERS,
+      stock_status: stock,
+      status,
+    }
+  }, [searchParams])
 
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
-  const [draftFilters, setDraftFilters] = useState<ProductFilters>(DEFAULT_FILTERS)
-  const [appliedFilters, setAppliedFilters] = useState<ProductFilters>(DEFAULT_FILTERS)
+  const [draftFilters, setDraftFilters] = useState<ProductFilters>(initialFromUrl)
+  const [appliedFilters, setAppliedFilters] = useState<ProductFilters>(initialFromUrl)
   const [columns, setColumns] = useState<ProductColumnVisibility>(loadColumnVisibility)
   const [busyId, setBusyId] = useState<number | null>(null)
   const [selectedIds, setSelectedIds] = useState<number[]>([])
