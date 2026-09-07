@@ -1,1 +1,0 @@
-import{t as e}from"./PageShell-BXcZgLYP.js";import{t}from"./MediaTermManager-CHRm_fDx.js";import{useTranslation as n}from"react-i18next";import{jsx as r}from"react/jsx-runtime";function i(){let{t:i}=n();return r(e,{title:i(`media.categoriesTitle`),description:i(`media.description`),children:r(t,{kind:`category`})})}export{i as default};

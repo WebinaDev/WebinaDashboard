@@ -6,8 +6,17 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import {
+  fetchAuditLog,
   fetchFeeds,
   fetchFindings,
   fetchIncidents,
@@ -58,6 +67,12 @@ export default function SecurityOverviewPage() {
     refetchInterval: 60_000,
   })
   useQueryErrorToast(incidentsQ)
+
+  const auditQ = useQuery({
+    queryKey: ['security', 'audit'],
+    queryFn: fetchAuditLog,
+  })
+  useQueryErrorToast(auditQ)
 
   const o = overviewQ.data
 
@@ -185,7 +200,12 @@ export default function SecurityOverviewPage() {
                 </Button>
               </>
             ) : (
-              <p className="text-muted-foreground">{t('security.noScanYet')}</p>
+              <div className="space-y-2">
+                <p className="text-muted-foreground">{t('security.noScanYet')}</p>
+                <Button asChild size="sm">
+                  <Link to="/security/scan">{t('security.startFirstScan', { defaultValue: 'Run your first scan' })}</Link>
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -329,6 +349,56 @@ export default function SecurityOverviewPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Audit log card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>{t('security.auditTitle', { defaultValue: 'Audit log' })}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {auditQ.isPending ? (
+            <Skeleton className="h-24 w-full" />
+          ) : (auditQ.data?.items ?? []).length === 0 ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">{t('security.auditEmpty', { defaultValue: 'No audit events yet.' })}</p>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/security/settings">{t('security.auditEmptyCta', { defaultValue: 'Configure security settings' })}</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('security.col.time')}</TableHead>
+                    <TableHead>{t('security.col.action')}</TableHead>
+                    <TableHead>{t('security.col.path')}</TableHead>
+                    <TableHead>{t('security.col.user', { defaultValue: 'User' })}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(auditQ.data?.items ?? []).slice(0, 10).map((entry, idx) => (
+                    <TableRow key={String((entry as Record<string, unknown>).id ?? idx)}>
+                      <TableCell className="text-xs">{String((entry as Record<string, unknown>).created_at ?? '—')}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {String((entry as Record<string, unknown>).action ?? (entry as Record<string, unknown>).event ?? '—')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate font-mono text-xs">
+                        {String((entry as Record<string, unknown>).object_id ?? (entry as Record<string, unknown>).path ?? '—')}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {String((entry as Record<string, unknown>).user_login ?? (entry as Record<string, unknown>).user_id ?? '—')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap gap-2">
         <Button asChild variant="outline" size="sm">

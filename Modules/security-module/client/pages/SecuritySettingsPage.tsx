@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -85,6 +86,8 @@ export default function SecuritySettingsPage() {
 
   const [totpCode, setTotpCode] = useState('')
   const [setupSecret, setSetupSecret] = useState<string | null>(null)
+  const [wizardStep, setWizardStep] = useState(1)
+  const WIZARD_STEPS = 6
 
   const settingsQ = useQuery({
     queryKey: ['security', 'settings'],
@@ -225,12 +228,141 @@ export default function SecuritySettingsPage() {
         <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t('security.wizardTitle')}</CardTitle>
-            <CardDescription>{t('security.wizardSettingsHint')}</CardDescription>
+            <CardDescription>
+              {t('security.wizardStep', { defaultValue: 'Step {{step}} of {{total}}', step: wizardStep, total: WIZARD_STEPS })}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button disabled={completeWizard.isPending} onClick={() => void completeWizard.mutateAsync()}>
-              {t('security.wizardComplete')}
-            </Button>
+          <CardContent className="space-y-4">
+            {/* Step indicators */}
+            <div className="flex gap-1.5">
+              {Array.from({ length: WIZARD_STEPS }, (_, i) => i + 1).map((step) => (
+                <div
+                  key={step}
+                  className={`h-1.5 flex-1 rounded-full transition-colors ${
+                    step < wizardStep
+                      ? 'bg-primary'
+                      : step === wizardStep
+                        ? 'bg-primary/70'
+                        : 'bg-muted'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Step content */}
+            {wizardStep === 1 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t('security.wizard.step1.title', { defaultValue: 'Allowlist your admin IP' })}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('security.wizard.step1.hint', { defaultValue: 'Before enabling enforce mode, add your current IP to the allowlist to avoid locking yourself out.' })}
+                </p>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/security/firewall/blocking">{t('security.wizard.step1.cta', { defaultValue: 'Go to blocking / allowlist' })}</Link>
+                </Button>
+              </div>
+            )}
+
+            {wizardStep === 2 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t('security.wizard.step2.title', { defaultValue: 'Choose a security profile' })}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('security.wizard.step2.hint', { defaultValue: 'Select the profile that best fits your site and click "Apply profile" below.' })}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t('security.wizard.step2.profiles', { defaultValue: 'Beginner → low friction · Recommended → balanced · Store → e-commerce hardened · Paranoid → maximum' })}
+                </p>
+              </div>
+            )}
+
+            {wizardStep === 3 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t('security.wizard.step3.title', { defaultValue: 'Scan schedule' })}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('security.wizard.step3.hint', { defaultValue: 'Run a first scan now to establish a baseline, then configure automatic scans via WP-Cron.' })}
+                </p>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/security/scan">{t('security.wizard.step3.cta', { defaultValue: 'Run a scan now' })}</Link>
+                </Button>
+              </div>
+            )}
+
+            {wizardStep === 4 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t('security.wizard.step4.title', { defaultValue: 'Enable notifications' })}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('security.wizard.step4.hint', { defaultValue: 'Configure email or dashboard alerts for security events. Settings are in the Notifications section below.' })}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: 'email', label: t('security.notify.email') },
+                    { key: 'site', label: t('security.notify.site') },
+                  ].map(({ key, label }) => {
+                    const notifyDraft = (s?.notify ?? {}) as Record<string, unknown>
+                    const checked = Boolean(notifyDraft[key])
+                    return (
+                      <label key={key} className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => s && setDraft(sectionBool(s, 'notify', key, e.target.checked))}
+                          className="accent-primary"
+                        />
+                        {label}
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {wizardStep === 5 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t('security.wizard.step5.title', { defaultValue: 'Coexistence check' })}</p>
+                {(diagQ.data?.conflicts ?? []).length > 0 ? (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    {t('security.wizard.step5.conflicts', { defaultValue: 'Conflicting plugins detected:' })}{' '}
+                    {(diagQ.data?.conflicts as Array<{ plugin: string }> ?? []).map((c) => c.plugin).join(', ')}
+                    {'. '}
+                    {t('security.wizard.step5.conflictHint', { defaultValue: 'Disable duplicate WAF rules in those plugins before enabling enforce mode.' })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-emerald-600">
+                    {t('security.wizard.step5.ok', { defaultValue: 'No conflicting security plugins detected. You\'re good to go.' })}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {wizardStep === 6 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t('security.wizard.step6.title', { defaultValue: 'Complete setup' })}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('security.wizard.step6.hint', { defaultValue: 'Save your settings, then mark the wizard as complete to hide this banner.' })}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" disabled={save.isPending} onClick={() => void save.mutateAsync()}>
+                    {t('security.saveSettings')}
+                  </Button>
+                  <Button disabled={completeWizard.isPending} onClick={() => void completeWizard.mutateAsync()}>
+                    {t('security.wizardComplete')}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Prev / Next navigation */}
+            <div className="flex gap-2">
+              {wizardStep > 1 && (
+                <Button size="sm" variant="ghost" onClick={() => setWizardStep((p) => p - 1)}>
+                  {t('security.wizard.prev', { defaultValue: '← Back' })}
+                </Button>
+              )}
+              {wizardStep < WIZARD_STEPS && (
+                <Button size="sm" onClick={() => setWizardStep((p) => p + 1)}>
+                  {t('security.wizard.next', { defaultValue: 'Next →' })}
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       ) : null}

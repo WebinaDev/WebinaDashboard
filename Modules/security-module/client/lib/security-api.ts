@@ -108,6 +108,27 @@ export type SecurityReport = {
   payload?: unknown
 }
 
+/** Structured payload shapes (optional — payloads may be arbitrary). */
+export type ReportPayload = {
+  title?: string
+  score?: number
+  summary?: string | string[]
+  sections?: Array<{ title: string; items?: unknown[] }>
+  [key: string]: unknown
+}
+
+export type SecurityAuditEntry = {
+  id?: number
+  action?: string
+  event?: string
+  object_id?: string | number
+  path?: string
+  user_id?: number
+  user_login?: string
+  created_at?: string
+  [key: string]: unknown
+}
+
 export type SecuritySettings = Record<string, Record<string, unknown>>
 
 export type SecuritySettingsSchema = {
@@ -384,8 +405,23 @@ export function fetchReport(id: number) {
   return apiFetch<SecurityReport>(`security/reports/${id}`)
 }
 
+/**
+ * Trigger a browser download of a report's payload as JSON.
+ * Call this in a click handler (not inside useEffect).
+ */
+export function downloadReportJson(report: SecurityReport): void {
+  const content = JSON.stringify(report.payload ?? report, null, 2)
+  const blob = new Blob([content], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `webino-report-${report.id}-${report.report_type}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export function fetchAuditLog() {
-  return apiFetch<{ items: Record<string, unknown>[] }>('security/audit')
+  return apiFetch<{ items: SecurityAuditEntry[] }>('security/audit')
 }
 
 export function fetchIncidents() {

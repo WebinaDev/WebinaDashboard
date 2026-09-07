@@ -5199,5 +5199,85 @@
   "security.feeds.directFallback": "Direct internet fallback",
   "security.notify.email": "Email notifications",
   "security.notify.site": "Dashboard notifications",
-  "security.notify.sms": "SMS notifications"
+  "security.notify.sms": "SMS notifications",
+
+  "security.incidentsTitle": "Open Incidents",
+  "security.viewIncidents": "View all",
+  "security.incidentOpen": "open incident",
+  "security.incidentsOpen": "open incidents",
+  "security.suggestedActions": "Suggested Actions",
+  "security.healWizard": "Heal Wizard",
+  "security.noActions": "No immediate actions required.",
+
+  "security.reportType.compliance_hint": "Compliance hints",
+  "security.reportType.incident": "Incident report",
+  "security.reportType.feed_health": "Feed health",
+
+  "security.reportDetailTitle": "Report detail",
+  "security.reportSummary": "Summary",
+  "security.reportStructured": "Report details",
+  "security.reportRawJson": "Show raw JSON",
+  "security.reportDownload": "Download JSON",
+
+  "security.auditTitle": "Audit log",
+  "security.auditEmpty": "No audit events yet.",
+  "security.auditEmptyCta": "Configure security settings",
+
+  "security.startFirstScan": "Run your first scan",
+  "security.noFindingsHint": "This scan found no issues. You can run another scan at any time.",
+  "security.backToScan": "Back to scans",
+  "security.healNotAvailable": "Auto-heal not available",
+
+  "security.toolsSearch": "Search tools…",
+  "security.toolsNoMatch": "No tools match your search.",
+
+  "security.refresh": "Refresh",
+  "security.incidentNoItems": "No incidents recorded.",
+
+  "security.diag.layers": "Active layers",
+  "security.diag.objectCache": "Object cache",
+  "security.diag.cron": "Shield cron",
+  "security.diag.conflicts": "Plugin conflicts",
+  "security.diag.noConflicts": "No plugin conflicts detected.",
+
+  "security.snapshotsEmpty": "No snapshots found.",
+  "security.passAudit.checked": "Common passwords checked: {{count}}",
+  "security.passAudit.noIssues": "All admin/editor accounts look good.",
+
+  "security.importExport.exportTitle": "Export settings",
+  "security.importExport.download": "Download JSON",
+  "security.importExport.importTitle": "Import settings JSON",
+  "security.importExport.import": "Import",
+  "security.importExport.importDone": "Settings imported successfully.",
+
+  "security.col.login": "Login",
+  "security.col.issues": "Issues",
+  "security.col.user": "User",
+  "security.col.severity": "Severity",
+
+  "security.ruleAction.block": "Block",
+  "security.ruleAction.challenge": "Challenge",
+  "security.ruleAction.log": "Log",
+  "security.ruleAction.allow": "Allow",
+
+  "security.wizard.prev": "← Back",
+  "security.wizard.next": "Next →",
+  "security.wizard.step": "Step {{step}} of {{total}}",
+  "security.wizard.step1.title": "Allowlist your admin IP",
+  "security.wizard.step1.hint": "Before enabling enforce mode, add your current IP to the allowlist to avoid locking yourself out.",
+  "security.wizard.step1.cta": "Go to blocking / allowlist",
+  "security.wizard.step2.title": "Choose a security profile",
+  "security.wizard.step2.hint": "Select the profile that best fits your site and click \"Apply profile\" below.",
+  "security.wizard.step2.profiles": "Beginner → low friction · Recommended → balanced · Store → e-commerce hardened · Paranoid → maximum",
+  "security.wizard.step3.title": "Scan schedule",
+  "security.wizard.step3.hint": "Run a first scan now to establish a baseline, then configure automatic scans via WP-Cron.",
+  "security.wizard.step3.cta": "Run a scan now",
+  "security.wizard.step4.title": "Enable notifications",
+  "security.wizard.step4.hint": "Configure email or dashboard alerts for security events. Settings are in the Notifications section below.",
+  "security.wizard.step5.title": "Coexistence check",
+  "security.wizard.step5.conflicts": "Conflicting plugins detected:",
+  "security.wizard.step5.conflictHint": "Disable duplicate WAF rules in those plugins before enabling enforce mode.",
+  "security.wizard.step5.ok": "No conflicting security plugins detected. You're good to go.",
+  "security.wizard.step6.title": "Complete setup",
+  "security.wizard.step6.hint": "Save your settings, then mark the wizard as complete to hide this banner."
 }

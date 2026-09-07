@@ -9,6 +9,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
@@ -146,7 +153,18 @@ export default function SecurityFirewallRulesPage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="rule-action">{t('security.col.action')}</Label>
-            <Input id="rule-action" value={action} onChange={(e) => setAction(e.target.value)} />
+            <Select value={action} onValueChange={setAction}>
+              <SelectTrigger id="rule-action" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(['block', 'challenge', 'log', 'allow'] as const).map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {t(`security.ruleAction.${a}`, { defaultValue: a.charAt(0).toUpperCase() + a.slice(1) })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-end gap-3">
             <label className="flex items-center gap-2 text-sm">

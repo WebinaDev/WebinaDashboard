@@ -5198,5 +5198,85 @@
   "security.feeds.directFallback": "Fallback اینترنت مستقیم",
   "security.notify.email": "اعلان ایمیل",
   "security.notify.site": "اعلان داشبورد",
-  "security.notify.sms": "اعلان SMS"
+  "security.notify.sms": "اعلان SMS",
+
+  "security.incidentsTitle": "رویدادهای باز",
+  "security.viewIncidents": "مشاهده همه",
+  "security.incidentOpen": "رویداد باز",
+  "security.incidentsOpen": "رویداد باز",
+  "security.suggestedActions": "اقدامات پیشنهادی",
+  "security.healWizard": "جادوگر ترمیم",
+  "security.noActions": "هیچ اقدام فوری لازم نیست.",
+
+  "security.reportType.compliance_hint": "راهنمای انطباق",
+  "security.reportType.incident": "گزارش رویداد",
+  "security.reportType.feed_health": "سلامت فیدها",
+
+  "security.reportDetailTitle": "جزئیات گزارش",
+  "security.reportSummary": "خلاصه",
+  "security.reportStructured": "جزئیات گزارش",
+  "security.reportRawJson": "نمایش JSON خام",
+  "security.reportDownload": "دانلود JSON",
+
+  "security.auditTitle": "گزارش حسابرسی",
+  "security.auditEmpty": "هنوز رویداد حسابرسی وجود ندارد.",
+  "security.auditEmptyCta": "پیکربندی تنظیمات امنیتی",
+
+  "security.startFirstScan": "اولین اسکن را اجرا کنید",
+  "security.noFindingsHint": "این اسکن مشکلی پیدا نکرد. می‌توانید هر زمان اسکن دیگری اجرا کنید.",
+  "security.backToScan": "بازگشت به اسکن‌ها",
+  "security.healNotAvailable": "ترمیم خودکار در دسترس نیست",
+
+  "security.toolsSearch": "جستجوی ابزارها…",
+  "security.toolsNoMatch": "هیچ ابزاری با جستجوی شما مطابقت ندارد.",
+
+  "security.refresh": "بازخوانی",
+  "security.incidentNoItems": "هیچ رویدادی ثبت نشده است.",
+
+  "security.diag.layers": "لایه‌های فعال",
+  "security.diag.objectCache": "کش شیء",
+  "security.diag.cron": "کرون Shield",
+  "security.diag.conflicts": "تداخل افزونه‌ها",
+  "security.diag.noConflicts": "هیچ تداخل افزونه‌ای شناسایی نشد.",
+
+  "security.snapshotsEmpty": "هیچ اسنپ‌شاتی یافت نشد.",
+  "security.passAudit.checked": "رمزهای عبور رایج بررسی شده: {{count}}",
+  "security.passAudit.noIssues": "همه حساب‌های ادمین/ویرایشگر سالم هستند.",
+
+  "security.importExport.exportTitle": "صادرکردن تنظیمات",
+  "security.importExport.download": "دانلود JSON",
+  "security.importExport.importTitle": "وارد کردن تنظیمات JSON",
+  "security.importExport.import": "وارد کردن",
+  "security.importExport.importDone": "تنظیمات با موفقیت وارد شد.",
+
+  "security.col.login": "نام کاربری",
+  "security.col.issues": "مشکلات",
+  "security.col.user": "کاربر",
+  "security.col.severity": "شدت",
+
+  "security.ruleAction.block": "مسدود کردن",
+  "security.ruleAction.challenge": "چالش",
+  "security.ruleAction.log": "ثبت گزارش",
+  "security.ruleAction.allow": "اجازه دادن",
+
+  "security.wizard.prev": "→ قبلی",
+  "security.wizard.next": "بعدی ←",
+  "security.wizard.step": "مرحله {{step}} از {{total}}",
+  "security.wizard.step1.title": "IP مدیر خود را به لیست مجاز اضافه کنید",
+  "security.wizard.step1.hint": "پیش از فعال‌سازی حالت اجرایی، IP فعلی خود را به لیست مجاز اضافه کنید تا قفل نشوید.",
+  "security.wizard.step1.cta": "رفتن به بلوک‌کردن / لیست مجاز",
+  "security.wizard.step2.title": "یک پروفایل امنیتی انتخاب کنید",
+  "security.wizard.step2.hint": "پروفایل مناسب سایت خود را انتخاب و روی «اعمال پروفایل» کلیک کنید.",
+  "security.wizard.step2.profiles": "مبتدی → اصطکاک کم · پیشنهادی · فروشگاه · پارانوید → حداکثر",
+  "security.wizard.step3.title": "برنامه اسکن",
+  "security.wizard.step3.hint": "یک اسکن اولیه اجرا کنید تا خط پایه تعیین شود، سپس اسکن خودکار را از طریق WP-Cron پیکربندی کنید.",
+  "security.wizard.step3.cta": "اجرای اسکن",
+  "security.wizard.step4.title": "فعال‌سازی اعلان‌ها",
+  "security.wizard.step4.hint": "هشدارهای ایمیل یا داشبورد را برای رویدادهای امنیتی پیکربندی کنید.",
+  "security.wizard.step5.title": "بررسی هم‌زیستی",
+  "security.wizard.step5.conflicts": "افزونه‌های در تعارض شناسایی شدند:",
+  "security.wizard.step5.conflictHint": "قوانین WAF تکراری را در آن افزونه‌ها قبل از فعال‌سازی حالت اجرایی غیرفعال کنید.",
+  "security.wizard.step5.ok": "هیچ افزونه امنیتی در تعارض شناسایی نشد.",
+  "security.wizard.step6.title": "تکمیل راه‌اندازی",
+  "security.wizard.step6.hint": "تنظیمات خود را ذخیره کنید، سپس جادوگر را کامل کنید تا این بنر مخفی شود."
 }

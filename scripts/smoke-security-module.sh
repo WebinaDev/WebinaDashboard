@@ -183,6 +183,118 @@ else
   echo "OK: file-browser tool"
 fi
 
+# IPv6 CIDR helper
+if ! grep -q 'ipv6_cidr_match\|inet_pton' "$MOD/includes/class-webino-shield-engine.php"; then
+  echo "FAIL: IPv6 CIDR match missing in engine"
+  FAIL=1
+else
+  echo "OK: IPv6 CIDR helper"
+fi
+
+# Circuit breaker actually gates evaluate_request
+if ! grep -q 'circuit_open' "$MOD/includes/class-webino-shield-waf.php"; then
+  echo "FAIL: circuit_open flag missing in WAF"
+  FAIL=1
+else
+  echo "OK: WAF circuit breaker flag"
+fi
+
+# skip_rest_namespaces enforced
+if ! grep -q 'skip_rest_namespaces' "$MOD/includes/class-webino-shield-waf.php"; then
+  echo "FAIL: skip_rest_namespaces not checked in WAF"
+  FAIL=1
+else
+  echo "OK: skip_rest_namespaces wired"
+fi
+
+# path-segment skip (not bare strpos on /checkout alone as sole logic)
+if ! grep -q 'path_segment_match' "$MOD/includes/class-webino-shield-waf.php"; then
+  echo "FAIL: path_segment_match missing for skip_paths"
+  FAIL=1
+else
+  echo "OK: safe skip_paths matching"
+fi
+
+# Feeds: FireHOL + Spamhaus + sync_hours scheduling
+if ! grep -q 'sync_firehol_l1' "$MOD/includes/class-webino-shield-feeds.php"; then
+  echo "FAIL: FireHOL adapter missing"
+  FAIL=1
+else
+  echo "OK: FireHOL adapter"
+fi
+if ! grep -q 'sync_spamhaus_drop' "$MOD/includes/class-webino-shield-feeds.php"; then
+  echo "FAIL: Spamhaus DROP adapter missing"
+  FAIL=1
+else
+  echo "OK: Spamhaus DROP adapter"
+fi
+if ! grep -q 'webino_shield_feeds_sync_hours\|sync_hours' "$MOD/includes/class-webino-shield-feeds.php"; then
+  echo "FAIL: sync_hours scheduling missing"
+  FAIL=1
+elif grep -A15 'function schedule' "$MOD/includes/class-webino-shield-feeds.php" | grep -q "twicedaily"; then
+  echo "FAIL: feeds still hardcode twicedaily ignoring sync_hours"
+  FAIL=1
+else
+  echo "OK: feeds sync_hours scheduling"
+fi
+
+# MalwareBazaar must not mark stub ok without data
+if grep -A40 'function sync_malwarebazaar' "$MOD/includes/class-webino-shield-feeds.php" | grep -q "mark_feed_ok( 'malwarebazaar', 'stub'"; then
+  echo "FAIL: malwarebazaar still green-stubs empty sync"
+  FAIL=1
+else
+  echo "OK: malwarebazaar no false-green stub"
+fi
+
+# Virtual patch must not use bare slug path contains as sole admin FP
+if grep -A80 'function build_vp_conditions' "$MOD/includes/class-webino-shield-feeds.php" | grep -q "wp-content/plugins/"; then
+  echo "OK: virtual patch scoped to plugin path"
+else
+  echo "FAIL: virtual patch conditions not scoped to plugin path"
+  FAIL=1
+fi
+
+# Heal actions required for v1
+for act in restore_theme_file rotate_salts regenerate_index_guards enable_virtual_patch invalidate_sessions; do
+  if ! grep -q "$act" "$MOD/includes/class-webino-shield-heal.php"; then
+    echo "FAIL: heal missing $act"
+    FAIL=1
+  fi
+done
+echo "OK: heal v1 actions present"
+
+# tls-dns uses dns_get_record
+if ! grep -q 'dns_get_record' "$MOD/includes/class-webino-shield-tools.php"; then
+  echo "FAIL: tls-dns missing dns_get_record"
+  FAIL=1
+else
+  echo "OK: tls-dns real DNS lookup"
+fi
+
+# Woo DB scan not empty stub
+if grep -A25 'function scan_woo_tables' "$MOD/includes/class-webino-shield-db-scan.php" | grep -q 'scan_content\|postmeta'; then
+  echo "OK: WooCommerce DB scan implemented"
+else
+  echo "FAIL: scan_woo_tables still empty"
+  FAIL=1
+fi
+
+# ASN populated in request
+if ! grep -q "asn" "$MOD/includes/class-webino-shield-waf.php"; then
+  echo "FAIL: asn not set on WAF request"
+  FAIL=1
+else
+  echo "OK: ASN on WAF request"
+fi
+
+# Learning auto-exit
+if ! grep -q 'webino_shield_learning_exit\|process_learning_exit' "$MOD/includes/class-webino-dashboard-security.php"; then
+  echo "FAIL: learning auto-exit missing"
+  FAIL=1
+else
+  echo "OK: learning auto-exit"
+fi
+
 if [[ "$FAIL" -ne 0 ]]; then
   echo "== Security module smoke FAILED =="
   exit 1

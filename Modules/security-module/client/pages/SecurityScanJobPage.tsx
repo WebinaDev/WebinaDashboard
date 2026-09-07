@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -209,7 +209,15 @@ export default function SecurityScanJobPage() {
           {findingsQ.isPending ? (
             <Skeleton className="h-48 w-full" />
           ) : findings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('security.noFindings')}</p>
+            <div className="space-y-3 py-2">
+              <p className="text-sm text-emerald-600">{t('security.noFindings')}</p>
+              <p className="text-sm text-muted-foreground">
+                {t('security.noFindingsHint', { defaultValue: 'This scan found no issues. You can run another scan at any time.' })}
+              </p>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/security/scan">{t('security.backToScan', { defaultValue: 'Back to scans' })}</Link>
+              </Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -223,13 +231,17 @@ export default function SecurityScanJobPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {findings.map((f) => (
+                {findings.map((f) => {
+                  const healable = Boolean(f.auto_heal_available)
+                  return (
                   <TableRow key={f.id}>
                     <TableCell>
                       <Checkbox
                         checked={selected.includes(f.id)}
+                        disabled={!healable}
                         onCheckedChange={(v) => toggle(f.id, Boolean(v))}
-                        aria-label={t('security.healSelectFinding')}
+                        aria-label={healable ? t('security.healSelectFinding') : t('security.healNotAvailable', { defaultValue: 'Auto-heal not available' })}
+                        title={!healable ? t('security.healNotAvailable', { defaultValue: 'Auto-heal not available for this finding' }) : undefined}
                       />
                     </TableCell>
                     <TableCell>
@@ -259,7 +271,8 @@ export default function SecurityScanJobPage() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           )}

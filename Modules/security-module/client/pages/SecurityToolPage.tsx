@@ -29,6 +29,281 @@ import {
 } from '../lib/security-api'
 import { SecurityShell } from './SecurityShell'
 
+// ─── Diagnostics panel ───────────────────────────────────────────────────────
+function DiagnosticsPanel({ data }: { data: ToolResult }) {
+  const { t } = useTranslation()
+  const layers = (data.layers as Record<string, unknown>) ?? {}
+  const conflicts = (data.conflicts as Array<Record<string, string>>) ?? []
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-3">
+        {[
+          { label: 'PHP', value: String(data.php ?? '—') },
+          { label: 'WordPress', value: String(data.wp ?? '—') },
+          { label: t('security.diag.objectCache', { defaultValue: 'Object cache' }), value: data.object_cache ? '✓' : '✗' },
+          { label: t('security.diag.cron', { defaultValue: 'Shield cron' }), value: data.cron ? '✓' : '✗' },
+        ].map(({ label, value }) => (
+          <div key={label} className="rounded-md border px-3 py-2">
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="font-mono text-sm">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium">{t('security.diag.layers', { defaultValue: 'Active layers' })}</p>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(layers).map(([k, v]) => (
+            <Badge key={k} variant={v ? 'secondary' : 'outline'} className="capitalize">
+              {k}: {String(v)}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {conflicts.length > 0 ? (
+        <div>
+          <p className="mb-2 text-sm font-medium text-amber-600">
+            {t('security.diag.conflicts', { defaultValue: 'Plugin conflicts' })}
+          </p>
+          <ul className="space-y-1">
+            {conflicts.map((c, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm">
+                <Badge variant="outline" className="capitalize">{c.severity}</Badge>
+                <span>{c.plugin}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-sm text-emerald-600">{t('security.diag.noConflicts', { defaultValue: 'No plugin conflicts detected.' })}</p>
+      )}
+    </div>
+  )
+}
+
+// ─── Snapshots panel ─────────────────────────────────────────────────────────
+function SnapshotsPanel({ data }: { data: ToolResult }) {
+  const { t } = useTranslation()
+  const items = (data.items as Array<Record<string, unknown>>) ?? []
+
+  if (items.length === 0) {
+    return <p className="text-sm text-muted-foreground">{t('security.snapshotsEmpty', { defaultValue: 'No snapshots found.' })}</p>
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>#</TableHead>
+            <TableHead>{t('security.col.path')}</TableHead>
+            <TableHead>{t('security.col.created')}</TableHead>
+            <TableHead>{t('security.fileSize')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((row) => (
+            <TableRow key={String(row.id ?? row.snapshot_id)}>
+              <TableCell>{String(row.id ?? row.snapshot_id ?? '—')}</TableCell>
+              <TableCell className="max-w-[280px] truncate font-mono text-xs">
+                {String(row.path ?? row.file ?? '—')}
+              </TableCell>
+              <TableCell className="text-xs">{String(row.created_at ?? '—')}</TableCell>
+              <TableCell className="text-xs">{row.size != null ? String(row.size) : '—'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
+// ─── Password audit panel ─────────────────────────────────────────────────────
+function PasswordAuditPanel({ data }: { data: ToolResult }) {
+  const { t } = useTranslation()
+  const users = (data.users as Array<Record<string, unknown>>) ?? []
+  const checked = data.checked_common_passwords as number ?? 0
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        {t('security.passAudit.checked', { defaultValue: 'Common passwords checked: {{count}}', count: checked })}
+      </p>
+      {users.length === 0 ? (
+        <p className="text-sm text-emerald-600">
+          {t('security.passAudit.noIssues', { defaultValue: 'All admin/editor accounts look good.' })}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>{t('security.col.login', { defaultValue: 'Login' })}</TableHead>
+                <TableHead>{t('security.col.issues', { defaultValue: 'Issues' })}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((u) => (
+                <TableRow key={String(u.id)}>
+                  <TableCell>{String(u.id)}</TableCell>
+                  <TableCell className="font-mono text-sm">{String(u.login ?? '—')}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {((u.issues as string[]) ?? []).map((issue) => (
+                        <Badge key={issue} variant="destructive" className="text-xs capitalize">
+                          {issue.replace(/_/g, ' ')}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Incident panel ──────────────────────────────────────────────────────────
+function IncidentPanel({
+  data,
+  onRefresh,
+  refreshing,
+}: {
+  data: ToolResult
+  onRefresh: () => void
+  refreshing: boolean
+}) {
+  const { t } = useTranslation()
+  const incidents = (data.incidents as Array<Record<string, unknown>>) ?? []
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="outline" disabled={refreshing} onClick={onRefresh}>
+          {t('security.refresh', { defaultValue: 'Refresh' })}
+        </Button>
+      </div>
+      {incidents.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {t('security.incidentNoItems', { defaultValue: 'No incidents recorded.' })}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>{t('security.col.title')}</TableHead>
+                <TableHead>{t('security.col.status')}</TableHead>
+                <TableHead>{t('security.col.severity', { defaultValue: 'Severity' })}</TableHead>
+                <TableHead>{t('security.col.created')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {incidents.map((inc) => (
+                <TableRow key={String(inc.id)}>
+                  <TableCell>{String(inc.id)}</TableCell>
+                  <TableCell className="max-w-[220px] truncate">
+                    {String(inc.title ?? `Incident #${String(inc.id)}`)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={inc.status === 'open' ? 'destructive' : 'secondary'} className="capitalize text-xs">
+                      {String(inc.status ?? '—')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize text-xs">
+                      {String(inc.severity ?? '—')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs">{String(inc.created_at ?? '—')}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Import / Export panel ────────────────────────────────────────────────────
+function ImportExportPanel({
+  data,
+  onImport,
+  importing,
+}: {
+  data: ToolResult
+  onImport: (json: string) => void
+  importing: boolean
+}) {
+  const { t } = useTranslation()
+  const [importText, setImportText] = useState('')
+  const exportObj = data.export as Record<string, unknown> | null
+
+  const handleDownload = () => {
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'webino-shield-settings.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="mb-2 text-sm font-medium">
+          {t('security.importExport.exportTitle', { defaultValue: 'Export settings' })}
+        </p>
+        {exportObj ? (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              {Object.keys(exportObj).map((section) => (
+                <Badge key={section} variant="outline" className="capitalize">{section}</Badge>
+              ))}
+            </div>
+            <Button size="sm" variant="outline" onClick={handleDownload}>
+              {t('security.importExport.download', { defaultValue: 'Download JSON' })}
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t('security.toolNoResult')}</p>
+        )}
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium">
+          {t('security.importExport.importTitle', { defaultValue: 'Import settings JSON' })}
+        </p>
+        <div className="space-y-2">
+          <Textarea
+            rows={5}
+            className="font-mono text-xs"
+            placeholder='{"general": {}, "waf": {}}'
+            value={importText}
+            onChange={(e) => setImportText(e.target.value)}
+          />
+          <Button
+            size="sm"
+            disabled={importing || !importText.trim()}
+            onClick={() => onImport(importText)}
+          >
+            {t('security.importExport.import', { defaultValue: 'Import' })}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const TOOL_FIELDS: Record<string, { name: string; labelKey: string; placeholder?: string }[]> = {
   whois: [{ name: 'ip', labelKey: 'security.toolField.ip', placeholder: '203.0.113.1' }],
   'ip-lookup': [{ name: 'ip', labelKey: 'security.toolField.ip' }],
@@ -271,14 +546,28 @@ export default function SecurityToolPage() {
   }, [tool])
 
   const specialized = useMemo(
-    () => ['whois', 'ip-lookup', 'quarantine', 'heal-wizard', 'file-browser'].includes(tool),
+    () =>
+      [
+        'whois', 'ip-lookup', 'quarantine', 'heal-wizard', 'file-browser',
+        'diagnostics', 'snapshots', 'password-audit', 'incident', 'import-export',
+      ].includes(tool),
+    [tool],
+  )
+
+  // Auto-fetch for tools that return data without user input.
+  const autoFetchTools = useMemo(
+    () =>
+      [
+        'quarantine', 'heal-wizard',
+        'diagnostics', 'snapshots', 'password-audit', 'incident', 'import-export',
+      ].includes(tool),
     [tool],
   )
 
   const getQ = useQuery({
     queryKey: ['security', 'tool', tool, 'auto'],
     queryFn: () => fetchSecurityTool(tool),
-    enabled: known && specialized && tool !== 'whois' && tool !== 'ip-lookup' && tool !== 'file-browser',
+    enabled: known && autoFetchTools,
   })
   useQueryErrorToast(getQ)
 
@@ -329,6 +618,16 @@ export default function SecurityToolPage() {
     onSuccess: () => {
       toast.success(t('security.healApplied'))
       void qc.invalidateQueries({ queryKey: ['security', 'tool', 'heal-wizard'] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const importM = useMutation({
+    mutationFn: (importJson: string) => runSecurityTool('import-export', { import: importJson }),
+    onSuccess: () => {
+      toast.success(t('security.importExport.importDone', { defaultValue: 'Settings imported successfully.' }))
+      void qc.invalidateQueries({ queryKey: ['security'] })
+      void getQ.refetch()
     },
     onError: (e: Error) => toastApiError(t, e),
   })
@@ -435,6 +734,24 @@ export default function SecurityToolPage() {
                   setFields({ path })
                   void fetchSecurityTool(tool, { path }).then((data) => setResult(data as ToolResult))
                 }}
+              />
+            ) : tool === 'diagnostics' ? (
+              <DiagnosticsPanel data={display} />
+            ) : tool === 'snapshots' ? (
+              <SnapshotsPanel data={display} />
+            ) : tool === 'password-audit' ? (
+              <PasswordAuditPanel data={display} />
+            ) : tool === 'incident' ? (
+              <IncidentPanel
+                data={display}
+                refreshing={getQ.isFetching}
+                onRefresh={() => void getQ.refetch()}
+              />
+            ) : tool === 'import-export' ? (
+              <ImportExportPanel
+                data={display}
+                importing={importM.isPending}
+                onImport={(json) => void importM.mutateAsync(json)}
               />
             ) : (
               <pre className="max-h-96 overflow-auto rounded-md border bg-muted/40 p-3 text-xs">

@@ -43,12 +43,39 @@ SnappPay, TorobPay, and Torob Extractor ZIPs published to CRM **must** include l
 
 ## Automated smoke (no WordPress)
 
-From `WebinoDashboard/`:
+From `WebinaDashboard/`:
 
 ```bash
 bash scripts/smoke-modules-structure.sh
 bash scripts/smoke-module-routes.sh
+bash scripts/smoke-security-module.sh
 bash scripts/smoke-gateway-vendor.sh
 php scripts/test-incomplete-module-package.php
 php scripts/test-bootstrap-guard.php
 ```
+
+## Security module (Webino Shield) — v1.0 manual matrix
+
+Run on an Iranian WooCommerce staging site behind CDN (Cloudflare or Arvan) when possible.
+
+| # | Scenario | Steps | Pass criteria |
+|---|----------|-------|---------------|
+| S1 | First-run wizard | Open `/security/settings`, complete 6 steps, finish | `diagnostics.wizard` false; no admin lockout |
+| S2 | Allowlist + unlock | Add admin IP to allowlist; create panic file / unlock token | Dashboard reachable; WAF bypass with disable file |
+| S3 | Live firewall | Hit a custom block rule; watch Live Traffic | Event row appears; block page FA/EN with branding |
+| S4 | CIDR v4 + v6 | Block `203.0.113.0/24` and an IPv6 CIDR; request from matching IP | Request blocked; non-matching allowed |
+| S5 | Checkout skip | Browse `/checkout` and place test order | No WAF block; order completes |
+| S6 | Custom rule CRUD | Create path rule, test JSON, toggle, delete | Test matches; rule compiles to runtime JSON |
+| S7 | Quick + standard scan | Start scans; open job; wait for resume chunks | Progress advances; findings filter by `scan_id` |
+| S8 | Integrity heal | Corrupt a core file in staging; scan; preview/apply heal; rollback | File restored then rolled back |
+| S9 | Feeds | Sync feeds from settings | checksums + WPVulnerability + KEV + FireHOL or Spamhaus OK; one failure does not stop others |
+| S10 | Virtual patch | With KEV matching an installed plugin, confirm rules exclude `/wp-admin` slug FP | Admin plugin screens load |
+| S11 | 2FA TOTP | Settings → generate secret → enable with code | Login requires TOTP; backup codes work |
+| S12 | Canary | Create canary path; request it | Incident + notify + auto-block |
+| S13 | Tools | whois, quarantine, file-browser, tls-dns, heal-wizard | Specialized UI; tls-dns shows SPF/DMARC/MX if DNS works |
+| S14 | Reports | Generate executive + feed_health + compliance_hint | Detail page structured; JSON download works |
+| S15 | Overview home | Open dashboard home | Security score/panel present |
+| S16 | Module off | Disable security-module | `home-overview` 200; no fatals |
+| S17 | Fail-open | Force WAF errors past circuit threshold | Subsequent requests pass (circuit open) |
+
+**Out of scope for 1.0 (document only):** WebAuthn, full OWASP CRS vendoring, commercial feed API keys, Multisite network-wide, 100 req/s load bench.
