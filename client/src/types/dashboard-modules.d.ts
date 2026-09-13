@@ -82,3 +82,9 @@ declare module '@module-telegram-bot/pages/bots/TelegramBotDashboardPage' {
   const Page: ComponentType<DashboardModulePageProps>
   export default Page
 }
+
+declare module '@module-basalam/pages/basalam/BasalamHomePage' {
+  import type { ComponentType } from 'react'
+  const Page: ComponentType<DashboardModulePageProps>
+  export default Page
+}

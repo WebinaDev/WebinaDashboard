@@ -1,11 +1,24 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 
-import { OrderDocumentsSettingsPanel } from '@/components/settings/OrderDocumentsSettingsPanel'
-import { PaymentHubPanel } from '@/components/settings/PaymentHubPanel'
 import { SettingsModulesChrome } from '@/components/settings/SettingsModulesChrome'
-import { ShippingZonesPanel } from '@/components/settings/ShippingZonesPanel'
-import { WcSettingsSectionPanel } from '@/components/settings/WcSettingsSectionPanel'
+import { RoutePageSkeleton } from '@/components/skeletons'
 import { isShopSection } from '@/lib/settings-nav'
+
+const OrderDocumentsSettingsPanel = lazy(() =>
+  import('@/components/settings/OrderDocumentsSettingsPanel').then((m) => ({
+    default: m.OrderDocumentsSettingsPanel,
+  })),
+)
+const PaymentHubPanel = lazy(() =>
+  import('@/components/settings/PaymentHubPanel').then((m) => ({ default: m.PaymentHubPanel })),
+)
+const ShippingZonesPanel = lazy(() =>
+  import('@/components/settings/ShippingZonesPanel').then((m) => ({ default: m.ShippingZonesPanel })),
+)
+const WcSettingsSectionPanel = lazy(() =>
+  import('@/components/settings/WcSettingsSectionPanel').then((m) => ({ default: m.WcSettingsSectionPanel })),
+)
 
 const PRODUCT_SUBSECTIONS = [
   { id: '', labelKey: 'settings.shop.productsGeneral' },
@@ -32,13 +45,17 @@ export default function SettingsShopShell() {
 
   return (
     <SettingsModulesChrome>
-      {section === 'general' ? <WcSettingsSectionPanel page="general" /> : null}
-      {section === 'products' ? <WcSettingsSectionPanel page="products" subsections={PRODUCT_SUBSECTIONS} /> : null}
-      {section === 'tax' ? <WcSettingsSectionPanel page="tax" /> : null}
-      {section === 'shipping' ? <ShippingZonesPanel /> : null}
-      {section === 'payments' ? <PaymentHubPanel /> : null}
-      {section === 'invoices' ? <OrderDocumentsSettingsPanel /> : null}
-      {section === 'advanced' ? <WcSettingsSectionPanel page="advanced" /> : null}
+      <Suspense fallback={<RoutePageSkeleton />}>
+        {section === 'general' ? <WcSettingsSectionPanel page="general" /> : null}
+        {section === 'products' ? (
+          <WcSettingsSectionPanel page="products" subsections={PRODUCT_SUBSECTIONS} />
+        ) : null}
+        {section === 'tax' ? <WcSettingsSectionPanel page="tax" /> : null}
+        {section === 'shipping' ? <ShippingZonesPanel /> : null}
+        {section === 'payments' ? <PaymentHubPanel /> : null}
+        {section === 'invoices' ? <OrderDocumentsSettingsPanel /> : null}
+        {section === 'advanced' ? <WcSettingsSectionPanel page="advanced" /> : null}
+      </Suspense>
     </SettingsModulesChrome>
   )
 }

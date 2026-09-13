@@ -200,6 +200,7 @@ class WNC_Activator {
 						'order_status_enabled'         => true,
 						'orders_list_api_enabled'      => true,
 						'product_page_webhook_enabled' => true,
+						'action_tracking_enabled'      => false,
 					),
 				)
 			),

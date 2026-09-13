@@ -140,7 +140,16 @@ class DiscountTaskProcessor
             $basalamVariationId = null;
 
             if ($wcProductId) $basalamProductId = get_post_meta($wcProductId, ProductMetaKey::basalamProductId(), true);
-            if ($wcVariationId) $basalamVariationId = get_post_meta($wcVariationId, 'sync_basalam_variation_id', true);
+            if ($wcVariationId) {
+                // Standalone: variation holds Basalam product id.
+                $standalone = get_post_meta($wcVariationId, ProductMetaKey::basalamProductId(), true);
+                if ($standalone) {
+                    $basalamProductId = $standalone;
+                    $basalamVariationId = null;
+                } else {
+                    $basalamVariationId = get_post_meta($wcVariationId, 'sync_basalam_variation_id', true);
+                }
+            }
 
             if ($basalamProductId || $basalamVariationId) {
                 $taskData = [
@@ -193,7 +202,7 @@ class DiscountTaskProcessor
             return;
         }
 
-        if ($product->is_type('simple')) {
+        if ($product->is_type('simple') || $product->is_type('variation')) {
             $basalamProductId = get_post_meta($productId, ProductMetaKey::basalamProductId(), true);
 
             if (!$basalamProductId) return;
@@ -217,12 +226,31 @@ class DiscountTaskProcessor
                 ];
             }
         } elseif ($product->is_type('variable')) {
-            $basalamProductId = get_post_meta($productId, ProductMetaKey::basalamProductId(), true);
-            if (!$basalamProductId) return;
-
             foreach ($product->get_children() as $variationId) {
                 $variation = wc_get_product($variationId);
                 if (!$variation) continue;
+
+                $standaloneProductId = get_post_meta($variationId, ProductMetaKey::basalamProductId(), true);
+                if ($standaloneProductId) {
+                    $salePrice = $variation->get_sale_price();
+                    $regularPrice = $variation->get_regular_price();
+                    if ($salePrice && $regularPrice) {
+                        $discountPercent = DiscountManager::calculateDiscountPercent($regularPrice, $salePrice);
+                        if ($discountPercent > 0) {
+                            $items[] = [
+                                'product_id' => $variationId,
+                                'discount_percent' => $discountPercent,
+                                'action' => 'apply'
+                            ];
+                        }
+                    } else {
+                        $items[] = [
+                            'product_id' => $variationId,
+                            'action' => 'remove'
+                        ];
+                    }
+                    continue;
+                }
 
                 $basalamVariationId = get_post_meta($variationId, 'sync_basalam_variation_id', true);
                 if (!$basalamVariationId) continue;
@@ -277,7 +305,7 @@ class DiscountTaskProcessor
         $productId = $product->get_id();
         $items = [];
 
-        if ($product->is_type('simple')) {
+        if ($product->is_type('simple') || $product->is_type('variation')) {
             $basalamProductId = get_post_meta($productId, ProductMetaKey::basalamProductId(), true);
             if (!$basalamProductId) return;
 
@@ -290,17 +318,23 @@ class DiscountTaskProcessor
                 ];
             }
         } elseif ($product->is_type('variable')) {
-            $basalamProductId = get_post_meta($productId, ProductMetaKey::basalamProductId(), true);
-
-            if (!$basalamProductId) return;
-
             foreach ($product->get_children() as $variationId) {
-                $basalamVariationId = get_post_meta($variationId, 'sync_basalam_variation_id', true);
+                $standalone = get_post_meta($variationId, ProductMetaKey::basalamProductId(), true);
+                if ($standalone) {
+                    $isDiscounted = get_post_meta($variationId, 'sync_basalam_discounted', true);
+                    if ($isDiscounted === 'true') {
+                        $items[] = [
+                            'product_id' => $variationId,
+                            'action' => 'remove'
+                        ];
+                    }
+                    continue;
+                }
 
+                $basalamVariationId = get_post_meta($variationId, 'sync_basalam_variation_id', true);
                 if (!$basalamVariationId) continue;
 
                 $isDiscounted = get_post_meta($variationId, 'sync_basalam_discounted', true);
-
                 if ($isDiscounted === 'true') {
                     $items[] = [
                         'product_id' => $productId,

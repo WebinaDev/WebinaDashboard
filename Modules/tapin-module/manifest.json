@@ -1,0 +1,67 @@
+{
+  "slug": "tapin-module",
+  "name": "Tapin",
+  "version": "1.2.1",
+  "is_builtin": true,
+  "is_first_party": true,
+  "default_active": true,
+  "parent_slug": "shipping-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Tapin",
+    "titleKey": "tapin.settingsTitle",
+    "sections": [
+      {
+        "id": "tapin",
+        "route": "/settings/shop/transport/tapin",
+        "title": "Tapin",
+        "titleKey": "tapin.settingsTitle"
+      },
+      {
+        "id": "tapin-ops",
+        "route": "/settings/shop/transport/tapin/ops",
+        "title": "Tapin ops",
+        "titleKey": "tapin.opsTitle"
+      },
+      {
+        "id": "tapin-finance",
+        "route": "/settings/shop/transport/tapin/finance",
+        "title": "Tapin finance",
+        "titleKey": "tapin.financeTitle"
+      },
+      {
+        "id": "tapin-catalog",
+        "route": "/settings/shop/transport/tapin/catalog",
+        "title": "Tapin catalog",
+        "titleKey": "tapin.catalogTitle"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/transport/tapin",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "tapin.settingsTitle"
+      },
+      {
+        "path": "settings/shop/transport/tapin/ops",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "tapin.opsTitle"
+      },
+      {
+        "path": "settings/shop/transport/tapin/finance",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "tapin.financeTitle"
+      },
+      {
+        "path": "settings/shop/transport/tapin/catalog",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "tapin.catalogTitle"
+      }
+    ]
+  }
+}

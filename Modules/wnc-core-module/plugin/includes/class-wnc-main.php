@@ -69,6 +69,7 @@ class WNC_Main {
 		require_once WNC_PLUGIN_DIR . 'includes/api/torob/class-wnc-torob-feed.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/torob/class-wnc-torob-order-status.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/torob/class-wnc-torob-order-tracking.php';
+		require_once WNC_PLUGIN_DIR . 'includes/api/torob/class-wnc-torob-action-tracking.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/torob/class-wnc-torob-webhook-queue-repo.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/torob/class-wnc-torob-webhook-queue-services.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/torob/class-wnc-torob-webhook-queue-runner.php';

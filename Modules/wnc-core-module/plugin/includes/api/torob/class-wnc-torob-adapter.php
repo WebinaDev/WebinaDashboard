@@ -46,10 +46,11 @@ class WNC_Torob_Adapter implements WNC_Platform {
 		return wp_parse_args(
 			$c,
 			array(
-				'per_page'                  => 50,
-				'order_status_enabled'      => true,
-				'orders_list_api_enabled'   => true,
+				'per_page'                     => 50,
+				'order_status_enabled'         => true,
+				'orders_list_api_enabled'      => true,
 				'product_page_webhook_enabled' => true,
+				'action_tracking_enabled'      => false,
 			)
 		);
 	}

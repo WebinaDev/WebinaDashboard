@@ -3,12 +3,17 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import {
+  GatewayField,
+  GatewayFieldsGrid,
+  GatewaySettingsLayout,
+  GatewaySwitchRow,
+  GatewayTextArea,
+} from '@/components/payments/GatewaySettingsLayout'
 import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
 
@@ -78,87 +83,97 @@ export default function C2CSettingsPage() {
     setDraft({ ...draft, cards })
   }
 
+  if (!draft) {
+    return <PageShell title={t('c2c.title')}>{t('common.loading')}</PageShell>
+  }
+
   return (
-    <PageShell title={t('c2c.title')} subtitle={t('c2c.subtitle')}>
-      {!draft ? (
-        <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
-      ) : (
-        <div className="grid max-w-2xl gap-4">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="c2c-enabled"
-              checked={draft.enabled}
-              onCheckedChange={(v) => setDraft({ ...draft, enabled: v === true })}
-            />
-            <Label htmlFor="c2c-enabled">{t('c2c.enabled')}</Label>
-          </div>
-          <div className="space-y-2">
-            <Label>{t('c2c.checkoutTitle')}</Label>
-            <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>{t('c2c.instructions')}</Label>
-            <Textarea
-              value={draft.instructions}
-              onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
-              rows={3}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>{t('c2c.iban')}</Label>
-            <Input
-              value={draft.iban}
-              onChange={(e) => setDraft({ ...draft, iban: e.target.value })}
-              className="font-mono"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>{t('c2c.deadline')}</Label>
-            <Input
-              type="number"
-              min={1}
-              max={72}
-              value={draft.deadline_h}
-              onChange={(e) => setDraft({ ...draft, deadline_h: Number(e.target.value) || 1 })}
-            />
-          </div>
-          <div className="space-y-3">
-            <Label>{t('c2c.cards')}</Label>
-            {draft.cards.map((card, i) => (
-              <div key={i} className="grid gap-2 rounded-lg border border-border p-3 md:grid-cols-3">
-                <Input
-                  placeholder={t('c2c.cardNumber')}
-                  value={card.number}
-                  className="font-mono"
-                  onChange={(e) => updateCard(i, { number: e.target.value })}
+    <GatewaySettingsLayout
+      title={t('c2c.title')}
+      description={t('c2c.subtitle')}
+      sections={[
+        {
+          id: 'checkout',
+          title: t('gateway.section.checkout'),
+          children: (
+            <div className="space-y-4">
+              <GatewaySwitchRow
+                label={t('c2c.enabled')}
+                description={t('c2c.enabledHint')}
+                checked={draft.enabled}
+                onChange={(v) => setDraft({ ...draft, enabled: v })}
+              />
+              <GatewayFieldsGrid>
+                <GatewayField
+                  label={t('c2c.checkoutTitle')}
+                  value={draft.title}
+                  onChange={(v) => setDraft({ ...draft, title: v })}
                 />
-                <Input
-                  placeholder={t('c2c.cardName')}
-                  value={card.name}
-                  onChange={(e) => updateCard(i, { name: e.target.value })}
+                <GatewayField
+                  label={t('c2c.deadline')}
+                  type="number"
+                  value={String(draft.deadline_h)}
+                  onChange={(v) => setDraft({ ...draft, deadline_h: Number(v) || 1 })}
+                  hint={t('c2c.deadlineHint')}
                 />
-                <Input
-                  placeholder={t('c2c.cardBank')}
-                  value={card.bank}
-                  onChange={(e) => updateCard(i, { bank: e.target.value })}
+                <GatewayTextArea
+                  className="md:col-span-2"
+                  label={t('c2c.instructions')}
+                  value={draft.instructions}
+                  onChange={(v) => setDraft({ ...draft, instructions: v })}
                 />
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDraft({ ...draft, cards: [...draft.cards, emptyCard()] })}
-            >
-              {t('c2c.addCard')}
-            </Button>
-          </div>
-          <div>
-            <Button type="button" disabled={save.isPending} onClick={() => void save.mutateAsync()}>
-              {t('common.save')}
-            </Button>
-          </div>
-        </div>
-      )}
-    </PageShell>
+                <GatewayField
+                  className="md:col-span-2"
+                  label={t('c2c.iban')}
+                  value={draft.iban}
+                  onChange={(v) => setDraft({ ...draft, iban: v })}
+                />
+              </GatewayFieldsGrid>
+            </div>
+          ),
+        },
+        {
+          id: 'cards',
+          title: t('c2c.cards'),
+          description: t('c2c.cardsHint'),
+          children: (
+            <div className="space-y-3">
+              {draft.cards.map((card, i) => (
+                <div key={i} className="grid gap-2 rounded-lg border p-3 md:grid-cols-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t('c2c.cardNumber')}</Label>
+                    <Input
+                      value={card.number}
+                      className="font-mono"
+                      onChange={(e) => updateCard(i, { number: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t('c2c.cardName')}</Label>
+                    <Input value={card.name} onChange={(e) => updateCard(i, { name: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t('c2c.cardBank')}</Label>
+                    <Input value={card.bank} onChange={(e) => updateCard(i, { bank: e.target.value })} />
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDraft({ ...draft, cards: [...draft.cards, emptyCard()] })}
+              >
+                {t('c2c.addCard')}
+              </Button>
+            </div>
+          ),
+        },
+      ]}
+      actions={
+        <Button type="button" disabled={save.isPending} onClick={() => void save.mutateAsync()}>
+          {t('common.save')}
+        </Button>
+      }
+    />
   )
 }

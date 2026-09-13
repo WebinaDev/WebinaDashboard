@@ -703,40 +703,7 @@ class Webino_Dashboard_REST {
 
 		$ui_theme = $uid ? (string) get_user_meta( $uid, 'webino_dashboard_theme', true ) : '';
 
-		$cap_whitelist = array(
-			'read',
-			'edit_posts',
-			'delete_posts',
-			'manage_categories',
-			'upload_files',
-			'edit_pages',
-			'delete_pages',
-			'edit_products',
-			'manage_product_terms',
-			'edit_shop_orders',
-			'webino_partner_portal',
-			'webino_account_portal',
-			'webino_pos',
-			'webino_create_shop_orders',
-			'webino_view_own_shop_orders',
-			'webino_manage_accounting',
-			'view_woocommerce_reports',
-			'edit_shop_coupons',
-			'manage_woocommerce',
-			'list_users',
-			'create_users',
-			'edit_users',
-			'delete_users',
-			'moderate_comments',
-			'manage_options',
-			'promote_users',
-		);
-		$capabilities = array();
-		foreach ( $cap_whitelist as $c ) {
-			if ( current_user_can( $c ) ) {
-				$capabilities[] = $c;
-			}
-		}
+		$capabilities = self::bootstrap_user_capabilities();
 
 		$ui_accent = class_exists( 'Webino_Dashboard_Brand_Style', false )
 			? Webino_Dashboard_Brand_Style::accent()
@@ -822,40 +789,7 @@ class Webino_Dashboard_REST {
 			? Webino_Dashboard_Brand_Style::client_payload()
 			: null;
 
-		$cap_whitelist = array(
-			'read',
-			'edit_posts',
-			'delete_posts',
-			'manage_categories',
-			'upload_files',
-			'edit_pages',
-			'delete_pages',
-			'edit_products',
-			'manage_product_terms',
-			'edit_shop_orders',
-			'webino_partner_portal',
-			'webino_account_portal',
-			'webino_pos',
-			'webino_create_shop_orders',
-			'webino_view_own_shop_orders',
-			'webino_manage_accounting',
-			'view_woocommerce_reports',
-			'edit_shop_coupons',
-			'manage_woocommerce',
-			'list_users',
-			'create_users',
-			'edit_users',
-			'delete_users',
-			'moderate_comments',
-			'manage_options',
-			'promote_users',
-		);
-		$capabilities = array();
-		foreach ( $cap_whitelist as $c ) {
-			if ( current_user_can( $c ) ) {
-				$capabilities[] = $c;
-			}
-		}
+		$capabilities = self::bootstrap_user_capabilities();
 
 		$wp_user = wp_get_current_user();
 		$user    = array(
@@ -1132,6 +1066,141 @@ class Webino_Dashboard_REST {
 		}
 		$t = isset( $s['bot_token'] ) ? trim( (string) $s['bot_token'] ) : '';
 		return '' !== $t;
+	}
+
+	/**
+	 * Capabilities exposed to the SPA PermissionGate via bootstrap.
+	 *
+	 * Core WP + Webino caps, plus any capability declared in module manifests
+	 * (sidebar / client routes) so module-specific gates cannot drift.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function bootstrap_capability_whitelist() {
+		$cap_whitelist = array(
+			'read',
+			'edit_posts',
+			'delete_posts',
+			'manage_categories',
+			'upload_files',
+			'edit_pages',
+			'delete_pages',
+			'edit_products',
+			'manage_product_terms',
+			'edit_shop_orders',
+			'webino_partner_portal',
+			'webino_account_portal',
+			'webino_pos',
+			'webino_create_shop_orders',
+			'webino_view_own_shop_orders',
+			'webino_manage_accounting',
+			'webino_view_security',
+			'webino_manage_security',
+			'webino_heal_security',
+			'view_woocommerce_reports',
+			'edit_shop_coupons',
+			'manage_woocommerce',
+			'list_users',
+			'create_users',
+			'edit_users',
+			'delete_users',
+			'moderate_comments',
+			'manage_options',
+			'promote_users',
+		);
+
+		if ( class_exists( 'Webino_Dashboard_Module_Registry', false ) ) {
+			foreach ( Webino_Dashboard_Module_Registry::scan_manifests() as $manifest ) {
+				if ( ! is_array( $manifest ) ) {
+					continue;
+				}
+				self::collect_manifest_capabilities( $manifest, $cap_whitelist );
+			}
+		}
+
+		/**
+		 * Filter bootstrap capability whitelist (strings checked with current_user_can).
+		 *
+		 * @param array<int, string> $cap_whitelist Capability keys.
+		 */
+		$cap_whitelist = apply_filters( 'webino_dashboard_bootstrap_capability_whitelist', $cap_whitelist );
+
+		$out = array();
+		foreach ( (array) $cap_whitelist as $cap ) {
+			$cap = sanitize_key( (string) $cap );
+			if ( '' !== $cap ) {
+				$out[ $cap ] = $cap;
+			}
+		}
+		return array_values( $out );
+	}
+
+	/**
+	 * Collect capability strings from a module manifest into $into (by ref, keyed).
+	 *
+	 * @param array<string,mixed> $manifest Manifest.
+	 * @param array<int,string>   $into     Accumulator list (may contain duplicates).
+	 * @return void
+	 */
+	private static function collect_manifest_capabilities( array $manifest, array &$into ) {
+		$push = static function ( $cap ) use ( &$into ) {
+			if ( is_array( $cap ) ) {
+				foreach ( $cap as $c ) {
+					$c = sanitize_key( (string) $c );
+					if ( '' !== $c ) {
+						$into[] = $c;
+					}
+				}
+				return;
+			}
+			$c = sanitize_key( (string) $cap );
+			if ( '' !== $c ) {
+				$into[] = $c;
+			}
+		};
+
+		$sidebar = isset( $manifest['sidebar'] ) && is_array( $manifest['sidebar'] ) ? $manifest['sidebar'] : array();
+		if ( ! empty( $sidebar['capability'] ) ) {
+			$push( $sidebar['capability'] );
+		}
+		if ( ! empty( $sidebar['nodes'] ) && is_array( $sidebar['nodes'] ) ) {
+			$walk = static function ( $nodes ) use ( &$walk, $push ) {
+				foreach ( (array) $nodes as $node ) {
+					if ( ! is_array( $node ) ) {
+						continue;
+					}
+					if ( ! empty( $node['capability'] ) ) {
+						$push( $node['capability'] );
+					}
+					if ( ! empty( $node['children'] ) && is_array( $node['children'] ) ) {
+						$walk( $node['children'] );
+					}
+				}
+			};
+			$walk( $sidebar['nodes'] );
+		}
+
+		$client = isset( $manifest['client'] ) && is_array( $manifest['client'] ) ? $manifest['client'] : array();
+		if ( ! empty( $client['routes'] ) && is_array( $client['routes'] ) ) {
+			foreach ( $client['routes'] as $route ) {
+				if ( is_array( $route ) && ! empty( $route['capability'] ) ) {
+					$push( $route['capability'] );
+				}
+			}
+		}
+	}
+
+	/**
+	 * @return array<int, string>
+	 */
+	private static function bootstrap_user_capabilities() {
+		$capabilities = array();
+		foreach ( self::bootstrap_capability_whitelist() as $c ) {
+			if ( current_user_can( $c ) ) {
+				$capabilities[] = $c;
+			}
+		}
+		return $capabilities;
 	}
 
 	/**

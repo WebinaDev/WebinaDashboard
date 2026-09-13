@@ -70,6 +70,18 @@ const SHELL_EXCLUDED_PREFIXES = [
   '/Modules/analytics-module/client/components/',
   '/src/components/ui/chart.tsx',
   '/src/components/ui/chart.ts',
+  '/src/i18n/locales/',
+  '/src/components/settings/',
+  '/src/components/reports/',
+  '/src/components/users/',
+  '/src/components/shop/',
+  '/src/components/wnc/',
+  '/src/components/notifications/',
+  '/src/components/account/',
+  '/src/components/marketing/',
+  '/src/components/cms/',
+  '/src/components/pos/',
+  '/src/components/media/',
 ]
 
 /**

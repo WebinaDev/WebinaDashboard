@@ -41,6 +41,40 @@ class Webino_Dashboard_Assets {
 	private static $runtime_config_snapshot = null;
 
 	/**
+	 * Request-local bootstrap from dashboard-shell (avoids rebuild in print_runtime_config).
+	 *
+	 * @var array<string,mixed>|null
+	 */
+	private static $bootstrap_request_cache = null;
+
+	/**
+	 * Request-local SSR page payload.
+	 *
+	 * @var array<string,mixed>|null
+	 */
+	private static $page_request_cache = null;
+
+	/**
+	 * @param array<string,mixed>|null $bootstrap Bootstrap payload.
+	 * @return void
+	 */
+	public static function stash_bootstrap( $bootstrap ) {
+		if ( is_array( $bootstrap ) ) {
+			self::$bootstrap_request_cache = $bootstrap;
+		}
+	}
+
+	/**
+	 * @param array<string,mixed>|null $page Page payload.
+	 * @return void
+	 */
+	public static function stash_page( $page ) {
+		if ( is_array( $page ) ) {
+			self::$page_request_cache = $page;
+		}
+	}
+
+	/**
 	 * @return bool
 	 */
 	public static function is_build_missing() {
@@ -950,8 +984,13 @@ class Webino_Dashboard_Assets {
 		}
 
 		$page = null;
-		if ( $uid > 0 && is_user_logged_in() && class_exists( 'Webino_Dashboard_SSR', false ) ) {
+		if ( is_array( self::$page_request_cache ) ) {
+			$page = self::$page_request_cache;
+		} elseif ( $uid > 0 && is_user_logged_in() && class_exists( 'Webino_Dashboard_SSR', false ) ) {
 			$page = Webino_Dashboard_SSR::build_page_payload();
+			if ( is_array( $page ) ) {
+				self::$page_request_cache = $page;
+			}
 		}
 
 		return array(
@@ -1058,6 +1097,10 @@ class Webino_Dashboard_Assets {
 	 * @return array<string,mixed>|null
 	 */
 	public static function get_or_build_bootstrap( $user_id ) {
+		if ( is_array( self::$bootstrap_request_cache ) ) {
+			return self::$bootstrap_request_cache;
+		}
+
 		$cached = self::get_cached_bootstrap( $user_id );
 		if ( is_array( $cached ) && ! empty( $cached['embedMinimal'] ) ) {
 			delete_transient( 'webino_dashboard_boot_' . (int) $user_id );
@@ -1065,6 +1108,7 @@ class Webino_Dashboard_Assets {
 		}
 		$stale = is_array( $cached ) && self::bootstrap_has_stale_module_entries( $cached );
 		if ( is_array( $cached ) && ! empty( $cached['modules'] ) && ! $stale ) {
+			self::$bootstrap_request_cache = $cached;
 			return $cached;
 		}
 
@@ -1090,6 +1134,7 @@ class Webino_Dashboard_Assets {
 			if ( empty( $data['embedMinimal'] ) ) {
 				self::set_cached_bootstrap( $user_id, $data );
 			}
+			self::$bootstrap_request_cache = $data;
 			return $data;
 		}
 

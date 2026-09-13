@@ -15,6 +15,8 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 	|| ! Webino_Dashboard_Module_Registry::require_module_files(
 		$dir,
 		array(
+			'class-webino-payment-gateway-bridge.php',
+			'class-webino-payment-money.php',
 			'class-webino-dashboard-rest-payments.php',
 		),
 		'payment-module'

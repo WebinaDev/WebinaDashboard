@@ -1,0 +1,88 @@
+{
+  "slug": "shipping-module",
+  "name": "Transport",
+  "version": "1.1.1",
+  "is_builtin": true,
+  "is_first_party": true,
+  "default_active": true,
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Transport",
+    "titleKey": "shipping.hubTitle",
+    "sections": [
+      {
+        "id": "hub",
+        "route": "/settings/shop/transport",
+        "title": "Transport",
+        "titleKey": "shipping.hubTitle"
+      },
+      {
+        "id": "packaging",
+        "route": "/settings/shop/transport/packaging",
+        "title": "Packaging",
+        "titleKey": "shipping.packagingTitle"
+      },
+      {
+        "id": "tools",
+        "route": "/settings/shop/transport/tools",
+        "title": "Tools",
+        "titleKey": "shipping.toolsTitle"
+      },
+      {
+        "id": "cities",
+        "route": "/settings/shop/transport/cities",
+        "title": "Cities",
+        "titleKey": "shipping.citiesTitle"
+      },
+      {
+        "id": "map",
+        "route": "/settings/shop/transport/map",
+        "title": "Map",
+        "titleKey": "shipping.mapTitle"
+      },
+      {
+        "id": "rules",
+        "route": "/settings/shop/transport/rules",
+        "title": "Rules",
+        "titleKey": "shipping.rulesTitle"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/transport",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "shipping.hubTitle"
+      },
+      {
+        "path": "settings/shop/transport/packaging",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "shipping.packagingTitle"
+      },
+      {
+        "path": "settings/shop/transport/tools",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "shipping.toolsTitle"
+      },
+      {
+        "path": "settings/shop/transport/cities",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "shipping.citiesTitle"
+      },
+      {
+        "path": "settings/shop/transport/map",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "shipping.mapTitle"
+      },
+      {
+        "path": "settings/shop/transport/rules",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "shipping.rulesTitle"
+      }
+    ]
+  }
+}

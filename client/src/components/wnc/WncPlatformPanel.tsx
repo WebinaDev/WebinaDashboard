@@ -38,6 +38,7 @@ const BOOL_CRED_KEYS = new Set([
   'order_status_enabled',
   'orders_list_api_enabled',
   'product_page_webhook_enabled',
+  'action_tracking_enabled',
 ])
 
 function credentialLabel(t: (key: string) => string, key: string) {
@@ -83,8 +84,13 @@ export function WncPlatformPanel({
     queryFn: () =>
       apiFetch<{
         url: string
+        products_v3_url?: string
+        products_legacy_url?: string
         order_status_url?: string
         orders_list_url?: string
+        orders_list_legacy_url?: string
+        actions_url?: string
+        set_token_url?: string
         note?: string
         enabled?: boolean
       }>(`wnc/${platform}/feed-url`),
@@ -255,6 +261,18 @@ export function WncPlatformPanel({
         <section className="wd-card-glass space-y-2 rounded-2xl border border-border/60 p-4">
           <h3 className="text-sm font-medium">{t('wnc.feedUrl')}</h3>
           <code className="bg-muted block break-all rounded-xl p-2 text-xs">{feedQ.data.url}</code>
+          {feedQ.data.products_v3_url ? (
+            <>
+              <h3 className="pt-2 text-sm font-medium">{t('wnc.torobProductsV3Url')}</h3>
+              <code className="bg-muted block break-all rounded-xl p-2 text-xs">{feedQ.data.products_v3_url}</code>
+            </>
+          ) : null}
+          {feedQ.data.products_legacy_url ? (
+            <>
+              <h3 className="pt-2 text-sm font-medium">{t('wnc.torobProductsLegacyUrl')}</h3>
+              <code className="bg-muted block break-all rounded-xl p-2 text-xs">{feedQ.data.products_legacy_url}</code>
+            </>
+          ) : null}
           {feedQ.data.order_status_url ? (
             <>
               <h3 className="pt-2 text-sm font-medium">{t('wnc.torobOrderStatusUrl')}</h3>
@@ -265,6 +283,26 @@ export function WncPlatformPanel({
             <>
               <h3 className="pt-2 text-sm font-medium">{t('wnc.torobOrdersListUrl')}</h3>
               <code className="bg-muted block break-all rounded-xl p-2 text-xs">{feedQ.data.orders_list_url}</code>
+            </>
+          ) : null}
+          {feedQ.data.orders_list_legacy_url ? (
+            <>
+              <h3 className="pt-2 text-sm font-medium">{t('wnc.torobOrdersListLegacyUrl')}</h3>
+              <code className="bg-muted block break-all rounded-xl p-2 text-xs">
+                {feedQ.data.orders_list_legacy_url}
+              </code>
+            </>
+          ) : null}
+          {feedQ.data.actions_url ? (
+            <>
+              <h3 className="pt-2 text-sm font-medium">{t('wnc.torobActionsUrl')}</h3>
+              <code className="bg-muted block break-all rounded-xl p-2 text-xs">{feedQ.data.actions_url}</code>
+            </>
+          ) : null}
+          {feedQ.data.set_token_url ? (
+            <>
+              <h3 className="pt-2 text-sm font-medium">{t('wnc.torobSetTokenUrl')}</h3>
+              <code className="bg-muted block break-all rounded-xl p-2 text-xs">{feedQ.data.set_token_url}</code>
             </>
           ) : null}
           {feedQ.data.note ? <p className="text-muted-foreground text-xs">{feedQ.data.note}</p> : null}

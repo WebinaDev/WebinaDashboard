@@ -18,6 +18,10 @@ final class Webino_Shield_2FA {
 	 * @return void
 	 */
 	public static function init() {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return;
+		}
 		add_filter( 'authenticate', array( __CLASS__, 'verify_login' ), 40, 3 );
 		add_action( 'show_user_profile', array( __CLASS__, 'profile_fields' ) );
 		add_action( 'personal_options_update', array( __CLASS__, 'save_profile' ) );

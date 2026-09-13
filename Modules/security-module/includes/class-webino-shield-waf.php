@@ -32,6 +32,10 @@ final class Webino_Shield_Waf {
 		}
 
 		$settings = Webino_Dashboard_Security_Settings::get();
+		$mode     = (string) ( $settings['waf']['mode'] ?? 'off' );
+		if ( in_array( $mode, array( 'off', 'disabled' ), true ) ) {
+			return;
+		}
 		if ( empty( $settings['waf']['layer3_hooks'] ) || empty( $settings['waf']['enabled'] ) ) {
 			return;
 		}
@@ -51,7 +55,15 @@ final class Webino_Shield_Waf {
 	 * @return void
 	 */
 	public static function init_mu() {
-		// L0 lite already ran from MU stub. Full rules wait for module bootstrap.
+		// Never schedule WAF from MU while protection is disabled / kill-switched.
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return;
+		}
+		if ( defined( 'WP_CONTENT_DIR' ) && is_readable( trailingslashit( WP_CONTENT_DIR ) . 'webino-shield.disable' ) ) {
+			return;
+		}
+		// L0 lite already ran from MU stub (no-op). Full rules wait for module bootstrap.
 		add_action( 'init', array( __CLASS__, 'evaluate_request' ), 20 );
 	}
 
@@ -59,6 +71,14 @@ final class Webino_Shield_Waf {
 	 * @return bool
 	 */
 	public static function is_disabled() {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& Webino_Dashboard_Security::is_kill_switch_active() ) {
+			return true;
+		}
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return true;
+		}
 		if ( class_exists( 'Webino_Dashboard_Security_Install', false )
 			&& Webino_Dashboard_Security_Install::is_disabled_file_present() ) {
 			return true;
@@ -67,9 +87,14 @@ final class Webino_Shield_Waf {
 			return true;
 		}
 		if ( ! class_exists( 'Webino_Dashboard_Security_Settings', false ) ) {
-			return false;
+			// Settings missing → fail-open (never enforce).
+			return true;
 		}
 		$settings = Webino_Dashboard_Security_Settings::get();
+		$mode     = (string) ( $settings['waf']['mode'] ?? 'off' );
+		if ( in_array( $mode, array( 'off', 'disabled' ), true ) ) {
+			return true;
+		}
 		return empty( $settings['general']['enabled'] ) || empty( $settings['waf']['enabled'] );
 	}
 
@@ -135,6 +160,11 @@ final class Webino_Shield_Waf {
 	 * @return bool
 	 */
 	private static function should_skip() {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return true;
+		}
+
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$s = Webino_Dashboard_Security_Settings::get();
 			if ( ! empty( $s['perf']['disable_on_wp_cli'] ) ) {
@@ -153,14 +183,14 @@ final class Webino_Shield_Waf {
 		$path = (string) ( wp_parse_url( $uri, PHP_URL_PATH ) ?: '/' );
 		$s    = Webino_Dashboard_Security_Settings::get();
 		$skip = array_filter( array_map( 'trim', explode( ',', (string) ( $s['waf']['skip_paths'] ?? '' ) ) ) );
-		// Always protect dashboard + payment/checkout paths from false positives.
-		$hard = array( '/dashboard', '/checkout', '/order-pay' );
-		$query_skip = array( 'wc-ajax', 'wc-api' );
+		// Always protect dashboard + payment/checkout + admin/login/ajax/REST from false positives.
+		$hard = array( '/dashboard', '/checkout', '/order-pay', '/wp-admin', '/wp-login.php' );
+		$query_skip = array( 'wc-ajax', 'wc-api', 'admin-ajax.php', 'rest_route=' );
 		foreach ( array_merge( $skip, $hard ) as $needle ) {
 			if ( '' === $needle ) {
 				continue;
 			}
-			if ( self::path_segment_match( $path, $needle ) ) {
+			if ( self::path_segment_match( $path, $needle ) || false !== strpos( $uri, $needle ) ) {
 				return true;
 			}
 		}

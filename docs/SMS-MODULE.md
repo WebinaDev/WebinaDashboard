@@ -67,7 +67,8 @@ PHP bootstrap: [`Modules/sms-panel-module/bootstrap.php`](../../Modules/sms-pane
 
 `{order_id}`, `{order_number}`, `{customer_name}`, `{customer_phone}`, `{customer_email}`, `{total}`, `{status}`, `{status_label}`, `{tracking}`, `{barcode}`, `{items}`, `{items_qty}`, `{payment_method}`, `{shipping_method}`, `{transaction_id}`, `{billing_address}`, `{shipping_address}`, `{order_date}`, `{site_name}`, `{site_url}`, `{code}`, `{product_name}`, `{product_url}`, `{qty}`, `{stock_quantity}`, `{low_stock_amount}`.
 
-**Order SMS is pattern-only:** if the IPPanel pattern is not synced for that event/role, the send is skipped (`pattern_missing`) — no webservice fallback.
+**Order SMS is pattern-only** for both customer and admin: if the IPPanel pattern is not synced for that event/role, the send is skipped (`pattern_missing`).
+Dashboard event switches (`settings.events[event].customer|admin`) are the sole enable gate. Local Dashboard cache fail-opens to CRM when unavailable.
 
 Event catalog comes from `wc_get_order_statuses()` on the customer site (plus extras: `pending_on_create`, `post-barcode`, `stock-low`, `stock-out`). Custom WC statuses are included automatically.
 

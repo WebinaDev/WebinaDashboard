@@ -18,6 +18,10 @@ final class Webino_Shield_Headers {
 	 * @return void
 	 */
 	public static function init() {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return;
+		}
 		add_action( 'send_headers', array( __CLASS__, 'send' ), 99 );
 		add_filter( 'the_generator', array( __CLASS__, 'remove_generator' ) );
 	}

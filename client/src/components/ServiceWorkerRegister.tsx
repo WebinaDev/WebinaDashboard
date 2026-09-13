@@ -1,36 +1,24 @@
-import { useEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
+import { useEffect } from 'react'
 
 import { registerDashboardServiceWorker } from '@/lib/serviceWorker'
 
+/**
+ * Best-effort PWA SW registration. Failures are console-only — offline cache
+ * is optional and must not interrupt dashboard UX on every page load.
+ */
 export function ServiceWorkerRegister() {
-  const { t } = useTranslation()
-  const warned = useRef(false)
-
   useEffect(() => {
-    const run = async () => {
-      const result = await registerDashboardServiceWorker()
-      if (result !== 'failed' || warned.current) {
-        return
-      }
-      const root = document.getElementById('root')
-      if (!root || root.childElementCount === 0) {
-        return
-      }
-      warned.current = true
-      toast.warning(t('serviceWorker.registrationFailedTitle'), {
-        description: t('serviceWorker.registrationFailedBody'),
-      })
+    const run = () => {
+      void registerDashboardServiceWorker()
     }
 
     if (typeof requestIdleCallback === 'function') {
-      const id = requestIdleCallback(() => void run(), { timeout: 4000 })
+      const id = requestIdleCallback(run, { timeout: 4000 })
       return () => cancelIdleCallback(id)
     }
-    const id = globalThis.setTimeout(() => void run(), 2000)
+    const id = globalThis.setTimeout(run, 2000)
     return () => globalThis.clearTimeout(id)
-  }, [t])
+  }, [])
 
   return null
 }

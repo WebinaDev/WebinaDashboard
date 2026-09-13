@@ -39,6 +39,21 @@ class WNC_Torob_Feed
             ),
             true
         );
+
+        // Torob-Sync Product API v3 (current).
+        register_rest_route(
+            'torob_api/v3',
+            '/products',
+            array(
+                array(
+                    'methods'             => 'POST',
+                    'callback'            => array( $this, 'get_products_v3' ),
+                    'permission_callback' => array( $validator, 'validate_token' ),
+                    'args'                => array(),
+                ),
+            ),
+            true
+        );
     }
 
     public function get_products(WP_REST_Request $request): WP_REST_Response
@@ -533,8 +548,317 @@ class WNC_Torob_Feed
             'order_status_enabled' => WNC_Torob_Options::isOrderStatusEnabled(),
             'orders_list_api_enabled' => WNC_Torob_Options::isOrdersListApiEnabled(),
             'product_page_webhook_enabled' => WNC_Torob_Options::isProductPageWebhookEnabled(),
+            'action_tracking_enabled' => WNC_Torob_Options::isActionTrackingEnabled(),
             'has_torob_token' => WNC_Torob_Options::getToken() !== '',
             'torob_token_set_at' => WNC_Torob_Options::getTokenSetAt()
         ];
+    }
+
+    /**
+     * Torob-Sync Product API v3 handler.
+     *
+     * @see https://github.com/torob/Torob-Sync/blob/main/product_api_v3.md
+     */
+    public function get_products_v3(WP_REST_Request $request): WP_REST_Response
+    {
+        $settings = WNC_Settings::get_platform('torob');
+        if (empty($settings['enabled'])) {
+            return new WP_REST_Response(
+                ['error' => 'Torob platform is disabled'],
+                403
+            );
+        }
+
+        $body = $request->get_json_params();
+        if (!is_array($body) || $body === []) {
+            return new WP_REST_Response(['error' => 'Request body is empty or invalid'], 400);
+        }
+
+        $has_urls = isset($body['page_urls']) && is_array($body['page_urls']);
+        $has_uniques = isset($body['page_uniques']) && is_array($body['page_uniques']);
+        $has_page = array_key_exists('page', $body);
+        $has_sort = array_key_exists('sort', $body);
+
+        if ($has_urls) {
+            if (count($body['page_urls']) < 1) {
+                return new WP_REST_Response(['error' => 'page_urls must contain at least one item'], 400);
+            }
+            $products = $this->get_v3_products_by_urls($body['page_urls']);
+            return new WP_REST_Response($this->wrap_v3_response($products, 1, count($products), 1), 200);
+        }
+
+        if ($has_uniques) {
+            if (count($body['page_uniques']) < 1) {
+                return new WP_REST_Response(['error' => 'page_uniques must contain at least one item'], 400);
+            }
+            $products = $this->get_v3_products_by_uniques($body['page_uniques']);
+            return new WP_REST_Response($this->wrap_v3_response($products, 1, count($products), 1), 200);
+        }
+
+        if ($has_page || $has_sort) {
+            if (!$has_page || !$has_sort) {
+                return new WP_REST_Response(
+                    ['error' => $has_page ? 'sort parameter is not provided' : 'page parameter is not provided'],
+                    400
+                );
+            }
+            $page = (int) $body['page'];
+            $sort = (string) $body['sort'];
+            if ($page < 1) {
+                return new WP_REST_Response(['error' => 'page must be >= 1'], 400);
+            }
+            if (!in_array($sort, ['date_added_desc', 'date_updated_desc'], true)) {
+                return new WP_REST_Response(['error' => 'sort must be date_added_desc or date_updated_desc'], 400);
+            }
+            $data = $this->get_all_products_v3($page, $sort);
+            return new WP_REST_Response($data, 200);
+        }
+
+        return new WP_REST_Response(['error' => 'Invalid request parameters'], 400);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $products Products.
+     */
+    private function wrap_v3_response(array $products, int $current_page, int $total, int $max_pages): array
+    {
+        return [
+            'api_version' => 'torob_api_v3',
+            'current_page' => $current_page,
+            'total' => $total,
+            'max_pages' => max(1, $max_pages),
+            'products' => array_values($products),
+        ];
+    }
+
+    /**
+     * @param array<int,mixed> $urls Absolute product URLs.
+     * @return array<int,array<string,mixed>>
+     */
+    private function get_v3_products_by_urls(array $urls): array
+    {
+        $out = [];
+        foreach ($urls as $url) {
+            $url = esc_url_raw((string) $url);
+            if ($url === '') {
+                continue;
+            }
+            $product = $this->resolve_product_from_url($url);
+            if (!$product instanceof WC_Product || $product->get_status() !== 'publish') {
+                continue;
+            }
+            $row = $this->serialize_product_v3($product);
+            if ($row !== null) {
+                $out[] = $row;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param array<int,mixed> $uniques page_unique values.
+     * @return array<int,array<string,mixed>>
+     */
+    private function get_v3_products_by_uniques(array $uniques): array
+    {
+        $out = [];
+        foreach ($uniques as $unique) {
+            $id = absint($unique);
+            if ($id < 1) {
+                continue;
+            }
+            $product = wc_get_product($id);
+            if (!$product instanceof WC_Product || $product->get_status() !== 'publish') {
+                continue;
+            }
+            $row = $this->serialize_product_v3($product);
+            if ($row !== null) {
+                $out[] = $row;
+            }
+        }
+        return $out;
+    }
+
+    private function resolve_product_from_url(string $url): ?WC_Product
+    {
+        $path = (string) wp_parse_url($url, PHP_URL_PATH);
+        if ($path === '') {
+            return null;
+        }
+        $post_id = url_to_postid($url);
+        if ($post_id > 0) {
+            $product = wc_get_product($post_id);
+            return $product instanceof WC_Product ? $product : null;
+        }
+        $slug = trim(basename(untrailingslashit($path)));
+        if ($slug === '') {
+            return null;
+        }
+        $post = get_page_by_path($slug, OBJECT, 'product');
+        if ($post && $post->post_status === 'publish') {
+            $product = wc_get_product($post->ID);
+            return $product instanceof WC_Product ? $product : null;
+        }
+        return null;
+    }
+
+    /**
+     * Paginated Product API v3 list (100 per page).
+     *
+     * @return array<string,mixed>
+     */
+    public function get_all_products_v3(int $page, string $sort): array
+    {
+        $per_page = 100;
+        $orderby = $sort === 'date_updated_desc' ? 'modified' : 'date';
+        $args = [
+            'posts_per_page' => $per_page,
+            'paged' => $page,
+            'post_status' => 'publish',
+            'orderby' => $orderby,
+            'order' => 'DESC',
+            'post_type' => ['product', 'product_variation'],
+            'update_post_term_cache' => true,
+            'update_post_meta_cache' => true,
+            'cache_results' => false,
+        ];
+
+        $query = new WP_Query($args);
+        $wc_products = array_filter(array_map('wc_get_product', $query->posts));
+        $products = [];
+        $this->fill_image_caches($wc_products);
+        foreach ($wc_products as $product) {
+            if (!$product instanceof WC_Product) {
+                continue;
+            }
+            $row = $this->serialize_product_v3($product);
+            if ($row !== null) {
+                $products[] = $row;
+            }
+        }
+
+        $total = (int) $query->found_posts;
+        $max_pages = (int) $query->max_num_pages;
+        return $this->wrap_v3_response($products, $page, $total, max(1, $max_pages));
+    }
+
+    /**
+     * Serialize a WooCommerce product to Torob Product API v3 schema.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function serialize_product_v3(WC_Product $product): ?array
+    {
+        $is_variation = $product->is_type('variation');
+        $parent = $is_variation ? $this->get_valid_parent($product) : null;
+        if ($is_variation && ($parent === null || !$product->get_price())) {
+            return null;
+        }
+        if ($product->is_type('variable')) {
+            // Variable parents are represented by variations in v3.
+            return null;
+        }
+
+        $legacy = $this->get_product_values($product, $parent);
+        $availability = $product->is_in_stock() && $product->get_stock_status() === 'instock';
+        $current = $this->to_toman_int($legacy->current_price ?? 0);
+        $old = $this->to_toman_int($legacy->old_price ?? $current);
+        if (!$availability) {
+            $current = 0;
+        }
+
+        $image_links = [];
+        $main = wp_get_attachment_image_src($product->get_image_id(), 'full');
+        if ($main) {
+            $image_links[] = $main[0];
+        }
+        foreach ($product->get_gallery_image_ids() as $attachment_id) {
+            $t_link = wp_get_attachment_image_src($attachment_id, 'full');
+            if ($t_link && !in_array($t_link[0], $image_links, true)) {
+                $image_links[] = $t_link[0];
+            }
+        }
+
+        $spec = [];
+        if (is_array($legacy->spec ?? null)) {
+            // Legacy wraps dict in a one-element list for Woo plugin parity.
+            if (isset($legacy->spec[0]) && is_array($legacy->spec[0])) {
+                $spec = $legacy->spec[0];
+            } elseif ($this->is_assoc_array($legacy->spec)) {
+                $spec = $legacy->spec;
+            }
+        }
+
+        $date_added = $product->get_date_created()
+            ? $product->get_date_created()->format(DATE_ATOM)
+            : gmdate(DATE_ATOM);
+        $date_updated = $product->get_date_modified()
+            ? $product->get_date_modified()->format(DATE_ATOM)
+            : null;
+
+        $row = [
+            'page_unique' => (string) WNC_Torob_Extraction_Utils::get_page_unique($product),
+            'page_url' => (string) WNC_Torob_Extraction_Utils::get_page_url($product),
+            'title' => mb_substr((string) ($legacy->title ?? $product->get_name()), 0, 500),
+            'current_price' => $current,
+            'availability' => (bool) $availability,
+            'image_links' => $image_links,
+            'spec' => is_array($spec) ? $spec : [],
+            'date_added' => $date_added,
+        ];
+
+        $subtitle = (string) ($legacy->subtitle ?? '');
+        if ($subtitle !== '') {
+            $row['subtitle'] = mb_substr($subtitle, 0, 500);
+        }
+        if ($parent) {
+            $row['product_group_id'] = (string) $parent->get_id();
+        }
+        if ($old > 0 && $old !== $current) {
+            $row['old_price'] = $old;
+        }
+        if (!empty($legacy->category_name)) {
+            $row['category_name'] = mb_substr((string) $legacy->category_name, 0, 200);
+        }
+        $short = wp_strip_all_tags((string) ($legacy->short_desc ?? ''));
+        if ($short !== '') {
+            $row['short_desc'] = mb_substr($short, 0, 500);
+        }
+        $guarantee = (string) ($legacy->guarantee ?? '');
+        if ($guarantee !== '') {
+            $row['guarantee'] = mb_substr($guarantee, 0, 200);
+        }
+        if ($date_updated) {
+            $row['date_updated'] = $date_updated;
+        }
+
+        return $row;
+    }
+
+    /**
+     * @param mixed $price Raw price.
+     */
+    private function to_toman_int($price): int
+    {
+        if ($price === '' || $price === null) {
+            return 0;
+        }
+        $n = (float) $price;
+        $currency = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : '';
+        if ($currency === 'IRR') {
+            $n /= 10;
+        }
+        return (int) round($n);
+    }
+
+    /**
+     * @param array<mixed> $arr Candidate array.
+     */
+    private function is_assoc_array(array $arr): bool
+    {
+        if ($arr === []) {
+            return true;
+        }
+        return array_keys($arr) !== range(0, count($arr) - 1);
     }
 }

@@ -64,7 +64,7 @@ class WNC_Torob_Order_Tracking
      */
     public function register_orders_route(WNC_Torob_Token $token_validator): void
     {
-        register_rest_route('torob-api/v1', '/orders', [
+        $route = [
             [
                 'methods' => 'GET',
                 'callback' => [$this, 'get_orders'],
@@ -85,7 +85,12 @@ class WNC_Torob_Order_Tracking
                     ]
                 ]
             ]
-        ], true);
+        ];
+
+        // Legacy / official Woo plugin path.
+        register_rest_route('torob-api/v1', '/orders', $route, true);
+        // Torob-Sync canonical path ending in /torob/v1/orders.
+        register_rest_route('torob/v1', '/orders', $route, true);
     }
 
     /**
@@ -185,13 +190,26 @@ class WNC_Torob_Order_Tracking
 
         $timestamp = $this->apply_lookback_limit($timestamp);
 
-        // Query orders with torob_clid
         $orders = $this->query_torob_orders($timestamp, $limit);
 
         return new WP_REST_Response([
             'success' => true,
             'data' => $orders
         ], 200);
+    }
+
+    /**
+     * Query WC_Order objects with _torob_clid for order/action tracking.
+     *
+     * @param bool $include_modified Also match date_modified after the cursor (cancellations/updates).
+     *
+     * @return WC_Order[]
+     */
+    public function query_torob_orders_for_tracking(int $timestamp_gt, int $limit, bool $include_modified = false): array
+    {
+        $date_query = gmdate('Y-m-d H:i:s', $timestamp_gt);
+        $statuses = ['wc-completed', 'wc-processing', 'wc-on-hold', 'wc-cancelled', 'wc-refunded', 'wc-failed'];
+        return $this->get_orders_with_torob_clid($date_query, $statuses, $limit, $timestamp_gt, $include_modified);
     }
 
     /**
@@ -265,12 +283,26 @@ class WNC_Torob_Order_Tracking
      */
     public function query_torob_orders(int $timestamp_gt, int $limit): array
     {
-        $date_query = gmdate('Y-m-d H:i:s', $timestamp_gt);
-        $statuses = ['wc-completed', 'wc-processing', 'wc-on-hold', 'wc-cancelled', 'wc-refunded'];
-        $orders = $this->get_orders_with_torob_clid($date_query, $statuses, $limit, $timestamp_gt);
-        $formatted_orders = array_map([$this, 'format_order_data'], $orders);
-        $valid_orders = array_filter($formatted_orders, static fn($order_data) => $order_data !== null);
-        return array_values($valid_orders);
+        $orders = $this->query_torob_orders_for_tracking($timestamp_gt, max($limit * 2, $limit), true);
+        $formatted = [];
+        foreach ($orders as $order) {
+            $row = $this->format_order_data($order);
+            if ($row === null) {
+                continue;
+            }
+            $purchase_ts = $this->parse_iso8601_timestamp((string) $row['purchase_timestamp']);
+            $last_ts = $this->parse_iso8601_timestamp((string) ($row['last_updated_timestamp'] ?? ''));
+            $include = (is_int($purchase_ts) && $purchase_ts > $timestamp_gt)
+                || (is_int($last_ts) && $last_ts > $timestamp_gt);
+            if (!$include) {
+                continue;
+            }
+            $formatted[] = $row;
+            if (count($formatted) >= $limit) {
+                break;
+            }
+        }
+        return array_values($formatted);
     }
 
     /**
@@ -287,14 +319,14 @@ class WNC_Torob_Order_Tracking
         string $date_query,
         array $statuses,
         int $limit,
-        int $timestamp_gt = 0
+        int $timestamp_gt = 0,
+        bool $include_modified = false
     ): array {
         if (WNC_Torob_Options::isHposEnabled()) {
-            $args = [
+            $base = [
                 'limit' => $limit,
                 'orderby' => 'date ID',
                 'order' => 'ASC',
-                'date_created' => '>' . $timestamp_gt,
                 'meta_query' => [
                     [
                         'key' => '_torob_clid',
@@ -308,14 +340,60 @@ class WNC_Torob_Order_Tracking
                 ],
                 'status' => $statuses
             ];
-            $orders = wc_get_orders($args);
+            $created_args = $base;
+            $created_args['date_created'] = '>' . $timestamp_gt;
+            $orders = wc_get_orders($created_args);
             if (!is_array($orders)) {
-                return [];
+                $orders = [];
+            }
+            if ($include_modified) {
+                $modified_args = $base;
+                $modified_args['date_modified'] = '>' . $timestamp_gt;
+                $modified = wc_get_orders($modified_args);
+                if (is_array($modified)) {
+                    $by_id = [];
+                    foreach (array_merge($orders, $modified) as $order) {
+                        if ($order instanceof \WC_Order) {
+                            $by_id[$order->get_id()] = $order;
+                        }
+                    }
+                    $orders = array_values($by_id);
+                    usort(
+                        $orders,
+                        static function ($a, $b) {
+                            return $a->get_date_created()->getTimestamp() <=> $b->get_date_created()->getTimestamp();
+                        }
+                    );
+                    $orders = array_slice($orders, 0, $limit);
+                }
             }
             return $orders;
         }
 
         // CPT datastore: meta_query is not supported in wc_get_orders (WC 9.2+). Use WP_Query on post meta.
+        $date_clauses = [
+            [
+                'column' => 'post_date_gmt',
+                'after' => $date_query,
+                'inclusive' => false
+            ]
+        ];
+        if ($include_modified) {
+            $date_clauses = [
+                'relation' => 'OR',
+                [
+                    'column' => 'post_date_gmt',
+                    'after' => $date_query,
+                    'inclusive' => false
+                ],
+                [
+                    'column' => 'post_modified_gmt',
+                    'after' => $date_query,
+                    'inclusive' => false
+                ]
+            ];
+        }
+
         $query = new \WP_Query([
             'post_type' => 'shop_order',
             'post_status' => $statuses,
@@ -323,13 +401,7 @@ class WNC_Torob_Order_Tracking
             'orderby' => 'date ID',
             'order' => 'ASC',
             'fields' => 'ids',
-            'date_query' => [
-                [
-                    'column' => 'post_date_gmt',
-                    'after' => $date_query,
-                    'inclusive' => false
-                ]
-            ],
+            'date_query' => $date_clauses,
             'meta_query' => [
                 [
                     'key' => '_torob_clid',
@@ -369,14 +441,11 @@ class WNC_Torob_Order_Tracking
             return null;
         }
 
+        // Torob-Sync only allows completed | cancelled.
         $wc_status = $order->get_status();
-        if (in_array($wc_status, ['cancelled', 'refunded'], true)) {
-            $status = 'cancelled';
-        } elseif ($wc_status === 'on-hold') {
-            $status = 'on-hold';
-        } else {
-            $status = 'completed';
-        }
+        $status = in_array($wc_status, ['cancelled', 'refunded', 'failed'], true)
+            ? 'cancelled'
+            : 'completed';
 
         $woocommerce_currency = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : null;
         $order_value = 0;

@@ -874,6 +874,16 @@ class Webino_Dashboard_Orders {
 			'shipping_method'          => self::get_shipping_method_title( $o ),
 			'shipping_items'           => $shipping_items,
 			'shipping_method_options'  => self::get_shipping_method_options(),
+			'packaging_plan'           => ( static function ( $raw ) {
+				if ( is_array( $raw ) ) {
+					return $raw;
+				}
+				if ( is_string( $raw ) && '' !== $raw ) {
+					$decoded = json_decode( $raw, true );
+					return is_array( $decoded ) ? $decoded : null;
+				}
+				return null;
+			} )( $o->get_meta( '_webino_packaging_plan' ) ),
 			'tracking_code'            => self::get_tracking_code( $o ),
 			'tracking_url'             => self::get_tracking_url( $o ),
 			'tracking_provider'        => self::get_meta_first( $o, array( '_tracking_provider', 'tracking_provider' ) ) ?: '',
@@ -1462,6 +1472,7 @@ class Webino_Dashboard_Orders {
 				'event'     => $event,
 				'phone'     => (string) ( $row['phone'] ?? '' ),
 				'role'      => (string) ( $row['recipient_role'] ?? '' ),
+				'reason'    => sanitize_key( (string) ( $row['reason'] ?? '' ) ),
 				'outbox_id' => (string) ( $row['outbox_id'] ?? '' ),
 				'source'    => 'crm',
 			);

@@ -87,9 +87,9 @@ self.addEventListener('fetch', (event) => {
 
   if (!isBuildAsset(url)) return
 
-  // Hashed JS/CSS: always network.
+  // Hashed JS/CSS: network-first without forcing cache bypass (reload thrashing).
   if (isJsOrCss(url)) {
-    event.respondWith(fetch(req, { cache: 'reload' }).catch(() => fetch(req)))
+    event.respondWith(fetch(req).catch(() => caches.match(req).then((c) => c || fetch(req))))
     return
   }
 

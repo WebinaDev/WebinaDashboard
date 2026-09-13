@@ -30,13 +30,16 @@ import {
   fetchNewsletterSubscribers,
   fetchShopSmsSettings,
   fetchSmsAccount,
+  fetchSmsNumbers,
   fetchSmsPatterns,
   saveShopSmsSettings,
   saveSmsTemplates,
+  smsQueryOptions,
   syncSmsPattern,
   unsubscribeNewsletterSubscriber,
   type ShopSmsPayload,
   type ShopSmsSettings,
+  type SmsAttachedNumber,
   type SmsEventCatalogItem,
   type SmsPatternRegistryRow,
   type SmsTemplateRow,
@@ -95,6 +98,11 @@ export function ShopSmsNotificationsPanel() {
   })
   useQueryErrorToast(q)
   const accountQ = useQuery({ queryKey: ['modirpayamak-account'], queryFn: () => fetchSmsAccount() })
+  const numbersQ = useQuery({
+    queryKey: ['sms-numbers'],
+    queryFn: fetchSmsNumbers,
+    ...smsQueryOptions,
+  })
   const patternsQ = useQuery({ queryKey: ['sms-patterns-shop'], queryFn: () => fetchSmsPatterns(1, 100) })
   const subsQ = useQuery({
     queryKey: ['sms-newsletter-subscribers'],
@@ -126,6 +134,12 @@ export function ShopSmsNotificationsPanel() {
     if (q.data?.event_catalog?.length) return q.data.event_catalog
     return (q.data?.event_keys ?? []).map((key) => ({ key, label: key, kind: 'status' as const }))
   }, [q.data])
+
+  const attachedLines: SmsAttachedNumber[] = useMemo(() => {
+    const payload = numbersQ.data
+    const list = payload?.numbers ?? payload?.data
+    return Array.isArray(list) ? list : []
+  }, [numbersQ.data])
 
   const setEventToggle = (key: string, role: 'customer' | 'admin', value: boolean) => {
     if (!settings) return
@@ -346,9 +360,28 @@ export function ShopSmsNotificationsPanel() {
               <Input value={settings.sender_line_dedicated ?? ''} readOnly className="bg-muted" dir="ltr" />
             </div>
           </div>
+          {attachedLines.length > 0 ? (
+            <div className="space-y-2">
+              <Label>{t('marketing.sms.linesTitle')}</Label>
+              <ul className="space-y-1 text-sm">
+                {attachedLines.map((n) => (
+                  <li key={`${n.number}-${n.role}`} className="flex flex-wrap items-center gap-2" dir="ltr">
+                    <span className="font-mono">{n.number}</span>
+                    <Badge variant="outline">{n.role}</Badge>
+                    {n.label ? <span className="text-muted-foreground">{n.label}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-xs">{t('marketing.sms.linesHint')}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button asChild>
               <Link to="/marketing/sms/patterns">{t('settings.shopSms.openPatternsMatrix')}</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/marketing/sms/lines">{t('marketing.sms.linesTitle')}</Link>
             </Button>
             <Button variant="outline" asChild>
               <Link to="/marketing/sms">{t('settings.smsModirpayamakPanel')}</Link>

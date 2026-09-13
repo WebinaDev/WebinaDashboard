@@ -59,14 +59,14 @@ final class Webino_Dashboard_Security_Settings {
 				'block_tor'       => false,
 			),
 			'general'        => array(
-				'enabled'                => true,
+				'enabled'                => false,
 				'profile'                => 'recommended',
 				'learning_mode'          => true,
 				'learning_days'          => 7,
 				'timezone_window'        => 'site',
 				'data_region'            => 'local',
 				'language_alerts'        => 'dashboard',
-				'self_guard'             => true,
+				'self_guard'             => false,
 				'panic_unlock_enabled'   => true,
 				'panic_unlock_ttl_hours' => 2,
 				'uninstall_wipe'         => false,
@@ -86,12 +86,12 @@ final class Webino_Dashboard_Security_Settings {
 				'hash_usernames_in_export' => false,
 			),
 			'waf' => array(
-				'enabled'                  => true,
+				'enabled'                  => false,
 				'layer0_prepend'           => false,
-				'layer1_dropin'            => true,
-				'layer2_mu'                => true,
-				'layer3_hooks'             => true,
-				'mode'                     => 'learning',
+				'layer1_dropin'            => false,
+				'layer2_mu'                => false,
+				'layer3_hooks'             => false,
+				'mode'                     => 'off',
 				'fail_open'                => true,
 				'circuit_breaker_errors'   => 20,
 				'max_request_inspect_bytes'=> 131072,
@@ -99,7 +99,7 @@ final class Webino_Dashboard_Security_Settings {
 				'inspect_json'             => true,
 				'inspect_xml'              => true,
 				'skip_media_ext'           => 'jpg,jpeg,png,webp,woff2,mp4',
-				'skip_paths'               => '/dashboard,/wp-cron.php',
+				'skip_paths'               => '/dashboard,/wp-cron.php,/wp-admin,/wp-login.php',
 				'skip_rest_namespaces'     => 'webino-dashboard/v1',
 				'challenge_provider'       => 'none',
 				'block_http_code'          => 403,
@@ -156,27 +156,27 @@ final class Webino_Dashboard_Security_Settings {
 				'score_404_window_min' => 5,
 			),
 			'login' => array(
-				'protect'               => true,
+				'protect'               => false,
 				'max_fail'              => 5,
 				'window_min'            => 10,
 				'lock_min'              => 30,
 				'same_response_time_ms' => 250,
 				'hide_errors'           => true,
-				'disable_xmlrpc'        => true,
+				'disable_xmlrpc'        => false,
 				'xmlrpc_pingback_only'  => false,
 				'disable_app_passwords' => false,
-				'disable_rest_users'    => true,
-				'disable_author_enum'   => true,
+				'disable_rest_users'    => false,
+				'disable_author_enum'   => false,
 				'captcha'               => false,
-				'honeypot'              => true,
-				'2fa_optional'          => true,
-				'2fa_required_roles'    => array( 'administrator' ),
+				'honeypot'              => false,
+				'2fa_optional'          => false,
+				'2fa_required_roles'    => array(),
 				'idle_timeout_min'      => 0,
 				'single_session'        => false,
 				'limit_username'        => array(),
 			),
 			'headers' => array(
-				'enabled'            => true,
+				'enabled'            => false,
 				'hsts'               => false,
 				'hsts_max_age'       => 15552000,
 				'hsts_subdomains'    => false,
@@ -307,6 +307,19 @@ final class Webino_Dashboard_Security_Settings {
 			&& class_exists( 'Webino_Dashboard_Security_Install', false ) ) {
 			Webino_Dashboard_Security_Install::mark_wizard_completed();
 		}
+
+		// Explicit re-enable (off → on) clears emergency force-disable + panic file.
+		$was_enabled = ! empty( $current['general']['enabled'] );
+		$now_enabled = ! empty( $merged['general']['enabled'] );
+		if ( $now_enabled && ! $was_enabled
+			&& class_exists( 'Webino_Dashboard_Security', false ) ) {
+			delete_option( Webino_Dashboard_Security::OPTION_FORCE_DISABLE );
+			if ( class_exists( 'Webino_Dashboard_Security_Install', false )
+				&& Webino_Dashboard_Security_Install::is_disabled_file_present() ) {
+				wp_delete_file( Webino_Dashboard_Security_Install::disable_file_path() );
+			}
+		}
+
 		if ( class_exists( 'Webino_Shield_Rules', false ) ) {
 			Webino_Shield_Rules::compile_runtime();
 		}

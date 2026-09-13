@@ -20,6 +20,7 @@ final class WNC_Torob_Options
     public const ORDER_STATUS_ENABLED_OPTION = 'wnc_torob_order_status_enabled';
     public const ORDERS_LIST_API_ENABLED_OPTION = 'wnc_torob_orders_list_api_enabled';
     public const PRODUCT_PAGE_WEBHOOK_ENABLED_OPTION = 'wnc_torob_product_page_webhook_enabled';
+    public const ACTION_TRACKING_ENABLED_OPTION = 'wnc_torob_action_tracking_enabled';
     public const TOKEN_OPTION = 'wnc_torob_token';
     public const TOKEN_SET_AT_OPTION = 'wnc_torob_token_set_at';
     public const PLUGIN_DB_VERSION_OPTION = 'wnc_torob_plugin_db_version';
@@ -135,6 +136,30 @@ final class WNC_Torob_Options
     public static function resetProductPageWebhookEnabled(): bool
     {
         return delete_option(self::PRODUCT_PAGE_WEBHOOK_ENABLED_OPTION);
+    }
+
+    /**
+     * Check whether the action tracking API is enabled.
+     */
+    public static function isActionTrackingEnabled(): bool
+    {
+        return get_option(self::ACTION_TRACKING_ENABLED_OPTION, self::DISABLED_VALUE) === self::ENABLED_VALUE;
+    }
+
+    /**
+     * Persist the action tracking API setting.
+     */
+    public static function setActionTrackingEnabled(bool $enabled): bool
+    {
+        return update_option(self::ACTION_TRACKING_ENABLED_OPTION, self::normalize_bool($enabled), true);
+    }
+
+    /**
+     * Delete the stored action tracking setting so the default applies.
+     */
+    public static function resetActionTrackingEnabled(): bool
+    {
+        return delete_option(self::ACTION_TRACKING_ENABLED_OPTION);
     }
 
     /**
@@ -353,6 +378,7 @@ final class WNC_Torob_Options
             self::ORDER_STATUS_ENABLED_OPTION,
             self::ORDERS_LIST_API_ENABLED_OPTION,
             self::PRODUCT_PAGE_WEBHOOK_ENABLED_OPTION,
+            self::ACTION_TRACKING_ENABLED_OPTION,
             self::TOKEN_OPTION,
             self::TOKEN_SET_AT_OPTION,
             self::PLUGIN_DB_VERSION_OPTION,

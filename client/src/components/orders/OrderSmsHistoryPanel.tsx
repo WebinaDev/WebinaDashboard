@@ -12,6 +12,7 @@ export type SmsLogEntry = {
   phone?: string
   source?: string
   role?: string
+  reason?: string
 }
 
 type OrderSmsHistoryPanelProps = {
@@ -44,30 +45,53 @@ function smsStatusLabel(t: (key: string) => string, status?: string): string {
   return s || '—'
 }
 
+function smsRoleLabel(t: (key: string) => string, role?: string): string {
+  const r = (role || '').toLowerCase()
+  if (!r || r === 'system') return ''
+  const key = `orders.smsRole.${r}`
+  const translated = t(key)
+  return translated !== key ? translated : r
+}
+
+function smsReasonLabel(t: (key: string) => string, reason?: string): string {
+  const r = (reason || '').trim()
+  if (!r) return ''
+  const key = `orders.smsReason.${r}`
+  const translated = t(key)
+  return translated !== key ? translated : r
+}
+
 export function OrderSmsHistoryPanel({ entries = [], locale }: OrderSmsHistoryPanelProps) {
   const { t } = useTranslation()
 
   return (
-    <OrderSidebarPanel title={t('orders.panelSmsHistory')} defaultOpen={false}>
+    <OrderSidebarPanel title={t('orders.panelSmsHistory')} defaultOpen={entries.length > 0}>
       {entries.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('orders.smsHistoryEmpty')}</p>
       ) : (
         <ul className="space-y-2">
-          {[...entries].reverse().map((e, i) => (
-            <li key={`${e.time}-${e.event}-${i}`} className="min-w-0 rounded-md border p-2 text-sm">
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                <span className="min-w-0 break-words font-medium">{smsEventLabel(t, e.event)}</span>
-                <Badge variant={smsStatusVariant(e.status)} className="shrink-0">
-                  {smsStatusLabel(t, e.status)}
-                </Badge>
-              </div>
-              <p className="text-muted-foreground mt-1 break-words text-xs">
-                {formatDisplayDateTime(e.time, locale)}
-                {e.phone ? ` · ${localizeDigits(e.phone, locale)}` : ''}
-                {e.role ? ` · ${e.role}` : ''}
-              </p>
-            </li>
-          ))}
+          {[...entries].reverse().map((e, i) => {
+            const role = smsRoleLabel(t, e.role)
+            const reason = smsReasonLabel(t, e.reason)
+            return (
+              <li key={`${e.time}-${e.event}-${e.role}-${i}`} className="min-w-0 rounded-md border p-2 text-sm">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 break-words font-medium">{smsEventLabel(t, e.event)}</span>
+                  <Badge variant={smsStatusVariant(e.status)} className="shrink-0">
+                    {smsStatusLabel(t, e.status)}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground mt-1 break-words text-xs">
+                  {formatDisplayDateTime(e.time, locale)}
+                  {e.phone ? ` · ${localizeDigits(e.phone, locale)}` : ''}
+                  {role ? ` · ${role}` : ''}
+                </p>
+                {reason ? (
+                  <p className="text-muted-foreground mt-1 break-words text-xs">{reason}</p>
+                ) : null}
+              </li>
+            )
+          })}
         </ul>
       )}
     </OrderSidebarPanel>

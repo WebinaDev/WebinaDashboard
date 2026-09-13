@@ -47,6 +47,12 @@ final class Webino_Dashboard_Security {
 	const OPTION     = 'webino_dashboard_security';
 	const SLUG       = 'security-module';
 
+	/** One-time emergency disarm (0.7.73) — forces runtime protection off even if DB said enforce. */
+	const OPTION_EMERGENCY_DISARM = 'webino_shield_emergency_disarm_0_7_73';
+
+	/** Persistent force-disable option (survives settings UI until cleared). */
+	const OPTION_FORCE_DISABLE = 'webino_shield_force_disable';
+
 	/**
 	 * @return void
 	 */
@@ -66,13 +72,28 @@ final class Webino_Dashboard_Security {
 		}
 		$bootstrapped = true;
 
+		// Always run emergency disarm first so L0/MU/disable-file stop blocking even if
+		// the module was active with enforce mode in the DB.
+		self::maybe_emergency_disarm();
+
 		if ( ! self::is_module_active() ) {
 			return;
 		}
 
-		Webino_Dashboard_Security_Install::maybe_install();
 		Webino_Dashboard_Security_Db::ensure_tables();
 		self::ensure_capabilities();
+
+		// Hard kill-switch: no WAF / login / rate-limit / blocklist enforcement / 2FA gate.
+		if ( ! self::is_runtime_protection_enabled() ) {
+			if ( class_exists( 'Webino_Dashboard_Security_Install', false ) ) {
+				Webino_Dashboard_Security_Install::neutralize_early_layers();
+			}
+			// Keep REST + CLI available so admins can re-enable safely later.
+			Webino_Shield_Cli::init();
+			return;
+		}
+
+		Webino_Dashboard_Security_Install::maybe_install();
 
 		Webino_Shield_Waf::init();
 		Webino_Shield_Login::init();
@@ -91,6 +112,107 @@ final class Webino_Dashboard_Security {
 		// Register learning-mode auto-exit cron (scheduled after settings are available).
 		add_action( 'init', array( __CLASS__, 'schedule_learning_exit' ), 25 );
 		add_action( 'webino_shield_learning_exit', array( __CLASS__, 'process_learning_exit' ) );
+	}
+
+	/**
+	 * Emergency / constant / file / option kill-switch. Overrides DB enforce mode.
+	 *
+	 * Constants (wp-config.php):
+	 *   define( 'WEBINO_SHIELD_DISABLE', true );
+	 *   define( 'WEBINO_DASHBOARD_SECURITY_DISABLE', true );
+	 *
+	 * Or drop file: wp-content/webino-shield.disable
+	 * Or option: webino_shield_force_disable = 1
+	 *
+	 * @return bool
+	 */
+	public static function is_kill_switch_active() {
+		if ( defined( 'WEBINO_SHIELD_DISABLE' ) && WEBINO_SHIELD_DISABLE ) {
+			return true;
+		}
+		if ( defined( 'WEBINO_DASHBOARD_SECURITY_DISABLE' ) && WEBINO_DASHBOARD_SECURITY_DISABLE ) {
+			return true;
+		}
+		if ( (bool) get_option( self::OPTION_FORCE_DISABLE, false ) ) {
+			return true;
+		}
+		if ( class_exists( 'Webino_Dashboard_Security_Install', false )
+			&& Webino_Dashboard_Security_Install::is_disabled_file_present() ) {
+			return true;
+		}
+		if ( defined( 'WP_CONTENT_DIR' ) && is_readable( trailingslashit( WP_CONTENT_DIR ) . 'webino-shield.disable' ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Whether any request-blocking runtime protection may run.
+	 *
+	 * @return bool
+	 */
+	public static function is_runtime_protection_enabled() {
+		if ( self::is_kill_switch_active() ) {
+			return false;
+		}
+		if ( ! self::is_module_active() ) {
+			return false;
+		}
+		if ( ! class_exists( 'Webino_Dashboard_Security_Settings', false ) ) {
+			return false;
+		}
+		$settings = Webino_Dashboard_Security_Settings::get();
+		if ( empty( $settings['general']['enabled'] ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * One-time: force-disable all runtime protection so locked-out sites recover after zip deploy.
+	 *
+	 * @return void
+	 */
+	public static function maybe_emergency_disarm() {
+		if ( get_option( self::OPTION_EMERGENCY_DISARM, false ) ) {
+			return;
+		}
+
+		update_option( self::OPTION_FORCE_DISABLE, 1, false );
+
+		$stored = get_option( self::OPTION, array() );
+		if ( ! is_array( $stored ) ) {
+			$stored = array();
+		}
+		if ( ! isset( $stored['general'] ) || ! is_array( $stored['general'] ) ) {
+			$stored['general'] = array();
+		}
+		if ( ! isset( $stored['waf'] ) || ! is_array( $stored['waf'] ) ) {
+			$stored['waf'] = array();
+		}
+		if ( ! isset( $stored['login'] ) || ! is_array( $stored['login'] ) ) {
+			$stored['login'] = array();
+		}
+
+		$stored['general']['enabled']       = false;
+		$stored['waf']['enabled']           = false;
+		$stored['waf']['mode']              = 'off';
+		$stored['waf']['layer0_prepend']    = false;
+		$stored['waf']['layer1_dropin']     = false;
+		$stored['waf']['layer2_mu']         = false;
+		$stored['waf']['layer3_hooks']      = false;
+		$stored['login']['protect']         = false;
+		$stored['login']['2fa_required_roles'] = array();
+
+		update_option( self::OPTION, $stored, false );
+
+		if ( class_exists( 'Webino_Dashboard_Security_Install', false ) ) {
+			Webino_Dashboard_Security_Install::write_disable_file( 'emergency disarm 0.7.73' );
+			Webino_Dashboard_Security_Install::neutralize_early_layers();
+		}
+
+		// Keep module installed/active for settings UI; runtime stays off via force-disable + general.enabled=false.
+		update_option( self::OPTION_EMERGENCY_DISARM, 1, false );
 	}
 
 	/**

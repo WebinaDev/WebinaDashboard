@@ -1,11 +1,36 @@
-import en from '@/i18n/locales/en.json'
-import fa from '@/i18n/locales/fa.json'
+/** Minimal boot strings — do not import full locale JSON (keeps shell chunk small). */
+const bootStrings: Record<string, Record<string, string>> = {
+  fa: {
+    'errors.reloadPage': 'بارگذاری مجدد',
+    'errors.boot.missingRoot': 'عنصر ریشهٔ داشبورد یافت نشد.',
+    'errors.boot.missingRootDetail': 'عنصر #root در HTML صفحه نیست.',
+    'errors.boot.missingConfig': 'پیکربندی داشبورد بارگذاری نشد.',
+    'errors.boot.missingConfigDetail':
+      'window.webinoDashboard موجود نیست. بررسی کنید افزونه و build روی سرور نصب باشد.',
+    'errors.boot.i18nFailed': 'راه‌اندازی داشبورد ناموفق بود.',
+    'errors.boot.loadFailed': 'بارگذاری داشبورد ناموفق بود.',
+  },
+  en: {
+    'errors.reloadPage': 'Reload page',
+    'errors.boot.missingRoot': 'Dashboard root element is missing.',
+    'errors.boot.missingRootDetail': '#root was not found in the page HTML.',
+    'errors.boot.missingConfig': 'Dashboard configuration failed to load.',
+    'errors.boot.missingConfigDetail':
+      'window.webinoDashboard is missing. Check that plugin assets are enqueued and the build exists on the server.',
+    'errors.boot.i18nFailed': 'Dashboard failed to start.',
+    'errors.boot.loadFailed': 'Dashboard failed to load.',
+  },
+}
 
-type BootBundle = Record<string, string>
+/** Set once createRoot is about to own #root — boot UI must not fight React. */
+let reactMountStarted = false
 
-const bundles: Record<string, BootBundle> = {
-  fa,
-  en,
+export function markReactMountStarted(): void {
+  reactMountStarted = true
+}
+
+export function hasReactMountStarted(): boolean {
+  return reactMountStarted
 }
 
 function bootLocale(): string {
@@ -15,12 +40,16 @@ function bootLocale(): string {
 
 export function bootI18n(key: string): string {
   const locale = bootLocale()
-  const bundle = bundles[locale] ?? bundles.fa
-  return bundle[key] ?? bundles.en[key] ?? key
+  return bootStrings[locale]?.[key] ?? bootStrings.en[key] ?? key
 }
 
 /** Visible fallback when React cannot mount (avoids a blank white screen). */
 export function showBootError(message: string, detail?: string) {
+  if (reactMountStarted) {
+    console.error('[Webino Dashboard] Boot error after React mount started (UI suppressed):', message, detail)
+    return
+  }
+
   const root = document.getElementById('root')
   if (!root) {
     return

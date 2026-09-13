@@ -2,6 +2,12 @@
 
 namespace WncBasalam\Admin\Product\Data\Services;
 
+use WncBasalam\Admin\Product\Data\Handlers\SimpleProductHandler;
+use WncBasalam\Admin\Product\Data\Handlers\VariableProductHandler;
+use WncBasalam\Admin\Product\Data\Strategies\CreateProductStrategy;
+use WncBasalam\Admin\Product\Data\Strategies\CustomUpdateProductStrategy;
+use WncBasalam\Admin\Product\Data\Strategies\QuickUpdateProductStrategy;
+use WncBasalam\Admin\Product\Data\Strategies\UpdateProductStrategy;
 use WncBasalam\Admin\Settings\SettingsConfig;
 
 defined('ABSPATH') || exit;
@@ -19,41 +25,86 @@ class VariantService
 
     public function getVariants($product): array
     {
-        if (!$product instanceof \WC_Product_Variable) return [];
-
-        $variants = [];
-        $variationIds = $product->get_children();
-
-        foreach ($variationIds as $variationId) {
-            $variant = $this->createVariant($variationId, $product);
-            if ($variant) $variants[] = $variant;
-        }
-
-        return $variants;
+        // Variations are synced as standalone Basalam products (not nested variants[]).
+        return [];
     }
 
-    private function createVariant(int $variationId, $parentProduct): ?array
+    /**
+     * Build Basalam product payload for one WooCommerce variation (as its own product).
+     *
+     * @param \WC_Product $variation Variation.
+     * @param \WC_Product $parent    Variable parent.
+     * @param string      $mode      create|update|quick_update|custom_update
+     * @return array<string,mixed>
+     */
+    public function buildStandaloneProductData($variation, $parent, string $mode = 'create'): array
     {
-        $variation = wc_get_product($variationId);
-        if (!$variation) return null;
+        $strategy = $this->resolveStrategy($mode);
+        $data     = $strategy->collect($parent, new VariableProductHandler());
 
-        $price = $this->priceService->calculateFinalPrice($variation);
-        if (!$price) return null;
+        unset($data['variants']);
 
-        $basalamVariantId = get_post_meta($variationId, 'sync_basalam_variation_id', true);
+        $data['name']          = $this->buildVariationTitle($parent, $variation);
+        $data['primary_price'] = $this->priceService->calculateFinalPrice($variation);
+        $data['stock']         = $this->getVariantStock($variation, $parent);
 
-        $variantData = [
-            'primary_price' => $price,
-            'stock' => $this->getVariantStock($variation, $parentProduct),
-            'properties' => $this->getVariantProperties($variation, $parentProduct),
-        ];
+        $simple = new SimpleProductHandler();
+        $data['weight']         = $simple->getWeight($variation);
+        $data['package_weight'] = $simple->getPackageWeight($variation);
 
-        // Add Basalam variant ID if it exists
-        if (!empty($basalamVariantId)) {
-            $variantData['id'] = $basalamVariantId;
+        $photo = $simple->getMainPhoto($variation);
+        if ($photo) {
+            $data['photo'] = $photo;
         }
 
-        return $variantData;
+        $data['variants'] = [];
+
+        return array_filter(
+            $data,
+            static function ($value) {
+                return $value !== null;
+            }
+        );
+    }
+
+    /**
+     * Title: parent name + variation attribute display values.
+     */
+    public function buildVariationTitle($parent, $variation): string
+    {
+        $baseName = $parent->get_name();
+        $parts    = [];
+        foreach ($this->getVariantProperties($variation, $parent) as $property) {
+            $value = isset($property['value']) ? trim((string) $property['value']) : '';
+            if ($value !== '') {
+                $parts[] = $value;
+            }
+        }
+
+        $combined = $parts ? trim($baseName . ' ' . implode(' ', $parts)) : $baseName;
+
+        $prefix = $this->settings[SettingsConfig::PRODUCT_PREFIX_TITLE] ?? '';
+        $suffix = $this->settings[SettingsConfig::PRODUCT_SUFFIX_TITLE] ?? '';
+
+        $name = $prefix ? "{$prefix} {$combined}" : $combined;
+        $name = $suffix ? "{$name} {$suffix}" : $name;
+
+        return mb_substr($name, 0, 120);
+    }
+
+    private function resolveStrategy(string $mode)
+    {
+        switch ($mode) {
+            case 'update':
+                return new UpdateProductStrategy();
+            case 'quick_update':
+                return new QuickUpdateProductStrategy();
+            case 'custom_update':
+                return new CustomUpdateProductStrategy();
+            case 'create':
+            default:
+                return new CreateProductStrategy();
+        }
     }
 
     private function getVariantStock($variation, $parentProduct): int
@@ -66,7 +117,9 @@ class VariantService
 
         $calculatedStock = $stockStatus === 'instock' ? $stock ?? $defaultStock : 0;
 
-        if ($safeStock > 0 && $calculatedStock <= $safeStock) return 0;
+        if ($safeStock > 0 && $calculatedStock <= $safeStock) {
+            return 0;
+        }
 
         return $calculatedStock;
     }
@@ -79,7 +132,6 @@ class VariantService
         $stock = $preferredProduct->get_stock_quantity();
         $stockStatus = $preferredProduct->get_stock_status();
 
-        // If preferred source has no numeric stock, fallback to the other source.
         if ($stock === null && $stockStatus === 'instock') {
             $fallbackStock = $fallbackProduct->get_stock_quantity();
             $fallbackStockStatus = $fallbackProduct->get_stock_status();
@@ -93,7 +145,10 @@ class VariantService
         return [$stock, $stockStatus];
     }
 
-    private function getVariantProperties($variation, $parentProduct): array
+    /**
+     * @return array<int,array{property:string,value:string}>
+     */
+    public function getVariantProperties($variation, $parentProduct): array
     {
         $properties = [];
         $variationData = $variation->get_variation_attributes();
@@ -102,7 +157,7 @@ class VariantService
             $taxonomyName = str_replace('attribute_', '', $attributeName);
             $attributeLabel = str_replace(['pa_', '-'], ' ', wc_attribute_label($taxonomyName, $parentProduct));
 
-            $valueName = rawurldecode($attributeValue);
+            $valueName = rawurldecode((string) $attributeValue);
             if (taxonomy_exists($taxonomyName)) {
                 $term = get_term_by('slug', $attributeValue, $taxonomyName);
                 if ($term && !is_wp_error($term)) {

@@ -1,0 +1,1 @@
+import{t as e}from"./SettingsModulesChrome-BqLYt4oU.js";import{t}from"./WncPlatformPanel-BOwL2qwV.js";import{jsx as n}from"react/jsx-runtime";function r(){return n(e,{children:n(t,{platform:`technolife`,titleKey:`wnc.modules.technolife.title`,subtitleKey:`wnc.modules.technolife.subtitle`,feedPlatform:!0,embedded:!0})})}export{r as default};

@@ -102,7 +102,7 @@ class SettingsConfig
             self::SYNC_PRODUCT_FIELD_PHOTOS         => 0,
             self::SYNC_PRODUCT_FIELD_PRICE          => 0,
             self::SYNC_PRODUCT_FIELD_STOCK          => 0,
-            self::SYNC_PRODUCT_FIELD_WEIGHT         => 0,
+            self::SYNC_PRODUCT_FIELD_WEIGHT         => 1,
             self::SYNC_PRODUCT_FIELD_DESCRIPTION    => 0,
             self::SYNC_PRODUCT_FIELD_ATTR           => 0,
             self::SYNC_PRODUCT_FIELD_VARIANT_PRICE  => 0,

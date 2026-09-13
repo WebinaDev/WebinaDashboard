@@ -123,6 +123,10 @@ final class Webino_Shield_Geo {
 	 * @return array<string,mixed>|null
 	 */
 	public static function evaluate_block( $request ) {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return null;
+		}
 		$s = Webino_Dashboard_Security_Settings::get();
 
 		// --- Country blocking ---

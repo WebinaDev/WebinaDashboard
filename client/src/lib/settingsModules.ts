@@ -34,6 +34,10 @@ const SHOP_CORE_IDS: Exclude<SettingsShopSectionId, 'pricing'>[] = [
   'advanced',
 ]
 
+/** Settings strip: merge Bale + Telegram into one «ربات‌ها» card. */
+const BOT_MODULE_SLUGS = new Set(['bale-bot-module', 'telegram-bot-module'])
+const BOTS_HUB_SLUG = 'bots-hub'
+
 function normalizeSection(raw: MarketplaceSettingsSection & {
   moduleSlug?: string
   sectionId?: string
@@ -100,18 +104,20 @@ export function groupSettingsModules(area?: 'site' | 'shop'): SettingsModuleGrou
       sectionId?: string
       moduleTitle?: string
     })
-    let group = map.get(sec.moduleSlug)
+    const isBotModule = BOT_MODULE_SLUGS.has(sec.moduleSlug)
+    const groupKey = isBotModule ? BOTS_HUB_SLUG : sec.moduleSlug
+    let group = map.get(groupKey)
     if (!group) {
       group = {
-        moduleSlug: sec.moduleSlug,
-        title: sec.moduleTitle,
-        titleKey: `marketplace.module.${sec.moduleSlug}`,
+        moduleSlug: groupKey,
+        title: isBotModule ? 'Bots' : sec.moduleTitle,
+        titleKey: isBotModule ? 'nav.module.bots' : `marketplace.module.${sec.moduleSlug}`,
         area: sec.area,
         kind: 'module',
-        parentSlug: parentSlug || undefined,
+        parentSlug: isBotModule ? undefined : parentSlug || undefined,
         sections: [],
       }
-      map.set(sec.moduleSlug, group)
+      map.set(groupKey, group)
     }
     const sectionId = sec.id
     const titleKey =
@@ -123,6 +129,15 @@ export function groupSettingsModules(area?: 'site' | 'shop'): SettingsModuleGrou
       titleKey,
       route: sec.route,
       slug: sec.slug,
+    })
+  }
+
+  const botsHub = map.get(BOTS_HUB_SLUG)
+  if (botsHub) {
+    botsHub.sections.sort((a, b) => {
+      const rank = (s: SettingsModuleSection) =>
+        s.route.includes('/bale') ? 0 : s.route.includes('/telegram') ? 1 : 99
+      return rank(a) - rank(b)
     })
   }
 

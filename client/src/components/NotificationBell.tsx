@@ -67,8 +67,9 @@ export function NotificationBell() {
     queryKey: ['account', 'notifications', 'header'],
     queryFn: () =>
       apiFetch<{ items: NotificationRow[]; total: number; unread: number }>('account/notifications?page=1'),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    refetchInterval: 120_000,
+    refetchIntervalInBackground: false,
+    staleTime: 60_000,
   })
 
   const markOne = useMutation({

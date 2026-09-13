@@ -186,7 +186,6 @@ final class Webino_Dashboard_Bootstrap {
 		}
 		if ( class_exists( 'Webino_Dashboard_Notifications', false ) ) {
 			Webino_Dashboard_Notifications::init_hooks();
-			Webino_Dashboard_Notifications::ensure_table();
 		}
 		if ( class_exists( 'Webino_Dashboard_Notify', false ) ) {
 			Webino_Dashboard_Notify::init();
@@ -199,14 +198,36 @@ final class Webino_Dashboard_Bootstrap {
 		}
 		if ( class_exists( 'Webino_Dashboard_Wallet', false ) ) {
 			Webino_Dashboard_Wallet::init_hooks();
+		}
+		if ( class_exists( 'Webino_Dashboard_Support_Tickets', false ) ) {
+			Webino_Dashboard_Support_Tickets::init();
+		}
+		// dbDelta only when schema option lags — never on every WP request.
+		self::maybe_ensure_runtime_schema();
+		if ( class_exists( 'Webino_Dashboard_REST_Account', false ) ) {
+			Webino_Dashboard_REST_Account::init();
+		}
+	}
+
+	/**
+	 * Run notifications/wallet/tickets dbDelta only when schema option is stale.
+	 *
+	 * @return void
+	 */
+	private static function maybe_ensure_runtime_schema() {
+		$needed = '1';
+		if ( (string) get_option( 'webino_dashboard_runtime_schema', '' ) === $needed ) {
+			return;
+		}
+		if ( class_exists( 'Webino_Dashboard_Notifications', false ) ) {
+			Webino_Dashboard_Notifications::ensure_table();
+		}
+		if ( class_exists( 'Webino_Dashboard_Wallet', false ) ) {
 			Webino_Dashboard_Wallet::ensure_tables();
 		}
 		if ( class_exists( 'Webino_Dashboard_Support_Tickets', false ) ) {
 			Webino_Dashboard_Support_Tickets::ensure_tables();
-			Webino_Dashboard_Support_Tickets::init();
 		}
-		if ( class_exists( 'Webino_Dashboard_REST_Account', false ) ) {
-			Webino_Dashboard_REST_Account::init();
-		}
+		update_option( 'webino_dashboard_runtime_schema', $needed, true );
 	}
 }

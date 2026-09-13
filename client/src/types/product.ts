@@ -153,6 +153,10 @@ export type ProductVariation = {
   stock_quantity: number | null
   stock_status: string
   image_id: number
+  weight?: string
+  length?: string
+  width?: string
+  height?: string
   attributes: Record<string, string>
   attribute_labels?: Record<string, { label: string; value: string }>
   status: string

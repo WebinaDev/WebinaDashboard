@@ -30,6 +30,17 @@ final class Webino_Shield_Rules {
 	 * @return array<string,mixed>
 	 */
 	public static function evaluate( $request ) {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return array( 'action' => 'allow' );
+		}
+
+		$s    = Webino_Dashboard_Security_Settings::get();
+		$mode = (string) ( $s['waf']['mode'] ?? 'off' );
+		if ( in_array( $mode, array( 'off', 'disabled' ), true ) || empty( $s['waf']['enabled'] ) ) {
+			return array( 'action' => 'allow' );
+		}
+
 		$block = Webino_Shield_Blocklist::match_request( $request );
 		if ( null !== $block ) {
 			return $block;
@@ -45,8 +56,6 @@ final class Webino_Shield_Rules {
 		$matched = null;
 		$rules   = array_merge( self::native_rules(), self::db_rules(), self::virtual_patch_rules() );
 
-		$s = Webino_Dashboard_Security_Settings::get();
-		$mode = $s['waf']['mode'] ?? 'learning';
 		$threshold_in = (int) ( $s['rules']['crs_anomaly_in'] ?? 5 );
 
 		foreach ( $rules as $rule ) {
@@ -399,11 +408,14 @@ final class Webino_Shield_Rules {
 
 		$runtime = array(
 			'version'    => time(),
+			'enabled'    => ! empty( $s['general']['enabled'] ) && ! empty( $s['waf']['enabled'] )
+				&& ! in_array( (string) ( $s['waf']['mode'] ?? 'off' ), array( 'off', 'disabled' ), true )
+				&& ( ! class_exists( 'Webino_Dashboard_Security', false ) || Webino_Dashboard_Security::is_runtime_protection_enabled() ),
 			'block_ips'  => array_values( array_unique( $block_ips ) ),
 			'allow_ips'  => array_values( array_unique( $allow_ips ) ),
 			'block_ua'   => array_values( array_unique( array_merge( $block_ua, (array) ( $s['access']['block_ua'] ?? array() ) ) ) ),
 			'rules'      => array_merge( self::native_rules(), self::db_rules() ),
-			'mode'       => $s['waf']['mode'] ?? 'learning',
+			'mode'       => $s['waf']['mode'] ?? 'off',
 		);
 
 		$path = Webino_Dashboard_Security::runtime_waf_path();

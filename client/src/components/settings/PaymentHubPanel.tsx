@@ -233,7 +233,10 @@ export function PaymentHubPanel() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{t(item.title_key)}</p>
-                  {warning ? <p className="text-muted-foreground text-xs">{warning}</p> : null}
+                  <p className="text-muted-foreground text-xs">
+                    {t(`${item.title_key}Desc`, { defaultValue: '' })}
+                  </p>
+                  {warning ? <p className="text-destructive/80 mt-0.5 text-xs">{warning}</p> : null}
                 </div>
                 <Button type="button" variant="ghost" size="icon" asChild>
                   <Link to={item.settings_path} aria-label={t('paymentsHub.openSettings')}>

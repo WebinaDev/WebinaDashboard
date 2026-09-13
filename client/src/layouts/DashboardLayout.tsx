@@ -278,58 +278,59 @@ export function DashboardLayout() {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <div className="ms-auto hidden items-center gap-2 md:flex">
+            <div className="ms-auto flex items-center gap-1 md:gap-2">
               <NotificationBell />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label={t('nav.fullscreen')}
-                onClick={() => void toggleFs()}
-              >
-                {fs ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
-              </Button>
-              <Button variant="outline" size="icon" asChild>
-                <a
-                  href={siteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t('nav.visitSite')}
+              <div className="hidden items-center gap-2 md:flex">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={t('nav.fullscreen')}
+                  onClick={() => void toggleFs()}
                 >
-                  <ExternalLink className="size-4" />
-                </a>
-              </Button>
-              <LanguageMenu />
-              <ThemeMenu />
-            </div>
-            <div className="ms-auto flex items-center gap-1 md:hidden">
-              <NotificationBell />
-              <ThemeMenu />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" size="icon" aria-label={t('nav.moreActions')}>
-                    <EllipsisVertical className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel>{t('nav.moreActions')}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => void toggleFs()}>
-                    {fs ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
-                    {t('nav.fullscreen')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <a href={siteUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="size-4" />
-                      {t('nav.visitSite')}
-                    </a>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <div className="flex flex-col gap-2 px-2 py-1.5">
-                    <LanguageMenu />
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  {fs ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+                </Button>
+                <Button variant="outline" size="icon" asChild>
+                  <a
+                    href={siteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t('nav.visitSite')}
+                  >
+                    <ExternalLink className="size-4" />
+                  </a>
+                </Button>
+                <LanguageMenu />
+                <ThemeMenu />
+              </div>
+              <div className="flex items-center gap-1 md:hidden">
+                <ThemeMenu />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" size="icon" aria-label={t('nav.moreActions')}>
+                      <EllipsisVertical className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuLabel>{t('nav.moreActions')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => void toggleFs()}>
+                      {fs ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+                      {t('nav.fullscreen')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a href={siteUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="size-4" />
+                        {t('nav.visitSite')}
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <div className="flex flex-col gap-2 px-2 py-1.5">
+                      <LanguageMenu />
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </header>

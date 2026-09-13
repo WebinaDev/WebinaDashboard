@@ -662,10 +662,11 @@ class OrderManager
     public static function getWooProductSimpleId($sync_basalam_product_id)
     {
         $product = get_posts([
-            'post_type'      => 'product',
+            'post_type'      => ['product', 'product_variation'],
             'meta_key'       => ProductMetaKey::basalamProductId(),
             'meta_value'     => $sync_basalam_product_id,
             'posts_per_page' => 1,
+            'post_status'    => ['publish', 'private'],
         ]);
 
         return !empty($product) ? $product[0]->ID : null;
@@ -673,17 +674,23 @@ class OrderManager
 
     public static function getWooProductVariableId($wnc_basalam_product_variant_id)
     {
+        // Legacy nested Basalam variation id.
         $args = [
             'post_type'      => 'product_variation',
             'posts_per_page' => 1,
             'meta_key'       => 'sync_basalam_variation_id',
             'meta_value'     => $wnc_basalam_product_variant_id,
             'fields'         => 'ids',
+            'post_status'    => ['publish', 'private'],
         ];
 
         $variation = get_posts($args);
+        if (!empty($variation)) {
+            return $variation[0];
+        }
 
-        return !empty($variation) ? $variation[0] : null;
+        // Standalone model: Basalam product id is stored on the variation.
+        return self::getWooProductSimpleId($wnc_basalam_product_variant_id);
     }
 
     public static function productExistsByTitle($title)

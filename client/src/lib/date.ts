@@ -30,13 +30,51 @@ export function formatDisplayDate(
   return d.format('YYYY-MM-DD')
 }
 
+/** True when MySQL/REST returned a missing unix timestamp (0 / "0" / empty). */
+export function isEmptyUnixTimestamp(value: unknown): boolean {
+  if (value === undefined || value === null || value === '') return true
+  if (typeof value === 'number') return !Number.isFinite(value) || value <= 0
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed || trimmed === '0' || trimmed === 'null' || trimmed === 'undefined') return true
+    if (/^\d+$/.test(trimmed)) return Number(trimmed) <= 0
+  }
+  return false
+}
+
+/**
+ * First usable job timestamp. Skips BIGINT defaults of 0/"0" so created_at wins
+ * over completed_at/started_at that were never set.
+ */
+export function pickJobTimestamp(
+  ...candidates: Array<string | number | null | undefined>
+): number | string | undefined {
+  for (const raw of candidates) {
+    if (isEmptyUnixTimestamp(raw)) continue
+    if (typeof raw === 'number') return raw
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim()
+      if (/^\d+$/.test(trimmed)) return Number(trimmed)
+      return trimmed
+    }
+  }
+  return undefined
+}
+
+function parseDisplayInstant(iso: string | number): dayjs.Dayjs {
+  if (typeof iso === 'number') return dayjs.unix(iso)
+  const trimmed = String(iso).trim()
+  if (/^\d+$/.test(trimmed)) return dayjs.unix(Number(trimmed))
+  return dayjs(trimmed)
+}
+
 export function formatDisplayDateTime(
   iso: string | number | undefined,
   locale: string,
   empty = '—',
 ): string {
-  if (iso === undefined || iso === null || iso === '') return empty
-  const d = typeof iso === 'number' ? dayjs.unix(iso) : dayjs(iso)
+  if (isEmptyUnixTimestamp(iso)) return empty
+  const d = parseDisplayInstant(iso as string | number)
   if (!d.isValid()) return empty
   if (isFaLocale(locale)) {
     const sep = i18n.t('date.timeSeparator')

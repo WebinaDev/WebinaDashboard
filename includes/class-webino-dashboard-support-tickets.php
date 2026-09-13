@@ -40,9 +40,19 @@ class Webino_Dashboard_Support_Tickets {
 	}
 
 	/**
+	 * @var bool
+	 */
+	private static $tables_ready = false;
+
+	/**
 	 * @return void
 	 */
 	public static function ensure_tables() {
+		if ( self::$tables_ready ) {
+			return;
+		}
+		self::$tables_ready = true;
+
 		global $wpdb;
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		$charset_collate = $wpdb->get_charset_collate();

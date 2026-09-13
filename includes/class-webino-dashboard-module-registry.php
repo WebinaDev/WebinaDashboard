@@ -1028,9 +1028,15 @@ final class Webino_Dashboard_Module_Registry {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function scan_manifests() {
+		static $cache = null;
+		if ( null !== $cache ) {
+			return $cache;
+		}
+
 		$dir = self::modules_dir();
 		if ( ! is_dir( $dir ) ) {
-			return array();
+			$cache = array();
+			return $cache;
 		}
 		$out = array();
 		foreach ( glob( $dir . '*/manifest.json' ) ?: array() as $file ) {
@@ -1041,7 +1047,8 @@ final class Webino_Dashboard_Module_Registry {
 				$out[] = $data;
 			}
 		}
-		return $out;
+		$cache = $out;
+		return $cache;
 	}
 
 	/**

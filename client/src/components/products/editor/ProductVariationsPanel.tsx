@@ -192,6 +192,10 @@ type VariationDraft = {
   lockPrice: boolean
   manageStock: boolean
   stock: string
+  weight: string
+  length: string
+  width: string
+  height: string
   attrValues: Record<string, string>
   referenceUrl: string
   wholesaleRule: WholesaleRuleForm
@@ -204,6 +208,10 @@ function buildVariationPatchBody(draft: VariationDraft): Record<string, unknown>
     regular_price: draft.price,
     manage_stock: draft.manageStock,
     stock_quantity: draft.manageStock ? stockQty : null,
+    weight: draft.weight.trim(),
+    length: draft.length.trim(),
+    width: draft.width.trim(),
+    height: draft.height.trim(),
     attributes: draft.attrValues,
     wfcp: {
       purchase_price: draft.purchase.trim() === '' ? '' : draft.purchase.trim(),
@@ -824,6 +832,10 @@ function VariationCard({
   const [stock, setStock] = useState(
     variation.stock_quantity != null ? String(variation.stock_quantity) : '',
   )
+  const [weight, setWeight] = useState(variation.weight ?? '')
+  const [length, setLength] = useState(variation.length ?? '')
+  const [width, setWidth] = useState(variation.width ?? '')
+  const [height, setHeight] = useState(variation.height ?? '')
   const [attrValues, setAttrValues] = useState(() => hydrateAttrValues(axes, variation))
   const [dkp, setDkp] = useState(dkMap?.dk_product_id ? `DKP-${dkMap.dk_product_id}` : '')
   const [dkVariant, setDkVariant] = useState(dkMap?.dk_variant_id ?? '')
@@ -846,6 +858,10 @@ function VariationCard({
     lockPrice: Boolean(variation.wfcp?.lock_price),
     manageStock: Boolean(variation.manage_stock),
     stock: variation.stock_quantity != null ? String(variation.stock_quantity) : '',
+    weight: variation.weight ?? '',
+    length: variation.length ?? '',
+    width: variation.width ?? '',
+    height: variation.height ?? '',
     attrValues: hydrateAttrValues(axes, variation),
     referenceUrl: variation.wfcp?.reference_url ?? '',
     wholesaleRule: hydrateVarWholesale(variation.wfcp?.wholesale_rule),
@@ -862,6 +878,10 @@ function VariationCard({
     lockPrice,
     manageStock,
     stock,
+    weight,
+    length,
+    width,
+    height,
     attrValues,
     referenceUrl,
     wholesaleRule,
@@ -931,6 +951,10 @@ function VariationCard({
       lockPrice: Boolean(variation.wfcp?.lock_price),
       manageStock: Boolean(variation.manage_stock),
       stock: variation.stock_quantity != null ? String(variation.stock_quantity) : '',
+      weight: variation.weight ?? '',
+      length: variation.length ?? '',
+      width: variation.width ?? '',
+      height: variation.height ?? '',
       attrValues: hydrateAttrValues(axes, variation),
       referenceUrl: variation.wfcp?.reference_url ?? '',
       wholesaleRule: hydrateVarWholesale(variation.wfcp?.wholesale_rule),
@@ -943,6 +967,10 @@ function VariationCard({
     setLockPrice(nextDraft.lockPrice)
     setManageStock(nextDraft.manageStock)
     setStock(nextDraft.stock)
+    setWeight(nextDraft.weight)
+    setLength(nextDraft.length)
+    setWidth(nextDraft.width)
+    setHeight(nextDraft.height)
     setAttrValues(nextDraft.attrValues)
     setReferenceUrl(nextDraft.referenceUrl)
     setWholesaleRule(nextDraft.wholesaleRule)
@@ -1211,6 +1239,49 @@ function VariationCard({
               />
             </>
           ) : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t('products.fieldWeight')}</Label>
+          <Input
+            value={weight}
+            onChange={(e) => {
+              setWeight(e.target.value)
+              scheduleAutosave()
+            }}
+            dir="ltr"
+          />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label>{t('products.fieldDimensions')}</Label>
+          <div className="grid grid-cols-3 gap-2">
+            <Input
+              value={length}
+              onChange={(e) => {
+                setLength(e.target.value)
+                scheduleAutosave()
+              }}
+              placeholder={t('products.dimLength')}
+              dir="ltr"
+            />
+            <Input
+              value={width}
+              onChange={(e) => {
+                setWidth(e.target.value)
+                scheduleAutosave()
+              }}
+              placeholder={t('products.dimWidth')}
+              dir="ltr"
+            />
+            <Input
+              value={height}
+              onChange={(e) => {
+                setHeight(e.target.value)
+                scheduleAutosave()
+              }}
+              placeholder={t('products.dimHeight')}
+              dir="ltr"
+            />
+          </div>
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <Label>{t('digikala.dkpCode')}</Label>

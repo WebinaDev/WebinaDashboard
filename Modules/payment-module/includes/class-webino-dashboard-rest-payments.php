@@ -72,14 +72,15 @@ final class Webino_Dashboard_REST_Payments {
 				'id'            => 'digipay',
 				'title_key'     => 'paymentsHub.digipay',
 				'module_slug'   => 'digipay-upg-module',
-				'gateway_ids'   => array( 'digipay_ipg' ),
+				'gateway_ids'   => array( 'digipay_ipg', 'digipay_bpg', 'digipay_cpg', 'digipay_wallet' ),
+				'id_match'      => 'digipay',
 				'settings_path' => '/settings/shop/digipay',
 			),
 			array(
 				'id'            => 'snapppay',
 				'title_key'     => 'paymentsHub.snapppay',
 				'module_slug'   => 'snapppay-gateway-module',
-				'gateway_ids'   => array( 'snapppay', 'snapp_pay', 'wc_snapppay' ),
+				'gateway_ids'   => array( 'WC_Gateway_SnappPay', 'snapppay', 'snapp_pay', 'wc_snapppay' ),
 				'id_match'      => 'snapp',
 				'settings_path' => '/settings/shop/snapppay',
 			),
@@ -87,7 +88,7 @@ final class Webino_Dashboard_REST_Payments {
 				'id'            => 'torobpay',
 				'title_key'     => 'paymentsHub.torobpay',
 				'module_slug'   => 'torobpay-gateway-module',
-				'gateway_ids'   => array( 'torobpay', 'torob_pay', 'wc_gateway_torobpay' ),
+				'gateway_ids'   => array( 'WC_Gateway_TorobPay', 'torobpay', 'torob_pay', 'wc_gateway_torobpay' ),
 				'id_match'      => 'torob',
 				'settings_path' => '/settings/shop/torobpay',
 			),
@@ -169,13 +170,31 @@ final class Webino_Dashboard_REST_Payments {
 				&& Webino_Dashboard_Module_Registry::is_active( $module_slug );
 			$available     = '' !== $gw_id && $module_active;
 
+			$enabled = false;
+			if ( $available ) {
+				// DigiPay (and similar multi-id rows): enabled if ANY catalog candidate is on.
+				foreach ( (array) $row['gateway_ids'] as $candidate ) {
+					$cid = (string) $candidate;
+					if ( ! empty( $wc_map[ $cid ]['enabled'] ) ) {
+						$enabled = true;
+						if ( '' === $gw_id ) {
+							$gw_id = $cid;
+						}
+						break;
+					}
+				}
+				if ( ! $enabled && '' !== $gw_id && ! empty( $wc_map[ $gw_id ]['enabled'] ) ) {
+					$enabled = true;
+				}
+			}
+
 			$items[] = array(
 				'id'            => (string) $row['id'],
 				'title_key'     => (string) $row['title_key'],
 				'module_slug'   => $module_slug,
 				'module_active' => $module_active,
 				'gateway_id'    => $gw_id,
-				'enabled'       => $available && ! empty( $wc_map[ $gw_id ]['enabled'] ),
+				'enabled'       => $enabled,
 				'available'     => $available,
 				'settings_path' => (string) $row['settings_path'],
 			);

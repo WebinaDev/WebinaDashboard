@@ -18,6 +18,11 @@ final class Webino_Shield_Login {
 	 * @return void
 	 */
 	public static function init() {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return;
+		}
+
 		$s = Webino_Dashboard_Security_Settings::get();
 		if ( empty( $s['login']['protect'] ) ) {
 			return;

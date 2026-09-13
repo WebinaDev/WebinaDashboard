@@ -216,7 +216,9 @@ final class Webino_Dashboard_REST_Site_Settings {
 	 * @return void
 	 */
 	public static function invalidate_sms_shop_cache() {
+		$domain = Webino_Dashboard_License::instance()->get_current_domain();
 		delete_transient( self::sms_shop_cache_key() );
+		delete_transient( 'webino_sms_shop_gate_' . md5( (string) $domain ) );
 	}
 
 	/**
@@ -333,7 +335,7 @@ final class Webino_Dashboard_REST_Site_Settings {
 			if ( isset( $data['templates'] ) && is_array( $data['templates'] ) ) {
 				$license->crm_post( 'wp-json/webinocrm/v1/modirpayamak/templates', array( 'templates' => $data['templates'] ) );
 			}
-			delete_transient( self::sms_shop_cache_key() );
+			self::invalidate_sms_shop_cache();
 			return self::sms_get();
 		}
 		if ( ! Webino_Dashboard_Module_Registry::sms_ready() ) {

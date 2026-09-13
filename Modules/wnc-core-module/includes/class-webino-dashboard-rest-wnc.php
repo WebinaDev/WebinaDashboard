@@ -401,6 +401,12 @@ final class Webino_Dashboard_REST_WNC {
 		}
 		$adapter  = WNC_Platform_Registry::get( $platform );
 		$settings = WNC_Settings::get_platform( $platform );
+		if ( $adapter && is_callable( array( $adapter, 'credentials' ) ) ) {
+			$creds = $adapter->credentials();
+			if ( is_array( $creds ) ) {
+				$settings['credentials'] = $creds;
+			}
+		}
 		return new WP_REST_Response(
 			array(
 				'platform' => $platform,
@@ -798,7 +804,7 @@ final class Webino_Dashboard_REST_WNC {
 			'zarehbin'          => rest_url( 'zarehbin/v1/products' ),
 			'emalls'            => rest_url( 'emalls_ext/v1/products' ),
 			'snapppay-search'   => rest_url( 'v1/product/feed' ),
-			'torob'             => rest_url( 'wcpe/v1/products' ),
+			'torob'             => rest_url( 'torob_api/v3/products' ),
 		);
 		$settings = class_exists( 'WNC_Settings' ) ? WNC_Settings::get_platform( $platform ) : array();
 		$payload  = array(
@@ -810,10 +816,17 @@ final class Webino_Dashboard_REST_WNC {
 			$payload['note'] = __( 'Platform is disabled — crawler requests return HTTP 403 until you enable it.', 'webino-dashboard' );
 		}
 		if ( 'torob' === $platform ) {
-			$payload['order_status_url'] = rest_url( 'torob-api/v1/order-status' );
-			$payload['orders_list_url']  = rest_url( 'torob-api/v1/orders' );
+			$payload['products_v3_url']     = rest_url( 'torob_api/v3/products' );
+			$payload['products_legacy_url'] = rest_url( 'wcpe/v1/products' );
+			$payload['order_status_url']    = rest_url( 'torob-api/v1/order-status' );
+			$payload['orders_list_url']     = rest_url( 'torob/v1/orders' );
+			$payload['orders_list_legacy_url'] = rest_url( 'torob-api/v1/orders' );
+			$payload['actions_url']         = rest_url( 'torob/v1/actions' );
+			$payload['set_token_url']       = rest_url( 'torob-api/v1/set-token' );
+			// Keep primary `url` as Product API v3; legacy still listed separately.
+			$payload['url'] = $payload['products_v3_url'];
 			if ( empty( $payload['note'] ) ) {
-				$payload['note'] = __( 'Torob pulls site orders via these GET endpoints (official plugin pattern). Enable Torob in Connector settings.', 'webino-dashboard' );
+				$payload['note'] = __( 'Torob-Sync: Product API v3 (primary), legacy wcpe feed, JWT, webhook set-token, orders, and optional action tracking.', 'webino-dashboard' );
 			}
 		}
 		return new WP_REST_Response( $payload );

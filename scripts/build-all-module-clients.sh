@@ -17,6 +17,7 @@ SLUGS=(
   telegram-bot-module
   torobpay-gateway-module
   torob-products-extractor-module
+  torob-connector-module
   wfcp-module
   zarinpal-gateway-module
   coffee-profile-module

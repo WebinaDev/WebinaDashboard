@@ -18,6 +18,10 @@ final class Webino_Shield_Rate_Limiter {
 	 * @return void
 	 */
 	public static function init() {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return;
+		}
 		add_action( 'init', array( __CLASS__, 'enforce' ), 2 );
 	}
 
@@ -25,6 +29,10 @@ final class Webino_Shield_Rate_Limiter {
 	 * @return void
 	 */
 	public static function enforce() {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return;
+		}
 		$class = self::detect_class();
 		if ( '' === $class ) {
 			return;
@@ -76,6 +84,10 @@ final class Webino_Shield_Rate_Limiter {
 	 * @return array<string,mixed>
 	 */
 	public static function hit( $class ) {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return array( 'blocked' => false );
+		}
 		$s    = Webino_Dashboard_Security_Settings::get();
 		$cfg  = isset( $s['rate'][ $class ] ) ? $s['rate'][ $class ] : null;
 		if ( ! is_array( $cfg ) ) {

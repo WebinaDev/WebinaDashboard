@@ -1,10 +1,10 @@
 /* webino-dashboard 0.1.31 — force fresh entry hashes after importmap fix */
 import { StrictMode } from 'react'
-import { createRoot, hydrateRoot } from 'react-dom/client'
+import { createRoot } from 'react-dom/client'
 
 import App from '@/App.tsx'
 import { i18nReady } from '@/i18n'
-import { bootI18n, showBootError } from '@/lib/bootError'
+import { bootI18n, hasReactMountStarted, markReactMountStarted, showBootError } from '@/lib/bootError'
 import { createQueryClient } from '@/lib/queryClient'
 import { QueryClientProvider } from '@tanstack/react-query'
 import '@/index.css'
@@ -14,7 +14,12 @@ const queryClient = createQueryClient()
 
 /** Non-fatal CDN/Vite font CSS preload glitches must not block React mount. */
 function isIgnorableBootError(msg: string): boolean {
-  return /Unable to preload CSS/i.test(msg) || /fonts-fa/i.test(msg)
+  return (
+    /Unable to preload CSS/i.test(msg) ||
+    /fonts-fa/i.test(msg) ||
+    /removeChild/i.test(msg) ||
+    /NotFoundError/i.test(msg)
+  )
 }
 
 function appTree() {
@@ -27,6 +32,11 @@ function appTree() {
   )
 }
 
+/**
+ * PHP first-paint (#wd-shell-loader / data-wd-ssr) is not isomorphic with React.
+ * Clear it before createRoot so React never removeChilds foreign nodes (avoids
+ * NotFoundError races that the boot error listener used to surface as a red screen).
+ */
 function mountApp() {
   const el = document.getElementById('root')
   if (!el) {
@@ -34,21 +44,9 @@ function mountApp() {
     return
   }
 
-  const tree = appTree()
-  const ssrChrome = el.querySelector('[data-wd-ssr]')
-  // PHP first-paint chrome is intentionally not isomorphic with React.
-  // createRoot replaces it after paint; embedded page/bootstrap data avoids REST waterfalls.
-  if (ssrChrome) {
-    createRoot(el).render(tree)
-    return
-  }
-
-  if (el.getAttribute('data-wd-hydrate') === '1' && el.childElementCount === 0) {
-    hydrateRoot(el, tree)
-    return
-  }
-
-  createRoot(el).render(tree)
+  el.replaceChildren()
+  markReactMountStarted()
+  createRoot(el).render(appTree())
 }
 
 function boot() {
@@ -68,25 +66,20 @@ function boot() {
     })
 }
 
-/** True once React has replaced the PHP shell loader (or shown a boot error). */
+/** True once React owns #root, or a boot error UI is already shown. */
 function isDashboardBooted(): boolean {
+  if (hasReactMountStarted()) {
+    return true
+  }
   const root = document.getElementById('root')
   if (!root) {
-    return false
-  }
-  // PHP shell leaves #wd-shell-loader until createRoot mounts — do not treat it as "booted".
-  if (document.getElementById('wd-shell-loader')) {
-    return false
-  }
-  // SSR chrome is transitional until React takes over.
-  if (root.querySelector('[data-wd-ssr]')) {
     return false
   }
   // Boot error UI replaces children with role=alert.
   if (root.querySelector('[role="alert"]')) {
     return true
   }
-  return root.childElementCount > 0
+  return false
 }
 
 window.addEventListener('error', (event) => {

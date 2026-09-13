@@ -22,6 +22,9 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 	return;
 }
 
+// Emergency disarm + kill-switch before any REST/engine wiring.
+Webino_Dashboard_Security::maybe_emergency_disarm();
+
 Webino_Dashboard_Security::init();
 Webino_Dashboard_REST_Security::init();
 // Module loads on init@10 — call bootstrap immediately (do not re-hook init@4).

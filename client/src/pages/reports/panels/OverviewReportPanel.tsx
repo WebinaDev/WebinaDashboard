@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 
+import { BasalamBalanceCard } from '@/components/reports/BasalamBalanceCard'
 import { TopCategoriesTable } from '@/components/orders/reports/TopCategoriesTable'
 import { TopCouponsTable } from '@/components/orders/reports/TopCouponsTable'
 import { TopCustomersTable } from '@/components/orders/reports/TopCustomersTable'
@@ -108,6 +109,8 @@ export function OverviewReportPanel() {
             currencySymbol={store.currencySymbol}
             locale={i18n.language}
           />
+
+          <BasalamBalanceCard />
 
           <Card className="min-w-0 overflow-hidden shadow-sm">
             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">

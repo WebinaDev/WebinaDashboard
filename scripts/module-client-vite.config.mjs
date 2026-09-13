@@ -31,6 +31,7 @@ const MODULE_SLUGS = [
   'telegram-bot-module',
   'torobpay-gateway-module',
   'torob-products-extractor-module',
+  'torob-connector-module',
   'wfcp-module',
   'zarinpal-gateway-module',
   'coffee-profile-module',
@@ -38,6 +39,8 @@ const MODULE_SLUGS = [
   'card-to-card-gateway-module',
   'wallet-gateway-module',
   'security-module',
+  'shipping-module',
+  'tapin-module',
 ]
 
 /** @type {Record<string, string>} */
@@ -55,6 +58,7 @@ const MODULE_ALIAS_PREFIX = {
   'telegram-bot-module': '@module-telegram-bot',
   'torobpay-gateway-module': '@module-torobpay',
   'torob-products-extractor-module': '@module-torob-extractor',
+  'torob-connector-module': '@module-torob-connector',
   'wfcp-module': '@module-wfcp',
   'zarinpal-gateway-module': '@module-zarinpal',
   'coffee-profile-module': '@module-coffee-profile',
@@ -62,6 +66,8 @@ const MODULE_ALIAS_PREFIX = {
   'card-to-card-gateway-module': '@module-c2c',
   'wallet-gateway-module': '@module-wallet',
   'security-module': '@module-security',
+  'shipping-module': '@module-shipping',
+  'tapin-module': '@module-tapin',
 }
 
 /** Force ESM for packages that still get inlined (not on the shared runtime list). */

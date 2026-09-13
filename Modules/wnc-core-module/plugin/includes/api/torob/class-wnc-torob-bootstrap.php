@@ -23,6 +23,9 @@ class WNC_Torob_Bootstrap {
 	/** @var WNC_Torob_Order_Tracking|null */
 	private static $order_tracking;
 
+	/** @var WNC_Torob_Action_Tracking|null */
+	private static $action_tracking;
+
 	/** @var WNC_Torob_Webhook_Handler|null */
 	private static $webhook;
 
@@ -41,6 +44,7 @@ class WNC_Torob_Bootstrap {
 		self::$feed           = new WNC_Torob_Feed();
 		self::$order_status   = new WNC_Torob_Order_Status();
 		self::$order_tracking = new WNC_Torob_Order_Tracking();
+		self::$action_tracking = new WNC_Torob_Action_Tracking( self::$order_tracking );
 		self::$webhook        = new WNC_Torob_Webhook_Handler();
 		self::$token          = new WNC_Torob_Token();
 		self::$lifecycle      = new WNC_Torob_Lifecycle();
@@ -69,6 +73,7 @@ class WNC_Torob_Bootstrap {
 		self::$feed->register_products_route( self::$token );
 		self::$order_status->register_order_status_route( self::$token );
 		self::$order_tracking->register_orders_route( self::$token );
+		self::$action_tracking->register_actions_route( self::$token );
 		self::$webhook->register_routes( self::$token );
 	}
 
@@ -90,9 +95,12 @@ class WNC_Torob_Bootstrap {
 		$webhook_on = array_key_exists( 'product_page_webhook_enabled', $c )
 			? ! empty( $c['product_page_webhook_enabled'] )
 			: $platform_on;
+		// Action tracking stays off unless the shop explicitly enables it (Torob-Sync shop-generator rule).
+		$actions_on = ! empty( $c['action_tracking_enabled'] );
 
 		WNC_Torob_Options::setOrderStatusEnabled( $order_status_on );
 		WNC_Torob_Options::setOrdersListApiEnabled( $orders_list_on );
+		WNC_Torob_Options::setActionTrackingEnabled( $actions_on );
 
 		if ( self::$webhook ) {
 			self::$webhook->set_webhook_enabled( $webhook_on );

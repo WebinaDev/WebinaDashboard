@@ -253,6 +253,10 @@ export async function apiFetch<T>(
   if (c.nonce && !hasNonceHeader) {
     headers['X-WP-Nonce'] = c.nonce
   }
+  const hasContentType = Object.keys(headers).some((k) => k.toLowerCase() === 'content-type')
+  if (!hasContentType && typeof init.body === 'string' && init.body.length > 0) {
+    headers['Content-Type'] = 'application/json'
+  }
 
   const { signal, clear } = fetchTimeoutSignal(init, timeoutMs)
 

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { PageShell } from '@/components/PageShell'
+import { BasalamBalanceCard } from '@/components/reports/BasalamBalanceCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api'
@@ -491,6 +492,9 @@ export default function AccountingShell() {
           <Card title={t('accounting.kpi.profit')} value={<Money value={(overviewQ.data?.profit as { profit?: number })?.profit} />} />
           <Card title={t('accounting.kpi.margin')} value={<Money value={(overviewQ.data?.margin as { margin?: number })?.margin} />} />
           <Card title={t('accounting.kpi.moadianPending')} value={String((overviewQ.data as { moadian_pending?: number })?.moadian_pending ?? 0)} />
+          <div className="md:col-span-3">
+            <BasalamBalanceCard />
+          </div>
           <div className="md:col-span-3 flex flex-wrap gap-2">
             <Button onClick={() => void backfill.mutate()} disabled={backfill.isPending}>
               {t('accounting.backfillOrders')}

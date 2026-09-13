@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ComponentType } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { QueryErrorState } from '@/components/QueryErrorState'
@@ -12,6 +12,14 @@ type Props = {
   routePath: string
 }
 
+function clientsSignature(
+  clients: { slug: string; entry: string }[] | undefined,
+  slug: string,
+): string {
+  const hit = clients?.find((c) => c.slug === slug)
+  return hit ? `${hit.slug}:${hit.entry}` : `missing:${slug}`
+}
+
 export function ModuleDynamicRoute({ slug, routePath }: Props) {
   const { t } = useTranslation()
   const { data, isPending, isError } = useBootstrapQuery()
@@ -22,6 +30,7 @@ export function ModuleDynamicRoute({ slug, routePath }: Props) {
 
   const clients = data?.activeModuleClients
   const bootstrapReady = data !== undefined
+  const clientsKey = useMemo(() => clientsSignature(clients, slug), [clients, slug])
 
   const retry = useCallback(() => {
     setFailed(false)
@@ -66,7 +75,9 @@ export function ModuleDynamicRoute({ slug, routePath }: Props) {
     return () => {
       cancelled = true
     }
-  }, [bootstrapReady, isPending, isError, clients, slug, routePath, reloadKey])
+    // clientsKey (slug+entry) — not clients identity — avoids re-import on bootstrap churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clients read from latest render when key changes
+  }, [bootstrapReady, isPending, isError, clientsKey, slug, routePath, reloadKey])
 
   if (failed) {
     const message = failDetail

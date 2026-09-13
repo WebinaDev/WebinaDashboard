@@ -1,16 +1,5 @@
 export type ServiceWorkerRegisterResult = 'registered' | 'skipped' | 'failed'
 
-function entryModuleScriptUrl(): string | null {
-  const scripts = document.querySelectorAll('script[type="module"][src]')
-  for (const node of scripts) {
-    const src = (node as HTMLScriptElement).src
-    if (src.includes('dashboard-build') && src.includes('/assets/index-')) {
-      return src
-    }
-  }
-  return null
-}
-
 function dashboardScopeUrl(): string | null {
   const base = window.webinoDashboard?.baseUrl
   if (!base) return null
@@ -57,19 +46,8 @@ export async function registerDashboardServiceWorker(): Promise<ServiceWorkerReg
     return 'skipped'
   }
 
-  const entryUrl = entryModuleScriptUrl()
-  if (entryUrl) {
-    try {
-      const probe = await fetch(entryUrl, { method: 'GET', cache: 'reload', credentials: 'same-origin' })
-      if (!probe.ok) {
-        console.warn('[Webino Dashboard] Skipping service worker — entry script not reachable', probe.status)
-        return 'failed'
-      }
-    } catch (err) {
-      console.warn('[Webino Dashboard] Skipping service worker — entry script fetch failed', err)
-      return 'failed'
-    }
-  }
+  // Entry script is already on the page; do not re-fetch it (cache:reload probes
+  // falsely returned 'failed' and triggered noisy toasts while the app worked).
 
   try {
     await unregisterStaleWorkers(scope)

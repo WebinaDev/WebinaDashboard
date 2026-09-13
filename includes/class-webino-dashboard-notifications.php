@@ -23,9 +23,19 @@ class Webino_Dashboard_Notifications {
 	}
 
 	/**
+	 * @var bool
+	 */
+	private static $table_ready = false;
+
+	/**
 	 * @return void
 	 */
 	public static function ensure_table() {
+		if ( self::$table_ready ) {
+			return;
+		}
+		self::$table_ready = true;
+
 		global $wpdb;
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		$table = self::table();

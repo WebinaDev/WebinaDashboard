@@ -40,9 +40,13 @@ $wd_ssr_bootstrap = null;
 $wd_ssr_page      = null;
 if ( class_exists( 'Webino_Dashboard_Assets' ) && $wd_uid > 0 && is_user_logged_in() ) {
 	$wd_ssr_bootstrap = Webino_Dashboard_Assets::get_or_build_bootstrap( $wd_uid );
+	Webino_Dashboard_Assets::stash_bootstrap( $wd_ssr_bootstrap );
 }
 if ( class_exists( 'Webino_Dashboard_SSR' ) ) {
 	$wd_ssr_page = Webino_Dashboard_SSR::build_page_payload();
+	if ( class_exists( 'Webino_Dashboard_Assets' ) ) {
+		Webino_Dashboard_Assets::stash_page( $wd_ssr_page );
+	}
 }
 
 ?><!DOCTYPE html>

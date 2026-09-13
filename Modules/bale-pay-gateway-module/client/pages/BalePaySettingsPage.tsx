@@ -3,12 +3,15 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import {
+  GatewayField,
+  GatewayFieldsGrid,
+  GatewaySettingsLayout,
+  GatewaySwitchRow,
+  GatewayTextArea,
+} from '@/components/payments/GatewaySettingsLayout'
 import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
 
@@ -61,59 +64,68 @@ export default function BalePaySettingsPage() {
   if (status && !status.bot_active) warnings.push(t('balePay.warnBot'))
   if (status && !status.has_provider_token) warnings.push(t('balePay.warnToken'))
 
+  if (!draft) {
+    return <PageShell title={t('balePay.title')}>{t('common.loading')}</PageShell>
+  }
+
   return (
-    <PageShell title={t('balePay.title')} subtitle={t('balePay.subtitle')}>
-      {!draft ? (
-        <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
-      ) : (
-        <div className="grid max-w-xl gap-4">
-          {warnings.length > 0 ? (
-            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
-              {warnings.map((w) => (
-                <p key={w}>{w}</p>
-              ))}
+    <GatewaySettingsLayout
+      title={t('balePay.title')}
+      description={t('balePay.subtitle')}
+      notice={
+        warnings.length ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+            {warnings.map((w) => (
+              <p key={w}>{w}</p>
+            ))}
+          </div>
+        ) : null
+      }
+      meta={
+        status?.bot_username
+          ? [{ label: t('balePay.botUsername'), value: `@${status.bot_username}` }]
+          : undefined
+      }
+      sections={[
+        {
+          id: 'checkout',
+          title: t('gateway.section.checkout'),
+          children: (
+            <div className="space-y-4">
+              <GatewaySwitchRow
+                label={t('balePay.enabled')}
+                description={t('balePay.enabledHint')}
+                checked={draft.enabled}
+                onChange={(v) => setDraft({ ...draft, enabled: v })}
+              />
+              <GatewayFieldsGrid>
+                <GatewayField
+                  label={t('balePay.checkoutTitle')}
+                  value={draft.title}
+                  onChange={(v) => setDraft({ ...draft, title: v })}
+                />
+                <GatewayTextArea
+                  className="md:col-span-2"
+                  label={t('balePay.description')}
+                  value={draft.description}
+                  onChange={(v) => setDraft({ ...draft, description: v })}
+                />
+                <GatewayTextArea
+                  className="md:col-span-2"
+                  label={t('balePay.instructions')}
+                  value={draft.instructions}
+                  onChange={(v) => setDraft({ ...draft, instructions: v })}
+                />
+              </GatewayFieldsGrid>
             </div>
-          ) : null}
-          {status?.bot_username ? (
-            <p className="text-muted-foreground text-sm">
-              {t('balePay.botUsername')}: @{status.bot_username}
-            </p>
-          ) : null}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="bale-pay-enabled"
-              checked={draft.enabled}
-              onCheckedChange={(v) => setDraft({ ...draft, enabled: v === true })}
-            />
-            <Label htmlFor="bale-pay-enabled">{t('balePay.enabled')}</Label>
-          </div>
-          <div className="space-y-2">
-            <Label>{t('balePay.checkoutTitle')}</Label>
-            <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>{t('balePay.description')}</Label>
-            <Textarea
-              value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-              rows={3}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>{t('balePay.instructions')}</Label>
-            <Textarea
-              value={draft.instructions}
-              onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
-              rows={3}
-            />
-          </div>
-          <div>
-            <Button type="button" disabled={save.isPending} onClick={() => void save.mutateAsync()}>
-              {t('common.save')}
-            </Button>
-          </div>
-        </div>
-      )}
-    </PageShell>
+          ),
+        },
+      ]}
+      actions={
+        <Button type="button" disabled={save.isPending} onClick={() => void save.mutateAsync()}>
+          {t('common.save')}
+        </Button>
+      }
+    />
   )
 }

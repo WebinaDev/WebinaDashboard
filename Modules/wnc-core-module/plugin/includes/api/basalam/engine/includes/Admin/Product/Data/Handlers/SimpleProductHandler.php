@@ -85,20 +85,45 @@ class SimpleProductHandler implements ProductDataHandlerInterface
 
     public function getWeight($product): ?int
     {
-        if (empty($product->get_weight())) return $this->settings[SettingsConfig::DEFAULT_WEIGHT];
+        $raw = is_a($product, 'WC_Product') ? $product->get_weight() : '';
+        if (($raw === '' || $raw === null) && is_a($product, 'WC_Product') && $product->is_type('variation')) {
+            $parent = wc_get_product((int) $product->get_parent_id());
+            if (is_a($parent, 'WC_Product') && $parent->get_weight() !== '' && $parent->get_weight() !== null) {
+                $raw = $parent->get_weight();
+            }
+        }
+        if ($raw === '' || $raw === null || $raw === false) {
+            return isset($this->settings[SettingsConfig::DEFAULT_WEIGHT])
+                ? (int) $this->settings[SettingsConfig::DEFAULT_WEIGHT]
+                : null;
+        }
 
-        $weight = str_replace(',', '.', $product->get_weight());
+        if (class_exists('Webino_Shipping_Weight', false)) {
+            $grams = Webino_Shipping_Weight::to_grams($raw);
+            return $grams > 0 ? $grams : (int) ($this->settings[SettingsConfig::DEFAULT_WEIGHT] ?? 0);
+        }
+
+        $weight = str_replace(',', '.', (string) $raw);
         $weightUnit = get_option('woocommerce_weight_unit');
 
-        return ($weightUnit === 'kg') ? floatval($weight) * 1000 : floatval($weight);
+        return ($weightUnit === 'kg') ? (int) round(floatval($weight) * 1000) : (int) round(floatval($weight));
     }
 
     public function getPackageWeight($product): int
     {
         $weight = $this->getWeight($product) ?? 0;
-        $packageWeight = $this->settings[SettingsConfig::DEFAULT_PACKAGE_WEIGHT];
 
-        return intval($weight + $packageWeight);
+        if (class_exists('Webino_Shipping_Weight', false) && is_a($product, 'WC_Product')) {
+            $estimate = Webino_Shipping_Weight::estimate_unit_package($product);
+            $tare = isset($estimate['tare_g']) ? (int) $estimate['tare_g'] : 0;
+            return (int) ($weight + max(0, $tare));
+        }
+
+        $packageWeight = isset($this->settings[SettingsConfig::DEFAULT_PACKAGE_WEIGHT])
+            ? (int) $this->settings[SettingsConfig::DEFAULT_PACKAGE_WEIGHT]
+            : 0;
+
+        return (int) ($weight + $packageWeight);
     }
 
     public function getMainPhoto($product): ?int

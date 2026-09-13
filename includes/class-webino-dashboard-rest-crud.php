@@ -3208,6 +3208,7 @@ class Webino_Dashboard_REST_Crud {
 		}
 		$changed   = false;
 		$new_attrs = array();
+		$key_map   = array(); // old axis key => new pa_* taxonomy.
 		foreach ( $parent->get_attributes() as $key => $attr ) {
 			if ( ! is_a( $attr, 'WC_Product_Attribute' ) ) {
 				continue;
@@ -3258,7 +3259,9 @@ class Webino_Dashboard_REST_Crud {
 			$migrated->set_visible( $attr->get_visible() );
 			$migrated->set_variation( true );
 			$new_attrs[ $tax ] = $migrated;
-			$changed           = true;
+			$key_map[ (string) $key ]  = $tax;
+			$key_map[ (string) $name ] = $tax;
+			$changed                   = true;
 		}
 		if ( $changed ) {
 			$parent->set_attributes( $new_attrs );
@@ -3266,10 +3269,78 @@ class Webino_Dashboard_REST_Crud {
 			if ( function_exists( 'wc_delete_product_transients' ) ) {
 				wc_delete_product_transients( $parent->get_id() );
 			}
+			self::remap_children_after_attribute_migrate( $parent, $key_map );
 		}
 		self::sync_parent_variation_taxonomy_terms( $parent );
 		$refreshed = wc_get_product( $parent->get_id() );
 		return ( $refreshed && $refreshed->is_type( 'variable' ) ) ? $refreshed : $parent;
+	}
+
+	/**
+	 * Remap child variation attribute meta after parent axes migrate to pa_*.
+	 *
+	 * @param WC_Product           $parent  Variable parent (post-migrate).
+	 * @param array<string,string> $key_map Old axis key => new taxonomy.
+	 * @return void
+	 */
+	private static function remap_children_after_attribute_migrate( $parent, $key_map ) {
+		if ( ! $parent || ! $parent->is_type( 'variable' ) || ! is_array( $key_map ) || array() === $key_map ) {
+			return;
+		}
+		$axes = $parent->get_variation_attributes();
+		if ( ! is_array( $axes ) || array() === $axes ) {
+			return;
+		}
+		foreach ( $parent->get_children() as $vid ) {
+			$variation = wc_get_product( (int) $vid );
+			if ( ! $variation || ! $variation->is_type( 'variation' ) ) {
+				continue;
+			}
+			// Prefer canonicalize (uses meta alias fallback). Leave untouched if incomplete.
+			self::canonicalize_variation_attributes( $parent, $variation );
+			$storage = $variation->get_attributes();
+			if ( is_array( $storage ) && count( array_filter( $storage ) ) === count( $axes ) ) {
+				self::persist_variation_storage_attributes( $variation, $storage );
+				$variation->save();
+				continue;
+			}
+
+			// Explicit remap from old keys / leftover attribute_* meta.
+			$combo = array();
+			$attrs = $variation->get_attributes();
+			if ( ! is_array( $attrs ) ) {
+				$attrs = array();
+			}
+			foreach ( array_keys( $axes ) as $axis_name ) {
+				$axis_name = (string) $axis_name;
+				$raw       = self::variation_axis_value( $attrs, $axis_name, $variation );
+				if ( '' === $raw ) {
+					foreach ( $key_map as $old_key => $new_tax ) {
+						if ( (string) $new_tax !== $axis_name ) {
+							continue;
+						}
+						$raw = self::variation_axis_value( $attrs, (string) $old_key, $variation );
+						if ( '' !== $raw ) {
+							break;
+						}
+					}
+				}
+				if ( '' === $raw ) {
+					$combo = array();
+					break;
+				}
+				$combo[ $axis_name ] = $raw;
+			}
+			if ( count( $combo ) !== count( $axes ) ) {
+				continue;
+			}
+			$built = self::build_variation_storage_attributes( $parent, $combo );
+			if ( count( $built ) !== count( $axes ) ) {
+				continue;
+			}
+			self::persist_variation_storage_attributes( $variation, $built );
+			$variation->save();
+		}
 	}
 
 	/**
@@ -4271,7 +4342,7 @@ class Webino_Dashboard_REST_Crud {
 	 *
 	 * @param WC_Product      $p Product instance.
 	 * @param WP_REST_Request $request Request.
-	 * @return void
+	 * @return true|WP_Error
 	 */
 	private static function apply_product_catalog_fields( $p, $request ) {
 		if ( null !== $request->get_param( 'image_id' ) ) {
@@ -4291,9 +4362,24 @@ class Webino_Dashboard_REST_Crud {
 		}
 		$raw_attrs = $request->get_param( 'product_attributes' );
 		if ( is_array( $raw_attrs ) && class_exists( 'WC_Product_Attribute' ) ) {
-			$attr_objects              = array();
-			$order_configs             = array();
-			$order_config_requested    = false;
+			$existing_attrs = $p->get_attributes();
+			$has_existing   = is_array( $existing_attrs ) && array() !== $existing_attrs;
+			$child_count    = ( $p->is_type( 'variable' ) && method_exists( $p, 'get_children' ) ) ? count( $p->get_children() ) : 0;
+
+			// Empty payload must not wipe axes on variable products that already have attributes/children.
+			if ( array() === $raw_attrs && ( $has_existing || $child_count > 0 ) ) {
+				return new WP_Error(
+					'product_attributes_wipe_blocked',
+					__( 'Cannot clear product attributes on a variable product that has variations.', 'webino-dashboard' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$attr_objects             = array();
+			$order_configs            = array();
+			$order_config_requested   = false;
+			$input_rows               = 0;
+			$dropped_variation_rows   = 0;
 			foreach ( $raw_attrs as $i => $row ) {
 				if ( ! is_array( $row ) ) {
 					continue;
@@ -4307,6 +4393,7 @@ class Webino_Dashboard_REST_Crud {
 				if ( '' === $name && $aid <= 0 ) {
 					continue;
 				}
+				++$input_rows;
 				$is_order_config = ! empty( $row['order_config'] );
 				if ( $is_order_config ) {
 					$order_config_requested = true;
@@ -4407,10 +4494,22 @@ class Webino_Dashboard_REST_Crud {
 					}
 				}
 
+				if ( $is_var_product && ! empty( $row['variation'] ) && ! $is_order_config ) {
+					++$dropped_variation_rows;
+				}
 				// Last resort should still not happen; skip orphan custom attrs.
 				continue;
 			}
-			// Always apply — empty array clears all product attributes.
+
+			// Non-empty input that resolved to nothing would wipe axes — refuse instead.
+			if ( array() === $attr_objects && $input_rows > 0 && ( $has_existing || $child_count > 0 || $dropped_variation_rows > 0 ) ) {
+				return new WP_Error(
+					'product_attributes_resolve_failed',
+					__( 'Could not resolve product attributes. Existing attributes were left unchanged.', 'webino-dashboard' ),
+					array( 'status' => 400 )
+				);
+			}
+
 			$p->set_attributes( $attr_objects );
 			$preserve_order_configs = false;
 			if ( class_exists( 'Webino_Dashboard_Order_Configs', false ) ) {
@@ -4457,6 +4556,7 @@ class Webino_Dashboard_REST_Crud {
 				$p->set_height( $val );
 			}
 		}
+		return true;
 	}
 
 	/**
@@ -4719,7 +4819,10 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! $is_variable && null !== $request->get_param( 'manage_stock' ) ) {
 			$p->set_manage_stock( (bool) $request->get_param( 'manage_stock' ) );
 		}
-		self::apply_product_catalog_fields( $p, $request );
+		$catalog = self::apply_product_catalog_fields( $p, $request );
+		if ( is_wp_error( $catalog ) ) {
+			return $catalog;
+		}
 		self::apply_product_extended_fields( $p, $request );
 		$seo = $request->get_param( 'seo' );
 		if ( is_array( $seo ) ) {
@@ -4811,7 +4914,10 @@ class Webino_Dashboard_REST_Crud {
 		$pid = $p->get_id();
 		$p2  = wc_get_product( $pid );
 		if ( $p2 ) {
-			self::apply_product_catalog_fields( $p2, $request );
+			$catalog = self::apply_product_catalog_fields( $p2, $request );
+			if ( is_wp_error( $catalog ) ) {
+				return $catalog;
+			}
 			self::apply_product_extended_fields( $p2, $request );
 			if ( ! $p2->is_type( 'variable' ) ) {
 				if ( null !== $request->get_param( 'regular_price' ) ) {
@@ -5238,8 +5344,14 @@ class Webino_Dashboard_REST_Crud {
 				'lock_price'     => (bool) get_post_meta( $v->get_id(), '_wfcp_lock_price', true ),
 			);
 		}
-		$attrs = $v->get_attributes();
+		$attrs  = $v->get_attributes();
 		$parent = wc_get_product( $v->get_parent_id() );
+		if ( $parent && $parent->is_type( 'variable' ) ) {
+			$repaired = self::maybe_repair_orphan_variation_attributes( $parent, $v );
+			if ( is_array( $repaired ) ) {
+				$attrs = $repaired;
+			}
+		}
 		$attr_labels = self::variation_attribute_labels( is_array( $attrs ) ? $attrs : array(), $parent ? $parent : null );
 		return array(
 			'id'             => $v->get_id(),
@@ -5251,6 +5363,10 @@ class Webino_Dashboard_REST_Crud {
 			'stock_quantity' => $v->get_stock_quantity(),
 			'stock_status'   => $v->get_stock_status(),
 			'image_id'       => (int) $v->get_image_id(),
+			'weight'         => $v->get_weight(),
+			'length'         => $v->get_length(),
+			'width'          => $v->get_width(),
+			'height'         => $v->get_height(),
 			'attributes'     => is_array( $attrs ) ? $attrs : array(),
 			'attribute_labels' => $attr_labels,
 			'status'         => $v->get_status(),
@@ -5264,6 +5380,53 @@ class Webino_Dashboard_REST_Crud {
 			),
 			'wfcp_prices'    => $wfcp,
 		);
+	}
+
+	/**
+	 * Best-effort repair when WC reports empty attributes but attribute_* meta still exists.
+	 *
+	 * @param WC_Product           $parent Variable parent.
+	 * @param WC_Product_Variation $v      Variation.
+	 * @return array<string,string>|null Repaired storage map, or null if unchanged/failed.
+	 */
+	private static function maybe_repair_orphan_variation_attributes( $parent, $v ) {
+		if ( ! $parent || ! $v || ! $parent->is_type( 'variable' ) || ! $v->is_type( 'variation' ) ) {
+			return null;
+		}
+		$axes = $parent->get_variation_attributes();
+		if ( ! is_array( $axes ) || array() === $axes ) {
+			return null;
+		}
+		$attrs = $v->get_attributes();
+		if ( ! is_array( $attrs ) ) {
+			$attrs = array();
+		}
+		$non_empty = 0;
+		foreach ( $attrs as $val ) {
+			if ( '' !== trim( (string) $val ) ) {
+				++$non_empty;
+			}
+		}
+		if ( $non_empty === count( $axes ) ) {
+			return null;
+		}
+
+		$combo = array();
+		foreach ( array_keys( $axes ) as $axis_name ) {
+			$raw = self::variation_axis_value( $attrs, (string) $axis_name, $v );
+			if ( '' === $raw ) {
+				return null;
+			}
+			$combo[ (string) $axis_name ] = $raw;
+		}
+		$storage = self::build_variation_storage_attributes( $parent, $combo );
+		if ( count( $storage ) !== count( $axes ) ) {
+			// Still expose readable combo for UI even if storage build failed.
+			return $combo;
+		}
+		self::persist_variation_storage_attributes( $v, $storage );
+		$v->save();
+		return $storage;
 	}
 
 	/**
@@ -5371,7 +5534,7 @@ class Webino_Dashboard_REST_Crud {
 	/**
 	 * @param WC_Product_Variation $v Variation.
 	 * @param WP_REST_Request      $request Request.
-	 * @return void
+	 * @return true|WP_Error
 	 */
 	private static function apply_variation_request( $v, $request ) {
 		if ( null !== $request->get_param( 'sku' ) ) {
@@ -5410,6 +5573,21 @@ class Webino_Dashboard_REST_Crud {
 			$img = (int) $request->get_param( 'image_id' );
 			$v->set_image_id( $img > 0 ? $img : 0 );
 		}
+		foreach ( array( 'weight', 'length', 'width', 'height' ) as $dim ) {
+			if ( null === $request->get_param( $dim ) ) {
+				continue;
+			}
+			$val = sanitize_text_field( (string) $request->get_param( $dim ) );
+			if ( 'weight' === $dim ) {
+				$v->set_weight( $val );
+			} elseif ( 'length' === $dim ) {
+				$v->set_length( $val );
+			} elseif ( 'width' === $dim ) {
+				$v->set_width( $val );
+			} elseif ( 'height' === $dim ) {
+				$v->set_height( $val );
+			}
+		}
 		$attrs = $request->get_param( 'attributes' );
 		if ( is_array( $attrs ) ) {
 			$parent = wc_get_product( (int) $v->get_parent_id() );
@@ -5443,13 +5621,25 @@ class Webino_Dashboard_REST_Crud {
 				if ( $complete && $parent && $parent->is_type( 'variable' ) ) {
 					$storage = self::build_variation_storage_attributes( $parent, $combo );
 					if ( count( $storage ) === count( $axes ) ) {
-						$v->set_attributes( $storage );
+						self::persist_variation_storage_attributes( $v, $storage );
+					} else {
+						return new WP_Error(
+							'variation_attrs_persist_failed',
+							__( 'Could not bind variation attributes. Check that each selected value exists on the product attribute.', 'webino-dashboard' ),
+							array( 'status' => 400 )
+						);
 					}
 				}
 			} elseif ( array() !== $combo && $parent && $parent->is_type( 'variable' ) ) {
 				$storage = self::build_variation_storage_attributes( $parent, $combo );
 				if ( array() !== $storage ) {
-					$v->set_attributes( $storage );
+					self::persist_variation_storage_attributes( $v, $storage );
+				} else {
+					return new WP_Error(
+						'variation_attrs_persist_failed',
+						__( 'Could not bind variation attributes. Check that each selected value exists on the product attribute.', 'webino-dashboard' ),
+						array( 'status' => 400 )
+					);
 				}
 			}
 		}
@@ -5488,6 +5678,7 @@ class Webino_Dashboard_REST_Crud {
 		} elseif ( $reg && '' !== $reg ) {
 			$v->set_price( wc_format_decimal( $reg ) );
 		}
+		return true;
 	}
 
 	/**
@@ -5623,7 +5814,10 @@ class Webino_Dashboard_REST_Crud {
 		$v = new WC_Product_Variation();
 		$v->set_parent_id( $parent_id );
 		$v->set_status( 'publish' );
-		self::apply_variation_request( $v, $request );
+		$applied = self::apply_variation_request( $v, $request );
+		if ( is_wp_error( $applied ) ) {
+			return $applied;
+		}
 		$v->save();
 		self::maybe_sync_variation_wfcp( $v->get_id() );
 		self::sync_variable_parent( $parent_id );
@@ -5642,7 +5836,10 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! $v || ! $v->is_type( 'variation' ) || (int) $v->get_parent_id() !== $parent_id ) {
 			return new WP_Error( 'not_found', __( 'Variation not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
 		}
-		self::apply_variation_request( $v, $request );
+		$applied = self::apply_variation_request( $v, $request );
+		if ( is_wp_error( $applied ) ) {
+			return $applied;
+		}
 		$v->save();
 		self::maybe_sync_variation_wfcp( $vid );
 		self::sync_variable_parent( $parent_id );
@@ -5788,7 +5985,10 @@ class Webino_Dashboard_REST_Crud {
 			if ( ! $v || ! $v->is_type( 'variation' ) ) {
 				continue;
 			}
-			self::apply_variation_request( $v, $sub );
+			$applied = self::apply_variation_request( $v, $sub );
+			if ( is_wp_error( $applied ) ) {
+				continue;
+			}
 			$v->save();
 			self::maybe_sync_variation_wfcp( (int) $vid );
 			++$updated;

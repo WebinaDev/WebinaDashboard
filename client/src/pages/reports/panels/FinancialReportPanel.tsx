@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { BasalamBalanceCard } from '@/components/reports/BasalamBalanceCard'
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { PaymentBarChart } from '@/components/orders/reports/PaymentBarChart'
 import { PaymentProfitBarChart } from '@/components/orders/reports/PaymentProfitBarChart'
@@ -439,6 +440,7 @@ export function FinancialReportPanel() {
   return (
     <div className="space-y-6">
       <ReportPeriodToolbar filterState={filterState} exportSection="financial" />
+      <BasalamBalanceCard />
       {q.isLoading ? (
         <ReportsDashboardSkeleton showPageHeader={false} />
       ) : q.isError ? (

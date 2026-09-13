@@ -33,6 +33,35 @@ class ProductOperationValidator
 
     public function validateBasalamConnection(int $product_id): array
     {
+        $product = wc_get_product($product_id);
+
+        // Variable parents: connected when any child has a Basalam product id (standalone model).
+        if ($product && $product->is_type('variable')) {
+            $connectedChild = null;
+            foreach ($product->get_children() as $variationId) {
+                $childId = get_post_meta((int) $variationId, ProductMetaKey::basalamProductId(), true);
+                if (!empty($childId)) {
+                    $connectedChild = (int) $variationId;
+                    break;
+                }
+            }
+            if (null === $connectedChild) {
+                // Legacy: parent itself may still hold nested product id.
+                $basalamProductId = get_post_meta($product_id, ProductMetaKey::basalamProductId(), true);
+                if (empty($basalamProductId)) {
+                    return [
+                        'valid' => false,
+                        'message' => sprintf('محصول %d به باسلام متصل نیست.', $product_id)
+                    ];
+                }
+            } else {
+                return [
+                    'valid' => true,
+                    'message' => sprintf('محصول متغیر %d از طریق متغیرها به باسلام متصل است.', $product_id)
+                ];
+            }
+        }
+
         $basalamProductId = get_post_meta($product_id, ProductMetaKey::basalamProductId(), true);
 
         if (empty($basalamProductId)) {

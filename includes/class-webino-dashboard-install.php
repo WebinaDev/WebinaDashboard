@@ -78,6 +78,7 @@ class Webino_Dashboard_Install {
 		self::ensure_analytics_tables();
 
 		update_option( 'webino_dashboard_db_version', WEBINO_DASHBOARD_VERSION );
+		update_option( 'webino_dashboard_runtime_schema', '1', true );
 		if ( class_exists( 'Webino_Dashboard_Assets', false ) && method_exists( 'Webino_Dashboard_Assets', 'purge_stale_build_assets' ) ) {
 			Webino_Dashboard_Assets::purge_stale_build_assets();
 		}

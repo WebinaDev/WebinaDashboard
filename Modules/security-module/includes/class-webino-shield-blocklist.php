@@ -26,6 +26,10 @@ final class Webino_Shield_Blocklist {
 	 * @return bool
 	 */
 	public static function is_blocked( $ip ) {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return false;
+		}
 		if ( self::is_allowed( $ip ) ) {
 			return false;
 		}
@@ -145,6 +149,10 @@ final class Webino_Shield_Blocklist {
 	 * @return array<string,mixed>|null
 	 */
 	public static function match_request( $request ) {
+		if ( class_exists( 'Webino_Dashboard_Security', false )
+			&& ! Webino_Dashboard_Security::is_runtime_protection_enabled() ) {
+			return null;
+		}
 		$ip = (string) ( $request['ip'] ?? '' );
 		if ( self::is_blocked( $ip ) ) {
 			return array( 'action' => 'block', 'rule_id' => 'blocklist', 'reason' => 'Blocked IP/UA' );

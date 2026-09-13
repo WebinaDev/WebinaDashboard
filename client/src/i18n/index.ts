@@ -45,20 +45,14 @@ export async function setDashboardLanguage(lng: string) {
 }
 
 export const i18nReady = (async () => {
-  const secondary = initial === 'fa' ? 'en' : 'fa'
-  const [primaryBundle, secondaryBundle] = await Promise.all([
-    loadLocaleBundle(initial),
-    loadLocaleBundle(secondary),
-  ])
+  const primaryBundle = await loadLocaleBundle(initial)
   loadedLocales.add(initial)
-  loadedLocales.add(secondary)
   await i18n
     .use(faDigitsProcessor)
     .use(initReactI18next)
     .init({
       resources: {
         [initial]: { translation: primaryBundle },
-        [secondary]: { translation: secondaryBundle },
       },
       lng: initial,
       fallbackLng: 'en',
@@ -74,6 +68,12 @@ export const i18nReady = (async () => {
     })
   document.documentElement.lang = initial
   document.documentElement.dir = dashboardDir(initial)
+
+  // Secondary locale loads after paint so language switch stays instant without blocking boot.
+  const secondary = initial === 'fa' ? 'en' : 'fa'
+  void ensureLocale(secondary).catch((err) => {
+    console.warn('[Webino Dashboard] Secondary locale preload failed', err)
+  })
 })()
 
 export { i18n }

@@ -6,6 +6,8 @@ import { toast } from 'sonner'
 import { toastApiError, ApiError } from '@/lib/apiError'
 
 import { MarketplaceBadge } from '@/components/data/MarketplaceBadge'
+import { ModulePanel } from '@/components/ModulePanel'
+import { BasalamOrderActions } from '@/components/orders/BasalamOrderActions'
 import { DigikalaOrderActions, digikalaWooStatusAllowed } from '@/components/orders/DigikalaOrderActions'
 import { OrderAddressBlock, type OrderAddress } from '@/components/orders/OrderAddressBlock'
 import { QueryErrorState } from '@/components/QueryErrorState'
@@ -245,6 +247,10 @@ export default function OrderDetailPage() {
     normalizeCapabilities(boot.data?.capabilities).includes('manage_woocommerce') ||
     normalizeCapabilities(boot.data?.capabilities).includes('webino_manage_accounting') ||
     normalizeCapabilities(boot.data?.capabilities).includes('manage_options')
+  const shippingModuleActive = (boot.data?.activeModuleClients ?? []).some(
+    (c) => c.slug === 'shipping-module',
+  )
+  const tapinModuleActive = (boot.data?.activeModuleClients ?? []).some((c) => c.slug === 'tapin-module')
   const listHref = useMatch('/account/orders/:orderId') ? '/account/orders' : '/orders/list'
   const isPortalOrder = Boolean(useMatch('/account/orders/:orderId'))
   const [status, setStatus] = useState('')
@@ -557,6 +563,9 @@ export default function OrderDetailPage() {
 
                   {order.marketplace === 'digikala' ? (
                     <DigikalaOrderActions orderId={order.id} order={order} onDone={invalidateOrder} />
+                  ) : null}
+                  {order.marketplace === 'basalam' ? (
+                    <BasalamOrderActions orderId={order.id} order={order} onDone={invalidateOrder} />
                   ) : null}
 
                   <Separator />
@@ -895,6 +904,31 @@ export default function OrderDetailPage() {
                     shippingOptions={order.shipping_method_options}
                     onSaved={invalidateOrder}
                   />
+                  {shippingModuleActive ? (
+                    <ModulePanel
+                      slug="shipping-module"
+                      component="OrderPackagingPanel"
+                      componentProps={{
+                        orderId: order.id,
+                        currency: order.currency || store.currency,
+                        locale,
+                      }}
+                    />
+                  ) : null}
+                  {shippingModuleActive ? (
+                    <ModulePanel
+                      slug="shipping-module"
+                      component="OrderMapPanel"
+                      componentProps={{ orderId: order.id }}
+                    />
+                  ) : null}
+                  {tapinModuleActive ? (
+                    <ModulePanel
+                      slug="tapin-module"
+                      component="OrderTapinPanel"
+                      componentProps={{ orderId: order.id }}
+                    />
+                  ) : null}
                 </>
               ) : null}
 
