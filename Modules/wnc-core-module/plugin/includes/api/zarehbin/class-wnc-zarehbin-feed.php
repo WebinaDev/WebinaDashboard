@@ -80,6 +80,10 @@ class WNC_Zarehbin_Feed {
 		$products = array();
 		$count    = 0;
 		$total_page = 1;
+		$expand     = class_exists( 'WNC_Variation_Title', false )
+			? WNC_Variation_Title::expand_enabled( 'zarehbin', false )
+			: false;
+		$post_types = $expand ? array( 'product', 'product_variation' ) : 'product';
 
 		if ( $product_id > 0 ) {
 			$product = wc_get_product( $product_id );
@@ -96,13 +100,24 @@ class WNC_Zarehbin_Feed {
 					),
 				);
 			}
-			$products   = array( WNC_Zarehbin_Adapter::build_product_payload( $product ) );
-			$count      = 1;
-			$total_page = 1;
+			if ( $expand && $product->is_type( 'variable' ) ) {
+				foreach ( $product->get_children() as $child_id ) {
+					$child = wc_get_product( $child_id );
+					if ( $child && 'publish' === get_post_status( $child_id ) ) {
+						$products[] = WNC_Zarehbin_Adapter::build_product_payload( $child, true );
+					}
+				}
+				$count      = count( $products );
+				$total_page = 1;
+			} else {
+				$products   = array( WNC_Zarehbin_Adapter::build_product_payload( $product, $expand ) );
+				$count      = 1;
+				$total_page = 1;
+			}
 		} else {
 			$count_q = new WP_Query(
 				array(
-					'post_type'      => 'product',
+					'post_type'      => $post_types,
 					'post_status'    => 'publish',
 					'posts_per_page' => 1,
 					'fields'         => 'ids',
@@ -113,7 +128,7 @@ class WNC_Zarehbin_Feed {
 
 			$posts = get_posts(
 				array(
-					'post_type'      => 'product',
+					'post_type'      => $post_types,
 					'post_status'    => 'publish',
 					'posts_per_page' => $posts_per_page,
 					'offset'         => ( $page_id * $posts_per_page ) - $posts_per_page,
@@ -121,9 +136,16 @@ class WNC_Zarehbin_Feed {
 			);
 			foreach ( $posts as $post ) {
 				$product = wc_get_product( $post->ID );
-				if ( $product ) {
-					$products[] = WNC_Zarehbin_Adapter::build_product_payload( $product );
+				if ( ! $product ) {
+					continue;
 				}
+				if ( $expand && $product->is_type( 'variable' ) ) {
+					continue;
+				}
+				if ( ! $expand && $product->is_type( 'variation' ) ) {
+					continue;
+				}
+				$products[] = WNC_Zarehbin_Adapter::build_product_payload( $product, $expand );
 			}
 		}
 

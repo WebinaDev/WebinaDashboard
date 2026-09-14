@@ -39,6 +39,7 @@ const BOOL_CRED_KEYS = new Set([
   'orders_list_api_enabled',
   'product_page_webhook_enabled',
   'action_tracking_enabled',
+  'expand_variations',
 ])
 
 function credentialLabel(t: (key: string) => string, key: string) {

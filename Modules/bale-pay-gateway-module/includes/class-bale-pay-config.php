@@ -22,11 +22,37 @@ final class Webino_Bale_Pay_Config {
 	 */
 	public static function defaults() {
 		return array(
-			'enabled'      => false,
-			'title'        => __( 'پرداخت از طریق بله', 'webino-dashboard' ),
-			'description'  => __( 'فاکتور یک‌بارمصرف در بازوی بله برایتان ارسال می‌شود.', 'webino-dashboard' ),
-			'instructions' => __( 'پس از ثبت سفارش، فاکتور را در بله باز کنید و پرداخت کنید.', 'webino-dashboard' ),
+			'enabled'           => false,
+			'title'             => 'پرداخت از طریق بله',
+			'description'       => 'فاکتور یک‌بارمصرف در بازوی بله برایتان ارسال می‌شود.',
+			'instructions'      => 'پس از ثبت سفارش، فاکتور را در بله باز کنید و پرداخت کنید.',
+			'order_button_text' => 'ثبت و پرداخت با بله',
+			'success_message'   => 'فاکتور پرداخت در بله برایتان ارسال شد.',
+			'failed_message'    => 'ارسال فاکتور بله ناموفق بود: {fault}',
+			'icon_url'          => '',
 		);
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function default_icon_url() {
+		if ( defined( 'WEBINO_DASHBOARD_FILE' ) ) {
+			return plugins_url( 'Modules/bale-pay-gateway-module/assets/bale-pay-logo.png', WEBINO_DASHBOARD_FILE );
+		}
+		return plugins_url( 'assets/bale-pay-logo.png', dirname( __DIR__ ) . '/bootstrap.php' );
+	}
+
+	/**
+	 * @param string|null $configured Optional.
+	 * @return string
+	 */
+	public static function resolve_icon_url( $configured = null ) {
+		if ( null === $configured ) {
+			$configured = (string) ( self::get()['icon_url'] ?? '' );
+		}
+		$configured = trim( (string) $configured );
+		return '' !== $configured ? esc_url_raw( $configured ) : self::default_icon_url();
 	}
 
 	/**
@@ -43,6 +69,16 @@ final class Webino_Bale_Pay_Config {
 	}
 
 	/**
+	 * @return array<string,mixed>
+	 */
+	public static function get_public() {
+		$s = self::get();
+		$s['default_icon_url'] = self::default_icon_url();
+		$s['resolved_icon_url'] = self::resolve_icon_url( (string) ( $s['icon_url'] ?? '' ) );
+		return $s;
+	}
+
+	/**
 	 * @param array<string,mixed> $data Raw.
 	 * @return array<string,mixed>
 	 */
@@ -52,10 +88,14 @@ final class Webino_Bale_Pay_Config {
 			$data = array();
 		}
 		$new = array(
-			'enabled'      => ! empty( $data['enabled'] ),
-			'title'        => sanitize_text_field( (string) ( $data['title'] ?? $old['title'] ) ),
-			'description'  => sanitize_textarea_field( (string) ( $data['description'] ?? $old['description'] ) ),
-			'instructions' => sanitize_textarea_field( (string) ( $data['instructions'] ?? $old['instructions'] ) ),
+			'enabled'           => ! empty( $data['enabled'] ),
+			'title'             => sanitize_text_field( (string) ( $data['title'] ?? $old['title'] ) ),
+			'description'       => sanitize_textarea_field( (string) ( $data['description'] ?? $old['description'] ) ),
+			'instructions'      => sanitize_textarea_field( (string) ( $data['instructions'] ?? $old['instructions'] ) ),
+			'order_button_text' => sanitize_text_field( (string) ( $data['order_button_text'] ?? $old['order_button_text'] ) ),
+			'success_message'   => sanitize_textarea_field( (string) ( $data['success_message'] ?? $old['success_message'] ) ),
+			'failed_message'    => sanitize_textarea_field( (string) ( $data['failed_message'] ?? $old['failed_message'] ) ),
+			'icon_url'          => esc_url_raw( (string) ( $data['icon_url'] ?? $old['icon_url'] ) ),
 		);
 		update_option( self::OPTION_KEY, $new, false );
 		$wc_key = 'woocommerce_' . self::GATEWAY_ID . '_settings';
@@ -67,6 +107,6 @@ final class Webino_Bale_Pay_Config {
 		$wc['title']       = $new['title'];
 		$wc['description'] = $new['description'];
 		update_option( $wc_key, $wc, false );
-		return $new;
+		return self::get_public();
 	}
 }

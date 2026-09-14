@@ -51,6 +51,7 @@ class WNC_Torob_Adapter implements WNC_Platform {
 				'orders_list_api_enabled'      => true,
 				'product_page_webhook_enabled' => true,
 				'action_tracking_enabled'      => false,
+				'expand_variations'            => true,
 			)
 		);
 	}

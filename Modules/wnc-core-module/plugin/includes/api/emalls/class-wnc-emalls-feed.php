@@ -122,13 +122,17 @@ class WNC_Emalls_Feed {
 	}
 
 	/**
-	 * Paginated product list (product + variation), official-compatible.
+	 * Paginated product list (product + variation when expand_variations is on).
 	 *
 	 * @param int $limit Limit.
 	 * @param int $page Page.
 	 * @return array
 	 */
 	private static function get_all_products( $limit, $page ) {
+		$expand = class_exists( 'WNC_Variation_Title', false )
+			? WNC_Variation_Title::expand_enabled( 'emalls', true )
+			: true;
+
 		$query = new WP_Query(
 			array(
 				'posts_per_page' => $limit,
@@ -136,7 +140,7 @@ class WNC_Emalls_Feed {
 				'post_status'    => 'publish',
 				'orderby'        => 'ID',
 				'order'          => 'DESC',
-				'post_type'      => array( 'product', 'product_variation' ),
+				'post_type'      => $expand ? array( 'product', 'product_variation' ) : 'product',
 			)
 		);
 
@@ -167,7 +171,13 @@ class WNC_Emalls_Feed {
 			if ( ! $product instanceof WC_Product ) {
 				continue;
 			}
-			$out['products'][] = WNC_Emalls_Adapter::build_product_payload( $product );
+			if ( $expand && $product->is_type( 'variable' ) ) {
+				continue;
+			}
+			if ( ! $expand && $product->is_type( 'variation' ) ) {
+				continue;
+			}
+			$out['products'][] = WNC_Emalls_Adapter::build_product_payload( $product, $expand );
 		}
 
 		return $out;

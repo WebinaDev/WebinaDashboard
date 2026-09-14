@@ -29,11 +29,18 @@ class WC_Gateway_Webino_Wallet extends WC_Payment_Gateway {
 		$this->supports           = array( 'products' );
 		$this->init_form_fields();
 		$this->init_settings();
-		$title_opt = $this->get_option( 'title', __( 'Wallet', 'webino-dashboard' ) );
+		$title_opt = $this->get_option( 'title', 'کیف پول' );
+		$s         = array();
 		if ( class_exists( 'Webino_Wallet_Config', false ) ) {
 			$s         = Webino_Wallet_Config::get();
 			$title_opt = (string) $s['title'];
 			$this->enabled = ! empty( $s['enabled'] ) ? 'yes' : 'no';
+			$this->description = (string) ( $s['description'] ?? '' );
+			$this->order_button_text = (string) ( $s['order_button_text'] ?? 'پرداخت با کیف پول' );
+			$this->icon = apply_filters(
+				'webino_wallet_gateway_icon',
+				Webino_Wallet_Config::resolve_icon_url( (string) ( $s['icon_url'] ?? '' ) )
+			);
 		} else {
 			$this->enabled = $this->get_option( 'enabled', 'yes' );
 		}
@@ -64,12 +71,24 @@ class WC_Gateway_Webino_Wallet extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function payment_fields() {
+		if ( $this->description ) {
+			echo wp_kses_post( wpautop( wptexturize( $this->description ) ) );
+		}
 		if ( ! is_user_logged_in() || ! class_exists( 'Webino_Dashboard_Wallet', false ) ) {
-			echo '<p>' . esc_html__( 'برای پرداخت با کیف پول وارد شوید.', 'webino-dashboard' ) . '</p>';
+			$prompt = 'برای پرداخت با کیف پول وارد شوید.';
+			if ( class_exists( 'Webino_Wallet_Config', false ) ) {
+				$prompt = (string) ( Webino_Wallet_Config::get()['login_prompt'] ?? $prompt );
+			}
+			echo '<p>' . esc_html( $prompt ) . '</p>';
 			return;
 		}
 		$balance = Webino_Dashboard_Wallet::get_balance( get_current_user_id() );
-		echo '<p>' . wp_kses_post( sprintf( __( 'موجودی کیف پول: %s', 'webino-dashboard' ), wc_price( $balance ) ) ) . '</p>';
+		$label   = 'موجودی کیف پول: {balance}';
+		if ( class_exists( 'Webino_Wallet_Config', false ) ) {
+			$label = (string) ( Webino_Wallet_Config::get()['balance_label'] ?? $label );
+		}
+		$msg = str_replace( '{balance}', wp_strip_all_tags( wc_price( $balance ) ), $label );
+		echo '<p>' . wp_kses_post( $msg ) . '</p>';
 	}
 
 	/**

@@ -169,8 +169,9 @@ class WNC_Activator {
 				$platform_defaults,
 				array(
 					'credentials' => array(
-						'per_page' => 50,
-						'version'  => '1.0.0',
+						'per_page'           => 50,
+						'version'            => '1.0.0',
+						'expand_variations'  => false,
 					),
 				)
 			),
@@ -178,8 +179,9 @@ class WNC_Activator {
 				$platform_defaults,
 				array(
 					'credentials' => array(
-						'per_page' => 50,
-						'version'  => '1.3.0',
+						'per_page'           => 50,
+						'version'            => '1.3.0',
+						'expand_variations'  => true,
 					),
 				)
 			),
@@ -187,8 +189,9 @@ class WNC_Activator {
 				$platform_defaults,
 				array(
 					'credentials' => array(
-						'per_page' => 100,
-						'version'  => '1.0.2',
+						'per_page'           => 100,
+						'version'            => '1.0.2',
+						'expand_variations'  => false,
 					),
 				)
 			),
@@ -201,6 +204,7 @@ class WNC_Activator {
 						'orders_list_api_enabled'      => true,
 						'product_page_webhook_enabled' => true,
 						'action_tracking_enabled'      => false,
+						'expand_variations'            => true,
 					),
 				)
 			),

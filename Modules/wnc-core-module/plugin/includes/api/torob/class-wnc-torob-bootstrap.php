@@ -97,10 +97,14 @@ class WNC_Torob_Bootstrap {
 			: $platform_on;
 		// Action tracking stays off unless the shop explicitly enables it (Torob-Sync shop-generator rule).
 		$actions_on = ! empty( $c['action_tracking_enabled'] );
+		$expand_variations_on = array_key_exists( 'expand_variations', $c )
+			? ! empty( $c['expand_variations'] )
+			: true;
 
 		WNC_Torob_Options::setOrderStatusEnabled( $order_status_on );
 		WNC_Torob_Options::setOrdersListApiEnabled( $orders_list_on );
 		WNC_Torob_Options::setActionTrackingEnabled( $actions_on );
+		WNC_Torob_Options::setExpandVariationsEnabled( $expand_variations_on );
 
 		if ( self::$webhook ) {
 			self::$webhook->set_webhook_enabled( $webhook_on );

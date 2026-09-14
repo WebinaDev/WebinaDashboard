@@ -66,8 +66,9 @@ class WNC_Torob_Feed
             );
         }
 
-        // Get Parameters
-        $show_variations = rest_sanitize_boolean($request->get_param('variation'));
+        // Get Parameters — setting expand_variations forces Basalam-style expansion.
+        $show_variations = rest_sanitize_boolean($request->get_param('variation'))
+            || ( class_exists( 'WNC_Torob_Options', false ) && WNC_Torob_Options::isExpandVariationsEnabled() );
         $limit = intval($request->get_param('limit'));
         $page = intval($request->get_param('page'));
         if (!empty($request->get_param('products'))) {
@@ -109,7 +110,10 @@ class WNC_Torob_Feed
         $source_product = $parent ?? $product;
 
         $temp_product = new stdClass();
-        $temp_product->title = $source_product->get_name();
+        $expand = class_exists( 'WNC_Torob_Options', false ) && WNC_Torob_Options::isExpandVariationsEnabled();
+        $temp_product->title = ( $parent && $expand )
+            ? $this->build_variation_title( $product, $parent )
+            : ( $parent ? $parent->get_name() : $product->get_name() );
         $temp_product->subtitle = get_post_meta($source_product->get_id(), 'product_english_name', true);
         $cat_ids = $source_product->get_category_ids();
         $temp_product->parent_id = $parent ? $parent->get_id() : 0;
@@ -270,6 +274,47 @@ class WNC_Torob_Feed
         }
 
         return $temp_product;
+    }
+
+    /**
+     * Parent name + variation attribute display values (Basalam-style standalone titles).
+     *
+     * @param WC_Product $variation Variation product.
+     * @param WC_Product $parent    Parent variable product.
+     * @return string
+     */
+    private function build_variation_title( WC_Product $variation, WC_Product $parent ): string {
+        if ( class_exists( 'WNC_Variation_Title', false ) ) {
+            return WNC_Variation_Title::build( $variation, $parent, 500 );
+        }
+        // Fallback mirrors WNC_Variation_Title::build (Basalam-style).
+        $base  = $parent->get_name();
+        $parts = array();
+        $attrs = method_exists( $variation, 'get_variation_attributes' )
+            ? $variation->get_variation_attributes()
+            : $variation->get_attributes();
+        if ( ! is_array( $attrs ) ) {
+            $attrs = array();
+        }
+        foreach ( $attrs as $attribute_name => $attribute_value ) {
+            if ( '' === $attribute_value || null === $attribute_value ) {
+                continue;
+            }
+            $taxonomy = str_replace( 'attribute_', '', (string) $attribute_name );
+            $value    = rawurldecode( (string) $attribute_value );
+            if ( $taxonomy && taxonomy_exists( $taxonomy ) ) {
+                $term = get_term_by( 'slug', $attribute_value, $taxonomy );
+                if ( $term && ! is_wp_error( $term ) ) {
+                    $value = (string) $term->name;
+                }
+            }
+            $value = trim( str_replace( '-', ' ', $value ) );
+            if ( '' !== $value ) {
+                $parts[] = $value;
+            }
+        }
+        $combined = $parts ? trim( $base . ' ' . implode( ' ', $parts ) ) : $base;
+        return mb_substr( $combined, 0, 500 );
     }
 
     /**
@@ -711,13 +756,14 @@ class WNC_Torob_Feed
     {
         $per_page = 100;
         $orderby = $sort === 'date_updated_desc' ? 'modified' : 'date';
+        $expand  = class_exists( 'WNC_Torob_Options', false ) && WNC_Torob_Options::isExpandVariationsEnabled();
         $args = [
             'posts_per_page' => $per_page,
             'paged' => $page,
             'post_status' => 'publish',
             'orderby' => $orderby,
             'order' => 'DESC',
-            'post_type' => ['product', 'product_variation'],
+            'post_type' => $expand ? ['product', 'product_variation'] : ['product'],
             'update_post_term_cache' => true,
             'update_post_meta_cache' => true,
             'cache_results' => false,
@@ -731,7 +777,7 @@ class WNC_Torob_Feed
             if (!$product instanceof WC_Product) {
                 continue;
             }
-            $row = $this->serialize_product_v3($product);
+            $row = $this->serialize_product_v3($product, $expand);
             if ($row !== null) {
                 $products[] = $row;
             }
@@ -745,17 +791,25 @@ class WNC_Torob_Feed
     /**
      * Serialize a WooCommerce product to Torob Product API v3 schema.
      *
+     * @param WC_Product $product Product or variation.
+     * @param bool|null  $expand  When null, reads WNC_Torob_Options.
      * @return array<string,mixed>|null
      */
-    public function serialize_product_v3(WC_Product $product): ?array
+    public function serialize_product_v3(WC_Product $product, ?bool $expand = null): ?array
     {
+        if ( null === $expand ) {
+            $expand = class_exists( 'WNC_Torob_Options', false ) && WNC_Torob_Options::isExpandVariationsEnabled();
+        }
         $is_variation = $product->is_type('variation');
         $parent = $is_variation ? $this->get_valid_parent($product) : null;
         if ($is_variation && ($parent === null || !$product->get_price())) {
             return null;
         }
-        if ($product->is_type('variable')) {
-            // Variable parents are represented by variations in v3.
+        if ($expand && $product->is_type('variable')) {
+            // Variable parents are represented by variations when expand is on.
+            return null;
+        }
+        if (!$expand && $is_variation) {
             return null;
         }
 

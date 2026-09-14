@@ -59,7 +59,7 @@ final class Webino_Dashboard_REST_Bale_Pay {
 	public static function settings_get() {
 		return new WP_REST_Response(
 			array(
-				'settings' => Webino_Bale_Pay_Config::get(),
+				'settings' => Webino_Bale_Pay_Config::get_public(),
 				'status'   => Webino_Bale_Pay_Service::status(),
 			)
 		);

@@ -30,9 +30,14 @@ class WC_Gateway_Bale_Pay extends WC_Payment_Gateway {
 		$this->supports           = array( 'products' );
 		$this->init_form_fields();
 		$this->init_settings();
-		$this->title       = (string) $s['title'];
-		$this->description = (string) $s['description'];
-		$this->enabled     = ! empty( $s['enabled'] ) ? 'yes' : 'no';
+		$this->title             = (string) $s['title'];
+		$this->description       = (string) $s['description'];
+		$this->order_button_text = (string) ( $s['order_button_text'] ?? 'ثبت و پرداخت با بله' );
+		$this->icon              = apply_filters(
+			'webino_bale_pay_gateway_icon',
+			Webino_Bale_Pay_Config::resolve_icon_url( (string) ( $s['icon_url'] ?? '' ) )
+		);
+		$this->enabled           = ! empty( $s['enabled'] ) ? 'yes' : 'no';
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou' ) );
 	}

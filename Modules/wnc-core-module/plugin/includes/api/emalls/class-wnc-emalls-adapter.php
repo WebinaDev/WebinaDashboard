@@ -51,8 +51,9 @@ class WNC_Emalls_Adapter implements WNC_Platform {
 		return wp_parse_args(
 			$c,
 			array(
-				'per_page' => 50,
-				'version'  => '1.3.0',
+				'per_page'           => 50,
+				'version'            => '1.3.0',
+				'expand_variations'  => true,
 			)
 		);
 	}
@@ -195,9 +196,16 @@ class WNC_Emalls_Adapter implements WNC_Platform {
 	 * Build official-plugin-compatible product object as array.
 	 *
 	 * @param WC_Product $product Product or variation.
+	 * @param bool|null  $expand  Whether variation titles should combine parent + attrs.
 	 * @return array
 	 */
-	public static function build_product_payload( $product ) {
+	public static function build_product_payload( $product, $expand = null ) {
+		if ( null === $expand ) {
+			$expand = class_exists( 'WNC_Variation_Title', false )
+				? WNC_Variation_Title::expand_enabled( 'emalls', true )
+				: true;
+		}
+
 		$is_child = (bool) $product->get_parent_id();
 		$parent   = null;
 
@@ -224,7 +232,9 @@ class WNC_Emalls_Adapter implements WNC_Platform {
 
 		if ( $is_child ) {
 			$parent            = wc_get_product( $product->get_parent_id() );
-			$out['title']      = $parent ? $parent->get_name() : $product->get_name();
+			$out['title']      = ( $expand && $parent instanceof WC_Product && class_exists( 'WNC_Variation_Title', false ) )
+				? WNC_Variation_Title::build( $product, $parent )
+				: ( $parent ? $parent->get_name() : $product->get_name() );
 			$out['subtitle']   = (string) get_post_meta( $product->get_parent_id(), 'product_english_name', true );
 			$out['parent_id']  = $parent ? $parent->get_id() : 0;
 			$cat_ids           = $parent ? $parent->get_category_ids() : $product->get_category_ids();

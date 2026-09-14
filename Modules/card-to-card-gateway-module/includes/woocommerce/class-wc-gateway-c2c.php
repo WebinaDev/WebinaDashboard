@@ -30,9 +30,15 @@ class WC_Gateway_C2C extends WC_Payment_Gateway {
 		$this->supports           = array( 'products' );
 		$this->init_form_fields();
 		$this->init_settings();
-		$this->title       = (string) $s['title'];
-		$this->description = (string) $s['instructions'];
-		$this->enabled     = ! empty( $s['enabled'] ) && '0' !== (string) $s['enabled'] ? 'yes' : 'no';
+		$this->title             = (string) $s['title'];
+		$desc                    = trim( (string) ( $s['description'] ?? '' ) );
+		$this->description       = '' !== $desc ? $desc : (string) $s['instructions'];
+		$this->order_button_text = (string) ( $s['order_button_text'] ?? 'ثبت سفارش کارت‌به‌کارت' );
+		$this->icon              = apply_filters(
+			'webino_c2c_gateway_icon',
+			Webino_C2C_Config::resolve_icon_url( (string) ( $s['icon_url'] ?? '' ) )
+		);
+		$this->enabled           = ! empty( $s['enabled'] ) && '0' !== (string) $s['enabled'] ? 'yes' : 'no';
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 	}
 

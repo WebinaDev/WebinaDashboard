@@ -48,8 +48,9 @@ class WNC_Zarehbin_Adapter implements WNC_Platform {
 		return wp_parse_args(
 			$c,
 			array(
-				'per_page' => 50,
-				'version'  => '1.0.0',
+				'per_page'           => 50,
+				'version'            => '1.0.0',
+				'expand_variations'  => false,
 			)
 		);
 	}
@@ -171,10 +172,17 @@ class WNC_Zarehbin_Adapter implements WNC_Platform {
 	/**
 	 * Build official-plugin-compatible product array (Zarehbin 1.0.0 + WFCP overlay).
 	 *
-	 * @param WC_Product $product Product.
+	 * @param WC_Product $product Product or variation.
+	 * @param bool|null  $expand  Whether variation titles should combine parent + attrs.
 	 * @return array
 	 */
-	public static function build_product_payload( $product ) {
+	public static function build_product_payload( $product, $expand = null ) {
+		if ( null === $expand ) {
+			$expand = class_exists( 'WNC_Variation_Title', false )
+				? WNC_Variation_Title::expand_enabled( 'zarehbin', false )
+				: false;
+		}
+
 		$prices = self::get_product_prices( $product );
 
 		$images = array();
@@ -191,8 +199,23 @@ class WNC_Zarehbin_Adapter implements WNC_Platform {
 			}
 		}
 
+		$title          = $product->get_title();
+		$cat_product_id = $product->get_id();
+
+		if ( $product->is_type( 'variation' ) ) {
+			$parent = wc_get_product( $product->get_parent_id() );
+			if ( $parent instanceof WC_Product ) {
+				$cat_product_id = $parent->get_id();
+				if ( $expand && class_exists( 'WNC_Variation_Title', false ) ) {
+					$title = WNC_Variation_Title::build( $product, $parent );
+				} else {
+					$title = $parent->get_title();
+				}
+			}
+		}
+
 		$cat_list   = function_exists( 'wc_get_product_category_list' )
-			? (string) wc_get_product_category_list( $product->get_id() )
+			? (string) wc_get_product_category_list( $cat_product_id )
 			: '';
 		$categories = array_values(
 			array_filter(
@@ -215,6 +238,14 @@ class WNC_Zarehbin_Adapter implements WNC_Platform {
 				} else {
 					$value = implode( ', ', $attribute->get_options() );
 				}
+			} elseif ( is_string( $attribute ) ) {
+				// Variation attribute: taxonomy slug or custom value.
+				if ( substr( (string) $attr, 0, 3 ) === 'pa_' ) {
+					$term  = get_term_by( 'slug', $attribute, $attr );
+					$value = $term ? $term->name : (string) $attribute;
+				} else {
+					$value = (string) $attribute;
+				}
 			} elseif ( is_array( $attribute ) ) {
 				if ( ! empty( $attribute['is_taxonomy'] ) ) {
 					$names = wc_get_product_terms( $product->get_id(), $attribute['name'], array( 'fields' => 'names' ) );
@@ -234,7 +265,7 @@ class WNC_Zarehbin_Adapter implements WNC_Platform {
 		return array(
 			'id'            => $product->get_id(),
 			'sku'           => (string) $product->get_sku(),
-			'title'         => $product->get_title(),
+			'title'         => $title,
 			'stock'         => $prices['stock'],
 			'regular_price' => $prices['regular_price'],
 			'sale_price'    => $prices['sale_price'],

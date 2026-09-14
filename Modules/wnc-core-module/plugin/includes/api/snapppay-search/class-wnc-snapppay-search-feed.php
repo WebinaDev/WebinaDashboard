@@ -129,6 +129,10 @@ class WNC_SnappPay_Search_Feed {
 	 * @return array
 	 */
 	private static function get_all_products( $limit, $page, $include_content ) {
+		$expand = class_exists( 'WNC_Variation_Title', false )
+			? WNC_Variation_Title::expand_enabled( 'snapppay-search', false )
+			: false;
+
 		$query = new WP_Query(
 			array(
 				'posts_per_page' => $limit,
@@ -136,7 +140,7 @@ class WNC_SnappPay_Search_Feed {
 				'post_status'    => 'publish',
 				'orderby'        => 'ID',
 				'order'          => 'DESC',
-				'post_type'      => 'product',
+				'post_type'      => $expand ? array( 'product', 'product_variation' ) : 'product',
 			)
 		);
 
@@ -151,7 +155,13 @@ class WNC_SnappPay_Search_Feed {
 			if ( ! $product ) {
 				continue;
 			}
-			$data['products'][] = WNC_SnappPay_Search_Adapter::format_product_data( $product, $include_content );
+			if ( $expand && $product->is_type( 'variable' ) ) {
+				continue;
+			}
+			if ( ! $expand && $product->is_type( 'variation' ) ) {
+				continue;
+			}
+			$data['products'][] = WNC_SnappPay_Search_Adapter::format_product_data( $product, $include_content, $expand );
 		}
 
 		return $data;
@@ -165,14 +175,27 @@ class WNC_SnappPay_Search_Feed {
 	 * @return array
 	 */
 	private static function get_products_by_ids( $product_ids, $include_content ) {
-		$data = array( 'products' => array() );
+		$expand = class_exists( 'WNC_Variation_Title', false )
+			? WNC_Variation_Title::expand_enabled( 'snapppay-search', false )
+			: false;
+		$data   = array( 'products' => array() );
 
 		foreach ( $product_ids as $id ) {
 			$id      = intval( $id );
 			$product = wc_get_product( $id );
-			if ( $product && 'publish' === $product->get_status() ) {
-				$data['products'][] = WNC_SnappPay_Search_Adapter::format_product_data( $product, $include_content );
+			if ( ! $product || 'publish' !== $product->get_status() ) {
+				continue;
 			}
+			if ( $expand && $product->is_type( 'variable' ) ) {
+				foreach ( $product->get_children() as $child_id ) {
+					$child = wc_get_product( $child_id );
+					if ( $child && 'publish' === get_post_status( $child_id ) ) {
+						$data['products'][] = WNC_SnappPay_Search_Adapter::format_product_data( $child, $include_content, true );
+					}
+				}
+				continue;
+			}
+			$data['products'][] = WNC_SnappPay_Search_Adapter::format_product_data( $product, $include_content, $expand );
 		}
 
 		return $data;
@@ -186,13 +209,30 @@ class WNC_SnappPay_Search_Feed {
 	 * @return array
 	 */
 	private static function get_products_by_slugs( $slug_list, $include_content ) {
-		$data = array( 'products' => array() );
+		$expand = class_exists( 'WNC_Variation_Title', false )
+			? WNC_Variation_Title::expand_enabled( 'snapppay-search', false )
+			: false;
+		$data   = array( 'products' => array() );
 
 		foreach ( $slug_list as $slug ) {
 			$product_post = get_page_by_path( $slug, OBJECT, 'product' );
-			if ( $product_post && 'publish' === $product_post->post_status ) {
-				$data['products'][] = WNC_SnappPay_Search_Adapter::format_product_data( wc_get_product( $product_post->ID ), $include_content );
+			if ( ! $product_post || 'publish' !== $product_post->post_status ) {
+				continue;
 			}
+			$product = wc_get_product( $product_post->ID );
+			if ( ! $product ) {
+				continue;
+			}
+			if ( $expand && $product->is_type( 'variable' ) ) {
+				foreach ( $product->get_children() as $child_id ) {
+					$child = wc_get_product( $child_id );
+					if ( $child && 'publish' === get_post_status( $child_id ) ) {
+						$data['products'][] = WNC_SnappPay_Search_Adapter::format_product_data( $child, $include_content, true );
+					}
+				}
+				continue;
+			}
+			$data['products'][] = WNC_SnappPay_Search_Adapter::format_product_data( $product, $include_content, $expand );
 		}
 
 		return $data;

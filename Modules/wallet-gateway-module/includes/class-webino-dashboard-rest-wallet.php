@@ -66,7 +66,7 @@ final class Webino_Dashboard_REST_Wallet {
 	 * @return WP_REST_Response
 	 */
 	public static function settings_get() {
-		return new WP_REST_Response( array( 'settings' => Webino_Wallet_Config::get() ) );
+		return new WP_REST_Response( array( 'settings' => Webino_Wallet_Config::get_public() ) );
 	}
 
 	/**

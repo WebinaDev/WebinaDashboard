@@ -21,6 +21,7 @@ final class WNC_Torob_Options
     public const ORDERS_LIST_API_ENABLED_OPTION = 'wnc_torob_orders_list_api_enabled';
     public const PRODUCT_PAGE_WEBHOOK_ENABLED_OPTION = 'wnc_torob_product_page_webhook_enabled';
     public const ACTION_TRACKING_ENABLED_OPTION = 'wnc_torob_action_tracking_enabled';
+    public const EXPAND_VARIATIONS_ENABLED_OPTION = 'wnc_torob_expand_variations_enabled';
     public const TOKEN_OPTION = 'wnc_torob_token';
     public const TOKEN_SET_AT_OPTION = 'wnc_torob_token_set_at';
     public const PLUGIN_DB_VERSION_OPTION = 'wnc_torob_plugin_db_version';
@@ -160,6 +161,31 @@ final class WNC_Torob_Options
     public static function resetActionTrackingEnabled(): bool
     {
         return delete_option(self::ACTION_TRACKING_ENABLED_OPTION);
+    }
+
+    /**
+     * Whether variable products are expanded into separate feed rows (Basalam-style).
+     * Default: enabled.
+     */
+    public static function isExpandVariationsEnabled(): bool
+    {
+        return get_option(self::EXPAND_VARIATIONS_ENABLED_OPTION, self::ENABLED_VALUE) === self::ENABLED_VALUE;
+    }
+
+    /**
+     * Persist expand-variations feed setting.
+     */
+    public static function setExpandVariationsEnabled(bool $enabled): bool
+    {
+        return update_option(self::EXPAND_VARIATIONS_ENABLED_OPTION, self::normalize_bool($enabled), true);
+    }
+
+    /**
+     * Delete the stored expand-variations flag so the default applies.
+     */
+    public static function resetExpandVariationsEnabled(): bool
+    {
+        return delete_option(self::EXPAND_VARIATIONS_ENABLED_OPTION);
     }
 
     /**

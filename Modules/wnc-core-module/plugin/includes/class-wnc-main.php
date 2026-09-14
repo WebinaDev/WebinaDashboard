@@ -40,6 +40,7 @@ class WNC_Main {
 		require_once WNC_PLUGIN_DIR . 'includes/class-wnc-pricing.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/interface-wnc-platform.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/class-wnc-http.php';
+		require_once WNC_PLUGIN_DIR . 'includes/api/class-wnc-variation-title.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/class-wnc-stub-adapter.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/digikala/class-wnc-digikala-auth.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/digikala/class-wnc-digikala-adapter.php';

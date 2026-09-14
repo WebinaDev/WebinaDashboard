@@ -51,8 +51,9 @@ class WNC_SnappPay_Search_Adapter implements WNC_Platform {
 		return wp_parse_args(
 			$c,
 			array(
-				'per_page' => 100,
-				'version'  => self::PLUGIN_VERSION,
+				'per_page'           => 100,
+				'version'            => self::PLUGIN_VERSION,
+				'expand_variations'  => false,
 			)
 		);
 	}
@@ -162,18 +163,35 @@ class WNC_SnappPay_Search_Adapter implements WNC_Platform {
 	/**
 	 * Format product like official Searchwise 1.0.2.
 	 *
-	 * @param WC_Product $product Product.
+	 * @param WC_Product $product Product or variation.
 	 * @param bool       $include_content Include post_content.
+	 * @param bool|null  $expand Whether variation titles should combine parent + attrs.
 	 * @return \stdClass
 	 */
-	public static function format_product_data( $product, $include_content = false ) {
+	public static function format_product_data( $product, $include_content = false, $expand = null ) {
+		if ( null === $expand ) {
+			$expand = class_exists( 'WNC_Variation_Title', false )
+				? WNC_Variation_Title::expand_enabled( 'snapppay-search', false )
+				: false;
+		}
+
+		$parent = null;
+		if ( $product->is_type( 'variation' ) ) {
+			$parent = wc_get_product( $product->get_parent_id() );
+		}
+
 		$formatted_product        = new \stdClass();
 		$formatted_product->id    = $product->get_id();
 		$formatted_product->slug  = $product->get_slug();
-		$formatted_product->title = $product->get_name();
+		if ( $expand && $parent instanceof WC_Product && class_exists( 'WNC_Variation_Title', false ) ) {
+			$formatted_product->title = WNC_Variation_Title::build( $product, $parent );
+		} else {
+			$formatted_product->title = $parent instanceof WC_Product ? $parent->get_name() : $product->get_name();
+		}
 
 		if ( $include_content ) {
-			$post = get_post( $product->get_id() );
+			$content_id = $parent instanceof WC_Product ? $parent->get_id() : $product->get_id();
+			$post       = get_post( $content_id );
 			$formatted_product->content = $post ? $post->post_content : '';
 		}
 
@@ -211,18 +229,21 @@ class WNC_SnappPay_Search_Adapter implements WNC_Platform {
 
 		self::overlay_wfcp_prices( $formatted_product, $price_product_id );
 
+		$cat_id = $parent instanceof WC_Product ? $parent->get_id() : $product->get_id();
 		$formatted_product->availability      = $product->get_stock_status();
-		$formatted_product->category          = wp_get_post_terms( $product->get_id(), 'product_cat', array( 'fields' => 'names' ) );
+		$formatted_product->category          = wp_get_post_terms( $cat_id, 'product_cat', array( 'fields' => 'names' ) );
 		if ( is_wp_error( $formatted_product->category ) ) {
 			$formatted_product->category = array();
 		}
 		$formatted_product->image_link        = self::get_product_images( $product );
 		$formatted_product->link              = get_permalink( $product->get_id() );
-		$formatted_product->short_description = $product->get_short_description();
-		$formatted_product->description       = self::get_product_attributes( $product );
-		$formatted_product->shipping_cost     = floatval( get_post_meta( $product->get_id(), '_shipping_cost', true ) );
-		$formatted_product->delivery_time     = intval( get_post_meta( $product->get_id(), '_delivery_days', true ) );
-		$formatted_product->brand             = self::get_product_brand( $product );
+		$formatted_product->short_description = $parent instanceof WC_Product
+			? $parent->get_short_description()
+			: $product->get_short_description();
+		$formatted_product->description       = self::get_product_attributes( $parent instanceof WC_Product ? $parent : $product );
+		$formatted_product->shipping_cost     = floatval( get_post_meta( $cat_id, '_shipping_cost', true ) );
+		$formatted_product->delivery_time     = intval( get_post_meta( $cat_id, '_delivery_days', true ) );
+		$formatted_product->brand             = self::get_product_brand( $parent instanceof WC_Product ? $parent : $product );
 
 		return $formatted_product;
 	}

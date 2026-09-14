@@ -26,7 +26,12 @@ type C2CCard = {
 type C2CSettings = {
   enabled: boolean
   title: string
+  description?: string
   instructions: string
+  order_button_text?: string
+  icon_url?: string
+  default_icon_url?: string
+  resolved_icon_url?: string
   iban: string
   deadline_h: number
   cards: C2CCard[]
@@ -110,6 +115,11 @@ export default function C2CSettingsPage() {
                   onChange={(v) => setDraft({ ...draft, title: v })}
                 />
                 <GatewayField
+                  label={t('gateway.field.orderButtonText')}
+                  value={draft.order_button_text ?? ''}
+                  onChange={(v) => setDraft({ ...draft, order_button_text: v })}
+                />
+                <GatewayField
                   label={t('c2c.deadline')}
                   type="number"
                   value={String(draft.deadline_h)}
@@ -118,10 +128,34 @@ export default function C2CSettingsPage() {
                 />
                 <GatewayTextArea
                   className="md:col-span-2"
+                  label={t('gateway.field.description')}
+                  value={draft.description ?? ''}
+                  onChange={(v) => setDraft({ ...draft, description: v })}
+                />
+                <GatewayTextArea
+                  className="md:col-span-2"
                   label={t('c2c.instructions')}
                   value={draft.instructions}
                   onChange={(v) => setDraft({ ...draft, instructions: v })}
                 />
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">{t('gateway.field.iconUrl')}</label>
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={draft.icon_url?.trim() || draft.resolved_icon_url || draft.default_icon_url || ''}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded border object-contain"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <GatewayField
+                        label=""
+                        value={draft.icon_url ?? ''}
+                        onChange={(v) => setDraft({ ...draft, icon_url: v })}
+                        hint={t('gateway.field.iconUrlHint')}
+                      />
+                    </div>
+                  </div>
+                </div>
                 <GatewayField
                   className="md:col-span-2"
                   label={t('c2c.iban')}

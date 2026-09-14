@@ -22,13 +22,38 @@ final class Webino_C2C_Config {
 	 */
 	public static function defaults() {
 		return array(
-			'enabled'      => '0',
-			'title'        => __( 'کارت به کارت', 'webino-dashboard' ),
-			'instructions' => __( 'مبلغ را به یکی از کارت‌های زیر واریز و رسید را آپلود کنید.', 'webino-dashboard' ),
-			'cards'        => array(),
-			'iban'         => '',
-			'deadline_h'   => 2,
+			'enabled'           => '0',
+			'title'             => 'کارت به کارت',
+			'description'       => 'مبلغ را به یکی از کارت‌های زیر واریز کنید.',
+			'instructions'      => 'مبلغ را به یکی از کارت‌های زیر واریز و رسید را آپلود کنید.',
+			'order_button_text' => 'ثبت سفارش کارت‌به‌کارت',
+			'icon_url'          => '',
+			'cards'             => array(),
+			'iban'              => '',
+			'deadline_h'        => 2,
 		);
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function default_icon_url() {
+		if ( defined( 'WEBINO_DASHBOARD_FILE' ) ) {
+			return plugins_url( 'Modules/card-to-card-gateway-module/assets/c2c-logo.png', WEBINO_DASHBOARD_FILE );
+		}
+		return plugins_url( 'assets/c2c-logo.png', dirname( __DIR__ ) . '/bootstrap.php' );
+	}
+
+	/**
+	 * @param string|null $configured Optional.
+	 * @return string
+	 */
+	public static function resolve_icon_url( $configured = null ) {
+		if ( null === $configured ) {
+			$configured = (string) ( self::get()['icon_url'] ?? '' );
+		}
+		$configured = trim( (string) $configured );
+		return '' !== $configured ? esc_url_raw( $configured ) : self::default_icon_url();
 	}
 
 	/**
@@ -68,12 +93,17 @@ final class Webino_C2C_Config {
 			}
 		}
 		return array(
-			'enabled'      => '0' !== (string) $s['enabled'] && ! empty( $s['enabled'] ),
-			'title'        => (string) $s['title'],
-			'instructions' => (string) $s['instructions'],
-			'iban'         => (string) $s['iban'],
-			'deadline_h'   => (int) $s['deadline_h'],
-			'cards'        => $cards,
+			'enabled'           => '0' !== (string) $s['enabled'] && ! empty( $s['enabled'] ),
+			'title'             => (string) $s['title'],
+			'description'       => (string) ( $s['description'] ?? '' ),
+			'instructions'      => (string) $s['instructions'],
+			'order_button_text' => (string) ( $s['order_button_text'] ?? '' ),
+			'icon_url'          => (string) ( $s['icon_url'] ?? '' ),
+			'default_icon_url'  => self::default_icon_url(),
+			'resolved_icon_url' => self::resolve_icon_url( (string) ( $s['icon_url'] ?? '' ) ),
+			'iban'              => (string) $s['iban'],
+			'deadline_h'        => (int) $s['deadline_h'],
+			'cards'             => $cards,
 		);
 	}
 
@@ -89,10 +119,15 @@ final class Webino_C2C_Config {
 		if ( array_key_exists( 'enabled', $input ) ) {
 			$cur['enabled'] = self::enabled_flag( $input['enabled'] );
 		}
-		foreach ( array( 'title', 'instructions', 'iban' ) as $f ) {
+		foreach ( array( 'title', 'description', 'instructions', 'iban', 'order_button_text' ) as $f ) {
 			if ( isset( $input[ $f ] ) ) {
-				$cur[ $f ] = sanitize_textarea_field( (string) $input[ $f ] );
+				$cur[ $f ] = 'order_button_text' === $f || 'title' === $f
+					? sanitize_text_field( (string) $input[ $f ] )
+					: sanitize_textarea_field( (string) $input[ $f ] );
 			}
+		}
+		if ( isset( $input['icon_url'] ) ) {
+			$cur['icon_url'] = esc_url_raw( (string) $input['icon_url'] );
 		}
 		if ( isset( $input['deadline_h'] ) ) {
 			$cur['deadline_h'] = max( 1, min( 72, (int) $input['deadline_h'] ) );
@@ -124,7 +159,7 @@ final class Webino_C2C_Config {
 		}
 		$wc['enabled']     = '1' === (string) $cur['enabled'] ? 'yes' : 'no';
 		$wc['title']       = (string) $cur['title'];
-		$wc['description'] = (string) $cur['instructions'];
+		$wc['description'] = (string) ( '' !== trim( (string) ( $cur['description'] ?? '' ) ) ? $cur['description'] : $cur['instructions'] );
 		update_option( $wc_key, $wc, false );
 		return self::for_rest();
 	}

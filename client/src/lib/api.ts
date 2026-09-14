@@ -117,6 +117,10 @@ function ajaxActionForPath(path: string): string | null {
       return 'webino_dashboard_bots_rest'
     }
   }
+  // Payment gateway SPA — prefer admin-ajax when CDN/WAF blocks /wp-json/.
+  if (/^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(clean)) {
+    return 'webino_dashboard_payments_rest'
+  }
   return null
 }
 

@@ -1,1 +1,0 @@
-import{t as e}from"./PageShell-DLC8I4Le.js";import{t}from"./MediaTermManager-BrNH5qCx.js";import{useTranslation as n}from"react-i18next";import{jsx as r}from"react/jsx-runtime";function i(){let{t:i}=n();return r(e,{title:i(`media.foldersTitle`),description:i(`media.description`),children:r(t,{kind:`folder`})})}export{i as default};

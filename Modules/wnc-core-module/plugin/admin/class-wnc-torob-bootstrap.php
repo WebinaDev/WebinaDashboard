@@ -90,9 +90,15 @@ class WNC_Torob_Bootstrap {
 		$webhook_on = array_key_exists( 'product_page_webhook_enabled', $c )
 			? ! empty( $c['product_page_webhook_enabled'] )
 			: $platform_on;
+		$expand_variations_on = array_key_exists( 'expand_variations', $c )
+			? ! empty( $c['expand_variations'] )
+			: true;
 
 		WNC_Torob_Options::setOrderStatusEnabled( $order_status_on );
 		WNC_Torob_Options::setOrdersListApiEnabled( $orders_list_on );
+		if ( method_exists( 'WNC_Torob_Options', 'setExpandVariationsEnabled' ) ) {
+			WNC_Torob_Options::setExpandVariationsEnabled( $expand_variations_on );
+		}
 
 		if ( self::$webhook ) {
 			self::$webhook->set_webhook_enabled( $webhook_on );

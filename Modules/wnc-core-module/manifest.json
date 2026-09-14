@@ -1,7 +1,7 @@
 {
   "slug": "wnc-core-module",
   "name": "Marketplace",
-  "version": "1.5.4",
+  "version": "1.5.7",
   "is_builtin": true,
   "is_first_party": true,
   "requires_woocommerce": true,

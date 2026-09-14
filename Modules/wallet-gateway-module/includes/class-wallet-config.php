@@ -22,10 +22,37 @@ final class Webino_Wallet_Config {
 	 */
 	public static function defaults() {
 		return array(
-			'enabled'   => true,
-			'title'     => __( 'کیف پول', 'webino-dashboard' ),
-			'min_topup' => 1000,
+			'enabled'           => true,
+			'title'             => 'کیف پول',
+			'description'       => 'پرداخت از موجودی کیف پول فروشگاه.',
+			'order_button_text' => 'پرداخت با کیف پول',
+			'login_prompt'      => 'برای پرداخت با کیف پول وارد شوید.',
+			'balance_label'     => 'موجودی کیف پول: {balance}',
+			'icon_url'          => '',
+			'min_topup'         => 1000,
 		);
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function default_icon_url() {
+		if ( defined( 'WEBINO_DASHBOARD_FILE' ) ) {
+			return plugins_url( 'Modules/wallet-gateway-module/assets/wallet-logo.png', WEBINO_DASHBOARD_FILE );
+		}
+		return plugins_url( 'assets/wallet-logo.png', dirname( __DIR__ ) . '/bootstrap.php' );
+	}
+
+	/**
+	 * @param string|null $configured Optional.
+	 * @return string
+	 */
+	public static function resolve_icon_url( $configured = null ) {
+		if ( null === $configured ) {
+			$configured = (string) ( self::get()['icon_url'] ?? '' );
+		}
+		$configured = trim( (string) $configured );
+		return '' !== $configured ? esc_url_raw( $configured ) : self::default_icon_url();
 	}
 
 	/**
@@ -49,6 +76,16 @@ final class Webino_Wallet_Config {
 	}
 
 	/**
+	 * @return array<string,mixed>
+	 */
+	public static function get_public() {
+		$s = self::get();
+		$s['default_icon_url'] = self::default_icon_url();
+		$s['resolved_icon_url'] = self::resolve_icon_url( (string) ( $s['icon_url'] ?? '' ) );
+		return $s;
+	}
+
+	/**
 	 * @param array<string,mixed> $data Raw.
 	 * @return array<string,mixed>
 	 */
@@ -58,9 +95,14 @@ final class Webino_Wallet_Config {
 			$data = array();
 		}
 		$new = array(
-			'enabled'   => ! empty( $data['enabled'] ),
-			'title'     => sanitize_text_field( (string) ( $data['title'] ?? $old['title'] ) ),
-			'min_topup' => max( 1, (int) ( $data['min_topup'] ?? $old['min_topup'] ) ),
+			'enabled'           => ! empty( $data['enabled'] ),
+			'title'             => sanitize_text_field( (string) ( $data['title'] ?? $old['title'] ) ),
+			'description'       => sanitize_textarea_field( (string) ( $data['description'] ?? $old['description'] ) ),
+			'order_button_text' => sanitize_text_field( (string) ( $data['order_button_text'] ?? $old['order_button_text'] ) ),
+			'login_prompt'      => sanitize_text_field( (string) ( $data['login_prompt'] ?? $old['login_prompt'] ) ),
+			'balance_label'     => sanitize_text_field( (string) ( $data['balance_label'] ?? $old['balance_label'] ) ),
+			'icon_url'          => esc_url_raw( (string) ( $data['icon_url'] ?? $old['icon_url'] ) ),
+			'min_topup'         => max( 1, (int) ( $data['min_topup'] ?? $old['min_topup'] ) ),
 		);
 		update_option( self::OPTION_KEY, $new, false );
 		$wc_key = 'woocommerce_' . self::GATEWAY_ID . '_settings';
@@ -68,10 +110,11 @@ final class Webino_Wallet_Config {
 		if ( ! is_array( $wc ) ) {
 			$wc = array();
 		}
-		$wc['enabled'] = $new['enabled'] ? 'yes' : 'no';
-		$wc['title']   = $new['title'];
+		$wc['enabled']     = $new['enabled'] ? 'yes' : 'no';
+		$wc['title']       = $new['title'];
+		$wc['description'] = $new['description'];
 		update_option( $wc_key, $wc, false );
-		return self::get();
+		return self::get_public();
 	}
 
 	/**

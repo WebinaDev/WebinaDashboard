@@ -20,6 +20,12 @@ type BalePaySettings = {
   title: string
   description: string
   instructions: string
+  order_button_text?: string
+  success_message?: string
+  failed_message?: string
+  icon_url?: string
+  default_icon_url?: string
+  resolved_icon_url?: string
 }
 
 type BalePayStatus = {
@@ -104,6 +110,11 @@ export default function BalePaySettingsPage() {
                   value={draft.title}
                   onChange={(v) => setDraft({ ...draft, title: v })}
                 />
+                <GatewayField
+                  label={t('gateway.field.orderButtonText')}
+                  value={draft.order_button_text ?? ''}
+                  onChange={(v) => setDraft({ ...draft, order_button_text: v })}
+                />
                 <GatewayTextArea
                   className="md:col-span-2"
                   label={t('balePay.description')}
@@ -116,6 +127,36 @@ export default function BalePaySettingsPage() {
                   value={draft.instructions}
                   onChange={(v) => setDraft({ ...draft, instructions: v })}
                 />
+                <GatewayTextArea
+                  className="md:col-span-2"
+                  label={t('gateway.field.successMessage')}
+                  value={draft.success_message ?? ''}
+                  onChange={(v) => setDraft({ ...draft, success_message: v })}
+                />
+                <GatewayTextArea
+                  className="md:col-span-2"
+                  label={t('gateway.field.failedMessage')}
+                  value={draft.failed_message ?? ''}
+                  onChange={(v) => setDraft({ ...draft, failed_message: v })}
+                />
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">{t('gateway.field.iconUrl')}</label>
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={draft.icon_url?.trim() || draft.resolved_icon_url || draft.default_icon_url || ''}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded border object-contain"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <GatewayField
+                        label=""
+                        value={draft.icon_url ?? ''}
+                        onChange={(v) => setDraft({ ...draft, icon_url: v })}
+                        hint={t('gateway.field.iconUrlHint')}
+                      />
+                    </div>
+                  </div>
+                </div>
               </GatewayFieldsGrid>
             </div>
           ),
