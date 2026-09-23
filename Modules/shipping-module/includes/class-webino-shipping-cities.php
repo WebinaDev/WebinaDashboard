@@ -18,8 +18,310 @@ class Webino_Shipping_Cities {
 	 * @return void
 	 */
 	public static function init() {
-		add_action( 'init', array( __CLASS__, 'register_taxonomy' ), 5 );
+		// Modules load at init:10 — register at 11 (same pattern as coffee-origins).
+		if ( did_action( 'init' ) ) {
+			self::register_taxonomy();
+			self::maybe_schedule_ensure();
+		} else {
+			add_action( 'init', array( __CLASS__, 'register_taxonomy' ), 11 );
+			add_action( 'init', array( __CLASS__, 'maybe_schedule_ensure' ), 12 );
+		}
+		add_action( 'webino_shipping_cities_ensure', array( __CLASS__, 'cron_seed_batches' ) );
 		add_filter( 'woocommerce_package_rates', array( __CLASS__, 'filter_city_bound_zones' ), 15, 2 );
+	}
+
+	/**
+	 * Load bundled state/city data file.
+	 *
+	 * @return bool
+	 */
+	private static function load_data_file() {
+		$file = dirname( __DIR__ ) . '/data/state_city.php';
+		if ( ! is_readable( $file ) ) {
+			return false;
+		}
+		require_once $file;
+		return function_exists( 'webino_shipping_get_states' ) && function_exists( 'webino_shipping_get_state_city' );
+	}
+
+	/**
+	 * @return array<string,string>
+	 */
+	public static function data_states() {
+		if ( ! self::load_data_file() ) {
+			return array();
+		}
+		$states = webino_shipping_get_states();
+		return is_array( $states ) ? $states : array();
+	}
+
+	/**
+	 * Cron: seed a few provinces per run without blocking HTTP.
+	 *
+	 * @return void
+	 */
+	public static function cron_seed_batches() {
+		self::register_taxonomy();
+		if ( self::is_seed_complete() ) {
+			return;
+		}
+		$deadline = time() + 20;
+		while ( time() < $deadline && ! self::is_seed_complete() ) {
+			$res = self::seed_batch( null );
+			if ( empty( $res['ok'] ) || empty( $res['next_key'] ) && ! empty( $res['installed'] ) ) {
+				break;
+			}
+			if ( empty( $res['next_key'] ) ) {
+				break;
+			}
+		}
+		if ( ! self::is_seed_complete() && function_exists( 'wp_schedule_single_event' ) ) {
+			if ( ! wp_next_scheduled( 'webino_shipping_cities_ensure' ) ) {
+				wp_schedule_single_event( time() + 30, 'webino_shipping_cities_ensure' );
+			}
+		}
+	}
+
+	/**
+	 * Schedule a one-shot background seed if provinces are missing.
+	 *
+	 * @return void
+	 */
+	public static function maybe_schedule_ensure() {
+		self::register_taxonomy();
+		if ( self::is_seed_complete() ) {
+			return;
+		}
+		if ( ! function_exists( 'wp_next_scheduled' ) || ! function_exists( 'wp_schedule_single_event' ) ) {
+			return;
+		}
+		if ( wp_next_scheduled( 'webino_shipping_cities_ensure' ) ) {
+			return;
+		}
+		wp_schedule_single_event( time() + 5, 'webino_shipping_cities_ensure' );
+	}
+
+	/**
+	 * Whether taxonomy has at least as many top-level provinces as the data file.
+	 *
+	 * @return bool
+	 */
+	public static function is_seed_complete() {
+		if ( ! taxonomy_exists( self::TAXONOMY ) ) {
+			return false;
+		}
+		$expected = count( self::data_states() );
+		if ( $expected < 1 ) {
+			return (bool) get_option( 'webino_shipping_cities_installed', 0 ) && count( self::get_states() ) > 0;
+		}
+		return count( self::get_states() ) >= $expected;
+	}
+
+	/**
+	 * Seed progress / next key for UI.
+	 *
+	 * @return array{installed:bool,needs_seed:bool,next_key:string|null,states_done:int,states_total:int}
+	 */
+	public static function seed_status() {
+		self::register_taxonomy();
+		if ( ! self::load_data_file() ) {
+			return array(
+				'installed'    => false,
+				'needs_seed'   => true,
+				'next_key'     => null,
+				'states_done'  => 0,
+				'states_total' => 0,
+			);
+		}
+		$states = webino_shipping_get_states();
+		$total  = is_array( $states ) ? count( $states ) : 0;
+		$done   = 0;
+		$next   = null;
+		foreach ( (array) $states as $key => $_name ) {
+			$term = term_exists( $key, self::TAXONOMY );
+			if ( ! $term ) {
+				if ( null === $next ) {
+					$next = (string) $key;
+				}
+				continue;
+			}
+			$term_id = (int) ( is_array( $term ) ? $term['term_id'] : $term );
+			$cities  = webino_shipping_get_state_city( $key );
+			$have    = count( self::get_cities( $term_id ) );
+			$need    = is_array( $cities ) ? count( $cities ) : 0;
+			if ( $have < $need ) {
+				if ( null === $next ) {
+					$next = (string) $key;
+				}
+				continue;
+			}
+			++$done;
+		}
+		$installed = self::is_seed_complete();
+		if ( $installed ) {
+			update_option( 'webino_shipping_cities_installed', 1, false );
+			$next = null;
+		}
+		return array(
+			'installed'    => $installed,
+			'needs_seed'   => ! $installed,
+			'next_key'     => $next,
+			'states_done'  => $done,
+			'states_total' => $total,
+		);
+	}
+
+	/**
+	 * Insert one province and its cities.
+	 *
+	 * @param string $state_key State key e.g. TE.
+	 * @return array{ok:bool,message:string,count:int,state_key:string}
+	 */
+	public static function seed_state( $state_key ) {
+		self::register_taxonomy();
+		if ( ! taxonomy_exists( self::TAXONOMY ) ) {
+			return array(
+				'ok'        => false,
+				'message'   => __( 'taxonomy شهرها ثبت نشد.', 'webino-dashboard' ),
+				'count'     => 0,
+				'state_key' => (string) $state_key,
+			);
+		}
+		if ( ! self::load_data_file() ) {
+			return array(
+				'ok'        => false,
+				'message'   => __( 'فایل شهرها پیدا نشد.', 'webino-dashboard' ),
+				'count'     => 0,
+				'state_key' => (string) $state_key,
+			);
+		}
+		$states = webino_shipping_get_states();
+		$key    = sanitize_key( (string) $state_key );
+		if ( '' === $key || ! isset( $states[ $key ] ) ) {
+			return array(
+				'ok'        => false,
+				'message'   => __( 'استان نامعتبر است.', 'webino-dashboard' ),
+				'count'     => 0,
+				'state_key' => $key,
+			);
+		}
+		$state_name = (string) $states[ $key ];
+		$term       = term_exists( $key, self::TAXONOMY );
+		if ( ! $term ) {
+			$term = wp_insert_term(
+				$state_name,
+				self::TAXONOMY,
+				array(
+					'slug'        => $key,
+					'description' => $state_name,
+				)
+			);
+		}
+		if ( is_wp_error( $term ) ) {
+			return array(
+				'ok'        => false,
+				'message'   => $term->get_error_message(),
+				'count'     => 0,
+				'state_key' => $key,
+			);
+		}
+		$term_id = (int) ( is_array( $term ) ? $term['term_id'] : $term );
+		$count   = 0;
+		$cities  = webino_shipping_get_state_city( $key );
+		$have    = wp_list_pluck( self::get_cities( $term_id ), 'name' );
+		$i       = 0;
+		foreach ( array_diff( is_array( $cities ) ? $cities : array(), $have ) as $city ) {
+			++$i;
+			$slug = strtolower( $key ) . '-c' . $i . '-' . substr( md5( (string) $city ), 0, 6 );
+			$ins  = wp_insert_term(
+				$city,
+				self::TAXONOMY,
+				array(
+					'parent' => $term_id,
+					'slug'   => $slug,
+				)
+			);
+			if ( is_wp_error( $ins ) ) {
+				// Already exists under this parent — treat as success.
+				if ( 'term_exists' === $ins->get_error_code() ) {
+					continue;
+				}
+				continue;
+			}
+			++$count;
+		}
+		return array(
+			'ok'        => true,
+			'message'   => sprintf(
+				/* translators: %s: province name */
+				__( 'استان %s تکمیل شد.', 'webino-dashboard' ),
+				$state_name
+			),
+			'count'     => $count,
+			'state_key' => $key,
+		);
+	}
+
+	/**
+	 * Seed one batch (one province). Empty state_key = next incomplete.
+	 *
+	 * @param string|null $state_key Optional key.
+	 * @return array{ok:bool,installed:bool,next_key:?string,states_done:int,states_total:int,message:string,count:int}
+	 */
+	public static function seed_batch( $state_key = null ) {
+		self::register_taxonomy();
+		$status = self::seed_status();
+		if ( $status['installed'] ) {
+			return array_merge(
+				$status,
+				array(
+					'ok'      => true,
+					'message' => __( 'لیست شهرها آماده است.', 'webino-dashboard' ),
+					'count'   => 0,
+				)
+			);
+		}
+		$key = is_string( $state_key ) && '' !== $state_key ? sanitize_key( $state_key ) : (string) ( $status['next_key'] ?? '' );
+		if ( '' === $key ) {
+			return array_merge(
+				$status,
+				array(
+					'ok'      => false,
+					'message' => __( 'استان بعدی پیدا نشد.', 'webino-dashboard' ),
+					'count'   => 0,
+				)
+			);
+		}
+		$res    = self::seed_state( $key );
+		$status = self::seed_status();
+		return array(
+			'ok'           => ! empty( $res['ok'] ),
+			'installed'    => $status['installed'],
+			'needs_seed'   => $status['needs_seed'],
+			'next_key'     => $status['next_key'],
+			'states_done'  => $status['states_done'],
+			'states_total' => $status['states_total'],
+			'message'      => (string) ( $res['message'] ?? '' ),
+			'count'        => (int) ( $res['count'] ?? 0 ),
+		);
+	}
+
+	/**
+	 * Auto-seed Iran provinces/cities when missing or incomplete (legacy full run).
+	 *
+	 * @return array{ok:bool,message:string,count:int}
+	 */
+	public static function ensure_seeded() {
+		self::register_taxonomy();
+		if ( self::is_seed_complete() ) {
+			update_option( 'webino_shipping_cities_installed', 1, false );
+			return array(
+				'ok'      => true,
+				'message' => __( 'لیست شهرها آماده است.', 'webino-dashboard' ),
+				'count'   => 0,
+			);
+		}
+		return self::reinstall( false );
 	}
 
 	/**
@@ -79,6 +381,9 @@ class Webino_Shipping_Cities {
 	 * @return void
 	 */
 	public static function register_taxonomy() {
+		if ( taxonomy_exists( self::TAXONOMY ) ) {
+			return;
+		}
 		register_taxonomy(
 			self::TAXONOMY,
 			array( 'product' ),
@@ -192,13 +497,16 @@ class Webino_Shipping_Cities {
 	 * @return array{ok:bool,message:string,count:int}
 	 */
 	public static function reinstall( $force = false ) {
-		$file = dirname( __DIR__ ) . '/data/state_city.php';
-		if ( ! is_readable( $file ) ) {
-			return array( 'ok' => false, 'message' => __( 'فایل شهرها پیدا نشد.', 'webino-dashboard' ), 'count' => 0 );
+		self::register_taxonomy();
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
 		}
-		require_once $file;
-		if ( ! function_exists( 'webino_shipping_get_states' ) || ! function_exists( 'webino_shipping_get_state_city' ) ) {
-			return array( 'ok' => false, 'message' => __( 'دادهٔ شهرها نامعتبر است.', 'webino-dashboard' ), 'count' => 0 );
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+
+		if ( ! self::load_data_file() ) {
+			return array( 'ok' => false, 'message' => __( 'فایل شهرها پیدا نشد.', 'webino-dashboard' ), 'count' => 0 );
 		}
 		if ( $force ) {
 			$all = get_terms( array( 'taxonomy' => self::TAXONOMY, 'hide_empty' => false, 'fields' => 'ids' ) );
@@ -209,41 +517,27 @@ class Webino_Shipping_Cities {
 			}
 		}
 		$count = 0;
-		foreach ( webino_shipping_get_states() as $key => $state ) {
-			$term = term_exists( $key, self::TAXONOMY );
-			if ( ! $term ) {
-				$term = wp_insert_term(
-					$state,
-					self::TAXONOMY,
-					array(
-						'slug'        => $key,
-						'description' => $state,
-					)
-				);
-			}
-			if ( is_wp_error( $term ) ) {
-				continue;
-			}
-			$term_id = (int) ( is_array( $term ) ? $term['term_id'] : $term );
-			$installed = wp_list_pluck( self::get_cities( $term_id ), 'name' );
-			foreach ( array_diff( webino_shipping_get_state_city( $key ), $installed ) as $city ) {
-				$ins = wp_insert_term(
-					$city,
-					self::TAXONOMY,
-					array(
-						'parent' => $term_id,
-						'slug'   => sanitize_title( $city . '-' . $key ),
-					)
-				);
-				if ( ! is_wp_error( $ins ) ) {
-					++$count;
-				}
+		foreach ( webino_shipping_get_states() as $key => $_state ) {
+			$res = self::seed_state( (string) $key );
+			if ( ! empty( $res['ok'] ) ) {
+				$count += (int) $res['count'];
 			}
 		}
-		update_option( 'webino_shipping_cities_installed', 1, false );
+
+		$states_ok = self::is_seed_complete();
+		if ( $states_ok ) {
+			update_option( 'webino_shipping_cities_installed', 1, false );
+			return array(
+				'ok'      => true,
+				'message' => __( 'شهرها نصب شدند.', 'webino-dashboard' ),
+				'count'   => $count,
+			);
+		}
+
+		delete_option( 'webino_shipping_cities_installed' );
 		return array(
-			'ok'      => true,
-			'message' => __( 'شهرها نصب شدند.', 'webino-dashboard' ),
+			'ok'      => false,
+			'message' => __( 'نصب شهرها کامل نشد. دوباره تلاش کنید.', 'webino-dashboard' ),
 			'count'   => $count,
 		);
 	}

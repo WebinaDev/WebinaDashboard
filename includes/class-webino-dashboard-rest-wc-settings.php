@@ -94,6 +94,43 @@ final class Webino_Dashboard_REST_WC_Settings {
 
 		register_rest_route(
 			self::NS,
+			'/shop/shipping/method-types',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'shipping_method_types_get' ),
+				'permission_callback' => array( __CLASS__, 'can_manage_shop' ),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shop/shipping/zones/(?P<id>\d+)/methods',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'shipping_zone_method_add' ),
+				'permission_callback' => array( __CLASS__, 'can_manage_shop' ),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shop/shipping/zones/(?P<id>\d+)/methods/(?P<instance_id>\d+)',
+			array(
+				array(
+					'methods'             => 'PATCH',
+					'callback'            => array( __CLASS__, 'shipping_zone_method_patch' ),
+					'permission_callback' => array( __CLASS__, 'can_manage_shop' ),
+				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => array( __CLASS__, 'shipping_zone_method_delete' ),
+					'permission_callback' => array( __CLASS__, 'can_manage_shop' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shop/payment-gateways',
 			array(
 				'methods'             => 'GET',
@@ -349,6 +386,114 @@ final class Webino_Dashboard_REST_WC_Settings {
 	}
 
 	/**
+	 * Flatten a WC_Shipping_Method for JSON (avoid circular object graphs).
+	 *
+	 * @param mixed $method Method instance.
+	 * @return array<string,mixed>|null
+	 */
+	private static function serialize_shipping_method( $method ) {
+		if ( ! is_object( $method ) ) {
+			return null;
+		}
+		$method_id   = isset( $method->id ) ? (string) $method->id : '';
+		$instance_id = isset( $method->instance_id ) ? (int) $method->instance_id : 0;
+		$title       = method_exists( $method, 'get_title' ) ? (string) $method->get_title() : $method_id;
+		$enabled     = true;
+		if ( isset( $method->enabled ) ) {
+			$enabled = 'yes' === (string) $method->enabled;
+		}
+		$cost = '';
+		if ( method_exists( $method, 'get_option' ) ) {
+			$cost = (string) $method->get_option( 'cost', '' );
+		} elseif ( isset( $method->cost ) ) {
+			$cost = (string) $method->cost;
+		}
+
+		$form_fields = array();
+		if ( method_exists( $method, 'get_instance_form_fields' ) ) {
+			$form_fields = $method->get_instance_form_fields();
+		} elseif ( method_exists( $method, 'get_form_fields' ) ) {
+			$form_fields = $method->get_form_fields();
+		}
+		if ( ! is_array( $form_fields ) ) {
+			$form_fields = array();
+		}
+		$schema   = array();
+		$settings = array();
+		foreach ( $form_fields as $key => $field ) {
+			if ( ! is_array( $field ) ) {
+				continue;
+			}
+			$fkey = (string) $key;
+			$schema[] = array(
+				'id'      => $fkey,
+				'type'    => isset( $field['type'] ) ? (string) $field['type'] : 'text',
+				'title'   => isset( $field['title'] ) ? wp_strip_all_tags( (string) $field['title'] ) : '',
+				'desc'    => isset( $field['description'] ) ? wp_strip_all_tags( (string) $field['description'] ) : '',
+				'default' => $field['default'] ?? '',
+				'options' => isset( $field['options'] ) && is_array( $field['options'] ) ? $field['options'] : null,
+			);
+			$settings[ $fkey ] = method_exists( $method, 'get_option' )
+				? $method->get_option( $fkey, $field['default'] ?? '' )
+				: ( $field['default'] ?? '' );
+		}
+
+		return array(
+			'id'          => $method_id,
+			'method_id'   => $method_id,
+			'instance_id' => $instance_id,
+			'title'       => $title,
+			'enabled'     => $enabled,
+			'cost'        => $cost,
+			'fields'      => $schema,
+			'settings'    => $settings,
+		);
+	}
+
+	/**
+	 * @param mixed $locations Zone locations (objects or arrays).
+	 * @return list<array{type:string,code:string}>
+	 */
+	private static function serialize_zone_locations( $locations ) {
+		$out = array();
+		if ( ! is_array( $locations ) ) {
+			return $out;
+		}
+		foreach ( $locations as $loc ) {
+			if ( is_object( $loc ) ) {
+				$out[] = array(
+					'type' => isset( $loc->type ) ? (string) $loc->type : '',
+					'code' => isset( $loc->code ) ? (string) $loc->code : '',
+				);
+			} elseif ( is_array( $loc ) ) {
+				$out[] = array(
+					'type' => isset( $loc['type'] ) ? (string) $loc['type'] : '',
+					'code' => isset( $loc['code'] ) ? (string) $loc['code'] : '',
+				);
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * @param mixed $methods Shipping methods list.
+	 * @return list<array{id:string,method_id:string,instance_id:int,title:string,enabled:bool,cost:string}>
+	 */
+	private static function serialize_shipping_methods( $methods ) {
+		$out = array();
+		if ( ! is_array( $methods ) ) {
+			return $out;
+		}
+		foreach ( $methods as $method ) {
+			$row = self::serialize_shipping_method( $method );
+			if ( null !== $row ) {
+				$out[] = $row;
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function shipping_zones_get() {
@@ -362,25 +507,28 @@ final class Webino_Dashboard_REST_WC_Settings {
 		$zones_data = array();
 		$zones      = WC_Shipping_Zones::get_zones();
 		foreach ( $zones as $z ) {
+			$raw_methods = isset( $z['shipping_methods'] ) && is_array( $z['shipping_methods'] ) ? $z['shipping_methods'] : array();
+			$methods     = self::serialize_shipping_methods( $raw_methods );
 			$zones_data[] = array(
-				'id'          => (int) $z['zone_id'],
-				'name'        => (string) $z['zone_name'],
-				'order'       => (int) $z['zone_order'],
-				'locations'   => $z['zone_locations'],
-				'methods'     => $z['shipping_methods'],
-				'method_count'=> count( $z['shipping_methods'] ),
+				'id'           => (int) $z['zone_id'],
+				'name'         => (string) $z['zone_name'],
+				'order'        => (int) $z['zone_order'],
+				'locations'    => self::serialize_zone_locations( $z['zone_locations'] ?? array() ),
+				'methods'      => $methods,
+				'method_count' => count( $methods ),
 			);
 		}
 
 		$rest = WC_Shipping_Zones::get_zone( 0 );
 		if ( $rest ) {
+			$methods = self::serialize_shipping_methods( $rest->get_shipping_methods() );
 			$zones_data[] = array(
 				'id'           => 0,
 				'name'         => $rest->get_zone_name(),
 				'order'        => 0,
-				'locations'    => $rest->get_zone_locations(),
-				'methods'      => $rest->get_shipping_methods(),
-				'method_count' => count( $rest->get_shipping_methods() ),
+				'locations'    => self::serialize_zone_locations( $rest->get_zone_locations() ),
+				'methods'      => $methods,
+				'method_count' => count( $methods ),
 			);
 		}
 
@@ -426,21 +574,171 @@ final class Webino_Dashboard_REST_WC_Settings {
 	 */
 	public static function shipping_zone_patch( $request ) {
 		$id = (int) $request->get_param( 'id' );
-		if ( $id <= 0 ) {
+		// Zone 0 = Rest of the World — allow name/methods via other endpoints; locations limited.
+		if ( $id < 0 ) {
 			return new WP_Error( 'invalid_zone', __( 'Cannot edit this zone.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 		if ( ! class_exists( 'WC_Shipping_Zone', false ) ) {
 			include_once WC_ABSPATH . 'includes/class-wc-shipping-zone.php';
+		}
+		if ( ! class_exists( 'WC_Shipping_Zones', false ) ) {
+			include_once WC_ABSPATH . 'includes/class-wc-shipping-zones.php';
 		}
 		$zone = WC_Shipping_Zones::get_zone( $id );
 		if ( ! $zone ) {
 			return new WP_Error( 'zone_not_found', __( 'Zone not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
 		}
 		$name = $request->get_param( 'name' );
-		if ( null !== $name ) {
+		if ( null !== $name && '' !== (string) $name ) {
 			$zone->set_zone_name( sanitize_text_field( (string) $name ) );
 		}
+		$order = $request->get_param( 'order' );
+		if ( null !== $order && method_exists( $zone, 'set_zone_order' ) ) {
+			$zone->set_zone_order( (int) $order );
+		}
+		$locations = $request->get_param( 'locations' );
+		if ( null !== $locations && is_array( $locations ) && method_exists( $zone, 'set_locations' ) ) {
+			$clean = array();
+			foreach ( $locations as $loc ) {
+				if ( ! is_array( $loc ) ) {
+					continue;
+				}
+				$type = sanitize_key( (string) ( $loc['type'] ?? '' ) );
+				$code = sanitize_text_field( (string) ( $loc['code'] ?? '' ) );
+				if ( '' === $type || '' === $code ) {
+					continue;
+				}
+				$clean[] = array(
+					'type' => $type,
+					'code' => $code,
+				);
+			}
+			$zone->set_locations( $clean );
+		}
 		$zone->save();
+		return self::shipping_zones_get();
+	}
+
+	/**
+	 * Available shipping method types for add-method UI.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function shipping_method_types_get() {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return new WP_Error( 'woocommerce_missing', __( 'Store module is not available.', 'webino-dashboard' ), array( 'status' => 503 ) );
+		}
+		$out = array();
+		$methods = WC()->shipping() ? WC()->shipping()->get_shipping_methods() : array();
+		foreach ( $methods as $id => $method ) {
+			if ( ! is_object( $method ) ) {
+				continue;
+			}
+			$out[] = array(
+				'id'          => (string) $id,
+				'title'       => method_exists( $method, 'get_method_title' ) ? (string) $method->get_method_title() : (string) $id,
+				'description' => method_exists( $method, 'get_method_description' ) ? wp_strip_all_tags( (string) $method->get_method_description() ) : '',
+			);
+		}
+		return new WP_REST_Response( array( 'methods' => $out ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function shipping_zone_method_add( $request ) {
+		$id = (int) $request->get_param( 'id' );
+		if ( $id < 0 ) {
+			return new WP_Error( 'invalid_zone', __( 'Invalid zone.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$method_id = sanitize_key( (string) $request->get_param( 'method_id' ) );
+		if ( '' === $method_id ) {
+			return new WP_Error( 'invalid_method', __( 'Method is required.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( ! class_exists( 'WC_Shipping_Zones', false ) ) {
+			include_once WC_ABSPATH . 'includes/class-wc-shipping-zones.php';
+		}
+		$zone = WC_Shipping_Zones::get_zone( $id );
+		if ( ! $zone ) {
+			return new WP_Error( 'zone_not_found', __( 'Zone not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
+		}
+		$instance_id = $zone->add_shipping_method( $method_id );
+		if ( ! $instance_id ) {
+			return new WP_Error( 'add_failed', __( 'Could not add shipping method.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		}
+		return self::shipping_zones_get();
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function shipping_zone_method_patch( $request ) {
+		$id          = (int) $request->get_param( 'id' );
+		$instance_id = (int) $request->get_param( 'instance_id' );
+		if ( $id < 0 || $instance_id < 1 ) {
+			return new WP_Error( 'invalid_zone', __( 'Invalid zone or method.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( ! class_exists( 'WC_Shipping_Zones', false ) ) {
+			include_once WC_ABSPATH . 'includes/class-wc-shipping-zones.php';
+		}
+		$zone = WC_Shipping_Zones::get_zone( $id );
+		if ( ! $zone ) {
+			return new WP_Error( 'zone_not_found', __( 'Zone not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
+		}
+		$methods = $zone->get_shipping_methods( true );
+		$method  = null;
+		foreach ( $methods as $m ) {
+			if ( is_object( $m ) && (int) $m->instance_id === $instance_id ) {
+				$method = $m;
+				break;
+			}
+		}
+		if ( ! $method ) {
+			return new WP_Error( 'method_not_found', __( 'Method not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
+		}
+		if ( null !== $request->get_param( 'enabled' ) ) {
+			$on = ! empty( $request->get_param( 'enabled' ) );
+			$method->enabled = $on ? 'yes' : 'no';
+			if ( method_exists( $method, 'update_option' ) ) {
+				$method->update_option( 'enabled', $on ? 'yes' : 'no' );
+			}
+		}
+		$settings = $request->get_param( 'settings' );
+		if ( is_array( $settings ) && method_exists( $method, 'update_option' ) ) {
+			foreach ( $settings as $key => $value ) {
+				$key = sanitize_key( (string) $key );
+				if ( '' === $key || 'enabled' === $key ) {
+					continue;
+				}
+				if ( is_string( $value ) && '********' === $value ) {
+					continue;
+				}
+				$method->update_option( $key, is_scalar( $value ) || null === $value ? $value : wp_json_encode( $value ) );
+			}
+		}
+		return self::shipping_zones_get();
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function shipping_zone_method_delete( $request ) {
+		$id          = (int) $request->get_param( 'id' );
+		$instance_id = (int) $request->get_param( 'instance_id' );
+		if ( $id < 0 || $instance_id < 1 ) {
+			return new WP_Error( 'invalid_zone', __( 'Invalid zone or method.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		if ( ! class_exists( 'WC_Shipping_Zones', false ) ) {
+			include_once WC_ABSPATH . 'includes/class-wc-shipping-zones.php';
+		}
+		$zone = WC_Shipping_Zones::get_zone( $id );
+		if ( ! $zone ) {
+			return new WP_Error( 'zone_not_found', __( 'Zone not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
+		}
+		$zone->delete_shipping_method( $instance_id );
 		return self::shipping_zones_get();
 	}
 

@@ -42,6 +42,10 @@ type OrdersListStats = {
   pending: number
   on_hold?: number
   currency?: string
+  period?: string
+  period_label?: string
+  after?: string
+  before?: string
 }
 
 const EMPTY_ITEMS: OrderListRow[] = []
@@ -281,7 +285,19 @@ export default function OrdersListPage() {
         </div>
       ) : null}
       {canManageOrders && !isPortal && statItems.length ? (
-        <div className="mb-4">
+        <div className="mb-4 space-y-2">
+          {stats?.period === 'month' && stats.period_label ? (
+            <p className="text-muted-foreground text-xs font-medium tracking-wide">
+              {t('orders.stats.periodMonth', { label: stats.period_label })}
+            </p>
+          ) : stats?.after || stats?.before || filters.after || filters.before ? (
+            <p className="text-muted-foreground text-xs font-medium tracking-wide">
+              {t('orders.stats.periodCustom', {
+                after: filters.after || stats?.after || '…',
+                before: filters.before || stats?.before || '…',
+              })}
+            </p>
+          ) : null}
           <ListStatsStrip
             items={statItems}
             locale={locale}

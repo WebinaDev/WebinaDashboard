@@ -94,6 +94,7 @@ class Webino_Shipping_Order_Statuses {
 		$map['webino-courier']       = 'courier';
 		$map['webino-post']          = 'post';
 		$map['webino-tipax']         = 'tipax';
+		$map['webino-chapar']        = 'chapar';
 		$map['webino-ready-to-ship'] = 'post';
 		$map['webino-shipping']      = 'post';
 		$map['webino-returned']      = 'refunded';

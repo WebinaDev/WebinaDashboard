@@ -407,6 +407,60 @@ class Webino_Dashboard_Locale {
 	}
 
 	/**
+	 * Unix timestamp for end of current calendar month (23:59:59 site TZ).
+	 *
+	 * @param string $locale Dashboard or WP locale.
+	 * @return int
+	 */
+	public static function calendar_month_end_ts( $locale = '' ) {
+		$tz  = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+		$now = new DateTimeImmutable( 'now', $tz );
+
+		if ( self::is_jalali_locale( $locale ) ) {
+			$gy = (int) $now->format( 'Y' );
+			$gm = (int) $now->format( 'n' );
+			$gd = (int) $now->format( 'j' );
+			list( $jy, $jm ) = self::gregorian_to_jalali( $gy, $gm, $gd );
+			$njm = (int) $jm + 1;
+			$njy = (int) $jy;
+			if ( $njm > 12 ) {
+				$njm = 1;
+				++$njy;
+			}
+			list( $gy2, $gm2, $gd2 ) = self::jalali_to_gregorian( $njy, $njm, 1 );
+			$next = new DateTimeImmutable(
+				sprintf( '%04d-%02d-%02d 00:00:00', $gy2, $gm2, $gd2 ),
+				$tz
+			);
+			return $next->modify( '-1 second' )->getTimestamp();
+		}
+
+		$last = $now->modify( 'last day of this month' )->setTime( 23, 59, 59 );
+		return $last->getTimestamp();
+	}
+
+	/**
+	 * Current calendar month range for sales KPIs.
+	 * from = month start; to = min(now, month end).
+	 *
+	 * @param string $locale Dashboard or WP locale.
+	 * @return array{from:int,to:int}
+	 */
+	public static function calendar_month_range_ts( $locale = '' ) {
+		$from = self::calendar_month_start_ts( $locale );
+		$end  = self::calendar_month_end_ts( $locale );
+		$now  = time();
+		$to   = $now < $end ? $now : $end;
+		if ( $to < $from ) {
+			$to = $from;
+		}
+		return array(
+			'from' => (int) $from,
+			'to'   => (int) $to,
+		);
+	}
+
+	/**
 	 * Human month label for dashboard (Jalali month name or Gregorian month name).
 	 *
 	 * @param string $locale Locale.

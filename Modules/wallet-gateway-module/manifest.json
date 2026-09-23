@@ -1,7 +1,7 @@
 {
   "slug": "wallet-gateway-module",
   "name": "Store Wallet",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "is_builtin": true,
   "is_first_party": true,
   "parent_slug": "payment-module",

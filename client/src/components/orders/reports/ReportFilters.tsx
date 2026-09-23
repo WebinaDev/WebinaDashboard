@@ -72,10 +72,10 @@ export function ReportFilters({
 }: ReportFiltersProps) {
   const { t } = useTranslation()
   const activeCount =
-    (preset !== 'last30' ? 1 : 0) +
+    (preset !== 'thisMonth' ? 1 : 0) +
     (compare ? 1 : 0) +
     (interval !== 'day' ? 1 : 0) +
-    (statuses.length !== 2 || !statuses.includes('completed') || !statuses.includes('processing') ? 1 : 0)
+    (statuses.length > 0 ? 1 : 0)
 
   return (
     <ListFiltersCollapsible activeCount={activeCount}>
@@ -134,6 +134,7 @@ export function ReportFilters({
 
         <div className="space-y-2">
           <Label>{t('reports.statusFilter')}</Label>
+          <p className="text-muted-foreground text-xs">{t('reports.statusFilterHint')}</p>
           <div className="flex flex-wrap gap-3">
             {STATUS_OPTIONS.map((slug) => (
               <label key={slug} className="flex cursor-pointer items-center gap-2 text-sm">

@@ -447,20 +447,18 @@ class WNC_Torob_Order_Tracking
             ? 'cancelled'
             : 'completed';
 
-        $woocommerce_currency = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : null;
         $order_value = 0;
         $products = [];
         foreach ($order->get_items() as $item) {
             $item_total = (float) $item->get_total();
-            $order_value += $this->normalize_price_for_torob($item_total, $woocommerce_currency);
+            $order_value += $this->normalize_price_for_torob($item_total);
             $product = $item->get_product();
             if ($product) {
                 $product_url = $this->normalize_product_url(get_permalink($product->get_id()));
                 $products[] = [
                     'product_url' => $product_url,
                     'product_price' => $this->normalize_price_for_torob(
-                        $item_total / max(1, $item->get_quantity()),
-                        $woocommerce_currency
+                        $item_total / max(1, $item->get_quantity())
                     ),
                     'quantity' => $item->get_quantity()
                 ];
@@ -484,8 +482,7 @@ class WNC_Torob_Order_Tracking
             'psp' => $this->get_order_psp($order),
             'order_value' => $order_value,
             'shipping_amount' => $this->normalize_price_for_torob(
-                (float) $order->get_shipping_total(),
-                $woocommerce_currency
+                (float) $order->get_shipping_total()
             ),
             'status' => $status,
             'last_updated_timestamp' => $date_for_last
@@ -497,14 +494,10 @@ class WNC_Torob_Order_Tracking
     }
 
     /**
-     * Normalize WooCommerce price values to the Toman amounts expected by Torob.
+     * Round shop display price (toman) to int for Torob.
      */
-    private function normalize_price_for_torob(float $amount, ?string $woocommerce_currency): int
+    private function normalize_price_for_torob(float $amount): int
     {
-        if ($woocommerce_currency === 'IRR') {
-            $amount /= 10;
-        }
-
         return (int) round($amount);
     }
 

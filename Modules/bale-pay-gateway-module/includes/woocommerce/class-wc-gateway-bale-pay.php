@@ -70,8 +70,14 @@ class WC_Gateway_Bale_Pay extends WC_Payment_Gateway {
 		if ( ! $order ) {
 			return array( 'result' => 'failure' );
 		}
+		$s = Webino_Bale_Pay_Config::get();
 		$order->update_status( 'on-hold', __( 'در انتظار پرداخت فاکتور بله', 'webino-dashboard' ) );
-		Webino_Bale_Pay_Service::send_invoice_for_order( $order );
+		$send = Webino_Bale_Pay_Service::send_invoice_for_order( $order );
+		if ( is_array( $send ) && empty( $send['ok'] ) && empty( $send['sent'] ) ) {
+			$fault = isset( $send['error'] ) ? (string) $send['error'] : 'send_failed';
+			$tpl   = (string) ( $s['failed_message'] ?? Webino_Bale_Pay_Config::defaults()['failed_message'] );
+			wc_add_notice( str_replace( '{fault}', $fault, $tpl ), 'error' );
+		}
 		if ( function_exists( 'WC' ) && WC()->cart ) {
 			WC()->cart->empty_cart();
 		}
@@ -94,14 +100,16 @@ class WC_Gateway_Bale_Pay extends WC_Payment_Gateway {
 		$sent = '1' === (string) $order->get_meta( Webino_Bale_Pay_Service::META_SENT );
 		echo '<div class="webino-bale-pay-thankyou">';
 		if ( $sent ) {
-			echo '<p>' . esc_html__( 'فاکتور پرداخت در بله برایتان ارسال شد. همان پیام را باز کنید و پرداخت کنید.', 'webino-dashboard' ) . '</p>';
+			$msg = (string) ( $s['success_message'] ?? Webino_Bale_Pay_Config::defaults()['success_message'] );
+			echo '<p>' . esc_html( $msg ) . '</p>';
 		} else {
 			echo '<p>' . esc_html( (string) $s['instructions'] ) . '</p>';
 			$url = Webino_Bale_Pay_Service::start_url( (int) $order_id );
 			if ( $url ) {
 				echo '<p><a class="button" href="' . esc_url( $url ) . '">' . esc_html__( 'باز کردن بازوی بله و دریافت فاکتور', 'webino-dashboard' ) . '</a></p>';
 			} else {
-				echo '<p>' . esc_html__( 'بازوی بله را استارت کنید تا فاکتور برایتان ارسال شود. اگر ربات را از قبل دارید، یک‌بار /start را بزنید.', 'webino-dashboard' ) . '</p>';
+				$fault_tpl = (string) ( $s['failed_message'] ?? Webino_Bale_Pay_Config::defaults()['failed_message'] );
+				echo '<p>' . esc_html( str_replace( '{fault}', __( 'بازوی بله را استارت کنید تا فاکتور برایتان ارسال شود.', 'webino-dashboard' ), $fault_tpl ) ) . '</p>';
 			}
 		}
 		echo '</div>';

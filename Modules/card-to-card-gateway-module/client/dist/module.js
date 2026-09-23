@@ -2679,7 +2679,7 @@ function En({ className: e, type: t, ...n }) {
 }
 //#endregion
 //#region src/components/ui/label.tsx
-function $({ className: e, ...t }) {
+function Dn({ className: e, ...t }) {
 	return /* @__PURE__ */ a(M, {
 		"data-slot": "label",
 		className: Y("flex items-center gap-2 text-start text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", e),
@@ -2688,7 +2688,7 @@ function $({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/switch.tsx
-function Dn({ className: e, size: t = "default", ...n }) {
+function On({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ a(Ce, {
 		"data-slot": "switch",
 		"data-size": t,
@@ -2703,7 +2703,7 @@ function Dn({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region src/components/ui/textarea.tsx
-function On({ className: e, ...t }) {
+function kn({ className: e, ...t }) {
 	return /* @__PURE__ */ a("textarea", {
 		"data-slot": "textarea",
 		className: Y("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
@@ -2712,7 +2712,7 @@ function On({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/payments/GatewaySettingsLayout.tsx
-function kn({ title: e, description: t, notice: n, meta: s, sections: c, actions: l, children: u }) {
+function An({ title: e, description: t, notice: n, meta: s, sections: c, actions: l, children: u }) {
 	let { t: d } = r(), f = async (e) => {
 		try {
 			await navigator.clipboard.writeText(e), i.success(d("common.copied", { defaultValue: "Copied" }));
@@ -2783,11 +2783,11 @@ function kn({ title: e, description: t, notice: n, meta: s, sections: c, actions
 		})
 	});
 }
-function An({ label: e, value: t, onChange: n, type: r = "text", placeholder: i, hint: s, className: c }) {
+function $({ label: e, value: t, onChange: n, type: r = "text", placeholder: i, hint: s, className: c }) {
 	return /* @__PURE__ */ o("div", {
 		className: Y("space-y-2", c),
 		children: [
-			/* @__PURE__ */ a($, { children: e }),
+			/* @__PURE__ */ a(Dn, { children: e }),
 			/* @__PURE__ */ a(En, {
 				type: r,
 				value: t,
@@ -2805,8 +2805,8 @@ function jn({ label: e, value: t, onChange: n, hint: r, className: i }) {
 	return /* @__PURE__ */ o("div", {
 		className: Y("space-y-2", i),
 		children: [
-			/* @__PURE__ */ a($, { children: e }),
-			/* @__PURE__ */ a(On, {
+			/* @__PURE__ */ a(Dn, { children: e }),
+			/* @__PURE__ */ a(kn, {
 				value: t,
 				onChange: (e) => n(e.target.value),
 				rows: 3
@@ -2830,7 +2830,7 @@ function Mn({ label: e, description: t, checked: n, onChange: r }) {
 				className: "text-muted-foreground text-xs leading-relaxed",
 				children: t
 			}) : null]
-		}), /* @__PURE__ */ a(Dn, {
+		}), /* @__PURE__ */ a(On, {
 			checked: n,
 			onCheckedChange: (e) => r(!!e),
 			className: "mt-0.5 shrink-0"
@@ -2890,7 +2890,7 @@ function Fn() {
 			cards: n
 		});
 	};
-	return l ? /* @__PURE__ */ a(kn, {
+	return l ? /* @__PURE__ */ a(An, {
 		title: s("c2c.title"),
 		description: s("c2c.subtitle"),
 		sections: [{
@@ -2907,7 +2907,7 @@ function Fn() {
 						enabled: e
 					})
 				}), /* @__PURE__ */ o(Nn, { children: [
-					/* @__PURE__ */ a(An, {
+					/* @__PURE__ */ a($, {
 						label: s("c2c.checkoutTitle"),
 						value: l.title,
 						onChange: (e) => u({
@@ -2915,7 +2915,15 @@ function Fn() {
 							title: e
 						})
 					}),
-					/* @__PURE__ */ a(An, {
+					/* @__PURE__ */ a($, {
+						label: s("gateway.field.orderButtonText"),
+						value: l.order_button_text ?? "",
+						onChange: (e) => u({
+							...l,
+							order_button_text: e
+						})
+					}),
+					/* @__PURE__ */ a($, {
 						label: s("c2c.deadline"),
 						type: "number",
 						value: String(l.deadline_h),
@@ -2927,6 +2935,15 @@ function Fn() {
 					}),
 					/* @__PURE__ */ a(jn, {
 						className: "md:col-span-2",
+						label: s("gateway.field.description"),
+						value: l.description ?? "",
+						onChange: (e) => u({
+							...l,
+							description: e
+						})
+					}),
+					/* @__PURE__ */ a(jn, {
+						className: "md:col-span-2",
 						label: s("c2c.instructions"),
 						value: l.instructions,
 						onChange: (e) => u({
@@ -2934,7 +2951,32 @@ function Fn() {
 							instructions: e
 						})
 					}),
-					/* @__PURE__ */ a(An, {
+					/* @__PURE__ */ o("div", {
+						className: "space-y-2 md:col-span-2",
+						children: [/* @__PURE__ */ a("label", {
+							className: "text-sm font-medium",
+							children: s("gateway.field.iconUrl")
+						}), /* @__PURE__ */ o("div", {
+							className: "flex items-start gap-3",
+							children: [/* @__PURE__ */ a("img", {
+								src: l.icon_url?.trim() || l.resolved_icon_url || l.default_icon_url || "",
+								alt: "",
+								className: "h-10 w-10 shrink-0 rounded border object-contain"
+							}), /* @__PURE__ */ a("div", {
+								className: "min-w-0 flex-1",
+								children: /* @__PURE__ */ a($, {
+									label: "",
+									value: l.icon_url ?? "",
+									onChange: (e) => u({
+										...l,
+										icon_url: e
+									}),
+									hint: s("gateway.field.iconUrlHint")
+								})
+							})]
+						})]
+					}),
+					/* @__PURE__ */ a($, {
 						className: "md:col-span-2",
 						label: s("c2c.iban"),
 						value: l.iban,
@@ -2956,7 +2998,7 @@ function Fn() {
 					children: [
 						/* @__PURE__ */ o("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ a($, {
+							children: [/* @__PURE__ */ a(Dn, {
 								className: "text-xs",
 								children: s("c2c.cardNumber")
 							}), /* @__PURE__ */ a(En, {
@@ -2967,7 +3009,7 @@ function Fn() {
 						}),
 						/* @__PURE__ */ o("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ a($, {
+							children: [/* @__PURE__ */ a(Dn, {
 								className: "text-xs",
 								children: s("c2c.cardName")
 							}), /* @__PURE__ */ a(En, {
@@ -2977,7 +3019,7 @@ function Fn() {
 						}),
 						/* @__PURE__ */ o("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ a($, {
+							children: [/* @__PURE__ */ a(Dn, {
 								className: "text-xs",
 								children: s("c2c.cardBank")
 							}), /* @__PURE__ */ a(En, {

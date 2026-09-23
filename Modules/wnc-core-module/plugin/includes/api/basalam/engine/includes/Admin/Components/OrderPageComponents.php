@@ -47,7 +47,7 @@ class OrderPageComponents
                         <div class="basalam-dropdown-label-row">
                             <?php echo CommonComponents::renderLabelWithTooltip('تعداد روزها (۱ تا ۳۰)', 'سفارشات باسلام که در ووکامرس ثبت نشده باشند در روزهای مشخص شده به ووکامرس اضافه خواهند شد.'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML is escaped inside the component method. ?>
                         </div>
-                        <input type="number" class="basalam-dropdown-input basalam-input" id="basalam-orders-fetch-days" min="1" max="30" value="7">
+                        <input type="number" class="basalam-dropdown-input basalam-input" id="basalam-orders-fetch-days" min="1" max="365" value="90">
                         <button type="button" class="basalam-primary-button basalam-p basalam-dropdown-submit" data-nonce="<?php echo esc_attr($nonce); ?>">
                             بررسی سفارشات
                         </button>
@@ -118,7 +118,7 @@ class OrderPageComponents
                         <div class="basalam-dropdown-label-row">
                             <?php echo CommonComponents::renderLabelWithTooltip('تعداد روزها (۱ تا ۳۰)', 'سفارشات باسلام که در ووکامرس ثبت نشده باشند در روزهای مشخص شده به ووکامرس اضافه خواهند شد.'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML is escaped inside the component method. ?>
                         </div>
-                        <input type="number" class="basalam-dropdown-input basalam-input" id="basalam-orders-fetch-days" min="1" max="30" value="7" required>
+                        <input type="number" class="basalam-dropdown-input basalam-input" id="basalam-orders-fetch-days" min="1" max="365" value="90" required>
                         <button type="button" class="basalam-primary-button basalam-p basalam-dropdown-submit" data-nonce="<?php echo esc_attr($nonce); ?>">
                             بررسی سفارشات
                         </button>

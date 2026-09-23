@@ -46,26 +46,39 @@ class Webino_Dashboard_Orders {
 	}
 
 	/**
-	 * Detect shipping carrier from order status, method title, or provider meta.
+	 * Canonical tracking / SMS shipping kinds.
+	 *
+	 * @return string[]
+	 */
+	public static function tracking_provider_kinds() {
+		return array( 'post', 'courier', 'tipax', 'chapar', 'other' );
+	}
+
+	/**
+	 * Detect shipping carrier from stored provider, status, method title, or meta.
 	 *
 	 * @param WC_Order $o Order.
-	 * @return string courier|post|tipax|other
+	 * @return string courier|post|tipax|chapar|other
 	 */
 	public static function get_shipping_kind( $o ) {
-		if ( class_exists( 'Webino_Dashboard_Sms_Order_Map', false ) ) {
-			$from_status = Webino_Dashboard_Sms_Order_Map::event_for_status( $o->get_status() );
-			if ( in_array( $from_status, array( 'courier', 'post', 'tipax' ), true ) ) {
-				return $from_status;
-			}
-		}
-		$parts   = array();
-		$parts[] = strtolower( self::get_shipping_method_title( $o ) );
-		$parts[] = strtolower(
+		$stored = sanitize_key(
 			self::get_meta_first(
 				$o,
 				array( '_tracking_provider', 'tracking_provider' )
 			)
 		);
+		if ( in_array( $stored, self::tracking_provider_kinds(), true ) ) {
+			return $stored;
+		}
+		if ( class_exists( 'Webino_Dashboard_Sms_Order_Map', false ) ) {
+			$from_status = Webino_Dashboard_Sms_Order_Map::event_for_status( $o->get_status() );
+			if ( in_array( $from_status, self::tracking_provider_kinds(), true ) ) {
+				return $from_status;
+			}
+		}
+		$parts   = array();
+		$parts[] = strtolower( self::get_shipping_method_title( $o ) );
+		$parts[] = strtolower( $stored );
 		foreach ( $o->get_shipping_methods() as $method ) {
 			$parts[] = strtolower( (string) $method->get_method_id() );
 			$parts[] = strtolower( (string) $method->get_name() );
@@ -73,6 +86,9 @@ class Webino_Dashboard_Orders {
 		$haystack = implode( ' ', $parts );
 		if ( preg_match( '/tipax|تیپاکس/u', $haystack ) ) {
 			return 'tipax';
+		}
+		if ( preg_match( '/chapar|چاپار/u', $haystack ) ) {
+			return 'chapar';
 		}
 		if ( preg_match( '/courier|peyk|pik|پیک/u', $haystack ) ) {
 			return 'courier';
@@ -86,13 +102,14 @@ class Webino_Dashboard_Orders {
 	/**
 	 * URL template for a shipping kind (shop SMS settings override defaults).
 	 *
-	 * @param string $kind courier|post|tipax|other.
+	 * @param string $kind courier|post|tipax|chapar|other.
 	 * @return string
 	 */
 	public static function get_tracking_url_template( $kind ) {
 		$defaults = array(
 			'post'    => 'https://tracking.post.ir/?id={code}',
 			'tipax'   => 'https://tipaxco.com/tracking?code={code}',
+			'chapar'  => 'https://chapar.ir/tracking?code={code}',
 			'courier' => '',
 			'other'   => '',
 		);
@@ -127,6 +144,114 @@ class Webino_Dashboard_Orders {
 	}
 
 	/**
+	 * Tracking providers for order UI (fixed kinds + CRM pattern bind info).
+	 *
+	 * @return array<int,array{id:string,title:string,sms_event:string,pattern_bound:bool,pattern_name:string}>
+	 */
+	public static function get_tracking_providers() {
+		$titles = array(
+			'post'    => 'پست',
+			'courier' => 'پیک',
+			'tipax'   => 'تیپاکس',
+			'chapar'  => 'چاپار',
+			'other'   => 'سایر',
+		);
+
+		$bound = self::get_customer_pattern_binds_for_kinds( array_keys( $titles ) );
+		$out   = array();
+		foreach ( $titles as $id => $title ) {
+			$code  = isset( $bound[ $id ] ) ? (string) $bound[ $id ] : '';
+			$out[] = array(
+				'id'            => $id,
+				'title'         => $title,
+				'sms_event'     => $id,
+				'pattern_bound' => '' !== $code,
+				'pattern_name'  => $code,
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Map event_key → bound IPPanel code for order_customer scope.
+	 *
+	 * @param string[] $kinds Event keys.
+	 * @return array<string,string>
+	 */
+	private static function get_customer_pattern_binds_for_kinds( array $kinds ) {
+		$kinds  = array_values( array_filter( array_map( 'sanitize_key', $kinds ) ) );
+		$result = array_fill_keys( $kinds, '' );
+		if ( empty( $kinds ) ) {
+			return $result;
+		}
+
+		$registry = self::fetch_sms_pattern_registry_rows();
+		foreach ( $registry as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			if ( 'order_customer' !== sanitize_key( (string) ( $row['scope'] ?? '' ) ) ) {
+				continue;
+			}
+			$event = sanitize_key( (string) ( $row['event_key'] ?? '' ) );
+			if ( ! isset( $result[ $event ] ) ) {
+				continue;
+			}
+			$code = trim( (string) ( $row['ippanel_code'] ?? '' ) );
+			if ( '' !== $code ) {
+				$result[ $event ] = $code;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function fetch_sms_pattern_registry_rows() {
+		if ( class_exists( 'Webino_Dashboard_REST_Site_Settings', false ) ) {
+			$domain = '';
+			if ( class_exists( 'Webino_Dashboard_License', false ) ) {
+				$domain = (string) Webino_Dashboard_License::instance()->get_current_domain();
+			}
+			$cache_key = 'webino_sms_shop_settings_' . md5( $domain );
+			$cached    = get_transient( $cache_key );
+			if ( is_array( $cached ) && isset( $cached['registry'] ) && is_array( $cached['registry'] ) ) {
+				return $cached['registry'];
+			}
+		}
+
+		$cache_key = 'webino_tracking_providers_registry';
+		$cached    = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$rows = array();
+		if ( class_exists( 'Webino_Dashboard_License', false ) ) {
+			$license = Webino_Dashboard_License::instance();
+			if ( $license->is_license_active( false ) ) {
+				$res = $license->crm_get(
+					'wp-json/webinocrm/v1/modirpayamak/patterns/registry',
+					array(),
+					array(
+						'timeout'  => 3,
+						'wall_cap' => 5,
+					)
+				);
+				if ( ! empty( $res['ok'] ) && is_array( $res['data'] ?? null ) ) {
+					$reg = $res['data']['registry'] ?? array();
+					if ( is_array( $reg ) ) {
+						$rows = $reg;
+					}
+				}
+			}
+		}
+		set_transient( $cache_key, $rows, 120 );
+		return $rows;
+	}
+
+	/**
 	 * Build tracking URL from code and shipping kind.
 	 *
 	 * @param WC_Order $o    Order.
@@ -141,7 +266,7 @@ class Webino_Dashboard_Orders {
 		$kind     = self::get_shipping_kind( $o );
 		$template = self::get_tracking_url_template( $kind );
 		if ( '' === $template ) {
-			if ( in_array( $kind, array( 'courier', 'other' ), true ) ) {
+			if ( in_array( $kind, array( 'courier', 'other', 'chapar' ), true ) ) {
 				return (string) $o->get_view_order_url();
 			}
 			$template = self::get_tracking_url_template( 'post' );
@@ -433,9 +558,11 @@ class Webino_Dashboard_Orders {
 				'avg_order_value'   => 0.0,
 			);
 		}
-		$paid_statuses = function_exists( 'wc_get_is_paid_statuses' )
-			? wc_get_is_paid_statuses()
-			: array( 'completed', 'processing' );
+		$paid_statuses = class_exists( 'Webino_Dashboard_Order_Reports', false )
+			? Webino_Dashboard_Order_Reports::default_statuses()
+			: ( function_exists( 'wc_get_is_paid_statuses' )
+				? wc_get_is_paid_statuses()
+				: array( 'completed', 'processing', 'on-hold', 'pending' ) );
 		$order_limit = 500;
 		$orders      = wc_get_orders(
 			array(
@@ -874,6 +1001,7 @@ class Webino_Dashboard_Orders {
 			'shipping_method'          => self::get_shipping_method_title( $o ),
 			'shipping_items'           => $shipping_items,
 			'shipping_method_options'  => self::get_shipping_method_options(),
+			'tracking_providers'       => self::get_tracking_providers(),
 			'packaging_plan'           => ( static function ( $raw ) {
 				if ( is_array( $raw ) ) {
 					return $raw;
@@ -1162,7 +1290,8 @@ class Webino_Dashboard_Orders {
 	}
 
 	/**
-	 * List-page KPI stats for current date window (defaults last 30 days).
+	 * List-page KPI stats for current date window (defaults to calendar month).
+	 * Uses the same unix range + build_report engine as the home sales KPIs.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return array<string,mixed>
@@ -1170,84 +1299,125 @@ class Webino_Dashboard_Orders {
 	public static function get_list_stats( $request ) {
 		$after  = sanitize_text_field( (string) $request->get_param( 'after' ) );
 		$before = sanitize_text_field( (string) $request->get_param( 'before' ) );
-		if ( '' === $after && '' === $before ) {
-			$after  = gmdate( 'Y-m-d', strtotime( '-29 days' ) );
-			$before = gmdate( 'Y-m-d' );
-		}
-		$date = self::build_date_query( $after, $before );
-		$base = array(
-			'limit'        => -1,
-			'return'       => 'ids',
-			'type'         => 'shop_order',
-			'date_created' => $date,
-		);
-		if ( class_exists( 'Webino_Dashboard_Rest_Base', false ) && Webino_Dashboard_Rest_Base::is_partner_portal_only() ) {
-			$base['customer_id'] = get_current_user_id();
-		}
-		$status = sanitize_key( (string) $request->get_param( 'status' ) );
-		$paid   = class_exists( 'Webino_Dashboard_Order_Reports' )
-			? Webino_Dashboard_Order_Reports::default_statuses()
-			: array( 'completed', 'processing' );
-		if ( '' !== $status && 'all' !== $status ) {
-			$base['status'] = $status;
+		$period = 'custom';
+		$period_label = '';
+		$locale = class_exists( 'Webino_Dashboard_I18n', false )
+			? Webino_Dashboard_I18n::get_user_locale()
+			: get_user_locale();
+		$tz = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+
+		if ( '' === $after && '' === $before && class_exists( 'Webino_Dashboard_Locale', false ) ) {
+			$range_ts     = Webino_Dashboard_Locale::calendar_month_range_ts( $locale );
+			$from_ts      = (int) $range_ts['from'];
+			$to_ts        = (int) $range_ts['to'];
+			$period       = 'month';
+			$period_label = Webino_Dashboard_Locale::calendar_month_label( $locale );
+			$from_dt      = ( new DateTimeImmutable( '@' . $from_ts ) )->setTimezone( $tz );
+			$to_dt        = ( new DateTimeImmutable( '@' . $to_ts ) )->setTimezone( $tz );
+			$after        = $from_dt->format( 'Y-m-d' );
+			$before       = $to_dt->format( 'Y-m-d' );
 		} else {
-			// Revenue KPIs exclude unpaid (pending payment / on-hold).
-			$base['status'] = $paid;
+			$from_ts = $after
+				? ( new DateTimeImmutable( $after . ' 00:00:00', $tz ) )->getTimestamp()
+				: ( time() - 30 * DAY_IN_SECONDS );
+			$to_ts   = $before
+				? ( new DateTimeImmutable( $before . ' 23:59:59', $tz ) )->getTimestamp()
+				: time();
+			if ( $to_ts < $from_ts ) {
+				$to_ts = $from_ts;
+			}
 		}
 
-		$ids = wc_get_orders( $base );
-		if ( ! is_array( $ids ) ) {
-			$ids = array();
-		}
-		$count      = count( $ids );
+		$status = sanitize_key( (string) $request->get_param( 'status' ) );
+		$sales  = class_exists( 'Webino_Dashboard_Order_Reports' )
+			? Webino_Dashboard_Order_Reports::default_statuses()
+			: array( 'completed', 'processing', 'on-hold', 'pending' );
+		$statuses = ( '' !== $status && 'all' !== $status ) ? array( $status ) : $sales;
+
 		$revenue    = 0.0;
+		$count      = 0;
 		$processing = 0;
 		$completed  = 0;
 		$pending    = 0;
 		$on_hold    = 0;
-		// Cap detailed walk for performance.
-		$walk = array_slice( $ids, 0, 2000 );
-		foreach ( $walk as $oid ) {
-			$o = wc_get_order( $oid );
-			if ( ! $o ) {
-				continue;
-			}
-			$revenue += (float) $o->get_total();
-			$st       = $o->get_status();
-			if ( 'processing' === $st ) {
-				++$processing;
-			} elseif ( 'completed' === $st ) {
-				++$completed;
-			} elseif ( 'pending' === $st ) {
-				++$pending;
-			} elseif ( 'on-hold' === $st ) {
-				++$on_hold;
-			}
+
+		$partner_only = class_exists( 'Webino_Dashboard_Rest_Base', false )
+			&& Webino_Dashboard_Rest_Base::is_partner_portal_only();
+
+		if ( ! $partner_only && class_exists( 'Webino_Dashboard_Order_Reports', false ) ) {
+			$report  = Webino_Dashboard_Order_Reports::build_report( $from_ts, $to_ts, 'day', $statuses );
+			$summary = is_array( $report['summary'] ?? null ) ? $report['summary'] : array();
+			$revenue = (float) ( $summary['revenue'] ?? 0 );
+			$count   = (int) ( $summary['order_count'] ?? 0 );
 		}
-		if ( $count > count( $walk ) && class_exists( 'Webino_Dashboard_Order_Aggregates' ) ) {
-			$agg = Webino_Dashboard_Order_Aggregates::sum_orders_in_range(
-				array(
-					'status'       => ! empty( $base['status'] ) ? $base['status'] : $paid,
-					'date_created' => $date,
-				),
-				false,
-				true
-			);
-			if ( is_array( $agg ) ) {
-				$revenue = (float) ( $agg['revenue'] ?? $revenue );
-				$count   = (int) ( $agg['order_count'] ?? $count );
+
+		// Status breakdown (and partner-scoped revenue when needed).
+		$q_args = array(
+			'limit'        => $partner_only ? -1 : 2000,
+			'return'       => 'ids',
+			'type'         => 'shop_order',
+			'status'       => $statuses,
+			'date_created' => (int) $from_ts . '...' . (int) $to_ts,
+		);
+		if ( $partner_only ) {
+			$q_args['customer_id'] = get_current_user_id();
+		}
+		$ids = wc_get_orders( $q_args );
+		if ( ! is_array( $ids ) ) {
+			$ids = array();
+		}
+		if ( $partner_only ) {
+			$count = count( $ids );
+			$walk  = array_slice( $ids, 0, 2000 );
+			foreach ( $walk as $oid ) {
+				$o = wc_get_order( $oid );
+				if ( ! $o ) {
+					continue;
+				}
+				$revenue += (float) $o->get_total();
+				$st       = $o->get_status();
+				if ( 'processing' === $st ) {
+					++$processing;
+				} elseif ( 'completed' === $st ) {
+					++$completed;
+				} elseif ( 'pending' === $st ) {
+					++$pending;
+				} elseif ( 'on-hold' === $st ) {
+					++$on_hold;
+				}
+			}
+		} else {
+			foreach ( $ids as $oid ) {
+				$o = wc_get_order( $oid );
+				if ( ! $o ) {
+					continue;
+				}
+				$st = $o->get_status();
+				if ( 'processing' === $st ) {
+					++$processing;
+				} elseif ( 'completed' === $st ) {
+					++$completed;
+				} elseif ( 'pending' === $st ) {
+					++$pending;
+				} elseif ( 'on-hold' === $st ) {
+					++$on_hold;
+				}
 			}
 		}
 
 		return array(
-			'order_count'  => $count,
-			'revenue'      => $revenue,
+			'order_count'     => $count,
+			'revenue'         => $revenue,
 			'avg_order_value' => $count > 0 ? $revenue / $count : 0.0,
-			'processing'   => $processing,
-			'completed'    => $completed,
-			'pending'      => $pending,
-			'on_hold'      => $on_hold,
-			'currency'     => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '',
+			'processing'      => $processing,
+			'completed'       => $completed,
+			'pending'         => $pending,
+			'on_hold'         => $on_hold,
+			'currency'        => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '',
+			'period'          => $period,
+			'period_label'    => $period_label,
+			'after'           => $after,
+			'before'          => $before,
 		);
 	}
 

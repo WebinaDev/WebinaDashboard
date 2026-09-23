@@ -15,7 +15,7 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  // Fetch orders with default 7 days
+  // Fetch orders with default 90 days
   $(document).on("click", ".basalam-fetch-orders-btn", function (e) {
     e.preventDefault();
     const $btn = $(this);
@@ -30,7 +30,7 @@ jQuery(document).ready(function ($) {
       data: {
         action: "add_unsync_orders_from_basalam",
         _wpnonce: nonce,
-        days: 7,
+        days: 90,
       },
       success: function (response) {
         if (response.success) {
@@ -66,8 +66,8 @@ jQuery(document).ready(function ($) {
     let days = parseInt($daysInput.val());
 
     // Validate days
-    if (isNaN(days) || days < 1 || days > 30) {
-      window.BasalamToast.warning("عدد وارد شده باید بین ۱ تا ۳۰ باشد.");
+    if (isNaN(days) || days < 1 || days > 365) {
+      window.BasalamToast.warning("عدد وارد شده باید بین ۱ تا ۳۶۵ باشد.");
       $daysInput.focus();
       return;
     }

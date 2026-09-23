@@ -85,6 +85,13 @@ type Order = {
   shipping_method?: string
   shipping_items?: { name: string; total: string; id?: string }[]
   shipping_method_options?: { id: string; title: string }[]
+  tracking_providers?: {
+    id: string
+    title: string
+    sms_event?: string
+    pattern_bound?: boolean
+    pattern_name?: string
+  }[]
   tracking_code?: string
   tracking_url?: string
   tracking_provider?: string
@@ -901,7 +908,7 @@ export default function OrderDetailPage() {
                     deliveryDate={order.delivery_date}
                     deliveryTime={order.delivery_time}
                     postBarcode={order.post_barcode}
-                    shippingOptions={order.shipping_method_options}
+                    trackingProviders={order.tracking_providers}
                     onSaved={invalidateOrder}
                   />
                   {shippingModuleActive ? (

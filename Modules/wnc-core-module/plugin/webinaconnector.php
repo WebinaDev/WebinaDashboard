@@ -3,7 +3,7 @@
  * Plugin Name: WebinaConnector
  * Plugin URI: https://webina.dev
  * Description: اتصال ووکامرس به بازارگاه‌ها و موتورهای مقایسه قیمت (دیجیکالا، باسلام، تکنولایف، اسنپ‌شاپ، تپسی‌شاپ، ذره‌بین، ایمالز، ترب)
- * Version: 1.7.4
+ * Version: 1.7.5
  * Author: توسعه و طراحی وبینا
  * Author URI: https://webina.dev
  * Text Domain: webinaconnector
@@ -20,7 +20,7 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-define( 'WNC_VERSION', '1.7.4' );
+define( 'WNC_VERSION', '1.7.5' );
 define( 'WNC_PLUGIN_NAME', 'webinaconnector' );
 define( 'WNC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WNC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

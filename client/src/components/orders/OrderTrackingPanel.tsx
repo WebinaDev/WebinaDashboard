@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
@@ -10,9 +10,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { apiFetch } from '@/lib/api'
+import { notifyOrderSms } from '@/lib/modirpayamak-api'
 import { isSafeContentUrl } from '@/lib/safeUrl'
 
-type ShippingOption = { id: string; title: string }
+export type TrackingProviderOption = {
+  id: string
+  title: string
+  sms_event?: string
+  pattern_bound?: boolean
+  pattern_name?: string
+}
 
 type OrderTrackingPanelProps = {
   orderId: number
@@ -22,11 +29,20 @@ type OrderTrackingPanelProps = {
   deliveryDate?: string
   deliveryTime?: string
   postBarcode?: string
-  shippingOptions?: ShippingOption[]
+  trackingProviders?: TrackingProviderOption[]
   onSaved: () => void
 }
 
-const OTHER = 'other'
+function providerOptionLabel(
+  o: TrackingProviderOption,
+  t: (key: string, opts?: Record<string, string>) => string
+): string {
+  const name = (o.pattern_name ?? '').trim()
+  if (name) {
+    return t('orders.trackingProviderWithPattern', { title: o.title, pattern: name })
+  }
+  return t('orders.trackingProviderPatternBound', { title: o.title })
+}
 
 export function OrderTrackingPanel({
   orderId,
@@ -36,33 +52,42 @@ export function OrderTrackingPanel({
   deliveryDate = '',
   deliveryTime = '',
   postBarcode = '',
-  shippingOptions = [],
+  trackingProviders = [],
   onSaved,
 }: OrderTrackingPanelProps) {
   const { t } = useTranslation()
   const [code, setCode] = useState(trackingCode)
-  const knownIds = new Set(shippingOptions.map((o) => o.id))
-  const initialKnown = trackingProvider && knownIds.has(trackingProvider) ? trackingProvider : ''
-  const [providerSelect, setProviderSelect] = useState(initialKnown || (trackingProvider ? OTHER : ''))
-  const [providerCustom, setProviderCustom] = useState(initialKnown ? '' : trackingProvider)
+
+  const activeProviders = useMemo(
+    () => trackingProviders.filter((p) => p.pattern_bound && p.id),
+    [trackingProviders]
+  )
+
+  const knownIds = useMemo(() => new Set(activeProviders.map((o) => o.id)), [activeProviders])
+  const initialProvider =
+    trackingProvider && knownIds.has(trackingProvider)
+      ? trackingProvider
+      : activeProviders[0]?.id ?? ''
+  const [providerSelect, setProviderSelect] = useState(initialProvider)
 
   useEffect(() => {
     setCode(trackingCode)
-    const known = trackingProvider && knownIds.has(trackingProvider) ? trackingProvider : ''
-    setProviderSelect(known || (trackingProvider ? OTHER : ''))
-    setProviderCustom(known ? '' : trackingProvider)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- options identity
-  }, [trackingCode, trackingProvider])
+    if (trackingProvider && knownIds.has(trackingProvider)) {
+      setProviderSelect(trackingProvider)
+    } else if (!providerSelect || !knownIds.has(providerSelect)) {
+      setProviderSelect(activeProviders[0]?.id ?? '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync from server props
+  }, [trackingCode, trackingProvider, activeProviders, knownIds])
 
-  const resolvedProvider =
-    providerSelect === OTHER || !providerSelect ? providerCustom.trim() : providerSelect
+  const canAct = Boolean(code.trim() && providerSelect && knownIds.has(providerSelect))
 
   const save = useMutation({
     mutationFn: () =>
       apiFetch(`orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracking_code: code, tracking_provider: resolvedProvider }),
+        body: JSON.stringify({ tracking_code: code, tracking_provider: providerSelect }),
       }),
     onSuccess: () => {
       toast.success(t('common.saved'))
@@ -70,6 +95,40 @@ export function OrderTrackingPanel({
     },
     onError: (e: Error) => toastApiError(t, e),
   })
+
+  const sendSms = useMutation({
+    mutationFn: async () => {
+      if (!canAct) {
+        throw new Error(t('orders.trackingSmsNeedCodeProvider'))
+      }
+      const selected = activeProviders.find((p) => p.id === providerSelect)
+      if (!selected?.pattern_bound) {
+        throw new Error(t('orders.trackingSmsNoPattern'))
+      }
+      await apiFetch(`orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tracking_code: code, tracking_provider: providerSelect }),
+      })
+      return notifyOrderSms({
+        order_id: orderId,
+        event_key: selected.sms_event || providerSelect,
+        force_customer: true,
+      })
+    },
+    onSuccess: (res) => {
+      if (res.skipped) {
+        toast.error(res.reason || t('orders.trackingSmsNoPattern'))
+        onSaved()
+        return
+      }
+      toast.success(t('orders.trackingSmsSent'))
+      onSaved()
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
+  const busy = save.isPending || sendSms.isPending
 
   return (
     <OrderSidebarPanel title={t('orders.panelTracking')}>
@@ -80,34 +139,22 @@ export function OrderTrackingPanel({
         </div>
         <div className="space-y-2">
           <Label>{t('orders.trackingProvider')}</Label>
-          <Select
-            value={providerSelect || undefined}
-            onValueChange={(v) => {
-              setProviderSelect(v)
-              if (v !== OTHER) setProviderCustom('')
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('orders.selectShippingMethod')} />
-            </SelectTrigger>
-            <SelectContent>
-              {shippingOptions.map((o) => (
-                <SelectItem key={o.id} value={o.id}>
-                  {o.title}
-                </SelectItem>
-              ))}
-              {!shippingOptions.some((o) => o.id === OTHER) ? (
-                <SelectItem value={OTHER}>{t('orders.trackingProviderOther')}</SelectItem>
-              ) : null}
-            </SelectContent>
-          </Select>
-          {providerSelect === OTHER || !providerSelect ? (
-            <Input
-              value={providerCustom}
-              onChange={(e) => setProviderCustom(e.target.value)}
-              placeholder={t('orders.trackingProviderOther')}
-            />
-          ) : null}
+          {activeProviders.length === 0 ? (
+            <p className="text-muted-foreground text-xs">{t('orders.trackingNoActiveProviders')}</p>
+          ) : (
+            <Select value={providerSelect || undefined} onValueChange={setProviderSelect}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('orders.selectTrackingProvider')} />
+              </SelectTrigger>
+              <SelectContent>
+                {activeProviders.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {providerOptionLabel(o, t)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         {postBarcode ? (
           <p className="text-muted-foreground break-words text-xs">
@@ -131,9 +178,25 @@ export function OrderTrackingPanel({
             {t('orders.deliverySlot')}: {[deliveryDate, deliveryTime].filter(Boolean).join(' · ')}
           </p>
         ) : null}
-        <Button type="button" size="sm" disabled={save.isPending} onClick={() => void save.mutateAsync()}>
-          {t('common.save')}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            disabled={busy || !canAct}
+            onClick={() => void save.mutateAsync()}
+          >
+            {t('common.save')}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={busy || !canAct}
+            onClick={() => void sendSms.mutateAsync()}
+          >
+            {t('orders.sendTrackingSms')}
+          </Button>
+        </div>
       </div>
     </OrderSidebarPanel>
   )

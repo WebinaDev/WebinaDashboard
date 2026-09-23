@@ -162,6 +162,18 @@ class Webino_Dashboard_REST_Shipping {
 
 		register_rest_route(
 			self::NS,
+			'/shipping/cities/seed-batch',
+			array(
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'cities_seed_batch' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shipping/cities/bulk/(?P<state_id>\d+)',
 			array(
 				array(
@@ -385,10 +397,16 @@ class Webino_Dashboard_REST_Shipping {
 	 * @return WP_REST_Response
 	 */
 	public static function cities_tree() {
+		Webino_Shipping_Cities::register_taxonomy();
+		$status = Webino_Shipping_Cities::seed_status();
 		return rest_ensure_response(
 			array(
-				'states'    => Webino_Shipping_Cities::get_states(),
-				'installed' => (bool) get_option( 'webino_shipping_cities_installed', 0 ),
+				'states'       => Webino_Shipping_Cities::get_states(),
+				'installed'    => $status['installed'],
+				'needs_seed'   => $status['needs_seed'],
+				'next_key'     => $status['next_key'],
+				'states_done'  => $status['states_done'],
+				'states_total' => $status['states_total'],
 			)
 		);
 	}
@@ -417,6 +435,18 @@ class Webino_Dashboard_REST_Shipping {
 	}
 
 	/**
+	 * Seed one province batch.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function cities_seed_batch( $request ) {
+		$body = self::body( $request );
+		$key  = isset( $body['state_key'] ) ? (string) $body['state_key'] : '';
+		return rest_ensure_response( Webino_Shipping_Cities::seed_batch( '' !== $key ? $key : null ) );
+	}
+
+	/**
 	 * List zone method instances for bulk price columns.
 	 *
 	 * @return list<array{key:string,label:string,method_id:string,instance_id:int}>
@@ -427,7 +457,7 @@ class Webino_Dashboard_REST_Shipping {
 			return $out;
 		}
 		foreach ( WC_Shipping_Zones::get_zones() as $zone ) {
-			$zone_obj = new WC_Shipping_Zone( (int) $zone['id'] );
+			$zone_obj = new WC_Shipping_Zone( (int) ( $zone['zone_id'] ?? $zone['id'] ?? 0 ) );
 			foreach ( $zone_obj->get_shipping_methods( true ) as $method ) {
 				$out[] = array(
 					'key'         => (string) $method->instance_id,
@@ -445,6 +475,7 @@ class Webino_Dashboard_REST_Shipping {
 	 * @return WP_REST_Response
 	 */
 	public static function cities_bulk_get( $request ) {
+		Webino_Shipping_Cities::register_taxonomy();
 		$state_id = (int) $request['state_id'];
 		$columns  = self::zone_method_columns();
 		$cities   = Webino_Shipping_Cities::get_cities( $state_id );
@@ -572,6 +603,7 @@ class Webino_Dashboard_REST_Shipping {
 	 * @return WP_REST_Response
 	 */
 	public static function cities_search( $request ) {
+		Webino_Shipping_Cities::register_taxonomy();
 		$q = (string) $request->get_param( 'q' );
 		$state = (int) $request->get_param( 'state' );
 		return rest_ensure_response( array( 'items' => Webino_Shipping_Cities::search( $q, $state, 40 ) ) );

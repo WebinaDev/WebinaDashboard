@@ -1,7 +1,13 @@
 import dayjs from 'dayjs'
+import 'dayjs/locale/fa'
+import jalali from 'jalaliday/dayjs'
+import i18n from 'i18next'
 import { useMemo, useState } from 'react'
 
+import { isFaLocale } from '@/lib/digits'
 import type { OrderReportFilters, ReportInterval, ReportPreset } from '@/types/orderReports'
+
+dayjs.extend(jalali)
 
 function startOfDay(d: Date) {
   return dayjs(d).startOf('day').toDate()
@@ -11,8 +17,15 @@ function endOfDay(d: Date) {
   return dayjs(d).endOf('day').toDate()
 }
 
+/** Calendar-aware now: Jalali for fa* locales, Gregorian otherwise. */
+function calendarNow() {
+  const n = dayjs()
+  return isFaLocale(i18n.language) ? n.calendar('jalali') : n
+}
+
 export function presetToRange(preset: ReportPreset): { from: Date; to: Date } {
   const now = dayjs()
+  const cal = calendarNow()
   switch (preset) {
     case 'today':
       return { from: now.startOf('day').toDate(), to: now.endOf('day').toDate() }
@@ -31,16 +44,16 @@ export function presetToRange(preset: ReportPreset): { from: Date; to: Date } {
       return { from: lw.startOf('week').toDate(), to: lw.endOf('week').toDate() }
     }
     case 'thisMonth':
-      return { from: now.startOf('month').toDate(), to: now.endOf('day').toDate() }
+      return { from: cal.startOf('month').toDate(), to: now.endOf('day').toDate() }
     case 'lastMonth': {
-      const lm = now.subtract(1, 'month')
+      const lm = cal.subtract(1, 'month')
       return { from: lm.startOf('month').toDate(), to: lm.endOf('month').toDate() }
     }
     case 'thisYear':
-      return { from: now.startOf('year').toDate(), to: now.endOf('day').toDate() }
+      return { from: cal.startOf('year').toDate(), to: now.endOf('day').toDate() }
     case 'custom':
     default:
-      return { from: now.subtract(29, 'day').startOf('day').toDate(), to: now.endOf('day').toDate() }
+      return { from: cal.startOf('month').toDate(), to: now.endOf('day').toDate() }
   }
 }
 
@@ -101,13 +114,13 @@ export async function downloadReportCsv(path: string, filename: string) {
 }
 
 export function useOrderReportsFilters() {
-  const initial = presetToRange('last30')
-  const [preset, setPreset] = useState<ReportPreset>('last30')
+  const initial = presetToRange('thisMonth')
+  const [preset, setPreset] = useState<ReportPreset>('thisMonth')
   const [from, setFrom] = useState(initial.from)
   const [to, setTo] = useState(initial.to)
   const [interval, setInterval] = useState<ReportInterval>('day')
   const [compare, setCompare] = useState(false)
-  const [statuses, setStatuses] = useState<string[]>(['completed', 'processing'])
+  const [statuses, setStatuses] = useState<string[]>([])
 
   const filters = useMemo<OrderReportFilters>(
     () => ({ preset, from, to, interval, compare, statuses }),

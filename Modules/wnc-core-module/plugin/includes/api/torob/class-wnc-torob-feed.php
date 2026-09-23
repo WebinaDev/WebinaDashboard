@@ -890,19 +890,16 @@ class WNC_Torob_Feed
     }
 
     /**
-     * @param mixed $price Raw price.
+     * Round shop display price (toman) to int for Torob.
+     *
+     * @param mixed $price Raw price in shop display unit (toman).
      */
     private function to_toman_int($price): int
     {
         if ($price === '' || $price === null) {
             return 0;
         }
-        $n = (float) $price;
-        $currency = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : '';
-        if ($currency === 'IRR') {
-            $n /= 10;
-        }
-        return (int) round($n);
+        return (int) round((float) $price);
     }
 
     /**

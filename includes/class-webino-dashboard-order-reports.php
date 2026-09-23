@@ -21,27 +21,31 @@ class Webino_Dashboard_Order_Reports {
 	const ORDER_FETCH_LIMIT = 10000;
 
 	/**
-	 * Default order statuses included in revenue reports.
+	 * Statuses excluded from sales / revenue KPIs.
 	 *
 	 * @return string[]
 	 */
-	public static function default_statuses() {
-		if ( function_exists( 'wc_get_is_paid_statuses' ) ) {
-			$paid = wc_get_is_paid_statuses();
-			if ( is_array( $paid ) && $paid ) {
-				return array_values( array_unique( array_map( array( __CLASS__, 'normalize_status_slug' ), $paid ) ) );
-			}
-		}
-		return array( 'completed', 'processing' );
+	public static function sales_exclude_statuses() {
+		return array(
+			'cancelled',
+			'refunded',
+			'failed',
+			'checkout-draft',
+			'trash',
+			'auto-draft',
+			'webino-returned',
+			'webino-deleted',
+		);
 	}
 
 	/**
-	 * Active store statuses (excludes cancelled / refunded / failed / drafts).
+	 * Sales statuses: all WC statuses except cancelled / refunded / failed / drafts / returned / deleted.
+	 * Includes custom transport statuses (packaged, courier, shipping, …).
 	 *
 	 * @return string[]
 	 */
-	public static function active_statuses() {
-		$exclude = array( 'cancelled', 'refunded', 'failed', 'checkout-draft', 'trash', 'auto-draft' );
+	public static function sales_statuses() {
+		$exclude = self::sales_exclude_statuses();
 		$out     = array();
 		if ( function_exists( 'wc_get_order_statuses' ) ) {
 			foreach ( array_keys( wc_get_order_statuses() ) as $st ) {
@@ -51,7 +55,28 @@ class Webino_Dashboard_Order_Reports {
 				}
 			}
 		}
-		return $out ? array_values( array_unique( $out ) ) : self::default_statuses();
+		if ( $out ) {
+			return array_values( array_unique( $out ) );
+		}
+		return array( 'completed', 'processing', 'on-hold', 'pending' );
+	}
+
+	/**
+	 * Default order statuses included in revenue reports (= sales_statuses).
+	 *
+	 * @return string[]
+	 */
+	public static function default_statuses() {
+		return self::sales_statuses();
+	}
+
+	/**
+	 * Active store statuses (same as sales_statuses for KPI consistency).
+	 *
+	 * @return string[]
+	 */
+	public static function active_statuses() {
+		return self::sales_statuses();
 	}
 
 	/**

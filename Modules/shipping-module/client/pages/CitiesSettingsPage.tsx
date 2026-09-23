@@ -23,6 +23,24 @@ type State = { id: number; name: string; slug: string }
 type Col = { key: string; label: string; method_id: string }
 type Row = { id: number; name: string; prices: Record<string, string | number> }
 type SearchItem = { id: number; name: string; parent: number; type: string }
+type TreeResponse = {
+  states: State[]
+  installed: boolean
+  needs_seed?: boolean
+  next_key?: string | null
+  states_done?: number
+  states_total?: number
+}
+type SeedBatchResponse = {
+  ok: boolean
+  installed: boolean
+  needs_seed?: boolean
+  next_key?: string | null
+  states_done: number
+  states_total: number
+  message: string
+  count: number
+}
 
 export default function CitiesSettingsPage() {
   const { t } = useTranslation()
@@ -32,12 +50,59 @@ export default function CitiesSettingsPage() {
   const [districtName, setDistrictName] = useState('')
   const [searchQ, setSearchQ] = useState('')
   const [draftPrices, setDraftPrices] = useState<Record<string, Record<string, string>>>({})
+  const [seedProgress, setSeedProgress] = useState<{ done: number; total: number } | null>(null)
+  const [seeding, setSeeding] = useState(false)
 
   const treeQ = useQuery({
     queryKey: ['shipping-cities-tree'],
-    queryFn: () => apiFetch<{ states: State[]; installed: boolean }>('shipping/cities/tree'),
+    queryFn: () => apiFetch<TreeResponse>('shipping/cities/tree', {}, 60_000),
   })
   useQueryErrorToast(treeQ)
+
+  const runSeedBatches = async () => {
+    if (seeding) return
+    setSeeding(true)
+    try {
+      let next: string | null | undefined = treeQ.data?.next_key ?? null
+      let guard = 0
+      while (guard < 40) {
+        ++guard
+        const res = await apiFetch<SeedBatchResponse>(
+          'shipping/cities/seed-batch',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(next ? { state_key: next } : {}),
+          },
+          60_000,
+        )
+        setSeedProgress({ done: res.states_done, total: res.states_total })
+        if (res.installed || !res.next_key) {
+          if (res.ok || res.installed) toast.success(res.message || t('shipping.citiesInstalled'))
+          else toast.error(res.message)
+          break
+        }
+        if (!res.ok) {
+          toast.error(res.message)
+          break
+        }
+        next = res.next_key
+      }
+      await qc.invalidateQueries({ queryKey: ['shipping-cities-tree'] })
+    } catch (e) {
+      toastApiError(t, e as Error)
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!treeQ.data || seeding) return
+    if (treeQ.data.needs_seed || (!treeQ.data.installed && (treeQ.data.states_total ?? 0) > 0)) {
+      void runSeedBatches()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- kick off once when tree says needs seed
+  }, [treeQ.data?.needs_seed, treeQ.data?.installed, treeQ.data?.states_total])
 
   const bulkQ = useQuery({
     queryKey: ['shipping-cities-bulk', stateId],
@@ -91,16 +156,9 @@ export default function CitiesSettingsPage() {
   }, [bulkQ.data, cityId])
 
   const reinstall = useMutation({
-    mutationFn: () =>
-      apiFetch<{ ok: boolean; message: string }>('shipping/cities/reinstall', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: false }),
-      }),
-    onSuccess: (d) => {
-      if (d.ok) toast.success(d.message)
-      else toast.error(d.message)
-      void qc.invalidateQueries({ queryKey: ['shipping-cities-tree'] })
+    mutationFn: async () => {
+      await runSeedBatches()
+      return { ok: true as const, message: t('shipping.citiesInstalled') }
     },
     onError: (e: Error) => toastApiError(t, e),
   })
@@ -166,11 +224,25 @@ export default function CitiesSettingsPage() {
   const states = treeQ.data?.states ?? []
   const columns = bulkQ.data?.columns ?? []
   const rows = bulkQ.data?.rows ?? []
+  const progressLabel =
+    seedProgress && seedProgress.total > 0
+      ? t('shipping.citiesSeedProgress', { done: seedProgress.done, total: seedProgress.total })
+      : treeQ.data?.states_total
+        ? t('shipping.citiesSeedProgress', {
+            done: treeQ.data.states_done ?? 0,
+            total: treeQ.data.states_total,
+          })
+        : null
 
   return (
     <PageShell title={t('shipping.citiesTitle')} description={t('shipping.citiesHint')}>
       <div className="mb-4 flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" disabled={reinstall.isPending} onClick={() => void reinstall.mutate()}>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={seeding || reinstall.isPending}
+          onClick={() => void runSeedBatches()}
+        >
           {t('shipping.reinstallCities')}
         </Button>
         {stateId > 0 && (
@@ -188,7 +260,11 @@ export default function CitiesSettingsPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('shipping.pickState')}</CardTitle>
           <CardDescription>
-            {treeQ.data?.installed ? t('shipping.citiesInstalled') : t('shipping.citiesNotInstalled')}
+            {seeding || treeQ.isFetching
+              ? progressLabel || t('shipping.citiesLoading')
+              : treeQ.data?.installed
+                ? t('shipping.citiesInstalled')
+                : t('shipping.citiesSeeding')}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">

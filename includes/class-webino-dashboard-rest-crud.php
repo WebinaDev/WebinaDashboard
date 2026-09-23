@@ -6717,7 +6717,13 @@ class Webino_Dashboard_REST_Crud {
 			$o->save();
 		}
 		if ( null !== $request->get_param( 'tracking_provider' ) ) {
-			$o->update_meta_data( '_tracking_provider', sanitize_text_field( (string) $request->get_param( 'tracking_provider' ) ) );
+			$provider = sanitize_key( (string) $request->get_param( 'tracking_provider' ) );
+			if ( class_exists( 'Webino_Dashboard_Orders', false )
+				&& in_array( $provider, Webino_Dashboard_Orders::tracking_provider_kinds(), true ) ) {
+				$o->update_meta_data( '_tracking_provider', $provider );
+			} else {
+				$o->update_meta_data( '_tracking_provider', sanitize_text_field( (string) $request->get_param( 'tracking_provider' ) ) );
+			}
 			$o->save();
 		}
 		return self::order_get( $request );

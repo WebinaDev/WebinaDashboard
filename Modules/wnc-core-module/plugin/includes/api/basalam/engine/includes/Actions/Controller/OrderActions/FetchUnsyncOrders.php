@@ -25,9 +25,11 @@ class FetchUnsyncOrders extends ActionController
             return;
         }
 
-        $day = isset($_POST['days']) ? intval($_POST['days']) : 7;
+        $day = isset($_POST['days']) ? intval($_POST['days']) : 90;
 
-        if ($day < 1 || $day > 30) $day = 7;
+        if ($day < 1 || $day > 365) {
+            $day = 90;
+        }
 
         $jobManager->createJob(
             'sync_basalam_fetch_orders',

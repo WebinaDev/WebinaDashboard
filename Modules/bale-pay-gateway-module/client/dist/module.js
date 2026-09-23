@@ -2794,6 +2794,14 @@ function Nn() {
 							title: e
 						})
 					}),
+					/* @__PURE__ */ f(cn, {
+						label: r("gateway.field.orderButtonText"),
+						value: a.order_button_text ?? "",
+						onChange: (e) => o({
+							...a,
+							order_button_text: e
+						})
+					}),
 					/* @__PURE__ */ f(ln, {
 						className: "md:col-span-2",
 						label: r("balePay.description"),
@@ -2811,6 +2819,49 @@ function Nn() {
 							...a,
 							instructions: e
 						})
+					}),
+					/* @__PURE__ */ f(ln, {
+						className: "md:col-span-2",
+						label: r("gateway.field.successMessage"),
+						value: a.success_message ?? "",
+						onChange: (e) => o({
+							...a,
+							success_message: e
+						})
+					}),
+					/* @__PURE__ */ f(ln, {
+						className: "md:col-span-2",
+						label: r("gateway.field.failedMessage"),
+						value: a.failed_message ?? "",
+						onChange: (e) => o({
+							...a,
+							failed_message: e
+						})
+					}),
+					/* @__PURE__ */ p("div", {
+						className: "space-y-2 md:col-span-2",
+						children: [/* @__PURE__ */ f("label", {
+							className: "text-sm font-medium",
+							children: r("gateway.field.iconUrl")
+						}), /* @__PURE__ */ p("div", {
+							className: "flex items-start gap-3",
+							children: [/* @__PURE__ */ f("img", {
+								src: a.icon_url?.trim() || a.resolved_icon_url || a.default_icon_url || "",
+								alt: "",
+								className: "h-10 w-10 shrink-0 rounded border object-contain"
+							}), /* @__PURE__ */ f("div", {
+								className: "min-w-0 flex-1",
+								children: /* @__PURE__ */ f(cn, {
+									label: "",
+									value: a.icon_url ?? "",
+									onChange: (e) => o({
+										...a,
+										icon_url: e
+									}),
+									hint: r("gateway.field.iconUrlHint")
+								})
+							})]
+						})]
 					})
 				] })]
 			})

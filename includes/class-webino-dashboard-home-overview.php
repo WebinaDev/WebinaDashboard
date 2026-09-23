@@ -508,14 +508,16 @@ class Webino_Dashboard_Home_Overview {
 	 * @return array<string,mixed>
 	 */
 	private static function sales_section( $locale ) {
-		$to_ts       = time();
-		$from_ts     = Webino_Dashboard_Locale::calendar_month_start_ts( $locale );
+		$range_ts    = Webino_Dashboard_Locale::calendar_month_range_ts( $locale );
+		$from_ts     = (int) $range_ts['from'];
+		$to_ts       = (int) $range_ts['to'];
 		$range       = 'month';
 		$month_label = Webino_Dashboard_Locale::calendar_month_label( $locale );
 		$statuses    = Webino_Dashboard_Order_Reports::default_statuses();
 		$current     = Webino_Dashboard_Order_Reports::build_report( $from_ts, $to_ts, 'day', $statuses );
 
 		if ( (int) ( $current['summary']['order_count'] ?? 0 ) === 0 ) {
+			$to_ts       = time();
 			$from_ts     = $to_ts - 30 * DAY_IN_SECONDS;
 			$range       = 'last30';
 			$month_label = __( 'Last 30 days', 'webino-dashboard' );

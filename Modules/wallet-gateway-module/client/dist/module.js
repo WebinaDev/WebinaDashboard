@@ -6122,23 +6122,84 @@ function Bl() {
 						...a,
 						enabled: e
 					})
-				}), /* @__PURE__ */ _(zl, { children: [/* @__PURE__ */ g(Ll, {
-					label: r("wallet.checkoutTitle"),
-					value: a.title,
-					onChange: (e) => o({
-						...a,
-						title: e
-					})
-				}), /* @__PURE__ */ g(Ll, {
-					label: r("wallet.minTopup"),
-					type: "number",
-					value: String(a.min_topup),
-					onChange: (e) => o({
-						...a,
-						min_topup: Number(e) || 1
+				}), /* @__PURE__ */ _(zl, { children: [
+					/* @__PURE__ */ g(Ll, {
+						label: r("wallet.checkoutTitle"),
+						value: a.title,
+						onChange: (e) => o({
+							...a,
+							title: e
+						})
 					}),
-					hint: r("wallet.minTopupHint")
-				})] })]
+					/* @__PURE__ */ g(Ll, {
+						label: r("gateway.field.orderButtonText"),
+						value: a.order_button_text ?? "",
+						onChange: (e) => o({
+							...a,
+							order_button_text: e
+						})
+					}),
+					/* @__PURE__ */ g(Ll, {
+						label: r("gateway.field.description"),
+						value: a.description ?? "",
+						onChange: (e) => o({
+							...a,
+							description: e
+						})
+					}),
+					/* @__PURE__ */ g(Ll, {
+						label: r("wallet.loginPrompt"),
+						value: a.login_prompt ?? "",
+						onChange: (e) => o({
+							...a,
+							login_prompt: e
+						})
+					}),
+					/* @__PURE__ */ g(Ll, {
+						label: r("wallet.balanceLabel"),
+						value: a.balance_label ?? "",
+						onChange: (e) => o({
+							...a,
+							balance_label: e
+						}),
+						hint: "{balance}"
+					}),
+					/* @__PURE__ */ g(Ll, {
+						label: r("wallet.minTopup"),
+						type: "number",
+						value: String(a.min_topup),
+						onChange: (e) => o({
+							...a,
+							min_topup: Number(e) || 1
+						}),
+						hint: r("wallet.minTopupHint")
+					}),
+					/* @__PURE__ */ _("div", {
+						className: "space-y-2 md:col-span-2",
+						children: [/* @__PURE__ */ g("label", {
+							className: "text-sm font-medium",
+							children: r("gateway.field.iconUrl")
+						}), /* @__PURE__ */ _("div", {
+							className: "flex items-start gap-3",
+							children: [/* @__PURE__ */ g("img", {
+								src: a.icon_url?.trim() || a.resolved_icon_url || a.default_icon_url || "",
+								alt: "",
+								className: "h-10 w-10 shrink-0 rounded border object-contain"
+							}), /* @__PURE__ */ g("div", {
+								className: "min-w-0 flex-1",
+								children: /* @__PURE__ */ g(Ll, {
+									label: "",
+									value: a.icon_url ?? "",
+									onChange: (e) => o({
+										...a,
+										icon_url: e
+									}),
+									hint: r("gateway.field.iconUrlHint")
+								})
+							})]
+						})]
+					})
+				] })]
 			})
 		}],
 		actions: /* @__PURE__ */ g(Fc, {
