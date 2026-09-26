@@ -404,25 +404,69 @@ final class Webino_Dashboard_Notify {
 		$customer_on = array_key_exists( 'customer', $ev ) ? ! empty( $ev['customer'] ) : self::default_customer_on( $event );
 		$admin_on    = array_key_exists( 'admin', $ev ) ? ! empty( $ev['admin'] ) : self::default_admin_on( $event );
 
+		$customer_href = $link ? $link : (string) ( $vars['link'] ?? '' );
+		$admin_href    = self::admin_link_for_event( $event, $vars, $customer_href );
+
 		if ( $customer_on && $customer_user_id > 0 ) {
 			$title = self::render( (string) ( $ev['title_customer'] ?? $defaults['title_customer'] ), $vars );
 			$body  = self::render( (string) ( $ev['body_customer'] ?? $defaults['body_customer'] ), $vars );
-			$href  = $link ? $link : (string) ( $vars['link'] ?? '' );
-			Webino_Dashboard_Notifications::create( $customer_user_id, $event, $title, $body, $href );
+			Webino_Dashboard_Notifications::create( $customer_user_id, $event, $title, $body, $customer_href );
 		}
 
 		if ( $admin_on ) {
 			$title = self::render( (string) ( $ev['title_admin'] ?? $defaults['title_admin'] ), $vars );
 			$body  = self::render( (string) ( $ev['body_admin'] ?? $defaults['body_admin'] ), $vars );
-			$href  = $link ? $link : (string) ( $vars['link'] ?? '' );
 			$cap   = self::admin_cap_for_event( $event );
 			foreach ( self::users_with_cap( $cap ) as $uid ) {
 				if ( $uid === $customer_user_id ) {
 					continue;
 				}
-				Webino_Dashboard_Notifications::create( $uid, $event, $title, $body, $href );
+				Webino_Dashboard_Notifications::create( $uid, $event, $title, $body, $admin_href );
 			}
 		}
+	}
+
+	/**
+	 * Admin inbox should open staff routes (orders list / product editor), not account portal.
+	 *
+	 * @param string               $event Event.
+	 * @param array<string,string> $vars  Vars.
+	 * @param string               $fallback Fallback link.
+	 * @return string
+	 */
+	private static function admin_link_for_event( $event, array $vars, $fallback ) {
+		$order_id = isset( $vars['order_id'] ) ? (int) $vars['order_id'] : 0;
+		if ( $order_id > 0 && class_exists( 'Webino_Dashboard_Rewrite', false )
+			&& ! in_array( $event, array( 'stock-low', 'stock-out', 'comment-pending', 'user-welcome', 'cart-abandoned' ), true ) ) {
+			return self::dashboard_path_url( 'orders/list/' . $order_id );
+		}
+		return (string) $fallback;
+	}
+
+	/**
+	 * Dashboard SPA URL without trailing slash on the path (React routes are slash-sensitive).
+	 *
+	 * @param string $path Path under /dashboard.
+	 * @return string
+	 */
+	private static function dashboard_path_url( $path ) {
+		if ( ! class_exists( 'Webino_Dashboard_Rewrite', false ) ) {
+			return home_url( '/dashboard/' . trim( (string) $path, '/' ) );
+		}
+		$url = Webino_Dashboard_Rewrite::url( $path );
+		$parts = wp_parse_url( $url );
+		if ( ! is_array( $parts ) || empty( $parts['path'] ) ) {
+			return untrailingslashit( $url );
+		}
+		$path_part = untrailingslashit( (string) $parts['path'] );
+		$built     = ( isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '' )
+			. ( $parts['host'] ?? '' )
+			. ( isset( $parts['port'] ) ? ':' . $parts['port'] : '' )
+			. $path_part;
+		if ( ! empty( $parts['query'] ) ) {
+			$built .= '?' . $parts['query'];
+		}
+		return $built;
 	}
 
 	/**
@@ -606,15 +650,21 @@ final class Webino_Dashboard_Notify {
 		$status = $order->get_status();
 		$label  = function_exists( 'wc_get_order_status_name' ) ? wc_get_order_status_name( $status ) : $status;
 		$link   = class_exists( 'Webino_Dashboard_Rewrite', false )
-			? Webino_Dashboard_Rewrite::url( 'account/orders/' . (int) $order->get_id() )
+			? self::dashboard_path_url( 'account/orders/' . (int) $order->get_id() )
 			: $order->get_view_order_url();
+		// Digits only for site inbox (IrtIcon); never HTML / «تومان» / entities.
+		$decimals = function_exists( 'wc_get_price_decimals' ) ? (int) wc_get_price_decimals() : 0;
+		$total    = number_format( (float) $order->get_total(), $decimals, '.', ',' );
+		if ( $decimals > 0 ) {
+			$total = rtrim( rtrim( $total, '0' ), '.' );
+		}
 		return self::normalize_vars(
 			array(
 				'order_number'  => (string) $order->get_order_number(),
 				'order_id'      => (string) $order->get_id(),
 				'order_status'  => (string) $label,
 				'customer_name' => trim( $order->get_formatted_billing_full_name() ),
-				'order_total'   => wp_strip_all_tags( $order->get_formatted_order_total() ),
+				'order_total'   => $total,
 				'tracking_code' => $tracking,
 				'link'          => $link,
 			)
@@ -755,10 +805,14 @@ final class Webino_Dashboard_Notify {
 		if ( is_object( $product ) && method_exists( $product, 'get_name' ) ) {
 			$name = (string) $product->get_name();
 			$id   = (int) $product->get_id();
+			if ( method_exists( $product, 'get_parent_id' ) ) {
+				$parent = (int) $product->get_parent_id();
+				if ( $parent > 0 ) {
+					$id = $parent;
+				}
+			}
 		}
-		$link = $id && class_exists( 'Webino_Dashboard_Rewrite', false )
-			? Webino_Dashboard_Rewrite::url( 'shop/products/' . $id )
-			: '';
+		$link = $id > 0 ? self::dashboard_path_url( 'shop/products/' . $id ) : '';
 		self::dispatch(
 			$event,
 			array(

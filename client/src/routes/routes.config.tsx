@@ -210,8 +210,20 @@ export const dashboardRoutes: DashboardRouteDef[] = [
   {
     path: 'marketing/coupons',
     capability: 'edit_shop_coupons',
+    headerTitleKey: 'coupons.builder.title',
+    Component: lazyPage(() => import('@/pages/marketing/CouponBuilderPage')),
+  },
+  {
+    path: 'marketing/coupons/table',
+    capability: 'edit_shop_coupons',
     headerTitleKey: 'coupons.title',
-    Component: lazyPage(() => import('@/pages/marketing/CouponsListPage')),
+    Component: lazyPage(() => import('@/pages/marketing/CouponsClassicListPage')),
+  },
+  {
+    path: 'marketing/sale-prices',
+    capability: 'edit_products',
+    headerTitleKey: 'salePrices.title',
+    Component: lazyPage(() => import('@/pages/marketing/SalePricesPage')),
   },
   {
     path: 'marketing/coupons/new',

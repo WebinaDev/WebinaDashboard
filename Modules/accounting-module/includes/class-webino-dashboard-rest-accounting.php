@@ -77,6 +77,14 @@ final class Webino_Dashboard_REST_Accounting {
 			array( 'POST', '/accounting/warehouse-documents', 'warehouse_doc_create' ),
 			array( 'GET', '/accounting/moadian/jobs', 'moadian_jobs' ),
 			array( 'POST', '/accounting/moadian/process', 'moadian_process' ),
+			array( 'GET', '/accounting/tax/summary', 'tax_summary' ),
+			array( 'GET', '/accounting/tax/tips', 'tax_tips_list' ),
+			array( 'POST', '/accounting/tax/tips/(?P<id>\d+)/dismiss', 'tax_tips_dismiss' ),
+			array( 'POST', '/accounting/tax/tips/refresh', 'tax_tips_refresh' ),
+			array( 'GET', '/accounting/tax/intacodes', 'tax_intacodes_search' ),
+			array( 'POST', '/accounting/tax/intacodes/import', 'tax_intacodes_import' ),
+			array( 'GET', '/accounting/tax/rates', 'tax_rates_active' ),
+			array( 'POST', '/accounting/tax/rates', 'tax_rates_create' ),
 			array( 'GET', '/accounting/projects', 'projects_list' ),
 			array( 'POST', '/accounting/projects', 'projects_create' ),
 			array( 'GET', '/accounting/projects/(?P<id>\d+)/profit', 'projects_profit' ),
@@ -371,7 +379,58 @@ final class Webino_Dashboard_REST_Accounting {
 	}
 
 	public static function moadian_process() {
-		return new WP_REST_Response( Accounting_Moadian::process_jobs( 20 ) );
+		$jobs = Accounting_Moadian::process_jobs( 20 );
+		$inq  = Accounting_Moadian::process_inquiries( 20 );
+		return new WP_REST_Response(
+			array(
+				'processed' => (int) ( $jobs['processed'] ?? 0 ),
+				'errors'    => $jobs['errors'] ?? array(),
+				'inquiries' => $inq,
+			)
+		);
+	}
+
+	public static function tax_summary( WP_REST_Request $request ) {
+		$from = sanitize_text_field( (string) ( $request->get_param( 'from' ) ?: gmdate( 'Y-m-d', strtotime( '-90 days' ) ) ) );
+		$to   = sanitize_text_field( (string) ( $request->get_param( 'to' ) ?: gmdate( 'Y-m-d' ) ) );
+		return new WP_REST_Response( Accounting_Tax_Engine::summary( $from, $to ) );
+	}
+
+	public static function tax_tips_list() {
+		Accounting_Tax_Tips::refresh();
+		return new WP_REST_Response( array( 'items' => Accounting_Tax_Tips::list_active() ) );
+	}
+
+	public static function tax_tips_dismiss( WP_REST_Request $request ) {
+		$res = Accounting_Tax_Tips::dismiss( (int) $request['id'] );
+		return is_wp_error( $res ) ? $res : new WP_REST_Response( array( 'ok' => true ) );
+	}
+
+	public static function tax_tips_refresh() {
+		$n = Accounting_Tax_Tips::refresh();
+		return new WP_REST_Response( array( 'ok' => true, 'upserted' => $n, 'items' => Accounting_Tax_Tips::list_active() ) );
+	}
+
+	public static function tax_intacodes_search( WP_REST_Request $request ) {
+		$q = (string) $request->get_param( 'q' );
+		return new WP_REST_Response( array( 'items' => Accounting_Intacodes::search( $q ) ) );
+	}
+
+	public static function tax_intacodes_import( WP_REST_Request $request ) {
+		$body = (array) $request->get_json_params();
+		$rows = is_array( $body['rows'] ?? null ) ? $body['rows'] : array();
+		$ver  = sanitize_text_field( (string) ( $body['version'] ?? 'upload' ) );
+		$n    = Accounting_Intacodes::import_rows( $rows, $ver );
+		return new WP_REST_Response( array( 'ok' => true, 'imported' => $n ) );
+	}
+
+	public static function tax_rates_active() {
+		return new WP_REST_Response( array( 'rate' => Accounting_Tax_Rates::active() ) );
+	}
+
+	public static function tax_rates_create( WP_REST_Request $request ) {
+		$id = Accounting_Tax_Rates::create_version( (array) $request->get_json_params() );
+		return is_wp_error( $id ) ? $id : new WP_REST_Response( array( 'id' => $id ), 201 );
 	}
 
 	public static function projects_list( WP_REST_Request $request ) {

@@ -30,6 +30,7 @@ type TicketDetail = {
   status: string
   user_name?: string
   user_email?: string
+  csat_rating?: number | null
   replies: Reply[]
 }
 
@@ -78,8 +79,26 @@ export function TicketDetailView({ staff }: { staff: boolean }) {
     onError: (e: Error) => toastApiError(t, e),
   })
 
+  const patchCsat = useMutation({
+    mutationFn: (rating: number) =>
+      apiFetch(`${base}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csat_rating: rating }),
+      }),
+    onSuccess: () => {
+      toast.success(t('common.saved'))
+      void qc.invalidateQueries({ queryKey: ['ticket'] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
+
   const ticket = q.data
   const closed = ticket?.status === 'closed'
+  const canRate =
+    !!ticket &&
+    (ticket.status === 'answered' || ticket.status === 'closed') &&
+    (ticket.csat_rating == null || ticket.csat_rating < 1)
 
   return (
     <PageShell
@@ -104,6 +123,27 @@ export function TicketDetailView({ staff }: { staff: boolean }) {
                 </option>
               ))}
             </select>
+          ) : null}
+          {canRate || (ticket?.csat_rating != null && ticket.csat_rating > 0) ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground text-xs">{t('analytics.support.rateLabel')}</span>
+              {ticket?.csat_rating != null && ticket.csat_rating > 0 ? (
+                <span className="text-sm font-medium">{ticket.csat_rating}/5</span>
+              ) : (
+                [1, 2, 3, 4, 5].map((n) => (
+                  <Button
+                    key={n}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={patchCsat.isPending}
+                    onClick={() => void patchCsat.mutateAsync(n)}
+                  >
+                    {n}
+                  </Button>
+                ))
+              )}
+            </div>
           ) : null}
         </div>
       ) : null}

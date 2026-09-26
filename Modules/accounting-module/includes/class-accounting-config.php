@@ -70,6 +70,20 @@ final class Accounting_Config {
 				'accounts'       => true,
 			),
 			'wizard_done'            => false,
+			'taxpayer_type'          => '',
+			'tax_file_tracking_code' => '',
+			'inta_code'              => '',
+			'inta_profit_ratio'      => 0,
+			'inta_vat_liable'        => true,
+			'corporate_tax_rate'     => 25,
+			'vat_regime'             => 'standard',
+			'setup_wizard_step'      => 0,
+			'moadian_transport'      => 'direct',
+			'tsp_base_url'           => '',
+			'tsp_api_key_enc'        => '',
+			'tsp_extra_json'         => '',
+			'sales_threshold_rial'   => 120000000000,
+			'use_inta_ratio_when_higher' => true,
 			'sync_order_statuses'    => array( 'processing', 'completed' ),
 			'snapshot_cogs'          => true,
 			'default_vat_rate'       => 10,
@@ -136,8 +150,11 @@ final class Accounting_Config {
 		$s = self::get();
 		$s['has_private_key']  = '' !== (string) $s['private_key_enc'];
 		$s['has_certificate']  = '' !== (string) $s['certificate_pem'];
+		$s['has_tsp_api_key']  = '' !== (string) ( $s['tsp_api_key_enc'] ?? '' );
 		$s['private_key_enc']  = '';
 		$s['private_key']      = '';
+		$s['tsp_api_key_enc']  = '';
+		$s['tsp_api_key']      = '';
 		$s['certificate_pem']  = $s['has_certificate'] ? '••••••••' : '';
 		$s['has_hesabfa_login_token'] = '' !== (string) ( $s['hesabfa_login_token_enc'] ?? '' );
 		$s['has_hesabfa_password']    = '' !== (string) ( $s['hesabfa_password_enc'] ?? '' );
@@ -187,6 +204,44 @@ final class Accounting_Config {
 		}
 		if ( array_key_exists( 'wizard_done', $data ) ) {
 			$new['wizard_done'] = ! empty( $data['wizard_done'] );
+		}
+		if ( array_key_exists( 'taxpayer_type', $data ) ) {
+			$tt = sanitize_key( (string) $data['taxpayer_type'] );
+			$new['taxpayer_type'] = in_array( $tt, array( 'individual', 'corporate', '' ), true ) ? $tt : $old['taxpayer_type'];
+		}
+		$text_tax = array( 'tax_file_tracking_code', 'inta_code', 'vat_regime', 'tsp_base_url' );
+		foreach ( $text_tax as $key ) {
+			if ( array_key_exists( $key, $data ) ) {
+				$new[ $key ] = sanitize_text_field( (string) $data[ $key ] );
+			}
+		}
+		if ( isset( $data['inta_profit_ratio'] ) ) {
+			$new['inta_profit_ratio'] = max( 0, min( 100, (float) $data['inta_profit_ratio'] ) );
+		}
+		if ( array_key_exists( 'inta_vat_liable', $data ) ) {
+			$new['inta_vat_liable'] = ! empty( $data['inta_vat_liable'] );
+		}
+		if ( isset( $data['corporate_tax_rate'] ) ) {
+			$new['corporate_tax_rate'] = max( 0, min( 100, (float) $data['corporate_tax_rate'] ) );
+		}
+		if ( isset( $data['setup_wizard_step'] ) ) {
+			$new['setup_wizard_step'] = max( 0, (int) $data['setup_wizard_step'] );
+		}
+		if ( array_key_exists( 'moadian_transport', $data ) ) {
+			$tr = sanitize_key( (string) $data['moadian_transport'] );
+			$new['moadian_transport'] = in_array( $tr, array( 'direct', 'tsp' ), true ) ? $tr : 'direct';
+		}
+		if ( array_key_exists( 'tsp_api_key', $data ) && is_string( $data['tsp_api_key'] ) && '' !== trim( $data['tsp_api_key'] ) && false === strpos( $data['tsp_api_key'], '•' ) ) {
+			$new['tsp_api_key_enc'] = self::encrypt_secret( (string) $data['tsp_api_key'] );
+		}
+		if ( array_key_exists( 'tsp_extra_json', $data ) ) {
+			$new['tsp_extra_json'] = sanitize_textarea_field( (string) $data['tsp_extra_json'] );
+		}
+		if ( isset( $data['sales_threshold_rial'] ) ) {
+			$new['sales_threshold_rial'] = max( 0, (float) $data['sales_threshold_rial'] );
+		}
+		if ( array_key_exists( 'use_inta_ratio_when_higher', $data ) ) {
+			$new['use_inta_ratio_when_higher'] = ! empty( $data['use_inta_ratio_when_higher'] );
 		}
 		if ( array_key_exists( 'snapshot_cogs', $data ) ) {
 			$new['snapshot_cogs'] = ! empty( $data['snapshot_cogs'] );
@@ -407,6 +462,14 @@ final class Accounting_Config {
 			return '';
 		}
 		return self::decrypt_secret( $enc );
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function tsp_api_key() {
+		$enc = (string) ( self::get()['tsp_api_key_enc'] ?? '' );
+		return '' === $enc ? '' : self::decrypt_secret( $enc );
 	}
 
 	/**

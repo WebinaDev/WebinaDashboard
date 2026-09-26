@@ -1,0 +1,49 @@
+{
+  "slug": "product-catalog-module",
+  "name": "Product catalog",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "default_active": true,
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Product catalog",
+    "sections": [
+      {
+        "id": "settings",
+        "route": "/settings/shop/product-catalog",
+        "title": "Product catalog",
+        "titleKey": "catalog.settingsTitle"
+      }
+    ]
+  },
+  "sidebar": {
+    "parent_id": "shop",
+    "nodes": [
+      {
+        "id": "product-catalog",
+        "title": "Product database",
+        "path": "/shop/product-catalog",
+        "capability": "edit_products",
+        "titleKey": "nav.module.product-catalog"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "shop/product-catalog",
+        "capability": "edit_products",
+        "headerTitleKey": "catalog.pageTitle"
+      },
+      {
+        "path": "settings/shop/product-catalog",
+        "capability": "edit_products",
+        "headerTitleKey": "catalog.settingsTitle"
+      }
+    ]
+  }
+}

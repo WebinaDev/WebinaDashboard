@@ -12,10 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { NotificationText } from '@/components/notifications/NotificationText'
 import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { apiFetch } from '@/lib/api'
 import { normalizeCapabilities } from '@/lib/bootstrapQuery'
 import { formatDisplayDateTime } from '@/lib/date'
+import { toNotificationNavPath } from '@/lib/notificationLink'
 import { cn } from '@/lib/utils'
 
 type NotificationRow = {
@@ -26,32 +28,6 @@ type NotificationRow = {
   link: string
   read: boolean
   created_at: string
-}
-
-function toAppPath(link: string): string | null {
-  if (!link) return null
-  try {
-    if (link.startsWith('/')) {
-      if (link.startsWith('/dashboard')) {
-        return link.replace(/^\/dashboard/, '') || '/'
-      }
-      const base = (window.webinoDashboard?.baseUrl || '/dashboard/').replace(/\/$/, '')
-      const basePath = new URL(base, window.location.origin).pathname.replace(/\/$/, '')
-      if (link === basePath || link.startsWith(`${basePath}/`)) {
-        return link.slice(basePath.length) || '/'
-      }
-      return link
-    }
-    const u = new URL(link, window.location.origin)
-    const base = new URL(window.webinoDashboard?.baseUrl || '/dashboard/', window.location.origin)
-    const basePath = base.pathname.replace(/\/$/, '')
-    if (u.origin === base.origin && u.pathname.startsWith(basePath)) {
-      return `${u.pathname.slice(basePath.length) || '/'}${u.search}`
-    }
-  } catch {
-    return null
-  }
-  return null
 }
 
 export function NotificationBell() {
@@ -120,7 +96,7 @@ export function NotificationBell() {
               onSelect={(e) => {
                 e.preventDefault()
                 if (!row.read) void markOne.mutateAsync(row.id)
-                const appPath = toAppPath(row.link)
+                const appPath = toNotificationNavPath(row.link, isAdmin)
                 if (appPath) {
                   nav(appPath)
                   return
@@ -128,8 +104,14 @@ export function NotificationBell() {
                 if (row.link) window.location.href = row.link
               }}
             >
-              <span className="truncate text-sm font-medium">{row.title}</span>
-              {row.body ? <span className="text-muted-foreground line-clamp-2 text-xs">{row.body}</span> : null}
+              <NotificationText text={row.title} locale={i18n.language} className="truncate text-sm font-medium" />
+              {row.body ? (
+                <NotificationText
+                  text={row.body}
+                  locale={i18n.language}
+                  className="text-muted-foreground line-clamp-2 text-xs"
+                />
+              ) : null}
               <span className="text-muted-foreground text-[10px]">
                 {formatDisplayDateTime(row.created_at, i18n.language)}
               </span>

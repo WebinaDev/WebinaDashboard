@@ -1,0 +1,189 @@
+/* Webino storefront offers — gift popup, chips, near-threshold progress */
+.webino-offers-root {
+  --wo-accent: #10b981;
+  --wo-bg: #fff;
+  --wo-text: #0f172a;
+  --wo-muted: #64748b;
+  --wo-border: #e2e8f0;
+  font-family: inherit;
+}
+
+.webino-offers-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: wo-fade-in 0.28s ease;
+}
+
+.webino-offers-popup {
+  width: min(100%, 22rem);
+  background: var(--wo-bg);
+  color: var(--wo-text);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+  padding: 1.5rem 1.25rem 1.25rem;
+  text-align: center;
+  animation: wo-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.webino-offers-popup__icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto 1rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--wo-accent);
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+}
+
+.webino-offers-popup__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.webino-offers-popup__hint {
+  color: var(--wo-muted);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+  line-height: 1.6;
+}
+
+.webino-offers-popup__code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.webino-offers-popup__code code {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px dashed var(--wo-border);
+  border-radius: 0.5rem;
+}
+
+.webino-offers-popup__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.webino-offers-btn {
+  appearance: none;
+  border: 0;
+  border-radius: 0.75rem;
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.webino-offers-btn--primary {
+  background: var(--wo-accent);
+  color: #fff;
+}
+
+.webino-offers-btn--ghost {
+  background: transparent;
+  color: var(--wo-muted);
+}
+
+.webino-offers-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.webino-offers-chip {
+  border: 1px solid var(--wo-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  background: #fff;
+  color: var(--wo-text);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  animation: wo-slide-up 0.35s ease both;
+}
+
+.webino-offers-progress {
+  position: fixed;
+  z-index: 99999;
+  inset-inline: 1rem;
+  bottom: 1rem;
+  max-width: 28rem;
+  margin-inline: auto;
+  left: 0;
+  right: 0;
+  background: var(--wo-bg);
+  border: 1px solid var(--wo-border);
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+  animation: wo-slide-up 0.35s ease;
+}
+
+.webino-offers-progress__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+
+.webino-offers-progress__meta {
+  font-size: 0.75rem;
+  color: var(--wo-muted);
+  margin: 0 0 0.5rem;
+}
+
+.webino-offers-progress__track {
+  height: 0.5rem;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.webino-offers-progress__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #34d399, #10b981);
+  border-radius: 999px;
+  transition: width 0.45s ease;
+}
+
+@keyframes wo-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wo-pop {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes wo-slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webino-offers-popup-backdrop,
+  .webino-offers-popup,
+  .webino-offers-chip,
+  .webino-offers-progress,
+  .webino-offers-progress__fill {
+    animation: none !important;
+    transition: none !important;
+  }
+}

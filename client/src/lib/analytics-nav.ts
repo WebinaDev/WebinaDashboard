@@ -1,4 +1,16 @@
-export type AnalyticsSectionId = 'overview' | 'visitors' | 'pages' | 'referrals' | 'geo' | 'devices'
+export type AnalyticsSectionId =
+  | 'overview'
+  | 'visitors'
+  | 'pages'
+  | 'referrals'
+  | 'geo'
+  | 'devices'
+  | 'commerce'
+  | 'compare'
+  | 'seo'
+  | 'support'
+  | 'content'
+  | 'month-summary'
 
 export const ANALYTICS_SECTIONS: AnalyticsSectionId[] = [
   'overview',
@@ -7,14 +19,18 @@ export const ANALYTICS_SECTIONS: AnalyticsSectionId[] = [
   'referrals',
   'geo',
   'devices',
+  'commerce',
+  'compare',
+  'seo',
+  'support',
+  'content',
+  'month-summary',
 ]
 
 export function isAnalyticsSection(s: string | undefined): s is AnalyticsSectionId {
   return !!s && (ANALYTICS_SECTIONS as readonly string[]).includes(s)
 }
 
-export function analyticsPeriodQuery(days: number) {
-  const to = Math.floor(Date.now() / 1000)
-  const from = to - days * 86400
+export function analyticsPeriodQuery(from: number, to: number) {
   return `from=${from}&to=${to}`
 }

@@ -116,7 +116,7 @@ function GroupBlock({
         {bucket.items.map((item) => (
           <li key={`${groupKey}-${item.id}`}>
             <Link
-              to={item.href || `/orders/${item.id}`}
+              to={item.href || `/orders/list/${item.id}`}
               className="hover:bg-muted/60 block rounded-lg border bg-card px-3 py-2 text-sm leading-relaxed transition-colors"
             >
               {itemMessage(t, item)}

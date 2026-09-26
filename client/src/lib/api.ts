@@ -1,4 +1,5 @@
 import { ApiError } from '@/lib/apiError'
+import { maybeMarkLoggedOut } from '@/lib/authLost'
 import { isAllowedRemoteUrl } from '@/lib/safeUrl'
 
 function cfg() {
@@ -102,8 +103,15 @@ function ajaxActionForPath(path: string): string | null {
   if (clean === 'basalam/oauth/complete') {
     return 'webino_dashboard_basalam_oauth_complete'
   }
-  // Product editor — prefer admin-ajax when CDN/WAF blocks /wp-json/.
-  if (clean === 'shop/products/lookup' || clean.startsWith('shop/products')) {
+  // Product editor, shop reports, comments — prefer admin-ajax when CDN/WAF blocks /wp-json/.
+  if (
+    clean === 'shop/products/lookup' ||
+    clean.startsWith('shop/products') ||
+    clean.startsWith('shop/reports') ||
+    clean.startsWith('shop/product-categories') ||
+    clean === 'comments' ||
+    clean.startsWith('comments/')
+  ) {
     return 'webino_dashboard_shop_rest'
   }
   // Bot SPA pages — single ajax proxy for all bots/* management routes.
@@ -120,6 +128,11 @@ function ajaxActionForPath(path: string): string | null {
   // Payment gateway SPA — prefer admin-ajax when CDN/WAF blocks /wp-json/.
   if (/^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(clean)) {
     return 'webino_dashboard_payments_rest'
+  }
+  // Analytics SPA reads (+ commerce summary) — prefer admin-ajax when CDN/WAF blocks /wp-json/.
+  // Public hit uses a dedicated nopriv action from the front-end tracker, not this map.
+  if (clean.startsWith('analytics/') && clean !== 'analytics/hit') {
+    return 'webino_dashboard_analytics_rest'
   }
   return null
 }
@@ -216,14 +229,17 @@ async function apiFetchViaAjax<T>(path: string, timeoutMs: number, init: Request
         (typeof json.data?.message === 'string' && json.data.message) ||
         json.message ||
         'Request failed'
-      throw new ApiError(msg, {
+      const err = new ApiError(msg, {
         code: (typeof json.data?.code === 'string' && json.data.code) || 'ajax_fallback_failed',
         status: res.status,
       })
+      maybeMarkLoggedOut(err)
+      throw err
     }
     return json.data as T
   } catch (err) {
     if (err instanceof ApiError) {
+      maybeMarkLoggedOut(err)
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {
@@ -287,11 +303,14 @@ export async function apiFetch<T>(
           : typeof errBody.error === 'string'
             ? errBody.error
             : errBody.code || res.statusText
-      throw new ApiError(msg, { code: errBody.code, status: res.status })
+      const err = new ApiError(msg, { code: errBody.code, status: res.status })
+      maybeMarkLoggedOut(err)
+      throw err
     }
     return data as T
   } catch (err) {
     if (err instanceof ApiError) {
+      maybeMarkLoggedOut(err)
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {
@@ -338,7 +357,9 @@ export async function apiUploadFile(
           : typeof errBody.error === 'string'
             ? errBody.error
             : errBody.code || res.statusText
-      throw new ApiError(msg, { code: errBody.code, status: res.status })
+      const err = new ApiError(msg, { code: errBody.code, status: res.status })
+      maybeMarkLoggedOut(err)
+      throw err
     }
     if (!data.id || data.id < 1) {
       throw new ApiError('Invalid upload response', { code: 'invalid', status: res.status })
@@ -346,6 +367,7 @@ export async function apiUploadFile(
     return { id: data.id, url: data.url ?? '' }
   } catch (err) {
     if (err instanceof ApiError) {
+      maybeMarkLoggedOut(err)
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {

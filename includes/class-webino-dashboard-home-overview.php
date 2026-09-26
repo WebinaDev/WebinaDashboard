@@ -425,7 +425,7 @@ class Webino_Dashboard_Home_Overview {
 	 */
 	private static function sales_section_cached( $locale ) {
 		$user_id = get_current_user_id();
-		$key     = 'webino_dashboard_sales_v2_' . (int) $user_id . '_' . md5( $locale );
+		$key     = 'webino_dashboard_sales_v3_' . (int) $user_id . '_' . md5( $locale );
 		if ( $user_id > 0 ) {
 			$cached = get_transient( $key );
 			if ( is_array( $cached ) ) {
@@ -515,14 +515,6 @@ class Webino_Dashboard_Home_Overview {
 		$month_label = Webino_Dashboard_Locale::calendar_month_label( $locale );
 		$statuses    = Webino_Dashboard_Order_Reports::default_statuses();
 		$current     = Webino_Dashboard_Order_Reports::build_report( $from_ts, $to_ts, 'day', $statuses );
-
-		if ( (int) ( $current['summary']['order_count'] ?? 0 ) === 0 ) {
-			$to_ts       = time();
-			$from_ts     = $to_ts - 30 * DAY_IN_SECONDS;
-			$range       = 'last30';
-			$month_label = __( 'Last 30 days', 'webino-dashboard' );
-			$current     = Webino_Dashboard_Order_Reports::build_report( $from_ts, $to_ts, 'day', $statuses );
-		}
 
 		list( $cmp_from, $cmp_to ) = Webino_Dashboard_Order_Reports::compare_range( $from_ts, $to_ts );
 		$prev = Webino_Dashboard_Order_Reports::build_report( $cmp_from, $cmp_to, 'day', $statuses );
@@ -1208,7 +1200,7 @@ class Webino_Dashboard_Home_Overview {
 			'number'         => (string) ( $ret['order_number'] ?? $order_id ),
 			'customer_name'  => $name,
 			'action'         => 'return',
-			'href'           => '/orders/' . $order_id,
+			'href'           => '/orders/list/' . $order_id,
 			'return_status'  => (string) ( $ret['status'] ?? '' ),
 			'return_item'    => (string) ( $ret['item_name'] ?? '' ),
 			'return_qty'     => (float) ( $ret['qty'] ?? 0 ),
@@ -1223,7 +1215,7 @@ class Webino_Dashboard_Home_Overview {
 	private static function fulfillment_row( $order, $action ) {
 		$row = self::order_row( $order );
 		$row['action']                = sanitize_key( $action );
-		$row['href']                  = '/orders/' . $order->get_id();
+		$row['href']                  = '/orders/list/' . $order->get_id();
 		$row['purchase_type']         = self::fulfillment_purchase_type( $order );
 		$row['payment_method_title']  = (string) $order->get_payment_method_title();
 		$row['shipping_kind']         = '';

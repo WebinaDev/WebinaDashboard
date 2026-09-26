@@ -34,29 +34,31 @@ class Webino_Dashboard_Inventory_Reports {
 			return new WP_Error( 'no_wc', __( 'Store module is not available.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 
-		$filter  = sanitize_key( (string) ( $request->get_param( 'stock_filter' ) ?: 'all' ) );
-		$search  = trim( (string) $request->get_param( 'search' ) );
-		$page    = max( 1, (int) ( $request->get_param( 'page' ) ?: 1 ) );
-		$per     = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?: 25 ) ) );
-		$orderby = sanitize_key( (string) ( $request->get_param( 'orderby' ) ?: 'name' ) );
-		$order   = strtolower( (string) ( $request->get_param( 'order' ) ?: 'asc' ) ) === 'desc' ? 'DESC' : 'ASC';
+		$filter   = sanitize_key( (string) ( $request->get_param( 'stock_filter' ) ?: 'all' ) );
+		$search   = trim( (string) $request->get_param( 'search' ) );
+		$category = max( 0, (int) $request->get_param( 'category' ) );
+		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?: 1 ) );
+		$per      = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?: 25 ) ) );
+		$orderby  = sanitize_key( (string) ( $request->get_param( 'orderby' ) ?: 'name' ) );
+		$order    = strtolower( (string) ( $request->get_param( 'order' ) ?: 'asc' ) ) === 'desc' ? 'DESC' : 'ASC';
 
 		$cache_key = 'webino_inv_report_' . md5(
 			wp_json_encode(
 				array(
 					'f'   => $filter,
 					's'   => $search,
+					'c'   => $category,
 					'ob'  => $orderby,
 					'o'   => $order,
 					'uid' => get_current_user_id(),
-					'v'   => 1,
+					'v'   => 2,
 				)
 			)
 		);
 
 		$payload = get_transient( $cache_key );
 		if ( ! is_array( $payload ) ) {
-			$payload = self::build_snapshot( $filter, $search );
+			$payload = self::build_snapshot( $filter, $search, $category );
 			set_transient( $cache_key, $payload, self::CACHE_TTL );
 		}
 
@@ -75,6 +77,7 @@ class Webino_Dashboard_Inventory_Reports {
 				'page'      => $page,
 				'per_page'  => $per,
 				'filter'    => $filter,
+				'category'  => $category,
 			)
 		);
 	}
@@ -94,9 +97,10 @@ class Webino_Dashboard_Inventory_Reports {
 		// Unpaginated: rebuild with high per_page via snapshot cache.
 		$request->set_param( 'page', 1 );
 		$request->set_param( 'per_page', 100 );
-		$filter = sanitize_key( (string) ( $request->get_param( 'stock_filter' ) ?: 'all' ) );
-		$search = trim( (string) $request->get_param( 'search' ) );
-		$snap   = self::build_snapshot( $filter, $search );
+		$filter   = sanitize_key( (string) ( $request->get_param( 'stock_filter' ) ?: 'all' ) );
+		$search   = trim( (string) $request->get_param( 'search' ) );
+		$category = max( 0, (int) $request->get_param( 'category' ) );
+		$snap     = self::build_snapshot( $filter, $search, $category );
 		$rows   = isset( $snap['rows'] ) ? $snap['rows'] : array();
 
 		header( 'Content-Type: text/csv; charset=utf-8' );
@@ -161,11 +165,13 @@ class Webino_Dashboard_Inventory_Reports {
 	/**
 	 * @param string $filter Stock filter.
 	 * @param string $search Search.
+	 * @param int    $category Product category term id (0 = all).
 	 * @return array{summary:array,rows:array,price_keys:array}
 	 */
-	private static function build_snapshot( $filter, $search ) {
+	private static function build_snapshot( $filter, $search, $category = 0 ) {
 		$cost_cache = array();
 		$rows       = array();
+		$category   = max( 0, (int) $category );
 		$summary    = array(
 			'sku_count'            => 0,
 			'units_in_stock'       => 0,
@@ -214,7 +220,9 @@ class Webino_Dashboard_Inventory_Reports {
 					continue;
 				}
 				if ( $product->is_type( 'variable' ) ) {
-					// Parent variable has no sellable stock rows; variations are listed separately when type includes variation.
+					continue;
+				}
+				if ( $category > 0 && ! self::product_in_category( $product, $category ) ) {
 					continue;
 				}
 				$row = self::map_product_row( $product, $cost_cache );
@@ -232,6 +240,20 @@ class Webino_Dashboard_Inventory_Reports {
 			'rows'       => $rows,
 			'price_keys' => $price_keys,
 		);
+	}
+
+	/**
+	 * @param WC_Product $product Product or variation.
+	 * @param int        $category_id Term id.
+	 * @return bool
+	 */
+	private static function product_in_category( $product, $category_id ) {
+		$category_id = (int) $category_id;
+		if ( $category_id <= 0 || ! is_a( $product, 'WC_Product' ) ) {
+			return true;
+		}
+		$check_id = $product->get_parent_id() ? (int) $product->get_parent_id() : (int) $product->get_id();
+		return has_term( $category_id, 'product_cat', $check_id );
 	}
 
 	/**
@@ -320,6 +342,8 @@ class Webino_Dashboard_Inventory_Reports {
 		switch ( $filter ) {
 			case 'outofstock':
 				return 'outofstock' === ( $row['stock_status'] ?? '' );
+			case 'onbackorder':
+				return 'onbackorder' === ( $row['stock_status'] ?? '' );
 			case 'lowstock':
 				return ! empty( $row['is_low_stock'] );
 			case 'missing_cost':

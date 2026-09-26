@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { apiFetch } from '@/lib/api'
+import { AUTH_SESSION_QUERY_KEY, type AuthSession } from '@/lib/authLost'
 
-export type AuthSession = {
-  logged_in: boolean
-}
-
-export const AUTH_SESSION_QUERY_KEY = ['auth', 'session'] as const
+export type { AuthSession }
+export { AUTH_SESSION_QUERY_KEY }
 
 export function useAuthSession() {
   const isLogged = Boolean(window.webinoDashboard?.isLogged)
@@ -14,8 +12,12 @@ export function useAuthSession() {
   return useQuery({
     queryKey: AUTH_SESSION_QUERY_KEY,
     queryFn: () => apiFetch<AuthSession>('auth/session'),
-    staleTime: 300_000,
+    staleTime: 30_000,
     retry: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
     initialData: { logged_in: isLogged },
     initialDataUpdatedAt: Date.now(),
   })

@@ -26,6 +26,11 @@ function calendarNow() {
 export function presetToRange(preset: ReportPreset): { from: Date; to: Date } {
   const now = dayjs()
   const cal = calendarNow()
+  const monthTo = () => {
+    const end = cal.endOf('month')
+    const capped = now.isBefore(end) ? now : end
+    return capped.endOf('day').toDate()
+  }
   switch (preset) {
     case 'today':
       return { from: now.startOf('day').toDate(), to: now.endOf('day').toDate() }
@@ -44,7 +49,7 @@ export function presetToRange(preset: ReportPreset): { from: Date; to: Date } {
       return { from: lw.startOf('week').toDate(), to: lw.endOf('week').toDate() }
     }
     case 'thisMonth':
-      return { from: cal.startOf('month').toDate(), to: now.endOf('day').toDate() }
+      return { from: cal.startOf('month').toDate(), to: monthTo() }
     case 'lastMonth': {
       const lm = cal.subtract(1, 'month')
       return { from: lm.startOf('month').toDate(), to: lm.endOf('month').toDate() }
@@ -53,7 +58,7 @@ export function presetToRange(preset: ReportPreset): { from: Date; to: Date } {
       return { from: cal.startOf('year').toDate(), to: now.endOf('day').toDate() }
     case 'custom':
     default:
-      return { from: cal.startOf('month').toDate(), to: now.endOf('day').toDate() }
+      return { from: cal.startOf('month').toDate(), to: monthTo() }
   }
 }
 

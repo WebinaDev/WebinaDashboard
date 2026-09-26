@@ -33,9 +33,17 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 			'services/class-accounting-payroll.php',
 			'services/class-accounting-payroll-print.php',
 			'services/class-accounting-reports.php',
+			'services/class-accounting-intacodes.php',
+			'services/class-accounting-tax-rates.php',
+			'services/class-accounting-tax-engine.php',
+			'services/class-accounting-tax-tips.php',
 			'services/class-accounting-installments.php',
 			'services/class-accounting-extras.php',
 			'moadian/class-accounting-moadian-client.php',
+			'moadian/class-accounting-moadian-transport.php',
+			'moadian/class-accounting-moadian-transport-direct.php',
+			'moadian/class-accounting-moadian-transport-tsp.php',
+			'moadian/class-accounting-moadian-transport-factory.php',
 			'moadian/class-accounting-moadian.php',
 			'hesabfa/class-accounting-hesabfa-client.php',
 			'hesabfa/class-accounting-hesabfa-sync.php',
@@ -58,3 +66,5 @@ Webino_Dashboard_REST_Accounting::init();
 Accounting_Hesabfa::init();
 Accounting_Seed::ensure_payroll_accounts();
 Accounting_Tamin_Jobs::maybe_seed();
+Accounting_Intacodes::maybe_seed();
+Accounting_Tax_Rates::maybe_seed();

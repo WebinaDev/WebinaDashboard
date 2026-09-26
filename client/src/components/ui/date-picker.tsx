@@ -3,8 +3,9 @@ import DatePickerLibImport from "react-multi-date-picker"
 import DateObjectImport from "react-date-object"
 import gregorianModule from "react-date-object/calendars/gregorian"
 import { useTranslation } from "react-i18next"
-import { getCalendarConfig } from "@/lib/locale"
 import { resolveDatePickerComponent, unwrapDefaultExport } from "@/lib/cjs-default"
+import { toAsciiDigits } from "@/lib/digits"
+import { getCalendarConfig } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 
 const DatePickerLib = resolveDatePickerComponent(DatePickerLibImport)
@@ -15,7 +16,7 @@ type PickerDate = {
   convert: (calendar: unknown) => { format: (pattern: string) => string }
 }
 
-/** ISO date string YYYY-MM-DD (Gregorian) for API. */
+/** ISO date string YYYY-MM-DD (Gregorian, ASCII digits) for API. */
 export interface DatePickerProps {
   value: string
   onChange: (isoDate: string) => void
@@ -25,6 +26,15 @@ export interface DatePickerProps {
   className?: string
   inputClass?: string
   id?: string
+}
+
+function toIsoDate(value: string): string | undefined {
+  if (!value || value.trim() === "") return undefined
+  const iso = toAsciiDigits(value.trim()).slice(0, 10)
+  if (iso === "0000-00-00" || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return undefined
+  const year = Number(iso.slice(0, 4))
+  if (!Number.isFinite(year) || year < 1600) return undefined
+  return iso
 }
 
 export const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
@@ -45,20 +55,21 @@ export const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
           <input
             type="date"
             id={id}
-            value={value}
+            value={toIsoDate(value) ?? ""}
             disabled={disabled}
             required={required}
             className={inputClassName}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(toAsciiDigits(e.target.value))}
           />
         </div>
       )
     }
 
     const pickerValue = (() => {
-      if (!value || value.trim() === "") return undefined
+      const iso = toIsoDate(value)
+      if (!iso) return undefined
       try {
-        return new DateObject(value)
+        return new DateObject({ date: iso, calendar: gregorian })
       } catch {
         return undefined
       }
@@ -69,8 +80,13 @@ export const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
         onChange("")
         return
       }
-      const g = d.convert(gregorian)
-      onChange(g.format("YYYY-MM-DD"))
+      try {
+        const g = d.convert(gregorian)
+        const iso = toAsciiDigits(g.format("YYYY-MM-DD"))
+        onChange(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "")
+      } catch {
+        onChange("")
+      }
     }
 
     return (

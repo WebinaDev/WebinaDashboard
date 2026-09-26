@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useMatch, useParams } from 'react-router-dom'
+import { Link, useMatch, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError, ApiError } from '@/lib/apiError'
 
@@ -19,7 +19,9 @@ import { OrderNotesPanel, type OrderNote } from '@/components/orders/OrderNotesP
 import { OrderPrintActions } from '@/components/orders/OrderPrintActions'
 import { OrderSidebarPanel } from '@/components/orders/OrderSidebarPanel'
 import { OrderReturnsPanel } from '@/components/orders/OrderReturnsPanel'
+import { OrderShipDialog } from '@/components/orders/OrderShipDialog'
 import { OrderSmsHistoryPanel, type SmsLogEntry } from '@/components/orders/OrderSmsHistoryPanel'
+import { OrderStatusStepper } from '@/components/orders/OrderStatusStepper'
 import { OrderTrackingPanel } from '@/components/orders/OrderTrackingPanel'
 import { DetailTwoColumnSkeleton } from '@/components/skeletons'
 import { PageShell } from '@/components/PageShell'
@@ -27,13 +29,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
@@ -41,14 +36,26 @@ import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { apiFetch } from '@/lib/api'
 import { normalizeCapabilities } from '@/lib/bootstrapQuery'
+import { decodePriceEntities } from '@/lib/currency'
 import { formatDisplayDateTime } from '@/lib/date'
 import { translateOrderStatus } from '@/lib/enumLabels'
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { MobileListCard } from '@/components/MobileListCard'
 import { LazyImage } from '@/components/ui/lazy-image'
-import { localizeDigits } from '@/lib/digits'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { localizeDigits, toAsciiDigits } from '@/lib/digits'
 import { formatNumber } from '@/lib/formatNumber'
 import { notifyOrderSms } from '@/lib/modirpayamak-api'
+import { isInstallmentOrder } from '@/lib/orderPurchaseType'
 import type { TFunction } from 'i18next'
 
 type LineItem = {
@@ -85,6 +92,8 @@ type Order = {
   shipping_method?: string
   shipping_items?: { name: string; total: string; id?: string }[]
   shipping_method_options?: { id: string; title: string }[]
+  is_tapin_shipping?: boolean
+  has_tapin_meta?: boolean
   tracking_providers?: {
     id: string
     title: string
@@ -140,6 +149,7 @@ type Order = {
   return_address?: string
   is_pos?: boolean
   sales_channel?: string
+  purchase_type?: string
 }
 
 type StatusOption = { slug: string; label: string }
@@ -186,7 +196,9 @@ function formatOrderItemMetaValue(
   key: string,
   value: string,
   currency?: string,
-): string {
+  currencySymbol?: string | null,
+  locale?: string,
+): ReactNode {
   const slug = key.replace(/^_/, '')
   if (slug === 'wfcp_purchase_type' || key === 'wfcp_purchase_type') {
     const typeKey = `orders.purchaseType.${value.trim().toLowerCase()}`
@@ -200,14 +212,30 @@ function formatOrderItemMetaValue(
     }
   }
   if (slug === 'wfcp_installment_total') {
-    const amount = parseFloat(value.replace(/[^\d.-]/g, ''))
-    if (!Number.isNaN(amount) && amount > 0 && currency) {
-      try {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount)
-      } catch {
-        return value
-      }
+    const cleaned = toAsciiDigits(decodePriceEntities(value))
+      .replace(/تومان|toman|irt/gi, '')
+      .replace(/[^\d.-]/g, '')
+    const amount = parseFloat(cleaned)
+    if (!Number.isNaN(amount) && amount > 0) {
+      return (
+        <MoneyDisplay
+          amount={amount}
+          currency={currency || 'IRT'}
+          currencySymbol={currencySymbol}
+          locale={locale || 'fa'}
+          className="inline-flex"
+        />
+      )
     }
+    return (
+      <MoneyDisplay
+        amount={cleaned || 0}
+        currency={currency || 'IRT'}
+        currencySymbol={currencySymbol}
+        locale={locale || 'fa'}
+        className="inline-flex"
+      />
+    )
   }
   return value
 }
@@ -260,7 +288,9 @@ export default function OrderDetailPage() {
   const tapinModuleActive = (boot.data?.activeModuleClients ?? []).some((c) => c.slug === 'tapin-module')
   const listHref = useMatch('/account/orders/:orderId') ? '/account/orders' : '/orders/list'
   const isPortalOrder = Boolean(useMatch('/account/orders/:orderId'))
-  const [status, setStatus] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [shipOpen, setShipOpen] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null)
   const [bots, setBots] = useState<
     { bale?: { connected?: boolean; username?: string }; telegram?: { connected?: boolean; username?: string } } | undefined
   >()
@@ -278,8 +308,14 @@ export default function OrderDetailPage() {
   })
 
   useEffect(() => {
-    if (q.data?.status) setStatus(q.data.status)
-  }, [q.data?.status])
+    if (searchParams.get('ship') === '1' || searchParams.get('action') === 'ship') {
+      setShipOpen(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('ship')
+      next.delete('action')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const patch = useMutation({
     mutationFn: (nextStatus: string) =>
@@ -294,9 +330,6 @@ export default function OrderDetailPage() {
       toast.success(t('common.saved'))
     },
     onError: (e: Error) => {
-      if (q.data?.status) {
-        setStatus(q.data.status)
-      }
       toastApiError(t, e)
     },
   })
@@ -324,17 +357,24 @@ export default function OrderDetailPage() {
     onError: (e: Error) => toastApiError(t, e),
   })
 
-  function applyStatus() {
-    if (!status || status === order?.status) {
+  function requestStatusChange(nextStatus: string) {
+    if (!nextStatus || nextStatus === order?.status) {
+      return
+    }
+    setPendingStatus(nextStatus)
+  }
+
+  function applyStatus(nextStatus: string) {
+    if (!nextStatus || nextStatus === order?.status) {
       return
     }
     if (order?.marketplace === 'digikala') {
-      const blocked = digikalaWooStatusAllowed(order, status)
+      const blocked = digikalaWooStatusAllowed(order, nextStatus)
       if (blocked) {
         toast.error(t(blocked))
         return
       }
-      if (status === 'cancelled') {
+      if (nextStatus === 'cancelled') {
         void apiFetch(`digikala/orders/${id}/cancel`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -344,8 +384,8 @@ export default function OrderDetailPage() {
           .catch((e: Error) => toastApiError(t, e))
         return
       }
-      if (order.digikala_fulfillment === 'seller' && (status === 'processing' || status === 'completed')) {
-        const action = status === 'completed' ? 'full_delivered_to_customer' : 'processing'
+      if (order.digikala_fulfillment === 'seller' && (nextStatus === 'processing' || nextStatus === 'completed')) {
+        const action = nextStatus === 'completed' ? 'full_delivered_to_customer' : 'processing'
         void apiFetch(`digikala/orders/${id}/sbs-status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -353,13 +393,13 @@ export default function OrderDetailPage() {
         })
           .then(() => {
             toast.success(t('digikala.statusPushed'))
-            return patch.mutateAsync(status)
+            return patch.mutateAsync(nextStatus)
           })
           .catch((e: Error) => toastApiError(t, e))
         return
       }
     }
-    void patch.mutateAsync(status)
+    void patch.mutateAsync(nextStatus)
   }
 
   function invalidateOrder() {
@@ -496,6 +536,14 @@ export default function OrderDetailPage() {
             </div>
           )}
 
+          {canManageOrders && shippingModuleActive ? (
+            <ModulePanel
+              slug="shipping-module"
+              component="OrderMapPanel"
+              componentProps={{ orderId: order.id }}
+            />
+          ) : null}
+
           <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
             <div className="min-w-0 space-y-6">
               <Card className="min-w-0 shadow-sm">
@@ -534,39 +582,18 @@ export default function OrderDetailPage() {
                     <>
                   <Separator />
 
-                  <div className="space-y-2">
-                    <Label>{t('orders.newStatus')}</Label>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Select
-                        value={status || order.status}
-                        onValueChange={setStatus}
-                        disabled={patch.isPending}
-                      >
-                        <SelectTrigger className="w-[min(100%,220px)]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(statuses.length
-                            ? statuses
-                            : [{ slug: order.status, label: translateOrderStatus(t, order.status) }]
-                          ).map((s) => (
-                            <SelectItem key={s.slug} value={s.slug}>
-                              {translateOrderStatus(t, s.slug, s.label)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={patch.isPending || !status || status === order.status}
-                        onClick={applyStatus}
-                      >
-                        {t('orders.applyStatus')}
-                      </Button>
-                    </div>
-                  </div>
+                  <OrderStatusStepper
+                    currentStatus={order.status}
+                    availableStatuses={
+                      statuses.length
+                        ? statuses
+                        : [{ slug: order.status, label: translateOrderStatus(t, order.status) }]
+                    }
+                    disabled={patch.isPending}
+                    onSelectStatus={requestStatusChange}
+                    onShip={() => setShipOpen(true)}
+                    onCancel={() => requestStatusChange('cancelled')}
+                  />
 
                   {order.marketplace === 'digikala' ? (
                     <DigikalaOrderActions orderId={order.id} order={order} onDone={invalidateOrder} />
@@ -646,7 +673,14 @@ export default function OrderDetailPage() {
                                     {attrs.map((a) => (
                                       <li key={`${a.key}-${a.value}`} className="break-words">
                                         {formatOrderItemMetaKey(t, a.key)}:{' '}
-                                        {formatOrderItemMetaValue(t, a.key, a.value, order.currency)}
+                                        {formatOrderItemMetaValue(
+                                          t,
+                                          a.key,
+                                          a.value,
+                                          order.currency,
+                                          store.currencySymbol,
+                                          locale,
+                                        )}
                                       </li>
                                     ))}
                                   </ul>
@@ -731,7 +765,14 @@ export default function OrderDetailPage() {
                                       {attrs.map((a) => (
                                         <li key={`${a.key}-${a.value}`}>
                                           {formatOrderItemMetaKey(t, a.key)}:{' '}
-                                          {formatOrderItemMetaValue(t, a.key, a.value, order.currency)}
+                                          {formatOrderItemMetaValue(
+                                            t,
+                                            a.key,
+                                            a.value,
+                                            order.currency,
+                                            store.currencySymbol,
+                                            locale,
+                                          )}
                                         </li>
                                       ))}
                                     </ul>
@@ -910,6 +951,7 @@ export default function OrderDetailPage() {
                     postBarcode={order.post_barcode}
                     trackingProviders={order.tracking_providers}
                     onSaved={invalidateOrder}
+                    onOpenShip={() => setShipOpen(true)}
                   />
                   {shippingModuleActive ? (
                     <ModulePanel
@@ -922,14 +964,7 @@ export default function OrderDetailPage() {
                       }}
                     />
                   ) : null}
-                  {shippingModuleActive ? (
-                    <ModulePanel
-                      slug="shipping-module"
-                      component="OrderMapPanel"
-                      componentProps={{ orderId: order.id }}
-                    />
-                  ) : null}
-                  {tapinModuleActive ? (
+                  {tapinModuleActive && (order.is_tapin_shipping || order.has_tapin_meta) ? (
                     <ModulePanel
                       slug="tapin-module"
                       component="OrderTapinPanel"
@@ -1021,6 +1056,84 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {canManageOrders && order ? (
+        <OrderShipDialog
+          open={shipOpen}
+          onOpenChange={setShipOpen}
+          orderId={order.id}
+          trackingCode={order.tracking_code}
+          trackingProvider={order.tracking_provider}
+          shippingMethodTitle={order.shipping_method}
+          shippingItems={order.shipping_items}
+          shippingMethodOptions={order.shipping_method_options}
+          trackingProviders={order.tracking_providers}
+          availableStatuses={statuses}
+          onDone={invalidateOrder}
+        />
+      ) : null}
+
+      <AlertDialog
+        open={pendingStatus != null}
+        onOpenChange={(open) => {
+          if (!open) setPendingStatus(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingStatus === 'cancelled'
+                ? t('orders.cancelConfirmTitle')
+                : t('orders.statusConfirmTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-muted-foreground space-y-2 text-sm">
+                {pendingStatus === 'cancelled' && order ? (
+                  <>
+                    <p>
+                      {t('orders.statusConfirmBody', {
+                        from: translateOrderStatus(t, order.status),
+                        to: translateOrderStatus(t, 'cancelled'),
+                      })}
+                    </p>
+                    <p>
+                      {isInstallmentOrder(order)
+                        ? t('orders.cancelConfirmInstallment')
+                        : t('orders.cancelConfirmCash', {
+                            gateway: order.payment_method_title
+                              ? t('orders.cancelConfirmCashGateway', {
+                                  gateway: order.payment_method_title,
+                                })
+                              : '',
+                          })}
+                    </p>
+                  </>
+                ) : pendingStatus ? (
+                  <p>
+                    {t('orders.statusConfirmBody', {
+                      from: translateOrderStatus(t, order?.status || ''),
+                      to: translateOrderStatus(t, pendingStatus),
+                    })}
+                  </p>
+                ) : null}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={pendingStatus === 'cancelled' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
+              onClick={() => {
+                const next = pendingStatus
+                setPendingStatus(null)
+                if (next) applyStatus(next)
+              }}
+            >
+              {pendingStatus === 'cancelled' ? t('orders.cancelOrder') : t('common.confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageShell>
   )
 }

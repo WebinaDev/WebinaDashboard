@@ -4,14 +4,18 @@ import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { NotificationText } from '@/components/notifications/NotificationText'
 import { PageShell } from '@/components/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
+import { normalizeCapabilities } from '@/lib/bootstrapQuery'
 import { formatDisplayDateTime } from '@/lib/date'
+import { toNotificationNavPath } from '@/lib/notificationLink'
 import { cn } from '@/lib/utils'
 
 type NotificationRow = {
@@ -26,37 +30,14 @@ type NotificationRow = {
 
 const LEGACY_TABS = ['site', 'sms', 'bale', 'telegram', 'email', 'otp'] as const
 
-function toAppPath(link: string): string | null {
-  if (!link) return null
-  try {
-    if (link.startsWith('/')) {
-      if (link.startsWith('/dashboard')) {
-        return link.replace(/^\/dashboard/, '') || '/'
-      }
-      const base = (window.webinoDashboard?.baseUrl || '/dashboard/').replace(/\/$/, '')
-      const basePath = new URL(base, window.location.origin).pathname.replace(/\/$/, '')
-      if (link === basePath || link.startsWith(`${basePath}/`)) {
-        return link.slice(basePath.length) || '/'
-      }
-      return link
-    }
-    const u = new URL(link, window.location.origin)
-    const base = new URL(window.webinoDashboard?.baseUrl || '/dashboard/', window.location.origin)
-    const basePath = base.pathname.replace(/\/$/, '')
-    if (u.origin === base.origin && u.pathname.startsWith(basePath)) {
-      return `${u.pathname.slice(basePath.length) || '/'}${u.search}`
-    }
-  } catch {
-    return null
-  }
-  return null
-}
-
 export default function NotificationsHubPage() {
   const { t, i18n } = useTranslation()
   const [params, setParams] = useSearchParams()
   const nav = useNavigate()
   const qc = useQueryClient()
+  const bq = useBootstrapQuery()
+  const caps = normalizeCapabilities(bq.data?.capabilities ?? window.webinoDashboard?.bootstrap?.capabilities)
+  const isStaff = caps.includes('manage_woocommerce') || caps.includes('manage_options')
   const legacyTab = params.get('tab')
 
   if (legacyTab && (LEGACY_TABS as readonly string[]).includes(legacyTab)) {
@@ -103,9 +84,20 @@ export default function NotificationsHubPage() {
   const unread = q.data?.unread ?? 0
   const totalPages = Math.max(1, Math.ceil(total / perPage))
 
+  function typeLabel(type: string): string {
+    if (!type) return ''
+    const statusKey = `orders.wcStatus.${type}`
+    const statusLabel = t(statusKey)
+    if (statusLabel !== statusKey) return statusLabel
+    const eventKey = `notifications.event.${type}`
+    const eventLabel = t(eventKey)
+    if (eventLabel !== eventKey) return eventLabel
+    return type
+  }
+
   function openNotification(row: NotificationRow) {
     if (!row.read) void markOne.mutateAsync(row.id)
-    const appPath = toAppPath(row.link)
+    const appPath = toNotificationNavPath(row.link, isStaff)
     if (appPath) {
       nav(appPath)
       return
@@ -163,12 +155,14 @@ export default function NotificationsHubPage() {
                       {row.type ? (
                         <span className="ms-2 inline-flex">
                           <Badge variant="secondary" className="text-[10px] font-normal">
-                            {row.type}
+                            {typeLabel(row.type)}
                           </Badge>
                         </span>
                       ) : null}
                     </CardDescription>
-                    <CardTitle className="text-lg leading-snug">{row.title}</CardTitle>
+                    <CardTitle className="text-lg leading-snug">
+                      <NotificationText text={row.title} locale={i18n.language} />
+                    </CardTitle>
                   </div>
                   {!row.read ? (
                     <Badge variant="default" className="shrink-0">
@@ -179,7 +173,9 @@ export default function NotificationsHubPage() {
               </CardHeader>
               {row.body ? (
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">{row.body}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">
+                    <NotificationText text={row.body} locale={i18n.language} />
+                  </p>
                   {row.link ? (
                     <p className="text-primary mt-3 text-sm font-medium">{t('notifications.openAction')}</p>
                   ) : null}

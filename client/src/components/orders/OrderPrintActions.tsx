@@ -1,9 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import { Printer } from 'lucide-react'
+import { ChevronDown, Printer } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { OrderDocumentsSettings } from '@/components/settings/OrderDocumentsSettingsPanel'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { apiFetch } from '@/lib/api'
 import { openOrderPrint } from '@/lib/orderPrint'
 
@@ -25,7 +31,19 @@ export function OrderPrintActions({ orderId }: OrderPrintActionsProps) {
   const enableCustomer = docs.data?.enable_customer_label !== false
   const enableStore = docs.data?.enable_store_label !== false
 
-  if (!enableInvoice && !enableLabel && !enableReceipt && !enablePacking && !enableCustomer && !enableStore) return null
+  const secondary = [
+    enablePacking
+      ? { type: 'packing' as const, label: t('orders.printPacking') }
+      : null,
+    enableCustomer
+      ? { type: 'customer_label' as const, label: t('orders.printCustomerLabel') }
+      : null,
+    enableStore
+      ? { type: 'store_label' as const, label: t('orders.printStoreLabel') }
+      : null,
+  ].filter(Boolean) as { type: 'packing' | 'customer_label' | 'store_label'; label: string }[]
+
+  if (!enableInvoice && !enableLabel && !enableReceipt && !secondary.length) return null
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -47,23 +65,23 @@ export function OrderPrintActions({ orderId }: OrderPrintActionsProps) {
           {t('orders.printReceipt')}
         </Button>
       ) : null}
-      {enablePacking ? (
-        <Button type="button" variant="outline" size="sm" onClick={() => openOrderPrint(orderId, 'packing')}>
-          <Printer className="size-4" aria-hidden />
-          {t('orders.printPacking')}
-        </Button>
-      ) : null}
-      {enableCustomer ? (
-        <Button type="button" variant="outline" size="sm" onClick={() => openOrderPrint(orderId, 'customer_label')}>
-          <Printer className="size-4" aria-hidden />
-          {t('orders.printCustomerLabel')}
-        </Button>
-      ) : null}
-      {enableStore ? (
-        <Button type="button" variant="outline" size="sm" onClick={() => openOrderPrint(orderId, 'store_label')}>
-          <Printer className="size-4" aria-hidden />
-          {t('orders.printStoreLabel')}
-        </Button>
+      {secondary.length ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="sm">
+              <Printer className="size-4" aria-hidden />
+              {t('orders.printMore')}
+              <ChevronDown className="size-3.5 opacity-70" aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {secondary.map((item) => (
+              <DropdownMenuItem key={item.type} onSelect={() => openOrderPrint(orderId, item.type)}>
+                {item.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : null}
     </div>
   )

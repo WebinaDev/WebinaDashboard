@@ -24,6 +24,7 @@ class Webino_Dashboard_REST {
 		// Bypass WCDN/REST blocks: same payload via admin-ajax.php (same-origin cookies).
 		add_action( 'wp_ajax_webino_dashboard_bootstrap', array( __CLASS__, 'ajax_bootstrap' ) );
 		add_action( 'wp_ajax_webino_dashboard_auth_session', array( __CLASS__, 'ajax_auth_session' ) );
+		add_action( 'wp_ajax_nopriv_webino_dashboard_auth_session', array( __CLASS__, 'ajax_auth_session' ) );
 		add_action( 'wp_ajax_webino_dashboard_overview', array( __CLASS__, 'ajax_overview' ) );
 		add_action( 'wp_ajax_webino_dashboard_sms_panel', array( __CLASS__, 'ajax_sms_panel' ) );
 		add_action( 'wp_ajax_webino_dashboard_shop_rest', array( __CLASS__, 'ajax_shop_rest' ) );
@@ -46,11 +47,12 @@ class Webino_Dashboard_REST {
 
 	/**
 	 * admin-ajax fallback for auth/session.
+	 * Public probe (mirrors REST permission_callback __return_true): do not die on
+	 * expired/missing nonce — dead sessions must still return logged_in: false.
 	 *
 	 * @return void
 	 */
 	public static function ajax_auth_session() {
-		check_ajax_referer( 'wp_rest', 'nonce' );
 		wp_send_json_success(
 			array(
 				'logged_in' => is_user_logged_in(),
@@ -118,7 +120,11 @@ class Webino_Dashboard_REST {
 		if ( ! is_string( $path ) || '' === $path ) {
 			return false;
 		}
-		return 0 === strpos( $path, 'shop/products' );
+		return 0 === strpos( $path, 'shop/products' )
+			|| 0 === strpos( $path, 'shop/reports' )
+			|| 0 === strpos( $path, 'shop/product-categories' )
+			|| 'comments' === $path
+			|| 0 === strpos( $path, 'comments/' );
 	}
 
 	/**

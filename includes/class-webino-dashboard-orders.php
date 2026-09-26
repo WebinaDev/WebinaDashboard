@@ -892,14 +892,31 @@ class Webino_Dashboard_Orders {
 		}
 
 		$shipping_items = array();
+		$is_tapin_shipping = false;
+		$tapin_method_ids = array(
+			'webino_tapin_pishtaz',
+			'webino_tapin_vip',
+			'webino_tapin_tipax',
+			'webino_tapin_tipax_api',
+			'webino_tapin_alonomic',
+			'webino_courier',
+			'webino_pishtaz_1405',
+		);
 		foreach ( $o->get_shipping_methods() as $method ) {
+			$method_id = (string) $method->get_method_id();
 			$shipping_items[] = array(
-				'id'        => $method->get_method_id(),
-				'instance'  => $method->get_instance_id(),
-				'name'      => $method->get_name(),
-				'total'     => $method->get_total(),
+				'id'       => $method_id,
+				'instance' => $method->get_instance_id(),
+				'name'     => $method->get_name(),
+				'total'    => $method->get_total(),
 			);
+			if ( 0 === strpos( $method_id, 'webino_tapin_' ) || in_array( $method_id, $tapin_method_ids, true ) ) {
+				$is_tapin_shipping = true;
+			}
 		}
+		$has_tapin_meta = '' !== (string) $o->get_meta( '_webino_tapin_order_id' )
+			|| '' !== (string) $o->get_meta( '_webino_tapin_barcode' )
+			|| '' !== (string) $o->get_meta( '_webino_tapin_uuid' );
 
 		$notes_out = array();
 		if ( function_exists( 'wc_get_order_notes' ) ) {
@@ -1000,6 +1017,8 @@ class Webino_Dashboard_Orders {
 			'shipping_formatted'       => self::address_parts_for_rest( $shipping_parts ),
 			'shipping_method'          => self::get_shipping_method_title( $o ),
 			'shipping_items'           => $shipping_items,
+			'is_tapin_shipping'        => $is_tapin_shipping,
+			'has_tapin_meta'           => $has_tapin_meta,
 			'shipping_method_options'  => self::get_shipping_method_options(),
 			'tracking_providers'       => self::get_tracking_providers(),
 			'packaging_plan'           => ( static function ( $raw ) {
@@ -1204,33 +1223,36 @@ class Webino_Dashboard_Orders {
 		}
 
 		$customer_role = sanitize_key( (string) $request->get_param( 'customer_role' ) );
-		if ( 'webino_partner' === $customer_role ) {
-			$partner_ids = get_users(
+		if ( in_array( $customer_role, array( 'webino_partner', 'customer' ), true ) ) {
+			$role_ids = get_users(
 				array(
-					'role'   => 'webino_partner',
+					'role'   => $customer_role,
 					'fields' => 'ID',
 					'number' => 5000,
 				)
 			);
-			$partner_ids = array_map( 'intval', (array) $partner_ids );
-			if ( empty( $partner_ids ) ) {
+			$role_ids = array_map( 'intval', (array) $role_ids );
+			if ( empty( $role_ids ) ) {
 				$args['customer_id'] = 0;
 			} else {
-				$args['customer'] = $partner_ids;
+				$args['customer'] = $role_ids;
 			}
 		}
 
 		$state = sanitize_text_field( (string) $request->get_param( 'state' ) );
 		if ( '' !== $state ) {
+			$state_values = self::state_filter_equivalent_values( $state );
 			$meta_query[] = array(
 				'relation' => 'OR',
 				array(
-					'key'   => '_shipping_state',
-					'value' => $state,
+					'key'     => '_shipping_state',
+					'value'   => $state_values,
+					'compare' => 'IN',
 				),
 				array(
-					'key'   => '_billing_state',
-					'value' => $state,
+					'key'     => '_billing_state',
+					'value'   => $state_values,
+					'compare' => 'IN',
 				),
 			);
 		}
@@ -1422,22 +1444,314 @@ class Webino_Dashboard_Orders {
 	}
 
 	/**
+	 * Whether WooCommerce HPOS custom orders table is in use.
+	 *
+	 * @return bool
+	 */
+	private static function orders_table_usage_is_enabled() {
+		if ( class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& method_exists( '\Automattic\WooCommerce\Utilities\OrderUtil', 'custom_orders_table_usage_is_enabled' ) ) {
+			return (bool) \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+		}
+		if ( function_exists( 'woocommerce_custom_orders_table_usage_is_enabled' ) ) {
+			return (bool) woocommerce_custom_orders_table_usage_is_enabled();
+		}
+		return false;
+	}
+
+	/**
+	 * Payment gateways that are enabled or have been used on at least one order.
+	 *
+	 * @return array<int,array{id:string,title:string}>
+	 */
+	private static function get_payment_filter_options() {
+		$by_lower = array();
+		$gateways = array();
+		if ( function_exists( 'WC' ) && WC()->payment_gateways() ) {
+			$gateways = WC()->payment_gateways()->payment_gateways();
+			if ( ! is_array( $gateways ) ) {
+				$gateways = array();
+			}
+		}
+
+		foreach ( $gateways as $gw ) {
+			if ( ! is_object( $gw ) || empty( $gw->id ) ) {
+				continue;
+			}
+			$enabled = isset( $gw->enabled ) && 'yes' === $gw->enabled;
+			if ( ! $enabled ) {
+				continue;
+			}
+			$id    = (string) $gw->id;
+			$lower = strtolower( $id );
+			$by_lower[ $lower ] = array(
+				'id'    => $id,
+				'title' => (string) ( $gw->get_title() ?: $id ),
+			);
+		}
+
+		foreach ( self::distinct_order_payment_methods() as $raw_id ) {
+			$lower = strtolower( $raw_id );
+			if ( isset( $by_lower[ $lower ] ) ) {
+				continue;
+			}
+			$canonical = $raw_id;
+			$title     = $raw_id;
+			foreach ( $gateways as $gw ) {
+				if ( ! is_object( $gw ) || empty( $gw->id ) ) {
+					continue;
+				}
+				if ( strtolower( (string) $gw->id ) === $lower ) {
+					$canonical = (string) $gw->id;
+					$title     = (string) ( $gw->get_title() ?: $canonical );
+					break;
+				}
+			}
+			$by_lower[ $lower ] = array(
+				'id'    => $canonical,
+				'title' => $title,
+			);
+		}
+
+		return array_values( $by_lower );
+	}
+
+	/**
+	 * Distinct payment_method values from existing orders.
+	 *
+	 * @return string[]
+	 */
+	private static function distinct_order_payment_methods() {
+		global $wpdb;
+		$out = array();
+		if ( self::orders_table_usage_is_enabled() ) {
+			$table = $wpdb->prefix . 'wc_orders';
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$rows = $wpdb->get_col( "SELECT DISTINCT payment_method FROM {$table} WHERE payment_method IS NOT NULL AND payment_method <> ''" );
+		} else {
+			$rows = $wpdb->get_col(
+				"SELECT DISTINCT pm.meta_value
+				FROM {$wpdb->postmeta} pm
+				INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+				WHERE pm.meta_key = '_payment_method'
+					AND pm.meta_value <> ''
+					AND p.post_type = 'shop_order'"
+			);
+		}
+		if ( ! is_array( $rows ) ) {
+			return $out;
+		}
+		$seen = array();
+		foreach ( $rows as $row ) {
+			$id = trim( (string) $row );
+			if ( '' === $id ) {
+				continue;
+			}
+			$lower = strtolower( $id );
+			if ( isset( $seen[ $lower ] ) ) {
+				continue;
+			}
+			$seen[ $lower ] = true;
+			$out[]          = $id;
+		}
+		return $out;
+	}
+
+	/**
+	 * Expand a selected state filter value into all equivalent stored forms
+	 * (WC code, WC label, state_city term id / name / state_code).
+	 *
+	 * @param string $state Selected filter value.
+	 * @return string[]
+	 */
+	private static function state_filter_equivalent_values( $state ) {
+		$state = trim( (string) $state );
+		$out   = array();
+		if ( '' === $state ) {
+			return $out;
+		}
+		$add = static function ( $value ) use ( &$out ) {
+			$value = trim( (string) $value );
+			if ( '' === $value ) {
+				return;
+			}
+			foreach ( $out as $existing ) {
+				if ( 0 === strcasecmp( $existing, $value ) ) {
+					return;
+				}
+			}
+			$out[] = $value;
+		};
+		$add( $state );
+
+		$country = 'IR';
+		if ( function_exists( 'wc_get_base_location' ) ) {
+			$base = wc_get_base_location();
+			if ( ! empty( $base['country'] ) ) {
+				$country = (string) $base['country'];
+			}
+		}
+
+		$wc_states = array();
+		if ( function_exists( 'WC' ) && WC()->countries ) {
+			$raw = WC()->countries->get_states( $country );
+			if ( is_array( $raw ) ) {
+				$wc_states = $raw;
+			}
+		}
+
+		foreach ( $wc_states as $code => $label ) {
+			$code  = (string) $code;
+			$label = (string) $label;
+			if ( 0 === strcasecmp( $code, $state ) || 0 === strcasecmp( $label, $state ) ) {
+				$add( $code );
+				$add( $label );
+			}
+		}
+
+		if ( taxonomy_exists( 'state_city' ) ) {
+			if ( ctype_digit( $state ) ) {
+				$term = get_term( (int) $state, 'state_city' );
+				if ( $term instanceof WP_Term && ! is_wp_error( $term ) ) {
+					$add( (string) $term->term_id );
+					$add( (string) $term->name );
+					$meta_code = (string) get_term_meta( $term->term_id, 'state_code', true );
+					if ( '' !== $meta_code ) {
+						$add( $meta_code );
+						if ( isset( $wc_states[ $meta_code ] ) ) {
+							$add( (string) $wc_states[ $meta_code ] );
+						}
+					}
+				}
+			}
+
+			$terms = get_terms(
+				array(
+					'taxonomy'   => 'state_city',
+					'hide_empty' => false,
+					'parent'     => 0,
+				)
+			);
+			if ( is_array( $terms ) ) {
+				foreach ( $terms as $term ) {
+					if ( ! ( $term instanceof WP_Term ) ) {
+						continue;
+					}
+					$meta_code = (string) get_term_meta( $term->term_id, 'state_code', true );
+					$name      = (string) $term->name;
+					$matched   = 0 === strcasecmp( $name, $state )
+						|| ( '' !== $meta_code && 0 === strcasecmp( $meta_code, $state ) )
+						|| ( isset( $wc_states[ $state ] ) && 0 === strcasecmp( $name, (string) $wc_states[ $state ] ) );
+					if ( ! $matched ) {
+						continue;
+					}
+					$add( (string) $term->term_id );
+					$add( $name );
+					if ( '' !== $meta_code ) {
+						$add( $meta_code );
+						if ( isset( $wc_states[ $meta_code ] ) ) {
+							$add( (string) $wc_states[ $meta_code ] );
+						}
+					}
+				}
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Active marketplace modules for the orders filter.
+	 *
+	 * @return array<int,array{id:string,title:string}>
+	 */
+	private static function get_marketplace_filter_options() {
+		$map = array(
+			'digikala'         => 'digikala-sellers-module',
+			'basalam'          => 'basalam-module',
+			'snappshop'        => 'snappshop-module',
+			'tapsishop'        => 'tapsishop-module',
+			'technolife'       => 'technolife-module',
+			'torob'            => 'torob-connector-module',
+			'emalls'           => 'emalls-module',
+			'snapppay-search'  => 'snapppay-search-module',
+			'zarehbin'         => 'zarehbin-module',
+		);
+		$labels = class_exists( 'Webino_Dashboard_Marketplace' )
+			? Webino_Dashboard_Marketplace::labels()
+			: array();
+		$out    = array();
+		foreach ( $map as $platform_id => $module_slug ) {
+			if ( ! class_exists( 'Webino_Dashboard_Module_Registry' )
+				|| ! Webino_Dashboard_Module_Registry::is_active( $module_slug ) ) {
+				continue;
+			}
+			$out[] = array(
+				'id'    => $platform_id,
+				'title' => isset( $labels[ $platform_id ] ) ? (string) $labels[ $platform_id ] : $platform_id,
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Distinct non-empty order meta values for a key (HPOS-aware).
+	 *
+	 * @param string $meta_key Meta key.
+	 * @return string[]
+	 */
+	private static function distinct_order_meta_values( $meta_key ) {
+		global $wpdb;
+		$meta_key = (string) $meta_key;
+		$out      = array();
+		if ( '' === $meta_key ) {
+			return $out;
+		}
+		if ( self::orders_table_usage_is_enabled() ) {
+			$table = $wpdb->prefix . 'wc_orders_meta';
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$rows = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT DISTINCT meta_value FROM {$table} WHERE meta_key = %s AND meta_value IS NOT NULL AND meta_value <> ''",
+					$meta_key
+				)
+			);
+		} else {
+			$rows = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT DISTINCT pm.meta_value
+					FROM {$wpdb->postmeta} pm
+					INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+					WHERE pm.meta_key = %s
+						AND pm.meta_value <> ''
+						AND p.post_type = 'shop_order'",
+					$meta_key
+				)
+			);
+		}
+		if ( ! is_array( $rows ) ) {
+			return $out;
+		}
+		foreach ( $rows as $row ) {
+			$val = sanitize_text_field( (string) $row );
+			if ( '' !== $val ) {
+				$out[] = $val;
+			}
+		}
+		$out = array_values( array_unique( $out ) );
+		natcasesort( $out );
+		return array_values( $out );
+	}
+
+	/**
 	 * Filter dropdown options for orders list.
 	 *
 	 * @return array<string,mixed>
 	 */
 	public static function get_filter_options() {
-		$payments = array();
-		if ( function_exists( 'WC' ) && WC()->payment_gateways() ) {
-			foreach ( WC()->payment_gateways()->payment_gateways() as $gw ) {
-				$payments[] = array(
-					'id'    => $gw->id,
-					'title' => $gw->get_title() ?: $gw->id,
-				);
-			}
-		}
-		$states = array();
-		$country = 'IR';
+		$payments = self::get_payment_filter_options();
+		$states   = array();
+		$country  = 'IR';
 		if ( function_exists( 'wc_get_base_location' ) ) {
 			$base = wc_get_base_location();
 			if ( ! empty( $base['country'] ) ) {
@@ -1489,23 +1803,92 @@ class Webino_Dashboard_Orders {
 			}
 		}
 
-		$marketplaces = array(
-			array( 'id' => 'digikala', 'title' => 'Digikala' ),
-			array( 'id' => 'basalam', 'title' => 'Basalam' ),
-			array( 'id' => 'technolife', 'title' => 'Technolife' ),
-			array( 'id' => 'tapsishop', 'title' => 'TapsiShop' ),
-			array( 'id' => 'snappshop', 'title' => 'SnappShop' ),
-			array( 'id' => 'torob', 'title' => 'Torob' ),
-			array( 'id' => 'emalls', 'title' => 'Emalls' ),
-			array( 'id' => 'snapppay-search', 'title' => 'SnappPay Search' ),
-			array( 'id' => 'zarehbin', 'title' => 'Zarehbin' ),
-		);
-
 		return array(
-			'payments'      => $payments,
-			'states'        => $states,
-			'shipping'      => self::get_shipping_method_options(),
-			'marketplaces'  => $marketplaces,
+			'payments'       => $payments,
+			'states'         => $states,
+			'shipping'       => self::get_shipping_filter_options(),
+			'marketplaces'   => self::get_marketplace_filter_options(),
+			'utm_sources'    => self::distinct_order_meta_values( '_wc_order_attribution_utm_source' ),
+			'utm_mediums'    => self::distinct_order_meta_values( '_wc_order_attribution_utm_medium' ),
+			'utm_campaigns'  => self::distinct_order_meta_values( '_wc_order_attribution_utm_campaign' ),
+		);
+	}
+
+	/**
+	 * Shipping methods currently added to shipping zones (orders list filter).
+	 *
+	 * @return array<int,array{id:string,title:string}>
+	 */
+	public static function get_shipping_filter_options() {
+		$out = array();
+		if ( ! function_exists( 'WC' ) ) {
+			return $out;
+		}
+		if ( ! class_exists( 'WC_Shipping_Zones', false ) && defined( 'WC_ABSPATH' ) ) {
+			include_once WC_ABSPATH . 'includes/class-wc-shipping-zones.php';
+		}
+		if ( ! class_exists( 'WC_Shipping_Zones', false ) ) {
+			return $out;
+		}
+		$by_id = array();
+		$zones = WC_Shipping_Zones::get_zones();
+		if ( ! is_array( $zones ) ) {
+			$zones = array();
+		}
+		foreach ( $zones as $zone ) {
+			$methods = isset( $zone['shipping_methods'] ) && is_array( $zone['shipping_methods'] )
+				? $zone['shipping_methods']
+				: array();
+			foreach ( $methods as $method ) {
+				self::collect_zone_shipping_method( $method, $by_id );
+			}
+		}
+		$rest = WC_Shipping_Zones::get_zone( 0 );
+		if ( $rest && is_callable( array( $rest, 'get_shipping_methods' ) ) ) {
+			foreach ( (array) $rest->get_shipping_methods() as $method ) {
+				self::collect_zone_shipping_method( $method, $by_id );
+			}
+		}
+		return array_values( $by_id );
+	}
+
+	/**
+	 * @param mixed                         $method Zone shipping method instance.
+	 * @param array<string,array{id:string,title:string}> $by_id Accumulator keyed by method_id.
+	 * @return void
+	 */
+	private static function collect_zone_shipping_method( $method, array &$by_id ) {
+		if ( ! is_object( $method ) ) {
+			return;
+		}
+		$enabled = true;
+		if ( isset( $method->enabled ) ) {
+			$enabled = 'yes' === $method->enabled;
+		} elseif ( is_callable( array( $method, 'is_enabled' ) ) ) {
+			$enabled = (bool) $method->is_enabled();
+		}
+		if ( ! $enabled ) {
+			return;
+		}
+		$id = '';
+		if ( is_callable( array( $method, 'get_method_id' ) ) ) {
+			$id = (string) $method->get_method_id();
+		} elseif ( isset( $method->id ) ) {
+			$id = (string) $method->id;
+		}
+		if ( '' === $id || isset( $by_id[ $id ] ) ) {
+			return;
+		}
+		$title = '';
+		if ( is_callable( array( $method, 'get_title' ) ) ) {
+			$title = (string) $method->get_title();
+		}
+		if ( '' === $title && is_callable( array( $method, 'get_method_title' ) ) ) {
+			$title = (string) $method->get_method_title();
+		}
+		$by_id[ $id ] = array(
+			'id'    => $id,
+			'title' => $title ?: $id,
 		);
 	}
 

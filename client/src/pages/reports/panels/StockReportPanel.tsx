@@ -19,19 +19,30 @@ import { formatNumber } from '@/lib/formatNumber'
 import type { InventoryReportResponse, InventoryReportRow } from '@/types/orderReports'
 
 const VALUE_BASES = ['purchase', 'retail', 'current', 'wholesale', 'credit'] as const
+const STOCK_FILTERS = ['all', 'instock', 'outofstock', 'onbackorder', 'lowstock', 'missing_cost'] as const
+const ALL_CATS = '__all__'
+
+type CategoryOption = { id: number; name: string }
 
 export function StockReportPanel() {
   const { t, i18n } = useTranslation()
   const store = useStoreCurrency()
   const [filter, setFilter] = useState('all')
+  const [category, setCategory] = useState(0)
   const [valueBase, setValueBase] = useState<(typeof VALUE_BASES)[number]>('purchase')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [orderby, setOrderby] = useState('name')
   const [order, setOrder] = useState<'asc' | 'desc'>('asc')
 
+  const catsQ = useQuery({
+    queryKey: ['product-categories', 'stock-filter'],
+    queryFn: () => apiFetch<{ items: CategoryOption[] }>('shop/product-categories?sort=name_asc'),
+    staleTime: 120_000,
+  })
+
   const q = useQuery({
-    queryKey: ['shop-reports', 'stock', filter, search, page, orderby, order],
+    queryKey: ['shop-reports', 'stock', filter, category, search, page, orderby, order],
     queryFn: () => {
       const p = new URLSearchParams()
       p.set('stock_filter', filter)
@@ -40,6 +51,7 @@ export function StockReportPanel() {
       p.set('orderby', orderby)
       p.set('order', order)
       if (search) p.set('search', search)
+      if (category > 0) p.set('category', String(category))
       return apiFetch<InventoryReportResponse>(`shop/reports/stock?${p.toString()}`)
     },
     retry: false,
@@ -48,6 +60,7 @@ export function StockReportPanel() {
   const data = q.data
   const currency = data?.currency || store.currency
   const summary = data?.summary
+  const categories = catsQ.data?.items ?? []
 
   const columns: ReportColumn<InventoryReportRow>[] = [
     { id: 'name', header: t('reports.table.product'), sortable: true, cell: (r) => r.name },
@@ -211,6 +224,7 @@ export function StockReportPanel() {
             const p = new URLSearchParams()
             p.set('stock_filter', filter)
             if (search) p.set('search', search)
+            if (category > 0) p.set('category', String(category))
             void downloadReportCsv(`shop/reports/stock/export?${p.toString()}`, `inventory-${new Date().toISOString().slice(0, 10)}.csv`)
           }}
         >
@@ -229,9 +243,28 @@ export function StockReportPanel() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {['all', 'instock', 'outofstock', 'lowstock', 'missing_cost'].map((f) => (
+              {STOCK_FILTERS.map((f) => (
                 <SelectItem key={f} value={f}>
                   {t(`reports.stockFilter.${f}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={category > 0 ? String(category) : ALL_CATS}
+            onValueChange={(v) => {
+              setCategory(v === ALL_CATS ? 0 : Number(v) || 0)
+              setPage(1)
+            }}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder={t('reports.stock.categoryAll')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_CATS}>{t('reports.stock.categoryAll')}</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.name}
                 </SelectItem>
               ))}
             </SelectContent>

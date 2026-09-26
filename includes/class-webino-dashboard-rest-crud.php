@@ -783,6 +783,18 @@ class Webino_Dashboard_REST_Crud {
 
 		register_rest_route(
 			self::NS,
+			'/shop/products/bulk-sale',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'Webino_Dashboard_Bulk_Sale', 'rest' ),
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can( 'edit_products' );
+				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shop/brands',
 			array(
 				array(
@@ -1115,6 +1127,54 @@ class Webino_Dashboard_REST_Crud {
 				'permission_callback' => function () {
 					return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
 				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/marketing/coupons/templates',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'Webino_Dashboard_Offer_Engine', 'rest_templates' ),
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/marketing/coupons/from-template',
+			array(
+				'methods'             => 'POST',
+				'callback'            => static function ( WP_REST_Request $request ) {
+					return Webino_Dashboard_Offer_Engine::create_from_template( (string) $request->get_param( 'template_id' ) );
+				},
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/marketing/coupons/offers',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'Webino_Dashboard_Offer_Engine', 'rest_owned_offers' ),
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/marketing/offers/eligible',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'Webino_Dashboard_Offer_Engine', 'rest_eligible' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -6723,6 +6783,39 @@ class Webino_Dashboard_REST_Crud {
 				$o->update_meta_data( '_tracking_provider', $provider );
 			} else {
 				$o->update_meta_data( '_tracking_provider', sanitize_text_field( (string) $request->get_param( 'tracking_provider' ) ) );
+			}
+			$o->save();
+		}
+		if ( null !== $request->get_param( 'shipping_method_id' ) ) {
+			$method_id = sanitize_text_field( (string) $request->get_param( 'shipping_method_id' ) );
+			$title     = $method_id;
+			if ( class_exists( 'Webino_Dashboard_Orders', false ) ) {
+				foreach ( Webino_Dashboard_Orders::get_shipping_method_options() as $opt ) {
+					if ( isset( $opt['id'] ) && (string) $opt['id'] === $method_id ) {
+						$title = (string) ( $opt['title'] ?? $method_id );
+						break;
+					}
+				}
+			}
+			$updated = false;
+			foreach ( $o->get_items( 'shipping' ) as $item ) {
+				if ( ! $item instanceof WC_Order_Item_Shipping ) {
+					continue;
+				}
+				$item->set_method_id( $method_id );
+				$item->set_method_title( $title );
+				$item->set_name( $title );
+				$item->save();
+				$updated = true;
+				break;
+			}
+			if ( ! $updated && '' !== $method_id && 'other' !== $method_id ) {
+				$item = new WC_Order_Item_Shipping();
+				$item->set_method_id( $method_id );
+				$item->set_method_title( $title );
+				$item->set_name( $title );
+				$item->set_total( 0 );
+				$o->add_item( $item );
 			}
 			$o->save();
 		}

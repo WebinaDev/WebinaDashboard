@@ -13,6 +13,7 @@ import { toastApiError } from '@/lib/apiError'
 
 const SECTIONS = [
   'overview',
+  'tax',
   'chart',
   'journals',
   'persons',
@@ -103,6 +104,46 @@ export default function AccountingShell() {
     queryKey: ['accounting', 'overview'],
     queryFn: async () => apiFetch<Record<string, unknown>>('accounting/overview'),
     enabled: section === 'overview',
+  })
+
+  const settingsGateQ = useQuery({
+    queryKey: ['accounting', 'settings'],
+    queryFn: async () => apiFetch<{ wizard_done?: boolean }>('accounting/settings'),
+    enabled: section === 'tax',
+  })
+
+  const [taxFrom, setTaxFrom] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 90)
+    return d.toISOString().slice(0, 10)
+  })
+  const [taxTo, setTaxTo] = useState(() => new Date().toISOString().slice(0, 10))
+
+  const taxSummaryQ = useQuery({
+    queryKey: ['accounting', 'tax', 'summary', taxFrom, taxTo],
+    queryFn: async () =>
+      apiFetch<Record<string, unknown>>(
+        `accounting/tax/summary?from=${encodeURIComponent(taxFrom)}&to=${encodeURIComponent(taxTo)}`,
+      ),
+    enabled: section === 'tax',
+  })
+
+  const taxTipsQ = useQuery({
+    queryKey: ['accounting', 'tax', 'tips'],
+    queryFn: async () =>
+      apiFetch<{ items: { id: number; severity: string; message_key: string; payload?: Record<string, unknown> }[] }>(
+        'accounting/tax/tips',
+      ),
+    enabled: section === 'tax',
+  })
+
+  const dismissTip = useMutation({
+    mutationFn: async (id: number) =>
+      apiFetch(`accounting/tax/tips/${id}/dismiss`, { method: 'POST', body: '{}' }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['accounting', 'tax', 'tips'] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
   })
 
   const journalsQ = useAccList('accounting/journals', section === 'journals')
@@ -502,8 +543,76 @@ export default function AccountingShell() {
             <Button variant="outline" onClick={() => { window.location.href = '/dashboard/settings/shop/accounting' }}>
               {t('accounting.settings.moadian')}
             </Button>
+            <Button variant="outline" asChild>
+              <Link to="/accounting/tax">{t('accounting.nav.tax')}</Link>
+            </Button>
           </div>
         </div>
+      ) : null}
+
+      {section === 'tax' ? (
+        settingsGateQ.data && settingsGateQ.data.wizard_done === false ? (
+          <Navigate to="/accounting/tax-setup" replace />
+        ) : (
+          <div className="space-y-4">
+            <p className="text-muted-foreground text-xs">{t('accounting.tax.disclaimer')}</p>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-1">
+                <label className="text-xs">{t('accounting.tax.from')}</label>
+                <Input type="date" dir="ltr" value={taxFrom} onChange={(e) => setTaxFrom(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs">{t('accounting.tax.to')}</label>
+                <Input type="date" dir="ltr" value={taxTo} onChange={(e) => setTaxTo(e.target.value)} />
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/accounting/tax-setup">{t('accounting.taxWizard.reopen')}</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/accounting/moadian">{t('accounting.nav.moadian')}</Link>
+              </Button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Card title={t('accounting.tax.revenue')} value={<Money value={taxSummaryQ.data?.revenue as number} />} />
+              <Card title={t('accounting.tax.profit')} value={<Money value={taxSummaryQ.data?.profit as number} />} />
+              <Card title={t('accounting.tax.loss')} value={<Money value={taxSummaryQ.data?.loss as number} />} />
+              <Card title={t('accounting.tax.vatNet')} value={<Money value={taxSummaryQ.data?.vat_net as number} />} />
+              <Card title={t('accounting.tax.incomeTax')} value={<Money value={taxSummaryQ.data?.income_tax_estimate as number} />} />
+              <Card
+                title={t('accounting.kpi.moadianPending')}
+                value={String(taxSummaryQ.data?.moadian_pending ?? 0)}
+              />
+            </div>
+            <div>
+              <h3 className="mb-2 text-sm font-semibold">{t('accounting.tax.tips')}</h3>
+              {(taxTipsQ.data?.items ?? []).length === 0 ? (
+                <p className="text-muted-foreground text-sm">—</p>
+              ) : (
+                <ul className="space-y-2">
+                  {(taxTipsQ.data?.items ?? []).map((tip) => (
+                    <li
+                      key={tip.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+                    >
+                      <span>
+                        <span className="text-muted-foreground me-2 text-xs uppercase">{tip.severity}</span>
+                        {t(tip.message_key, tip.payload ?? {})}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => dismissTip.mutate(tip.id)}
+                      >
+                        {t('accounting.tax.dismiss')}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )
       ) : null}
 
       {section === 'chart' ? (

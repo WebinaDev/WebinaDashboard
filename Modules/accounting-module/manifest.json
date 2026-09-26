@@ -1,7 +1,7 @@
 {
   "slug": "accounting-module",
   "name": "Accounting",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "is_builtin": true,
   "is_first_party": true,
   "requires_woocommerce": true,
@@ -27,6 +27,8 @@
     "nav_group": "shop",
     "children": [
       { "id": "accounting-overview", "title": "Overview", "path": "/accounting/overview", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
+      { "id": "accounting-tax", "title": "Tax", "path": "/accounting/tax", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true, "titleKey": "accounting.nav.tax" },
+      { "id": "accounting-tax-setup", "title": "Tax setup", "path": "/accounting/tax-setup", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true, "titleKey": "accounting.taxWizard.title" },
       { "id": "accounting-chart", "title": "Chart of accounts", "path": "/accounting/chart", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
       { "id": "accounting-journals", "title": "Journals", "path": "/accounting/journals", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
       { "id": "accounting-persons", "title": "Persons", "path": "/accounting/persons", "capability": "webino_manage_accounting", "exclude_from_module_toggle": true },
@@ -53,6 +55,7 @@
     "routes": [
       { "path": "accounting/:section", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.title", "headerParamKeys": { "section": "section" } },
       { "path": "accounting/my-payroll", "capability": ["read"], "headerTitleKey": "accounting.payroll.myPayroll" },
+      { "path": "accounting/tax-setup", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.taxWizard.title" },
       { "path": "settings/shop/accounting", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.moadian" },
       { "path": "settings/shop/accounting/company", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.company" },
       { "path": "settings/shop/accounting/sync", "capability": ["manage_woocommerce", "webino_manage_accounting"], "headerTitleKey": "accounting.settings.sync" },

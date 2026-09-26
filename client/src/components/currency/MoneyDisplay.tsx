@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { IrtIcon } from '@/components/currency/IrtIcon'
 import { decodePriceEntities, isTomanCurrency, parseWcPriceText } from '@/lib/currency'
-import { localizeDigits } from '@/lib/digits'
+import { localizeDigits, toAsciiDigits } from '@/lib/digits'
 import { formatNumber } from '@/lib/formatNumber'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +16,17 @@ type MoneyDisplayProps = {
   prefix?: ReactNode
 }
 
+const TOMAN_WORD = /تومان|toman|irt/gi
+
+function numericFromAmount(amount: number | string): number {
+  if (typeof amount === 'number') return Number.isFinite(amount) ? amount : 0
+  const cleaned = toAsciiDigits(decodePriceEntities(amount))
+    .replace(TOMAN_WORD, '')
+    .replace(/[^\d.-]/g, '')
+  const n = parseFloat(cleaned)
+  return Number.isFinite(n) ? n : NaN
+}
+
 export function MoneyDisplay({
   amount,
   currency,
@@ -25,21 +36,24 @@ export function MoneyDisplay({
   amountClassName,
   prefix,
 }: MoneyDisplayProps) {
-  const cleaned =
-    typeof amount === 'string' ? decodePriceEntities(amount).replace(/[^\d.-]/g, '') : ''
-  const numeric = typeof amount === 'number' ? amount : parseFloat(cleaned)
-  const formatted =
-    typeof amount === 'string' && Number.isNaN(numeric)
-      ? decodePriceEntities(amount)
-      : formatNumber(Number.isFinite(numeric) ? numeric : 0, locale)
+  const numeric = numericFromAmount(amount)
+  const formatted = Number.isFinite(numeric)
+    ? formatNumber(numeric, locale)
+    : localizeDigits(
+        toAsciiDigits(decodePriceEntities(String(amount))).replace(TOMAN_WORD, '').trim(),
+        locale
+      )
   const toman =
     isTomanCurrency(currency, currencySymbol) || (!currency?.trim() && !currencySymbol?.trim())
 
   return (
-    <span className={cn('inline-flex items-baseline gap-1', className)}>
+    <span className={cn('inline-flex items-baseline gap-1', className)} dir="ltr">
       {prefix}
+      {toman ? <IrtIcon /> : null}
       <span className={amountClassName}>{formatted}</span>
-      {toman ? <IrtIcon /> : currency ? <span className="text-muted-foreground text-[0.85em]">{currency}</span> : null}
+      {!toman && currency ? (
+        <span className="text-muted-foreground text-[0.85em]">{currency}</span>
+      ) : null}
     </span>
   )
 }
@@ -61,9 +75,14 @@ export function WcPriceText({ text, className, locale = 'en' }: WcPriceTextProps
     return <span className={className}>{localizeDigits(decoded, locale)}</span>
   }
   return (
-    <span className={cn('inline-flex items-baseline gap-1', className)}>
-      <span>{localizeDigits(parsed.amount || decoded.replace(TOMAN_HINT, '').trim(), locale)}</span>
+    <span className={cn('inline-flex items-baseline gap-1', className)} dir="ltr">
       <IrtIcon />
+      <span>
+        {localizeDigits(
+          toAsciiDigits(parsed.amount || decoded.replace(TOMAN_HINT, '').trim()),
+          locale
+        )}
+      </span>
     </span>
   )
 }

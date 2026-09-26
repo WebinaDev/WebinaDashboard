@@ -479,4 +479,74 @@ class Webino_Dashboard_Locale {
 		}
 		return $now->format( 'F Y' );
 	}
+
+	/**
+	 * Calendar month window with offset (0 = this month, -1 = previous, …).
+	 * Jalali for fa* locales; Gregorian otherwise. Current month end capped at now.
+	 *
+	 * @param int    $offset_months Month offset.
+	 * @param string $locale        Locale.
+	 * @return array{from_ts:int,to_ts:int,label:string}
+	 */
+	public static function calendar_month_bounds_offset( $offset_months = 0, $locale = '' ) {
+		$locale = self::resolve_locale( $locale );
+		$tz     = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+		$now    = new DateTimeImmutable( 'now', $tz );
+		$offset = (int) $offset_months;
+
+		if ( self::is_jalali_locale( $locale ) ) {
+			$gy = (int) $now->format( 'Y' );
+			$gm = (int) $now->format( 'n' );
+			$gd = (int) $now->format( 'j' );
+			list( $jy, $jm ) = self::gregorian_to_jalali( $gy, $gm, $gd );
+			$jm += $offset;
+			while ( $jm < 1 ) {
+				$jm += 12;
+				--$jy;
+			}
+			while ( $jm > 12 ) {
+				$jm -= 12;
+				++$jy;
+			}
+			list( $gy1, $gm1, $gd1 ) = self::jalali_to_gregorian( $jy, $jm, 1 );
+			$start = new DateTimeImmutable(
+				sprintf( '%04d-%02d-%02d 00:00:00', $gy1, $gm1, $gd1 ),
+				$tz
+			);
+			$njm = $jm + 1;
+			$njy = $jy;
+			if ( $njm > 12 ) {
+				$njm = 1;
+				++$njy;
+			}
+			list( $gy2, $gm2, $gd2 ) = self::jalali_to_gregorian( $njy, $njm, 1 );
+			$next = new DateTimeImmutable(
+				sprintf( '%04d-%02d-%02d 00:00:00', $gy2, $gm2, $gd2 ),
+				$tz
+			);
+			$end = $next->modify( '-1 second' );
+			if ( 0 === $offset && $now < $end ) {
+				$end = $now;
+			}
+			$month = isset( self::$jalali_months[ $jm ] ) ? self::$jalali_months[ $jm ] : '';
+			$label = trim( $month . ' ' . self::to_persian_digits( (string) $jy ) );
+			return array(
+				'from_ts' => (int) $start->getTimestamp(),
+				'to_ts'   => (int) $end->getTimestamp(),
+				'label'   => $label,
+			);
+		}
+
+		$cursor = $now->modify( $offset . ' months' );
+		$start  = $cursor->modify( 'first day of this month' )->setTime( 0, 0, 0 );
+		$end    = $cursor->modify( 'last day of this month' )->setTime( 23, 59, 59 );
+		if ( 0 === $offset && $now < $end ) {
+			$end = $now;
+		}
+		return array(
+			'from_ts' => (int) $start->getTimestamp(),
+			'to_ts'   => (int) $end->getTimestamp(),
+			'label'   => $start->format( 'F Y' ),
+		);
+	}
 }

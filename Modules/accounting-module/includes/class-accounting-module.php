@@ -24,9 +24,13 @@ final class Webino_Accounting_Module {
 		add_action( 'woocommerce_checkout_create_order_line_item', array( 'Accounting_Woo_Sync', 'snapshot_cogs_on_line' ), 20, 4 );
 		add_action( 'woocommerce_order_status_changed', array( 'Accounting_Woo_Sync', 'on_status_changed' ), 30, 4 );
 		add_action( 'webino_accounting_process_moadian', array( __CLASS__, 'cron_moadian' ) );
+		add_action( 'webino_accounting_tax_tips', array( __CLASS__, 'cron_tax_tips' ) );
 		add_filter( 'cron_schedules', array( __CLASS__, 'schedules' ) );
 		if ( ! wp_next_scheduled( 'webino_accounting_process_moadian' ) ) {
 			wp_schedule_event( time() + 120, 'accounting_five_minutes', 'webino_accounting_process_moadian' );
+		}
+		if ( ! wp_next_scheduled( 'webino_accounting_tax_tips' ) ) {
+			wp_schedule_event( time() + 300, 'daily', 'webino_accounting_tax_tips' );
 		}
 
 		add_action( 'before_woocommerce_init', array( __CLASS__, 'declare_hpos' ) );
@@ -46,6 +50,14 @@ final class Webino_Accounting_Module {
 	 */
 	public static function cron_moadian() {
 		Accounting_Moadian::process_jobs( 15 );
+		Accounting_Moadian::process_inquiries( 15 );
+	}
+
+	/**
+	 * @return void
+	 */
+	public static function cron_tax_tips() {
+		Accounting_Tax_Tips::refresh();
 	}
 
 	/**

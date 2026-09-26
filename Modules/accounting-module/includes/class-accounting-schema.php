@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Accounting_Schema {
 	const SCHEMA_OPTION = 'webino_accounting_schema_version';
-	const SCHEMA_VERSION = '1.4.0';
+	const SCHEMA_VERSION = '1.5.0';
 
 	/**
 	 * @return void
@@ -82,6 +82,9 @@ final class Accounting_Schema {
 			self::sql_payroll_attendance( $p, $charset ),
 			self::sql_tamin_jobs( $p, $charset ),
 			self::sql_employment_decrees( $p, $charset ),
+			self::sql_intacodes( $p, $charset ),
+			self::sql_tax_rate_versions( $p, $charset ),
+			self::sql_tax_tips( $p, $charset ),
 		);
 
 		foreach ( $tables as $sql ) {
@@ -928,6 +931,58 @@ final class Accounting_Schema {
 			KEY decree_no (decree_no),
 			KEY effective_from (effective_from),
 			KEY status (status)
+		) $c;";
+	}
+
+	private static function sql_intacodes( $p, $c ) {
+		return "CREATE TABLE {$p}webino_acc_intacodes (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			code varchar(40) NOT NULL,
+			title varchar(255) NOT NULL,
+			profit_ratio decimal(8,4) NOT NULL DEFAULT 0,
+			vat_liable tinyint(1) NOT NULL DEFAULT 1,
+			version varchar(40) NOT NULL DEFAULT 'seed',
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY code_version (code, version),
+			KEY title (title)
+		) $c;";
+	}
+
+	private static function sql_tax_rate_versions( $p, $c ) {
+		return "CREATE TABLE {$p}webino_acc_tax_rate_versions (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			label varchar(100) NOT NULL,
+			vat_general decimal(5,2) NOT NULL DEFAULT 10,
+			special_rates_json longtext NULL,
+			art131_brackets_json longtext NULL,
+			corporate_rate decimal(5,2) NOT NULL DEFAULT 25,
+			effective_from date NOT NULL,
+			source_note text NULL,
+			is_active tinyint(1) NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY effective_from (effective_from),
+			KEY is_active (is_active)
+		) $c;";
+	}
+
+	private static function sql_tax_tips( $p, $c ) {
+		return "CREATE TABLE {$p}webino_acc_tax_tips (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			code varchar(80) NOT NULL,
+			severity varchar(20) NOT NULL DEFAULT 'info',
+			message_key varchar(120) NOT NULL,
+			payload_json longtext NULL,
+			dismissed_at datetime NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY tip_code (code),
+			KEY severity (severity),
+			KEY dismissed_at (dismissed_at)
 		) $c;";
 	}
 }

@@ -27,7 +27,13 @@ const PRESETS: ReportPreset[] = [
   'custom',
 ]
 
-const STATUS_OPTIONS = ['completed', 'processing', 'on-hold', 'pending', 'cancelled', 'refunded', 'failed']
+const STATUS_OPTIONS = [
+  'completed',
+  'processing',
+  'webino-packaged',
+  'webino-ready-to-ship',
+  'webino-shipping',
+]
 
 type ReportFiltersProps = {
   preset: ReportPreset

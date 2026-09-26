@@ -97,6 +97,9 @@ final class Webino_Dashboard_Plugin {
 		if ( class_exists( 'Webino_Dashboard_Coupon_Restrictions', false ) ) {
 			Webino_Dashboard_Coupon_Restrictions::init();
 		}
+		if ( class_exists( 'Webino_Dashboard_Offer_Engine', false ) ) {
+			Webino_Dashboard_Offer_Engine::init();
+		}
 		if ( class_exists( 'Webino_Dashboard_Variation_Swatches', false ) ) {
 			Webino_Dashboard_Variation_Swatches::init();
 		}

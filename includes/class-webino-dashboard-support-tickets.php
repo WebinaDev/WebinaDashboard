@@ -66,6 +66,8 @@ class Webino_Dashboard_Support_Tickets {
 			status varchar(20) NOT NULL DEFAULT 'open',
 			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			csat_rating tinyint(3) unsigned DEFAULT NULL,
+			csat_at datetime DEFAULT NULL,
 			PRIMARY KEY  (id),
 			KEY user_id (user_id),
 			KEY status (status)
@@ -84,6 +86,26 @@ class Webino_Dashboard_Support_Tickets {
 
 		dbDelta( $sql_tickets );
 		dbDelta( $sql_replies );
+		self::maybe_add_csat_columns();
+	}
+
+	/**
+	 * @return void
+	 */
+	private static function maybe_add_csat_columns() {
+		global $wpdb;
+		$table = self::tickets_table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$cols = is_array( $cols ) ? $cols : array();
+		if ( ! in_array( 'csat_rating', $cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN csat_rating tinyint(3) unsigned DEFAULT NULL" );
+		}
+		if ( ! in_array( 'csat_at', $cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN csat_at datetime DEFAULT NULL" );
+		}
 	}
 
 	/**
@@ -119,9 +141,16 @@ class Webino_Dashboard_Support_Tickets {
 			$ns,
 			'/account/tickets/(?P<id>\d+)',
 			array(
-				'methods'             => 'GET',
-				'callback'            => array( __CLASS__, 'account_get' ),
-				'permission_callback' => $portal,
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'account_get' ),
+					'permission_callback' => $portal,
+				),
+				array(
+					'methods'             => 'PATCH',
+					'callback'            => array( __CLASS__, 'account_patch' ),
+					'permission_callback' => $portal,
+				),
 			)
 		);
 
@@ -291,11 +320,62 @@ class Webino_Dashboard_Support_Tickets {
 		$body   = $request->get_json_params();
 		$body   = is_array( $body ) ? $body : array();
 		$status = sanitize_key( (string) ( $body['status'] ?? '' ) );
-		if ( ! in_array( $status, self::STATUSES, true ) ) {
-			return new WP_Error( 'invalid_status', __( 'Invalid status.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		if ( '' !== $status ) {
+			if ( ! in_array( $status, self::STATUSES, true ) ) {
+				return new WP_Error( 'invalid_status', __( 'Invalid status.', 'webino-dashboard' ), array( 'status' => 400 ) );
+			}
+			self::set_status( (int) $ticket['id'], $status );
 		}
-		self::set_status( (int) $ticket['id'], $status );
+		if ( array_key_exists( 'csat_rating', $body ) ) {
+			self::set_csat( (int) $ticket['id'], (int) $body['csat_rating'] );
+		}
 		return self::staff_get( $request );
+	}
+
+	/**
+	 * Customer CSAT rating when ticket is answered/closed.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function account_patch( WP_REST_Request $request ) {
+		$ticket = self::get_ticket( (int) $request['id'] );
+		if ( ! $ticket || (int) $ticket['user_id'] !== get_current_user_id() ) {
+			return new WP_Error( 'not_found', __( 'Not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
+		}
+		if ( ! in_array( (string) $ticket['status'], array( 'answered', 'closed' ), true ) ) {
+			return new WP_Error( 'ticket_not_ready', __( 'You can rate after the ticket is answered.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$body = $request->get_json_params();
+		$body = is_array( $body ) ? $body : array();
+		if ( ! array_key_exists( 'csat_rating', $body ) ) {
+			return new WP_Error( 'csat_required', __( 'Rating is required.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		self::set_csat( (int) $ticket['id'], (int) $body['csat_rating'] );
+		return self::account_get( $request );
+	}
+
+	/**
+	 * @param int $ticket_id Ticket ID.
+	 * @param int $rating    1–5.
+	 * @return void
+	 */
+	private static function set_csat( $ticket_id, $rating ) {
+		global $wpdb;
+		self::ensure_tables();
+		$rating = max( 1, min( 5, (int) $rating ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->update(
+			self::tickets_table(),
+			array(
+				'csat_rating' => $rating,
+				'csat_at'     => current_time( 'mysql' ),
+				'updated_at'  => current_time( 'mysql' ),
+			),
+			array( 'id' => (int) $ticket_id ),
+			array( '%d', '%s', '%s' ),
+			array( '%d' )
+		);
 	}
 
 	/**
@@ -546,12 +626,16 @@ class Webino_Dashboard_Support_Tickets {
 		$uid  = (int) $row['user_id'];
 		$user = $staff ? get_userdata( $uid ) : null;
 		$out  = array(
-			'id'         => (int) $row['id'],
-			'user_id'    => $uid,
-			'subject'    => (string) $row['subject'],
-			'status'     => (string) $row['status'],
-			'created_at' => (string) $row['created_at'],
-			'updated_at' => (string) $row['updated_at'],
+			'id'          => (int) $row['id'],
+			'user_id'     => $uid,
+			'subject'     => (string) $row['subject'],
+			'status'      => (string) $row['status'],
+			'created_at'  => (string) $row['created_at'],
+			'updated_at'  => (string) $row['updated_at'],
+			'csat_rating' => isset( $row['csat_rating'] ) && '' !== $row['csat_rating'] && null !== $row['csat_rating']
+				? (int) $row['csat_rating']
+				: null,
+			'csat_at'     => isset( $row['csat_at'] ) ? (string) $row['csat_at'] : null,
 		);
 		if ( $staff ) {
 			$out['user_name']  = $user ? $user->display_name : '';

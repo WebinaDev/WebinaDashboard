@@ -25,6 +25,7 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { apiFetch } from '@/lib/api'
 import { formatNumber } from '@/lib/formatNumber'
+import { utmDisplayLabel as utmLabel, UTM_NONE } from '@/lib/utmLabel'
 import type {
   FinancialReportResponse,
   OrderReportOrderLite,
@@ -32,13 +33,6 @@ import type {
   OrderReportUtmComboRow,
   OrderReportUtmDimRow,
 } from '@/types/orderReports'
-
-const UTM_NONE = '(direct/none)'
-
-function utmLabel(value: string | undefined, t: (k: string) => string) {
-  if (!value || value === UTM_NONE) return t('reports.financial.directNone')
-  return value
-}
 
 export function FinancialReportPanel() {
   const { t, i18n } = useTranslation()

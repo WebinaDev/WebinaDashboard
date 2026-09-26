@@ -1,7 +1,13 @@
 import { QueryClient } from '@tanstack/react-query'
 
+let queryClientRef: QueryClient | null = null
+
+export function getQueryClient(): QueryClient | null {
+  return queryClientRef
+}
+
 export function createQueryClient() {
-  return new QueryClient({
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         retry: 1,
@@ -12,4 +18,6 @@ export function createQueryClient() {
       mutations: { retry: 0 },
     },
   })
+  queryClientRef = client
+  return client
 }

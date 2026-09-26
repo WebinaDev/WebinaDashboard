@@ -1,4 +1,5 @@
 import { ApiError } from '@/lib/apiError'
+import { maybeMarkLoggedOut } from '@/lib/authLost'
 
 function cfg() {
   return window.webinoDashboard
@@ -50,11 +51,14 @@ export async function apiPostFormData<T>(
           : typeof errBody.error === 'string'
             ? errBody.error
             : errBody.code || res.statusText
-      throw new ApiError(msg, { code: errBody.code, status: res.status })
+      const err = new ApiError(msg, { code: errBody.code, status: res.status })
+      maybeMarkLoggedOut(err)
+      throw err
     }
     return data as T
   } catch (err) {
     if (err instanceof ApiError) {
+      maybeMarkLoggedOut(err)
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {

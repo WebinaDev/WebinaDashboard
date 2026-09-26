@@ -3,9 +3,11 @@ import type { ComponentType } from 'react'
 import AccountingSettingsPage from './pages/accounting/AccountingSettingsPage'
 import AccountingShell from './pages/accounting/AccountingShell'
 import MyPayrollPage from './pages/accounting/MyPayrollPage'
+import TaxSetupWizardPage from './pages/accounting/TaxSetupWizardPage'
 
 export const routes: Record<string, ComponentType> = {
   'accounting/my-payroll': MyPayrollPage,
+  'accounting/tax-setup': TaxSetupWizardPage,
   'accounting/:section': AccountingShell,
   'settings/shop/accounting': AccountingSettingsPage,
   'settings/shop/accounting/company': AccountingSettingsPage,

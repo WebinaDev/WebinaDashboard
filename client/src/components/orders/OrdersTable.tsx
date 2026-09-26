@@ -13,6 +13,7 @@ import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { formatDisplayDateTime } from '@/lib/date'
 import { localizeDigits } from '@/lib/digits'
 import { formatAttributionSource, translateOrderStatus } from '@/lib/enumLabels'
+import { utmDisplayLabel } from '@/lib/utmLabel'
 import { cn } from '@/lib/utils'
 
 export type OrderListRow = {
@@ -280,7 +281,7 @@ export function OrdersTable({
                   {row.payment_method_title || row.payment_method || t('common.emptyValue')}
                 </TableCell>
                 <TableCell className="max-w-[7rem] truncate text-sm">
-                  {row.utm_source || t('common.emptyValue')}
+                  {row.utm_source ? utmDisplayLabel(row.utm_source, t) : t('common.emptyValue')}
                 </TableCell>
                 <TableCell className="text-end font-medium whitespace-nowrap">
                   <MoneyDisplay

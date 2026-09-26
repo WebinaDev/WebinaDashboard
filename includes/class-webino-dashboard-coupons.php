@@ -216,7 +216,10 @@ class Webino_Dashboard_Coupons {
 				'visibility'                  => $post ? self::post_visibility_from_post( $post ) : 'public',
 				'trash_url'                   => $urls['trash_url'],
 			),
-			self::get_restriction_fields( $c->get_id() )
+			self::get_restriction_fields( $c->get_id() ),
+			class_exists( 'Webino_Dashboard_Offer_Engine', false )
+				? Webino_Dashboard_Offer_Engine::get_offer_fields( $c->get_id() )
+				: array()
 		);
 	}
 
@@ -469,6 +472,9 @@ class Webino_Dashboard_Coupons {
 				}
 			}
 			self::set_string_list_meta( $coupon_id, self::META_ALLOWED_CHANNELS, $channels );
+		}
+		if ( class_exists( 'Webino_Dashboard_Offer_Engine', false ) ) {
+			Webino_Dashboard_Offer_Engine::apply_offer_fields( $coupon_id, $request );
 		}
 		return true;
 	}

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { NotificationText } from '@/components/notifications/NotificationText'
 import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -10,6 +11,7 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
 import { formatDisplayDateTime } from '@/lib/date'
+import { toAppPath } from '@/lib/notificationLink'
 import { cn } from '@/lib/utils'
 
 type NotificationRow = {
@@ -78,12 +80,22 @@ export default function AccountNotificationsPage() {
                 onClick={() => {
                   if (!row.read) void markOne.mutateAsync(row.id)
                   if (!row.link) return
-                  if (row.link.startsWith('/')) nav(row.link)
-                  else window.location.assign(row.link)
+                  const appPath = toAppPath(row.link)
+                  if (appPath) {
+                    nav(appPath)
+                    return
+                  }
+                  window.location.assign(row.link)
                 }}
               >
-                <p className="text-sm font-medium">{row.title}</p>
-                {row.body ? <p className="text-muted-foreground mt-1 text-sm">{row.body}</p> : null}
+                <p className="text-sm font-medium">
+                  <NotificationText text={row.title} locale={i18n.language} />
+                </p>
+                {row.body ? (
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    <NotificationText text={row.body} locale={i18n.language} />
+                  </p>
+                ) : null}
                 <p className="text-muted-foreground mt-1 text-xs">
                   {formatDisplayDateTime(row.created_at, i18n.language)}
                 </p>

@@ -21,6 +21,8 @@ class Webino_Dashboard_Coupon_Restrictions {
 		add_filter( 'woocommerce_coupon_is_valid', array( __CLASS__, 'validate_coupon' ), 20, 3 );
 		add_filter( 'woocommerce_coupon_is_valid_for_product', array( __CLASS__, 'validate_product_brands' ), 20, 4 );
 		add_action( 'woocommerce_after_checkout_validation', array( __CLASS__, 'validate_checkout' ), 20, 2 );
+		add_action( 'woocommerce_applied_coupon', array( __CLASS__, 'on_coupon_applied' ), 20 );
+		add_filter( 'woocommerce_available_payment_gateways', array( __CLASS__, 'filter_gateways_by_coupons' ), PHP_INT_MAX );
 	}
 
 	/**
@@ -35,7 +37,12 @@ class Webino_Dashboard_Coupon_Restrictions {
 		if ( ! $valid || ! ( $coupon instanceof WC_Coupon ) ) {
 			return $valid;
 		}
-		$error = self::check_restrictions( $coupon, self::build_context_from_cart() );
+		// Soft-skip payment on cart apply; enforce at checkout only.
+		$error = self::check_restrictions(
+			$coupon,
+			self::build_context_from_cart(),
+			array( 'strict_payment' => false )
+		);
 		if ( $error ) {
 			throw new Exception( $error );
 		}
@@ -106,11 +113,89 @@ class Webino_Dashboard_Coupon_Restrictions {
 			if ( ! $coupon->get_id() ) {
 				continue;
 			}
-			$error = self::check_restrictions( $coupon, $ctx );
+			$error = self::check_restrictions( $coupon, $ctx, array( 'strict_payment' => true ) );
 			if ( $error && $errors instanceof WP_Error ) {
 				$errors->add( 'webino_coupon_' . $coupon->get_id(), $error );
 			}
 		}
+	}
+
+	/**
+	 * After coupon apply: align session payment with coupon allow-list.
+	 *
+	 * @param string $code Coupon code.
+	 * @return void
+	 */
+	public static function on_coupon_applied( $code ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return;
+		}
+		$coupon = new WC_Coupon( (string) $code );
+		if ( ! $coupon->get_id() ) {
+			return;
+		}
+		$allowed = Webino_Dashboard_Coupons::get_restriction_fields( $coupon->get_id() )['allowed_payment_methods'];
+		if ( ! is_array( $allowed ) || array() === $allowed ) {
+			return;
+		}
+		$allowed = array_values( array_filter( array_map( 'strval', $allowed ) ) );
+		if ( array() === $allowed ) {
+			return;
+		}
+		$pm = (string) WC()->session->get( 'chosen_payment_method' );
+		if ( '' === $pm || ! in_array( $pm, $allowed, true ) ) {
+			WC()->session->set( 'chosen_payment_method', $allowed[0] );
+		}
+	}
+
+	/**
+	 * Limit checkout gateways to union of applied coupons' allowed payment methods.
+	 *
+	 * @param array<string,WC_Payment_Gateway> $available Gateways.
+	 * @return array<string,WC_Payment_Gateway>
+	 */
+	public static function filter_gateways_by_coupons( $available ) {
+		if ( ! is_array( $available ) || ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return is_array( $available ) ? array_filter( $available, 'is_object' ) : $available;
+		}
+		$union        = array();
+		$any_restrict = false;
+		foreach ( WC()->cart->get_applied_coupons() as $code ) {
+			$coupon = new WC_Coupon( $code );
+			if ( ! $coupon->get_id() ) {
+				continue;
+			}
+			$payments = Webino_Dashboard_Coupons::get_restriction_fields( $coupon->get_id() )['allowed_payment_methods'];
+			if ( ! is_array( $payments ) || array() === $payments ) {
+				continue;
+			}
+			$any_restrict = true;
+			foreach ( $payments as $pid ) {
+				$pid = (string) $pid;
+				if ( '' !== $pid && ! in_array( $pid, $union, true ) ) {
+					$union[] = $pid;
+				}
+			}
+		}
+		if ( ! $any_restrict || array() === $union ) {
+			return array_filter( $available, 'is_object' );
+		}
+		foreach ( array_keys( $available ) as $gateway_id ) {
+			if ( ! in_array( (string) $gateway_id, $union, true ) ) {
+				unset( $available[ $gateway_id ] );
+			}
+		}
+		$available = array_filter( $available, 'is_object' );
+		if ( function_exists( 'WC' ) && WC()->session && $available ) {
+			$pm = (string) WC()->session->get( 'chosen_payment_method' );
+			if ( '' === $pm || ! isset( $available[ $pm ] ) ) {
+				$first = array_key_first( $available );
+				if ( null !== $first ) {
+					WC()->session->set( 'chosen_payment_method', (string) $first );
+				}
+			}
+		}
+		return $available;
 	}
 
 	/**
@@ -123,6 +208,7 @@ class Webino_Dashboard_Coupon_Restrictions {
 		$payment     = '';
 		$shipping    = array();
 		$purchase    = 'cash';
+		$has_purchase_type = false;
 
 		if ( function_exists( 'WC' ) && WC()->customer ) {
 			$state = (string) WC()->customer->get_shipping_state();
@@ -142,20 +228,22 @@ class Webino_Dashboard_Coupon_Restrictions {
 		if ( function_exists( 'WC' ) && WC()->cart ) {
 			foreach ( WC()->cart->get_cart() as $item ) {
 				if ( ! empty( $item['wfcp_purchase_type'] ) ) {
-					$purchase = sanitize_key( (string) $item['wfcp_purchase_type'] );
+					$purchase          = sanitize_key( (string) $item['wfcp_purchase_type'] );
+					$has_purchase_type = true;
 					break;
 				}
 			}
 		}
 
 		return array(
-			'user_id'         => (int) $customer_id,
-			'state'           => $state,
-			'city'            => $city,
-			'payment_method'  => $payment,
-			'shipping'        => $shipping,
-			'purchase_type'   => $purchase,
-			'channel'         => self::detect_channel(),
+			'user_id'           => (int) $customer_id,
+			'state'             => $state,
+			'city'              => $city,
+			'payment_method'    => $payment,
+			'shipping'          => $shipping,
+			'purchase_type'     => $purchase,
+			'has_purchase_type' => $has_purchase_type,
+			'channel'           => self::detect_channel(),
 		);
 	}
 
@@ -226,11 +314,13 @@ class Webino_Dashboard_Coupon_Restrictions {
 	/**
 	 * @param WC_Coupon            $coupon Coupon.
 	 * @param array<string, mixed> $ctx    Context.
+	 * @param array<string, mixed> $opts   Options: strict_payment (bool).
 	 * @return string Empty if ok, else error message.
 	 */
-	public static function check_restrictions( $coupon, array $ctx ) {
+	public static function check_restrictions( $coupon, array $ctx, array $opts = array() ) {
 		$cid = (int) $coupon->get_id();
 		$r   = Webino_Dashboard_Coupons::get_restriction_fields( $cid );
+		$strict_payment = ! empty( $opts['strict_payment'] );
 
 		$user_ids = $r['allowed_user_ids'];
 		if ( $user_ids ) {
@@ -272,15 +362,19 @@ class Webino_Dashboard_Coupon_Restrictions {
 		$payments = $r['allowed_payment_methods'];
 		if ( $payments ) {
 			$pm = (string) ( $ctx['payment_method'] ?? '' );
-			if ( '' !== $pm && ! in_array( $pm, $payments, true ) ) {
-				return __( 'این کد تخفیف برای روش پرداخت انتخاب‌شده معتبر نیست.', 'webino-dashboard' );
+			if ( $strict_payment ) {
+				if ( '' === $pm || ! in_array( $pm, $payments, true ) ) {
+					return __( 'این کد تخفیف برای روش پرداخت انتخاب‌شده معتبر نیست.', 'webino-dashboard' );
+				}
 			}
+			// Soft-skip on cart apply: gateways are filtered / session realigned instead.
 		}
 
 		$purchase_types = $r['allowed_purchase_types'];
 		if ( $purchase_types ) {
 			$pt = sanitize_key( (string) ( $ctx['purchase_type'] ?? 'cash' ) );
-			if ( ! in_array( $pt, $purchase_types, true ) ) {
+			// Soft-skip until a cart line has an explicit purchase type.
+			if ( ! empty( $ctx['has_purchase_type'] ) && ! in_array( $pt, $purchase_types, true ) ) {
 				return __( 'این کد تخفیف برای نوع خرید انتخاب‌شده معتبر نیست.', 'webino-dashboard' );
 			}
 		}

@@ -50,6 +50,8 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-order-aggregates.php',
 			'includes/class-webino-dashboard-coupons.php',
 			'includes/class-webino-dashboard-coupon-restrictions.php',
+			'includes/class-webino-dashboard-offer-engine.php',
+			'includes/class-webino-dashboard-bulk-sale.php',
 			'includes/class-webino-dashboard-users.php',
 			'includes/class-webino-dashboard-addresses.php',
 			'includes/class-webino-dashboard-account-portal.php',

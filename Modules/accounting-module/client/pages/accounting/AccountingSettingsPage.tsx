@@ -29,6 +29,10 @@ type Settings = {
   has_certificate?: boolean
   moadian_sandbox: boolean
   moadian_proxy?: string
+  moadian_transport?: string
+  tsp_base_url?: string
+  tsp_api_key?: string
+  has_tsp_api_key?: boolean
   auto_send_moadian: boolean
   default_invoice_type: number
   default_vat_rate: number
@@ -243,6 +247,33 @@ export default function AccountingSettingsPage() {
         {tab === 'moadian' ? (
           <div className="grid gap-4 md:grid-cols-2">
             <Field label={t('accounting.fiscalId')} value={settings.fiscal_id} onChange={(v) => setDraft((p) => ({ ...(p as Settings), fiscal_id: v }))} />
+            <div className="space-y-2">
+              <Label>{t('accounting.taxWizard.transport')}</Label>
+              <Select
+                value={String(settings.moadian_transport ?? 'direct')}
+                onValueChange={(v) => setDraft((p) => ({ ...(p as Settings), moadian_transport: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="direct">{t('accounting.taxWizard.transportDirect')}</SelectItem>
+                  <SelectItem value="tsp">{t('accounting.taxWizard.transportTsp')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Field
+              label={t('accounting.taxWizard.tspUrl')}
+              value={String(settings.tsp_base_url ?? '')}
+              onChange={(v) => setDraft((p) => ({ ...(p as Settings), tsp_base_url: v }))}
+            />
+            <Field
+              label={t('accounting.taxWizard.tspKey')}
+              type="password"
+              value={String(settings.tsp_api_key ?? '')}
+              placeholder={settings.has_tsp_api_key ? '••••••••' : ''}
+              onChange={(v) => setDraft((p) => ({ ...(p as Settings), tsp_api_key: v }))}
+            />
             <div className="space-y-2">
               <Label>{t('accounting.defaultInvoiceType')}</Label>
               <Select

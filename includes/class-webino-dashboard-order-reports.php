@@ -27,20 +27,26 @@ class Webino_Dashboard_Order_Reports {
 	 */
 	public static function sales_exclude_statuses() {
 		return array(
+			'pending',
+			'on-hold',
 			'cancelled',
 			'refunded',
+			'partially-refunded',
 			'failed',
 			'checkout-draft',
 			'trash',
 			'auto-draft',
 			'webino-returned',
 			'webino-deleted',
+			'webino-need-review',
+			'bslm-wait-vendor',
+			'bslm-rejected',
 		);
 	}
 
 	/**
-	 * Sales statuses: all WC statuses except cancelled / refunded / failed / drafts / returned / deleted.
-	 * Includes custom transport statuses (packaged, courier, shipping, …).
+	 * Sales statuses: all WC statuses except unpaid / cancelled / refunded / drafts / returned / vendor-pending.
+	 * Includes custom transport statuses and Basalam sold statuses (preparation, shipping, completed).
 	 *
 	 * @return string[]
 	 */
@@ -58,7 +64,7 @@ class Webino_Dashboard_Order_Reports {
 		if ( $out ) {
 			return array_values( array_unique( $out ) );
 		}
-		return array( 'completed', 'processing', 'on-hold', 'pending' );
+		return array( 'completed', 'processing' );
 	}
 
 	/**
@@ -169,6 +175,35 @@ class Webino_Dashboard_Order_Reports {
 		}
 		$gateways = WFCP_Helper::get_settings( 'wholesale', 'gateways' );
 		return is_array( $gateways ) ? array_values( array_filter( array_map( 'strval', $gateways ) ) ) : array();
+	}
+
+	/**
+	 * Unit purchase cost for an order line: prefer WFCP COGS snapshot, else live WFCP purchase price.
+	 *
+	 * @param WC_Order_Item_Product $item Line item.
+	 * @param array<int,float>      $cache Cost cache keyed by product/variation id.
+	 * @return float
+	 */
+	private static function get_item_unit_purchase_cost( $item, &$cache ) {
+		if ( ! is_a( $item, 'WC_Order_Item_Product' ) ) {
+			return 0.0;
+		}
+		$pid = (int) $item->get_product_id();
+		$vid = (int) $item->get_variation_id();
+		$qty = max( 1, (int) $item->get_quantity() );
+		$raw_cogs = $item->get_meta( '_wfcp_cogs', true );
+		if ( '' !== $raw_cogs && false !== $raw_cogs && null !== $raw_cogs && is_numeric( $raw_cogs ) ) {
+			$raw = (float) $raw_cogs;
+			if ( $raw > 0 ) {
+				// Accounting stores unit cost; some writers store line total (unit * qty).
+				$live_unit = self::get_line_purchase_cost( $pid, $vid, $cache );
+				if ( $qty > 1 && $live_unit > 0 && $raw >= ( $live_unit * $qty * 0.85 ) ) {
+					return $raw / $qty;
+				}
+				return $raw;
+			}
+		}
+		return self::get_line_purchase_cost( $pid, $vid, $cache );
 	}
 
 	/**
@@ -797,7 +832,7 @@ class Webino_Dashboard_Order_Reports {
 				$line_rev    = (float) $item->get_total();
 				$pid         = (int) $item->get_product_id();
 				$vid         = (int) $item->get_variation_id();
-				$unit_cost   = self::get_line_purchase_cost( $pid, $vid, $cost_cache );
+				$unit_cost   = self::get_item_unit_purchase_cost( $item, $cost_cache );
 				$line_cogs   = $unit_cost * $qty;
 				$tier        = self::resolve_price_tier( $o, $item );
 

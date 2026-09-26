@@ -215,7 +215,8 @@ class Webino_Dashboard_Modules {
 				'capability' => 'edit_shop_coupons',
 				'icon'       => 'percent',
 				'children'   => array(
-					array( 'id' => 'coupons', 'title' => __( 'Coupons', 'webino-dashboard' ), 'path' => '/marketing/coupons', 'capability' => 'edit_shop_coupons' ),
+					array( 'id' => 'coupons', 'title' => __( 'Coupon builder', 'webino-dashboard' ), 'path' => '/marketing/coupons', 'capability' => 'edit_shop_coupons' ),
+					array( 'id' => 'sale-prices', 'title' => __( 'Strikethrough prices', 'webino-dashboard' ), 'path' => '/marketing/sale-prices', 'capability' => 'edit_products' ),
 				),
 			),
 			array(

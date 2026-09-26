@@ -108,7 +108,7 @@ final class Accounting_Moadian {
 			return $packet;
 		}
 
-		$res = Accounting_Moadian_Client::send_invoices( array( $packet ) );
+		$res = Accounting_Moadian_Transport_Factory::make()->send_invoices( array( $packet ) );
 		if ( is_wp_error( $res ) ) {
 			Accounting_Db::update(
 				'moadian_jobs',
@@ -129,11 +129,11 @@ final class Accounting_Moadian {
 			'moadian_jobs',
 			(int) $job['id'],
 			array(
-				'status'            => 'sent',
-				'attempts'          => $attempts,
-				'uid'               => $uid,
-				'reference_number'  => $ref,
-				'last_error'        => null,
+				'status'           => 'sent',
+				'attempts'         => $attempts,
+				'uid'              => $uid,
+				'reference_number' => $ref,
+				'last_error'       => null,
 			)
 		);
 		Accounting_Db::update(
@@ -146,6 +146,64 @@ final class Accounting_Moadian {
 			)
 		);
 		return true;
+	}
+
+	/**
+	 * Poll sent jobs / invoices for acceptance.
+	 *
+	 * @param int $limit Max.
+	 * @return int Updated count.
+	 */
+	public static function process_inquiries( $limit = 10 ) {
+		global $wpdb;
+		$it    = Accounting_Db::table( 'invoices' );
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, reference_uid, taxid FROM {$it} WHERE moadian_status = 'sent' AND reference_uid IS NOT NULL AND reference_uid != '' ORDER BY id DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				max( 1, min( 50, (int) $limit ) )
+			),
+			ARRAY_A
+		);
+		$transport = Accounting_Moadian_Transport_Factory::make();
+		$updated   = 0;
+		foreach ( (array) $rows as $row ) {
+			$res = $transport->inquiry_by_uid( (string) $row['reference_uid'] );
+			if ( is_wp_error( $res ) ) {
+				continue;
+			}
+			$status = self::parse_inquiry_status( $res );
+			if ( ! $status ) {
+				continue;
+			}
+			Accounting_Db::update( 'invoices', (int) $row['id'], array( 'moadian_status' => $status ) );
+			++$updated;
+			if ( 'rejected' === $status ) {
+				Accounting_Tax_Tips::refresh();
+			}
+		}
+		return $updated;
+	}
+
+	/**
+	 * @param array<string,mixed> $res Inquiry response.
+	 * @return string|null accepted|rejected|null
+	 */
+	private static function parse_inquiry_status( array $res ) {
+		$items = $res['result'] ?? $res['data'] ?? $res;
+		if ( isset( $items[0] ) && is_array( $items[0] ) ) {
+			$items = $items[0];
+		}
+		if ( ! is_array( $items ) ) {
+			return null;
+		}
+		$code = strtoupper( (string) ( $items['status'] ?? $items['data']['status'] ?? $items['confirmation'] ?? '' ) );
+		if ( in_array( $code, array( 'SUCCESS', 'OK', 'ACCEPTED', 'CONFIRMED', '1' ), true ) ) {
+			return 'accepted';
+		}
+		if ( in_array( $code, array( 'FAILED', 'REJECTED', 'ERROR', 'INVALID', '0' ), true ) ) {
+			return 'rejected';
+		}
+		return null;
 	}
 
 	/**
@@ -281,7 +339,19 @@ final class Accounting_Moadian {
 		return array(
 			'header'   => $header,
 			'body'     => $body_rows,
-			'payments' => array(),
+			'payments' => array(
+				array(
+					'iinn' => null,
+					'acn'  => null,
+					'trmn' => null,
+					'trn'  => null,
+					'pcn'  => null,
+					'pid'  => null,
+					'pdt'  => $ts * 1000,
+					'pv'   => Accounting_Config::amount_to_rial( (float) $inv['total'], $currency ),
+					'pmt'  => 1,
+				),
+			),
 		);
 	}
 
@@ -289,10 +359,10 @@ final class Accounting_Moadian {
 	 * @return true|WP_Error
 	 */
 	public static function test_connection() {
-		$info = Accounting_Moadian_Client::get_fiscal_information();
+		$transport = Accounting_Moadian_Transport_Factory::make();
+		$info      = $transport->get_fiscal_information();
 		if ( is_wp_error( $info ) ) {
-			// Fall back to server info if fiscal requires full TSP enrollment.
-			$srv = Accounting_Moadian_Client::get_server_information();
+			$srv = $transport->get_server_information();
 			if ( is_wp_error( $srv ) ) {
 				return $info;
 			}
@@ -320,14 +390,15 @@ final class Accounting_Moadian {
 		if ( is_wp_error( $inv ) ) {
 			return $inv;
 		}
+		$transport = Accounting_Moadian_Transport_Factory::make();
 		if ( ! empty( $inv['reference_uid'] ) ) {
-			return Accounting_Moadian_Client::inquiry_by_uid( (string) $inv['reference_uid'] );
+			return $transport->inquiry_by_uid( (string) $inv['reference_uid'] );
 		}
 		global $wpdb;
 		$jt  = Accounting_Db::table( 'moadian_jobs' );
 		$ref = $wpdb->get_var( $wpdb->prepare( "SELECT reference_number FROM {$jt} WHERE invoice_id = %d AND reference_number IS NOT NULL ORDER BY id DESC LIMIT 1", absint( $invoice_id ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $ref ) {
-			return Accounting_Moadian_Client::inquiry_by_reference( (string) $ref );
+			return $transport->inquiry_by_reference( (string) $ref );
 		}
 		return new WP_Error( 'acc_moadian_inquiry', __( 'No Moadian reference to inquire.', 'webino-dashboard' ) );
 	}
