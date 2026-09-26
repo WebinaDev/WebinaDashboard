@@ -1,1 +1,0 @@
-import{TicketDetailView as e}from"./AccountTicketDetailPage-HAfgQ5V3.js";import{jsx as t}from"react/jsx-runtime";function n(){return t(e,{staff:!0})}export{n as default};
