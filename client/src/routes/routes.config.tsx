@@ -354,6 +354,12 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     Component: lazyPage(() => import('@/pages/marketplace/MarketplacePaymentCallbackPage')),
   },
   {
+    path: 'tools/migrate',
+    capability: 'manage_options',
+    headerTitleKey: 'migrate.title',
+    Component: lazyPage(() => import('@/pages/tools/MigrateWebinoPage')),
+  },
+  {
     path: 'settings',
     capability: 'manage_options',
     headerTitleKey: 'settings.hub.title',

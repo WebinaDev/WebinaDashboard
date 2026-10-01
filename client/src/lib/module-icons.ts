@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  ArrowRightLeft,
   BarChart2,
   Bot,
   Bell,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react'
 
 const MAP: Record<string, LucideIcon> = {
+  'arrow-right-left': ArrowRightLeft,
   'circle-dollar-sign': CircleDollarSign,
   'layout-dashboard': LayoutDashboard,
   newspaper: Newspaper,

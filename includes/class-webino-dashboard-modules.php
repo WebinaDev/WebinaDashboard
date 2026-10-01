@@ -257,6 +257,14 @@ class Webino_Dashboard_Modules {
 				'children'             => array(),
 			),
 			array(
+				'id'         => 'migrate-webino',
+				'nav_group'  => self::NAV_GROUP_TOOLS,
+				'title'      => __( 'Migrate to Webino', 'webino-dashboard' ),
+				'path'       => '/tools/migrate',
+				'capability' => 'manage_options',
+				'icon'       => 'arrow-right-left',
+			),
+			array(
 				'id'                   => 'notifications-hub',
 				'nav_group'            => self::NAV_GROUP_TOOLS,
 				'title'                => __( 'Notification system', 'webino-dashboard' ),

@@ -1,0 +1,131 @@
+.webino-migrate {
+	max-width: 960px;
+}
+
+.webino-migrate__lead {
+	max-width: 70ch;
+	font-size: 14px;
+}
+
+.webino-migrate__card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 16px 20px 8px;
+	margin: 16px 0;
+}
+
+.webino-migrate__checks {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 8px 16px;
+	margin: 0 0 16px;
+	padding: 0;
+	list-style: none;
+}
+
+.webino-migrate__count {
+	display: inline-block;
+	margin-right: 6px;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: #f0f0f1;
+	color: #50575e;
+	font-size: 12px;
+}
+
+.webino-migrate__inline {
+	display: inline-block;
+	margin-right: 12px;
+}
+
+.webino-migrate__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.webino-migrate__endpoints {
+	margin: 12px 0 16px;
+}
+
+.webino-migrate__test {
+	min-height: 1.4em;
+	font-weight: 600;
+}
+
+.webino-migrate__test.is-ok {
+	color: #007017;
+}
+
+.webino-migrate__test.is-err {
+	color: #b32d2e;
+}
+
+.webino-migrate__error:empty {
+	display: none;
+}
+
+.webino-migrate__error {
+	color: #b32d2e;
+}
+
+.webino-migrate__badge {
+	display: inline-block;
+	margin-right: 8px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #fcf9e8;
+	color: #6e4e00;
+	font-size: 12px;
+}
+
+.webino-migrate__bar {
+	margin: 0 0 12px;
+}
+
+.webino-migrate__bar-label {
+	display: flex;
+	justify-content: space-between;
+	font-size: 13px;
+	margin-bottom: 4px;
+}
+
+.webino-migrate__track {
+	height: 8px;
+	background: #f0f0f1;
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.webino-migrate__track > span {
+	display: block;
+	height: 100%;
+	background: #2271b1;
+}
+
+.webino-migrate__log {
+	max-height: 280px;
+	overflow: auto;
+	margin: 0 0 16px;
+	padding: 8px 16px 8px 8px;
+	background: #1d2327;
+	color: #f0f0f1;
+	border-radius: 6px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.webino-migrate__log time {
+	color: #a7aaad;
+	margin-left: 8px;
+}
+
+.webino-migrate__log .is-warn {
+	color: #f0c33c;
+}
+
+.webino-migrate__log .is-error {
+	color: #f86368;
+}

@@ -87,6 +87,16 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-rest-core-update.php',
 			'includes/class-webino-dashboard-build-pipeline.php',
 			'includes/class-webino-dashboard-rest-build-pipeline.php',
+			'includes/migrate/class-webino-dashboard-migrate-crypto.php',
+			'includes/migrate/class-webino-dashboard-migrate-schema.php',
+			'includes/migrate/class-webino-dashboard-migrate-settings.php',
+			'includes/migrate/class-webino-dashboard-migrate-client.php',
+			'includes/migrate/class-webino-dashboard-migrate-runner.php',
+			'includes/migrate/class-webino-dashboard-migrate-exporters.php',
+			'includes/migrate/class-webino-dashboard-migrate-job.php',
+			'includes/migrate/class-webino-dashboard-migrate-admin.php',
+			'includes/migrate/class-webino-dashboard-migrate-rest.php',
+			'includes/migrate/class-webino-dashboard-migrate.php',
 		);
 
 		$missing_critical = array();
@@ -182,6 +192,9 @@ final class Webino_Dashboard_Bootstrap {
 		}
 		if ( class_exists( 'Webino_Dashboard_REST_Build_Pipeline', false ) ) {
 			Webino_Dashboard_REST_Build_Pipeline::init();
+		}
+		if ( class_exists( 'Webino_Dashboard_Migrate', false ) ) {
+			Webino_Dashboard_Migrate::init();
 		}
 		if ( class_exists( 'Webino_Dashboard_Account_Portal', false ) ) {
 			Webino_Dashboard_Account_Portal::init();

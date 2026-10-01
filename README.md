@@ -94,6 +94,14 @@ GitHub Actions: [`.github/workflows/dashboard-ci.yml`](.github/workflows/dashboa
 - لایسنس فعال برای Marketplace و Core Update
 - ارتباط سالم با CRM API
 
+## مهاجرت به وبینو / Migrate to Webino
+
+انتقال فروشگاه وردپرس (مثلاً [parisma.ir](https://parisma.ir/)) به مستاجر WebinoDashboard (مثلاً [parisma.webinaagency.ir](https://parisma.webinaagency.ir)).
+
+**English.** In wp-admin open **مهاجرت به وبینو**, or in the dashboard open **Tools → Migrate to Webino** (`/dashboard/tools/migrate`, after the client bundle is rebuilt). Set the tenant origin (`https://…`) and API token, test the connection, choose entities, then start. Batches resume from the last cursor. WordPress cron continues one batch per minute if the browser is closed. The token is stored with AES-256-CBC (WordPress salts) and is not written to the migration log. Customer password hashes are not exported. Payload contract: [`docs/WEBINO_MIGRATE.md`](docs/WEBINO_MIGRATE.md) (`webino.wordpress.import.v1`). Default ingest paths are `/api/v1/import/wordpress/{ping,categories,media,products,customers,orders,pages,posts,menus,complete}` and can be overridden on the same screen.
+
+**فارسی.** از پیشخوان وردپرس وارد «مهاجرت به وبینو» شوید، یا در داشبورد از ابزارها صفحه «مهاجرت کامل به سیستم اختصاصی وبینو» را باز کنید. آدرس مستاجر (مثل `https://parisma.webinaagency.ir`) و توکن API را ذخیره کنید، اتصال را آزمایش کنید، موجودیت‌ها را انتخاب کنید و مهاجرت را شروع کنید. در صورت توقف یا خطا، «ادامه» از همان مکان‌نما پیش می‌رود. رسانه به‌صورت فراداده و نشانی فایل ارسال می‌شود تا وبینو خودش فایل را بگیرد. جزئیات طرح داده در [`docs/WEBINO_MIGRATE.md`](docs/WEBINO_MIGRATE.md) است.
+
 ## عیب‌یابی سریع
 - اگر ماژول نصب نمی‌شود: قرارداد ZIP (manifest/bootstrap/includes/client dist) را بررسی کنید.
 - اگر core update خطا دارد: مجوز `manage_options`، لایسنس و writable بودن مسیر پلاگین را چک کنید.
