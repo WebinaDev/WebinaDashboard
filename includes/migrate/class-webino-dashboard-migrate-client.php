@@ -1,6 +1,6 @@
 <?php
 /**
- * HTTP client for Webino wordpress import endpoints.
+ * HTTP client for Webino wordpress import ingest API.
  *
  * @package WebinoDashboard
  */
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Pushes one JSON batch. Tokens stay in the Authorization header and out of logs.
+ * Pushes ingest batches and runs jobs. Tokens stay out of logs.
  */
 final class Webino_Dashboard_Migrate_Client {
 
@@ -22,11 +22,6 @@ final class Webino_Dashboard_Migrate_Client {
 	}
 
 	/**
-	 * Best-effort: rewrite Authorization before other debug listeners run.
-	 *
-	 * The filter cannot change arguments already copied by an earlier hook.
-	 * Migration logs never include the header. See docs/WEBINO_MIGRATE.md.
-	 *
 	 * @param mixed  $response Response.
 	 * @param string $context  Context.
 	 * @param string $class    Transport class.
@@ -66,7 +61,7 @@ final class Webino_Dashboard_Migrate_Client {
 			'schema_version' => Webino_Dashboard_Migrate_Schema::VERSION,
 			'source'         => Webino_Dashboard_Migrate_Schema::source_site(),
 		);
-		$result = self::post( 'ping', $body, 'ping:' . gmdate( 'YmdHis' ) );
+		$result = self::request( 'ping', $body, 'ping:' . gmdate( 'YmdHis' ), array() );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -89,27 +84,120 @@ final class Webino_Dashboard_Migrate_Client {
 	}
 
 	/**
+	 * Push one resource batch through POST /import/wordpress/ingest.
+	 *
+	 * @param string                    $resource Canonical Webino resource.
+	 * @param list<array<string,mixed>> $items    Already adapted items.
+	 * @param string                    $idempotency Idempotency key.
+	 * @param array<string,mixed>       $extra    Extra ingest fields.
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,job_id:int,body:array}|WP_Error
+	 */
+	public static function ingest( $resource, array $items, $idempotency, array $extra = array() ) {
+		$source = Webino_Dashboard_Migrate_Schema::source_site();
+		$body   = array_merge(
+			array(
+				'source_url'     => isset( $source['site_url'] ) ? (string) $source['site_url'] : '',
+				'resource'       => (string) $resource,
+				'items'          => array_values( $items ),
+				'download_media' => true,
+				'dry_run'        => Webino_Dashboard_Migrate_Settings::dry_run(),
+			),
+			$extra
+		);
+		if ( '' === $body['source_url'] ) {
+			return new WP_Error( 'empty_source', __( 'Could not resolve this site URL for the ingest payload.', 'webino-dashboard' ) );
+		}
+		return self::request( 'ingest', $body, $idempotency, array() );
+	}
+
+	/**
+	 * Apply pending rows on the Webino job.
+	 *
+	 * @param int    $job_id      Webino job id.
+	 * @param string $idempotency Idempotency key.
+	 * @param int    $limit       Run limit.
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,job_id:int,body:array}|WP_Error
+	 */
+	public static function run( $job_id, $idempotency, $limit = 50 ) {
+		$job_id = (int) $job_id;
+		if ( $job_id <= 0 ) {
+			return new WP_Error( 'missing_job', __( 'Webino job id is missing.', 'webino-dashboard' ) );
+		}
+		$path = Webino_Dashboard_Migrate_Settings::endpoint( 'run' );
+		$path = str_replace( array( '{id}', '{job}', '{jobId}' ), (string) $job_id, $path );
+		return self::request_path(
+			$path,
+			array( 'limit' => max( 1, min( 100, (int) $limit ) ) ),
+			$idempotency,
+			array( 'job_id' => $job_id )
+		);
+	}
+
+	/**
+	 * Legacy helper used by older job code paths / tests.
+	 *
 	 * @param string              $endpoint_key Endpoint key.
 	 * @param array<string,mixed> $body         JSON body.
 	 * @param string              $idempotency  Idempotency key.
-	 * @return array{ok:bool,http_status:int,retry_after:int,error:string}|WP_Error
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,job_id:int,body:array}|WP_Error
 	 */
 	public static function post( $endpoint_key, array $body, $idempotency ) {
+		return self::request( $endpoint_key, $body, $idempotency, array() );
+	}
+
+	/**
+	 * @param string              $endpoint_key Endpoint key.
+	 * @param array<string,mixed> $body         JSON body.
+	 * @param string              $idempotency  Idempotency key.
+	 * @param array<string,mixed> $meta         Extra meta for dry-run.
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,job_id:int,body:array}|WP_Error
+	 */
+	public static function request( $endpoint_key, array $body, $idempotency, array $meta ) {
 		if ( Webino_Dashboard_Migrate_Settings::dry_run() && 'ping' !== $endpoint_key ) {
 			return array(
 				'ok'          => true,
 				'http_status' => 200,
 				'retry_after' => 0,
 				'error'       => '',
+				'job_id'      => isset( $meta['job_id'] ) ? (int) $meta['job_id'] : 0,
+				'body'        => array(),
+			);
+		}
+
+		$path = Webino_Dashboard_Migrate_Settings::endpoint( $endpoint_key );
+		if ( '' === $path ) {
+			return new WP_Error( 'bad_endpoint', __( 'The destination URL or endpoint path is missing.', 'webino-dashboard' ) );
+		}
+		return self::request_path( $path, $body, $idempotency, $meta );
+	}
+
+	/**
+	 * @param string              $path        Absolute path (may still contain {id}).
+	 * @param array<string,mixed> $body        JSON body.
+	 * @param string              $idempotency Idempotency key.
+	 * @param array<string,mixed> $meta        Meta.
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,job_id:int,body:array}|WP_Error
+	 */
+	public static function request_path( $path, array $body, $idempotency, array $meta = array() ) {
+		if ( Webino_Dashboard_Migrate_Settings::dry_run() && false === strpos( (string) $path, '/ping' ) ) {
+			return array(
+				'ok'          => true,
+				'http_status' => 200,
+				'retry_after' => 0,
+				'error'       => '',
+				'job_id'      => isset( $meta['job_id'] ) ? (int) $meta['job_id'] : 0,
+				'body'        => array(),
 			);
 		}
 
 		$origin = Webino_Dashboard_Migrate_Settings::site_url();
-		$path   = Webino_Dashboard_Migrate_Settings::endpoint( $endpoint_key );
 		if ( '' === $origin || '' === $path ) {
 			return new WP_Error( 'bad_endpoint', __( 'The destination URL or endpoint path is missing.', 'webino-dashboard' ) );
 		}
-		$url = Webino_Dashboard_Migrate_Schema::join_url( $origin, $path );
+		if ( false !== strpos( $path, '{id}' ) || false !== strpos( $path, '{job}' ) ) {
+			return new WP_Error( 'bad_endpoint', __( 'The Webino job id placeholder was not replaced.', 'webino-dashboard' ) );
+		}
+		$url  = Webino_Dashboard_Migrate_Schema::join_url( $origin, $path );
 		$json = wp_json_encode( $body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
 		if ( ! is_string( $json ) ) {
 			return new WP_Error( 'json_encode', __( 'Could not encode the migration batch.', 'webino-dashboard' ) );
@@ -117,11 +205,11 @@ final class Webino_Dashboard_Migrate_Client {
 
 		$token   = Webino_Dashboard_Migrate_Settings::token();
 		$headers = array(
-			'Accept'                  => 'application/json',
-			'Content-Type'            => 'application/json; charset=utf-8',
-			'X-Webino-Import-Schema'  => Webino_Dashboard_Migrate_Schema::NAME,
+			'Accept'                   => 'application/json',
+			'Content-Type'             => 'application/json; charset=utf-8',
+			'X-Webino-Import-Schema'   => Webino_Dashboard_Migrate_Schema::NAME,
 			'X-Webino-Idempotency-Key' => $idempotency,
-			'User-Agent'              => 'WebinoDashboard-Migrate/' . ( defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '0' ),
+			'User-Agent'               => 'WebinoDashboard-Migrate/' . ( defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '0' ),
 		);
 		if ( '' !== $token ) {
 			$headers['Authorization'] = 'Bearer ' . $token;
@@ -145,7 +233,7 @@ final class Webino_Dashboard_Migrate_Client {
 	/**
 	 * @param array|WP_Error $response HTTP API result.
 	 * @param string         $token    Token to strip from errors.
-	 * @return array{ok:bool,http_status:int,retry_after:int,error:string}
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,job_id:int,body:array}
 	 */
 	public static function parse_response( $response, $token = '' ) {
 		if ( is_wp_error( $response ) ) {
@@ -154,12 +242,15 @@ final class Webino_Dashboard_Migrate_Client {
 				'http_status' => 0,
 				'retry_after' => 0,
 				'error'       => Webino_Dashboard_Migrate_Schema::redact( $response->get_error_message(), $token ),
+				'job_id'      => 0,
+				'body'        => array(),
 			);
 		}
-		$code = (int) wp_remote_retrieve_response_code( $response );
-		$raw  = (string) wp_remote_retrieve_body( $response );
-		$retry = self::retry_after_seconds( wp_remote_retrieve_header( $response, 'retry-after' ) );
+		$code    = (int) wp_remote_retrieve_response_code( $response );
+		$raw     = (string) wp_remote_retrieve_body( $response );
+		$retry   = self::retry_after_seconds( wp_remote_retrieve_header( $response, 'retry-after' ) );
 		$decoded = json_decode( $raw, true );
+		$body    = is_array( $decoded ) ? $decoded : array();
 		$message = '';
 		if ( is_array( $decoded ) ) {
 			if ( isset( $decoded['message'] ) && is_string( $decoded['message'] ) ) {
@@ -170,20 +261,32 @@ final class Webino_Dashboard_Migrate_Client {
 			if ( isset( $decoded['ok'] ) && false === $decoded['ok'] && $code >= 200 && $code < 300 ) {
 				$code = 422;
 			}
+			if ( isset( $decoded['success'] ) && false === $decoded['success'] && $code >= 200 && $code < 300 ) {
+				$code = 422;
+			}
 		}
 		if ( '' === $message && $code >= 400 ) {
 			$message = '' !== trim( $raw ) ? $raw : 'HTTP ' . $code;
 		}
 		$ok = $code >= 200 && $code < 300;
-		// Idempotent replay: the batch was already accepted.
 		if ( 409 === $code ) {
 			$ok = true;
+		}
+		$job_id = 0;
+		if ( isset( $body['data']['job']['id'] ) ) {
+			$job_id = (int) $body['data']['job']['id'];
+		} elseif ( isset( $body['data']['id'] ) ) {
+			$job_id = (int) $body['data']['id'];
+		} elseif ( isset( $body['job']['id'] ) ) {
+			$job_id = (int) $body['job']['id'];
 		}
 		return array(
 			'ok'          => $ok,
 			'http_status' => $code,
 			'retry_after' => $retry,
 			'error'       => $ok ? '' : Webino_Dashboard_Migrate_Schema::redact( $message, $token ),
+			'job_id'      => $job_id,
+			'body'        => $body,
 		);
 	}
 

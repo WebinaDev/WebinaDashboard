@@ -116,7 +116,7 @@ final class Webino_Dashboard_Migrate_Settings {
 		$stored = array(
 			'site_url'   => $url,
 			'token_enc'  => $token_enc,
-			'batch_size' => self::clamp_int( isset( $input['batch_size'] ) ? $input['batch_size'] : 20, 1, 100 ),
+			'batch_size' => self::clamp_int( isset( $input['batch_size'] ) ? $input['batch_size'] : 20, 1, 50 ),
 			'delay_ms'   => self::clamp_int( isset( $input['delay_ms'] ) ? $input['delay_ms'] : 400, 0, 10000 ),
 			'timeout'    => self::clamp_int( isset( $input['timeout'] ) ? $input['timeout'] : 45, 5, 120 ),
 			'dry_run'    => ! empty( $input['dry_run'] ),
@@ -156,7 +156,7 @@ final class Webino_Dashboard_Migrate_Settings {
 	 */
 	public static function batch_size() {
 		$raw = self::raw();
-		return self::clamp_int( $raw['batch_size'], 1, 100 );
+		return self::clamp_int( $raw['batch_size'], 1, 50 );
 	}
 
 	/**

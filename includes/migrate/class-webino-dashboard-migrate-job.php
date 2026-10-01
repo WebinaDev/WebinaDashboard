@@ -270,45 +270,151 @@ final class Webino_Dashboard_Migrate_Job {
 			);
 		}
 
-		$payload = Webino_Dashboard_Migrate_Schema::envelope(
-			$entity,
-			$items,
-			array(
-				'cursor'      => $cursor,
-				'next_cursor' => $next,
-				'limit'       => $limit,
-				'done'        => $done,
-				'total'       => isset( $state['totals'][ $entity ] ) ? (int) $state['totals'][ $entity ] : ( isset( $batch['total'] ) ? (int) $batch['total'] : null ),
-			),
-			Webino_Dashboard_Migrate_Schema::source_site(),
-			isset( $state['id'] ) ? (string) $state['id'] : ''
-		);
-		$key    = Webino_Dashboard_Migrate_Schema::idempotency_key(
-			isset( $state['id'] ) ? (string) $state['id'] : '',
-			$entity,
-			$cursor,
-			count( $items )
-		);
-		$result = Webino_Dashboard_Migrate_Client::post( $entity, $payload, $key );
-		if ( is_wp_error( $result ) ) {
+		$chunks = Webino_Dashboard_Migrate_Adapter::for_ingest( $entity, $items );
+		if ( ! $chunks ) {
 			return Webino_Dashboard_Migrate_Runner::reduce(
 				$state,
 				array(
 					'entity'      => $entity,
-					'ok'          => false,
-					'http_status' => 0,
-					'error'       => $result->get_error_message(),
+					'ok'          => true,
+					'http_status' => 200,
+					'exported'    => 0,
+					'next_cursor' => $next,
+					'done'        => $done,
+					'warning'     => __( 'No ingestable rows in this batch.', 'webino-dashboard' ),
 				)
 			);
 		}
+
+		$webino_job_id = isset( $state['webino_job_id'] ) ? (int) $state['webino_job_id'] : 0;
+		$last_result   = null;
+		foreach ( $chunks as $index => $chunk ) {
+			$key = Webino_Dashboard_Migrate_Schema::idempotency_key(
+				isset( $state['id'] ) ? (string) $state['id'] : '',
+				(string) $chunk['resource'] . ( $index ? ( ':' . $index ) : '' ),
+				$cursor,
+				count( $chunk['items'] )
+			);
+			$result = Webino_Dashboard_Migrate_Client::ingest( $chunk['resource'], $chunk['items'], $key );
+			if ( is_wp_error( $result ) ) {
+				return Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'entity'      => $entity,
+						'ok'          => false,
+						'http_status' => 0,
+						'error'       => $result->get_error_message(),
+					)
+				);
+			}
+			if ( empty( $result['ok'] ) ) {
+				return Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'entity'      => $entity,
+						'ok'          => false,
+						'http_status' => (int) $result['http_status'],
+						'retry_after' => (int) $result['retry_after'],
+						'error'       => (string) $result['error'],
+					)
+				);
+			}
+			if ( ! empty( $result['job_id'] ) ) {
+				$webino_job_id = (int) $result['job_id'];
+				$state['webino_job_id'] = $webino_job_id;
+			}
+			$last_result = $result;
+		}
+
+		if ( $webino_job_id > 0 && ! Webino_Dashboard_Migrate_Settings::dry_run() ) {
+			$run_key = Webino_Dashboard_Migrate_Schema::idempotency_key(
+				isset( $state['id'] ) ? (string) $state['id'] : '',
+				'run:' . $entity,
+				$cursor,
+				$webino_job_id
+			);
+			$run = Webino_Dashboard_Migrate_Client::run( $webino_job_id, $run_key, max( count( $items ), 25 ) );
+			if ( is_wp_error( $run ) ) {
+				return Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'entity'      => $entity,
+						'ok'          => false,
+						'http_status' => 0,
+						'error'       => $run->get_error_message(),
+					)
+				);
+			}
+			// Rate limits on run should pause without failing the already-accepted batch.
+			if ( empty( $run['ok'] ) && 429 === (int) $run['http_status'] ) {
+				$state = Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'entity'      => $entity,
+						'ok'          => true,
+						'http_status' => 200,
+						'exported'    => count( $items ),
+						'next_cursor' => $next,
+						'done'        => $done,
+						'warning'     => isset( $batch['warning'] ) ? (string) $batch['warning'] : '',
+					)
+				);
+				return Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'entity'      => $entity,
+						'ok'          => false,
+						'http_status' => 429,
+						'retry_after' => (int) $run['retry_after'],
+						'error'       => (string) $run['error'],
+					)
+				);
+			}
+			if ( empty( $run['ok'] ) && (int) $run['http_status'] >= 500 ) {
+				// Batch is already queued; keep the cursor and retry later.
+				$state = Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'entity'      => $entity,
+						'ok'          => true,
+						'http_status' => 200,
+						'exported'    => count( $items ),
+						'next_cursor' => $next,
+						'done'        => $done,
+						'warning'     => __( 'Batch accepted; Webino run will retry.', 'webino-dashboard' ),
+					)
+				);
+				return Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'entity'      => $entity,
+						'ok'          => false,
+						'http_status' => (int) $run['http_status'],
+						'error'       => (string) $run['error'],
+					)
+				);
+			}
+			if ( empty( $run['ok'] ) ) {
+				return Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'entity'      => $entity,
+						'ok'          => false,
+						'http_status' => (int) $run['http_status'],
+						'retry_after' => (int) $run['retry_after'],
+						'error'       => (string) $run['error'],
+					)
+				);
+			}
+		}
+
+		unset( $last_result );
 		return Webino_Dashboard_Migrate_Runner::reduce(
 			$state,
 			array(
 				'entity'      => $entity,
-				'ok'          => ! empty( $result['ok'] ),
-				'http_status' => (int) $result['http_status'],
-				'retry_after' => (int) $result['retry_after'],
-				'error'       => (string) $result['error'],
+				'ok'          => true,
+				'http_status' => 200,
 				'exported'    => count( $items ),
 				'next_cursor' => $next,
 				'done'        => $done,
@@ -322,45 +428,64 @@ final class Webino_Dashboard_Migrate_Job {
 	 * @return array<string,mixed>
 	 */
 	private static function step_complete( array $state ) {
-		$summary = array();
-		$progress = isset( $state['progress'] ) && is_array( $state['progress'] ) ? $state['progress'] : array();
-		foreach ( $progress as $entity => $row ) {
-			$summary[ $entity ] = array(
-				'exported' => isset( $row['exported'] ) ? (int) $row['exported'] : 0,
-				'failed'   => isset( $row['failed'] ) ? (int) $row['failed'] : 0,
+		// Webino has no /complete route: drain remaining pending rows via /jobs/{id}/run.
+		$webino_job_id = isset( $state['webino_job_id'] ) ? (int) $state['webino_job_id'] : 0;
+		if ( $webino_job_id > 0 && ! Webino_Dashboard_Migrate_Settings::dry_run() ) {
+			$key = Webino_Dashboard_Migrate_Schema::idempotency_key(
+				isset( $state['id'] ) ? (string) $state['id'] : '',
+				'complete',
+				'done',
+				$webino_job_id
 			);
-		}
-		$payload = Webino_Dashboard_Migrate_Schema::complete_payload(
-			Webino_Dashboard_Migrate_Schema::source_site(),
-			$summary,
-			isset( $state['id'] ) ? (string) $state['id'] : ''
-		);
-		$key     = Webino_Dashboard_Migrate_Schema::idempotency_key(
-			isset( $state['id'] ) ? (string) $state['id'] : '',
-			'complete',
-			'done',
-			count( $summary )
-		);
-		$result  = Webino_Dashboard_Migrate_Client::post( 'complete', $payload, $key );
-		if ( is_wp_error( $result ) ) {
-			return Webino_Dashboard_Migrate_Runner::reduce(
-				$state,
-				array(
-					'kind'        => 'complete',
-					'ok'          => false,
-					'http_status' => 0,
-					'error'       => $result->get_error_message(),
-				)
-			);
+			$result = Webino_Dashboard_Migrate_Client::run( $webino_job_id, $key, 100 );
+			if ( is_wp_error( $result ) ) {
+				return Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'kind'        => 'complete',
+						'ok'          => false,
+						'http_status' => 0,
+						'error'       => $result->get_error_message(),
+					)
+				);
+			}
+			if ( empty( $result['ok'] ) ) {
+				return Webino_Dashboard_Migrate_Runner::reduce(
+					$state,
+					array(
+						'kind'        => 'complete',
+						'ok'          => false,
+						'http_status' => (int) $result['http_status'],
+						'retry_after' => (int) $result['retry_after'],
+						'error'       => (string) $result['error'],
+					)
+				);
+			}
+			$body = isset( $result['body']['data'] ) && is_array( $result['body']['data'] ) ? $result['body']['data'] : array();
+			$job  = isset( $body['job'] ) && is_array( $body['job'] ) ? $body['job'] : ( isset( $body['status'] ) ? $body : array() );
+			$status = isset( $job['status'] ) ? (string) $job['status'] : '';
+			$pending = 0;
+			if ( isset( $job['progress']['totals']['pending'] ) ) {
+				$pending = (int) $job['progress']['totals']['pending'];
+			}
+			if ( $pending > 0 || in_array( $status, array( 'ready', 'running' ), true ) ) {
+				// Stay in complete phase and keep calling run on the next tick.
+				$state['updated_at'] = gmdate( 'c' );
+				$state['log']        = Webino_Dashboard_Migrate_Schema::append_log(
+					isset( $state['log'] ) && is_array( $state['log'] ) ? $state['log'] : array(),
+					'info',
+					sprintf( 'اعمال باقی‌مانده در وبینو… (pending=%d, status=%s)', $pending, $status )
+				);
+				return $state;
+			}
 		}
 		return Webino_Dashboard_Migrate_Runner::reduce(
 			$state,
 			array(
 				'kind'        => 'complete',
-				'ok'          => ! empty( $result['ok'] ),
-				'http_status' => (int) $result['http_status'],
-				'retry_after' => (int) $result['retry_after'],
-				'error'       => (string) $result['error'],
+				'ok'          => true,
+				'http_status' => 200,
+				'error'       => '',
 			)
 		);
 	}

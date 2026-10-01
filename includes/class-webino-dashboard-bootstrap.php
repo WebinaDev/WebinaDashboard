@@ -90,6 +90,7 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/migrate/class-webino-dashboard-migrate-crypto.php',
 			'includes/migrate/class-webino-dashboard-migrate-schema.php',
 			'includes/migrate/class-webino-dashboard-migrate-settings.php',
+			'includes/migrate/class-webino-dashboard-migrate-adapter.php',
 			'includes/migrate/class-webino-dashboard-migrate-client.php',
 			'includes/migrate/class-webino-dashboard-migrate-runner.php',
 			'includes/migrate/class-webino-dashboard-migrate-exporters.php',

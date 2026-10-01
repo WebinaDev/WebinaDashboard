@@ -77,17 +77,12 @@ final class Webino_Dashboard_Migrate_Schema {
 	 * @return array<string,string>
 	 */
 	public static function default_endpoints() {
+		// Match WebinoDashboard docs/wordpress-import.md (job + ingest + run).
 		$paths = array(
-			'ping'       => '/api/v1/import/wordpress/ping',
-			'categories' => '/api/v1/import/wordpress/categories',
-			'media'      => '/api/v1/import/wordpress/media',
-			'products'   => '/api/v1/import/wordpress/products',
-			'customers'  => '/api/v1/import/wordpress/customers',
-			'orders'     => '/api/v1/import/wordpress/orders',
-			'pages'      => '/api/v1/import/wordpress/pages',
-			'posts'      => '/api/v1/import/wordpress/posts',
-			'menus'      => '/api/v1/import/wordpress/menus',
-			'complete'   => '/api/v1/import/wordpress/complete',
+			'ping'     => '/api/v1/import/wordpress/ping',
+			'ingest'   => '/api/v1/import/wordpress/ingest',
+			'run'      => '/api/v1/import/wordpress/jobs/{id}/run',
+			'complete' => '/api/v1/import/wordpress/jobs/{id}/run',
 		);
 		if ( function_exists( 'apply_filters' ) ) {
 			$filtered = apply_filters( 'webino_dashboard_migrate_endpoints', $paths );
@@ -121,7 +116,7 @@ final class Webino_Dashboard_Migrate_Schema {
 		if ( '/' !== substr( $path, 0, 1 ) ) {
 			$path = '/' . $path;
 		}
-		if ( ! preg_match( '#^/[A-Za-z0-9_./~-]+$#', $path ) ) {
+		if ( ! preg_match( '#^/[A-Za-z0-9_./~{}-]+$#', $path ) ) {
 			return $fallback;
 		}
 		return $path;

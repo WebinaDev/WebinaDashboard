@@ -196,6 +196,7 @@ if ( ! function_exists( 'wp_remote_retrieve_header' ) ) {
 $root = dirname( __DIR__ );
 require $root . '/includes/migrate/class-webino-dashboard-migrate-crypto.php';
 require $root . '/includes/migrate/class-webino-dashboard-migrate-schema.php';
+require $root . '/includes/migrate/class-webino-dashboard-migrate-adapter.php';
 require $root . '/includes/migrate/class-webino-dashboard-migrate-settings.php';
 require $root . '/includes/migrate/class-webino-dashboard-migrate-client.php';
 require $root . '/includes/migrate/class-webino-dashboard-migrate-runner.php';
@@ -220,16 +221,17 @@ $saved = Webino_Dashboard_Migrate_Settings::update(
 			'orders'   => '1',
 		),
 		'endpoints'  => array(
-			'products' => '../secret',
-			'orders'   => '/api/v1/import/wordpress/orders',
+			'ingest' => '../secret',
+			'run'    => '/api/v1/import/wordpress/jobs/{id}/run',
 		),
 	)
 );
 webino_migrate_assert( ! is_wp_error( $saved ), 'settings save accepts a public https origin' );
 webino_migrate_assert( 'https://parisma.webinaagency.ir/tenant' === $saved['site_url'], 'origin is normalized and query is dropped' );
-webino_migrate_assert( 100 === $saved['batch_size'], 'batch size is clamped' );
+webino_migrate_assert( 50 === $saved['batch_size'], 'batch size is clamped to Webino ingest max' );
 webino_migrate_assert( ! empty( $saved['entities']['products'] ) && empty( $saved['entities']['pages'] ), 'entity checklist is stored' );
-webino_migrate_assert( '/api/v1/import/wordpress/products' === $saved['endpoints']['products'], 'path traversal falls back to the default endpoint' );
+webino_migrate_assert( '/api/v1/import/wordpress/ingest' === $saved['endpoints']['ingest'], 'path traversal falls back to the default ingest endpoint' );
+webino_migrate_assert( '/api/v1/import/wordpress/jobs/{id}/run' === $saved['endpoints']['run'], 'run endpoint keeps job id placeholder' );
 webino_migrate_assert( true === $saved['token_set'], 'token is marked as stored' );
 webino_migrate_assert( false === strpos( wp_json_encode( $saved ), $secret ) && false === strpos( $saved['token_hint'], $secret ), 'public settings do not contain the token' );
 $stored = get_option( Webino_Dashboard_Migrate_Settings::OPTION );
@@ -421,6 +423,42 @@ webino_migrate_assert( '' === $media['url'], 'media URL must be http(s)' );
 $key = Webino_Dashboard_Migrate_Schema::idempotency_key( 'job1', 'products', '20', 20 );
 webino_migrate_assert( $key === Webino_Dashboard_Migrate_Schema::idempotency_key( 'job1', 'products', '20', 20 ), 'idempotency key is stable' );
 webino_migrate_assert( 1 === preg_match( '/^[A-Za-z0-9_:\-|.]{8,180}$/', $key ), 'idempotency key is header-safe' );
+
+$adapted = Webino_Dashboard_Migrate_Adapter::for_ingest(
+	'products',
+	array(
+		array(
+			'source_id'  => 501,
+			'name'       => 'رژ',
+			'permalink'  => 'https://parisma.ir/product/x',
+			'categories' => array( array( 'source_id' => 15, 'name' => 'آرایش', 'slug' => 'makeup' ) ),
+			'tags'       => array( array( 'source_id' => 3, 'name' => 'جدید', 'slug' => 'new' ) ),
+			'images'     => array( array( 'source_id' => 90, 'url' => 'https://parisma.ir/a.jpg', 'alt' => '' ) ),
+			'variations' => array( array( 'source_id' => 502, 'sku' => 'X-1', 'regular_price' => '1' ) ),
+		),
+	)
+);
+webino_migrate_assert( 1 === count( $adapted ) && 'products' === $adapted[0]['resource'], 'adapter emits products resource' );
+webino_migrate_assert( '501' === $adapted[0]['items'][0]['external_id'], 'adapter maps source_id to external_id' );
+webino_migrate_assert( array( '15' ) === $adapted[0]['items'][0]['category_external_ids'], 'adapter flattens category ids' );
+webino_migrate_assert( '502' === $adapted[0]['items'][0]['variations'][0]['external_id'], 'adapter maps variation ids' );
+
+$split = Webino_Dashboard_Migrate_Adapter::for_ingest(
+	'categories',
+	array(
+		array( 'taxonomy' => 'product_cat', 'source_id' => 1, 'name' => 'Cat', 'slug' => 'cat', 'parent_source_id' => 0 ),
+		array( 'taxonomy' => 'product_tag', 'source_id' => 2, 'name' => 'Tag', 'slug' => 'tag', 'parent_source_id' => 0 ),
+	)
+);
+$resources = array_column( $split, 'resource' );
+webino_migrate_assert( in_array( 'categories', $resources, true ) && in_array( 'tags', $resources, true ), 'adapter splits categories and tags' );
+
+webino_migrate_assert(
+	'/api/v1/import/wordpress/ingest' === Webino_Dashboard_Migrate_Schema::default_endpoints()['ingest'],
+	'default ingest path matches WebinoDashboard'
+);
+
+
 
 if ( $failures > 0 ) {
 	fwrite( STDERR, "{$failures} failure(s)\n" );
