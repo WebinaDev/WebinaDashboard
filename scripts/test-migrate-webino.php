@@ -200,6 +200,8 @@ require $root . '/includes/migrate/class-webino-dashboard-migrate-settings.php';
 require $root . '/includes/migrate/class-webino-dashboard-migrate-client.php';
 require $root . '/includes/migrate/class-webino-dashboard-migrate-runner.php';
 require $root . '/includes/migrate/class-webino-dashboard-migrate-exporters.php';
+require $root . '/includes/migrate/class-webino-dashboard-migrate-elementor.php';
+require $root . '/includes/migrate/class-webino-dashboard-migrate-extra.php';
 
 $secret = 'super-secret-token-value';
 $cipher = Webino_Dashboard_Migrate_Crypto::encrypt( $secret );
@@ -220,16 +222,18 @@ $saved = Webino_Dashboard_Migrate_Settings::update(
 			'orders'   => '1',
 		),
 		'endpoints'  => array(
-			'products' => '../secret',
-			'orders'   => '/api/v1/import/wordpress/orders',
+			'ingest' => '../secret',
+			'run'    => '/api/v1/import/wordpress/jobs/{id}/run',
 		),
 	)
 );
 webino_migrate_assert( ! is_wp_error( $saved ), 'settings save accepts a public https origin' );
 webino_migrate_assert( 'https://parisma.webinaagency.ir/tenant' === $saved['site_url'], 'origin is normalized and query is dropped' );
-webino_migrate_assert( 100 === $saved['batch_size'], 'batch size is clamped' );
+webino_migrate_assert( 50 === $saved['batch_size'], 'batch size is clamped to the ingest maximum' );
+webino_migrate_assert( 'selective' === $saved['mode'], 'a save without mode stays selective' );
 webino_migrate_assert( ! empty( $saved['entities']['products'] ) && empty( $saved['entities']['pages'] ), 'entity checklist is stored' );
-webino_migrate_assert( '/api/v1/import/wordpress/products' === $saved['endpoints']['products'], 'path traversal falls back to the default endpoint' );
+webino_migrate_assert( '/api/v1/import/wordpress/ingest' === $saved['endpoints']['ingest'], 'path traversal falls back to the default ingest path' );
+webino_migrate_assert( '/api/v1/import/wordpress/jobs/{id}/run' === $saved['endpoints']['run'], 'run path keeps the job id placeholder' );
 webino_migrate_assert( true === $saved['token_set'], 'token is marked as stored' );
 webino_migrate_assert( false === strpos( wp_json_encode( $saved ), $secret ) && false === strpos( $saved['token_hint'], $secret ), 'public settings do not contain the token' );
 $stored = get_option( Webino_Dashboard_Migrate_Settings::OPTION );
@@ -421,6 +425,132 @@ webino_migrate_assert( '' === $media['url'], 'media URL must be http(s)' );
 $key = Webino_Dashboard_Migrate_Schema::idempotency_key( 'job1', 'products', '20', 20 );
 webino_migrate_assert( $key === Webino_Dashboard_Migrate_Schema::idempotency_key( 'job1', 'products', '20', 20 ), 'idempotency key is stable' );
 webino_migrate_assert( 1 === preg_match( '/^[A-Za-z0-9_:\-|.]{8,180}$/', $key ), 'idempotency key is header-safe' );
+
+$full = Webino_Dashboard_Migrate_Settings::update(
+	array(
+		'site_url' => 'https://parisma.webinaagency.ir',
+		'mode'     => 'full',
+		'entities' => array( 'pages' => '' ),
+	)
+);
+webino_migrate_assert( ! is_wp_error( $full ) && 'full' === $full['mode'] && ! empty( $full['entities']['pages'] ) && ! empty( $full['entities']['brands'] ), 'full mode forces every entity on' );
+
+$taxes = Webino_Dashboard_Migrate_Export_Categories::taxonomies();
+webino_migrate_assert( array( 'product_cat' ) === $taxes, 'category export is product categories only' );
+
+$product = Webino_Dashboard_Migrate_Export_Products::shape_item(
+	array(
+		'source_id'  => 501,
+		'type'       => 'simple',
+		'name'       => 'رژ مات',
+		'dimensions' => array( 'length' => '12', 'width' => '3', 'height' => '3' ),
+		'brands'     => array(
+			array( 'source_id' => 8, 'slug' => 'loreal', 'name' => 'لورآل' ),
+		),
+		'license_key' => 'should-drop',
+	)
+);
+webino_migrate_assert( '12' === $product['length'] && array( '8' ) === $product['brand_external_ids'], 'product length is flattened and brands become external ids' );
+webino_migrate_assert( ! isset( $product['license_key'] ), 'product payload drops license keys' );
+
+$order = Webino_Dashboard_Migrate_Export_Orders::shape_item(
+	array(
+		'source_id'      => 9002,
+		'number'         => '9002',
+		'status'         => 'processing',
+		'shipping_lines' => array(
+			array( 'line_type' => 'shipping', 'method_title' => 'پست', 'total' => '45000' ),
+		),
+		'private_notes'  => array(
+			array( 'content' => 'بسته‌بندی هدیه' ),
+		),
+	)
+);
+webino_migrate_assert( 'shipping' === $order['shipping_lines'][0]['line_type'] && 'بسته‌بندی هدیه' === $order['note'], 'order keeps shipping lines and joins private notes' );
+
+$menu = Webino_Dashboard_Migrate_Export_Menus::nest_items(
+	array(
+		array( 'source_id' => 1, 'parent_source_id' => 0, 'title' => 'فروشگاه' ),
+		array( 'source_id' => 2, 'parent_source_id' => 1, 'title' => 'آرایش' ),
+	)
+);
+webino_migrate_assert( isset( $menu[0]['children'][0]['title'] ) && 'آرایش' === $menu[0]['children'][0]['title'], 'flat menu items nest under their parent' );
+
+$staff = Webino_Dashboard_Migrate_Export_Staff::shape_item(
+	array(
+		'source_id' => '7',
+		'email'     => 'editor@parisma.ir',
+		'name'      => 'ویراستار',
+		'roles'     => array( 'editor' ),
+		'user_pass' => '$P$not-exported',
+	)
+);
+webino_migrate_assert( true === $staff['invite'] && false === $staff['password_exported'] && ! isset( $staff['user_pass'] ), 'staff payload is invite-only' );
+
+$stripped = Webino_Dashboard_Migrate_Schema::strip_sensitive_keys(
+	array(
+		'title'            => 'زرین‌پال',
+		'enabled'          => 'yes',
+		'merchant'         => 'MID',
+		'license'          => 'LIC',
+		'consumer_secret'  => 'sec',
+	)
+);
+webino_migrate_assert( isset( $stripped['title'] ) && ! isset( $stripped['merchant'] ) && ! isset( $stripped['license'] ) && ! isset( $stripped['consumer_secret'] ), 'settings strip drops credentials and license keys' );
+
+$ingest = Webino_Dashboard_Migrate_Schema::ingest_payload(
+	'pages',
+	array( array( 'source_id' => 1927, 'title' => 'خانه' ) ),
+	array( 'site_url' => 'https://parisma.ir' )
+);
+webino_migrate_assert( 'https://parisma.ir' === $ingest['source_url'] && 'pages' === $ingest['resource'] && false === $ingest['publish_content'], 'ingest payload keeps publish off' );
+webino_migrate_assert( '1927' === $ingest['items'][0]['external_id'], 'ingest rows alias source_id to external_id' );
+
+webino_migrate_assert( true === Webino_Dashboard_Migrate_Schema::remote_accepts( 'products', null ), 'empty advertisement still accepts products' );
+webino_migrate_assert( false === Webino_Dashboard_Migrate_Schema::remote_accepts( 'brands', array() ), 'empty advertisement does not accept brands' );
+webino_migrate_assert( true === Webino_Dashboard_Migrate_Schema::remote_accepts( 'brands', array( 'brands', 'products' ) ), 'advertised brands are accepted' );
+webino_migrate_assert( true === Webino_Dashboard_Migrate_Schema::is_unknown_resource_error( 'Unknown import resource.' ), 'unknown resource errors are recognized' );
+
+$skip = Webino_Dashboard_Migrate_Runner::initial_state( 'job4', array( 'brands', 'products' ), 1_700_000_100, false );
+$skip = Webino_Dashboard_Migrate_Runner::reduce(
+	$skip,
+	array(
+		'now'          => 1_700_000_110,
+		'entity'       => 'brands',
+		'unsupported'  => true,
+		'http_status'  => 422,
+		'error'        => 'Unknown import resource.',
+	)
+);
+webino_migrate_assert( 'running' === $skip['status'] && ! empty( $skip['progress']['brands']['unsupported'] ) && 1 === (int) $skip['entity_index'], 'an unknown resource is skipped without failing the job' );
+
+$fixture = json_decode( (string) file_get_contents( __DIR__ . '/fixtures/elementor-page.json' ), true );
+$document = Webino_Dashboard_Migrate_Elementor::convert(
+	$fixture,
+	array(
+		'html'        => '<div class="elementor">خانه</div>',
+		'css'         => '.elementor{color:#111}',
+		'title'       => 'خانه',
+		'external_id' => '1927',
+	)
+);
+$types = array();
+$unmapped = '';
+foreach ( $document['sections'] as $section ) {
+	foreach ( $section['columns'] as $column ) {
+		foreach ( $column['widgets'] as $widget ) {
+			$types[] = $widget['type'];
+			if ( isset( $widget['props']['html'] ) && is_string( $widget['props']['html'] ) && false !== strpos( $widget['props']['html'], 'data-webino-unmapped' ) ) {
+				$unmapped = $widget['props']['html'];
+			}
+		}
+	}
+}
+webino_migrate_assert( 1 === $document['version'] && 'elementor' === $document['source'], 'Elementor document uses builder version 1' );
+webino_migrate_assert( in_array( 'heading', $types, true ) && in_array( 'text', $types, true ) && in_array( 'image', $types, true ), 'Elementor maps heading, text, and image' );
+webino_migrate_assert( in_array( 'button', $types, true ) && in_array( 'product-grid', $types, true ) && in_array( 'html', $types, true ), 'Elementor maps button, product grid, and unmapped HTML' );
+webino_migrate_assert( false !== strpos( $unmapped, 'countdown' ), 'unmapped widgets keep an HTML marker' );
+webino_migrate_assert( isset( $document['styles']['css'] ) && false !== strpos( $document['styles']['css'], 'color:#111' ), 'Elementor CSS is attached to the document' );
 
 if ( $failures > 0 ) {
 	fwrite( STDERR, "{$failures} failure(s)\n" );

@@ -2,14 +2,27 @@
 
 Schema name: `webino.wordpress.import.v1`  
 Schema version: `1`  
-Producer: Webino Dashboard plugin (`includes/migrate/`)  
-Consumer: WebinoDashboard tenant ingest (for example `https://parisma.webinaagency.ir`)
+Plugin: Webino Dashboard `0.9.41` (`includes/migrate/`)  
+Consumer: WebinoDashboard tenant, for example `https://parisma.webinaagency.ir`
 
-The WordPress side pushes batches. Webino fetches media bytes from the `url` fields. This plugin does not upload file bodies.
+The WordPress plugin pushes batches. It does not upload file bodies. Webino downloads public image URLs itself. Destination site URL must be HTTPS, with no userinfo and no private or link-local host.
+
+`publish_content` is always `false`. Content stays draft on Webino until an operator publishes it.
+
+## Full and selective
+
+The migrate screen (wp-admin and the dashboard tools page) has two modes:
+
+- **Full** turns every resource checkbox on.
+- **Selective** sends only the checked resources.
+
+A saved settings row that has an entity checklist and no `mode` is treated as selective, so an older partial save is not promoted to a full cutover. New installs default to full.
+
+The plugin only POSTs a resource when the tenant ping advertises it. If `resources` is missing or empty, the fallback is the accepted v1 set below. An ingest `422` whose message contains `Unknown import resource` marks that entity `skipped_remote` and continues. Resume re-pings and retries skipped entities after Webino adds the importer. Dry run builds every selected entity locally and does not call the tenant.
 
 ## Authentication
 
-Every request except a dry run:
+Every live request:
 
 - `Authorization: Bearer <token>`
 - `Accept: application/json`
@@ -17,28 +30,23 @@ Every request except a dry run:
 - `X-Webino-Import-Schema: webino.wordpress.import.v1`
 - `X-Webino-Idempotency-Key: <job>:<entity>:<cursor>:<hash>`
 
-The token is stored in the `webino_dashboard_migrate_settings` option as `v1:` + base64(IV + AES-256-CBC ciphertext). The key is `SHA-256(AUTH_KEY + "|" + SECURE_AUTH_KEY + "|webino-migrate-v1")`. The plaintext token is not returned by REST and is stripped from migration log lines (`Bearer …`, `token=…`, and the known secret).
+The token is stored in `webino_dashboard_migrate_settings` as `v1:` + base64(IV + AES-256-CBC). The key is `SHA-256(AUTH_KEY + "|" + SECURE_AUTH_KEY + "|webino-migrate-v1")`. REST never returns the plaintext. Log lines redact `Bearer …`, `token=…`, and the known secret.
 
-`409 Conflict` on a batch is treated as success (the same idempotency key was already accepted). `429` keeps the cursor and waits for `Retry-After` (1–300 seconds). Other `4xx` fail the job. Network errors and `5xx` retry the same cursor up to 3 times with exponential backoff. `Resume` continues from the stored cursors.
+`409 Conflict` counts as success. `429` keeps the cursor and waits for `Retry-After` (1–300 seconds). Other `4xx` fail the job, except the unknown-resource case above. Network errors and `5xx` retry the same cursor up to 3 times with exponential backoff. WordPress cron keeps a running job moving if the browser is closed.
+
+Customer password hashes are never exported. Staff rows are invite payloads (`invite: true`, `password_exported: false`) and are not sent as customers. License keys, consumer secrets, payment credentials, and similar fields are stripped before settings, products, and review-queue rows leave the site.
 
 ## Endpoints
 
-Base URL is the tenant origin saved in the screen (HTTPS only, no userinfo, no private or link-local hosts). Paths are configurable. Defaults:
+These are the only paths this plugin calls. They match the existing Webino importer. There is no per-entity URL and no `/complete`.
 
 | Key | Method | Path |
 | --- | --- | --- |
 | ping | POST | `/api/v1/import/wordpress/ping` |
-| categories | POST | `/api/v1/import/wordpress/categories` |
-| media | POST | `/api/v1/import/wordpress/media` |
-| products | POST | `/api/v1/import/wordpress/products` |
-| customers | POST | `/api/v1/import/wordpress/customers` |
-| orders | POST | `/api/v1/import/wordpress/orders` |
-| pages | POST | `/api/v1/import/wordpress/pages` |
-| posts | POST | `/api/v1/import/wordpress/posts` |
-| menus | POST | `/api/v1/import/wordpress/menus` |
-| complete | POST | `/api/v1/import/wordpress/complete` |
+| ingest | POST | `/api/v1/import/wordpress/ingest` |
+| run | POST | `/api/v1/import/wordpress/jobs/{id}/run` |
 
-Entity order: categories → media → products → customers → orders → pages → posts → menus → complete.
+`{id}` is the remote job id from `data.job.id` on the first successful ingest. Each tick: one ingest batch (max 50 items), then `run` with `{ "limit": <count> }` when a remote job id exists. After the last entity, `run` is repeated until the remote status is `completed` or `completed_with_errors`, or `pending` is `0`, or 40 tries have been used (the local job still completes, with a warning).
 
 Filters: `webino_dashboard_migrate_endpoints`, `webino_dashboard_migrate_entities`, `webino_dashboard_migrate_taxonomies`, `webino_dashboard_migrate_customer_roles`, `webino_dashboard_migrate_item`, `webino_dashboard_migrate_capability`.
 
@@ -55,324 +63,189 @@ Filters: `webino_dashboard_migrate_endpoints`, `webino_dashboard_migrate_entitie
     "timezone": "Asia/Tehran",
     "wp_version": "6.8",
     "wc_version": "9.8",
-    "plugin_version": "0.9.40",
-    "exported_at": "2026-10-01T18:00:00+00:00"
+    "plugin_version": "0.9.41",
+    "exported_at": "2026-10-03T09:00:00+00:00"
   }
 }
 ```
 
-Any HTTP 2xx is success. A JSON body with `"ok": false` is treated as failure. Recommended response: `{ "ok": true }`.
+HTTP 2xx with `"ok": true` is success. The plugin reads `resources` (the list from `advertised()`).
 
-## Batch envelope
+## Ingest body
 
-Used for every entity except `complete`.
+Laravel validation keeps `source_url`, `resource`, `items` (max 50), `dry_run`, `currency`, `price_multiplier`, `media_hosts` (max 10), `download_media`, and `publish_content`. Unknown keys are dropped, so `schema` and `schema_version` are informational.
 
 ```json
 {
   "schema": "webino.wordpress.import.v1",
   "schema_version": 1,
-  "job_id": "a1b2c3d4e5f6",
-  "entity": "products",
-  "source": {},
-  "batch": {
-    "cursor": "1200",
-    "next_cursor": "1240",
-    "limit": 20,
-    "count": 20,
-    "done": false,
-    "total": 860
-  },
-  "items": []
-}
-```
-
-`cursor` is the last acknowledged position. The next retry of this batch repeats the same cursor and the same idempotency key. `done: true` means this entity has no further rows after `items`. Cursors:
-
-- categories: `taxonomy|term_id` (example `product_cat|40`)
-- everything else: decimal source id of the last row considered (`0` / empty at the start)
-
-Upsert key on Webino should be `(source_site_url, entity, source_id)`.
-
-## Categories
-
-Taxonomies: `product_cat`, `product_tag`, `category`, `post_tag`, plus `product_brand` / `pwb-brand` / `yith_product_brand` when they exist.
-
-```json
-{
-  "taxonomy": "product_cat",
-  "source_id": 15,
-  "parent_source_id": 4,
-  "name": "آرایش",
-  "slug": "makeup",
-  "description": "",
-  "count": 32,
-  "image": { "source_id": 90, "url": "https://parisma.ir/wp-content/uploads/cat.jpg", "alt": "" }
-}
-```
-
-`image` is `null` when there is no public thumbnail.
-
-## Media
-
-Attachment metadata only. `url` and `sizes[].url` are public `http(s)` URLs. Local paths and non-HTTP values are omitted.
-
-```json
-{
-  "source_id": 90,
-  "title": "lipstick",
-  "alt": "رژ",
-  "caption": "",
-  "description": "",
-  "mime_type": "image/jpeg",
-  "url": "https://parisma.ir/wp-content/uploads/2024/05/lipstick.jpg",
-  "file": "2024/05/lipstick.jpg",
-  "width": 1200,
-  "height": 1200,
-  "filesize": 240112,
-  "sizes": [
-    { "name": "woocommerce_thumbnail", "url": "https://parisma.ir/wp-content/uploads/2024/05/lipstick-300x300.jpg", "width": 300, "height": 300, "mime_type": "image/jpeg" }
-  ],
-  "created_at": "2024-05-02T08:11:00+00:00"
-}
-```
-
-## Products
-
-One parent product per item. Variations are nested (cap 200). Prices are decimal strings as stored by WooCommerce. Gallery images are ordered by `position` (`0` is the featured image). Arbitrary post meta is not copied. Download rows keep only public URLs.
-
-```json
-{
-  "source_id": 501,
-  "type": "variable",
-  "status": "publish",
-  "slug": "matte-lipstick",
-  "name": "رژ مات",
-  "description": "<p>…</p>",
-  "short_description": "",
-  "sku": "PRS-501",
-  "regular_price": "",
-  "sale_price": "",
+  "source_url": "https://parisma.ir",
+  "resource": "pages",
+  "items": [],
+  "publish_content": false,
   "currency": "IRT",
-  "manage_stock": false,
-  "stock_quantity": null,
-  "stock_status": "instock",
-  "backorders": "no",
-  "weight": "",
-  "dimensions": { "length": "", "width": "", "height": "" },
-  "tax_status": "taxable",
-  "tax_class": "",
-  "catalog_visibility": "visible",
-  "featured": false,
-  "virtual": false,
-  "downloadable": false,
-  "downloads": [],
-  "menu_order": 0,
-  "categories": [{ "source_id": 15, "name": "آرایش", "slug": "makeup" }],
-  "tags": [],
-  "brands": [{ "source_id": 3, "name": "پاریسما", "slug": "parisma" }],
-  "attributes": [
-    {
-      "source_id": 2,
-      "name": "رنگ",
-      "slug": "pa_color",
-      "visible": true,
-      "variation": true,
-      "options": [{ "source_id": 8, "name": "قرمز", "slug": "red" }]
-    }
-  ],
-  "images": [
-    { "source_id": 90, "url": "https://parisma.ir/wp-content/uploads/2024/05/lipstick.jpg", "alt": "", "position": 0 }
-  ],
-  "variations": [
-    {
-      "source_id": 502,
-      "sku": "PRS-501-RED",
-      "status": "publish",
-      "regular_price": "450000",
-      "sale_price": "399000",
-      "manage_stock": true,
-      "stock_quantity": 12,
-      "stock_status": "instock",
-      "weight": "",
-      "attributes": { "pa_color": "red" },
-      "image": { "source_id": 91, "url": "https://parisma.ir/wp-content/uploads/2024/05/lipstick-red.jpg", "alt": "" },
-      "description": ""
-    }
-  ],
-  "grouped_children": [],
-  "external_url": "",
-  "created_at": "2024-05-02T08:00:00+00:00",
-  "updated_at": "2026-01-04T10:00:00+00:00",
-  "permalink": "https://parisma.ir/product/matte-lipstick/"
+  "download_media": true
 }
 ```
 
-## Customers
+Every item gets `external_id` from `source_id` when it is missing. Upsert on Webino is the job plus `external_id`.
 
-WordPress users in the `customer` role (filterable). Password hashes, activation keys, session tokens, and API keys are removed. Guests exist only on orders.
+Local checklist order:
 
-```json
-{
-  "source_id": 44,
-  "email": "customer@example.com",
-  "username": "customer44",
-  "first_name": "سارا",
-  "last_name": "احمدی",
-  "display_name": "سارا احمدی",
-  "roles": ["customer"],
-  "registered_at": "2023-11-01T12:00:00+00:00",
-  "phone": "09120000000",
-  "billing": {
-    "first_name": "سارا",
-    "last_name": "احمدی",
-    "company": "",
-    "address_1": "",
-    "address_2": "",
-    "city": "تهران",
-    "state": "THR",
-    "postcode": "",
-    "country": "IR",
-    "phone": "09120000000",
-    "email": "customer@example.com"
-  },
-  "shipping": {
-    "first_name": "",
-    "last_name": "",
-    "company": "",
-    "address_1": "",
-    "address_2": "",
-    "city": "",
-    "state": "",
-    "postcode": "",
-    "country": ""
-  }
-}
-```
+`media` → `media_files` → `categories` → `tags` → `brands` → `customers` → `staff` → `products` → `coupons` → `reviews` → `pages` → `posts` → `elementor_templates` → `orders` → `menus` → `redirects` → `settings` → `stats` → `waiting_list` → `permalinks` → `review_queue`
 
-## Orders
+`media_files` is not a remote resource. It ingests as `media`.
 
-HPOS (`wp_wc_orders`) and legacy `shop_order` posts are both read. Trash and checkout-draft orders are skipped. Refunds are nested, not separate top-level rows. Payment tokens and card numbers are not exported. Coupon codes travel on the order; there is no separate coupon entity.
+## Resources the current importer already applies
+
+Aliases the plugin understands the same way as Webino: `woo_products` → `products`, `product_categories` → `categories`, `product_tags` → `tags`, `users` → `customers`, `attachments` → `media`, `analytics` → `stats`.
+
+| Resource | What this plugin sends | What the current importer does with it |
+| --- | --- | --- |
+| `media` | Public JPEG, PNG, GIF, WebP, plus the optional non-image batch | Stores raster images up to 8MB. SVG, PDF, and video can fail per row. |
+| `categories` | `product_cat` only | Shop categories. |
+| `tags` | `product_tag` only | Product tags. |
+| `customers` | Role `customer`, field `name`, no password | Customers. Non-customer roles are not sent here. |
+| `products` | See fidelity notes | Simple and variable. Grouped and external stay labeled, but Webino currently coerces them to simple. |
+| `pages` | HTML, SEO, Elementor `document` | Stores `document` when it has `sections` and the JSON is at most 750000 bytes. |
+| `posts` | HTML, `cover`, SEO, categories, tags, Elementor `document` | Cover image. Only the first blog category is linked. Tags need `external_id`. |
+| `orders` | Lines, shipping, coupons, fees, refunds, private notes | Line items become order items. Shipping, discount, and tax are order totals. `note` becomes one private note. The extra line arrays stay on the stored import item for a later importer. |
+| `menus` | Nested `children` | Draft header, or footer when a location contains `footer`. |
+| `stats` | Daily rows when `wp_*webino_dashboard_analytics*` tables exist | Snapshots on the job summary. If the tables are missing, the plugin warns and Webino can derive stats from imported orders. |
+
+## Resources that need a new Webino importer
+
+Send these on the same `POST /api/v1/import/wordpress/ingest` with `resource` set to the name below. Do not add a new path. Until `ping.resources` includes the name, this plugin will not POST it on a live run.
+
+### `brands`
+
+Same term shape as a category, from `product_brand`, `pwb-brand`, or `yith_product_brand` when that taxonomy exists. Products also carry `brand_external_ids` and a `brands` array. The current product importer does not link brands; a Brand model should.
 
 ```json
 {
-  "source_id": 9001,
-  "number": "9001",
-  "status": "completed",
-  "currency": "IRT",
-  "created_at": "2025-03-01T09:30:00+00:00",
-  "updated_at": "2025-03-02T09:30:00+00:00",
-  "customer_source_id": 44,
-  "billing": { "first_name": "سارا", "email": "customer@example.com", "phone": "09120000000" },
-  "shipping_address": { "city": "تهران", "country": "IR" },
-  "totals": { "subtotal": "450000", "discount": "0", "shipping": "50000", "tax": "0", "total": "500000" },
-  "payment_method": "cod",
-  "payment_method_title": "پرداخت در محل",
-  "transaction_id": "",
-  "customer_note": "",
-  "line_items": [
-    {
-      "source_id": 1,
-      "product_source_id": 501,
-      "variation_source_id": 502,
-      "name": "رژ مات - قرمز",
-      "sku": "PRS-501-RED",
-      "quantity": 1,
-      "subtotal": "450000",
-      "total": "450000",
-      "tax": "0"
-    }
-  ],
-  "shipping_lines": [{ "source_id": 2, "method_id": "flat_rate", "method_title": "پست", "total": "50000" }],
-  "coupon_lines": [],
-  "fee_lines": [],
-  "refunds": []
-}
-```
-
-`customer_source_id` is `0` for guest checkout.
-
-## Pages and posts
-
-```json
-{
-  "source_id": 12,
-  "type": "page",
-  "status": "publish",
-  "slug": "about",
-  "title": "درباره ما",
-  "content": "<!-- raw post_content, shortcodes included -->",
-  "excerpt": "",
+  "source_id": 8,
+  "external_id": "8",
+  "taxonomy": "product_brand",
   "parent_source_id": 0,
-  "menu_order": 0,
-  "author": { "source_id": 1, "display_name": "admin" },
-  "featured_image": null,
-  "categories": [],
-  "tags": [],
-  "created_at": "2022-01-01T00:00:00+00:00",
-  "updated_at": "2024-01-01T00:00:00+00:00",
-  "permalink": "https://parisma.ir/about/"
+  "name": "لورآل",
+  "slug": "loreal",
+  "description": "",
+  "count": 12,
+  "image": null
 }
 ```
 
-Posts fill `categories` (`category`) and `tags` (`post_tag`). Statuses: `publish`, `draft`, `private`, `pending`.
+### `coupons`
 
-## Menus
+WooCommerce coupon posts. Amounts are decimal strings as stored.
+
+`source_id`, `code`, `description`, `status`, `discount_type`, `amount`, `date_expires`, `individual_use`, `free_shipping`, `exclude_sale_items`, `minimum_amount`, `maximum_amount`, `usage_limit`, `usage_count`, `product_ids`, `excluded_product_ids`, `product_categories`, `email_restrictions`.
+
+### `reviews`
+
+Product comments of type `review`, `comment`, or empty, excluding spam and trash.
+
+`source_id`, `product_source_id`, `author`, `email`, `content`, `rating` (int or null), `status`, `user_source_id`, `created_at`.
+
+### `redirects`
+
+Rank Math table `rank_math_redirections`, Yoast tables `yoast_seo_redirects` / `yoast_redirects`, or the `wpseo_redirect` option.
+
+`source_id`, `source` (`rank_math`, `yoast_table`, `yoast_option`), `from`, `to`, `code` (300–399, default 301), `status`.
+
+### `settings`
+
+One item, `source_id` `store`, `kind` `settings`.
+
+Includes store address, currency, email-from, weight and dimension units, shipping zones (method id, title, enabled, settings with secrets removed), tax rates from `woocommerce_tax_rates`, enabled payment gateways with credentials removed, email id/title/enabled/subject/heading, and these options when present: `webino_dashboard_pwa`, `webino_dashboard_notify`, `webino_dashboard_brand_style`, `webino_dashboard_swatch_settings`, `webino_dashboard_attribute_groups`, plus module flags. Keys matching password, secret, api key, token, license, hmac, entitlement, merchant, or webhook secret are removed.
+
+### `elementor_templates`
+
+`elementor_library` posts (Theme Builder header, footer, single, archive, kit). Page and post bodies are **not** this resource; they travel on `pages` and `posts` with the same `document`.
+
+`source_id`, `title`, `slug`, `status`, `template_type`, `location`, `conditions`, `page_settings`, `css`, `css_url`, `document`, `content` (rendered HTML), `elementor` (raw decoded `_elementor_data`, page settings, template type, location).
+
+### `staff`
+
+Users in `administrator`, `shop_manager`, `editor`, `author`, `contributor`, or `translator`.
+
+`source_id`, `email`, `name`, `first_name`, `last_name`, `username`, `roles`, `invite` (always true), `password_exported` (always false), `registered_at`. No `user_pass`.
+
+### `waiting_list`
+
+Rows from `yith_wcwtl_waitlists`, `yith_wcwtl_list`, or `yith_wcwtl_users` when those tables exist. The row is passed through after secret stripping, with `source_id`.
+
+### `permalinks`
+
+One row per product, page, and post so old URLs can map to the new slug.
+
+`source_id` (`product|501`), `entity`, `object_source_id`, `slug`, `permalink`, `path`.
+
+### `review_queue`
+
+Staged JSON for wallet (`webino_wallet_ledger`), tickets (`webino_support_tickets`), and returns (`webino_order_returns`) when those tables exist.
+
+`source_id` (`wallet:15`), `kind`, `needs_mapping` (always true), `record`.
+
+## Elementor → builder document
+
+Pages, posts, and theme templates with `_elementor_data` or Elementor CSS get:
+
+- `content`: rendered HTML (`Elementor` frontend when it is loaded, otherwise `the_content`)
+- `content_raw` and `content_rendered`
+- `document`: Webino builder JSON
+- `elementor`: raw elements, `_elementor_page_settings`, CSS, `css_url` (`uploads/elementor/css/post-{id}.css` when that file exists), `template_type`, `location`, conditions
+- `seo`: Rank Math (`rank_math_title`, `rank_math_description`, `rank_math_focus_keyword`, robots, canonical) or Yoast (`_yoast_wpseo_*`) when Rank Math is empty
+- `cover`: alias of the featured image (posts need this name)
+
+Document shape, matching the Webino builder registry:
 
 ```json
 {
-  "source_id": 7,
-  "name": "فهرست اصلی",
-  "slug": "main",
-  "locations": ["primary"],
-  "items": [
+  "version": 1,
+  "source": "elementor",
+  "styles": { "css": ".elementor{color:#111}" },
+  "sections": [
     {
-      "source_id": 80,
-      "parent_source_id": 0,
-      "title": "فروشگاه",
-      "type": "taxonomy",
-      "object": "product_cat",
-      "object_source_id": 15,
-      "url": "https://parisma.ir/product-category/makeup/",
-      "target": "",
-      "classes": [],
-      "menu_order": 1,
-      "attr_title": "",
-      "description": ""
+      "id": "sec_sec1",
+      "columns": [
+        {
+          "id": "col_col1",
+          "span": 12,
+          "widgets": [
+            { "id": "w_w-heading", "type": "heading", "props": { "text": "پاریسما", "tag": "h1" } }
+          ]
+        }
+      ]
     }
   ]
 }
 ```
 
-`type` is the WordPress menu item type (`post_type`, `taxonomy`, `custom`). `object_source_id` points at the page, post, product, or term exported above.
+Mapped widget types: `heading`, `text`, `image`, `button`, `spacer`, `divider`, `video`, `icon`, `html`, `form`, `product-grid`, `product-detail`. Text that contains HTML becomes an `html` widget. Galleries and icon lists become HTML. Unknown widgets become `html` with `data-webino-unmapped="<widgetType>"` and `props.elementor_widget`. Column span comes from `_column_size` or `width.size` (percent → 1–12).
 
-## Complete
+If the encoded document exceeds 700000 bytes, `styles` is omitted and `styles_omitted` is set so the page importer’s 750000 byte cap can still store `sections`. A fixture lives at `scripts/fixtures/elementor-page.json`. The builder may ignore `styles.css` until it reads that key; the CSS is still on the payload, and rendered HTML remains the fallback.
 
-Sent once after every selected entity is finished.
+Homepage cutover (for example Elementor page 1927) is a `pages` item with `document.sections`, not an `elementor_templates` item.
 
-```json
-{
-  "schema": "webino.wordpress.import.v1",
-  "schema_version": 1,
-  "job_id": "a1b2c3d4e5f6",
-  "entity": "complete",
-  "source": {},
-  "summary": {
-    "products": { "exported": 860, "failed": 0 },
-    "orders": { "exported": 12040, "failed": 0 }
-  }
-}
-```
+## Product and order fidelity
 
-Recommended response: `{ "ok": true }`.
+Products are one parent per item. Variations are nested in that same item and are not paginated, because Webino deletes previously imported variations that are absent from the payload. `variations_truncated` is false.
 
-## Operator notes (parisma.ir)
+Also sent, because the current importer reads these names:
 
-1. Open **مهاجرت به وبینو** in wp-admin, or `/dashboard/tools/migrate` after the dashboard client is built.
-2. Site URL: `https://parisma.webinaagency.ir`. Paste the tenant import token. Save.
-3. Test connection (`POST …/ping`).
-4. Leave the checklist on, or turn off entities you do not want. Counts on the screen are estimates.
-5. Optional: enable dry run to walk cursors without HTTP.
-6. Start. Pause keeps cursors. Resume does not restart from zero. A new start clears the job.
-7. If the browser closes, WP-Cron hook `webino_dashboard_migrate_tick` sends one batch per minute until the job is no longer `running`.
+- `length`, `width`, `height` (and the nested `dimensions` object)
+- `sale_starts_at` / `sale_ends_at` and `date_on_sale_from` / `date_on_sale_to`
+- `upsell_external_ids`, `cross_sell_external_ids`, `brand_external_ids`, `grouped_external_ids`
+- variation `external_id`, sale dates, and `image.url`
+- downloads with public URLs, tax class, external URL
 
-Only users with `manage_options` (filter `webino_dashboard_migrate_capability`) can read or change this screen.
+Orders keep `line_type` on line, shipping, coupon, fee, and refund rows, plus `shipping_lines`, `coupon_lines`, `fee_lines`, `refunds`, `private_notes`, and a joined `note` string. The current importer persists `note` and the order-level totals. It does not yet copy the extra line arrays into order meta.
+
+Menus are nested with `children` built from `parent_source_id`. A flat list loses hierarchy in the current menu importer.
+
+Blog categories and tags stay on the post (`external_id` on each term). They are not a separate ingest resource. The current post importer links only the first category.
+
+## Checks
+
+`php scripts/test-migrate-webino.php` covers token encryption, HTTPS origin checks, batch clamp 50, selective versus full, ingest payload (`publish_content: false`, `external_id`), unknown-resource skip, product brands and dimensions, order notes, nested menus, staff invites, secret stripping, and the Elementor fixture. It does not boot WordPress.

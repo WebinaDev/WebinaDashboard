@@ -81,31 +81,66 @@ final class Webino_Dashboard_Migrate_Client {
 				)
 			);
 		}
+		$resources = array();
+		if ( isset( $result['body']['resources'] ) && is_array( $result['body']['resources'] ) ) {
+			$resources = array_values( $result['body']['resources'] );
+		} elseif ( isset( $result['body']['data']['resources'] ) && is_array( $result['body']['data']['resources'] ) ) {
+			$resources = array_values( $result['body']['data']['resources'] );
+		}
 		return array(
 			'ok'          => true,
 			'http_status' => (int) $result['http_status'],
 			'message'     => __( 'Connection succeeded.', 'webino-dashboard' ),
+			'resources'   => $resources,
 		);
+	}
+
+	/**
+	 * @param int    $remote_id   Webino job id.
+	 * @param int    $limit       Records to apply (1–100).
+	 * @param string $idempotency Idempotency key.
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,body:array}|WP_Error
+	 */
+	public static function run_job( $remote_id, $limit, $idempotency ) {
+		$path = Webino_Dashboard_Migrate_Schema::run_path(
+			Webino_Dashboard_Migrate_Settings::endpoint( 'run' ),
+			(int) $remote_id
+		);
+		$limit = max( 1, min( 100, (int) $limit ) );
+		return self::post_path( $path, array( 'limit' => $limit ), $idempotency, 'run' );
 	}
 
 	/**
 	 * @param string              $endpoint_key Endpoint key.
 	 * @param array<string,mixed> $body         JSON body.
 	 * @param string              $idempotency  Idempotency key.
-	 * @return array{ok:bool,http_status:int,retry_after:int,error:string}|WP_Error
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,body:array}|WP_Error
 	 */
 	public static function post( $endpoint_key, array $body, $idempotency ) {
+		$path = Webino_Dashboard_Migrate_Settings::endpoint( $endpoint_key );
+		return self::post_path( $path, $body, $idempotency, $endpoint_key );
+	}
+
+	/**
+	 * @param string              $path         Absolute path on the tenant.
+	 * @param array<string,mixed> $body         JSON body.
+	 * @param string              $idempotency  Idempotency key.
+	 * @param string              $endpoint_key Logical key (dry-run skip).
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,body:array}|WP_Error
+	 */
+	public static function post_path( $path, array $body, $idempotency, $endpoint_key = '' ) {
 		if ( Webino_Dashboard_Migrate_Settings::dry_run() && 'ping' !== $endpoint_key ) {
 			return array(
 				'ok'          => true,
 				'http_status' => 200,
 				'retry_after' => 0,
 				'error'       => '',
+				'body'        => array(),
 			);
 		}
 
 		$origin = Webino_Dashboard_Migrate_Settings::site_url();
-		$path   = Webino_Dashboard_Migrate_Settings::endpoint( $endpoint_key );
+		$path   = (string) $path;
 		if ( '' === $origin || '' === $path ) {
 			return new WP_Error( 'bad_endpoint', __( 'The destination URL or endpoint path is missing.', 'webino-dashboard' ) );
 		}
@@ -145,7 +180,7 @@ final class Webino_Dashboard_Migrate_Client {
 	/**
 	 * @param array|WP_Error $response HTTP API result.
 	 * @param string         $token    Token to strip from errors.
-	 * @return array{ok:bool,http_status:int,retry_after:int,error:string}
+	 * @return array{ok:bool,http_status:int,retry_after:int,error:string,body:array}
 	 */
 	public static function parse_response( $response, $token = '' ) {
 		if ( is_wp_error( $response ) ) {
@@ -154,6 +189,7 @@ final class Webino_Dashboard_Migrate_Client {
 				'http_status' => 0,
 				'retry_after' => 0,
 				'error'       => Webino_Dashboard_Migrate_Schema::redact( $response->get_error_message(), $token ),
+				'body'        => array(),
 			);
 		}
 		$code = (int) wp_remote_retrieve_response_code( $response );
@@ -166,6 +202,20 @@ final class Webino_Dashboard_Migrate_Client {
 				$message = $decoded['message'];
 			} elseif ( isset( $decoded['error'] ) && is_string( $decoded['error'] ) ) {
 				$message = $decoded['error'];
+			}
+			if ( isset( $decoded['errors'] ) && is_array( $decoded['errors'] ) ) {
+				$flat = array();
+				array_walk_recursive(
+					$decoded['errors'],
+					static function ( $value ) use ( &$flat ) {
+						if ( is_string( $value ) && '' !== $value ) {
+							$flat[] = $value;
+						}
+					}
+				);
+				if ( $flat ) {
+					$message = trim( $message . ' ' . implode( ' ', $flat ) );
+				}
 			}
 			if ( isset( $decoded['ok'] ) && false === $decoded['ok'] && $code >= 200 && $code < 300 ) {
 				$code = 422;
@@ -184,7 +234,23 @@ final class Webino_Dashboard_Migrate_Client {
 			'http_status' => $code,
 			'retry_after' => $retry,
 			'error'       => $ok ? '' : Webino_Dashboard_Migrate_Schema::redact( $message, $token ),
+			'body'        => is_array( $decoded ) ? $decoded : array(),
 		);
+	}
+
+	/**
+	 * @param array<string,mixed> $body Parsed JSON.
+	 * @return int
+	 */
+	public static function remote_job_id( array $body ) {
+		$data = isset( $body['data'] ) && is_array( $body['data'] ) ? $body['data'] : $body;
+		if ( isset( $data['job'] ) && is_array( $data['job'] ) && isset( $data['job']['id'] ) ) {
+			return (int) $data['job']['id'];
+		}
+		if ( isset( $data['id'] ) && ( isset( $data['status'] ) || isset( $data['source_url'] ) ) ) {
+			return (int) $data['id'];
+		}
+		return 0;
 	}
 
 	/**

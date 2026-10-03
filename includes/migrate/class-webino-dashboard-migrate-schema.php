@@ -29,14 +29,27 @@ final class Webino_Dashboard_Migrate_Schema {
 	 */
 	public static function entity_order() {
 		$order = array(
-			'categories',
 			'media',
-			'products',
+			'media_files',
+			'categories',
+			'tags',
+			'brands',
 			'customers',
-			'orders',
+			'staff',
+			'products',
+			'coupons',
+			'reviews',
 			'pages',
 			'posts',
+			'elementor_templates',
+			'orders',
 			'menus',
+			'redirects',
+			'settings',
+			'stats',
+			'waiting_list',
+			'permalinks',
+			'review_queue',
 		);
 		if ( function_exists( 'apply_filters' ) ) {
 			$filtered = apply_filters( 'webino_dashboard_migrate_entities', $order );
@@ -60,15 +73,160 @@ final class Webino_Dashboard_Migrate_Schema {
 	 */
 	public static function entity_labels() {
 		return array(
-			'categories' => 'دسته‌بندی‌ها و برچسب‌ها',
-			'media'      => 'رسانه',
-			'products'   => 'محصولات و متغیرها',
-			'customers'  => 'مشتریان',
-			'orders'     => 'سفارش‌ها',
-			'pages'      => 'برگه‌ها',
-			'posts'      => 'نوشته‌ها',
-			'menus'      => 'فهرست‌ها',
+			'media'               => 'تصاویر',
+			'media_files'         => 'سایر رسانه‌ها (ویدیو، PDF، SVG)',
+			'categories'          => 'دسته‌های محصول',
+			'tags'                => 'برچسب‌های محصول',
+			'brands'              => 'برندها',
+			'customers'           => 'مشتریان',
+			'staff'               => 'کارکنان (دعوت، بدون رمز)',
+			'products'            => 'محصولات و متغیرها',
+			'coupons'             => 'کوپن‌ها',
+			'reviews'             => 'دیدگاه‌ها و امتیاز محصول',
+			'pages'               => 'برگه‌ها',
+			'posts'               => 'نوشته‌ها',
+			'elementor_templates' => 'قالب‌های المنتور',
+			'orders'              => 'سفارش‌ها',
+			'menus'               => 'فهرست‌ها',
+			'redirects'           => 'ریدایرکت‌ها',
+			'settings'            => 'تنظیمات فروشگاه',
+			'stats'               => 'آمار روزانه',
+			'waiting_list'        => 'لیست انتظار',
+			'permalinks'          => 'نقشه پیوندها',
+			'review_queue'        => 'صف بررسی (کیف پول، تیکت، مرجوعی)',
 		);
+	}
+
+	/**
+	 * Short operator hint. Extended resources need a matching Webino importer.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function entity_hints() {
+		$needs = 'وبینو این منبع را هنوز وارد نمی‌کند. داده ساخته می‌شود؛ در مهاجرت زنده رد می‌شود تا واردکننده اضافه شود.';
+		return array(
+			'media'               => 'JPEG، PNG، GIF و WebP. وبینو فایل را از نشانی عمومی می‌گیرد.',
+			'media_files'         => 'ویدیو، PDF و SVG با همان منبع media ارسال می‌شوند. وبینو امروز فقط تصویرهای بالا را ذخیره می‌کند.',
+			'categories'          => 'فقط product_cat. برچسب و برند جدا هستند.',
+			'tags'                => 'فقط product_tag. برچسب نوشته در خود نوشته می‌رود.',
+			'brands'              => $needs,
+			'staff'               => $needs . ' رمز عبور ارسال نمی‌شود.',
+			'coupons'             => $needs,
+			'reviews'             => $needs,
+			'pages'               => 'اگر _elementor_data باشد، document سازنده وبینو همراه HTML ساخته می‌شود.',
+			'posts'               => 'کاور، سئو و در صورت وجود المنتور.',
+			'elementor_templates' => $needs . ' سربرگ، پاورقی، تک‌نوشته، بایگانی و کیت.',
+			'redirects'           => $needs,
+			'settings'            => $needs . ' بدون رمز درگاه و بدون لایسنس.',
+			'stats'               => 'اگر جدول webino_dashboard_analytics_* باشد. وگرنه آمار از سفارش‌های واردشده ساخته می‌شود.',
+			'waiting_list'        => $needs,
+			'permalinks'          => $needs,
+			'review_queue'        => $needs . ' برچسب needs_mapping.',
+		);
+	}
+
+	/**
+	 * Resources the current Webino importer applies (schema v1).
+	 *
+	 * @return list<string>
+	 */
+	public static function accepted_resources() {
+		return array(
+			'media',
+			'categories',
+			'tags',
+			'customers',
+			'products',
+			'pages',
+			'posts',
+			'orders',
+			'menus',
+			'stats',
+		);
+	}
+
+	/**
+	 * Resource names that need a new Webino importer. Documented in docs/WEBINO_MIGRATE.md.
+	 *
+	 * @return list<string>
+	 */
+	public static function extended_resources() {
+		return array(
+			'brands',
+			'coupons',
+			'reviews',
+			'redirects',
+			'settings',
+			'elementor_templates',
+			'staff',
+			'waiting_list',
+			'permalinks',
+			'review_queue',
+		);
+	}
+
+	/**
+	 * Local checklist key → ingest `resource` value.
+	 *
+	 * @param string $entity Local entity.
+	 * @return string
+	 */
+	public static function remote_resource( $entity ) {
+		$map = array(
+			'media_files' => 'media',
+		);
+		$entity = (string) $entity;
+		return isset( $map[ $entity ] ) ? $map[ $entity ] : $entity;
+	}
+
+	/**
+	 * Alias map matching Webino WordpressImportResources::ALIASES.
+	 *
+	 * @param string $resource Resource or alias.
+	 * @return string
+	 */
+	public static function canonical_resource( $resource ) {
+		$resource = strtolower( trim( (string) $resource ) );
+		$aliases  = array(
+			'woo_products'       => 'products',
+			'product_categories' => 'categories',
+			'product_tags'       => 'tags',
+			'users'              => 'customers',
+			'attachments'        => 'media',
+			'analytics'          => 'stats',
+		);
+		return isset( $aliases[ $resource ] ) ? $aliases[ $resource ] : $resource;
+	}
+
+	/**
+	 * Whether this tenant advertised the ingest resource.
+	 *
+	 * An empty advertisement falls back to the known v1 set so an older ping
+	 * cannot be tricked into accepting brands or settings.
+	 *
+	 * @param string     $resource   Canonical resource.
+	 * @param mixed|null $advertised List from ping `resources`, or null before ping.
+	 * @return bool
+	 */
+	public static function remote_accepts( $resource, $advertised ) {
+		$resource = self::canonical_resource( $resource );
+		if ( ! is_array( $advertised ) || ! $advertised ) {
+			return in_array( $resource, self::accepted_resources(), true );
+		}
+		$canon = array();
+		foreach ( $advertised as $name ) {
+			$canon[] = self::canonical_resource( $name );
+		}
+		return in_array( $resource, $canon, true );
+	}
+
+	/**
+	 * @param string $error Error text from ingest.
+	 * @return bool
+	 */
+	public static function is_unknown_resource_error( $error ) {
+		$error = strtolower( (string) $error );
+		return false !== strpos( $error, 'unknown import resource' );
 	}
 
 	/**
@@ -78,16 +236,9 @@ final class Webino_Dashboard_Migrate_Schema {
 	 */
 	public static function default_endpoints() {
 		$paths = array(
-			'ping'       => '/api/v1/import/wordpress/ping',
-			'categories' => '/api/v1/import/wordpress/categories',
-			'media'      => '/api/v1/import/wordpress/media',
-			'products'   => '/api/v1/import/wordpress/products',
-			'customers'  => '/api/v1/import/wordpress/customers',
-			'orders'     => '/api/v1/import/wordpress/orders',
-			'pages'      => '/api/v1/import/wordpress/pages',
-			'posts'      => '/api/v1/import/wordpress/posts',
-			'menus'      => '/api/v1/import/wordpress/menus',
-			'complete'   => '/api/v1/import/wordpress/complete',
+			'ping'   => '/api/v1/import/wordpress/ping',
+			'ingest' => '/api/v1/import/wordpress/ingest',
+			'run'    => '/api/v1/import/wordpress/jobs/{id}/run',
 		);
 		if ( function_exists( 'apply_filters' ) ) {
 			$filtered = apply_filters( 'webino_dashboard_migrate_endpoints', $paths );
@@ -121,7 +272,7 @@ final class Webino_Dashboard_Migrate_Schema {
 		if ( '/' !== substr( $path, 0, 1 ) ) {
 			$path = '/' . $path;
 		}
-		if ( ! preg_match( '#^/[A-Za-z0-9_./~-]+$#', $path ) ) {
+		if ( ! preg_match( '#^/[A-Za-z0-9_./~{}-]+$#', $path ) ) {
 			return $fallback;
 		}
 		return $path;
@@ -210,6 +361,81 @@ final class Webino_Dashboard_Migrate_Schema {
 		$key    = $job_id . ':' . $entity . ':' . $cursor . ':' . $hash;
 		$key    = (string) preg_replace( '/[^A-Za-z0-9_:\-|.]/', '', $key );
 		return substr( $key, 0, 180 );
+	}
+
+	/**
+	 * @param string $entity  Entity key or `complete`.
+	 * @param array  $items   Batch items.
+	 * @param array  $batch   cursor, next_cursor, limit, done, total.
+	 * @param array  $source  Source site descriptor.
+	 * @param string $job_id  Job id.
+	 * @return array<string,mixed>
+	 */
+	/**
+	 * Body for POST /api/v1/import/wordpress/ingest.
+	 *
+	 * Webino validates source_url, resource, and items (max 50). Extra keys are
+	 * ignored by the validator. publish_content stays false so drafts are not published.
+	 *
+	 * @param string              $resource Ingest resource.
+	 * @param list<array>         $items    Rows.
+	 * @param array<string,mixed> $source   Source descriptor.
+	 * @return array<string,mixed>
+	 */
+	public static function ingest_payload( $resource, array $items, array $source ) {
+		$currency = '';
+		if ( function_exists( 'get_woocommerce_currency' ) ) {
+			$currency = (string) get_woocommerce_currency();
+		}
+		if ( '' === $currency && function_exists( 'get_option' ) ) {
+			$currency = (string) get_option( 'woocommerce_currency', '' );
+		}
+		if ( '' === $currency ) {
+			$currency = 'IRT';
+		}
+		return array(
+			'schema'           => self::NAME,
+			'schema_version'   => self::VERSION,
+			'source_url'       => isset( $source['site_url'] ) ? (string) $source['site_url'] : '',
+			'resource'         => (string) $resource,
+			'items'            => self::with_external_ids( $items ),
+			'publish_content'  => false,
+			'currency'         => substr( $currency, 0, 8 ),
+			'download_media'   => true,
+		);
+	}
+
+	/**
+	 * Ensure every row has the external_id alias Webino requires.
+	 *
+	 * @param list<array<string,mixed>> $items Items.
+	 * @return list<array<string,mixed>>
+	 */
+	public static function with_external_ids( array $items ) {
+		$out = array();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			if ( ! isset( $item['external_id'] ) || '' === trim( (string) $item['external_id'] ) || '0' === (string) $item['external_id'] ) {
+				if ( isset( $item['source_id'] ) && '' !== trim( (string) $item['source_id'] ) && '0' !== (string) $item['source_id'] ) {
+					$item['external_id'] = (string) $item['source_id'];
+				}
+			} else {
+				$item['external_id'] = (string) $item['external_id'];
+			}
+			$out[] = $item;
+		}
+		return $out;
+	}
+
+	/**
+	 * @param string $path      Run path template.
+	 * @param int    $remote_id Remote job id.
+	 * @return string
+	 */
+	public static function run_path( $path, $remote_id ) {
+		return str_replace( '{id}', (string) max( 0, (int) $remote_id ), (string) $path );
 	}
 
 	/**
@@ -311,7 +537,7 @@ final class Webino_Dashboard_Migrate_Schema {
 		}
 		$out = array();
 		foreach ( $value as $key => $child ) {
-			if ( is_string( $key ) && preg_match( '/password|passwd|secret|api[_-]?key|authorization|user_pass|session_token|payment_token|card_number/i', $key ) ) {
+			if ( is_string( $key ) && preg_match( '/password|passwd|secret|api[_-]?key|authorization|user_pass|session_token|payment_token|card_number|consumer_key|consumer_secret|private_key|access_token|refresh_token|license|hmac|entitlement|webhook_secret|merchant/i', $key ) ) {
 				continue;
 			}
 			$out[ $key ] = is_array( $child ) ? self::strip_sensitive_keys( $child ) : $child;

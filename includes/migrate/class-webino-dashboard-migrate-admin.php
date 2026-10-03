@@ -97,6 +97,7 @@ final class Webino_Dashboard_Migrate_Admin {
 			'delay_ms'   => isset( $_POST['delay_ms'] ) ? wp_unslash( $_POST['delay_ms'] ) : 400,
 			'timeout'    => isset( $_POST['timeout'] ) ? wp_unslash( $_POST['timeout'] ) : 45,
 			'dry_run'    => ! empty( $_POST['dry_run'] ),
+			'mode'       => isset( $_POST['mode'] ) ? wp_unslash( $_POST['mode'] ) : 'selective',
 			'entities'   => isset( $_POST['entities'] ) && is_array( $_POST['entities'] ) ? wp_unslash( $_POST['entities'] ) : array(),
 			'endpoints'  => isset( $_POST['endpoints'] ) && is_array( $_POST['endpoints'] ) ? wp_unslash( $_POST['endpoints'] ) : array(),
 		);
@@ -245,7 +246,9 @@ final class Webino_Dashboard_Migrate_Admin {
 					</tr>
 					<tr>
 						<th scope="row"><label for="webino-migrate-batch">اندازه دسته</label></th>
-						<td><input id="webino-migrate-batch" name="batch_size" type="number" min="1" max="100" value="<?php echo esc_attr( (string) $settings['batch_size'] ); ?>" /></td>
+						<td><input id="webino-migrate-batch" name="batch_size" type="number" min="1" max="50" value="<?php echo esc_attr( (string) $settings['batch_size'] ); ?>" />
+							<p class="description">حداکثر ۵۰، چون ingest وبینو بیش از ۵۰ ردیف در هر درخواست نمی‌پذیرد.</p>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="webino-migrate-delay">فاصله بین دسته‌ها (میلی‌ثانیه)</label></th>
@@ -261,22 +264,34 @@ final class Webino_Dashboard_Migrate_Admin {
 					</tr>
 				</table>
 
+				<h2>حالت مهاجرت</h2>
+				<p>
+					<label><input type="radio" name="mode" value="full" <?php checked( 'full', isset( $settings['mode'] ) ? (string) $settings['mode'] : 'full' ); ?> /> کامل (همه منابع)</label>
+					&nbsp;
+					<label><input type="radio" name="mode" value="selective" <?php checked( 'selective', isset( $settings['mode'] ) ? (string) $settings['mode'] : '' ); ?> /> انتخابی</label>
+				</p>
 				<h2>موجودیت‌ها</h2>
 				<ul class="webino-migrate__checks">
-					<?php foreach ( $labels as $key => $label ) : ?>
+					<?php
+					$hints = isset( $settings['entity_hints'] ) && is_array( $settings['entity_hints'] ) ? $settings['entity_hints'] : array();
+					foreach ( $labels as $key => $label ) :
+						?>
 						<li>
 							<label>
 								<input type="checkbox" name="entities[<?php echo esc_attr( $key ); ?>]" value="1" <?php checked( ! empty( $settings['entities'][ $key ] ) ); ?> />
 								<?php echo esc_html( $label ); ?>
 								<span class="webino-migrate__count"><?php echo esc_html( (string) ( isset( $estimates[ $key ] ) ? $estimates[ $key ] : 0 ) ); ?></span>
 							</label>
+							<?php if ( ! empty( $hints[ $key ] ) ) : ?>
+								<p class="description"><?php echo esc_html( (string) $hints[ $key ] ); ?></p>
+							<?php endif; ?>
 						</li>
 					<?php endforeach; ?>
 				</ul>
 
 				<details class="webino-migrate__endpoints">
 					<summary>مسیرهای API (قابل تغییر)</summary>
-					<p class="description">پیش‌فرض‌ها روی <code>/api/v1/import/wordpress/…</code> هستند. فقط مسیر نسبی وارد کنید.</p>
+					<p class="description">قرارداد وبینو: <code>ping</code>، سپس <code>ingest</code>، سپس <code>jobs/{id}/run</code>. فقط مسیر نسبی وارد کنید.</p>
 					<table class="widefat striped">
 						<thead><tr><th>کلید</th><th>مسیر</th></tr></thead>
 						<tbody>
@@ -368,6 +383,10 @@ final class Webino_Dashboard_Migrate_Admin {
 			$total    = isset( $totals[ $key ] ) ? (int) $totals[ $key ] : 0;
 			$pct      = $total > 0 ? min( 100, (int) floor( ( $exported / $total ) * 100 ) ) : ( ! empty( $row['done'] ) ? 100 : 0 );
 			$label    = isset( $labels[ $key ] ) ? $labels[ $key ] : (string) $key;
+			if ( ! empty( $row['unsupported'] ) ) {
+				$label .= ' (منتظر واردکننده وبینو)';
+				$pct    = 100;
+			}
 			$html    .= '<div class="webino-migrate__bar">';
 			$html    .= '<div class="webino-migrate__bar-label"><span>' . esc_html( $label ) . '</span><span>' . esc_html( (string) $exported . ( $total ? ' / ' . $total : '' ) ) . '</span></div>';
 			$html    .= '<div class="webino-migrate__track" role="progressbar" aria-valuenow="' . esc_attr( (string) $pct ) . '" aria-valuemin="0" aria-valuemax="100"><span style="width:' . esc_attr( (string) $pct ) . '%"></span></div>';

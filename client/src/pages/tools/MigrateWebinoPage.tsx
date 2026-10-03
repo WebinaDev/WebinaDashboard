@@ -84,6 +84,7 @@ export default function MigrateWebinoPage() {
         delay_ms: form.delay_ms,
         timeout: form.timeout,
         dry_run: form.dry_run,
+        mode: form.mode === 'full' ? 'full' : 'selective',
         entities: form.entities,
         endpoints: form.endpoints,
       })
@@ -125,6 +126,18 @@ export default function MigrateWebinoPage() {
 
   const status = job?.status || 'idle'
   const estimates = query.data?.estimates ?? {}
+  const entityKeys = form?.entity_order?.length ? form.entity_order : MIGRATE_ENTITIES
+  const fullMode = form?.mode === 'full'
+
+  const setMode = (mode: 'full' | 'selective') => {
+    setForm((prev) => {
+      if (!prev) return prev
+      if (mode !== 'full') return { ...prev, mode }
+      const entities = { ...prev.entities }
+      for (const key of entityKeys) entities[key] = true
+      return { ...prev, mode, entities }
+    })
+  }
 
   return (
     <PageShell title={t('migrate.title')} description={t('migrate.description')}>
@@ -169,7 +182,7 @@ export default function MigrateWebinoPage() {
               <Input
                 type="number"
                 min={1}
-                max={100}
+                max={50}
                 value={form?.batch_size ?? 20}
                 onChange={(event) =>
                   setForm((prev) => (prev ? { ...prev, batch_size: Number(event.target.value) } : prev))
@@ -210,24 +223,49 @@ export default function MigrateWebinoPage() {
             {t('migrate.dryRun')}
           </label>
           <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">{t('migrate.mode')}</legend>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="radio" name="migrate-mode" checked={fullMode} onChange={() => setMode('full')} />
+                {t('migrate.modeFull')}
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="migrate-mode" checked={!fullMode} onChange={() => setMode('selective')} />
+                {t('migrate.modeSelective')}
+              </label>
+            </div>
+            <p className="text-muted-foreground text-xs">{t('migrate.modeHint')}</p>
+          </fieldset>
+          <fieldset className="space-y-2">
             <legend className="text-sm font-medium">{t('migrate.entities')}</legend>
             <ul className="grid gap-2 sm:grid-cols-2">
-              {MIGRATE_ENTITIES.map((key) => (
+              {entityKeys.map((key) => (
                 <li key={key}>
-                  <label className="flex items-center gap-2 text-sm">
+                  <label className="flex items-start gap-2 text-sm">
                     <input
                       type="checkbox"
-                      checked={Boolean(form?.entities?.[key])}
+                      className="mt-1"
+                      checked={fullMode || Boolean(form?.entities?.[key])}
+                      disabled={fullMode}
                       onChange={(event) =>
                         setForm((prev) =>
                           prev
-                            ? { ...prev, entities: { ...prev.entities, [key]: event.target.checked } }
+                            ? {
+                                ...prev,
+                                mode: 'selective',
+                                entities: { ...prev.entities, [key]: event.target.checked },
+                              }
                             : prev,
                         )
                       }
                     />
-                    <span>{t(`migrate.entity.${key}`)}</span>
-                    <span className="text-muted-foreground text-xs">{estimates[key] ?? 0}</span>
+                    <span>
+                      <span className="block">{t(`migrate.entity.${key}`, { defaultValue: form?.entity_labels?.[key] || key })}</span>
+                      {form?.entity_hints?.[key] ? (
+                        <span className="text-muted-foreground block text-xs">{form.entity_hints[key]}</span>
+                      ) : null}
+                      <span className="text-muted-foreground text-xs">{estimates[key] ?? 0}</span>
+                    </span>
                   </label>
                 </li>
               ))}
@@ -285,7 +323,10 @@ export default function MigrateWebinoPage() {
                 return (
                   <div key={key} className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span>{t(`migrate.entity.${key}`, { defaultValue: key })}</span>
+                      <span>
+                        {t(`migrate.entity.${key}`, { defaultValue: key })}
+                        {row.unsupported ? ` — ${t('migrate.unsupported')}` : ''}
+                      </span>
                       <span>
                         {row.exported}
                         {total ? ` / ${total}` : ''}
