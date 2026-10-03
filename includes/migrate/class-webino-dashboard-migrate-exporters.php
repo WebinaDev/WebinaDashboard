@@ -19,14 +19,27 @@ final class Webino_Dashboard_Migrate_Exporters {
 	 */
 	public static function map() {
 		return array(
-			'categories' => 'Webino_Dashboard_Migrate_Export_Categories',
-			'media'      => 'Webino_Dashboard_Migrate_Export_Media',
-			'products'   => 'Webino_Dashboard_Migrate_Export_Products',
-			'customers'  => 'Webino_Dashboard_Migrate_Export_Customers',
-			'orders'     => 'Webino_Dashboard_Migrate_Export_Orders',
-			'pages'      => 'Webino_Dashboard_Migrate_Export_Pages',
-			'posts'      => 'Webino_Dashboard_Migrate_Export_Posts',
-			'menus'      => 'Webino_Dashboard_Migrate_Export_Menus',
+			'media'               => 'Webino_Dashboard_Migrate_Export_Media',
+			'media_files'         => 'Webino_Dashboard_Migrate_Export_Media_Files',
+			'categories'          => 'Webino_Dashboard_Migrate_Export_Categories',
+			'tags'                => 'Webino_Dashboard_Migrate_Export_Tags',
+			'brands'              => 'Webino_Dashboard_Migrate_Export_Brands',
+			'products'            => 'Webino_Dashboard_Migrate_Export_Products',
+			'customers'           => 'Webino_Dashboard_Migrate_Export_Customers',
+			'staff'               => 'Webino_Dashboard_Migrate_Export_Staff',
+			'orders'              => 'Webino_Dashboard_Migrate_Export_Orders',
+			'pages'               => 'Webino_Dashboard_Migrate_Export_Pages',
+			'posts'               => 'Webino_Dashboard_Migrate_Export_Posts',
+			'elementor_templates' => 'Webino_Dashboard_Migrate_Export_Elementor_Templates',
+			'menus'               => 'Webino_Dashboard_Migrate_Export_Menus',
+			'coupons'             => 'Webino_Dashboard_Migrate_Export_Coupons',
+			'reviews'             => 'Webino_Dashboard_Migrate_Export_Reviews',
+			'redirects'           => 'Webino_Dashboard_Migrate_Export_Redirects',
+			'settings'            => 'Webino_Dashboard_Migrate_Export_Settings',
+			'stats'               => 'Webino_Dashboard_Migrate_Export_Stats',
+			'waiting_list'        => 'Webino_Dashboard_Migrate_Export_Waiting_List',
+			'permalinks'          => 'Webino_Dashboard_Migrate_Export_Permalinks',
+			'review_queue'        => 'Webino_Dashboard_Migrate_Export_Review_Queue',
 		);
 	}
 
@@ -151,6 +164,20 @@ final class Webino_Dashboard_Migrate_Export_Support {
 	}
 
 	/**
+	 * @param string $table Full table name.
+	 * @return bool
+	 */
+	public static function table_exists( $table ) {
+		global $wpdb;
+		$table = (string) $table;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_var' ) || ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
+			return false;
+		}
+		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		return is_string( $found ) && $found === $table;
+	}
+
+	/**
 	 * @param array<string,mixed> $item Item.
 	 * @param string              $entity Entity.
 	 * @param int                 $source_id Source id.
@@ -177,12 +204,7 @@ final class Webino_Dashboard_Migrate_Export_Categories {
 	 * @return list<string>
 	 */
 	public static function taxonomies() {
-		$taxes = array( 'product_cat', 'product_tag', 'category', 'post_tag' );
-		foreach ( array( 'product_brand', 'pwb-brand', 'yith_product_brand' ) as $brand ) {
-			if ( function_exists( 'taxonomy_exists' ) && taxonomy_exists( $brand ) ) {
-				$taxes[] = $brand;
-			}
-		}
+		$taxes = array( 'product_cat' );
 		if ( function_exists( 'apply_filters' ) ) {
 			$filtered = apply_filters( 'webino_dashboard_migrate_taxonomies', $taxes );
 			if ( is_array( $filtered ) ) {
@@ -224,8 +246,18 @@ final class Webino_Dashboard_Migrate_Export_Categories {
 	 * @return array<string,mixed>
 	 */
 	public static function export_batch( $cursor, $limit ) {
-		$taxes = self::taxonomies();
-		$total = self::count_total();
+		return self::export_taxonomies( self::taxonomies(), 'categories', $cursor, $limit );
+	}
+
+	/**
+	 * @param list<string> $taxes  Taxonomies.
+	 * @param string       $entity Entity key passed to the item filter.
+	 * @param string       $cursor Cursor.
+	 * @param int          $limit  Limit.
+	 * @return array<string,mixed>
+	 */
+	public static function export_taxonomies( array $taxes, $entity, $cursor, $limit ) {
+		$total = self::count_taxonomies( $taxes );
 		if ( ! $taxes ) {
 			return array(
 				'items'       => array(),
@@ -243,7 +275,7 @@ final class Webino_Dashboard_Migrate_Export_Categories {
 			$ids  = self::term_ids_after( $taxonomy, $last_id, $need );
 			foreach ( $ids as $term_id ) {
 				$last_id = $term_id;
-				$item    = self::map_term( $term_id, $taxonomy );
+				$item    = self::map_term( $term_id, $taxonomy, $entity );
 				if ( $item ) {
 					$items[] = $item;
 				}
@@ -275,11 +307,19 @@ final class Webino_Dashboard_Migrate_Export_Categories {
 	 * @return int
 	 */
 	public static function count_total() {
+		return self::count_taxonomies( self::taxonomies() );
+	}
+
+	/**
+	 * @param list<string> $taxes Taxonomies.
+	 * @return int
+	 */
+	public static function count_taxonomies( array $taxes ) {
 		if ( ! function_exists( 'wp_count_terms' ) ) {
 			return 0;
 		}
 		$total = 0;
-		foreach ( self::taxonomies() as $tax ) {
+		foreach ( $taxes as $tax ) {
 			$n = wp_count_terms(
 				array(
 					'taxonomy'   => $tax,
@@ -328,7 +368,7 @@ final class Webino_Dashboard_Migrate_Export_Categories {
 	 * @param string $taxonomy Taxonomy.
 	 * @return array<string,mixed>|null
 	 */
-	private static function map_term( $term_id, $taxonomy ) {
+	private static function map_term( $term_id, $taxonomy, $entity = 'categories' ) {
 		$term = get_term( (int) $term_id, $taxonomy );
 		if ( ! $term || is_wp_error( $term ) ) {
 			return null;
@@ -350,7 +390,7 @@ final class Webino_Dashboard_Migrate_Export_Categories {
 				'image'            => $image,
 			)
 		);
-		return Webino_Dashboard_Migrate_Export_Support::filter_item( $item, 'categories', (int) $term->term_id );
+		return Webino_Dashboard_Migrate_Export_Support::filter_item( $item, (string) $entity, (int) $term->term_id );
 	}
 
 	/**
@@ -394,21 +434,49 @@ final class Webino_Dashboard_Migrate_Export_Media {
 	 * @return array<string,mixed>
 	 */
 	public static function export_batch( $cursor, $limit ) {
-		$ids   = Webino_Dashboard_Migrate_Export_Support::post_ids_after( 'attachment', array( 'inherit', 'private' ), (int) $cursor, $limit );
+		return self::export_kind( $cursor, $limit, 'image' );
+	}
+
+	/**
+	 * @param string $cursor Cursor.
+	 * @param int    $limit  Limit.
+	 * @param string $kind   `image` or `other`.
+	 * @return array<string,mixed>
+	 */
+	public static function export_kind( $cursor, $limit, $kind ) {
+		$ids   = self::ids_after( (int) $cursor, (int) $limit, $kind );
 		$items = array();
 		$last  = (int) $cursor;
 		foreach ( $ids as $id ) {
 			$last = $id;
-			$item = self::map_attachment( $id );
+			$item = self::map_attachment( $id, $kind );
 			if ( $item ) {
 				$items[] = $item;
 			}
 		}
+		$warning = 'other' === $kind
+			? 'وبینو امروز فقط JPEG، PNG، GIF و WebP را ذخیره می‌کند. این ردیف‌ها نشانی و نوع فایل را برای بررسی نگه می‌دارند.'
+			: '';
 		return array(
 			'items'       => $items,
 			'next_cursor' => (string) $last,
 			'done'        => count( $ids ) < $limit,
-			'total'       => self::count_total(),
+			'total'       => self::count_kind( $kind ),
+			'warning'     => $warning,
+		);
+	}
+
+	/**
+	 * Raster types Webino will store. SVG is intentionally excluded.
+	 *
+	 * @param string $mime MIME type.
+	 * @return bool
+	 */
+	public static function is_raster_image( $mime ) {
+		return in_array(
+			strtolower( (string) $mime ),
+			array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ),
+			true
 		);
 	}
 
@@ -416,16 +484,62 @@ final class Webino_Dashboard_Migrate_Export_Media {
 	 * @return int
 	 */
 	public static function count_total() {
-		return Webino_Dashboard_Migrate_Export_Support::count_posts( 'attachment', array( 'inherit', 'private' ) );
+		return self::count_kind( 'image' );
+	}
+
+	/**
+	 * @param string $kind image|other.
+	 * @return int
+	 */
+	public static function count_kind( $kind ) {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_var' ) ) {
+			return 'image' === $kind ? Webino_Dashboard_Migrate_Export_Support::count_posts( 'attachment', array( 'inherit', 'private' ) ) : 0;
+		}
+		$mimes = array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp' );
+		$place = implode( ', ', array_fill( 0, count( $mimes ), '%s' ) );
+		$op    = 'image' === $kind ? 'IN' : 'NOT IN';
+		$sql   = "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_status IN ('inherit','private') AND post_mime_type {$op} ({$place})";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$n = $wpdb->get_var( $wpdb->prepare( $sql, $mimes ) );
+		return (int) $n;
+	}
+
+	/**
+	 * @param int    $cursor Last ID.
+	 * @param int    $limit  Limit.
+	 * @param string $kind   image|other.
+	 * @return list<int>
+	 */
+	private static function ids_after( $cursor, $limit, $kind ) {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_col' ) ) {
+			return Webino_Dashboard_Migrate_Export_Support::post_ids_after( 'attachment', array( 'inherit', 'private' ), $cursor, $limit );
+		}
+		$mimes = array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp' );
+		$place = implode( ', ', array_fill( 0, count( $mimes ), '%s' ) );
+		$op    = 'image' === $kind ? 'IN' : 'NOT IN';
+		$sql   = "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_status IN ('inherit','private') AND ID > %d AND post_mime_type {$op} ({$place}) ORDER BY ID ASC LIMIT %d";
+		$args  = array_merge( array( (int) $cursor ), $mimes, array( (int) $limit ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$ids = $wpdb->get_col( $wpdb->prepare( $sql, $args ) );
+		return array_map( 'intval', is_array( $ids ) ? $ids : array() );
 	}
 
 	/**
 	 * @param int $id Attachment ID.
 	 * @return array<string,mixed>|null
 	 */
-	private static function map_attachment( $id ) {
+	private static function map_attachment( $id, $kind = 'image' ) {
 		$post = get_post( $id );
 		if ( ! $post ) {
+			return null;
+		}
+		$mime = (string) $post->post_mime_type;
+		if ( 'image' === $kind && ! self::is_raster_image( $mime ) ) {
+			return null;
+		}
+		if ( 'other' === $kind && self::is_raster_image( $mime ) ) {
 			return null;
 		}
 		$url  = Webino_Dashboard_Migrate_Schema::public_url( (string) wp_get_attachment_url( $id ) );
@@ -466,6 +580,7 @@ final class Webino_Dashboard_Migrate_Export_Media {
 				'filesize'    => isset( $meta['filesize'] ) ? (int) $meta['filesize'] : 0,
 				'sizes'       => $sizes,
 				'created_at'  => Webino_Dashboard_Migrate_Export_Support::iso_date( $post->post_date_gmt ),
+				'storage'     => self::is_raster_image( $mime ) ? 'image' : 'metadata_only',
 			)
 		);
 		return Webino_Dashboard_Migrate_Export_Support::filter_item( $item, 'media', (int) $id );
@@ -510,7 +625,30 @@ final class Webino_Dashboard_Migrate_Export_Media {
 			'filesize'    => isset( $raw['filesize'] ) ? (int) $raw['filesize'] : 0,
 			'sizes'       => $sizes,
 			'created_at'  => isset( $raw['created_at'] ) ? (string) $raw['created_at'] : '',
+			'storage'     => isset( $raw['storage'] ) ? (string) $raw['storage'] : '',
 		);
+	}
+}
+
+/**
+ * Video, PDF, SVG, and other non-raster attachments. Same ingest resource as images.
+ */
+final class Webino_Dashboard_Migrate_Export_Media_Files {
+
+	/**
+	 * @param string $cursor Cursor.
+	 * @param int    $limit  Limit.
+	 * @return array<string,mixed>
+	 */
+	public static function export_batch( $cursor, $limit ) {
+		return Webino_Dashboard_Migrate_Export_Media::export_kind( $cursor, $limit, 'other' );
+	}
+
+	/**
+	 * @return int
+	 */
+	public static function count_total() {
+		return Webino_Dashboard_Migrate_Export_Media::count_kind( 'other' );
 	}
 }
 
@@ -634,9 +772,12 @@ final class Webino_Dashboard_Migrate_Export_Products {
 			);
 		}
 
-		$variations = array();
+		$variations      = array();
+		$variation_total = 0;
 		if ( $product->is_type( 'variable' ) ) {
-			foreach ( $product->get_children() as $child_id ) {
+			$children        = $product->get_children();
+			$variation_total = count( $children );
+			foreach ( $children as $child_id ) {
 				$variation = wc_get_product( $child_id );
 				if ( ! $variation ) {
 					continue;
@@ -644,10 +785,13 @@ final class Webino_Dashboard_Migrate_Export_Products {
 				$image = Webino_Dashboard_Migrate_Export_Support::image_ref( (int) $variation->get_image_id() );
 				$variations[] = array(
 					'source_id'        => (int) $variation->get_id(),
+					'external_id'      => (string) $variation->get_id(),
 					'sku'              => (string) $variation->get_sku(),
 					'status'           => (string) $variation->get_status(),
 					'regular_price'    => Webino_Dashboard_Migrate_Export_Support::money( $variation->get_regular_price() ),
 					'sale_price'       => Webino_Dashboard_Migrate_Export_Support::money( $variation->get_sale_price() ),
+					'date_on_sale_from' => Webino_Dashboard_Migrate_Export_Support::iso_date( method_exists( $variation, 'get_date_on_sale_from' ) ? $variation->get_date_on_sale_from() : '' ),
+					'date_on_sale_to'  => Webino_Dashboard_Migrate_Export_Support::iso_date( method_exists( $variation, 'get_date_on_sale_to' ) ? $variation->get_date_on_sale_to() : '' ),
 					'manage_stock'     => (bool) $variation->get_manage_stock(),
 					'stock_quantity'   => null === $variation->get_stock_quantity() ? null : (int) $variation->get_stock_quantity(),
 					'stock_status'     => (string) $variation->get_stock_status(),
@@ -656,9 +800,12 @@ final class Webino_Dashboard_Migrate_Export_Products {
 					'image'            => $image,
 					'description'      => method_exists( $variation, 'get_description' ) ? (string) $variation->get_description() : '',
 				);
-				if ( count( $variations ) >= 200 ) {
-					break;
-				}
+			}
+		}
+		$brand_ids = array();
+		foreach ( $brands as $brand ) {
+			if ( ! empty( $brand['source_id'] ) ) {
+				$brand_ids[] = (string) $brand['source_id'];
 			}
 		}
 
@@ -694,11 +841,23 @@ final class Webino_Dashboard_Migrate_Export_Products {
 				'stock_status'       => (string) $product->get_stock_status(),
 				'backorders'         => (string) $product->get_backorders(),
 				'weight'             => (string) $product->get_weight(),
+				'length'             => (string) $product->get_length(),
+				'width'              => (string) $product->get_width(),
+				'height'             => (string) $product->get_height(),
 				'dimensions'         => array(
 					'length' => (string) $product->get_length(),
 					'width'  => (string) $product->get_width(),
 					'height' => (string) $product->get_height(),
 				),
+				'sale_starts_at'     => Webino_Dashboard_Migrate_Export_Support::iso_date( $product->get_date_on_sale_from() ),
+				'sale_ends_at'       => Webino_Dashboard_Migrate_Export_Support::iso_date( $product->get_date_on_sale_to() ),
+				'date_on_sale_from'  => Webino_Dashboard_Migrate_Export_Support::iso_date( $product->get_date_on_sale_from() ),
+				'date_on_sale_to'    => Webino_Dashboard_Migrate_Export_Support::iso_date( $product->get_date_on_sale_to() ),
+				'upsell_external_ids' => array_map( 'strval', (array) $product->get_upsell_ids() ),
+				'cross_sell_external_ids' => array_map( 'strval', (array) $product->get_cross_sell_ids() ),
+				'brand_external_ids' => $brand_ids,
+				'variations_total'   => $variation_total,
+				'variations_truncated' => false,
 				'tax_status'         => (string) $product->get_tax_status(),
 				'tax_class'          => (string) $product->get_tax_class(),
 				'catalog_visibility' => (string) $product->get_catalog_visibility(),
@@ -714,6 +873,7 @@ final class Webino_Dashboard_Migrate_Export_Products {
 				'images'             => $images,
 				'variations'         => $variations,
 				'grouped_children'   => $product->is_type( 'grouped' ) ? array_map( 'intval', (array) $product->get_children() ) : array(),
+				'grouped_external_ids' => $product->is_type( 'grouped' ) ? array_map( 'strval', (array) $product->get_children() ) : array(),
 				'external_url'       => $product->is_type( 'external' ) && method_exists( $product, 'get_product_url' ) ? Webino_Dashboard_Migrate_Schema::public_url( $product->get_product_url() ) : '',
 				'created_at'         => Webino_Dashboard_Migrate_Export_Support::iso_date( $product->get_date_created() ),
 				'updated_at'         => Webino_Dashboard_Migrate_Export_Support::iso_date( $product->get_date_modified() ),
@@ -786,7 +946,10 @@ final class Webino_Dashboard_Migrate_Export_Products {
 				}
 				$variations[] = array(
 					'source_id'      => isset( $variation['source_id'] ) ? (int) $variation['source_id'] : 0,
+					'external_id'    => isset( $variation['external_id'] ) ? (string) $variation['external_id'] : ( isset( $variation['source_id'] ) ? (string) $variation['source_id'] : '' ),
 					'sku'            => isset( $variation['sku'] ) ? (string) $variation['sku'] : '',
+					'date_on_sale_from' => isset( $variation['date_on_sale_from'] ) ? (string) $variation['date_on_sale_from'] : '',
+					'date_on_sale_to' => isset( $variation['date_on_sale_to'] ) ? (string) $variation['date_on_sale_to'] : '',
 					'status'         => isset( $variation['status'] ) ? (string) $variation['status'] : '',
 					'regular_price'  => isset( $variation['regular_price'] ) ? (string) $variation['regular_price'] : '',
 					'sale_price'     => isset( $variation['sale_price'] ) ? (string) $variation['sale_price'] : '',
@@ -798,6 +961,14 @@ final class Webino_Dashboard_Migrate_Export_Products {
 					'image'          => $image,
 					'description'    => isset( $variation['description'] ) ? (string) $variation['description'] : '',
 				);
+			}
+		}
+		$brand_ids = isset( $raw['brand_external_ids'] ) && is_array( $raw['brand_external_ids'] ) ? array_values( array_map( 'strval', $raw['brand_external_ids'] ) ) : array();
+		if ( ! $brand_ids && isset( $raw['brands'] ) && is_array( $raw['brands'] ) ) {
+			foreach ( $raw['brands'] as $brand ) {
+				if ( is_array( $brand ) && ! empty( $brand['source_id'] ) ) {
+					$brand_ids[] = (string) $brand['source_id'];
+				}
 			}
 		}
 		return array(
@@ -817,6 +988,9 @@ final class Webino_Dashboard_Migrate_Export_Products {
 			'stock_status'       => isset( $raw['stock_status'] ) ? (string) $raw['stock_status'] : '',
 			'backorders'         => isset( $raw['backorders'] ) ? (string) $raw['backorders'] : 'no',
 			'weight'             => isset( $raw['weight'] ) ? (string) $raw['weight'] : '',
+			'length'             => isset( $raw['length'] ) ? (string) $raw['length'] : ( isset( $raw['dimensions']['length'] ) ? (string) $raw['dimensions']['length'] : '' ),
+			'width'              => isset( $raw['width'] ) ? (string) $raw['width'] : ( isset( $raw['dimensions']['width'] ) ? (string) $raw['dimensions']['width'] : '' ),
+			'height'             => isset( $raw['height'] ) ? (string) $raw['height'] : ( isset( $raw['dimensions']['height'] ) ? (string) $raw['dimensions']['height'] : '' ),
 			'dimensions'         => array(
 				'length' => isset( $raw['dimensions']['length'] ) ? (string) $raw['dimensions']['length'] : '',
 				'width'  => isset( $raw['dimensions']['width'] ) ? (string) $raw['dimensions']['width'] : '',
@@ -824,6 +998,15 @@ final class Webino_Dashboard_Migrate_Export_Products {
 			),
 			'tax_status'         => isset( $raw['tax_status'] ) ? (string) $raw['tax_status'] : '',
 			'tax_class'          => isset( $raw['tax_class'] ) ? (string) $raw['tax_class'] : '',
+			'sale_starts_at'     => isset( $raw['sale_starts_at'] ) ? (string) $raw['sale_starts_at'] : '',
+			'sale_ends_at'       => isset( $raw['sale_ends_at'] ) ? (string) $raw['sale_ends_at'] : '',
+			'date_on_sale_from'  => isset( $raw['date_on_sale_from'] ) ? (string) $raw['date_on_sale_from'] : ( isset( $raw['sale_starts_at'] ) ? (string) $raw['sale_starts_at'] : '' ),
+			'date_on_sale_to'    => isset( $raw['date_on_sale_to'] ) ? (string) $raw['date_on_sale_to'] : ( isset( $raw['sale_ends_at'] ) ? (string) $raw['sale_ends_at'] : '' ),
+			'upsell_external_ids' => isset( $raw['upsell_external_ids'] ) && is_array( $raw['upsell_external_ids'] ) ? array_values( array_map( 'strval', $raw['upsell_external_ids'] ) ) : array(),
+			'cross_sell_external_ids' => isset( $raw['cross_sell_external_ids'] ) && is_array( $raw['cross_sell_external_ids'] ) ? array_values( array_map( 'strval', $raw['cross_sell_external_ids'] ) ) : array(),
+			'brand_external_ids' => $brand_ids,
+			'variations_total'   => isset( $raw['variations_total'] ) ? (int) $raw['variations_total'] : ( isset( $raw['variations'] ) && is_array( $raw['variations'] ) ? count( $raw['variations'] ) : 0 ),
+			'variations_truncated' => ! empty( $raw['variations_truncated'] ),
 			'catalog_visibility' => isset( $raw['catalog_visibility'] ) ? (string) $raw['catalog_visibility'] : 'visible',
 			'featured'           => ! empty( $raw['featured'] ),
 			'virtual'            => ! empty( $raw['virtual'] ),
@@ -837,6 +1020,7 @@ final class Webino_Dashboard_Migrate_Export_Products {
 			'images'             => $images,
 			'variations'         => $variations,
 			'grouped_children'   => isset( $raw['grouped_children'] ) && is_array( $raw['grouped_children'] ) ? array_map( 'intval', $raw['grouped_children'] ) : array(),
+			'grouped_external_ids' => isset( $raw['grouped_external_ids'] ) && is_array( $raw['grouped_external_ids'] ) ? array_values( array_map( 'strval', $raw['grouped_external_ids'] ) ) : array(),
 			'external_url'       => Webino_Dashboard_Migrate_Schema::public_url( isset( $raw['external_url'] ) ? $raw['external_url'] : '' ),
 			'created_at'         => isset( $raw['created_at'] ) ? (string) $raw['created_at'] : '',
 			'updated_at'         => isset( $raw['updated_at'] ) ? (string) $raw['updated_at'] : '',
@@ -975,9 +1159,12 @@ final class Webino_Dashboard_Migrate_Export_Customers {
 	public static function shape_item( array $raw ) {
 		$raw = Webino_Dashboard_Migrate_Schema::strip_sensitive_keys( $raw );
 		unset( $raw['user_pass'], $raw['user_activation_key'] );
+		$display = isset( $raw['display_name'] ) ? (string) $raw['display_name'] : '';
+		$name    = isset( $raw['name'] ) ? (string) $raw['name'] : $display;
 		return array(
 			'source_id'     => isset( $raw['source_id'] ) ? (int) $raw['source_id'] : 0,
 			'email'         => isset( $raw['email'] ) ? (string) $raw['email'] : '',
+			'name'          => $name,
 			'username'      => isset( $raw['username'] ) ? (string) $raw['username'] : '',
 			'first_name'    => isset( $raw['first_name'] ) ? (string) $raw['first_name'] : '',
 			'last_name'     => isset( $raw['last_name'] ) ? (string) $raw['last_name'] : '',
@@ -1082,13 +1269,17 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 	public static function from_order( $order ) {
 		$lines = array();
 		foreach ( $order->get_items( 'line_item' ) as $item ) {
+			$qty   = (int) $item->get_quantity();
+			$total = (float) $item->get_total();
 			$lines[] = array(
 				'source_id'           => (int) $item->get_id(),
+				'line_type'           => 'line_item',
 				'product_source_id'   => (int) $item->get_product_id(),
 				'variation_source_id' => (int) $item->get_variation_id(),
 				'name'                => (string) $item->get_name(),
 				'sku'                 => (string) $item->get_meta( '_sku', true ) ?: ( method_exists( $item, 'get_product' ) && $item->get_product() ? (string) $item->get_product()->get_sku() : '' ),
-				'quantity'            => (int) $item->get_quantity(),
+				'quantity'            => $qty,
+				'price'               => $qty > 0 ? (string) ( $total / $qty ) : (string) $total,
 				'subtotal'            => Webino_Dashboard_Migrate_Export_Support::money( $item->get_subtotal() ),
 				'total'               => Webino_Dashboard_Migrate_Export_Support::money( $item->get_total() ),
 				'tax'                 => Webino_Dashboard_Migrate_Export_Support::money( $item->get_total_tax() ),
@@ -1098,6 +1289,7 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 		foreach ( $order->get_items( 'shipping' ) as $ship ) {
 			$shipping[] = array(
 				'source_id'    => (int) $ship->get_id(),
+				'line_type'    => 'shipping',
 				'method_id'    => method_exists( $ship, 'get_method_id' ) ? (string) $ship->get_method_id() : '',
 				'method_title' => method_exists( $ship, 'get_method_title' ) ? (string) $ship->get_method_title() : '',
 				'total'        => Webino_Dashboard_Migrate_Export_Support::money( $ship->get_total() ),
@@ -1107,6 +1299,7 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 		foreach ( $order->get_items( 'coupon' ) as $coupon ) {
 			$coupons[] = array(
 				'source_id' => (int) $coupon->get_id(),
+				'line_type' => 'coupon',
 				'code'      => method_exists( $coupon, 'get_code' ) ? (string) $coupon->get_code() : (string) $coupon->get_name(),
 				'discount'  => method_exists( $coupon, 'get_discount' ) ? Webino_Dashboard_Migrate_Export_Support::money( $coupon->get_discount() ) : '',
 			);
@@ -1115,6 +1308,7 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 		foreach ( $order->get_items( 'fee' ) as $fee ) {
 			$fees[] = array(
 				'source_id' => (int) $fee->get_id(),
+				'line_type' => 'fee',
 				'name'      => (string) $fee->get_name(),
 				'total'     => Webino_Dashboard_Migrate_Export_Support::money( $fee->get_total() ),
 			);
@@ -1123,10 +1317,38 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 		foreach ( $order->get_refunds() as $refund ) {
 			$refunds[] = array(
 				'source_id'  => (int) $refund->get_id(),
+				'line_type'  => 'refund',
 				'amount'     => Webino_Dashboard_Migrate_Export_Support::money( $refund->get_amount() ),
 				'reason'     => (string) $refund->get_reason(),
 				'created_at' => Webino_Dashboard_Migrate_Export_Support::iso_date( $refund->get_date_created() ),
 			);
+		}
+		$private_notes = array();
+		if ( function_exists( 'wc_get_order_notes' ) ) {
+			$notes = wc_get_order_notes(
+				array(
+					'order_id' => $order->get_id(),
+					'type'     => 'internal',
+				)
+			);
+			if ( is_array( $notes ) ) {
+				foreach ( $notes as $note ) {
+					$content = '';
+					if ( is_object( $note ) && isset( $note->content ) ) {
+						$content = (string) $note->content;
+					} elseif ( is_array( $note ) && isset( $note['content'] ) ) {
+						$content = (string) $note['content'];
+					}
+					$content = trim( wp_strip_all_tags( $content ) );
+					if ( '' === $content ) {
+						continue;
+					}
+					$private_notes[] = array(
+						'content'    => $content,
+						'created_at' => is_object( $note ) && isset( $note->date_created ) ? Webino_Dashboard_Migrate_Export_Support::iso_date( $note->date_created ) : '',
+					);
+				}
+			}
 		}
 		$billing  = $order->get_address( 'billing' );
 		$shipping_address = $order->get_address( 'shipping' );
@@ -1152,6 +1374,7 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 				'payment_method_title' => (string) $order->get_payment_method_title(),
 				'transaction_id'       => (string) $order->get_transaction_id(),
 				'customer_note'        => (string) $order->get_customer_note(),
+				'private_notes'        => $private_notes,
 				'line_items'           => $lines,
 				'shipping_lines'       => $shipping,
 				'coupon_lines'         => $coupons,
@@ -1167,6 +1390,19 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 	 */
 	public static function shape_item( array $raw ) {
 		$raw = Webino_Dashboard_Migrate_Schema::strip_sensitive_keys( $raw );
+		$notes = isset( $raw['private_notes'] ) && is_array( $raw['private_notes'] ) ? array_values( $raw['private_notes'] ) : array();
+		$note  = isset( $raw['note'] ) ? trim( (string) $raw['note'] ) : '';
+		if ( '' === $note && $notes ) {
+			$parts = array();
+			foreach ( $notes as $row ) {
+				if ( is_array( $row ) && ! empty( $row['content'] ) ) {
+					$parts[] = (string) $row['content'];
+				} elseif ( is_string( $row ) ) {
+					$parts[] = $row;
+				}
+			}
+			$note = implode( "\n", $parts );
+		}
 		return array(
 			'source_id'            => isset( $raw['source_id'] ) ? (int) $raw['source_id'] : 0,
 			'number'               => isset( $raw['number'] ) ? (string) $raw['number'] : '',
@@ -1188,6 +1424,8 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 			'payment_method_title' => isset( $raw['payment_method_title'] ) ? (string) $raw['payment_method_title'] : '',
 			'transaction_id'       => isset( $raw['transaction_id'] ) ? (string) $raw['transaction_id'] : '',
 			'customer_note'        => isset( $raw['customer_note'] ) ? (string) $raw['customer_note'] : '',
+			'note'                 => $note,
+			'private_notes'        => $notes,
 			'line_items'           => isset( $raw['line_items'] ) && is_array( $raw['line_items'] ) ? array_values( $raw['line_items'] ) : array(),
 			'shipping_lines'       => isset( $raw['shipping_lines'] ) && is_array( $raw['shipping_lines'] ) ? array_values( $raw['shipping_lines'] ) : array(),
 			'coupon_lines'         => isset( $raw['coupon_lines'] ) && is_array( $raw['coupon_lines'] ) ? array_values( $raw['coupon_lines'] ) : array(),
@@ -1232,9 +1470,7 @@ final class Webino_Dashboard_Migrate_Export_Content {
 				$cats = self::term_list( $id, 'category' );
 				$tags = self::term_list( $id, 'post_tag' );
 			}
-			$items[] = Webino_Dashboard_Migrate_Export_Support::filter_item(
-				self::shape_item(
-					array(
+			$raw = array(
 						'source_id'        => (int) $id,
 						'type'             => $post_type,
 						'status'           => (string) $post->post_status,
@@ -1253,9 +1489,14 @@ final class Webino_Dashboard_Migrate_Export_Content {
 						'tags'             => $tags,
 						'created_at'       => Webino_Dashboard_Migrate_Export_Support::iso_date( $post->post_date_gmt ),
 						'updated_at'       => Webino_Dashboard_Migrate_Export_Support::iso_date( $post->post_modified_gmt ),
-						'permalink'        => Webino_Dashboard_Migrate_Schema::public_url( (string) get_permalink( $id ) ),
-					)
-				),
+				'permalink'        => Webino_Dashboard_Migrate_Schema::public_url( (string) get_permalink( $id ) ),
+				'published_at'     => Webino_Dashboard_Migrate_Export_Support::iso_date( $post->post_date_gmt ),
+			);
+			if ( class_exists( 'Webino_Dashboard_Migrate_Elementor', false ) ) {
+				$raw = Webino_Dashboard_Migrate_Elementor::enrich_content( $raw, $post );
+			}
+			$items[] = Webino_Dashboard_Migrate_Export_Support::filter_item(
+				self::shape_item( $raw ),
 				$entity,
 				$id
 			);
@@ -1281,9 +1522,10 @@ final class Webino_Dashboard_Migrate_Export_Content {
 		$out = array();
 		foreach ( $terms as $term ) {
 			$out[] = array(
-				'source_id' => (int) $term->term_id,
-				'name'      => (string) $term->name,
-				'slug'      => (string) $term->slug,
+				'source_id'   => (int) $term->term_id,
+				'external_id' => (string) $term->term_id,
+				'name'        => (string) $term->name,
+				'slug'        => (string) $term->slug,
 			);
 		}
 		return $out;
@@ -1326,6 +1568,13 @@ final class Webino_Dashboard_Migrate_Export_Content {
 			'created_at'       => isset( $raw['created_at'] ) ? (string) $raw['created_at'] : '',
 			'updated_at'       => isset( $raw['updated_at'] ) ? (string) $raw['updated_at'] : '',
 			'permalink'        => Webino_Dashboard_Migrate_Schema::public_url( isset( $raw['permalink'] ) ? $raw['permalink'] : '' ),
+			'published_at'     => isset( $raw['published_at'] ) ? (string) $raw['published_at'] : ( isset( $raw['created_at'] ) ? (string) $raw['created_at'] : '' ),
+			'cover'            => $featured,
+			'seo'              => isset( $raw['seo'] ) && is_array( $raw['seo'] ) ? $raw['seo'] : array(),
+			'document'         => isset( $raw['document'] ) && is_array( $raw['document'] ) ? $raw['document'] : null,
+			'elementor'        => isset( $raw['elementor'] ) && is_array( $raw['elementor'] ) ? $raw['elementor'] : null,
+			'content_raw'      => isset( $raw['content_raw'] ) ? (string) $raw['content_raw'] : '',
+			'content_rendered' => isset( $raw['content_rendered'] ) ? (string) $raw['content_rendered'] : '',
 		);
 	}
 }
@@ -1514,7 +1763,36 @@ final class Webino_Dashboard_Migrate_Export_Menus {
 			'name'      => isset( $raw['name'] ) ? (string) $raw['name'] : '',
 			'slug'      => isset( $raw['slug'] ) ? (string) $raw['slug'] : '',
 			'locations' => isset( $raw['locations'] ) && is_array( $raw['locations'] ) ? array_values( array_map( 'strval', $raw['locations'] ) ) : array(),
-			'items'     => $items,
+			'items'     => self::nest_items( $items ),
 		);
+	}
+
+	/**
+	 * Nest a flat menu (parent_source_id) so Webino can prefix child labels.
+	 *
+	 * @param list<array<string,mixed>> $flat Flat items.
+	 * @return list<array<string,mixed>>
+	 */
+	public static function nest_items( array $flat ) {
+		$by_parent = array();
+		foreach ( $flat as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$parent                 = isset( $item['parent_source_id'] ) ? (int) $item['parent_source_id'] : 0;
+			$by_parent[ $parent ][] = $item;
+		}
+		$build = function ( $parent ) use ( &$build, $by_parent ) {
+			$rows = isset( $by_parent[ $parent ] ) ? $by_parent[ $parent ] : array();
+			foreach ( $rows as $index => $row ) {
+				$id = isset( $row['source_id'] ) ? (int) $row['source_id'] : 0;
+				$children = $build( $id );
+				if ( $children ) {
+					$rows[ $index ]['children'] = $children;
+				}
+			}
+			return $rows;
+		};
+		return $build( 0 );
 	}
 }

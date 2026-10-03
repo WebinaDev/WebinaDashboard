@@ -1,14 +1,27 @@
 import { apiFetch } from '@/lib/api'
 
 export type MigrateEntityKey =
-  | 'categories'
   | 'media'
-  | 'products'
+  | 'media_files'
+  | 'categories'
+  | 'tags'
+  | 'brands'
   | 'customers'
-  | 'orders'
+  | 'staff'
+  | 'products'
+  | 'coupons'
+  | 'reviews'
   | 'pages'
   | 'posts'
+  | 'elementor_templates'
+  | 'orders'
   | 'menus'
+  | 'redirects'
+  | 'settings'
+  | 'stats'
+  | 'waiting_list'
+  | 'permalinks'
+  | 'review_queue'
 
 export type MigrateSettings = {
   site_url: string
@@ -18,12 +31,16 @@ export type MigrateSettings = {
   delay_ms: number
   timeout: number
   dry_run: boolean
+  mode: 'full' | 'selective' | string
   entities: Record<string, boolean>
   endpoints: Record<string, string>
   endpoint_defaults: Record<string, string>
   schema: string
   schema_version: number
   entity_labels: Record<string, string>
+  entity_hints?: Record<string, string>
+  entity_order?: string[]
+  extended_resources?: string[]
 }
 
 export type MigrateLogRow = {
@@ -37,7 +54,7 @@ export type MigrateJob = {
   status: 'idle' | 'running' | 'paused' | 'failed' | 'completed' | string
   phase?: string
   entities?: string[]
-  progress?: Record<string, { exported: number; failed: number; done: boolean }>
+  progress?: Record<string, { exported: number; failed: number; done: boolean; unsupported?: boolean }>
   totals?: Record<string, number>
   log?: MigrateLogRow[]
   last_error?: string
@@ -54,14 +71,27 @@ export type MigrateSnapshot = {
 }
 
 export const MIGRATE_ENTITIES: MigrateEntityKey[] = [
-  'categories',
   'media',
-  'products',
+  'media_files',
+  'categories',
+  'tags',
+  'brands',
   'customers',
-  'orders',
+  'staff',
+  'products',
+  'coupons',
+  'reviews',
   'pages',
   'posts',
+  'elementor_templates',
+  'orders',
   'menus',
+  'redirects',
+  'settings',
+  'stats',
+  'waiting_list',
+  'permalinks',
+  'review_queue',
 ]
 
 export function fetchMigrateSettings() {

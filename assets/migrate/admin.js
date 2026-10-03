@@ -69,6 +69,7 @@
 				var total = job.totals && job.totals[key] ? Number(job.totals[key]) : 0;
 				var pct = total > 0 ? Math.min(100, Math.floor((exported / total) * 100)) : row.done ? 100 : 0;
 				var label = (cfg.labels && cfg.labels[key]) || key;
+				if (row.unsupported) label += ' (منتظر واردکننده وبینو)';
 				var wrap = document.createElement('div');
 				wrap.className = 'webino-migrate__bar';
 				var head = document.createElement('div');

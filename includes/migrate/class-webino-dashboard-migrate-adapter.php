@@ -59,16 +59,28 @@ final class Webino_Dashboard_Migrate_Adapter {
 		}
 
 		$map = array(
-			'media'     => 'media',
-			'products'  => 'products',
-			'customers' => 'customers',
-			'orders'    => 'orders',
-			'pages'     => 'pages',
-			'posts'     => 'posts',
-			'menus'     => 'menus',
+			'media'       => 'media',
+			'media_files' => 'media',
+			'products'    => 'products',
+			'customers'   => 'customers',
+			'orders'      => 'orders',
+			'pages'       => 'pages',
+			'posts'       => 'posts',
+			'menus'       => 'menus',
+			'tags'        => 'tags',
+			'brands'      => 'brands',
 		);
 		if ( ! isset( $map[ $entity ] ) ) {
-			return array();
+			$rows = Webino_Dashboard_Migrate_Schema::with_external_ids( $items );
+			if ( ! $rows ) {
+				return array();
+			}
+			return array(
+				array(
+					'resource' => Webino_Dashboard_Migrate_Schema::remote_resource( $entity ),
+					'items'    => $rows,
+				),
+			);
 		}
 		$resource = $map[ $entity ];
 		$mapped   = array();
@@ -113,7 +125,11 @@ final class Webino_Dashboard_Migrate_Adapter {
 			case 'menus':
 				return self::menu_item( $item );
 			case 'categories':
+			case 'tags':
+			case 'brands':
 				return self::category_item( $item );
+			case 'media_files':
+				return self::media_item( $item );
 			default:
 				return null;
 		}
@@ -308,6 +324,14 @@ final class Webino_Dashboard_Migrate_Adapter {
 			$out['width']  = isset( $item['dimensions']['width'] ) ? $item['dimensions']['width'] : null;
 			$out['height'] = isset( $item['dimensions']['height'] ) ? $item['dimensions']['height'] : null;
 		}
+		foreach ( array( 'length', 'width', 'height' ) as $dim ) {
+			if ( isset( $item[ $dim ] ) && ! is_array( $item[ $dim ] ) && '' !== (string) $item[ $dim ] ) {
+				$out[ $dim ] = (string) $item[ $dim ];
+			}
+		}
+		if ( isset( $item['brand_external_ids'] ) && is_array( $item['brand_external_ids'] ) ) {
+			$out['brand_external_ids'] = array_values( array_map( 'strval', $item['brand_external_ids'] ) );
+		}
 		return $out;
 	}
 
@@ -457,6 +481,24 @@ final class Webino_Dashboard_Migrate_Adapter {
 			}
 			$out['tags'] = $tags;
 		}
+		foreach ( array( 'document', 'elementor', 'seo' ) as $key ) {
+			if ( isset( $item[ $key ] ) && is_array( $item[ $key ] ) ) {
+				$out[ $key ] = $item[ $key ];
+			}
+		}
+		foreach ( array( 'content_raw', 'content_rendered', 'permalink', 'updated_at' ) as $key ) {
+			if ( isset( $item[ $key ] ) && '' !== (string) $item[ $key ] ) {
+				$out[ $key ] = (string) $item[ $key ];
+			}
+		}
+		if ( ! empty( $item['parent_source_id'] ) ) {
+			$out['parent_external_id'] = (string) (int) $item['parent_source_id'];
+		} elseif ( isset( $item['parent_external_id'] ) && '' !== trim( (string) $item['parent_external_id'] ) && '0' !== (string) $item['parent_external_id'] ) {
+			$out['parent_external_id'] = (string) $item['parent_external_id'];
+		}
+		if ( isset( $item['menu_order'] ) ) {
+			$out['menu_order'] = (int) $item['menu_order'];
+		}
 		return $out;
 	}
 
@@ -477,16 +519,7 @@ final class Webino_Dashboard_Migrate_Adapter {
 		}
 		$items = array();
 		if ( isset( $item['items'] ) && is_array( $item['items'] ) ) {
-			foreach ( $item['items'] as $row ) {
-				if ( ! is_array( $row ) ) {
-					continue;
-				}
-				$items[] = array(
-					'title' => isset( $row['title'] ) ? (string) $row['title'] : '',
-					'label' => isset( $row['title'] ) ? (string) $row['title'] : '',
-					'url'   => isset( $row['url'] ) ? (string) $row['url'] : '',
-				);
-			}
+			$items = self::menu_rows( $item['items'] );
 		}
 		return array(
 			'external_id' => $external,
@@ -495,6 +528,49 @@ final class Webino_Dashboard_Migrate_Adapter {
 			'location'    => $location,
 			'items'       => $items,
 		);
+	}
+
+
+	/**
+	 * @param list<array<string,mixed>> $rows Menu rows, possibly nested.
+	 * @return list<array<string,mixed>>
+	 */
+	private static function menu_rows( array $rows ) {
+		$out = array();
+		foreach ( $rows as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$title  = isset( $row['title'] ) ? (string) $row['title'] : ( isset( $row['label'] ) ? (string) $row['label'] : '' );
+			$mapped = array(
+				'title' => $title,
+				'label' => $title,
+				'url'   => isset( $row['url'] ) ? (string) $row['url'] : '',
+			);
+			$id = self::external_id( $row );
+			if ( '' !== $id ) {
+				$mapped['external_id'] = $id;
+			}
+			if ( isset( $row['type'] ) && '' !== (string) $row['type'] ) {
+				$mapped['type'] = (string) $row['type'];
+			}
+			if ( isset( $row['object'] ) && '' !== (string) $row['object'] ) {
+				$mapped['object'] = (string) $row['object'];
+			}
+			if ( ! empty( $row['object_source_id'] ) ) {
+				$mapped['object_external_id'] = (string) (int) $row['object_source_id'];
+			} elseif ( isset( $row['object_external_id'] ) && '' !== (string) $row['object_external_id'] ) {
+				$mapped['object_external_id'] = (string) $row['object_external_id'];
+			}
+			if ( isset( $row['children'] ) && is_array( $row['children'] ) ) {
+				$children = self::menu_rows( $row['children'] );
+				if ( $children ) {
+					$mapped['children'] = $children;
+				}
+			}
+			$out[] = $mapped;
+		}
+		return $out;
 	}
 
 	/**

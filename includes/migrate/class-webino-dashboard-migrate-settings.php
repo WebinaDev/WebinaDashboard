@@ -31,6 +31,7 @@ final class Webino_Dashboard_Migrate_Settings {
 			'delay_ms'   => 400,
 			'timeout'    => 45,
 			'dry_run'    => false,
+			'mode'       => 'full',
 			'entities'   => $entities,
 			'endpoints'  => array(),
 		);
@@ -44,7 +45,16 @@ final class Webino_Dashboard_Migrate_Settings {
 		if ( ! is_array( $stored ) ) {
 			$stored = array();
 		}
-		return array_merge( self::defaults(), $stored );
+		$merged = array_merge( self::defaults(), $stored );
+		if ( ! isset( $stored['mode'] ) && isset( $stored['entities'] ) ) {
+			$merged['mode'] = 'selective';
+		}
+		if ( isset( $merged['mode'] ) && 'full' === $merged['mode'] ) {
+			foreach ( Webino_Dashboard_Migrate_Schema::entity_order() as $key ) {
+				$merged['entities'][ $key ] = true;
+			}
+		}
+		return $merged;
 	}
 
 	/**
@@ -63,12 +73,16 @@ final class Webino_Dashboard_Migrate_Settings {
 			'delay_ms'           => (int) $raw['delay_ms'],
 			'timeout'            => (int) $raw['timeout'],
 			'dry_run'            => ! empty( $raw['dry_run'] ),
+			'mode'               => 'full' === ( isset( $raw['mode'] ) ? (string) $raw['mode'] : '' ) ? 'full' : 'selective',
 			'entities'           => self::entity_flags( isset( $raw['entities'] ) ? $raw['entities'] : array() ),
 			'endpoints'          => self::effective_endpoints( isset( $raw['endpoints'] ) ? $raw['endpoints'] : array() ),
 			'endpoint_defaults'  => Webino_Dashboard_Migrate_Schema::default_endpoints(),
 			'schema'             => Webino_Dashboard_Migrate_Schema::NAME,
 			'schema_version'     => Webino_Dashboard_Migrate_Schema::VERSION,
 			'entity_labels'      => Webino_Dashboard_Migrate_Schema::entity_labels(),
+			'entity_hints'       => Webino_Dashboard_Migrate_Schema::entity_hints(),
+			'entity_order'       => Webino_Dashboard_Migrate_Schema::entity_order(),
+			'extended_resources' => Webino_Dashboard_Migrate_Schema::extended_resources(),
 		);
 	}
 
@@ -94,10 +108,12 @@ final class Webino_Dashboard_Migrate_Settings {
 			$token_enc = $encrypted;
 		}
 
-		$entities = array();
-		$posted   = isset( $input['entities'] ) && is_array( $input['entities'] ) ? $input['entities'] : array();
+		$posted_mode = isset( $input['mode'] ) ? sanitize_key( (string) $input['mode'] ) : '';
+		$mode        = in_array( $posted_mode, array( 'full', 'selective' ), true ) ? $posted_mode : 'selective';
+		$entities    = array();
+		$posted      = isset( $input['entities'] ) && is_array( $input['entities'] ) ? $input['entities'] : array();
 		foreach ( Webino_Dashboard_Migrate_Schema::entity_order() as $key ) {
-			$entities[ $key ] = ! empty( $posted[ $key ] );
+			$entities[ $key ] = ( 'full' === $mode ) ? true : ! empty( $posted[ $key ] );
 		}
 
 		$defaults  = Webino_Dashboard_Migrate_Schema::default_endpoints();
@@ -120,6 +136,7 @@ final class Webino_Dashboard_Migrate_Settings {
 			'delay_ms'   => self::clamp_int( isset( $input['delay_ms'] ) ? $input['delay_ms'] : 400, 0, 10000 ),
 			'timeout'    => self::clamp_int( isset( $input['timeout'] ) ? $input['timeout'] : 45, 5, 120 ),
 			'dry_run'    => ! empty( $input['dry_run'] ),
+			'mode'       => $mode,
 			'entities'   => $entities,
 			'endpoints'  => $endpoints,
 		);

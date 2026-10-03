@@ -50,10 +50,15 @@ final class Webino_Dashboard_Migrate_Runner {
 			'pause_until'  => 0,
 			'log'          => array(),
 			'last_error'   => '',
-			'started_at'   => gmdate( 'c', $now ),
-			'updated_at'   => gmdate( 'c', $now ),
-			'finished_at'  => null,
-			'dry_run'      => (bool) $dry_run,
+			'started_at'       => gmdate( 'c', $now ),
+			'updated_at'       => gmdate( 'c', $now ),
+			'finished_at'      => null,
+			'dry_run'          => (bool) $dry_run,
+			'remote_job_id'    => 0,
+			'webino_job_id'    => 0,
+			'pinged'           => false,
+			'remote_resources' => array(),
+			'complete_tries'   => 0,
 		);
 		$state['log'] = Webino_Dashboard_Migrate_Schema::append_log(
 			$state['log'],
@@ -91,6 +96,26 @@ final class Webino_Dashboard_Migrate_Runner {
 
 		$ok     = ! empty( $event['ok'] );
 		$status = isset( $event['http_status'] ) ? (int) $event['http_status'] : 0;
+		if ( ! empty( $event['unsupported'] ) ) {
+			$state['progress'][ $entity ]['done']            = true;
+			$state['progress'][ $entity ]['skipped_remote']  = true;
+			$state['progress'][ $entity ]['unsupported']     = true;
+			$state['entity_index']                           = (int) $state['entity_index'] + 1;
+			$state['pause_until']                            = 0;
+			$state['last_error']                             = '';
+			$state['log']                                    = Webino_Dashboard_Migrate_Schema::append_log(
+				$state['log'],
+				'warn',
+				isset( $event['warning'] ) && '' !== (string) $event['warning']
+					? (string) $event['warning']
+					: sprintf( 'منبع «%s» در این وبینو پذیرفته نشد. بقیه مهاجرت ادامه پیدا می‌کند.', self::label( $entity ) ),
+				$now
+			);
+			if ( (int) $state['entity_index'] >= count( (array) $state['entities'] ) ) {
+				$state['phase'] = 'complete';
+			}
+			return $state;
+		}
 		if ( $ok ) {
 			$count = isset( $event['exported'] ) ? (int) $event['exported'] : 0;
 			$state['progress'][ $entity ]['exported'] += $count;
@@ -203,6 +228,31 @@ final class Webino_Dashboard_Migrate_Runner {
 	 * @return array<string,mixed>
 	 */
 	private static function reduce_complete( array $state, array $event, $now ) {
+		if ( ! empty( $event['pending'] ) ) {
+			$tries = isset( $state['complete_tries'] ) ? (int) $state['complete_tries'] : 0;
+			++$tries;
+			$state['complete_tries'] = $tries;
+			$state['phase']          = 'complete';
+			$state['status']         = 'running';
+			if ( $tries >= 40 ) {
+				$state['status']      = 'completed';
+				$state['finished_at'] = gmdate( 'c', $now );
+				$state['log']         = Webino_Dashboard_Migrate_Schema::append_log(
+					$state['log'],
+					'warn',
+					'اعمال دسته‌ها در وبینو پس از چند بار اجرا هنوز تمام نشده است. از صفحه وارد کردن وبینو ادامه دهید.',
+					$now
+				);
+				return $state;
+			}
+			$state['log'] = Webino_Dashboard_Migrate_Schema::append_log(
+				$state['log'],
+				'info',
+				'دسته‌ها در صف وبینو هستند. اجرای بعدی ادامه اعمال است.',
+				$now
+			);
+			return $state;
+		}
 		if ( ! empty( $event['ok'] ) ) {
 			$state['status']      = 'completed';
 			$state['phase']       = 'complete';

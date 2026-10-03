@@ -99,8 +99,9 @@ final class Webino_Dashboard_Migrate_Client {
 				'source_url'     => isset( $source['site_url'] ) ? (string) $source['site_url'] : '',
 				'resource'       => (string) $resource,
 				'items'          => array_values( $items ),
-				'download_media' => true,
-				'dry_run'        => Webino_Dashboard_Migrate_Settings::dry_run(),
+				'download_media'  => true,
+				'publish_content' => false,
+				'dry_run'         => Webino_Dashboard_Migrate_Settings::dry_run(),
 			),
 			$extra
 		);
