@@ -25,6 +25,15 @@ final class Webino_Dashboard_License {
 	const NAG_FORCE_DAYS = 2;
 
 	/**
+	 * Transient: CRM / license server circuit breaker. While open, dashboard-path CRM
+	 * reads return immediately instead of blocking PHP workers on a dead host.
+	 */
+	const CRM_CIRCUIT_TRANSIENT = 'webino_dashboard_crm_circuit';
+
+	/** One-off background license check (never runs inside a dashboard request). */
+	const ASYNC_CHECK_HOOK = 'webino_dashboard_license_async_check';
+
+	/**
 	 * @var self|null
 	 */
 	private static $instance = null;
@@ -53,6 +62,7 @@ final class Webino_Dashboard_License {
 		add_action( 'plugins_loaded', array( $this, 'ensure_license_table' ), 3 );
 		add_action( 'init', array( $this, 'maybe_schedule_cron' ), 5 );
 		add_action( self::CRON_HOOK, array( $this, 'cron_check' ) );
+		add_action( self::ASYNC_CHECK_HOOK, array( $this, 'cron_check' ) );
 		add_action( 'wp_ajax_nopriv_webino_dashboard_license_webhook', array( $this, 'ajax_webhook_stub' ) );
 		add_action( 'wp_ajax_webino_dashboard_license_webhook', array( $this, 'ajax_webhook_stub' ) );
 		add_action( 'wp_ajax_nopriv_maneli_license_webhook', array( $this, 'ajax_crm_webhook' ) );
@@ -135,7 +145,105 @@ final class Webino_Dashboard_License {
 		if ( ! $this->is_license_check_stale() ) {
 			return;
 		}
-		$this->check_license_status( true, $context );
+		// Never block a dashboard/page request on the license server — defer to wp-cron.
+		$this->schedule_async_check();
+	}
+
+	/**
+	 * Queue a one-off background license check (wp-cron). Non-blocking.
+	 *
+	 * @param int $delay Seconds from now.
+	 * @return void
+	 */
+	public function schedule_async_check( $delay = 5 ) {
+		if ( ! function_exists( 'wp_next_scheduled' ) || wp_next_scheduled( self::ASYNC_CHECK_HOOK ) ) {
+			return;
+		}
+		wp_schedule_single_event( time() + max( 0, (int) $delay ), self::ASYNC_CHECK_HOOK );
+	}
+
+	/**
+	 * Seconds the CRM circuit stays open after a transport/5xx failure.
+	 *
+	 * @return int
+	 */
+	public function crm_circuit_ttl() {
+		return max( 30, (int) apply_filters( 'webino_dashboard_crm_circuit_ttl', 180 ) );
+	}
+
+	/**
+	 * Whether the CRM / license server is currently considered down (recent failure).
+	 *
+	 * @return bool
+	 */
+	public function is_crm_circuit_open() {
+		if ( (bool) apply_filters( 'webino_dashboard_crm_circuit_disabled', false ) ) {
+			return false;
+		}
+		$state = get_transient( self::CRM_CIRCUIT_TRANSIENT );
+		return is_array( $state ) && ! empty( $state['until'] ) && (int) $state['until'] > time();
+	}
+
+	/**
+	 * @param string $reason Short failure reason (logged only).
+	 * @return void
+	 */
+	private function open_crm_circuit( $reason ) {
+		$ttl = $this->crm_circuit_ttl();
+		set_transient(
+			self::CRM_CIRCUIT_TRANSIENT,
+			array(
+				'until'  => time() + $ttl,
+				'at'     => time(),
+				'reason' => substr( (string) $reason, 0, 200 ),
+			),
+			$ttl
+		);
+	}
+
+	/**
+	 * @return void
+	 */
+	private function close_crm_circuit() {
+		if ( false !== get_transient( self::CRM_CIRCUIT_TRANSIENT ) ) {
+			delete_transient( self::CRM_CIRCUIT_TRANSIENT );
+		}
+	}
+
+	/**
+	 * HTTP status that means "license host / gateway is down" (opens circuit).
+	 *
+	 * @param int $code HTTP status.
+	 * @return bool
+	 */
+	private function is_gateway_failure_status( $code ) {
+		$code = (int) $code;
+		return 0 === $code || 500 === $code || 502 === $code || 504 === $code || ( $code >= 520 && $code <= 530 );
+	}
+
+	/**
+	 * Fast failure returned while the circuit is open (no network I/O).
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function circuit_open_result() {
+		return array(
+			'ok'           => false,
+			'code'         => 0,
+			'error'        => __( 'License server temporarily unreachable.', 'webino-dashboard' ),
+			'error_code'   => 'crm_unreachable',
+			'circuit_open' => true,
+		);
+	}
+
+	/**
+	 * Explicit/background contexts always try the network (manual retry, install, cron, webhook).
+	 *
+	 * @param string $context Request context.
+	 * @return bool
+	 */
+	private function context_bypasses_circuit( $context ) {
+		return in_array( (string) $context, array( 'manual', 'install', 'cron', 'webhook', 'write' ), true );
 	}
 
 	/**
@@ -406,7 +514,7 @@ final class Webino_Dashboard_License {
 	 * @return bool
 	 */
 	private function is_unreachable_transport_code( $code ) {
-		return in_array( (string) $code, array( 'timeout', 'transport', 'empty_reply' ), true );
+		return in_array( (string) $code, array( 'timeout', 'transport', 'empty_reply', 'crm_unreachable' ), true );
 	}
 
 	/**
@@ -561,6 +669,9 @@ final class Webino_Dashboard_License {
 	 * @return array{ ok: bool, code?: int, data?: mixed, error?: string, error_code?: string, transport_raw?: string }
 	 */
 	private function post_first_server( $path, array $body, $context = 'sync' ) {
+		if ( ! $this->context_bypasses_circuit( $context ) && $this->is_crm_circuit_open() ) {
+			return $this->circuit_open_result();
+		}
 		$path            = ltrim( (string) $path, '/' );
 		$payload         = $this->build_request_body( $body );
 		$correlation     = $this->correlation_id();
@@ -650,6 +761,7 @@ final class Webino_Dashboard_License {
 				);
 
 				if ( $code >= 200 && $code < 300 ) {
+					$this->close_crm_circuit();
 					return array(
 						'ok'   => true,
 						'code' => $code,
@@ -658,6 +770,8 @@ final class Webino_Dashboard_License {
 				}
 
 				if ( $code >= 400 && $code < 500 ) {
+					// Host answered — it is up even if it rejected this request.
+					$this->close_crm_circuit();
 					$err_msg = '';
 					if ( is_array( $data ) && ! empty( $data['message'] ) ) {
 						$err_msg = (string) $data['message'];
@@ -708,6 +822,10 @@ final class Webino_Dashboard_License {
 			);
 		} else {
 			$friendly = $this->friendly_transport_error( $last_error );
+		}
+
+		if ( $this->is_gateway_failure_status( $last_code ) ) {
+			$this->open_crm_circuit( $last_error );
 		}
 
 		$fail = array(
@@ -972,11 +1090,28 @@ final class Webino_Dashboard_License {
 
 		$now = current_time( 'mysql' );
 
+		if ( ! $result['ok'] && ! empty( $result['circuit_open'] ) ) {
+			// Recently failed — do not touch the stored (last-known) license; no network I/O.
+			$this->row_cache = null;
+			$r   = $this->get_row();
+			$out = array(
+				'active'     => $this->is_license_active( false ),
+				'status'     => isset( $r['status'] ) ? (string) $r['status'] : 'unknown',
+				'message'    => (string) $result['error'],
+				'expiry'     => ! empty( $r['expiry_date'] ) ? (string) $r['expiry_date'] : null,
+				'demo'       => ! empty( $r['is_demo'] ),
+				'error_code' => 'crm_unreachable',
+				'warning'    => 'crm_unreachable',
+			);
+			return $out;
+		}
+
 		if ( ! $result['ok'] ) {
 			$msg           = isset( $result['error'] ) ? (string) $result['error'] : __( 'License server error.', 'webino-dashboard' );
 			$transport_raw = ! empty( $result['transport_raw'] ) ? (string) $result['transport_raw'] : '';
 			$err_code      = ! empty( $result['error_code'] ) ? (string) $result['error_code'] : '';
 			$was_ok        = false;
+			$db_message    = '';
 			if ( $persist_errors ) {
 				$this->row_cache = null;
 				$prev    = $this->get_row();
@@ -985,8 +1120,11 @@ final class Webino_Dashboard_License {
 					|| in_array( $prev_st, array( 'active', 'valid', 'ok', 'licensed' ), true );
 				if ( '' !== $transport_raw ) {
 					$db_message = '[diag] ' . $transport_raw;
-				} elseif ( ! $was_ok && 'timeout' === $err_code ) {
+				} elseif ( $this->is_unreachable_transport_code( $err_code ) ) {
+					// Network / timeout / 5xx — not a license decision; banner stays informational.
 					$db_message = '[unreachable] ' . $msg;
+				} else {
+					$db_message = $msg;
 				}
 				// Do not overwrite a known-good license with "error" on transient network/CRM failure.
 				if ( $was_ok ) {
@@ -1151,6 +1289,11 @@ final class Webino_Dashboard_License {
 			return;
 		}
 		self::$checked_this_request = true;
+		// Page/bootstrap/gate paths must never wait on the license server.
+		if ( in_array( (string) $context, array( 'bootstrap', 'gate', 'page', 'sync' ), true ) ) {
+			$this->schedule_async_check();
+			return;
+		}
 		$this->remote_license_check( true, $context );
 	}
 
@@ -1260,12 +1403,22 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
+	 * Public: CRM confirmed inactive/expired (not merely unreachable).
+	 *
+	 * @return bool
+	 */
+	public function is_definitively_inactive() {
+		return $this->is_row_definitively_inactive();
+	}
+
+	/**
 	 * Clear transport-only license noise and nag clock (admin repair tool).
 	 *
 	 * @return void
 	 */
 	public function repair_transport_state() {
 		delete_option( self::NAG_SINCE_OPTION );
+		$this->close_crm_circuit();
 		$this->row_cache = null;
 		$row             = $this->get_row();
 		if ( ! $this->is_row_transport_unreachable( $row ) ) {
@@ -1411,7 +1564,8 @@ final class Webino_Dashboard_License {
 			'nag_since'                => $since > 0 ? $since : null,
 			'force_license_page'       => $this->should_force_license_page(),
 			'show_banner'              => $this->should_show_license_banner(),
-			'show_unreachable_banner'  => $this->should_show_unreachable_banner(),
+			'show_unreachable_banner'  => $this->should_show_unreachable_banner() || $this->is_crm_circuit_open(),
+			'crm_unreachable'          => $this->is_crm_circuit_open(),
 		);
 	}
 
@@ -1426,6 +1580,10 @@ final class Webino_Dashboard_License {
 	public function crm_post( $path, array $body = array(), $context = 'sync' ) {
 		$domain  = isset( $body['domain'] ) ? $this->normalize_site_domain( (string) $body['domain'] ) : $this->get_current_domain();
 		$payload = array_merge( $body, array( 'domain' => $domain ) );
+		// Explicit user writes always try the network; failures still open the circuit for reads.
+		if ( 'sync' === $context ) {
+			$context = 'write';
+		}
 		return $this->post_first_server( ltrim( (string) $path, '/' ), $payload, $context );
 	}
 
@@ -1469,6 +1627,9 @@ final class Webino_Dashboard_License {
 	 * @return array{ ok: bool, code?: int, data?: mixed, error?: string }
 	 */
 	public function crm_get( $path, array $query = array(), array $options = array() ) {
+		if ( empty( $options['bypass_circuit'] ) && $this->is_crm_circuit_open() ) {
+			return $this->circuit_open_result();
+		}
 		$domain       = isset( $query['domain'] ) ? $this->normalize_site_domain( (string) $query['domain'] ) : $this->get_current_domain();
 		$query        = array_merge( $query, array( 'domain' => $domain ) );
 		$path         = ltrim( (string) $path, '/' );
@@ -1495,11 +1656,15 @@ final class Webino_Dashboard_License {
 			);
 			if ( is_wp_error( $response ) ) {
 				$last_error = $response->get_error_message();
+				$last_code  = 0;
 				continue;
 			}
 			$code = (int) wp_remote_retrieve_response_code( $response );
 			$raw  = (string) wp_remote_retrieve_body( $response );
 			$data = json_decode( $raw, true );
+			if ( ! $this->is_gateway_failure_status( $code ) ) {
+				$this->close_crm_circuit();
+			}
 			if ( $code >= 200 && $code < 300 ) {
 				return array(
 					'ok'   => true,
@@ -1541,6 +1706,10 @@ final class Webino_Dashboard_License {
 		if ( $last_code > 0 ) {
 			$out['code'] = $last_code;
 		}
+		if ( $this->is_gateway_failure_status( $last_code ) && '' !== $last_error ) {
+			$this->open_crm_circuit( $last_error );
+			$out['error_code'] = 'crm_unreachable';
+		}
 		return $out;
 	}
 
@@ -1563,12 +1732,19 @@ final class Webino_Dashboard_License {
 		if ( empty( $paths ) ) {
 			return $results;
 		}
+		if ( empty( $options['bypass_circuit'] ) && $this->is_crm_circuit_open() ) {
+			foreach ( array_keys( $paths ) as $key ) {
+				$results[ $key ] = $this->circuit_open_result();
+			}
+			return $results;
+		}
 
 		$domain       = isset( $query['domain'] ) ? $this->normalize_site_domain( (string) $query['domain'] ) : $this->get_current_domain();
 		$query        = array_merge( $query, array( 'domain' => $domain ) );
 		$timeout      = isset( $options['timeout'] ) ? max( 2, (int) $options['timeout'] ) : $this->crm_get_http_timeout();
 		$wall_cap     = isset( $options['wall_cap'] ) ? max( 3, (int) $options['wall_cap'] ) : $this->crm_get_wall_clock_cap();
 		$wall_started = microtime( true );
+		$any_response = false;
 
 		foreach ( $this->get_request_bases() as $base ) {
 			$elapsed = microtime( true ) - $wall_started;
@@ -1590,7 +1766,16 @@ final class Webino_Dashboard_License {
 				if ( ! empty( $res['ok'] ) ) {
 					$results[ $key ] = $res;
 				}
+				if ( ! $this->is_gateway_failure_status( isset( $res['code'] ) ? (int) $res['code'] : 0 ) ) {
+					$any_response = true;
+				}
 			}
+		}
+
+		if ( $any_response ) {
+			$this->close_crm_circuit();
+		} else {
+			$this->open_crm_circuit( 'crm_get_many: no response' );
 		}
 
 		return $results;
@@ -1673,6 +1858,8 @@ final class Webino_Dashboard_License {
 					'code' => $code,
 					'data' => is_array( $data ) ? $data : array(),
 				);
+			} else {
+				$results[ $key ]['code'] = $code;
 			}
 		}
 
@@ -1703,6 +1890,7 @@ final class Webino_Dashboard_License {
 		if ( is_wp_error( $response ) ) {
 			return array(
 				'ok'    => false,
+				'code'  => 0,
 				'error' => __( 'CRM request failed.', 'webino-dashboard' ),
 			);
 		}
@@ -1718,6 +1906,7 @@ final class Webino_Dashboard_License {
 		}
 		return array(
 			'ok'    => false,
+			'code'  => $code,
 			'error' => __( 'CRM request failed.', 'webino-dashboard' ),
 		);
 	}

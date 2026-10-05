@@ -337,9 +337,27 @@ export function DashboardLayout() {
         <div className="@container/main wd-app-atmosphere flex min-w-0 flex-1 flex-col gap-3 p-3 pt-3 sm:gap-4 sm:p-4 sm:pt-4">
           <LicenseSoftBanner />
           {bq.isError ? (
-            <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-sm" role="alert">
-              {t('errors.restUnavailable')}
-            </p>
+            <div
+              className={
+                bq.data
+                  ? 'flex flex-wrap items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-950 text-sm dark:text-amber-50'
+                  : 'flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-sm'
+              }
+              role={bq.data ? 'status' : 'alert'}
+            >
+              <p className="min-w-0 flex-1">
+                {bq.data ? t('errors.restUnavailableSoft') : t('errors.restUnavailable')}
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={bq.isFetching}
+                onClick={() => void bq.refetch()}
+              >
+                {t('license.retry')}
+              </Button>
+            </div>
           ) : null}
           <Outlet />
         </div>

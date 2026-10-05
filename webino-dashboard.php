@@ -3,7 +3,7 @@
  * Plugin Name:       Webino Dashboard
  * Plugin URI:        https://webina.dev
  * Description:       Standalone customer dashboard at /dashboard (SPA), separate from wp-admin.
- * Version:           0.9.46
+ * Version:           0.9.47
  * Author:            Webina
  * Author URI:        https://webina.dev
  * Text Domain:       webino-dashboard
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WEBINO_DASHBOARD_VERSION', '0.9.46' );
+define( 'WEBINO_DASHBOARD_VERSION', '0.9.47' );
 define( 'WEBINO_DASHBOARD_FILE', __FILE__ );
 define( 'WEBINO_DASHBOARD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_URL', plugin_dir_url( __FILE__ ) );
@@ -44,6 +44,12 @@ add_action(
 		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', WEBINO_DASHBOARD_FILE, true );
 	}
 );
+
+// Dashboard admin-ajax endpoints must always answer JSON (no HTML notices / fatal pages).
+if ( is_readable( WEBINO_DASHBOARD_DIR . 'includes/class-webino-dashboard-ajax-guard.php' ) ) {
+	require_once WEBINO_DASHBOARD_DIR . 'includes/class-webino-dashboard-ajax-guard.php';
+	Webino_Dashboard_Ajax_Guard::maybe_start();
+}
 
 require_once WEBINO_DASHBOARD_DIR . 'includes/class-webino-dashboard-bootstrap.php';
 

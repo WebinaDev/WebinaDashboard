@@ -159,18 +159,33 @@ function restNonJsonMessage(rawText: string, status: number): { message: string;
   return { message: 'Invalid JSON response', code: 'invalid_json' }
 }
 
-function ajaxNonJsonMessage(rawText: string, status: number): string {
+function ajaxNonJsonMessage(rawText: string, status: number): { message: string; code: string } {
   const lower = rawText.toLowerCase()
-  if (rawText.includes('Upstream Error') || rawText.includes('Forbidden') || status === 403) {
-    return 'admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry'
+  // Gateway/CDN timeout pages (e.g. "Upstream Error - Gateway Timeout") — the site's PHP was slow,
+  // not a license decision. Check before the generic "Upstream" match.
+  if (
+    status === 504 ||
+    status === 524 ||
+    lower.includes('gateway timeout') ||
+    lower.includes('gateway time-out') ||
+    lower.includes('timed out') ||
+    lower.includes('timeout')
+  ) {
+    return { message: `Gateway timeout (HTTP ${status || 0})`, code: 'gateway_timeout' }
   }
-  if (lower.includes('timed out') || lower.includes('timeout') || status === 504 || status === 524) {
-    return 'Request timed out — RSA-4096 generation can take over a minute on weak hosts'
+  if (status === 502 || status === 503 || status === 520 || status === 521 || status === 522) {
+    return { message: `Server temporarily unavailable (HTTP ${status})`, code: 'server_unavailable' }
+  }
+  if (rawText.includes('Upstream Error') || rawText.includes('Forbidden') || status === 403) {
+    return {
+      message: 'admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry',
+      code: 'rest_cdn_blocked',
+    }
   }
   if (rawText.trim().startsWith('<') || rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
-    return `Invalid AJAX response (HTML, HTTP ${status || 0})`
+    return { message: `Invalid AJAX response (HTML, HTTP ${status || 0})`, code: 'invalid_json' }
   }
-  return `Invalid AJAX response (HTTP ${status || 0})`
+  return { message: `Invalid AJAX response (HTTP ${status || 0})`, code: 'invalid_json' }
 }
 
 async function apiFetchViaAjax<T>(path: string, timeoutMs: number, init: RequestInit = {}): Promise<T> {
@@ -219,8 +234,9 @@ async function apiFetchViaAjax<T>(path: string, timeoutMs: number, init: Request
     try {
       json = JSON.parse(rawText) as typeof json
     } catch {
-      throw new ApiError(ajaxNonJsonMessage(rawText, res.status), {
-        code: 'invalid_json',
+      const mapped = ajaxNonJsonMessage(rawText, res.status)
+      throw new ApiError(mapped.message, {
+        code: mapped.code,
         status: res.status,
       })
     }
@@ -243,7 +259,7 @@ async function apiFetchViaAjax<T>(path: string, timeoutMs: number, init: Request
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new ApiError('Request timed out', { code: 'timeout', status: 0 })
+      throw new ApiError('Request timed out', { code: 'request_timeout', status: 0 })
     }
     if (err instanceof TypeError) {
       throw new ApiError('Network unavailable', { code: 'network_offline', status: 0 })
@@ -314,7 +330,7 @@ export async function apiFetch<T>(
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new ApiError('Request timed out', { code: 'timeout', status: 0 })
+      throw new ApiError('Request timed out', { code: 'request_timeout', status: 0 })
     }
     if (err instanceof TypeError) {
       throw new ApiError('Network unavailable', { code: 'network_offline', status: 0 })
@@ -371,7 +387,7 @@ export async function apiUploadFile(
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new ApiError('Request timed out', { code: 'timeout', status: 0 })
+      throw new ApiError('Request timed out', { code: 'request_timeout', status: 0 })
     }
     throw err
   } finally {

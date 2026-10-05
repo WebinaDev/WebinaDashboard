@@ -62,7 +62,7 @@ export async function apiPostFormData<T>(
       throw err
     }
     if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new ApiError('Request timed out', { code: 'timeout', status: 0 })
+      throw new ApiError('Request timed out', { code: 'request_timeout', status: 0 })
     }
     throw err
   } finally {

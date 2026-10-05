@@ -28,6 +28,11 @@ const CODE_KEYS: Record<string, string> = {
   forbidden_role: 'errors.api.forbiddenRole',
   invalid_nonce: 'errors.api.invalidNonce',
   timeout: 'errors.api.timeout',
+  request_timeout: 'errors.api.requestTimeout',
+  gateway_timeout: 'errors.api.gatewayTimeout',
+  server_unavailable: 'errors.api.serverUnavailable',
+  ajax_unhandled: 'errors.api.invalidResponse',
+  empty_response: 'errors.api.invalidResponse',
   empty_reply: 'errors.api.emptyReply',
   transport: 'errors.api.transport',
   network_offline: 'errors.api.networkOffline',
@@ -136,7 +141,8 @@ export function apiErrorMessage(t: TFunction, err: unknown): string {
   if (err instanceof Error && err.message) {
     const msg = err.message.trim()
     if (messageLooksLikeTimeout(msg)) {
-      return t('errors.api.timeout')
+      // Generic request timeout (site/gateway) — not necessarily the license server.
+      return t('errors.api.requestTimeout')
     }
     if (messageLooksLikeEmptyReply(msg)) {
       return t('errors.api.emptyReply')
@@ -163,6 +169,7 @@ export function licenseStatusMessage(
   if (errorCode === 'timeout') return t('errors.api.timeout')
   if (errorCode === 'empty_reply') return t('errors.api.emptyReply')
   if (errorCode === 'transport') return t('errors.api.transport')
+  if (errorCode === 'crm_unreachable') return t('license.errors.serverUnreachable')
   if (message && message.trim()) {
     if (messageLooksLikeTimeout(message)) return t('errors.api.timeout')
     if (messageLooksLikeEmptyReply(message)) return t('errors.api.emptyReply')

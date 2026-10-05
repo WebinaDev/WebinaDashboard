@@ -640,6 +640,7 @@ class Webino_Dashboard_Home_Overview {
 				'active' => $license->is_license_active( false ) || $license->is_demo_mode(),
 				'demo'   => $license->is_demo_mode(),
 				'status' => (string) get_option( 'webino_dashboard_license_status', '' ),
+				'unreachable' => $license->should_show_unreachable_banner() || $license->is_crm_circuit_open(),
 			);
 		} catch ( Throwable $e ) {
 			$panels['license'] = array(
@@ -1317,7 +1318,8 @@ class Webino_Dashboard_Home_Overview {
 		$alerts = array();
 
 		$license = Webino_Dashboard_License::instance();
-		if ( ! $license->is_license_active( false ) && ! $license->is_demo_mode() ) {
+		// Only CRM-confirmed inactive/expired — never alarm on license-server timeouts.
+		if ( ! $license->is_license_active( false ) && ! $license->is_demo_mode() && $license->is_definitively_inactive() ) {
 			$alerts[] = array(
 				'level'   => 'error',
 				'source'  => 'license',

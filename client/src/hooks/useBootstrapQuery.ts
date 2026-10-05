@@ -31,6 +31,8 @@ export function useBootstrapQuery() {
     placeholderData: (prev) => prev ?? initial,
     refetchOnMount: embedMinimal ? 'always' : Boolean(!initial),
     refetchOnWindowFocus: false,
-    retry: 1,
+    // Transient server/gateway hiccups must not leave the shell in an error state.
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1500 * 2 ** attempt, 8000),
   })
 }

@@ -37,12 +37,42 @@ class Webino_Dashboard_REST {
 	 */
 	public static function ajax_bootstrap() {
 		if ( ! Webino_Dashboard_Rest_Base::can_read() ) {
-			wp_send_json_error( array( 'message' => 'Forbidden' ), 403 );
+			wp_send_json_error( array( 'message' => 'Forbidden', 'code' => 'forbidden' ), 403 );
 		}
-		check_ajax_referer( 'wp_rest', 'nonce' );
-		$response = self::bootstrap();
-		$data     = $response instanceof WP_REST_Response ? $response->get_data() : array();
-		wp_send_json_success( $data );
+		self::ajax_require_nonce();
+		try {
+			$response = self::bootstrap();
+			$data     = $response instanceof WP_REST_Response ? $response->get_data() : array();
+			wp_send_json_success( $data );
+		} catch ( Throwable $e ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[Webino Dashboard] bootstrap failed: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() );
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage() ? $e->getMessage() : 'Bootstrap failed',
+					'code'    => 'bootstrap_failed',
+				),
+				500
+			);
+		}
+	}
+
+	/**
+	 * JSON (not "-1") on a stale/missing nonce so the SPA can show a real message.
+	 *
+	 * @return void
+	 */
+	private static function ajax_require_nonce() {
+		if ( check_ajax_referer( 'wp_rest', 'nonce', false ) ) {
+			return;
+		}
+		wp_send_json_error(
+			array(
+				'message' => 'Invalid nonce',
+				'code'    => 'invalid_nonce',
+			),
+			403
+		);
 	}
 
 	/**
@@ -67,9 +97,9 @@ class Webino_Dashboard_REST {
 	 */
 	public static function ajax_overview() {
 		if ( ! Webino_Dashboard_Rest_Base::can_read() ) {
-			wp_send_json_error( array( 'message' => 'Forbidden' ), 403 );
+			wp_send_json_error( array( 'message' => 'Forbidden', 'code' => 'forbidden' ), 403 );
 		}
-		check_ajax_referer( 'wp_rest', 'nonce' );
+		self::ajax_require_nonce();
 		try {
 			$response = Webino_Dashboard_Home_Overview::rest_get();
 			$data     = $response instanceof WP_REST_Response ? $response->get_data() : array();
@@ -91,9 +121,9 @@ class Webino_Dashboard_REST {
 	 */
 	public static function ajax_sms_panel() {
 		if ( ! Webino_Dashboard_Rest_Base::can_read() ) {
-			wp_send_json_error( array( 'message' => 'Forbidden' ), 403 );
+			wp_send_json_error( array( 'message' => 'Forbidden', 'code' => 'forbidden' ), 403 );
 		}
-		check_ajax_referer( 'wp_rest', 'nonce' );
+		self::ajax_require_nonce();
 		try {
 			$response = Webino_Dashboard_Home_Overview::rest_sms_panel();
 			$data     = $response instanceof WP_REST_Response ? $response->get_data() : array();
@@ -858,7 +888,8 @@ class Webino_Dashboard_REST {
 	 * @return WP_REST_Response
 	 */
 	public static function license_remote_check() {
-		$out = Webino_Dashboard_License::instance()->remote_license_check( true );
+		// Explicit user "check now": always tries the network (bypasses the CRM circuit breaker).
+		$out = Webino_Dashboard_License::instance()->remote_license_check( true, 'manual' );
 		return new WP_REST_Response( $out );
 	}
 

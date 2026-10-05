@@ -21,6 +21,7 @@ import { useBootstrapQuery } from '@/hooks/useBootstrapQuery'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { apiFetch } from '@/lib/api'
+import { apiErrorMessage } from '@/lib/apiError'
 import { normalizeCapabilities } from '@/lib/bootstrapQuery'
 import { formatDisplayDate } from '@/lib/date'
 import { getSsrOverview } from '@/lib/ssrPage'
@@ -75,7 +76,7 @@ export function HomePage() {
       ? {
           status: (smsPanelQ.isError ? 'error' : 'loading') as 'error' | 'loading',
           onRetry: () => void smsPanelQ.refetch(),
-          message: smsPanelQ.error?.message,
+          message: smsPanelQ.error ? apiErrorMessage(t, smsPanelQ.error) : undefined,
         }
       : undefined
 
@@ -124,7 +125,10 @@ export function HomePage() {
       {showLoading ? (
         <HomeOverviewSkeleton />
       ) : overview.isError && !overview.data ? (
-        <QueryErrorState message={overview.error?.message} onRetry={() => void overview.refetch()} />
+        <QueryErrorState
+          message={overview.error ? apiErrorMessage(t, overview.error) : undefined}
+          onRetry={() => void overview.refetch()}
+        />
       ) : (
         <div className="space-y-4 sm:space-y-6">
           <HomeActionBar alerts={data?.alerts} tasks={data?.tasks} locale={i18n.language} />

@@ -115,7 +115,10 @@ export default function LicensePage() {
         return
       }
       const desc = licenseStatusMessage(t, r.message, r.error_code)
-      if (!r.active && r.error_code === 'timeout') {
+      if (
+        !r.active &&
+        ['timeout', 'transport', 'empty_reply', 'crm_unreachable'].includes(String(r.error_code ?? ''))
+      ) {
         toast.message(t('license.unreachableHint'), { description: desc })
         return
       }
