@@ -1,14 +1,14 @@
 <?php
 
-namespace WncBasalam\Admin\Product\Data\Handlers;
+namespace WebinoBasalam\Admin\Product\Data\Handlers;
 
-use WncBasalam\Admin\Product\Data\Services\CategoryService;
-use WncBasalam\Admin\Product\Data\Services\PriceService;
-use WncBasalam\Admin\Product\Data\Services\PhotoService;
-use WncBasalam\Admin\Product\Data\Services\VideoService;
-use WncBasalam\Admin\Product\Data\Services\AttributeService;
-use WncBasalam\Admin\Settings\SettingsConfig;
-use WncBasalam\Services\Products\PreparationDaysGuard;
+use WebinoBasalam\Admin\Product\Data\Services\CategoryService;
+use WebinoBasalam\Admin\Product\Data\Services\PriceService;
+use WebinoBasalam\Admin\Product\Data\Services\PhotoService;
+use WebinoBasalam\Admin\Product\Data\Services\VideoService;
+use WebinoBasalam\Admin\Product\Data\Services\AttributeService;
+use WebinoBasalam\Admin\Settings\SettingsConfig;
+use WebinoBasalam\Services\Products\PreparationDaysGuard;
 
 defined('ABSPATH') || exit;
 
@@ -30,7 +30,7 @@ class SimpleProductHandler implements ProductDataHandlerInterface
         $this->videoService = new VideoService();
         $this->attributeService = new AttributeService();
         $this->preparationGuard = new PreparationDaysGuard();
-        $this->settings = wncBasalamSettings()->getSettings();
+        $this->settings = webinoBasalamSettings()->getSettings();
     }
 
     public function getName($product): string
