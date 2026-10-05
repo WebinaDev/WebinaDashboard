@@ -109,6 +109,9 @@ final class Webino_Dashboard_Plugin {
 		if ( class_exists( 'Webino_Dashboard_Order_Notes', false ) ) {
 			Webino_Dashboard_Order_Notes::init();
 		}
+		if ( class_exists( 'Webino_Dashboard_Order_Reports', false ) ) {
+			Webino_Dashboard_Order_Reports::init();
+		}
 		if ( class_exists( 'Webino_Dashboard_Pay_Order', false ) ) {
 			Webino_Dashboard_Pay_Order::init();
 		}

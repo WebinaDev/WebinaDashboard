@@ -28,7 +28,7 @@ class Webino_Dashboard_Home_Overview {
 	public static function rest_get() {
 		$user_id = get_current_user_id();
 		$locale  = self::dashboard_locale();
-		$key     = 'webino_dashboard_overview_v4_' . (int) $user_id . '_' . md5( $locale );
+		$key     = 'webino_dashboard_overview_v5_' . (int) $user_id . '_' . md5( $locale );
 
 		if ( $user_id > 0 ) {
 			$cached = get_transient( $key );
@@ -425,7 +425,7 @@ class Webino_Dashboard_Home_Overview {
 	 */
 	private static function sales_section_cached( $locale ) {
 		$user_id = get_current_user_id();
-		$key     = 'webino_dashboard_sales_v3_' . (int) $user_id . '_' . md5( $locale );
+		$key     = 'webino_dashboard_sales_v4_' . (int) $user_id . '_' . md5( $locale );
 		if ( $user_id > 0 ) {
 			$cached = get_transient( $key );
 			if ( is_array( $cached ) ) {

@@ -66,6 +66,15 @@ if ( in_array( 'partially-refunded', $never, true ) ) {
 	exit( 1 );
 }
 
+
+$builtin = Webino_Dashboard_Order_Reports::sales_status_allowlist_builtin();
+foreach ( array( 'webino-packaged', 'bslm-preparation', 'processing' ) as $good ) {
+	if ( ! in_array( $good, $builtin, true ) ) {
+		fwrite( STDERR, "FAIL: allowlist_builtin must include {$good}\n" );
+		exit( 1 );
+	}
+}
+
 $sales = Webino_Dashboard_Order_Reports::sales_statuses();
 foreach ( array( 'cancelled', 'refunded', 'failed', 'pending' ) as $bad ) {
 	if ( in_array( $bad, $sales, true ) ) {

@@ -229,8 +229,12 @@ final class Webino_Dashboard_SSR {
 				delete_transient( 'webino_dashboard_overview_' . $uid . '_' . $hash );
 				delete_transient( 'webino_dashboard_overview_v2_' . $uid . '_' . $hash );
 				delete_transient( 'webino_dashboard_overview_v3_' . $uid . '_' . $hash );
+				delete_transient( 'webino_dashboard_overview_v4_' . $uid . '_' . $hash );
+				delete_transient( 'webino_dashboard_overview_v5_' . $uid . '_' . $hash );
 				delete_transient( 'webino_dashboard_sales_' . $uid . '_' . $hash );
 				delete_transient( 'webino_dashboard_sales_v2_' . $uid . '_' . $hash );
+				delete_transient( 'webino_dashboard_sales_v3_' . $uid . '_' . $hash );
+				delete_transient( 'webino_dashboard_sales_v4_' . $uid . '_' . $hash );
 			}
 			delete_transient( 'webino_dashboard_traffic_' . $uid );
 			delete_transient( 'webino_dashboard_traffic_v2_' . $uid );

@@ -375,10 +375,13 @@ final class Webino_Dashboard_Bots_Admin_Ops {
 				$from = strtotime( 'today' );
 				$label = __( 'امروز', 'webino-dashboard' );
 		}
+		$statuses = class_exists( 'Webino_Dashboard_Order_Reports', false )
+			? Webino_Dashboard_Order_Reports::sales_statuses()
+			: array( 'processing', 'completed' );
 		$orders = wc_get_orders(
 			array(
 				'limit'        => -1,
-				'status'       => array( 'wc-processing', 'wc-completed', 'wc-on-hold' ),
+				'status'       => $statuses,
 				'date_created' => $from . '...' . $now,
 				'return'       => 'objects',
 			)
@@ -391,8 +394,14 @@ final class Webino_Dashboard_Bots_Admin_Ops {
 				if ( ! $order instanceof WC_Order ) {
 					continue;
 				}
+				if ( class_exists( 'Webino_Dashboard_Order_Reports', false )
+					&& ! Webino_Dashboard_Order_Reports::order_counts_in_sale_metrics( $order ) ) {
+					continue;
+				}
 				++$count;
-				$gmv += (float) $order->get_total();
+				$gmv += class_exists( 'Webino_Dashboard_Order_Reports', false )
+					? Webino_Dashboard_Order_Reports::order_net_total( $order )
+					: (float) $order->get_total();
 				foreach ( $order->get_items() as $item ) {
 					$pid = $item->get_product_id();
 					$skus[ $pid ] = isset( $skus[ $pid ] ) ? $skus[ $pid ] + (int) $item->get_quantity() : (int) $item->get_quantity();

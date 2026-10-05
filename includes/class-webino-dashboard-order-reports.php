@@ -20,6 +20,62 @@ class Webino_Dashboard_Order_Reports {
 	/** Maximum orders loaded per report query. */
 	const ORDER_FETCH_LIMIT = 10000;
 
+
+	/**
+	 * Wire WC paid/analytics filters so fulfillment statuses stay in sales KPIs site-wide.
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		add_filter( 'woocommerce_order_is_paid_statuses', array( __CLASS__, 'filter_paid_statuses' ), 20 );
+		add_filter( 'woocommerce_analytics_excluded_order_statuses', array( __CLASS__, 'filter_analytics_excluded_statuses' ), 20 );
+	}
+
+	/**
+	 * Ensure fulfillment / Basalam sales statuses are treated as paid by WooCommerce.
+	 *
+	 * @param string[] $statuses Paid status slugs (no wc- prefix).
+	 * @return string[]
+	 */
+	public static function filter_paid_statuses( $statuses ) {
+		$statuses = is_array( $statuses ) ? $statuses : array();
+		$never    = self::sales_never_count_statuses();
+		foreach ( self::sales_status_allowlist_builtin() as $slug ) {
+			$slug = self::normalize_status_slug( $slug );
+			if ( $slug && ! in_array( $slug, $never, true ) && ! in_array( $slug, $statuses, true ) ) {
+				$statuses[] = $slug;
+			}
+		}
+		return array_values( array_unique( $statuses ) );
+	}
+
+	/**
+	 * Keep sales-eligible fulfillment statuses out of the Analytics exclusion list.
+	 *
+	 * @param string[] $statuses Excluded status slugs.
+	 * @return string[]
+	 */
+	public static function filter_analytics_excluded_statuses( $statuses ) {
+		$statuses = is_array( $statuses ) ? $statuses : array();
+		$keep     = array();
+		foreach ( self::sales_status_allowlist_builtin() as $slug ) {
+			$slug = self::normalize_status_slug( $slug );
+			if ( $slug && ! in_array( $slug, self::sales_never_count_statuses(), true ) ) {
+				$keep[] = $slug;
+			}
+		}
+		$out = array();
+		foreach ( $statuses as $st ) {
+			$slug = self::normalize_status_slug( $st );
+			if ( $slug && in_array( $slug, $keep, true ) ) {
+				continue;
+			}
+			$out[] = $st;
+		}
+		return $out;
+	}
+
+
 	/**
 	 * Statuses never counted as sales (unpaid, cancelled, fully refunded, failed, drafts, returns).
 	 *
@@ -122,6 +178,56 @@ class Webino_Dashboard_Order_Reports {
 	}
 
 	/**
+	 * Built-in sales allowlist (fulfillment / Basalam / legacy aliases).
+	 * Unpaid custom statuses must NOT appear here — use never-count denylist.
+	 *
+	 * @return string[]
+	 */
+	public static function sales_status_allowlist_builtin() {
+		$allow = array(
+			// Core WC paid / processing pipeline.
+			'processing',
+			'completed',
+			'partially-refunded',
+			// Shipping-module fulfillment (still paid/successful).
+			'webino-in-stock',
+			'webino-packaged',
+			'webino-courier',
+			'webino-post',
+			'webino-tipax',
+			'webino-ready-to-ship',
+			'webino-shipping',
+			'webino-chapar',
+			// Legacy / PWS / SMS-map aliases used as live WC status slugs.
+			'sent-to-warehouse',
+			'packaged',
+			'courier',
+			'post',
+			'tipax',
+			'chapar',
+			'ready-to-ship',
+			'pws-sent-to-warehouse',
+			'pws-packaged',
+			'pws-courier',
+			'pws-post',
+			'pws-tipax',
+			// Basalam sold / fulfillment (paid).
+			'bslm-preparation',
+			'bslm-shipping',
+			'bslm-completed',
+		);
+
+		// Live shipping-module definitions so allowlist never drifts from registered slugs.
+		if ( class_exists( 'Webino_Shipping_Order_Statuses', false ) && is_callable( array( 'Webino_Shipping_Order_Statuses', 'definitions' ) ) ) {
+			foreach ( array_keys( (array) Webino_Shipping_Order_Statuses::definitions() ) as $st ) {
+				$allow[] = self::normalize_status_slug( $st );
+			}
+		}
+
+		return array_values( array_unique( array_filter( $allow ) ) );
+	}
+
+	/**
 	 * Sales statuses: WC paid statuses + fulfillment/Basalam allowlist, minus never-count slugs (no all-status union).
 	 *
 	 * @return string[]
@@ -142,45 +248,11 @@ class Webino_Dashboard_Order_Reports {
 
 		/**
 		 * Explicit fulfillment / sales allowlist (do NOT union every WC status).
-		 * Custom unpaid statuses must opt in via this filter or wc_order_is_paid_statuses.
+		 * Custom unpaid statuses must opt in via this filter or woocommerce_order_is_paid_statuses.
 		 *
 		 * @param string[] $allowlist Status slugs without wc- prefix.
 		 */
-		$allowlist = apply_filters(
-			'webino_dashboard_sales_status_allowlist',
-			array(
-				// Core WC paid / processing pipeline.
-				'processing',          // در حال پردازش
-				'completed',           // تکمیل شده
-				'partially-refunded',
-				// Shipping-module fulfillment (still paid/successful).
-				'webino-in-stock',      // انبار / ارسال شده به انبار
-				'webino-packaged',      // بسته‌بندی شده
-				'webino-courier',       // پیک
-				'webino-post',          // پست
-				'webino-tipax',         // تیپاکس
-				'webino-ready-to-ship', // آماده ارسال
-				'webino-shipping',      // درحال ارسال
-				'webino-chapar',
-				// Legacy / PWS / SMS-map aliases used as live WC status slugs.
-				'sent-to-warehouse',    // ارسال شده به انبار
-				'packaged',
-				'courier',
-				'post',
-				'tipax',
-				'chapar',
-				'ready-to-ship',
-				'pws-sent-to-warehouse',
-				'pws-packaged',
-				'pws-courier',
-				'pws-post',
-				'pws-tipax',
-				// Basalam sold / fulfillment (paid).
-				'bslm-preparation',     // باسلام آماده‌سازی
-				'bslm-shipping',        // باسلام ارسال
-				'bslm-completed',       // باسلام تکمیل
-			)
-		);
+		$allowlist = apply_filters( 'webino_dashboard_sales_status_allowlist', self::sales_status_allowlist_builtin() );
 		if ( is_array( $allowlist ) ) {
 			foreach ( $allowlist as $st ) {
 				$slug = self::normalize_status_slug( $st );
@@ -650,7 +722,7 @@ class Webino_Dashboard_Order_Reports {
 			'status'   => (string) $request->get_param( 'status' ),
 			'compare'  => $request->get_param( 'compare' ) ? '1' : '0',
 			'uid'      => (string) get_current_user_id(),
-			'v'        => 4,
+			'v'        => 6,
 		);
 		return 'webino_order_report_' . md5( wp_json_encode( $parts ) );
 	}
@@ -1352,11 +1424,41 @@ class Webino_Dashboard_Order_Reports {
 	 */
 	private static function fetch_orders( $from_ts, $to_ts, $statuses ) {
 		$statuses = self::normalize_query_statuses( $statuses );
-		$ids      = self::fetch_order_ids_from_stats( $from_ts, $to_ts, $statuses );
-		if ( is_array( $ids ) && $ids ) {
-			return self::load_orders_by_ids( $ids );
+		/*
+		 * Always use wc_get_orders (HPOS/posts aware). Preferring wc_order_stats alone
+		 * under-counted BOTH order counts and revenue when fulfillment/Basalam statuses
+		 * were missing or stale in analytics tables while processing/completed rows still
+		 * made the stats path return a non-empty ID set (skipping the WC fallback).
+		 */
+		$via_wc = self::fetch_orders_via_wc( $from_ts, $to_ts, $statuses );
+
+		// Best-effort merge of any stats-only IDs (rare) the WC query might have missed.
+		$stats_ids = self::fetch_order_ids_from_stats( $from_ts, $to_ts, $statuses );
+		if ( ! is_array( $stats_ids ) || ! $stats_ids ) {
+			return $via_wc;
 		}
-		return self::fetch_orders_via_wc( $from_ts, $to_ts, $statuses );
+		$have = array();
+		foreach ( (array) ( $via_wc['orders'] ?? array() ) as $o ) {
+			if ( is_a( $o, 'WC_Order' ) ) {
+				$have[ (int) $o->get_id() ] = true;
+			}
+		}
+		$missing = array();
+		foreach ( $stats_ids as $oid ) {
+			$oid = (int) $oid;
+			if ( $oid > 0 && empty( $have[ $oid ] ) ) {
+				$missing[] = $oid;
+			}
+		}
+		if ( ! $missing ) {
+			return $via_wc;
+		}
+		$extra = self::load_orders_by_ids( $missing );
+		$orders = array_merge( (array) ( $via_wc['orders'] ?? array() ), (array) ( $extra['orders'] ?? array() ) );
+		return array(
+			'orders'    => $orders,
+			'truncated' => ! empty( $via_wc['truncated'] ) || ! empty( $extra['truncated'] ),
+		);
 	}
 
 	/**
@@ -1885,7 +1987,7 @@ class Webino_Dashboard_Order_Reports {
 					'interval' => $interval,
 					'status'   => $statuses,
 					'uid'      => get_current_user_id(),
-					'v'        => 5,
+					'v'        => 6,
 				)
 			)
 		);
