@@ -1,1 +1,0 @@
-import{i as e}from"./index-Bl_5vsSx.js";import{jsx as t}from"react/jsx-runtime";function n(){return t(e,{slug:`basalam-module`,routePath:`basalam`})}export{n as default};
