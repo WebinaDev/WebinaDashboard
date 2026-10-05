@@ -1,7 +1,7 @@
 {
-  "js": "assets/index-Bq4B_mXi.js",
-  "css": "assets/index-DnZ3IDGg.css",
-  "shared": "assets/dashboard-shell-Becqub5o.js",
+  "js": "assets/index-C76qiPAr.js",
+  "css": "assets/index-z6wom4PL.css",
+  "shared": "assets/dashboard-shell-DRjg_hvM.js",
   "importMap": {
     "react": "shared/react.js",
     "react/jsx-runtime": "shared/react_jsx-runtime.js",
@@ -15,6 +15,6 @@
     "react-i18next": "shared/react-i18next.js",
     "sonner": "shared/sonner.js"
   },
-  "builtAt": "2026-10-05T12:02:37.554Z",
-  "pluginVersion": "0.9.42"
+  "builtAt": "2026-10-05T12:46:42.183Z",
+  "pluginVersion": "0.9.41"
 }
