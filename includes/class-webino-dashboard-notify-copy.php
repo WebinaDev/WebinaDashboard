@@ -223,6 +223,7 @@ final class Webino_Dashboard_Notify_Copy {
 			'return-parcel-received' => 'مرسوله مرجوعی سفارش {order_number} دریافت شد.',
 			'return-refund'       => 'مبلغ مرجوعی سفارش {order_number} مسترد شد.',
 			'return-exchange'     => 'تعویض کالا برای سفارش {order_number} ثبت شد.',
+			'pos-payment-link'    => '{customer_name} عزیز، لینک پرداخت سفارش #{order_number}: {payment_url}',
 		);
 		if ( isset( $map[ $event ] ) ) {
 			return $map[ $event ];
@@ -248,6 +249,8 @@ final class Webino_Dashboard_Notify_Copy {
 				return 'سبد خرید رها شده — مشتری: {customer_name}';
 			case 'pending_on_create':
 				return 'سفارش جدید شماره {order_number} از {customer_name} — در انتظار پرداخت. مبلغ: {order_total}';
+			case 'pos-payment-link':
+				return 'لینک پرداخت صندوق برای {customer_name} ({customer_phone}): {payment_url}';
 			case 'return-requested':
 				return 'درخواست مرجوعی سفارش {order_number} — {return_item} ×{return_qty}. دلیل: {return_reason}';
 			case 'return-approved':

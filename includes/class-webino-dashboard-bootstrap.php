@@ -44,6 +44,7 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-order-writer.php',
 			'includes/class-webino-dashboard-order-returns.php',
 			'includes/class-webino-dashboard-pay-order.php',
+			'includes/class-webino-dashboard-sms-pos-payment.php',
 			'includes/class-webino-dashboard-checkout-geo.php',
 			'includes/class-webino-dashboard-order-reports.php',
 			'includes/class-webino-dashboard-inventory-reports.php',

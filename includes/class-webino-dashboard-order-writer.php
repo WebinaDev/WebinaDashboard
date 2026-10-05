@@ -209,6 +209,9 @@ final class Webino_Dashboard_Order_Writer {
 	/**
 	 * Send pay-only link SMS via the site SMS panel (pattern hooks), with plain fallback.
 	 *
+	 * Snapshot always includes customer name (اسم), phone (شماره), payment link (لینک),
+	 * and bound pattern code for the `pos-payment-link` template.
+	 *
 	 * @param WC_Order $order Order.
 	 * @return bool True when a send path was invoked.
 	 */
@@ -216,12 +219,8 @@ final class Webino_Dashboard_Order_Writer {
 		if ( ! $order instanceof WC_Order ) {
 			return false;
 		}
-		if ( class_exists( 'Webino_Dashboard_Sms_Order_Hooks', false ) ) {
-			Webino_Dashboard_Sms_Order_Hooks::notify_snapshot(
-				'pos-payment-link',
-				Webino_Dashboard_Sms_Order_Hooks::build_snapshot( $order )
-			);
-			return true;
+		if ( class_exists( 'Webino_Dashboard_Sms_Pos_Payment', false ) ) {
+			return Webino_Dashboard_Sms_Pos_Payment::notify( $order );
 		}
 
 		$phone = preg_replace( '/\D+/', '', (string) $order->get_billing_phone() );

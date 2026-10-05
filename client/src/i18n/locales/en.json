@@ -1215,6 +1215,7 @@
   "settings.shopSms.recoveryUsage": "Usage limit",
   "settings.shopSms.postBarcodeMergedHint": "Saving a post barcode also uses this “Post delivery” pattern.",
   "settings.shopSms.trackingVarsHint": "Use {tracking} and {tracking_url} in patterns for post/courier/tipax/chapar/other.",
+  "settings.shopSms.posPaymentVarsHint": "For POS payment SMS, map pattern variables to {customer_name} (اسم), {customer_phone} (شماره), {payment_url} (لینک). Aliases: {name}, {phone}/{mobile}, {link}/{payment_link}. Optional: {pattern_code}.",
   "settings.site.fieldSiteTitle": "Site title",
   "settings.site.fieldTagline": "Tagline",
   "settings.site.fieldAdminEmail": "Admin email",

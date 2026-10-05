@@ -242,7 +242,7 @@ final class Webino_Dashboard_REST_Site_Settings {
 			if ( class_exists( 'Webino_Dashboard_Sms_Recovery', false ) ) {
 				$cached['shortcodes'] = Webino_Dashboard_Sms_Recovery::merge_shortcodes( $cached['shortcodes'] ?? array() );
 			}
-			return new WP_REST_Response( $cached, 200 );
+			return new WP_REST_Response( self::finalize_sms_shop_payload( $cached ), 200 );
 		}
 
 		$local_catalog = class_exists( 'Webino_Dashboard_Sms_Order_Map', false )
@@ -286,6 +286,7 @@ final class Webino_Dashboard_REST_Site_Settings {
 					}
 					$response['shortcodes'] = Webino_Dashboard_Sms_Recovery::merge_shortcodes( $response['shortcodes'] ?? array() );
 				}
+				$response = self::finalize_sms_shop_payload( $response );
 				set_transient( $key, $response, self::SMS_SHOP_CACHE_TTL );
 				return new WP_REST_Response( $response, 200 );
 			}
@@ -305,7 +306,56 @@ final class Webino_Dashboard_REST_Site_Settings {
 				: array(),
 			'registry'      => array(),
 		);
-		return new WP_REST_Response( $fallback, 200 );
+		return new WP_REST_Response( self::finalize_sms_shop_payload( $fallback ), 200 );
+	}
+
+	/**
+	 * Merge POS payment-link shortcodes + event into shop SMS API payloads.
+	 *
+	 * @param array<string,mixed> $payload Shop SMS payload.
+	 * @return array<string,mixed>
+	 */
+	private static function finalize_sms_shop_payload( array $payload ) {
+		$catalog = isset( $payload['event_catalog'] ) && is_array( $payload['event_catalog'] )
+			? $payload['event_catalog']
+			: array();
+		$shortcodes = isset( $payload['shortcodes'] ) && is_array( $payload['shortcodes'] )
+			? $payload['shortcodes']
+			: array();
+
+		if ( class_exists( 'Webino_Dashboard_Sms_Pos_Payment', false ) ) {
+			$catalog    = Webino_Dashboard_Sms_Pos_Payment::merge_event_catalog( $catalog );
+			$shortcodes = Webino_Dashboard_Sms_Pos_Payment::merge_shortcodes( $shortcodes );
+		}
+
+		/**
+		 * Filter shop SMS event catalog (sms-panel + core extras).
+		 *
+		 * @param array<int,mixed> $catalog Catalog.
+		 */
+		$catalog = apply_filters( 'webino_dashboard_sms_event_catalog', $catalog );
+		/**
+		 * Filter shop SMS shortcodes available in pattern binding UI.
+		 *
+		 * @param array<int,mixed> $shortcodes Shortcodes.
+		 */
+		$shortcodes = apply_filters( 'webino_dashboard_sms_shortcodes', $shortcodes );
+
+		$payload['event_catalog'] = is_array( $catalog ) ? $catalog : array();
+		$payload['shortcodes']    = is_array( $shortcodes ) ? $shortcodes : array();
+		$payload['event_keys']    = array_values(
+			array_unique(
+				array_filter(
+					array_map(
+						static function ( $row ) {
+							return is_array( $row ) ? sanitize_key( (string) ( $row['key'] ?? '' ) ) : '';
+						},
+						$payload['event_catalog']
+					)
+				)
+			)
+		);
+		return $payload;
 	}
 
 	/**

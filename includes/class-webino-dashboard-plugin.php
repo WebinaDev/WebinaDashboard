@@ -112,6 +112,9 @@ final class Webino_Dashboard_Plugin {
 		if ( class_exists( 'Webino_Dashboard_Pay_Order', false ) ) {
 			Webino_Dashboard_Pay_Order::init();
 		}
+		if ( class_exists( 'Webino_Dashboard_Sms_Pos_Payment', false ) ) {
+			Webino_Dashboard_Sms_Pos_Payment::init();
+		}
 		if ( class_exists( 'Webino_Dashboard_Checkout_Geo', false ) ) {
 			Webino_Dashboard_Checkout_Geo::init();
 		}

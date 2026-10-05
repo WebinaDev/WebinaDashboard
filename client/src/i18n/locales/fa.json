@@ -1215,6 +1215,7 @@
   "settings.shopSms.recoveryUsage": "حد مصرف",
   "settings.shopSms.postBarcodeMergedHint": "با ثبت بارکد پستی هم از همین پترن «تحویل پست» استفاده می‌شود.",
   "settings.shopSms.trackingVarsHint": "برای رهگیری از متغیرهای {tracking} و {tracking_url} در پترن استفاده کنید.",
+  "settings.shopSms.posPaymentVarsHint": "برای پیامک پرداخت صندوق، متغیرهای پترن را به {customer_name} (اسم)، {customer_phone} (شماره) و {payment_url} (لینک) وصل کنید. معادل‌ها: {name}، {phone}/{mobile}، {link}/{payment_link}. اختیاری: {pattern_code}.",
   "settings.site.fieldSiteTitle": "عنوان سایت",
   "settings.site.fieldTagline": "شعار",
   "settings.site.fieldAdminEmail": "ایمیل مدیر",
