@@ -123,11 +123,23 @@ grep -q 'DashboardModulePageProps' "$CLIENT/types/dashboard-modules.d.ts" \
   || { echo "FAIL: DashboardModulePageProps type missing" >&2; exit 1; }
 echo "OK: shared module page props type"
 
-grep -q 'maybe_sync_if_stale' "$INC/class-webino-dashboard-license.php" \
-  || { echo "FAIL: license bootstrap sync missing" >&2; exit 1; }
-grep -q "maybe_sync_if_stale( 'bootstrap' )" "$INC/class-webino-dashboard-rest.php" \
-  || { echo "FAIL: bootstrap must sync stale license" >&2; exit 1; }
-echo "OK: zero-touch license sync wired"
+# License policy (0.9.48): one initial check + explicit user checks only — no periodic polling.
+grep -q 'INITIAL_CHECK_HOOK' "$INC/class-webino-dashboard-license.php" \
+  || { echo "FAIL: one-off initial license check missing" >&2; exit 1; }
+grep -q 'unschedule_legacy_checks' "$INC/class-webino-dashboard-license.php" \
+  || { echo "FAIL: legacy license cron must be unscheduled" >&2; exit 1; }
+if grep -q "webino_dashboard_license_12h" "$INC/class-webino-dashboard-license.php"; then
+  echo "FAIL: recurring license cron schedule must not exist" >&2; exit 1
+fi
+if grep -qE "wp_schedule_event\(.*CRON_HOOK" "$INC/class-webino-dashboard-license.php"; then
+  echo "FAIL: license must not schedule a recurring event" >&2; exit 1
+fi
+if grep -q "maybe_sync_if_stale( 'bootstrap' )" "$INC/class-webino-dashboard-rest.php"; then
+  echo "FAIL: bootstrap must not trigger license sync" >&2; exit 1
+fi
+grep -q "remote_license_check( true, 'manual' )" "$INC/class-webino-dashboard-rest.php" \
+  || { echo "FAIL: manual license check-now endpoint missing" >&2; exit 1; }
+echo "OK: license checks are initial + on-demand only"
 
 grep -q 'package.webina.dev' "$INC/class-webino-dashboard-remote-url.php" \
   || { echo "FAIL: Gitea icon host not in allowlist default" >&2; exit 1; }

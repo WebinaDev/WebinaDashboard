@@ -10,11 +10,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Persists CRM license state, schedules periodic checks, exposes bootstrap payload.
+ * Persists CRM license state and exposes the bootstrap payload.
+ *
+ * Network policy (0.9.48+): the license server is NEVER polled on a schedule.
+ *  - One initial check: on plugin activation, or on first load when this site has never checked.
+ *  - Thereafter only on explicit user request (License page "check now" / activate), or when the
+ *    CRM itself pushes a webhook.
+ *  - Dashboard boot / page loads / bootstrap never wait on (or trigger) a license request.
  */
 final class Webino_Dashboard_License {
 
+	/**
+	 * Legacy recurring 12h check hook (removed in 0.9.48). Kept only so old events get unscheduled.
+	 */
 	const CRON_HOOK = 'webino_dashboard_license_cron';
+
+	/** One-off initial license check (activation / never-checked site). */
+	const INITIAL_CHECK_HOOK = 'webino_dashboard_license_initial_check';
+
+	/** Option flag: first-load initial check already queued (never re-queued automatically). */
+	const INITIAL_CHECK_OPTION = 'webino_dashboard_license_initial_check_done';
 
 	const TABLE_ROW_ID = 1;
 
@@ -27,10 +42,12 @@ final class Webino_Dashboard_License {
 	/**
 	 * Transient: CRM / license server circuit breaker. While open, dashboard-path CRM
 	 * reads return immediately instead of blocking PHP workers on a dead host.
+	 * Since 0.9.48 it does NOT auto-close on a timer (no re-probe after a cooldown): it stays open
+	 * until an explicit user action reaches the server (license "check now", activate, a CRM write).
 	 */
 	const CRM_CIRCUIT_TRANSIENT = 'webino_dashboard_crm_circuit';
 
-	/** One-off background license check (never runs inside a dashboard request). */
+	/** Legacy one-off background check hook (removed in 0.9.48; unscheduled on load). */
 	const ASYNC_CHECK_HOOK = 'webino_dashboard_license_async_check';
 
 	/**
@@ -60,9 +77,9 @@ final class Webino_Dashboard_License {
 
 	private function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'ensure_license_table' ), 3 );
-		add_action( 'init', array( $this, 'maybe_schedule_cron' ), 5 );
-		add_action( self::CRON_HOOK, array( $this, 'cron_check' ) );
-		add_action( self::ASYNC_CHECK_HOOK, array( $this, 'cron_check' ) );
+		add_action( 'init', array( $this, 'unschedule_legacy_checks' ), 5 );
+		add_action( 'init', array( $this, 'maybe_queue_initial_check' ), 6 );
+		add_action( self::INITIAL_CHECK_HOOK, array( $this, 'run_initial_check' ) );
 		add_action( 'wp_ajax_nopriv_webino_dashboard_license_webhook', array( $this, 'ajax_webhook_stub' ) );
 		add_action( 'wp_ajax_webino_dashboard_license_webhook', array( $this, 'ajax_webhook_stub' ) );
 		add_action( 'wp_ajax_nopriv_maneli_license_webhook', array( $this, 'ajax_crm_webhook' ) );
@@ -91,84 +108,95 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
+	 * Remove recurring / deferred license checks left by <= 0.9.47 (12h cron + async re-check).
+	 * Cheap: reads the autoloaded cron array only.
+	 *
 	 * @return void
 	 */
-	public function maybe_schedule_cron() {
-		if ( wp_next_scheduled( self::CRON_HOOK ) ) {
+	public function unschedule_legacy_checks() {
+		if ( ! function_exists( 'wp_next_scheduled' ) ) {
 			return;
 		}
-		wp_schedule_event( time() + HOUR_IN_SECONDS, 'webino_dashboard_license_12h', self::CRON_HOOK );
-	}
-
-	/**
-	 * @return void
-	 */
-	public function cron_check() {
-		$this->remote_license_check( true, 'cron' );
-	}
-
-	/**
-	 * TTL (seconds) before bootstrap triggers an outbound CRM sync.
-	 * Default 12h — aligned with cron; avoid CRM spam on every dashboard load.
-	 *
-	 * @return int
-	 */
-	public function bootstrap_sync_ttl() {
-		return max( 60, (int) apply_filters( 'webino_dashboard_license_bootstrap_sync_ttl', 12 * HOUR_IN_SECONDS ) );
-	}
-
-	/**
-	 * Whether local license row has no recent CRM check.
-	 *
-	 * @return bool
-	 */
-	public function is_license_check_stale() {
-		$row  = $this->get_row();
-		$last = isset( $row['last_check'] ) ? (string) $row['last_check'] : '';
-		if ( '' === $last ) {
-			return true;
+		foreach ( array( self::CRON_HOOK, self::ASYNC_CHECK_HOOK ) as $hook ) {
+			if ( wp_next_scheduled( $hook ) ) {
+				wp_clear_scheduled_hook( $hook );
+			}
 		}
-		$ts = strtotime( $last );
-		if ( ! $ts ) {
-			return true;
-		}
-		return ( time() - $ts ) >= $this->bootstrap_sync_ttl();
 	}
 
 	/**
-	 * Outbound CRM sync when local cache is stale (once per request).
-	 *
-	 * @param string $context install|bootstrap|gate|sync.
-	 * @return void
-	 */
-	public function maybe_sync_if_stale( $context = 'bootstrap' ) {
-		if ( ! $this->is_license_check_stale() ) {
-			return;
-		}
-		// Never block a dashboard/page request on the license server — defer to wp-cron.
-		$this->schedule_async_check();
-	}
-
-	/**
-	 * Queue a one-off background license check (wp-cron). Non-blocking.
+	 * Queue the one-off initial license check (wp-cron single event; never inline/blocking).
 	 *
 	 * @param int $delay Seconds from now.
 	 * @return void
 	 */
-	public function schedule_async_check( $delay = 5 ) {
-		if ( ! function_exists( 'wp_next_scheduled' ) || wp_next_scheduled( self::ASYNC_CHECK_HOOK ) ) {
+	public function queue_initial_check( $delay = 30 ) {
+		if ( ! function_exists( 'wp_next_scheduled' ) || wp_next_scheduled( self::INITIAL_CHECK_HOOK ) ) {
 			return;
 		}
-		wp_schedule_single_event( time() + max( 0, (int) $delay ), self::ASYNC_CHECK_HOOK );
+		wp_schedule_single_event( time() + max( 0, (int) $delay ), self::INITIAL_CHECK_HOOK );
+	}
+
+	/**
+	 * First load fallback: if this site has never checked its license, queue exactly one
+	 * background check. The flag is set before queuing, so this never repeats (even on failure).
+	 *
+	 * @return void
+	 */
+	public function maybe_queue_initial_check() {
+		if ( get_option( self::INITIAL_CHECK_OPTION ) ) {
+			return;
+		}
+		update_option( self::INITIAL_CHECK_OPTION, time(), true );
+		$row = $this->get_row();
+		if ( ! empty( $row['last_check'] ) ) {
+			return;
+		}
+		$this->queue_initial_check( 30 );
+	}
+
+	/**
+	 * wp-cron handler for the one-off initial check.
+	 *
+	 * @return void
+	 */
+	public function run_initial_check() {
+		if ( ! get_option( self::INITIAL_CHECK_OPTION ) ) {
+			update_option( self::INITIAL_CHECK_OPTION, time(), true );
+		}
+		$this->remote_license_check( true, 'install' );
+	}
+
+	/**
+	 * Deprecated (0.9.48): license sync is never triggered by staleness/page loads. No-op.
+	 *
+	 * @param string $context Ignored.
+	 * @return void
+	 */
+	public function maybe_sync_if_stale( $context = 'bootstrap' ) {
+		unset( $context );
+	}
+
+	/**
+	 * Deprecated (0.9.48): background re-checks were removed. No-op.
+	 *
+	 * @param int $delay Ignored.
+	 * @return void
+	 */
+	public function schedule_async_check( $delay = 5 ) {
+		unset( $delay );
 	}
 
 	/**
 	 * Seconds the CRM circuit stays open after a transport/5xx failure.
+	 * 0 (default) = no timed cooldown/re-probe: stays open until an explicit user action
+	 * reaches the server. A positive value (via filter) restores a timed cooldown.
 	 *
 	 * @return int
 	 */
 	public function crm_circuit_ttl() {
-		return max( 30, (int) apply_filters( 'webino_dashboard_crm_circuit_ttl', 180 ) );
+		$ttl = (int) apply_filters( 'webino_dashboard_crm_circuit_ttl', 0 );
+		return $ttl > 0 ? max( 30, $ttl ) : 0;
 	}
 
 	/**
@@ -181,7 +209,12 @@ final class Webino_Dashboard_License {
 			return false;
 		}
 		$state = get_transient( self::CRM_CIRCUIT_TRANSIENT );
-		return is_array( $state ) && ! empty( $state['until'] ) && (int) $state['until'] > time();
+		if ( ! is_array( $state ) ) {
+			return false;
+		}
+		$until = isset( $state['until'] ) ? (int) $state['until'] : 0;
+		// until = 0: sticky (no timed re-probe). Otherwise legacy/opt-in timed cooldown.
+		return 0 === $until || $until > time();
 	}
 
 	/**
@@ -193,7 +226,7 @@ final class Webino_Dashboard_License {
 		set_transient(
 			self::CRM_CIRCUIT_TRANSIENT,
 			array(
-				'until'  => time() + $ttl,
+				'until'  => $ttl > 0 ? time() + $ttl : 0,
 				'at'     => time(),
 				'reason' => substr( (string) $reason, 0, 200 ),
 			),
@@ -237,7 +270,7 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
-	 * Explicit/background contexts always try the network (manual retry, install, cron, webhook).
+	 * Explicit contexts always try the network (manual check, activate, initial check, webhook, writes).
 	 *
 	 * @param string $context Request context.
 	 * @return bool
@@ -1222,7 +1255,7 @@ final class Webino_Dashboard_License {
 				array( 'domain' => $domain ),
 				(array) apply_filters( 'webino_dashboard_license_activate_body', array() )
 			),
-			'sync'
+			'manual'
 		);
 
 		$now = current_time( 'mysql' );
@@ -1285,15 +1318,15 @@ final class Webino_Dashboard_License {
 	 * @return void
 	 */
 	public function check_license_status( $use_cache = true, $context = 'sync' ) {
+		// Only explicit contexts reach the license server; page/bootstrap/gate/sync use the stored row
+		// and never queue a background re-check.
+		if ( ! in_array( (string) $context, array( 'manual', 'install', 'webhook' ), true ) ) {
+			return;
+		}
 		if ( $use_cache && self::$checked_this_request ) {
 			return;
 		}
 		self::$checked_this_request = true;
-		// Page/bootstrap/gate paths must never wait on the license server.
-		if ( in_array( (string) $context, array( 'bootstrap', 'gate', 'page', 'sync' ), true ) ) {
-			$this->schedule_async_check();
-			return;
-		}
 		$this->remote_license_check( true, $context );
 	}
 
@@ -1912,15 +1945,3 @@ final class Webino_Dashboard_License {
 	}
 }
 
-add_filter(
-	'cron_schedules',
-	static function ( $schedules ) {
-		if ( ! isset( $schedules['webino_dashboard_license_12h'] ) ) {
-			$schedules['webino_dashboard_license_12h'] = array(
-				'interval' => 12 * HOUR_IN_SECONDS,
-				'display'  => __( 'Every 12 hours (Webino license)', 'webino-dashboard' ),
-			);
-		}
-		return $schedules;
-	}
-);

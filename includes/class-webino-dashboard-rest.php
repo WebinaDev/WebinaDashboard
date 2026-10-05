@@ -724,7 +724,7 @@ class Webino_Dashboard_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function bootstrap() {
-		// No outbound CRM here — keep bootstrap local/fast. License sync is cron + remote-check;
+		// No outbound CRM here — keep bootstrap local/fast. License: one initial check + user remote-check only;
 		// core update check lives in CoreUpdatePanel / its REST endpoint.
 
 		$uid    = get_current_user_id();
@@ -888,7 +888,7 @@ class Webino_Dashboard_REST {
 	 * @return WP_REST_Response
 	 */
 	public static function license_remote_check() {
-		// Explicit user "check now": always tries the network (bypasses the CRM circuit breaker).
+		// Explicit user "check now": always tries the network (bypasses and, on success, closes the CRM circuit).
 		$out = Webino_Dashboard_License::instance()->remote_license_check( true, 'manual' );
 		return new WP_REST_Response( $out );
 	}

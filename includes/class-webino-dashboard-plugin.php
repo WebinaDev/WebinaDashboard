@@ -355,7 +355,8 @@ final class Webino_Dashboard_Plugin {
 		if ( ! wp_next_scheduled( self::DEFERRED_INSTALL_HOOK ) ) {
 			wp_schedule_single_event( time() + 5, self::DEFERRED_INSTALL_HOOK );
 		}
-		wp_schedule_single_event( time() + 30, Webino_Dashboard_License::CRON_HOOK );
+		// One initial license check on activation (background, non-blocking). No recurring checks.
+		Webino_Dashboard_License::instance()->queue_initial_check( 30 );
 		if ( function_exists( 'opcache_reset' ) ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			@opcache_reset();
@@ -367,6 +368,8 @@ final class Webino_Dashboard_Plugin {
 	 */
 	public function deactivate() {
 		wp_clear_scheduled_hook( Webino_Dashboard_License::CRON_HOOK );
+		wp_clear_scheduled_hook( Webino_Dashboard_License::ASYNC_CHECK_HOOK );
+		wp_clear_scheduled_hook( Webino_Dashboard_License::INITIAL_CHECK_HOOK );
 		wp_clear_scheduled_hook( self::FLUSH_REWRITES_HOOK );
 		wp_clear_scheduled_hook( self::DEFERRED_INSTALL_HOOK );
 		delete_transient( self::REWRITE_FLUSH_PENDING_TRANSIENT );
