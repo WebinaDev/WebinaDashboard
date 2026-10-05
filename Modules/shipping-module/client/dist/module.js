@@ -7,7 +7,7 @@ import * as g from "react-dom";
 import _ from "react-dom";
 import { Fragment as v, jsx as y, jsxs as b } from "react/jsx-runtime";
 import { Link as x } from "react-router-dom";
-//#region node_modules/clsx/dist/clsx.mjs
+//#region client/node_modules/clsx/dist/clsx.mjs
 function S(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
@@ -22,7 +22,7 @@ function C() {
 	return r;
 }
 //#endregion
-//#region node_modules/class-variance-authority/dist/index.mjs
+//#region client/node_modules/class-variance-authority/dist/index.mjs
 var w = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, T = C, E = (e, t) => (n) => {
 	if (t?.variants == null) return T(e, n?.class, n?.className);
 	let { variants: r, defaultVariants: i } = t, a = Object.keys(r).map((e) => {
@@ -53,7 +53,7 @@ var w = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, T = C, E = (e
 	}, []), n?.class, n?.className);
 };
 //#endregion
-//#region node_modules/@radix-ui/react-compose-refs/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-compose-refs/dist/index.mjs
 function D(e, t) {
 	if (typeof e == "function") return e(t);
 	e != null && (e.current = t);
@@ -76,7 +76,7 @@ function k(...e) {
 	return r.useCallback(O(...e), e);
 }
 //#endregion
-//#region node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
 function A(e) {
 	let t = /* @__PURE__ */ j(e), n = r.forwardRef((e, n) => {
@@ -135,7 +135,7 @@ function ee(e) {
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
-//#region node_modules/@radix-ui/react-primitive/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-primitive/dist/index.mjs
 var F = [
 	"a",
 	"button",
@@ -171,7 +171,7 @@ function te(e, t) {
 	e && g.flushSync(() => e.dispatchEvent(t));
 }
 //#endregion
-//#region node_modules/@radix-ui/react-visually-hidden/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-visually-hidden/dist/index.mjs
 var I = Object.freeze({
 	position: "absolute",
 	border: 0,
@@ -193,7 +193,7 @@ var I = Object.freeze({
 }));
 re.displayName = ne;
 //#endregion
-//#region node_modules/@radix-ui/react-context/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-context/dist/index.mjs
 function L(e, t = []) {
 	let n = [];
 	function i(t, i) {
@@ -249,7 +249,7 @@ function R(...e) {
 	return n.scopeName = t.scopeName, n;
 }
 //#endregion
-//#region node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-slot/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
 function ie(e) {
 	let t = /* @__PURE__ */ ae(e), n = r.forwardRef((e, n) => {
@@ -367,7 +367,7 @@ function B(e, t, { checkForDefaultPrevented: n = !0 } = {}) {
 	};
 }
 //#endregion
-//#region node_modules/@radix-ui/react-use-layout-effect/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-use-layout-effect/dist/index.mjs
 var ue = globalThis?.document ? r.useLayoutEffect : () => {}, de = r.useInsertionEffect || ue;
 function fe({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
 	let [a, o, s] = pe({
@@ -409,7 +409,7 @@ function me(e) {
 	return typeof e == "function";
 }
 //#endregion
-//#region node_modules/@radix-ui/react-id/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-id/dist/index.mjs
 var he = r.useId || (() => void 0), ge = 0;
 function _e(e) {
 	let [t, n] = r.useState(he());
@@ -418,14 +418,14 @@ function _e(e) {
 	}, [e]), e || (t ? `radix-${t}` : "");
 }
 //#endregion
-//#region node_modules/@radix-ui/react-direction/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-direction/dist/index.mjs
 var ve = r.createContext(void 0);
 function ye(e) {
 	let t = r.useContext(ve);
 	return e || t || "ltr";
 }
 //#endregion
-//#region node_modules/@radix-ui/react-use-callback-ref/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-use-callback-ref/dist/index.mjs
 function be(e) {
 	let t = r.useRef(e);
 	return r.useEffect(() => {
@@ -433,7 +433,7 @@ function be(e) {
 	}), r.useMemo(() => (...e) => t.current?.(...e), []);
 }
 //#endregion
-//#region node_modules/@radix-ui/react-use-escape-keydown/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-use-escape-keydown/dist/index.mjs
 function xe(e, t = globalThis?.document) {
 	let n = be(e);
 	r.useEffect(() => {
@@ -444,7 +444,7 @@ function xe(e, t = globalThis?.document) {
 	}, [n, t]);
 }
 //#endregion
-//#region node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs
 var Se = "DismissableLayer", Ce = "dismissableLayer.update", we = "dismissableLayer.pointerDownOutside", Te = "dismissableLayer.focusOutside", Ee, De = r.createContext({
 	layers: /* @__PURE__ */ new Set(),
 	layersWithOutsidePointerEventsDisabled: /* @__PURE__ */ new Set(),
@@ -543,7 +543,7 @@ function Pe(e, t, n, { discrete: r }) {
 	t && i.addEventListener(e, t, { once: !0 }), r ? te(i, a) : i.dispatchEvent(a);
 }
 //#endregion
-//#region node_modules/@radix-ui/react-focus-scope/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-focus-scope/dist/index.mjs
 var Fe = "focusScope.autoFocusOnMount", Ie = "focusScope.autoFocusOnUnmount", Le = {
 	bubbles: !1,
 	cancelable: !0
@@ -682,7 +682,7 @@ function Xe(e) {
 	return e.filter((e) => e.tagName !== "A");
 }
 //#endregion
-//#region node_modules/@radix-ui/react-portal/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-portal/dist/index.mjs
 var Ze = "Portal", Qe = r.forwardRef((e, t) => {
 	let { container: n, ...i } = e, [a, o] = r.useState(!1);
 	ue(() => o(!0), []);
@@ -694,7 +694,7 @@ var Ze = "Portal", Qe = r.forwardRef((e, t) => {
 });
 Qe.displayName = Ze;
 //#endregion
-//#region node_modules/@radix-ui/react-focus-guards/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-focus-guards/dist/index.mjs
 var $e = 0;
 function et() {
 	r.useEffect(() => {
@@ -709,7 +709,7 @@ function tt() {
 	return e.setAttribute("data-radix-focus-guard", ""), e.tabIndex = 0, e.style.outline = "none", e.style.opacity = "0", e.style.position = "fixed", e.style.pointerEvents = "none", e;
 }
 //#endregion
-//#region node_modules/tslib/tslib.es6.mjs
+//#region client/node_modules/tslib/tslib.es6.mjs
 var nt = function() {
 	return nt = Object.assign || function(e) {
 		for (var t, n = 1, r = arguments.length; n < r; n++) for (var i in t = arguments[n], t) Object.prototype.hasOwnProperty.call(t, i) && (e[i] = t[i]);
@@ -727,15 +727,15 @@ function it(e, t, n) {
 	return e.concat(a || Array.prototype.slice.call(t));
 }
 //#endregion
-//#region node_modules/react-remove-scroll-bar/dist/es2015/constants.js
+//#region client/node_modules/react-remove-scroll-bar/dist/es2015/constants.js
 var at = "right-scroll-bar-position", ot = "width-before-scroll-bar", st = "with-scroll-bars-hidden", ct = "--removed-body-scroll-bar-size";
 //#endregion
-//#region node_modules/use-callback-ref/dist/es2015/assignRef.js
+//#region client/node_modules/use-callback-ref/dist/es2015/assignRef.js
 function lt(e, t) {
 	return typeof e == "function" ? e(t) : e && (e.current = t), e;
 }
 //#endregion
-//#region node_modules/use-callback-ref/dist/es2015/useRef.js
+//#region client/node_modules/use-callback-ref/dist/es2015/useRef.js
 function ut(e, t) {
 	var n = p(function() {
 		return {
@@ -755,7 +755,7 @@ function ut(e, t) {
 	return n.callback = t, n.facade;
 }
 //#endregion
-//#region node_modules/use-callback-ref/dist/es2015/useMergeRef.js
+//#region client/node_modules/use-callback-ref/dist/es2015/useMergeRef.js
 var dt = typeof window < "u" ? r.useLayoutEffect : r.useEffect, ft = /* @__PURE__ */ new WeakMap();
 function pt(e, t) {
 	var n = ut(t || null, function(t) {
@@ -777,7 +777,7 @@ function pt(e, t) {
 	}, [e]), n;
 }
 //#endregion
-//#region node_modules/use-sidecar/dist/es2015/medium.js
+//#region client/node_modules/use-sidecar/dist/es2015/medium.js
 function mt(e) {
 	return e;
 }
@@ -844,7 +844,7 @@ function gt(e) {
 	}, e), t;
 }
 //#endregion
-//#region node_modules/use-sidecar/dist/es2015/exports.js
+//#region client/node_modules/use-sidecar/dist/es2015/exports.js
 var _t = function(e) {
 	var t = e.sideCar, n = rt(e, ["sideCar"]);
 	if (!t) throw Error("Sidecar: please provide `sideCar` property to import the right car");
@@ -857,7 +857,7 @@ function vt(e, t) {
 	return e.useMedium(t), _t;
 }
 //#endregion
-//#region node_modules/react-remove-scroll/dist/es2015/medium.js
+//#region client/node_modules/react-remove-scroll/dist/es2015/medium.js
 var yt = gt(), bt = function() {}, xt = r.forwardRef(function(e, t) {
 	var n = r.useRef(null), i = r.useState({
 		onScrollCapture: bt,
@@ -903,13 +903,13 @@ xt.defaultProps = {
 	zeroRight: at
 };
 //#endregion
-//#region node_modules/get-nonce/dist/es2015/index.js
+//#region client/node_modules/get-nonce/dist/es2015/index.js
 var St, Ct = function() {
 	if (St) return St;
 	if (typeof __webpack_nonce__ < "u") return __webpack_nonce__;
 };
 //#endregion
-//#region node_modules/react-style-singleton/dist/es2015/singleton.js
+//#region client/node_modules/react-style-singleton/dist/es2015/singleton.js
 function wt() {
 	if (!document) return null;
 	var e = document.createElement("style");
@@ -1195,7 +1195,7 @@ function ln(e) {
 	return t;
 }
 //#endregion
-//#region node_modules/react-remove-scroll/dist/es2015/sidecar.js
+//#region client/node_modules/react-remove-scroll/dist/es2015/sidecar.js
 var un = vt(yt, cn), dn = r.forwardRef(function(e, t) {
 	return r.createElement(xt, nt({}, e, {
 		ref: t,
@@ -1204,7 +1204,7 @@ var un = vt(yt, cn), dn = r.forwardRef(function(e, t) {
 });
 dn.classNames = xt.classNames;
 //#endregion
-//#region src/lib/remove-scroll-gate.tsx
+//#region client/src/lib/remove-scroll-gate.tsx
 var fn = r.createContext(!1);
 function pn({ allowBodyScroll: e, children: t }) {
 	return /* @__PURE__ */ y(fn.Provider, {
@@ -1216,7 +1216,7 @@ function mn() {
 	return r.useContext(fn);
 }
 //#endregion
-//#region src/lib/react-remove-scroll-shim.tsx
+//#region client/src/lib/react-remove-scroll-shim.tsx
 var hn = r.forwardRef(function(e, t) {
 	let n = mn() ? !1 : e.enabled !== !1;
 	return /* @__PURE__ */ y(dn, {
@@ -1227,7 +1227,7 @@ var hn = r.forwardRef(function(e, t) {
 });
 hn.classNames = dn.classNames;
 //#endregion
-//#region node_modules/aria-hidden/dist/es2015/index.js
+//#region client/node_modules/aria-hidden/dist/es2015/index.js
 var gn = function(e) {
 	return typeof document > "u" ? null : (Array.isArray(e) ? e[0] : e).ownerDocument.body;
 }, _n = /* @__PURE__ */ new WeakMap(), vn = /* @__PURE__ */ new WeakMap(), yn = {}, bn = 0, xn = function(e) {
@@ -1272,7 +1272,7 @@ var gn = function(e) {
 	};
 };
 //#endregion
-//#region node_modules/@radix-ui/react-use-previous/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-use-previous/dist/index.mjs
 function Tn(e) {
 	let t = r.useRef({
 		value: e,
@@ -1281,7 +1281,7 @@ function Tn(e) {
 	return r.useMemo(() => (t.current.value !== e && (t.current.previous = t.current.value, t.current.value = e), t.current.previous), [e]);
 }
 //#endregion
-//#region node_modules/@radix-ui/react-use-size/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-use-size/dist/index.mjs
 function En(e) {
 	let [t, n] = r.useState(void 0);
 	return ue(() => {
@@ -1307,7 +1307,7 @@ function En(e) {
 	}, [e]), t;
 }
 //#endregion
-//#region node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
+//#region client/node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
 var Dn = [
 	"top",
 	"right",
@@ -1412,7 +1412,7 @@ function er(e) {
 	};
 }
 //#endregion
-//#region node_modules/@floating-ui/core/dist/floating-ui.core.mjs
+//#region client/node_modules/@floating-ui/core/dist/floating-ui.core.mjs
 function tr(e, t, n) {
 	let { reference: r, floating: i } = e, a = Bn(t), o = Vn(t), s = zn(o), c = In(t), l = a === "y", u = r.x + r.width / 2 - i.width / 2, d = r.y + r.height / 2 - i.height / 2, f = r[s] / 2 - i[s] / 2, p;
 	switch (c) {
@@ -1769,7 +1769,7 @@ var fr = function(e) {
 	};
 };
 //#endregion
-//#region node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
+//#region client/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
 function gr() {
 	return typeof window < "u";
 }
@@ -1865,7 +1865,7 @@ function Br(e) {
 	return e.parent && Object.getPrototypeOf(e.parent) ? e.frameElement : null;
 }
 //#endregion
-//#region node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs
+//#region client/node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs
 function Vr(e) {
 	let t = Fr(e), n = parseFloat(t.width) || 0, r = parseFloat(t.height) || 0, i = Sr(e), a = i ? e.offsetWidth : n, o = i ? e.offsetHeight : r, s = An(n) !== a || An(r) !== o;
 	return s && (n = a, r = o), {
@@ -2586,12 +2586,12 @@ var oa = qi, sa = Yi, ca = $i, la = na, ua = "Label", da = r.forwardRef((e, t) =
 da.displayName = ua;
 var fa = da;
 //#endregion
-//#region node_modules/@radix-ui/number/dist/index.mjs
+//#region client/node_modules/@radix-ui/number/dist/index.mjs
 function pa(e, [t, n]) {
 	return Math.min(n, Math.max(t, e));
 }
 //#endregion
-//#region node_modules/@radix-ui/react-select/node_modules/@radix-ui/react-slot/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-select/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
 function ma(e) {
 	let t = /* @__PURE__ */ ha(e), n = r.forwardRef((e, n) => {
@@ -2650,7 +2650,7 @@ function ya(e) {
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
-//#region node_modules/@radix-ui/react-select/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-select/dist/index.mjs
 var ba = [
 	" ",
 	"Enter",
@@ -3312,7 +3312,7 @@ function No(e, t) {
 }
 var Po = Na, Fo = Fa, Io = La, Lo = za, Ro = Va, zo = Ua, Bo = ro, Vo = mo, Ho = go, Uo = vo, Wo = bo, Go = So;
 //#endregion
-//#region node_modules/radix-ui/node_modules/@radix-ui/react-slot/dist/index.mjs
+//#region client/node_modules/radix-ui/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
 function Ko(e) {
 	let t = /* @__PURE__ */ Jo(e), n = r.forwardRef((e, n) => {
@@ -3372,7 +3372,7 @@ function Qo(e) {
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
-//#region node_modules/@radix-ui/react-switch/dist/index.mjs
+//#region client/node_modules/@radix-ui/react-switch/dist/index.mjs
 var $o = "Switch", [es, ts] = L($o), [ns, rs] = es($o), is = r.forwardRef((e, t) => {
 	let { __scopeSwitch: n, name: i, checked: a, defaultChecked: o, required: s, disabled: c, value: l = "on", onCheckedChange: u, form: d, ...f } = e, [p, m] = r.useState(null), h = k(t, (e) => m(e)), g = r.useRef(!1), _ = p ? d || !!p.closest("form") : !0, [v, x] = fe({
 		prop: a,
@@ -5127,12 +5127,12 @@ var us = is, ds = os, fs = (e, t) => {
 	};
 });
 //#endregion
-//#region src/lib/utils.ts
+//#region client/src/lib/utils.ts
 function G(...e) {
 	return Nc(C(e));
 }
 //#endregion
-//#region src/components/ui/button.tsx
+//#region client/src/components/ui/button.tsx
 var Pc = E("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
 	variants: {
 		variant: {
@@ -5173,7 +5173,7 @@ function K({ className: e, variant: t = "default", size: n = "default", asChild:
 	});
 }
 //#endregion
-//#region src/components/ui/card.tsx
+//#region client/src/components/ui/card.tsx
 var Fc = {
 	default: "",
 	stat: "wd-card-stat",
@@ -5217,7 +5217,7 @@ function Lc({ className: e, ...t }) {
 	});
 }
 //#endregion
-//#region src/components/ui/input.tsx
+//#region client/src/components/ui/input.tsx
 function X({ className: e, type: t, ...n }) {
 	return /* @__PURE__ */ y("input", {
 		type: t,
@@ -5227,7 +5227,7 @@ function X({ className: e, type: t, ...n }) {
 	});
 }
 //#endregion
-//#region src/components/ui/label.tsx
+//#region client/src/components/ui/label.tsx
 function Z({ className: e, ...t }) {
 	return /* @__PURE__ */ y(fa, {
 		"data-slot": "label",
@@ -5236,13 +5236,13 @@ function Z({ className: e, ...t }) {
 	});
 }
 //#endregion
-//#region src/lib/queryClient.ts
+//#region client/src/lib/queryClient.ts
 var Rc = null;
 function zc() {
 	return Rc;
 }
 //#endregion
-//#region src/lib/authLost.ts
+//#region client/src/lib/authLost.ts
 var Bc = ["auth", "session"], Vc = new Set([
 	"rest_cookie_invalid_nonce",
 	"rest_not_logged_in",
@@ -5267,7 +5267,7 @@ function Wc(e) {
 	Hc(e) && Uc();
 }
 //#endregion
-//#region src/lib/safeUrl.ts
+//#region client/src/lib/safeUrl.ts
 function Gc(e) {
 	try {
 		let t = new URL(e, window.location.origin);
@@ -5279,7 +5279,7 @@ function Gc(e) {
 	}
 }
 //#endregion
-//#region src/lib/api.ts
+//#region client/src/lib/api.ts
 function Kc() {
 	return window.webinoDashboard;
 }
@@ -5425,7 +5425,7 @@ async function Q(e, t = {}, n = qc) {
 	}
 }
 //#endregion
-//#region src/lib/marketplace-api.ts
+//#region client/src/lib/marketplace-api.ts
 function tl(e) {
 	return `marketplace.installStep.${e}`;
 }
@@ -5468,7 +5468,7 @@ function al(e, t, n) {
 	}) : e[t] = n, e;
 }
 //#endregion
-//#region src/lib/apiError.ts
+//#region client/src/lib/apiError.ts
 var ol = class extends Error {
 	constructor(e, t) {
 		super(e), al(this, "code", void 0), al(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
@@ -5539,7 +5539,7 @@ function fl(e, t) {
 	h.error(dl(e, t));
 }
 //#endregion
-//#region src/hooks/useQueryErrorToast.ts
+//#region client/src/hooks/useQueryErrorToast.ts
 function pl(e) {
 	let { t } = m(), n = f(!1);
 	l(() => {
@@ -5552,7 +5552,7 @@ function pl(e) {
 	]);
 }
 //#endregion
-//#region ../Modules/shipping-module/client/components/OrderMapPanel.tsx
+//#region Modules/shipping-module/client/components/OrderMapPanel.tsx
 var ml = null;
 function hl() {
 	return typeof window > "u" ? Promise.reject(/* @__PURE__ */ Error("no window")) : window.L ? Promise.resolve(window.L) : ml || (ml = new Promise((e, t) => {
@@ -5699,7 +5699,7 @@ function _l({ orderId: r }) {
 	});
 }
 //#endregion
-//#region src/components/currency/IrtIcon.tsx
+//#region client/src/components/currency/IrtIcon.tsx
 function vl({ className: e }) {
 	return /* @__PURE__ */ b("svg", {
 		width: "13",
@@ -5734,7 +5734,7 @@ function vl({ className: e }) {
 	});
 }
 //#endregion
-//#region src/lib/currency.ts
+//#region client/src/lib/currency.ts
 var yl = /تومان|toman|irt/i;
 function bl(e) {
 	return e.replace(/&nbsp;/gi, " ").replace(/&#160;/g, " ").replace(/&#x0*a0;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, "\"").replace(/&#(\d+);/g, (e, t) => {
@@ -5783,13 +5783,13 @@ function El(e, t) {
 	return Cl(t) ? wl(e) : e;
 }
 //#endregion
-//#region src/lib/formatNumber.ts
+//#region client/src/lib/formatNumber.ts
 function Dl(e, t) {
 	let n = Number.isFinite(e) ? e : 0, r = Cl(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
 	return Cl(t) ? wl(i) : i;
 }
 //#endregion
-//#region src/components/currency/MoneyDisplay.tsx
+//#region client/src/components/currency/MoneyDisplay.tsx
 var Ol = /تومان|toman|irt/gi;
 function kl(e) {
 	if (typeof e == "number") return Number.isFinite(e) ? e : 0;
@@ -5816,7 +5816,7 @@ function Al({ amount: e, currency: t, currencySymbol: n, locale: r, className: i
 	});
 }
 //#endregion
-//#region ../Modules/shipping-module/client/components/OrderPackagingPanel.tsx
+//#region Modules/shipping-module/client/components/OrderPackagingPanel.tsx
 function jl({ orderId: r, currency: i = "IRT", locale: a = "fa-IR" }) {
 	let { t: o } = m(), s = n(), c = t({
 		queryKey: ["shipping-order-packaging", r],
@@ -5908,7 +5908,7 @@ function jl({ orderId: r, currency: i = "IRT", locale: a = "fa-IR" }) {
 	});
 }
 //#endregion
-//#region src/components/PageShell.tsx
+//#region client/src/components/PageShell.tsx
 function Ml({ title: e, description: t, eyebrow: n, children: r }) {
 	return /* @__PURE__ */ b("div", {
 		className: "space-y-5",
@@ -5932,7 +5932,7 @@ function Ml({ title: e, description: t, eyebrow: n, children: r }) {
 	});
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
+//#region client/node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
 var Nl = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), Pl = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), Fl = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), Il = (e) => {
 	let t = Fl(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
@@ -5981,13 +5981,13 @@ var Nl = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 	key: "153udz"
 }]]);
 //#endregion
-//#region src/hooks/use-text-direction.ts
+//#region client/src/hooks/use-text-direction.ts
 function Kl() {
 	let { i18n: e } = m();
 	return e.dir() === "rtl" ? "rtl" : "ltr";
 }
 //#endregion
-//#region src/components/ui/select.tsx
+//#region client/src/components/ui/select.tsx
 function ql({ ...e }) {
 	return /* @__PURE__ */ y(Po, {
 		"data-slot": "select",
@@ -6063,7 +6063,7 @@ function $l({ className: e, ...t }) {
 	});
 }
 //#endregion
-//#region ../Modules/shipping-module/client/pages/CitiesSettingsPage.tsx
+//#region Modules/shipping-module/client/pages/CitiesSettingsPage.tsx
 function eu() {
 	let { t: r } = m(), i = n(), [a, o] = p(0), [s, c] = p(0), [u, f] = p(""), [g, _] = p(""), [x, S] = p({}), [C, w] = p(null), [T, E] = p(!1), D = t({
 		queryKey: ["shipping-cities-tree"],
@@ -6398,7 +6398,7 @@ function eu() {
 	});
 }
 //#endregion
-//#region src/components/ui/switch.tsx
+//#region client/src/components/ui/switch.tsx
 function $({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ y(us, {
 		"data-slot": "switch",
@@ -6413,7 +6413,7 @@ function $({ className: e, size: t = "default", ...n }) {
 	});
 }
 //#endregion
-//#region ../Modules/shipping-module/client/pages/MapSettingsPage.tsx
+//#region Modules/shipping-module/client/pages/MapSettingsPage.tsx
 function tu() {
 	let { t: n } = m(), [r, i] = p(null), a = t({
 		queryKey: ["shipping-map"],
@@ -6617,7 +6617,7 @@ function tu() {
 	});
 }
 //#endregion
-//#region ../Modules/shipping-module/client/pages/PackagingSettingsPage.tsx
+//#region Modules/shipping-module/client/pages/PackagingSettingsPage.tsx
 function nu(e) {
 	return Object.values(e.boxes).sort((e, t) => e.size - t.size);
 }
@@ -6896,7 +6896,7 @@ function ru() {
 	});
 }
 //#endregion
-//#region ../Modules/shipping-module/client/pages/RulesSettingsPage.tsx
+//#region Modules/shipping-module/client/pages/RulesSettingsPage.tsx
 var iu = [
 	"state",
 	"city",
@@ -7151,7 +7151,7 @@ function cu() {
 	});
 }
 //#endregion
-//#region ../Modules/shipping-module/client/pages/ToolsSettingsPage.tsx
+//#region Modules/shipping-module/client/pages/ToolsSettingsPage.tsx
 var lu = () => ({
 	hide_when_free: !1,
 	hide_when_courier: !1,
@@ -7415,7 +7415,7 @@ function uu() {
 	});
 }
 //#endregion
-//#region ../Modules/shipping-module/client/pages/TransportHubPage.tsx
+//#region Modules/shipping-module/client/pages/TransportHubPage.tsx
 var du = [
 	{
 		to: "/settings/shop/transport/packaging",
@@ -7509,7 +7509,7 @@ function fu() {
 	});
 }
 //#endregion
-//#region ../Modules/shipping-module/client/module-entry.tsx
+//#region Modules/shipping-module/client/module-entry.tsx
 var pu = {
 	"settings/shop/transport": fu,
 	"settings/shop/transport/packaging": ru,
