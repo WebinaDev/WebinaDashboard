@@ -18,9 +18,20 @@ if ( ! is_readable( $file ) ) {
 if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', $root . '/' );
 }
+if ( ! function_exists( 'sanitize_key' ) ) {
+	function sanitize_key( $key ) {
+		$key = strtolower( (string) $key );
+		return preg_replace( '/[^a-z0-9_\-]/', '', $key );
+	}
+}
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( $tag, $value ) {
+		return $value;
+	}
+}
 if ( ! function_exists( 'wc_get_is_paid_statuses' ) ) {
 	function wc_get_is_paid_statuses() {
-		return array( 'processing', 'completed', 'partially-refunded', 'packaged' );
+		return array( 'processing', 'completed', 'partially-refunded' );
 	}
 }
 if ( ! function_exists( 'wc_get_order_statuses' ) ) {
@@ -35,6 +46,8 @@ if ( ! function_exists( 'wc_get_order_statuses' ) ) {
 			'wc-partially-refunded'  => 'Partially refunded',
 			'wc-packaged'            => 'Packaged',
 			'wc-awaiting-review'     => 'Awaiting review', // unpaid custom — must NOT auto-join sales
+			'wc-webino-packaged'     => 'Packaged',
+			'wc-bslm-preparation'    => 'Basalam prep',
 		);
 	}
 }
@@ -60,15 +73,37 @@ foreach ( array( 'cancelled', 'refunded', 'failed', 'pending' ) as $bad ) {
 		exit( 1 );
 	}
 }
-foreach ( array( 'processing', 'completed', 'partially-refunded', 'packaged' ) as $good ) {
+$must_include = array(
+	'processing',
+	'completed',
+	'partially-refunded',
+	'webino-in-stock',
+	'webino-packaged',
+	'webino-courier',
+	'webino-post',
+	'webino-tipax',
+	'webino-ready-to-ship',
+	'webino-shipping',
+	'sent-to-warehouse',
+	'packaged',
+	'courier',
+	'post',
+	'tipax',
+	'bslm-preparation',
+	'bslm-shipping',
+	'bslm-completed',
+);
+foreach ( $must_include as $good ) {
 	if ( ! in_array( $good, $sales, true ) ) {
 		fwrite( STDERR, "FAIL: sales_statuses must include {$good}\n" );
 		exit( 1 );
 	}
 }
-if ( in_array( 'awaiting-review', $sales, true ) ) {
-	fwrite( STDERR, "FAIL: sales_statuses must not union unpaid custom statuses like awaiting-review\n" );
-	exit( 1 );
+foreach ( array( 'awaiting-review', 'bslm-wait-vendor', 'bslm-rejected', 'webino-returned', 'webino-deleted', 'webino-need-review', 'on-hold' ) as $still_out ) {
+	if ( in_array( $still_out, $sales, true ) ) {
+		fwrite( STDERR, "FAIL: sales_statuses must not include {$still_out}\n" );
+		exit( 1 );
+	}
 }
 
 // Net total helper.
@@ -109,6 +144,18 @@ if ( abs( Webino_Dashboard_Order_Reports::order_net_total( $partial ) - 70.0 ) >
 }
 if ( ! Webino_Dashboard_Order_Reports::order_counts_in_sale_metrics( $partial ) ) {
 	fwrite( STDERR, "FAIL: partial refund order should count in sales\n" );
+	exit( 1 );
+}
+
+$packaged = new WC_Order( 100.0, 0.0, 'webino-packaged' );
+if ( ! Webino_Dashboard_Order_Reports::order_counts_in_sale_metrics( $packaged ) ) {
+	fwrite( STDERR, "FAIL: webino-packaged order should count in sales\n" );
+	exit( 1 );
+}
+
+$basalam = new WC_Order( 100.0, 0.0, 'bslm-preparation' );
+if ( ! Webino_Dashboard_Order_Reports::order_counts_in_sale_metrics( $basalam ) ) {
+	fwrite( STDERR, "FAIL: bslm-preparation order should count in sales\n" );
 	exit( 1 );
 }
 

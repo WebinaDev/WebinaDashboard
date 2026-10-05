@@ -122,7 +122,7 @@ class Webino_Dashboard_Order_Reports {
 	}
 
 	/**
-	 * Sales statuses: WC paid statuses + explicit fulfillment allowlist, minus never-count slugs (no all-status union).
+	 * Sales statuses: WC paid statuses + fulfillment/Basalam allowlist, minus never-count slugs (no all-status union).
 	 *
 	 * @return string[]
 	 */
@@ -149,9 +149,36 @@ class Webino_Dashboard_Order_Reports {
 		$allowlist = apply_filters(
 			'webino_dashboard_sales_status_allowlist',
 			array(
-				'processing',
-				'completed',
+				// Core WC paid / processing pipeline.
+				'processing',          // در حال پردازش
+				'completed',           // تکمیل شده
 				'partially-refunded',
+				// Shipping-module fulfillment (still paid/successful).
+				'webino-in-stock',      // انبار / ارسال شده به انبار
+				'webino-packaged',      // بسته‌بندی شده
+				'webino-courier',       // پیک
+				'webino-post',          // پست
+				'webino-tipax',         // تیپاکس
+				'webino-ready-to-ship', // آماده ارسال
+				'webino-shipping',      // درحال ارسال
+				'webino-chapar',
+				// Legacy / PWS / SMS-map aliases used as live WC status slugs.
+				'sent-to-warehouse',    // ارسال شده به انبار
+				'packaged',
+				'courier',
+				'post',
+				'tipax',
+				'chapar',
+				'ready-to-ship',
+				'pws-sent-to-warehouse',
+				'pws-packaged',
+				'pws-courier',
+				'pws-post',
+				'pws-tipax',
+				// Basalam sold / fulfillment (paid).
+				'bslm-preparation',     // باسلام آماده‌سازی
+				'bslm-shipping',        // باسلام ارسال
+				'bslm-completed',       // باسلام تکمیل
 			)
 		);
 		if ( is_array( $allowlist ) ) {
