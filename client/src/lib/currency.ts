@@ -24,7 +24,7 @@ export function isTomanCurrency(codeOrLabel: string | undefined | null, symbol?:
   const sym = (symbol ?? '').trim()
   if (!code && !sym) return false
   const upper = code.toUpperCase()
-  if (upper === 'IRT' || upper === 'TOMAN') return true
+  if (upper === 'IRT' || upper === 'TOMAN' || upper === 'IRHT') return true
   if (TOMAN_LABEL.test(code) || TOMAN_LABEL.test(sym)) return true
   return false
 }
@@ -49,7 +49,7 @@ export function parseWcPriceText(text: string): { amount: string; isToman: boole
  */
 export function formatMarketplaceCurrency(code: string | undefined | null, t: TFunction): string {
   const upper = (code ?? 'IRT').trim().toUpperCase()
-  if (upper === 'IRT' || upper === 'TOMAN') return ''
+  if (upper === 'IRT' || upper === 'TOMAN' || upper === 'IRHT') return ''
   if (upper === 'IRR' || upper === 'RIAL') return t('shopBot.currency.rial')
   return code?.trim() || ''
 }

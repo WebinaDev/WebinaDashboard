@@ -44,7 +44,23 @@ export default function WfcpPriceChangerPage() {
   const st = useQuery({
     queryKey: ['wfcp', 'bpc', 'state'],
     queryFn: () => apiFetch<BpcState>('wfcp/bulk-price-change/state'),
-    refetchInterval: 5000,
+    refetchInterval: (q) => (q.state.data?.locked ? 2500 : 5000),
+  })
+
+  const locked = Boolean(st.data?.locked)
+
+  const cancel = useMutation({
+    mutationFn: () =>
+      apiFetch<{ success?: boolean }>('wfcp/bulk-price-change/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['wfcp', 'bpc', 'state'] })
+      toast.success(t('wfcp.bpcCanceled', { defaultValue: 'Bulk price job canceled' }))
+    },
+    onError: (e: Error) => toastApiError(t, e),
   })
 
   const start = useMutation({
@@ -77,7 +93,7 @@ export default function WfcpPriceChangerPage() {
         <div className="space-y-3 rounded-lg border border-border p-4">
           <div className="space-y-2">
             <Label>{t('wfcp.bpcType')}</Label>
-            <Select value={type} onValueChange={(v) => setType(v as 'fixed' | 'percent')}>
+            <Select value={type} onValueChange={(v) => setType(v as 'fixed' | 'percent')} disabled={locked}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -89,31 +105,31 @@ export default function WfcpPriceChangerPage() {
           </div>
           <div className="space-y-2">
             <Label>{t('wfcp.bpcValue')}</Label>
-            <Input value={value} onChange={(e) => setValue(e.target.value)} />
+            <Input value={value} onChange={(e) => setValue(e.target.value)} disabled={locked} />
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox id="bpc-apply-sale" checked={applySale} onCheckedChange={(v) => setApplySale(v === true)} />
+            <Checkbox id="bpc-apply-sale" checked={applySale} disabled={locked} onCheckedChange={(v) => setApplySale(v === true)} />
             <Label htmlFor="bpc-apply-sale" className="cursor-pointer font-normal">
               {t('wfcp.bpcApplySale')}
             </Label>
           </div>
           <div className="space-y-2">
             <Label>{t('wfcp.bpcCategories')}</Label>
-            <Input value={cats} onChange={(e) => setCats(e.target.value)} />
+            <Input value={cats} onChange={(e) => setCats(e.target.value)} disabled={locked} />
             <p className="text-xs text-muted-foreground">{t('wfcp.bpcCategoriesHint')}</p>
           </div>
           <div className="space-y-2">
             <Label>{t('wfcp.bpcRangeRules')}</Label>
-            <Textarea className="min-h-20" value={rules} onChange={(e) => setRules(e.target.value)} />
+            <Textarea className="min-h-20" value={rules} onChange={(e) => setRules(e.target.value)} disabled={locked} />
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox id="bpc-rules-combine" checked={rulesCombine} onCheckedChange={(v) => setRulesCombine(v === true)} />
+            <Checkbox id="bpc-rules-combine" checked={rulesCombine} disabled={locked} onCheckedChange={(v) => setRulesCombine(v === true)} />
             <Label htmlFor="bpc-rules-combine" className="cursor-pointer font-normal">
               {t('wfcp.bpcRulesCombine')}
             </Label>
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox id="bpc-rounding" checked={rounding} onCheckedChange={(v) => setRounding(v === true)} />
+            <Checkbox id="bpc-rounding" checked={rounding} disabled={locked} onCheckedChange={(v) => setRounding(v === true)} />
             <Label htmlFor="bpc-rounding" className="cursor-pointer font-normal">
               {t('wfcp.bpcRounding')}
             </Label>
@@ -121,24 +137,31 @@ export default function WfcpPriceChangerPage() {
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
               <Label>{t('wfcp.bpcRoundTh')}</Label>
-              <Input value={roundTh} onChange={(e) => setRoundTh(e.target.value)} />
+              <Input value={roundTh} onChange={(e) => setRoundTh(e.target.value)} disabled={locked} />
             </div>
             <div className="space-y-2">
               <Label>{t('wfcp.bpcRoundVal')}</Label>
-              <Input value={roundVal} onChange={(e) => setRoundVal(e.target.value)} />
+              <Input value={roundVal} onChange={(e) => setRoundVal(e.target.value)} disabled={locked} />
             </div>
           </div>
-          <Button type="button" disabled={start.isPending} onClick={() => void start.mutateAsync()}>
-            {t('wfcp.bpcStart')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" disabled={start.isPending || locked} onClick={() => void start.mutateAsync()}>
+              {t('wfcp.bpcStart')}
+            </Button>
+            {locked ? (
+              <Button type="button" variant="outline" disabled={cancel.isPending} onClick={() => void cancel.mutateAsync()}>
+                {t('wfcp.bpcCancel', { defaultValue: 'Cancel job' })}
+              </Button>
+            ) : null}
+          </div>
         </div>
         <div className="rounded-lg border border-border p-4">
           <h3 className="text-sm font-medium">{t('wfcp.bpcStateTitle')}</h3>
           <div className="mt-2 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge
-                status={st.data?.locked ? 'locked' : 'idle'}
-                tone={st.data?.locked ? 'warning' : 'secondary'}
+                status={locked ? 'locked' : 'idle'}
+                tone={locked ? 'warning' : 'secondary'}
               />
               {st.data?.last?.run ? (
                 <span className="text-muted-foreground text-xs">{String(st.data.last.run)}</span>

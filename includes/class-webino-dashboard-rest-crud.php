@@ -4988,6 +4988,12 @@ class Webino_Dashboard_REST_Crud {
 				if ( null !== $request->get_param( 'sale_price' ) ) {
 					$sale = (string) $request->get_param( 'sale_price' );
 					$p2->set_sale_price( '' !== $sale ? wc_format_decimal( $sale ) : '' );
+					if ( '' !== $sale ) {
+						$p2->set_price( wc_format_decimal( $sale ) );
+					} else {
+						$reg = $p2->get_regular_price();
+						$p2->set_price( $reg ? wc_format_decimal( $reg ) : '' );
+					}
 				}
 				if ( null !== $request->get_param( 'stock_quantity' ) ) {
 					$p2->set_stock_quantity( (int) $request->get_param( 'stock_quantity' ) );
@@ -5747,10 +5753,28 @@ class Webino_Dashboard_REST_Crud {
 	 * @param int $variation_id Variation ID.
 	 * @return void
 	 */
-	private static function maybe_sync_variation_wfcp( $variation_id ) {
+	/**
+	 * Sync retail from purchase only when this request updated purchase_price.
+	 * Avoids overwriting manual regular/sale on unrelated variation saves (stock, attrs, etc.).
+	 *
+	 * @param int                  $variation_id Variation ID.
+	 * @param WP_REST_Request|null $request      Request (optional).
+	 * @return void
+	 */
+	private static function maybe_sync_variation_wfcp( $variation_id, $request = null ) {
 		$variation_id = (int) $variation_id;
 		if ( $variation_id < 1 || ! class_exists( 'WFCP_Helper', false ) ) {
 			return;
+		}
+		if ( $request instanceof WP_REST_Request ) {
+			$wfcp = $request->get_param( 'wfcp' );
+			if ( ! is_array( $wfcp ) || ! array_key_exists( 'purchase_price', $wfcp ) ) {
+				return;
+			}
+			// Empty purchase clears COGS; do not force retail sync.
+			if ( null === $wfcp['purchase_price'] || '' === $wfcp['purchase_price'] ) {
+				return;
+			}
 		}
 		$pp = get_post_meta( $variation_id, '_wfcp_purchase_price', true );
 		if ( '' === $pp || false === $pp ) {
@@ -5879,7 +5903,7 @@ class Webino_Dashboard_REST_Crud {
 			return $applied;
 		}
 		$v->save();
-		self::maybe_sync_variation_wfcp( $v->get_id() );
+		self::maybe_sync_variation_wfcp( $v->get_id(), $request );
 		self::sync_variable_parent( $parent_id );
 		$v2 = wc_get_product( $v->get_id() );
 		return new WP_REST_Response( $v2 && $v2->is_type( 'variation' ) ? self::map_variation_row( $v2 ) : self::map_variation_row( $v ), 201 );
@@ -5901,7 +5925,7 @@ class Webino_Dashboard_REST_Crud {
 			return $applied;
 		}
 		$v->save();
-		self::maybe_sync_variation_wfcp( $vid );
+		self::maybe_sync_variation_wfcp( $vid, $request );
 		self::sync_variable_parent( $parent_id );
 		$v2 = wc_get_product( $vid );
 		return new WP_REST_Response( $v2 && $v2->is_type( 'variation' ) ? self::map_variation_row( $v2 ) : self::map_variation_row( $v ) );
@@ -6050,7 +6074,7 @@ class Webino_Dashboard_REST_Crud {
 				continue;
 			}
 			$v->save();
-			self::maybe_sync_variation_wfcp( (int) $vid );
+			self::maybe_sync_variation_wfcp( (int) $vid, $sub );
 			++$updated;
 		}
 		self::sync_variable_parent( $parent_id );

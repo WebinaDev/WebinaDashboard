@@ -719,7 +719,12 @@ final class Webino_Dashboard_Coffee_Pricing {
 		}
 		update_post_meta( $product_id, '_wfcp_purchase_price', $purchase );
 		update_post_meta( $product_id, '_regular_price', $purchase );
-		update_post_meta( $product_id, '_price', $purchase );
+		$sale = get_post_meta( $product_id, '_sale_price', true );
+		if ( '' !== $sale && is_numeric( $sale ) && (float) $sale > 0 && (float) $sale < (float) $purchase ) {
+			update_post_meta( $product_id, '_price', $sale );
+		} else {
+			update_post_meta( $product_id, '_price', $purchase );
+		}
 	}
 
 	/**

@@ -631,6 +631,27 @@ class WFCP_Helper {
 	 * @param float $purchase_price Purchase price.
 	 * @return void
 	 */
+	/**
+	 * Set regular price and keep active sale as the live `_price` when valid.
+	 *
+	 * @param WC_Product $product Product.
+	 * @param string|float $regular New regular price.
+	 * @return void
+	 */
+	public static function set_regular_preserving_sale( $product, $regular ) {
+		if ( ! $product || ! is_object( $product ) || ! method_exists( $product, 'set_regular_price' ) ) {
+			return;
+		}
+		$regular = wc_format_decimal( $regular );
+		$product->set_regular_price( (string) $regular );
+		$sale = method_exists( $product, 'get_sale_price' ) ? $product->get_sale_price( 'edit' ) : '';
+		if ( '' !== $sale && null !== $sale && is_numeric( $sale ) && (float) $sale > 0 && (float) $regular > 0 && (float) $sale < (float) $regular ) {
+			$product->set_price( (string) wc_format_decimal( $sale ) );
+		} else {
+			$product->set_price( (string) $regular );
+		}
+	}
+
 	public static function sync_retail_price_from_purchase( $product_id, $purchase_price ) {
 		if ( self::is_product_price_locked( $product_id ) || ! class_exists( 'WFCP_Calculator', false ) ) {
 			return;
@@ -641,15 +662,19 @@ class WFCP_Helper {
 			$product = wc_get_product( $product_id );
 			if ( $product ) {
 				$product->update_meta_data( '_wfcp_purchase_price', (float) $purchase_price );
-				$product->set_regular_price( (string) $retail );
-				$product->set_price( (string) $retail );
+				self::set_regular_preserving_sale( $product, $retail );
 				$product->save();
 				return;
 			}
 		}
 
 		update_post_meta( $product_id, '_regular_price', $retail );
-		update_post_meta( $product_id, '_price', $retail );
+		$sale = get_post_meta( $product_id, '_sale_price', true );
+		if ( '' !== $sale && is_numeric( $sale ) && (float) $sale > 0 && (float) $sale < (float) $retail ) {
+			update_post_meta( $product_id, '_price', $sale );
+		} else {
+			update_post_meta( $product_id, '_price', $retail );
+		}
 	}
 
 	/**

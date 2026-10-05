@@ -105,7 +105,7 @@ class Webino_Dashboard_Currency {
 			return false;
 		}
 		$upper = strtoupper( $code );
-		if ( in_array( $upper, array( 'IRT', 'TOMAN' ), true ) ) {
+		if ( in_array( $upper, array( 'IRT', 'TOMAN', 'IRHT' ), true ) ) {
 			return true;
 		}
 		if ( preg_match( '/تومان|toman|irt/iu', $code ) || preg_match( '/تومان|toman|irt/iu', $sym ) ) {

@@ -98,10 +98,38 @@ var O = Object.defineProperty, k = (e, t) => () => (e && (t = e(e = 0)), t), A =
 }], ["path", {
 	d: "m6 6 12 12",
 	key: "d8bk6v"
-}]]);
+}]]), oe = null;
+function se() {
+	return oe;
+}
+//#endregion
+//#region src/lib/authLost.ts
+var ce = ["auth", "session"], le = new Set([
+	"rest_cookie_invalid_nonce",
+	"rest_not_logged_in",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function ue(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !0;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (le.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
+}
+function de(e) {
+	let t = e ?? se();
+	t && t.setQueryData(ce, { logged_in: !1 });
+}
+function fe(e) {
+	ue(e) && de();
+}
 //#endregion
 //#region src/lib/safeUrl.ts
-function oe(e) {
+function pe(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -113,38 +141,38 @@ function oe(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function se() {
+function me() {
 	return window.webinoDashboard;
 }
-var ce = 3e4;
-function le(e) {
+var he = 3e4;
+function ge(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function ue(e) {
-	let t = se();
+function _e(e) {
+	let t = me();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (le(e) || oe(e)) return e;
-	throw new Se("Request blocked: URL not allowed", {
+	if (ge(e) || pe(e)) return e;
+	throw new ke("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function de(e, t) {
+function ve(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function fe(e) {
+function ye(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
-	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : null;
+	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function pe(e, t) {
+function be(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -160,13 +188,13 @@ function pe(e, t) {
 		code: "invalid_json"
 	};
 }
-function me(e, t) {
+function xe(e, t) {
 	let n = e.toLowerCase();
 	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
 }
-async function he(e, t, n = {}) {
-	let r = fe(e), i = se();
-	if (!r || !i.ajaxUrl) throw new Se("AJAX fallback unavailable", {
+async function Se(e, t, n = {}) {
+	let r = ye(e), i = me();
+	if (!r || !i.ajaxUrl) throw new ke("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
 	});
@@ -179,7 +207,7 @@ async function he(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = de({}, t);
+	let { signal: l, clear: u } = ve({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -191,21 +219,24 @@ async function he(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new Se(me(t, e.status), {
+			throw new ke(xe(t, e.status), {
 				code: "invalid_json",
 				status: e.status
 			});
 		}
-		if (!n.success) throw new Se(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
-			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
-			status: e.status
-		});
+		if (!n.success) {
+			let t = new ke(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
+				status: e.status
+			});
+			throw fe(t), t;
+		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof Se ? e : e instanceof DOMException && e.name === "AbortError" ? new Se("Request timed out", {
+		throw e instanceof ke ? (fe(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ke("Request timed out", {
 			code: "timeout",
 			status: 0
-		}) : e instanceof TypeError ? new Se("Network unavailable", {
+		}) : e instanceof TypeError ? new ke("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -213,11 +244,11 @@ async function he(e, t, n = {}) {
 		u();
 	}
 }
-async function V(e, t = {}, n = ce) {
-	if (fe(e) && se().ajaxUrl) return he(e, n, t);
-	let r = ue(e), i = se(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
-	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce);
-	let { signal: s, clear: c } = de(t, n);
+async function V(e, t = {}, n = he) {
+	if (ye(e) && me().ajaxUrl) return Se(e, n, t);
+	let r = _e(e), i = me(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
+	let { signal: s, clear: c } = ve(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -228,25 +259,25 @@ async function V(e, t = {}, n = ce) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = pe(n, e.status);
-			throw new Se(t.message, {
+			let t = be(n, e.status);
+			throw new ke(t.message, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		if (!e.ok) {
-			let t = i;
-			throw new Se(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			let t = i, n = new ke(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
+			throw fe(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof Se ? e : e instanceof DOMException && e.name === "AbortError" ? new Se("Request timed out", {
+		throw e instanceof ke ? (fe(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ke("Request timed out", {
 			code: "timeout",
 			status: 0
-		}) : e instanceof TypeError ? new Se("Network unavailable", {
+		}) : e instanceof TypeError ? new ke("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -254,12 +285,12 @@ async function V(e, t = {}, n = ce) {
 		c();
 	}
 }
-async function ge(e, t, n) {
-	let r = ue(e), i = se(), a = new FormData();
+async function Ce(e, t, n) {
+	let r = _e(e), i = me(), a = new FormData();
 	if (a.append("file", t), n) for (let [e, t] of Object.entries(n)) a.append(e, t);
 	let o = {};
 	i.nonce && (o["X-WP-Nonce"] = i.nonce);
-	let { signal: s, clear: c } = de({}, ce);
+	let { signal: s, clear: c } = ve({}, he);
 	try {
 		let e = await fetch(r, {
 			method: "POST",
@@ -269,13 +300,13 @@ async function ge(e, t, n) {
 			signal: s
 		}), t = await e.json().catch(() => ({}));
 		if (!e.ok) {
-			let n = t;
-			throw new Se(typeof n.message == "string" ? n.message : typeof n.error == "string" ? n.error : n.code || e.statusText, {
+			let n = t, r = new ke(typeof n.message == "string" ? n.message : typeof n.error == "string" ? n.error : n.code || e.statusText, {
 				code: n.code,
 				status: e.status
 			});
+			throw fe(r), r;
 		}
-		if (!t.id || t.id < 1) throw new Se("Invalid upload response", {
+		if (!t.id || t.id < 1) throw new ke("Invalid upload response", {
 			code: "invalid",
 			status: e.status
 		});
@@ -284,7 +315,7 @@ async function ge(e, t, n) {
 			url: t.url ?? ""
 		};
 	} catch (e) {
-		throw e instanceof Se ? e : e instanceof DOMException && e.name === "AbortError" ? new Se("Request timed out", {
+		throw e instanceof ke ? (fe(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ke("Request timed out", {
 			code: "timeout",
 			status: 0
 		}) : e;
@@ -294,41 +325,41 @@ async function ge(e, t, n) {
 }
 //#endregion
 //#region src/lib/marketplace-api.ts
-function _e(e) {
+function we(e) {
 	return `marketplace.installStep.${e}`;
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/typeof.js
-function ve(e) {
+function Te(e) {
 	"@babel/helpers - typeof";
-	return ve = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
+	return Te = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
 		return typeof e;
 	} : function(e) {
 		return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
-	}, ve(e);
+	}, Te(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPrimitive.js
-function ye(e, t) {
-	if (ve(e) != "object" || !e) return e;
+function Ee(e, t) {
+	if (Te(e) != "object" || !e) return e;
 	var n = e[Symbol.toPrimitive];
 	if (n !== void 0) {
 		var r = n.call(e, t || "default");
-		if (ve(r) != "object") return r;
+		if (Te(r) != "object") return r;
 		throw TypeError("@@toPrimitive must return a primitive value.");
 	}
 	return (t === "string" ? String : Number)(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPropertyKey.js
-function be(e) {
-	var t = ye(e, "string");
-	return ve(t) == "symbol" ? t : t + "";
+function De(e) {
+	var t = Ee(e, "string");
+	return Te(t) == "symbol" ? t : t + "";
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/defineProperty.js
-function xe(e, t, n) {
-	return (t = be(t)) in e ? Object.defineProperty(e, t, {
+function Oe(e, t, n) {
+	return (t = De(t)) in e ? Object.defineProperty(e, t, {
 		value: n,
 		enumerable: !0,
 		configurable: !0,
@@ -337,11 +368,11 @@ function xe(e, t, n) {
 }
 //#endregion
 //#region src/lib/apiError.ts
-var Se = class extends Error {
+var ke = class extends Error {
 	constructor(e, t) {
-		super(e), xe(this, "code", void 0), xe(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
+		super(e), Oe(this, "code", void 0), Oe(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
 	}
-}, Ce = {
+}, Ae = {
 	invalid: "errors.api.invalid",
 	ai_disabled: "aiContent.errDisabled",
 	ai_entity_off: "aiContent.errEntityOff",
@@ -371,22 +402,22 @@ var Se = class extends Error {
 	install_job_start_failed: "marketplace.installJobStartFailed",
 	build_dev_only: "buildPipeline.devOnly"
 };
-function we(e) {
+function je(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 28") || t.includes("timed out") || t.includes("did not respond in time") || t.includes("زمان") && t.includes("پاسخ");
 }
-function Te(e) {
+function Me(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 52") || t.includes("empty reply") || t.includes("closed the connection without a response") || t.includes("پاسخ") && t.includes("خالی");
 }
-function Ee(e, t) {
-	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(_e(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
+function Ne(e, t) {
+	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(we(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
 }
-function De(e, t) {
+function Pe(e, t) {
 	let n = t;
-	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return Ee(e, n);
-	if (t instanceof Se && t.code) {
-		let n = Ce[t.code];
+	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return Ne(e, n);
+	if (t instanceof ke && t.code) {
+		let n = Ae[t.code];
 		if (n === "marketplace.installFailedGeneric") {
 			let n = t.message?.trim();
 			return n ? e("marketplace.installFailed", { message: n }) : e("marketplace.installFailedGeneric");
@@ -394,129 +425,129 @@ function De(e, t) {
 		if (n) return e(n);
 	}
 	if (t && typeof t == "object" && "code" in t) {
-		let n = Ce[String(t.code)];
+		let n = Ae[String(t.code)];
 		if (n) return e(n);
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return we(n) ? e("errors.api.timeout") : Te(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return je(n) ? e("errors.api.timeout") : Me(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
-function Oe(e, t) {
-	x.error(De(e, t));
+function Fe(e, t) {
+	x.error(Pe(e, t));
 }
 //#endregion
 //#region node_modules/clsx/dist/clsx.mjs
-function ke(e) {
+function Ie(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
 	else if (typeof e == "object") if (Array.isArray(e)) {
 		var i = e.length;
-		for (t = 0; t < i; t++) e[t] && (n = ke(e[t])) && (r && (r += " "), r += n);
+		for (t = 0; t < i; t++) e[t] && (n = Ie(e[t])) && (r && (r += " "), r += n);
 	} else for (n in e) e[n] && (r && (r += " "), r += n);
 	return r;
 }
-function Ae() {
-	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = ke(e)) && (r && (r += " "), r += t);
+function Le() {
+	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = Ie(e)) && (r && (r += " "), r += t);
 	return r;
 }
 //#endregion
 //#region node_modules/tailwind-merge/dist/bundle-mjs.mjs
-var je = (e, t) => {
+var Re = (e, t) => {
 	let n = Array(e.length + t.length);
 	for (let t = 0; t < e.length; t++) n[t] = e[t];
 	for (let r = 0; r < t.length; r++) n[e.length + r] = t[r];
 	return n;
-}, Me = (e, t) => ({
+}, ze = (e, t) => ({
 	classGroupId: e,
 	validator: t
-}), Ne = (e = /* @__PURE__ */ new Map(), t = null, n) => ({
+}), Be = (e = /* @__PURE__ */ new Map(), t = null, n) => ({
 	nextPart: e,
 	validators: t,
 	classGroupId: n
-}), Pe = "-", Fe = [], Ie = "arbitrary..", Le = (e) => {
-	let t = Be(e), { conflictingClassGroups: n, conflictingClassGroupModifiers: r } = e;
+}), Ve = "-", He = [], Ue = "arbitrary..", We = (e) => {
+	let t = qe(e), { conflictingClassGroups: n, conflictingClassGroupModifiers: r } = e;
 	return {
 		getClassGroupId: (e) => {
-			if (e.startsWith("[") && e.endsWith("]")) return ze(e);
-			let n = e.split(Pe);
-			return Re(n, +(n[0] === "" && n.length > 1), t);
+			if (e.startsWith("[") && e.endsWith("]")) return Ke(e);
+			let n = e.split(Ve);
+			return Ge(n, +(n[0] === "" && n.length > 1), t);
 		},
 		getConflictingClassGroupIds: (e, t) => {
 			if (t) {
 				let t = r[e], i = n[e];
-				return t ? i ? je(i, t) : t : i || Fe;
+				return t ? i ? Re(i, t) : t : i || He;
 			}
-			return n[e] || Fe;
+			return n[e] || He;
 		}
 	};
-}, Re = (e, t, n) => {
+}, Ge = (e, t, n) => {
 	if (e.length - t === 0) return n.classGroupId;
 	let r = e[t], i = n.nextPart.get(r);
 	if (i) {
-		let n = Re(e, t + 1, i);
+		let n = Ge(e, t + 1, i);
 		if (n) return n;
 	}
 	let a = n.validators;
 	if (a === null) return;
-	let o = t === 0 ? e.join(Pe) : e.slice(t).join(Pe), s = a.length;
+	let o = t === 0 ? e.join(Ve) : e.slice(t).join(Ve), s = a.length;
 	for (let e = 0; e < s; e++) {
 		let t = a[e];
 		if (t.validator(o)) return t.classGroupId;
 	}
-}, ze = (e) => e.slice(1, -1).indexOf(":") === -1 ? void 0 : (() => {
+}, Ke = (e) => e.slice(1, -1).indexOf(":") === -1 ? void 0 : (() => {
 	let t = e.slice(1, -1), n = t.indexOf(":"), r = t.slice(0, n);
-	return r ? Ie + r : void 0;
-})(), Be = (e) => {
+	return r ? Ue + r : void 0;
+})(), qe = (e) => {
 	let { theme: t, classGroups: n } = e;
-	return Ve(n, t);
-}, Ve = (e, t) => {
-	let n = Ne();
+	return Je(n, t);
+}, Je = (e, t) => {
+	let n = Be();
 	for (let r in e) {
 		let i = e[r];
-		He(i, n, r, t);
+		Ye(i, n, r, t);
 	}
 	return n;
-}, He = (e, t, n, r) => {
+}, Ye = (e, t, n, r) => {
 	let i = e.length;
 	for (let a = 0; a < i; a++) {
 		let i = e[a];
-		Ue(i, t, n, r);
+		Xe(i, t, n, r);
 	}
-}, Ue = (e, t, n, r) => {
+}, Xe = (e, t, n, r) => {
 	if (typeof e == "string") {
-		We(e, t, n);
+		Ze(e, t, n);
 		return;
 	}
 	if (typeof e == "function") {
-		Ge(e, t, n, r);
+		Qe(e, t, n, r);
 		return;
 	}
-	Ke(e, t, n, r);
-}, We = (e, t, n) => {
-	let r = e === "" ? t : qe(t, e);
+	$e(e, t, n, r);
+}, Ze = (e, t, n) => {
+	let r = e === "" ? t : et(t, e);
 	r.classGroupId = n;
-}, Ge = (e, t, n, r) => {
-	if (Je(e)) {
-		He(e(r), t, n, r);
+}, Qe = (e, t, n, r) => {
+	if (tt(e)) {
+		Ye(e(r), t, n, r);
 		return;
 	}
-	t.validators === null && (t.validators = []), t.validators.push(Me(n, e));
-}, Ke = (e, t, n, r) => {
+	t.validators === null && (t.validators = []), t.validators.push(ze(n, e));
+}, $e = (e, t, n, r) => {
 	let i = Object.entries(e), a = i.length;
 	for (let e = 0; e < a; e++) {
 		let [a, o] = i[e];
-		He(o, qe(t, a), n, r);
+		Ye(o, et(t, a), n, r);
 	}
-}, qe = (e, t) => {
-	let n = e, r = t.split(Pe), i = r.length;
+}, et = (e, t) => {
+	let n = e, r = t.split(Ve), i = r.length;
 	for (let e = 0; e < i; e++) {
 		let t = r[e], i = n.nextPart.get(t);
-		i || (i = Ne(), n.nextPart.set(t, i)), n = i;
+		i || (i = Be(), n.nextPart.set(t, i)), n = i;
 	}
 	return n;
-}, Je = (e) => "isThemeGetter" in e && e.isThemeGetter === !0, Ye = (e) => {
+}, tt = (e) => "isThemeGetter" in e && e.isThemeGetter === !0, nt = (e) => {
 	if (e < 1) return {
 		get: () => void 0,
 		set: () => {}
@@ -534,19 +565,19 @@ var je = (e, t) => {
 			e in n ? n[e] = t : i(e, t);
 		}
 	};
-}, Xe = "!", Ze = ":", Qe = [], $e = (e, t, n, r, i) => ({
+}, rt = "!", it = ":", at = [], ot = (e, t, n, r, i) => ({
 	modifiers: e,
 	hasImportantModifier: t,
 	baseClassName: n,
 	maybePostfixModifierPosition: r,
 	isExternal: i
-}), et = (e) => {
+}), st = (e) => {
 	let { prefix: t, experimentalParseClassName: n } = e, r = (e) => {
 		let t = [], n = 0, r = 0, i = 0, a, o = e.length;
 		for (let s = 0; s < o; s++) {
 			let o = e[s];
 			if (n === 0 && r === 0) {
-				if (o === Ze) {
+				if (o === it) {
 					t.push(e.slice(i, s)), i = s + 1;
 					continue;
 				}
@@ -558,13 +589,13 @@ var je = (e, t) => {
 			o === "[" ? n++ : o === "]" ? n-- : o === "(" ? r++ : o === ")" && r--;
 		}
 		let s = t.length === 0 ? e : e.slice(i), c = s, l = !1;
-		s.endsWith(Xe) ? (c = s.slice(0, -1), l = !0) : s.startsWith(Xe) && (c = s.slice(1), l = !0);
+		s.endsWith(rt) ? (c = s.slice(0, -1), l = !0) : s.startsWith(rt) && (c = s.slice(1), l = !0);
 		let u = a && a > i ? a - i : void 0;
-		return $e(t, l, c, u);
+		return ot(t, l, c, u);
 	};
 	if (t) {
-		let e = t + Ze, n = r;
-		r = (t) => t.startsWith(e) ? n(t.slice(e.length)) : $e(Qe, !1, t, void 0, !0);
+		let e = t + it, n = r;
+		r = (t) => t.startsWith(e) ? n(t.slice(e.length)) : ot(at, !1, t, void 0, !0);
 	}
 	if (n) {
 		let e = r;
@@ -574,7 +605,7 @@ var je = (e, t) => {
 		});
 	}
 	return r;
-}, tt = (e) => {
+}, ct = (e) => {
 	let t = /* @__PURE__ */ new Map();
 	return e.orderSensitiveModifiers.forEach((e, n) => {
 		t.set(e, 1e6 + n);
@@ -586,13 +617,13 @@ var je = (e, t) => {
 		}
 		return r.length > 0 && (r.sort(), n.push(...r)), n;
 	};
-}, nt = (e) => ({
-	cache: Ye(e.cacheSize),
-	parseClassName: et(e),
-	sortModifiers: tt(e),
-	...Le(e)
-}), rt = /\s+/, it = (e, t) => {
-	let { parseClassName: n, getClassGroupId: r, getConflictingClassGroupIds: i, sortModifiers: a } = t, o = [], s = e.trim().split(rt), c = "";
+}, lt = (e) => ({
+	cache: nt(e.cacheSize),
+	parseClassName: st(e),
+	sortModifiers: ct(e),
+	...We(e)
+}), ut = /\s+/, dt = (e, t) => {
+	let { parseClassName: n, getClassGroupId: r, getConflictingClassGroupIds: i, sortModifiers: a } = t, o = [], s = e.trim().split(ut), c = "";
 	for (let e = s.length - 1; e >= 0; --e) {
 		let t = s[e], { isExternal: l, modifiers: u, hasImportantModifier: d, baseClassName: f, maybePostfixModifierPosition: p } = n(t);
 		if (l) {
@@ -611,7 +642,7 @@ var je = (e, t) => {
 			}
 			m = !1;
 		}
-		let g = u.length === 0 ? "" : u.length === 1 ? u[0] : a(u).join(":"), _ = d ? g + Xe : g, v = _ + h;
+		let g = u.length === 0 ? "" : u.length === 1 ? u[0] : a(u).join(":"), _ = d ? g + rt : g, v = _ + h;
 		if (o.indexOf(v) > -1) continue;
 		o.push(v);
 		let y = i(h, m);
@@ -622,34 +653,34 @@ var je = (e, t) => {
 		c = t + (c.length > 0 ? " " + c : c);
 	}
 	return c;
-}, at = (...e) => {
+}, ft = (...e) => {
 	let t = 0, n, r, i = "";
-	for (; t < e.length;) (n = e[t++]) && (r = ot(n)) && (i && (i += " "), i += r);
+	for (; t < e.length;) (n = e[t++]) && (r = pt(n)) && (i && (i += " "), i += r);
 	return i;
-}, ot = (e) => {
+}, pt = (e) => {
 	if (typeof e == "string") return e;
 	let t, n = "";
-	for (let r = 0; r < e.length; r++) e[r] && (t = ot(e[r])) && (n && (n += " "), n += t);
+	for (let r = 0; r < e.length; r++) e[r] && (t = pt(e[r])) && (n && (n += " "), n += t);
 	return n;
-}, st = (e, ...t) => {
-	let n, r, i, a, o = (o) => (n = nt(t.reduce((e, t) => t(e), e())), r = n.cache.get, i = n.cache.set, a = s, s(o)), s = (e) => {
+}, mt = (e, ...t) => {
+	let n, r, i, a, o = (o) => (n = lt(t.reduce((e, t) => t(e), e())), r = n.cache.get, i = n.cache.set, a = s, s(o)), s = (e) => {
 		let t = r(e);
 		if (t) return t;
-		let a = it(e, n);
+		let a = dt(e, n);
 		return i(e, a), a;
 	};
-	return a = o, (...e) => a(at(...e));
-}, ct = [], lt = (e) => {
-	let t = (t) => t[e] || ct;
+	return a = o, (...e) => a(ft(...e));
+}, ht = [], gt = (e) => {
+	let t = (t) => t[e] || ht;
 	return t.isThemeGetter = !0, t;
-}, ut = /^\[(?:(\w[\w-]*):)?(.+)\]$/i, dt = /^\((?:(\w[\w-]*):)?(.+)\)$/i, ft = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/, pt = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/, mt = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/, ht = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/, gt = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/, _t = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/, vt = (e) => ft.test(e), H = (e) => !!e && !Number.isNaN(Number(e)), yt = (e) => !!e && Number.isInteger(Number(e)), bt = (e) => e.endsWith("%") && H(e.slice(0, -1)), xt = (e) => pt.test(e), St = () => !0, Ct = (e) => mt.test(e) && !ht.test(e), wt = () => !1, Tt = (e) => gt.test(e), Et = (e) => _t.test(e), Dt = (e) => !U(e) && !W(e), Ot = (e) => Ut(e, qt, wt), U = (e) => ut.test(e), kt = (e) => Ut(e, Jt, Ct), At = (e) => Ut(e, Yt, H), jt = (e) => Ut(e, Zt, St), Mt = (e) => Ut(e, Xt, wt), Nt = (e) => Ut(e, Gt, wt), Pt = (e) => Ut(e, Kt, Et), Ft = (e) => Ut(e, Qt, Tt), W = (e) => dt.test(e), It = (e) => Wt(e, Jt), Lt = (e) => Wt(e, Xt), Rt = (e) => Wt(e, Gt), zt = (e) => Wt(e, qt), Bt = (e) => Wt(e, Kt), Vt = (e) => Wt(e, Qt, !0), Ht = (e) => Wt(e, Zt, !0), Ut = (e, t, n) => {
-	let r = ut.exec(e);
+}, _t = /^\[(?:(\w[\w-]*):)?(.+)\]$/i, vt = /^\((?:(\w[\w-]*):)?(.+)\)$/i, yt = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/, bt = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/, xt = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/, St = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/, Ct = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/, wt = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/, Tt = (e) => yt.test(e), H = (e) => !!e && !Number.isNaN(Number(e)), Et = (e) => !!e && Number.isInteger(Number(e)), Dt = (e) => e.endsWith("%") && H(e.slice(0, -1)), Ot = (e) => bt.test(e), kt = () => !0, At = (e) => xt.test(e) && !St.test(e), jt = () => !1, Mt = (e) => Ct.test(e), Nt = (e) => wt.test(e), Pt = (e) => !U(e) && !W(e), Ft = (e) => Xt(e, en, jt), U = (e) => _t.test(e), It = (e) => Xt(e, tn, At), Lt = (e) => Xt(e, nn, H), Rt = (e) => Xt(e, an, kt), zt = (e) => Xt(e, rn, jt), Bt = (e) => Xt(e, Qt, jt), Vt = (e) => Xt(e, $t, Nt), Ht = (e) => Xt(e, on, Mt), W = (e) => vt.test(e), Ut = (e) => Zt(e, tn), Wt = (e) => Zt(e, rn), Gt = (e) => Zt(e, Qt), Kt = (e) => Zt(e, en), qt = (e) => Zt(e, $t), Jt = (e) => Zt(e, on, !0), Yt = (e) => Zt(e, an, !0), Xt = (e, t, n) => {
+	let r = _t.exec(e);
 	return r ? r[1] ? t(r[1]) : n(r[2]) : !1;
-}, Wt = (e, t, n = !1) => {
-	let r = dt.exec(e);
+}, Zt = (e, t, n = !1) => {
+	let r = vt.exec(e);
 	return r ? r[1] ? t(r[1]) : n : !1;
-}, Gt = (e) => e === "position" || e === "percentage", Kt = (e) => e === "image" || e === "url", qt = (e) => e === "length" || e === "size" || e === "bg-size", Jt = (e) => e === "length", Yt = (e) => e === "number", Xt = (e) => e === "family-name", Zt = (e) => e === "number" || e === "weight", Qt = (e) => e === "shadow", $t = /* @__PURE__ */ st(() => {
-	let e = lt("color"), t = lt("font"), n = lt("text"), r = lt("font-weight"), i = lt("tracking"), a = lt("leading"), o = lt("breakpoint"), s = lt("container"), c = lt("spacing"), l = lt("radius"), u = lt("shadow"), d = lt("inset-shadow"), f = lt("text-shadow"), p = lt("drop-shadow"), m = lt("blur"), h = lt("perspective"), g = lt("aspect"), _ = lt("ease"), v = lt("animate"), y = () => [
+}, Qt = (e) => e === "position" || e === "percentage", $t = (e) => e === "image" || e === "url", en = (e) => e === "length" || e === "size" || e === "bg-size", tn = (e) => e === "length", nn = (e) => e === "number", rn = (e) => e === "family-name", an = (e) => e === "number" || e === "weight", on = (e) => e === "shadow", sn = /* @__PURE__ */ mt(() => {
+	let e = gt("color"), t = gt("font"), n = gt("text"), r = gt("font-weight"), i = gt("tracking"), a = gt("leading"), o = gt("breakpoint"), s = gt("container"), c = gt("spacing"), l = gt("radius"), u = gt("shadow"), d = gt("inset-shadow"), f = gt("text-shadow"), p = gt("drop-shadow"), m = gt("blur"), h = gt("perspective"), g = gt("aspect"), _ = gt("ease"), v = gt("animate"), y = () => [
 		"auto",
 		"avoid",
 		"all",
@@ -691,12 +722,12 @@ var je = (e, t) => {
 		U,
 		c
 	], T = () => [
-		vt,
+		Tt,
 		"full",
 		"auto",
 		...w()
 	], E = () => [
-		yt,
+		Et,
 		"none",
 		"subgrid",
 		W,
@@ -705,15 +736,15 @@ var je = (e, t) => {
 		"auto",
 		{ span: [
 			"full",
-			yt,
+			Et,
 			W,
 			U
 		] },
-		yt,
+		Et,
 		W,
 		U
 	], O = () => [
-		yt,
+		Et,
 		"auto",
 		W,
 		U
@@ -743,7 +774,7 @@ var je = (e, t) => {
 		"center-safe",
 		"end-safe"
 	], M = () => ["auto", ...w()], N = () => [
-		vt,
+		Tt,
 		"auto",
 		"full",
 		"dvw",
@@ -757,7 +788,7 @@ var je = (e, t) => {
 		"fit",
 		...w()
 	], P = () => [
-		vt,
+		Tt,
 		"screen",
 		"full",
 		"dvw",
@@ -768,7 +799,7 @@ var je = (e, t) => {
 		"fit",
 		...w()
 	], F = () => [
-		vt,
+		Tt,
 		"screen",
 		"full",
 		"lh",
@@ -785,8 +816,8 @@ var je = (e, t) => {
 		U
 	], L = () => [
 		...b(),
-		Rt,
-		Nt,
+		Gt,
+		Bt,
 		{ position: [W, U] }
 	], ee = () => ["no-repeat", { repeat: [
 		"",
@@ -798,13 +829,13 @@ var je = (e, t) => {
 		"auto",
 		"cover",
 		"contain",
-		zt,
-		Ot,
+		Kt,
+		Ft,
 		{ size: [W, U] }
 	], ne = () => [
-		bt,
-		It,
-		kt
+		Dt,
+		Ut,
+		It
 	], R = () => [
 		"",
 		"none",
@@ -815,8 +846,8 @@ var je = (e, t) => {
 	], z = () => [
 		"",
 		H,
-		It,
-		kt
+		Ut,
+		It
 	], re = () => [
 		"solid",
 		"dashed",
@@ -841,9 +872,9 @@ var je = (e, t) => {
 		"luminosity"
 	], B = () => [
 		H,
-		bt,
-		Rt,
-		Nt
+		Dt,
+		Gt,
+		Bt
 	], ae = () => [
 		"",
 		"none",
@@ -865,7 +896,7 @@ var je = (e, t) => {
 		W,
 		U
 	], le = () => [
-		vt,
+		Tt,
 		"full",
 		...w()
 	];
@@ -879,17 +910,17 @@ var je = (e, t) => {
 				"bounce"
 			],
 			aspect: ["video"],
-			blur: [xt],
-			breakpoint: [xt],
-			color: [St],
-			container: [xt],
-			"drop-shadow": [xt],
+			blur: [Ot],
+			breakpoint: [Ot],
+			color: [kt],
+			container: [Ot],
+			"drop-shadow": [Ot],
 			ease: [
 				"in",
 				"out",
 				"in-out"
 			],
-			font: [Dt],
+			font: [Pt],
 			"font-weight": [
 				"thin",
 				"extralight",
@@ -901,7 +932,7 @@ var je = (e, t) => {
 				"extrabold",
 				"black"
 			],
-			"inset-shadow": [xt],
+			"inset-shadow": [Ot],
 			leading: [
 				"none",
 				"tight",
@@ -918,11 +949,11 @@ var je = (e, t) => {
 				"distant",
 				"none"
 			],
-			radius: [xt],
-			shadow: [xt],
+			radius: [Ot],
+			shadow: [Ot],
 			spacing: ["px", H],
-			text: [xt],
-			"text-shadow": [xt],
+			text: [Ot],
+			"text-shadow": [Ot],
 			tracking: [
 				"tighter",
 				"tight",
@@ -936,7 +967,7 @@ var je = (e, t) => {
 			aspect: [{ aspect: [
 				"auto",
 				"square",
-				vt,
+				Tt,
 				U,
 				W,
 				g
@@ -1042,13 +1073,13 @@ var je = (e, t) => {
 				"collapse"
 			],
 			z: [{ z: [
-				yt,
+				Et,
 				"auto",
 				W,
 				U
 			] }],
 			basis: [{ basis: [
-				vt,
+				Tt,
 				"full",
 				"auto",
 				s,
@@ -1067,7 +1098,7 @@ var je = (e, t) => {
 			] }],
 			flex: [{ flex: [
 				H,
-				vt,
+				Tt,
 				"auto",
 				"initial",
 				"none",
@@ -1086,7 +1117,7 @@ var je = (e, t) => {
 				U
 			] }],
 			order: [{ order: [
-				yt,
+				Et,
 				"first",
 				"last",
 				"none",
@@ -1197,15 +1228,15 @@ var je = (e, t) => {
 			"font-size": [{ text: [
 				"base",
 				n,
-				It,
-				kt
+				Ut,
+				It
 			] }],
 			"font-smoothing": ["antialiased", "subpixel-antialiased"],
 			"font-style": ["italic", "not-italic"],
 			"font-weight": [{ font: [
 				r,
-				Ht,
-				jt
+				Yt,
+				Rt
 			] }],
 			"font-stretch": [{ "font-stretch": [
 				"ultra-condensed",
@@ -1217,12 +1248,12 @@ var je = (e, t) => {
 				"expanded",
 				"extra-expanded",
 				"ultra-expanded",
-				bt,
+				Dt,
 				U
 			] }],
 			"font-family": [{ font: [
-				Lt,
-				Mt,
+				Wt,
+				zt,
 				t
 			] }],
 			"font-features": [{ "font-features": [U] }],
@@ -1241,7 +1272,7 @@ var je = (e, t) => {
 				H,
 				"none",
 				W,
-				At
+				Lt
 			] }],
 			leading: [{ leading: [a, ...w()] }],
 			"list-image": [{ "list-image": [
@@ -1279,7 +1310,7 @@ var je = (e, t) => {
 				"from-font",
 				"auto",
 				W,
-				kt
+				It
 			] }],
 			"text-decoration-color": [{ decoration: I() }],
 			"underline-offset": [{ "underline-offset": [
@@ -1380,7 +1411,7 @@ var je = (e, t) => {
 							"l",
 							"tl"
 						] },
-						yt,
+						Et,
 						W,
 						U
 					],
@@ -1390,13 +1421,13 @@ var je = (e, t) => {
 						U
 					],
 					conic: [
-						yt,
+						Et,
 						W,
 						U
 					]
 				},
-				Bt,
-				Pt
+				qt,
+				Vt
 			] }],
 			"bg-color": [{ bg: I() }],
 			"gradient-from-pos": [{ from: ne() }],
@@ -1470,37 +1501,37 @@ var je = (e, t) => {
 			"outline-w": [{ outline: [
 				"",
 				H,
-				It,
-				kt
+				Ut,
+				It
 			] }],
 			"outline-color": [{ outline: I() }],
 			shadow: [{ shadow: [
 				"",
 				"none",
 				u,
-				Vt,
-				Ft
+				Jt,
+				Ht
 			] }],
 			"shadow-color": [{ shadow: I() }],
 			"inset-shadow": [{ "inset-shadow": [
 				"none",
 				d,
-				Vt,
-				Ft
+				Jt,
+				Ht
 			] }],
 			"inset-shadow-color": [{ "inset-shadow": I() }],
 			"ring-w": [{ ring: z() }],
 			"ring-w-inset": ["ring-inset"],
 			"ring-color": [{ ring: I() }],
-			"ring-offset-w": [{ "ring-offset": [H, kt] }],
+			"ring-offset-w": [{ "ring-offset": [H, It] }],
 			"ring-offset-color": [{ "ring-offset": I() }],
 			"inset-ring-w": [{ "inset-ring": z() }],
 			"inset-ring-color": [{ "inset-ring": I() }],
 			"text-shadow": [{ "text-shadow": [
 				"none",
 				f,
-				Vt,
-				Ft
+				Jt,
+				Ht
 			] }],
 			"text-shadow-color": [{ "text-shadow": I() }],
 			opacity: [{ opacity: [
@@ -1616,8 +1647,8 @@ var je = (e, t) => {
 				"",
 				"none",
 				p,
-				Vt,
-				Ft
+				Jt,
+				Ht
 			] }],
 			"drop-shadow-color": [{ "drop-shadow": I() }],
 			grayscale: [{ grayscale: [
@@ -1903,9 +1934,9 @@ var je = (e, t) => {
 			fill: [{ fill: ["none", ...I()] }],
 			"stroke-w": [{ stroke: [
 				H,
+				Ut,
 				It,
-				kt,
-				At
+				Lt
 			] }],
 			stroke: [{ stroke: ["none", ...I()] }],
 			"forced-color-adjust": [{ "forced-color-adjust": ["auto", "none"] }]
@@ -2095,11 +2126,11 @@ var je = (e, t) => {
 //#endregion
 //#region src/lib/utils.ts
 function G(...e) {
-	return $t(Ae(e));
+	return sn(Le(e));
 }
 //#endregion
 //#region src/components/currency/IrtIcon.tsx
-function en({ className: e }) {
+function cn({ className: e }) {
 	return /* @__PURE__ */ w("svg", {
 		width: "13",
 		height: "12",
@@ -2134,47 +2165,82 @@ function en({ className: e }) {
 }
 //#endregion
 //#region src/lib/currency.ts
-var tn = /تومان|toman|irt/i;
-function nn(e) {
+var ln = /تومان|toman|irt/i;
+function un(e) {
 	return e.replace(/&nbsp;/gi, " ").replace(/&#160;/g, " ").replace(/&#x0*a0;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, "\"").replace(/&#(\d+);/g, (e, t) => {
 		let n = Number(t);
 		return Number.isFinite(n) ? String.fromCharCode(n) : e;
 	}).replace(/\u00a0/g, " ");
 }
-function rn(e, t) {
+function dn(e, t) {
 	let n = (e ?? "").trim(), r = (t ?? "").trim();
 	if (!n && !r) return !1;
 	let i = n.toUpperCase();
-	return !!(i === "IRT" || i === "TOMAN" || tn.test(n) || tn.test(r));
+	return !!(i === "IRT" || i === "TOMAN" || i === "IRHT" || ln.test(n) || ln.test(r));
 }
 //#endregion
 //#region src/lib/digits.ts
-var an = "۰۱۲۳۴۵۶۷۸۹";
-function on(e) {
+var fn = "۰۱۲۳۴۵۶۷۸۹", pn = {
+	"۰": "0",
+	"۱": "1",
+	"۲": "2",
+	"۳": "3",
+	"۴": "4",
+	"۵": "5",
+	"۶": "6",
+	"۷": "7",
+	"۸": "8",
+	"۹": "9",
+	"٠": "0",
+	"١": "1",
+	"٢": "2",
+	"٣": "3",
+	"٤": "4",
+	"٥": "5",
+	"٦": "6",
+	"٧": "7",
+	"٨": "8",
+	"٩": "9"
+};
+function mn(e) {
 	return e.toLowerCase().startsWith("fa");
 }
-function sn(e) {
+function hn(e) {
 	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
+}
+function gn(e) {
+	return e.replace(/[۰-۹٠-٩]/g, (e) => pn[e] ?? e);
+}
+function _n(e, t) {
+	return mn(t) ? hn(e) : e;
 }
 //#endregion
 //#region src/lib/formatNumber.ts
-function cn(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = on(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return on(t) ? sn(i) : i;
+function vn(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = mn(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return mn(t) ? hn(i) : i;
 }
 //#endregion
 //#region src/components/currency/MoneyDisplay.tsx
-function ln({ amount: e, currency: t, currencySymbol: n, locale: r, className: i, amountClassName: a, prefix: o }) {
-	let s = typeof e == "string" ? nn(e).replace(/[^\d.-]/g, "") : "", c = typeof e == "number" ? e : parseFloat(s), l = typeof e == "string" && Number.isNaN(c) ? nn(e) : cn(Number.isFinite(c) ? c : 0, r), u = rn(t, n) || !t?.trim() && !n?.trim();
+var yn = /تومان|toman|irt/gi;
+function bn(e) {
+	if (typeof e == "number") return Number.isFinite(e) ? e : 0;
+	let t = gn(un(e)).replace(yn, "").replace(/[^\d.-]/g, ""), n = parseFloat(t);
+	return Number.isFinite(n) ? n : NaN;
+}
+function xn({ amount: e, currency: t, currencySymbol: n, locale: r, className: i, amountClassName: a, prefix: o }) {
+	let s = bn(e), c = Number.isFinite(s) ? vn(s, r) : _n(gn(un(String(e))).replace(yn, "").trim(), r), l = dn(t, n) || !t?.trim() && !n?.trim();
 	return /* @__PURE__ */ w("span", {
 		className: G("inline-flex items-baseline gap-1", i),
+		dir: "ltr",
 		children: [
 			o,
+			l ? /* @__PURE__ */ C(cn, {}) : null,
 			/* @__PURE__ */ C("span", {
 				className: a,
-				children: l
+				children: c
 			}),
-			u ? /* @__PURE__ */ C(en, {}) : t ? /* @__PURE__ */ C("span", {
+			!l && t ? /* @__PURE__ */ C("span", {
 				className: "text-muted-foreground text-[0.85em]",
 				children: t
 			}) : null
@@ -2183,18 +2249,18 @@ function ln({ amount: e, currency: t, currencySymbol: n, locale: r, className: i
 }
 //#endregion
 //#region node_modules/class-variance-authority/dist/index.mjs
-var un = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, dn = Ae, fn = (e, t) => (n) => {
-	if (t?.variants == null) return dn(e, n?.class, n?.className);
+var Sn = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, Cn = Le, wn = (e, t) => (n) => {
+	if (t?.variants == null) return Cn(e, n?.class, n?.className);
 	let { variants: r, defaultVariants: i } = t, a = Object.keys(r).map((e) => {
 		let t = n?.[e], a = i?.[e];
 		if (t === null) return null;
-		let o = un(t) || un(a);
+		let o = Sn(t) || Sn(a);
 		return r[e][o];
 	}), o = n && Object.entries(n).reduce((e, t) => {
 		let [n, r] = t;
 		return r === void 0 || (e[n] = r), e;
 	}, {});
-	return dn(e, a, t?.compoundVariants?.reduce((e, t) => {
+	return Cn(e, a, t?.compoundVariants?.reduce((e, t) => {
 		let { class: n, className: r, ...a } = t;
 		return Object.entries(a).every((e) => {
 			let [t, n] = e;
@@ -2214,33 +2280,33 @@ var un = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, dn = Ae, fn 
 };
 //#endregion
 //#region node_modules/@radix-ui/react-compose-refs/dist/index.mjs
-function pn(e, t) {
+function Tn(e, t) {
 	if (typeof e == "function") return e(t);
 	e != null && (e.current = t);
 }
-function mn(...e) {
+function En(...e) {
 	return (t) => {
 		let n = !1, r = e.map((e) => {
-			let r = pn(e, t);
+			let r = Tn(e, t);
 			return !n && typeof r == "function" && (n = !0), r;
 		});
 		if (n) return () => {
 			for (let t = 0; t < r.length; t++) {
 				let n = r[t];
-				typeof n == "function" ? n() : pn(e[t], null);
+				typeof n == "function" ? n() : Tn(e[t], null);
 			}
 		};
 	};
 }
 function K(...e) {
-	return r.useCallback(mn(...e), e);
+	return r.useCallback(En(...e), e);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function hn(e) {
-	let t = /* @__PURE__ */ gn(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(vn);
+function Dn(e) {
+	let t = /* @__PURE__ */ On(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(An);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ C(t, {
@@ -2258,22 +2324,22 @@ function hn(e) {
 	return n.displayName = `${e}.Slot`, n;
 }
 /* @__NO_SIDE_EFFECTS__ */
-function gn(e) {
+function On(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
-			let e = bn(n), a = yn(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? mn(t, e) : e), r.cloneElement(n, a);
+			let e = Mn(n), a = jn(i, n.props);
+			return n.type !== r.Fragment && (a.ref = t ? En(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var _n = Symbol("radix.slottable");
-function vn(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === _n;
+var kn = Symbol("radix.slottable");
+function An(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === kn;
 }
-function yn(e, t) {
+function jn(e, t) {
 	let n = { ...t };
 	for (let r in t) {
 		let i = e[r], a = t[r];
@@ -2290,7 +2356,7 @@ function yn(e, t) {
 		...n
 	};
 }
-function bn(e) {
+function Mn(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
@@ -2315,7 +2381,7 @@ var q = [
 	"svg",
 	"ul"
 ].reduce((e, t) => {
-	let n = /* @__PURE__ */ hn(`Primitive.${t}`), i = r.forwardRef((e, r) => {
+	let n = /* @__PURE__ */ Dn(`Primitive.${t}`), i = r.forwardRef((e, r) => {
 		let { asChild: i, ...a } = e, o = i ? n : t;
 		return typeof window < "u" && (window[Symbol.for("radix-ui")] = !0), /* @__PURE__ */ C(o, {
 			...a,
@@ -2327,12 +2393,12 @@ var q = [
 		[t]: i
 	};
 }, {});
-function xn(e, t) {
+function Nn(e, t) {
 	e && T.flushSync(() => e.dispatchEvent(t));
 }
 //#endregion
 //#region node_modules/@radix-ui/react-visually-hidden/dist/index.mjs
-var Sn = Object.freeze({
+var Pn = Object.freeze({
 	position: "absolute",
 	border: 0,
 	width: 1,
@@ -2343,18 +2409,18 @@ var Sn = Object.freeze({
 	clip: "rect(0, 0, 0, 0)",
 	whiteSpace: "nowrap",
 	wordWrap: "normal"
-}), Cn = "VisuallyHidden", wn = r.forwardRef((e, t) => /* @__PURE__ */ C(q.span, {
+}), Fn = "VisuallyHidden", In = r.forwardRef((e, t) => /* @__PURE__ */ C(q.span, {
 	...e,
 	ref: t,
 	style: {
-		...Sn,
+		...Pn,
 		...e.style
 	}
 }));
-wn.displayName = Cn;
+In.displayName = Fn;
 //#endregion
 //#region node_modules/@radix-ui/react-context/dist/index.mjs
-function Tn(e, t) {
+function Ln(e, t) {
 	let n = r.createContext(t), i = (e) => {
 		let { children: t, ...i } = e, a = r.useMemo(() => i, Object.values(i));
 		return /* @__PURE__ */ C(n.Provider, {
@@ -2371,7 +2437,7 @@ function Tn(e, t) {
 	}
 	return [i, a];
 }
-function En(e, t = []) {
+function Rn(e, t = []) {
 	let n = [];
 	function i(t, i) {
 		let a = r.createContext(i), o = n.length;
@@ -2402,9 +2468,9 @@ function En(e, t = []) {
 			} }), [n, i]);
 		};
 	};
-	return a.scopeName = e, [i, Dn(a, ...t)];
+	return a.scopeName = e, [i, zn(a, ...t)];
 }
-function Dn(...e) {
+function zn(...e) {
 	let t = e[0];
 	if (e.length === 1) return t;
 	let n = () => {
@@ -2428,9 +2494,9 @@ function Dn(...e) {
 //#endregion
 //#region node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function On(e) {
-	let t = /* @__PURE__ */ kn(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(jn);
+function Bn(e) {
+	let t = /* @__PURE__ */ Vn(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(Un);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ C(t, {
@@ -2448,22 +2514,22 @@ function On(e) {
 	return n.displayName = `${e}.Slot`, n;
 }
 /* @__NO_SIDE_EFFECTS__ */
-function kn(e) {
+function Vn(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
-			let e = Nn(n), a = Mn(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? mn(t, e) : e), r.cloneElement(n, a);
+			let e = Gn(n), a = Wn(i, n.props);
+			return n.type !== r.Fragment && (a.ref = t ? En(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var An = Symbol("radix.slottable");
-function jn(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === An;
+var Hn = Symbol("radix.slottable");
+function Un(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === Hn;
 }
-function Mn(e, t) {
+function Wn(e, t) {
 	let n = { ...t };
 	for (let r in t) {
 		let i = e[r], a = t[r];
@@ -2480,12 +2546,12 @@ function Mn(e, t) {
 		...n
 	};
 }
-function Nn(e) {
+function Gn(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
-function Pn(e) {
-	let t = e + "CollectionProvider", [n, r] = En(t), [a, o] = n(t, {
+function Kn(e) {
+	let t = e + "CollectionProvider", [n, r] = Rn(t), [a, o] = n(t, {
 		collectionRef: { current: null },
 		itemMap: /* @__PURE__ */ new Map()
 	}), s = (e) => {
@@ -2498,7 +2564,7 @@ function Pn(e) {
 		});
 	};
 	s.displayName = t;
-	let c = e + "CollectionSlot", l = /* @__PURE__ */ On(c), u = i.forwardRef((e, t) => {
+	let c = e + "CollectionSlot", l = /* @__PURE__ */ Bn(c), u = i.forwardRef((e, t) => {
 		let { scope: n, children: r } = e;
 		return /* @__PURE__ */ C(l, {
 			ref: K(t, o(c, n).collectionRef),
@@ -2506,7 +2572,7 @@ function Pn(e) {
 		});
 	});
 	u.displayName = c;
-	let d = e + "CollectionItemSlot", f = "data-radix-collection-item", p = /* @__PURE__ */ On(d), m = i.forwardRef((e, t) => {
+	let d = e + "CollectionItemSlot", f = "data-radix-collection-item", p = /* @__PURE__ */ Bn(d), m = i.forwardRef((e, t) => {
 		let { scope: n, children: r, ...a } = e, s = i.useRef(null), c = K(t, s), l = o(d, n);
 		return i.useEffect(() => (l.itemMap.set(s, {
 			ref: s,
@@ -2545,9 +2611,9 @@ function J(e, t, { checkForDefaultPrevented: n = !0 } = {}) {
 }
 //#endregion
 //#region node_modules/@radix-ui/react-use-layout-effect/dist/index.mjs
-var Fn = globalThis?.document ? r.useLayoutEffect : () => {}, In = r.useInsertionEffect || Fn;
-function Ln({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
-	let [a, o, s] = Rn({
+var qn = globalThis?.document ? r.useLayoutEffect : () => {}, Jn = r.useInsertionEffect || qn;
+function Yn({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
+	let [a, o, s] = Xn({
 		defaultProp: t,
 		onChange: n
 	}), c = e !== void 0, l = c ? e : a;
@@ -2560,7 +2626,7 @@ function Ln({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
 	}
 	return [l, r.useCallback((t) => {
 		if (c) {
-			let n = zn(t) ? t(e) : t;
+			let n = Zn(t) ? t(e) : t;
 			n !== e && s.current?.(n);
 		} else o(t);
 	}, [
@@ -2570,9 +2636,9 @@ function Ln({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
 		s
 	])];
 }
-function Rn({ defaultProp: e, onChange: t }) {
+function Xn({ defaultProp: e, onChange: t }) {
 	let [n, i] = r.useState(e), a = r.useRef(n), o = r.useRef(t);
-	return In(() => {
+	return Jn(() => {
 		o.current = t;
 	}, [t]), r.useEffect(() => {
 		a.current !== n && (o.current?.(n), a.current = n);
@@ -2582,21 +2648,21 @@ function Rn({ defaultProp: e, onChange: t }) {
 		o
 	];
 }
-function zn(e) {
+function Zn(e) {
 	return typeof e == "function";
 }
 //#endregion
 //#region node_modules/@radix-ui/react-presence/dist/index.mjs
-function Bn(e, t) {
+function Qn(e, t) {
 	return r.useReducer((e, n) => t[e][n] ?? e, e);
 }
-var Vn = (e) => {
-	let { present: t, children: n } = e, i = Hn(t), a = typeof n == "function" ? n({ present: i.isPresent }) : r.Children.only(n), o = K(i.ref, Wn(a));
+var $n = (e) => {
+	let { present: t, children: n } = e, i = er(t), a = typeof n == "function" ? n({ present: i.isPresent }) : r.Children.only(n), o = K(i.ref, nr(a));
 	return typeof n == "function" || i.isPresent ? r.cloneElement(a, { ref: o }) : null;
 };
-Vn.displayName = "Presence";
-function Hn(e) {
-	let [t, n] = r.useState(), i = r.useRef(null), a = r.useRef(e), o = r.useRef("none"), [s, c] = Bn(e ? "mounted" : "unmounted", {
+$n.displayName = "Presence";
+function er(e) {
+	let [t, n] = r.useState(), i = r.useRef(null), a = r.useRef(e), o = r.useRef("none"), [s, c] = Qn(e ? "mounted" : "unmounted", {
 		mounted: {
 			UNMOUNT: "unmounted",
 			ANIMATION_OUT: "unmountSuspended"
@@ -2608,18 +2674,18 @@ function Hn(e) {
 		unmounted: { MOUNT: "mounted" }
 	});
 	return r.useEffect(() => {
-		let e = Un(i.current);
+		let e = tr(i.current);
 		o.current = s === "mounted" ? e : "none";
-	}, [s]), Fn(() => {
+	}, [s]), qn(() => {
 		let t = i.current, n = a.current;
 		if (n !== e) {
-			let r = o.current, i = Un(t);
+			let r = o.current, i = tr(t);
 			e ? c("MOUNT") : i === "none" || t?.display === "none" ? c("UNMOUNT") : c(n && r !== i ? "ANIMATION_OUT" : "UNMOUNT"), a.current = e;
 		}
-	}, [e, c]), Fn(() => {
+	}, [e, c]), qn(() => {
 		if (t) {
 			let e, n = t.ownerDocument.defaultView ?? window, r = (r) => {
-				let o = Un(i.current).includes(CSS.escape(r.animationName));
+				let o = tr(i.current).includes(CSS.escape(r.animationName));
 				if (r.target === t && o && (c("ANIMATION_END"), !a.current)) {
 					let r = t.style.animationFillMode;
 					t.style.animationFillMode = "forwards", e = n.setTimeout(() => {
@@ -2627,7 +2693,7 @@ function Hn(e) {
 					});
 				}
 			}, s = (e) => {
-				e.target === t && (o.current = Un(i.current));
+				e.target === t && (o.current = tr(i.current));
 			};
 			return t.addEventListener("animationstart", s), t.addEventListener("animationcancel", r), t.addEventListener("animationend", r), () => {
 				n.clearTimeout(e), t.removeEventListener("animationstart", s), t.removeEventListener("animationcancel", r), t.removeEventListener("animationend", r);
@@ -2640,53 +2706,53 @@ function Hn(e) {
 		}, [])
 	};
 }
-function Un(e) {
+function tr(e) {
 	return e?.animationName || "none";
 }
-function Wn(e) {
+function nr(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-id/dist/index.mjs
-var Gn = r.useId || (() => void 0), Kn = 0;
-function qn(e) {
-	let [t, n] = r.useState(Gn());
-	return Fn(() => {
-		e || n((e) => e ?? String(Kn++));
+var rr = r.useId || (() => void 0), ir = 0;
+function ar(e) {
+	let [t, n] = r.useState(rr());
+	return qn(() => {
+		e || n((e) => e ?? String(ir++));
 	}, [e]), e || (t ? `radix-${t}` : "");
 }
 //#endregion
 //#region node_modules/@radix-ui/react-collapsible/dist/index.mjs
-var Jn = "Collapsible", [Yn, Xn] = En(Jn), [Zn, Qn] = Yn(Jn), $n = r.forwardRef((e, t) => {
-	let { __scopeCollapsible: n, open: i, defaultOpen: a, disabled: o, onOpenChange: s, ...c } = e, [l, u] = Ln({
+var or = "Collapsible", [sr, cr] = Rn(or), [lr, ur] = sr(or), dr = r.forwardRef((e, t) => {
+	let { __scopeCollapsible: n, open: i, defaultOpen: a, disabled: o, onOpenChange: s, ...c } = e, [l, u] = Yn({
 		prop: i,
 		defaultProp: a ?? !1,
 		onChange: s,
-		caller: Jn
+		caller: or
 	});
-	return /* @__PURE__ */ C(Zn, {
+	return /* @__PURE__ */ C(lr, {
 		scope: n,
 		disabled: o,
-		contentId: qn(),
+		contentId: ar(),
 		open: l,
 		onOpenToggle: r.useCallback(() => u((e) => !e), [u]),
 		children: /* @__PURE__ */ C(q.div, {
-			"data-state": ar(l),
+			"data-state": _r(l),
 			"data-disabled": o ? "" : void 0,
 			...c,
 			ref: t
 		})
 	});
 });
-$n.displayName = Jn;
-var er = "CollapsibleTrigger", tr = r.forwardRef((e, t) => {
-	let { __scopeCollapsible: n, ...r } = e, i = Qn(er, n);
+dr.displayName = or;
+var fr = "CollapsibleTrigger", pr = r.forwardRef((e, t) => {
+	let { __scopeCollapsible: n, ...r } = e, i = ur(fr, n);
 	return /* @__PURE__ */ C(q.button, {
 		type: "button",
 		"aria-controls": i.contentId,
 		"aria-expanded": i.open || !1,
-		"data-state": ar(i.open),
+		"data-state": _r(i.open),
 		"data-disabled": i.disabled ? "" : void 0,
 		disabled: i.disabled,
 		...r,
@@ -2694,25 +2760,25 @@ var er = "CollapsibleTrigger", tr = r.forwardRef((e, t) => {
 		onClick: J(e.onClick, i.onOpenToggle)
 	});
 });
-tr.displayName = er;
-var nr = "CollapsibleContent", rr = r.forwardRef((e, t) => {
-	let { forceMount: n, ...r } = e, i = Qn(nr, e.__scopeCollapsible);
-	return /* @__PURE__ */ C(Vn, {
+pr.displayName = fr;
+var mr = "CollapsibleContent", hr = r.forwardRef((e, t) => {
+	let { forceMount: n, ...r } = e, i = ur(mr, e.__scopeCollapsible);
+	return /* @__PURE__ */ C($n, {
 		present: n || i.open,
-		children: ({ present: e }) => /* @__PURE__ */ C(ir, {
+		children: ({ present: e }) => /* @__PURE__ */ C(gr, {
 			...r,
 			ref: t,
 			present: e
 		})
 	});
 });
-rr.displayName = nr;
-var ir = r.forwardRef((e, t) => {
-	let { __scopeCollapsible: n, present: i, children: a, ...o } = e, s = Qn(nr, n), [c, l] = r.useState(i), u = r.useRef(null), d = K(t, u), f = r.useRef(0), p = f.current, m = r.useRef(0), h = m.current, g = s.open || c, _ = r.useRef(g), v = r.useRef(void 0);
+hr.displayName = mr;
+var gr = r.forwardRef((e, t) => {
+	let { __scopeCollapsible: n, present: i, children: a, ...o } = e, s = ur(mr, n), [c, l] = r.useState(i), u = r.useRef(null), d = K(t, u), f = r.useRef(0), p = f.current, m = r.useRef(0), h = m.current, g = s.open || c, _ = r.useRef(g), v = r.useRef(void 0);
 	return r.useEffect(() => {
 		let e = requestAnimationFrame(() => _.current = !1);
 		return () => cancelAnimationFrame(e);
-	}, []), Fn(() => {
+	}, []), qn(() => {
 		let e = u.current;
 		if (e) {
 			v.current = v.current || {
@@ -2723,7 +2789,7 @@ var ir = r.forwardRef((e, t) => {
 			f.current = t.height, m.current = t.width, _.current || (e.style.transitionDuration = v.current.transitionDuration, e.style.animationName = v.current.animationName), l(i);
 		}
 	}, [s.open, i]), /* @__PURE__ */ C(q.div, {
-		"data-state": ar(s.open),
+		"data-state": _r(s.open),
 		"data-disabled": s.disabled ? "" : void 0,
 		id: s.contentId,
 		hidden: !g,
@@ -2737,17 +2803,17 @@ var ir = r.forwardRef((e, t) => {
 		children: g && a
 	});
 });
-function ar(e) {
+function _r(e) {
 	return e ? "open" : "closed";
 }
-var or = $n, sr = r.createContext(void 0);
-function cr(e) {
-	let t = r.useContext(sr);
+var vr = dr, yr = r.createContext(void 0);
+function br(e) {
+	let t = r.useContext(yr);
 	return e || t || "ltr";
 }
 //#endregion
 //#region node_modules/@radix-ui/react-use-callback-ref/dist/index.mjs
-function lr(e) {
+function xr(e) {
 	let t = r.useRef(e);
 	return r.useEffect(() => {
 		t.current = e;
@@ -2755,8 +2821,8 @@ function lr(e) {
 }
 //#endregion
 //#region node_modules/@radix-ui/react-use-escape-keydown/dist/index.mjs
-function ur(e, t = globalThis?.document) {
-	let n = lr(e);
+function Sr(e, t = globalThis?.document) {
+	let n = xr(e);
 	r.useEffect(() => {
 		let e = (e) => {
 			e.key === "Escape" && n(e);
@@ -2766,23 +2832,23 @@ function ur(e, t = globalThis?.document) {
 }
 //#endregion
 //#region node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs
-var dr = "DismissableLayer", fr = "dismissableLayer.update", pr = "dismissableLayer.pointerDownOutside", mr = "dismissableLayer.focusOutside", hr, gr = r.createContext({
+var Cr = "DismissableLayer", wr = "dismissableLayer.update", Tr = "dismissableLayer.pointerDownOutside", Er = "dismissableLayer.focusOutside", Dr, Or = r.createContext({
 	layers: /* @__PURE__ */ new Set(),
 	layersWithOutsidePointerEventsDisabled: /* @__PURE__ */ new Set(),
 	branches: /* @__PURE__ */ new Set()
-}), _r = r.forwardRef((e, t) => {
-	let { disableOutsidePointerEvents: n = !1, onEscapeKeyDown: i, onPointerDownOutside: a, onFocusOutside: o, onInteractOutside: s, onDismiss: c, ...l } = e, u = r.useContext(gr), [d, f] = r.useState(null), p = d?.ownerDocument ?? globalThis?.document, [, m] = r.useState({}), h = K(t, (e) => f(e)), g = Array.from(u.layers), [_] = [...u.layersWithOutsidePointerEventsDisabled].slice(-1), v = g.indexOf(_), y = d ? g.indexOf(d) : -1, b = u.layersWithOutsidePointerEventsDisabled.size > 0, x = y >= v, S = br((e) => {
+}), kr = r.forwardRef((e, t) => {
+	let { disableOutsidePointerEvents: n = !1, onEscapeKeyDown: i, onPointerDownOutside: a, onFocusOutside: o, onInteractOutside: s, onDismiss: c, ...l } = e, u = r.useContext(Or), [d, f] = r.useState(null), p = d?.ownerDocument ?? globalThis?.document, [, m] = r.useState({}), h = K(t, (e) => f(e)), g = Array.from(u.layers), [_] = [...u.layersWithOutsidePointerEventsDisabled].slice(-1), v = g.indexOf(_), y = d ? g.indexOf(d) : -1, b = u.layersWithOutsidePointerEventsDisabled.size > 0, x = y >= v, S = Mr((e) => {
 		let t = e.target, n = [...u.branches].some((e) => e.contains(t));
 		!x || n || (a?.(e), s?.(e), e.defaultPrevented || c?.());
-	}, p), w = xr((e) => {
+	}, p), w = Nr((e) => {
 		let t = e.target;
 		[...u.branches].some((e) => e.contains(t)) || (o?.(e), s?.(e), e.defaultPrevented || c?.());
 	}, p);
-	return ur((e) => {
+	return Sr((e) => {
 		y === u.layers.size - 1 && (i?.(e), !e.defaultPrevented && c && (e.preventDefault(), c()));
 	}, p), r.useEffect(() => {
-		if (d) return n && (u.layersWithOutsidePointerEventsDisabled.size === 0 && (hr = p.body.style.pointerEvents, p.body.style.pointerEvents = "none"), u.layersWithOutsidePointerEventsDisabled.add(d)), u.layers.add(d), Sr(), () => {
-			n && u.layersWithOutsidePointerEventsDisabled.size === 1 && (p.body.style.pointerEvents = hr);
+		if (d) return n && (u.layersWithOutsidePointerEventsDisabled.size === 0 && (Dr = p.body.style.pointerEvents, p.body.style.pointerEvents = "none"), u.layersWithOutsidePointerEventsDisabled.add(d)), u.layers.add(d), Pr(), () => {
+			n && u.layersWithOutsidePointerEventsDisabled.size === 1 && (p.body.style.pointerEvents = Dr);
 		};
 	}, [
 		d,
@@ -2790,10 +2856,10 @@ var dr = "DismissableLayer", fr = "dismissableLayer.update", pr = "dismissableLa
 		n,
 		u
 	]), r.useEffect(() => () => {
-		d && (u.layers.delete(d), u.layersWithOutsidePointerEventsDisabled.delete(d), Sr());
+		d && (u.layers.delete(d), u.layersWithOutsidePointerEventsDisabled.delete(d), Pr());
 	}, [d, u]), r.useEffect(() => {
 		let e = () => m({});
-		return document.addEventListener(fr, e), () => document.removeEventListener(fr, e);
+		return document.addEventListener(wr, e), () => document.removeEventListener(wr, e);
 	}, []), /* @__PURE__ */ C(q.div, {
 		...l,
 		ref: h,
@@ -2806,9 +2872,9 @@ var dr = "DismissableLayer", fr = "dismissableLayer.update", pr = "dismissableLa
 		onPointerDownCapture: J(e.onPointerDownCapture, S.onPointerDownCapture)
 	});
 });
-_r.displayName = dr;
-var vr = "DismissableLayerBranch", yr = r.forwardRef((e, t) => {
-	let n = r.useContext(gr), i = r.useRef(null), a = K(t, i);
+kr.displayName = Cr;
+var Ar = "DismissableLayerBranch", jr = r.forwardRef((e, t) => {
+	let n = r.useContext(Or), i = r.useRef(null), a = K(t, i);
 	return r.useEffect(() => {
 		let e = i.current;
 		if (e) return n.branches.add(e), () => {
@@ -2819,14 +2885,14 @@ var vr = "DismissableLayerBranch", yr = r.forwardRef((e, t) => {
 		ref: a
 	});
 });
-yr.displayName = vr;
-function br(e, t = globalThis?.document) {
-	let n = lr(e), i = r.useRef(!1), a = r.useRef(() => {});
+jr.displayName = Ar;
+function Mr(e, t = globalThis?.document) {
+	let n = xr(e), i = r.useRef(!1), a = r.useRef(() => {});
 	return r.useEffect(() => {
 		let e = (e) => {
 			if (e.target && !i.current) {
 				let r = function() {
-					Cr(pr, n, i, { discrete: !0 });
+					Fr(Tr, n, i, { discrete: !0 });
 				}, i = { originalEvent: e };
 				e.pointerType === "touch" ? (t.removeEventListener("click", a.current), a.current = r, t.addEventListener("click", a.current, { once: !0 })) : r();
 			} else t.removeEventListener("click", a.current);
@@ -2839,11 +2905,11 @@ function br(e, t = globalThis?.document) {
 		};
 	}, [t, n]), { onPointerDownCapture: () => i.current = !0 };
 }
-function xr(e, t = globalThis?.document) {
-	let n = lr(e), i = r.useRef(!1);
+function Nr(e, t = globalThis?.document) {
+	let n = xr(e), i = r.useRef(!1);
 	return r.useEffect(() => {
 		let e = (e) => {
-			e.target && !i.current && Cr(mr, n, { originalEvent: e }, { discrete: !1 });
+			e.target && !i.current && Fr(Er, n, { originalEvent: e }, { discrete: !1 });
 		};
 		return t.addEventListener("focusin", e), () => t.removeEventListener("focusin", e);
 	}, [t, n]), {
@@ -2851,25 +2917,25 @@ function xr(e, t = globalThis?.document) {
 		onBlurCapture: () => i.current = !1
 	};
 }
-function Sr() {
-	let e = new CustomEvent(fr);
+function Pr() {
+	let e = new CustomEvent(wr);
 	document.dispatchEvent(e);
 }
-function Cr(e, t, n, { discrete: r }) {
+function Fr(e, t, n, { discrete: r }) {
 	let i = n.originalEvent.target, a = new CustomEvent(e, {
 		bubbles: !1,
 		cancelable: !0,
 		detail: n
 	});
-	t && i.addEventListener(e, t, { once: !0 }), r ? xn(i, a) : i.dispatchEvent(a);
+	t && i.addEventListener(e, t, { once: !0 }), r ? Nn(i, a) : i.dispatchEvent(a);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-focus-scope/dist/index.mjs
-var wr = "focusScope.autoFocusOnMount", Tr = "focusScope.autoFocusOnUnmount", Er = {
+var Ir = "focusScope.autoFocusOnMount", Lr = "focusScope.autoFocusOnUnmount", Rr = {
 	bubbles: !1,
 	cancelable: !0
-}, Dr = "FocusScope", Or = r.forwardRef((e, t) => {
-	let { loop: n = !1, trapped: i = !1, onMountAutoFocus: a, onUnmountAutoFocus: o, ...s } = e, [c, l] = r.useState(null), u = lr(a), d = lr(o), f = r.useRef(null), p = K(t, (e) => l(e)), m = r.useRef({
+}, zr = "FocusScope", Br = r.forwardRef((e, t) => {
+	let { loop: n = !1, trapped: i = !1, onMountAutoFocus: a, onUnmountAutoFocus: o, ...s } = e, [c, l] = r.useState(null), u = xr(a), d = xr(o), f = r.useRef(null), p = K(t, (e) => l(e)), m = r.useRef({
 		paused: !1,
 		pause() {
 			this.paused = !0;
@@ -2883,13 +2949,13 @@ var wr = "focusScope.autoFocusOnMount", Tr = "focusScope.autoFocusOnUnmount", Er
 			let e = function(e) {
 				if (m.paused || !c) return;
 				let t = e.target;
-				c.contains(t) ? f.current = t : Fr(f.current, { select: !0 });
+				c.contains(t) ? f.current = t : qr(f.current, { select: !0 });
 			}, t = function(e) {
 				if (m.paused || !c) return;
 				let t = e.relatedTarget;
-				t !== null && (c.contains(t) || Fr(f.current, { select: !0 }));
+				t !== null && (c.contains(t) || qr(f.current, { select: !0 }));
 			}, n = function(e) {
-				if (document.activeElement === document.body) for (let t of e) t.removedNodes.length > 0 && Fr(c);
+				if (document.activeElement === document.body) for (let t of e) t.removedNodes.length > 0 && qr(c);
 			};
 			document.addEventListener("focusin", e), document.addEventListener("focusout", t);
 			let r = new MutationObserver(n);
@@ -2906,16 +2972,16 @@ var wr = "focusScope.autoFocusOnMount", Tr = "focusScope.autoFocusOnUnmount", Er
 		m.paused
 	]), r.useEffect(() => {
 		if (c) {
-			Ir.add(m);
+			Jr.add(m);
 			let e = document.activeElement;
 			if (!c.contains(e)) {
-				let t = new CustomEvent(wr, Er);
-				c.addEventListener(wr, u), c.dispatchEvent(t), t.defaultPrevented || (kr(zr(jr(c)), { select: !0 }), document.activeElement === e && Fr(c));
+				let t = new CustomEvent(Ir, Rr);
+				c.addEventListener(Ir, u), c.dispatchEvent(t), t.defaultPrevented || (Vr(Zr(Ur(c)), { select: !0 }), document.activeElement === e && qr(c));
 			}
 			return () => {
-				c.removeEventListener(wr, u), setTimeout(() => {
-					let t = new CustomEvent(Tr, Er);
-					c.addEventListener(Tr, d), c.dispatchEvent(t), t.defaultPrevented || Fr(e ?? document.body, { select: !0 }), c.removeEventListener(Tr, d), Ir.remove(m);
+				c.removeEventListener(Ir, u), setTimeout(() => {
+					let t = new CustomEvent(Lr, Rr);
+					c.addEventListener(Lr, d), c.dispatchEvent(t), t.defaultPrevented || qr(e ?? document.body, { select: !0 }), c.removeEventListener(Lr, d), Jr.remove(m);
 				}, 0);
 			};
 		}
@@ -2929,8 +2995,8 @@ var wr = "focusScope.autoFocusOnMount", Tr = "focusScope.autoFocusOnUnmount", Er
 		if (!n && !i || m.paused) return;
 		let t = e.key === "Tab" && !e.altKey && !e.ctrlKey && !e.metaKey, r = document.activeElement;
 		if (t && r) {
-			let t = e.currentTarget, [i, a] = Ar(t);
-			i && a ? !e.shiftKey && r === a ? (e.preventDefault(), n && Fr(i, { select: !0 })) : e.shiftKey && r === i && (e.preventDefault(), n && Fr(a, { select: !0 })) : r === t && e.preventDefault();
+			let t = e.currentTarget, [i, a] = Hr(t);
+			i && a ? !e.shiftKey && r === a ? (e.preventDefault(), n && qr(i, { select: !0 })) : e.shiftKey && r === i && (e.preventDefault(), n && qr(a, { select: !0 })) : r === t && e.preventDefault();
 		}
 	}, [
 		n,
@@ -2944,16 +3010,16 @@ var wr = "focusScope.autoFocusOnMount", Tr = "focusScope.autoFocusOnUnmount", Er
 		onKeyDown: h
 	});
 });
-Or.displayName = Dr;
-function kr(e, { select: t = !1 } = {}) {
+Br.displayName = zr;
+function Vr(e, { select: t = !1 } = {}) {
 	let n = document.activeElement;
-	for (let r of e) if (Fr(r, { select: t }), document.activeElement !== n) return;
+	for (let r of e) if (qr(r, { select: t }), document.activeElement !== n) return;
 }
-function Ar(e) {
-	let t = jr(e);
-	return [Mr(t, e), Mr(t.reverse(), e)];
+function Hr(e) {
+	let t = Ur(e);
+	return [Wr(t, e), Wr(t.reverse(), e)];
 }
-function jr(e) {
+function Ur(e) {
 	let t = [], n = document.createTreeWalker(e, NodeFilter.SHOW_ELEMENT, { acceptNode: (e) => {
 		let t = e.tagName === "INPUT" && e.type === "hidden";
 		return e.disabled || e.hidden || t ? NodeFilter.FILTER_SKIP : e.tabIndex >= 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
@@ -2961,10 +3027,10 @@ function jr(e) {
 	for (; n.nextNode();) t.push(n.currentNode);
 	return t;
 }
-function Mr(e, t) {
-	for (let n of e) if (!Nr(n, { upTo: t })) return n;
+function Wr(e, t) {
+	for (let n of e) if (!Gr(n, { upTo: t })) return n;
 }
-function Nr(e, { upTo: t }) {
+function Gr(e, { upTo: t }) {
 	if (getComputedStyle(e).visibility === "hidden") return !0;
 	for (; e;) {
 		if (t !== void 0 && e === t) return !1;
@@ -2973,91 +3039,91 @@ function Nr(e, { upTo: t }) {
 	}
 	return !1;
 }
-function Pr(e) {
+function Kr(e) {
 	return e instanceof HTMLInputElement && "select" in e;
 }
-function Fr(e, { select: t = !1 } = {}) {
+function qr(e, { select: t = !1 } = {}) {
 	if (e && e.focus) {
 		let n = document.activeElement;
-		e.focus({ preventScroll: !0 }), e !== n && Pr(e) && t && e.select();
+		e.focus({ preventScroll: !0 }), e !== n && Kr(e) && t && e.select();
 	}
 }
-var Ir = Lr();
-function Lr() {
+var Jr = Yr();
+function Yr() {
 	let e = [];
 	return {
 		add(t) {
 			let n = e[0];
-			t !== n && n?.pause(), e = Rr(e, t), e.unshift(t);
+			t !== n && n?.pause(), e = Xr(e, t), e.unshift(t);
 		},
 		remove(t) {
-			e = Rr(e, t), e[0]?.resume();
+			e = Xr(e, t), e[0]?.resume();
 		}
 	};
 }
-function Rr(e, t) {
+function Xr(e, t) {
 	let n = [...e], r = n.indexOf(t);
 	return r !== -1 && n.splice(r, 1), n;
 }
-function zr(e) {
+function Zr(e) {
 	return e.filter((e) => e.tagName !== "A");
 }
 //#endregion
 //#region node_modules/@radix-ui/react-portal/dist/index.mjs
-var Br = "Portal", Vr = r.forwardRef((e, t) => {
+var Qr = "Portal", $r = r.forwardRef((e, t) => {
 	let { container: n, ...i } = e, [a, o] = r.useState(!1);
-	Fn(() => o(!0), []);
+	qn(() => o(!0), []);
 	let s = n || a && globalThis?.document?.body;
 	return s ? E.createPortal(/* @__PURE__ */ C(q.div, {
 		...i,
 		ref: t
 	}), s) : null;
 });
-Vr.displayName = Br;
+$r.displayName = Qr;
 //#endregion
 //#region node_modules/@radix-ui/react-focus-guards/dist/index.mjs
-var Hr = 0;
-function Ur() {
+var ei = 0;
+function ti() {
 	r.useEffect(() => {
 		let e = document.querySelectorAll("[data-radix-focus-guard]");
-		return document.body.insertAdjacentElement("afterbegin", e[0] ?? Wr()), document.body.insertAdjacentElement("beforeend", e[1] ?? Wr()), Hr++, () => {
-			Hr === 1 && document.querySelectorAll("[data-radix-focus-guard]").forEach((e) => e.remove()), Hr--;
+		return document.body.insertAdjacentElement("afterbegin", e[0] ?? ni()), document.body.insertAdjacentElement("beforeend", e[1] ?? ni()), ei++, () => {
+			ei === 1 && document.querySelectorAll("[data-radix-focus-guard]").forEach((e) => e.remove()), ei--;
 		};
 	}, []);
 }
-function Wr() {
+function ni() {
 	let e = document.createElement("span");
 	return e.setAttribute("data-radix-focus-guard", ""), e.tabIndex = 0, e.style.outline = "none", e.style.opacity = "0", e.style.position = "fixed", e.style.pointerEvents = "none", e;
 }
 //#endregion
 //#region node_modules/tslib/tslib.es6.mjs
-var Gr = function() {
-	return Gr = Object.assign || function(e) {
+var ri = function() {
+	return ri = Object.assign || function(e) {
 		for (var t, n = 1, r = arguments.length; n < r; n++) for (var i in t = arguments[n], t) Object.prototype.hasOwnProperty.call(t, i) && (e[i] = t[i]);
 		return e;
-	}, Gr.apply(this, arguments);
+	}, ri.apply(this, arguments);
 };
-function Kr(e, t) {
+function ii(e, t) {
 	var n = {};
 	for (var r in e) Object.prototype.hasOwnProperty.call(e, r) && t.indexOf(r) < 0 && (n[r] = e[r]);
 	if (e != null && typeof Object.getOwnPropertySymbols == "function") for (var i = 0, r = Object.getOwnPropertySymbols(e); i < r.length; i++) t.indexOf(r[i]) < 0 && Object.prototype.propertyIsEnumerable.call(e, r[i]) && (n[r[i]] = e[r[i]]);
 	return n;
 }
-function qr(e, t, n) {
+function ai(e, t, n) {
 	if (n || arguments.length === 2) for (var r = 0, i = t.length, a; r < i; r++) (a || !(r in t)) && (a || (a = Array.prototype.slice.call(t, 0, r)), a[r] = t[r]);
 	return e.concat(a || Array.prototype.slice.call(t));
 }
 //#endregion
 //#region node_modules/react-remove-scroll-bar/dist/es2015/constants.js
-var Jr = "right-scroll-bar-position", Yr = "width-before-scroll-bar", Xr = "with-scroll-bars-hidden", Zr = "--removed-body-scroll-bar-size";
+var oi = "right-scroll-bar-position", si = "width-before-scroll-bar", ci = "with-scroll-bars-hidden", li = "--removed-body-scroll-bar-size";
 //#endregion
 //#region node_modules/use-callback-ref/dist/es2015/assignRef.js
-function Qr(e, t) {
+function ui(e, t) {
 	return typeof e == "function" ? e(t) : e && (e.current = t), e;
 }
 //#endregion
 //#region node_modules/use-callback-ref/dist/es2015/useRef.js
-function $r(e, t) {
+function di(e, t) {
 	var n = m(function() {
 		return {
 			value: e,
@@ -3077,33 +3143,33 @@ function $r(e, t) {
 }
 //#endregion
 //#region node_modules/use-callback-ref/dist/es2015/useMergeRef.js
-var ei = typeof window < "u" ? r.useLayoutEffect : r.useEffect, ti = /* @__PURE__ */ new WeakMap();
-function ni(e, t) {
-	var n = $r(t || null, function(t) {
+var fi = typeof window < "u" ? r.useLayoutEffect : r.useEffect, pi = /* @__PURE__ */ new WeakMap();
+function mi(e, t) {
+	var n = di(t || null, function(t) {
 		return e.forEach(function(e) {
-			return Qr(e, t);
+			return ui(e, t);
 		});
 	});
-	return ei(function() {
-		var t = ti.get(n);
+	return fi(function() {
+		var t = pi.get(n);
 		if (t) {
 			var r = new Set(t), i = new Set(e), a = n.current;
 			r.forEach(function(e) {
-				i.has(e) || Qr(e, null);
+				i.has(e) || ui(e, null);
 			}), i.forEach(function(e) {
-				r.has(e) || Qr(e, a);
+				r.has(e) || ui(e, a);
 			});
 		}
-		ti.set(n, e);
+		pi.set(n, e);
 	}, [e]), n;
 }
 //#endregion
 //#region node_modules/use-sidecar/dist/es2015/medium.js
-function ri(e) {
+function hi(e) {
 	return e;
 }
-function ii(e, t) {
-	t === void 0 && (t = ri);
+function gi(e, t) {
+	t === void 0 && (t = hi);
 	var n = [], r = !1;
 	return {
 		read: function() {
@@ -3156,35 +3222,35 @@ function ii(e, t) {
 		}
 	};
 }
-function ai(e) {
+function _i(e) {
 	e === void 0 && (e = {});
-	var t = ii(null);
-	return t.options = Gr({
+	var t = gi(null);
+	return t.options = ri({
 		async: !0,
 		ssr: !1
 	}, e), t;
 }
 //#endregion
 //#region node_modules/use-sidecar/dist/es2015/exports.js
-var oi = function(e) {
-	var t = e.sideCar, n = Kr(e, ["sideCar"]);
+var vi = function(e) {
+	var t = e.sideCar, n = ii(e, ["sideCar"]);
 	if (!t) throw Error("Sidecar: please provide `sideCar` property to import the right car");
 	var i = t.read();
 	if (!i) throw Error("Sidecar medium not found");
-	return r.createElement(i, Gr({}, n));
+	return r.createElement(i, ri({}, n));
 };
-oi.isSideCarExport = !0;
-function si(e, t) {
-	return e.useMedium(t), oi;
+vi.isSideCarExport = !0;
+function yi(e, t) {
+	return e.useMedium(t), vi;
 }
 //#endregion
 //#region node_modules/react-remove-scroll/dist/es2015/medium.js
-var ci = ai(), li = function() {}, ui = r.forwardRef(function(e, t) {
+var bi = _i(), xi = function() {}, Si = r.forwardRef(function(e, t) {
 	var n = r.useRef(null), i = r.useState({
-		onScrollCapture: li,
-		onWheelCapture: li,
-		onTouchMoveCapture: li
-	}), a = i[0], o = i[1], s = e.forwardProps, c = e.children, l = e.className, u = e.removeScrollBar, d = e.enabled, f = e.shards, p = e.sideCar, m = e.noRelative, h = e.noIsolation, g = e.inert, _ = e.allowPinchZoom, v = e.as, y = v === void 0 ? "div" : v, b = e.gapMode, x = Kr(e, [
+		onScrollCapture: xi,
+		onWheelCapture: xi,
+		onTouchMoveCapture: xi
+	}), a = i[0], o = i[1], s = e.forwardProps, c = e.children, l = e.className, u = e.removeScrollBar, d = e.enabled, f = e.shards, p = e.sideCar, m = e.noRelative, h = e.noIsolation, g = e.inert, _ = e.allowPinchZoom, v = e.as, y = v === void 0 ? "div" : v, b = e.gapMode, x = ii(e, [
 		"forwardProps",
 		"children",
 		"className",
@@ -3198,9 +3264,9 @@ var ci = ai(), li = function() {}, ui = r.forwardRef(function(e, t) {
 		"allowPinchZoom",
 		"as",
 		"gapMode"
-	]), S = p, C = ni([n, t]), w = Gr(Gr({}, x), a);
+	]), S = p, C = mi([n, t]), w = ri(ri({}, x), a);
 	return r.createElement(r.Fragment, null, d && r.createElement(S, {
-		sideCar: ci,
+		sideCar: bi,
 		removeScrollBar: u,
 		shards: f,
 		noRelative: m,
@@ -3210,52 +3276,52 @@ var ci = ai(), li = function() {}, ui = r.forwardRef(function(e, t) {
 		allowPinchZoom: !!_,
 		lockRef: n,
 		gapMode: b
-	}), s ? r.cloneElement(r.Children.only(c), Gr(Gr({}, w), { ref: C })) : r.createElement(y, Gr({}, w, {
+	}), s ? r.cloneElement(r.Children.only(c), ri(ri({}, w), { ref: C })) : r.createElement(y, ri({}, w, {
 		className: l,
 		ref: C
 	}), c));
 });
-ui.defaultProps = {
+Si.defaultProps = {
 	enabled: !0,
 	removeScrollBar: !0,
 	inert: !1
-}, ui.classNames = {
-	fullWidth: Yr,
-	zeroRight: Jr
+}, Si.classNames = {
+	fullWidth: si,
+	zeroRight: oi
 };
 //#endregion
 //#region node_modules/get-nonce/dist/es2015/index.js
-var di, fi = function() {
-	if (di) return di;
+var Ci, wi = function() {
+	if (Ci) return Ci;
 	if (typeof __webpack_nonce__ < "u") return __webpack_nonce__;
 };
 //#endregion
 //#region node_modules/react-style-singleton/dist/es2015/singleton.js
-function pi() {
+function Ti() {
 	if (!document) return null;
 	var e = document.createElement("style");
 	e.type = "text/css";
-	var t = fi();
+	var t = wi();
 	return t && e.setAttribute("nonce", t), e;
 }
-function mi(e, t) {
+function Ei(e, t) {
 	e.styleSheet ? e.styleSheet.cssText = t : e.appendChild(document.createTextNode(t));
 }
-function hi(e) {
+function Di(e) {
 	(document.head || document.getElementsByTagName("head")[0]).appendChild(e);
 }
-var gi = function() {
+var Oi = function() {
 	var e = 0, t = null;
 	return {
 		add: function(n) {
-			e == 0 && (t = pi()) && (mi(t, n), hi(t)), e++;
+			e == 0 && (t = Ti()) && (Ei(t, n), Di(t)), e++;
 		},
 		remove: function() {
 			e--, !e && t && (t.parentNode && t.parentNode.removeChild(t), t = null);
 		}
 	};
-}, _i = function() {
-	var e = gi();
+}, ki = function() {
+	var e = Oi();
 	return function(t, n) {
 		r.useEffect(function() {
 			return e.add(t), function() {
@@ -3263,43 +3329,43 @@ var gi = function() {
 			};
 		}, [t && n]);
 	};
-}, vi = function() {
-	var e = _i();
+}, Ai = function() {
+	var e = ki();
 	return function(t) {
 		var n = t.styles, r = t.dynamic;
 		return e(n, r), null;
 	};
-}, yi = {
+}, ji = {
 	left: 0,
 	top: 0,
 	right: 0,
 	gap: 0
-}, bi = function(e) {
+}, Mi = function(e) {
 	return parseInt(e || "", 10) || 0;
-}, xi = function(e) {
+}, Ni = function(e) {
 	var t = window.getComputedStyle(document.body), n = t[e === "padding" ? "paddingLeft" : "marginLeft"], r = t[e === "padding" ? "paddingTop" : "marginTop"], i = t[e === "padding" ? "paddingRight" : "marginRight"];
 	return [
-		bi(n),
-		bi(r),
-		bi(i)
+		Mi(n),
+		Mi(r),
+		Mi(i)
 	];
-}, Si = function(e) {
-	if (e === void 0 && (e = "margin"), typeof window > "u") return yi;
-	var t = xi(e), n = document.documentElement.clientWidth, r = window.innerWidth;
+}, Pi = function(e) {
+	if (e === void 0 && (e = "margin"), typeof window > "u") return ji;
+	var t = Ni(e), n = document.documentElement.clientWidth, r = window.innerWidth;
 	return {
 		left: t[0],
 		top: t[1],
 		right: t[2],
 		gap: Math.max(0, r - n + t[2] - t[0])
 	};
-}, Ci = vi(), wi = "data-scroll-locked", Ti = function(e, t, n, r) {
+}, Fi = Ai(), Ii = "data-scroll-locked", Li = function(e, t, n, r) {
 	var i = e.left, a = e.top, o = e.right, s = e.gap;
 	return n === void 0 && (n = "margin"), `
-  .${Xr} {
+  .${ci} {
    overflow: hidden ${r};
    padding-right: ${s}px ${r};
   }
-  body[${wi}] {
+  body[${Ii}] {
     overflow: hidden ${r};
     overscroll-behavior: contain;
     ${[
@@ -3316,122 +3382,122 @@ var gi = function() {
 	].filter(Boolean).join("")}
   }
   
-  .${Jr} {
+  .${oi} {
     right: ${s}px ${r};
   }
   
-  .${Yr} {
+  .${si} {
     margin-right: ${s}px ${r};
   }
   
-  .${Jr} .${Jr} {
+  .${oi} .${oi} {
     right: 0 ${r};
   }
   
-  .${Yr} .${Yr} {
+  .${si} .${si} {
     margin-right: 0 ${r};
   }
   
-  body[${wi}] {
-    ${Zr}: ${s}px;
+  body[${Ii}] {
+    ${li}: ${s}px;
   }
 `;
-}, Ei = function() {
+}, Ri = function() {
 	var e = parseInt(document.body.getAttribute("data-scroll-locked") || "0", 10);
 	return isFinite(e) ? e : 0;
-}, Di = function() {
+}, zi = function() {
 	r.useEffect(function() {
-		return document.body.setAttribute(wi, (Ei() + 1).toString()), function() {
-			var e = Ei() - 1;
-			e <= 0 ? document.body.removeAttribute(wi) : document.body.setAttribute(wi, e.toString());
+		return document.body.setAttribute(Ii, (Ri() + 1).toString()), function() {
+			var e = Ri() - 1;
+			e <= 0 ? document.body.removeAttribute(Ii) : document.body.setAttribute(Ii, e.toString());
 		};
 	}, []);
-}, Oi = function(e) {
+}, Bi = function(e) {
 	var t = e.noRelative, n = e.noImportant, i = e.gapMode, a = i === void 0 ? "margin" : i;
-	Di();
+	zi();
 	var o = r.useMemo(function() {
-		return Si(a);
+		return Pi(a);
 	}, [a]);
-	return r.createElement(Ci, { styles: Ti(o, !t, a, n ? "" : "!important") });
-}, ki = !1;
+	return r.createElement(Fi, { styles: Li(o, !t, a, n ? "" : "!important") });
+}, Vi = !1;
 if (typeof window < "u") try {
-	var Ai = Object.defineProperty({}, "passive", { get: function() {
-		return ki = !0, !0;
+	var Hi = Object.defineProperty({}, "passive", { get: function() {
+		return Vi = !0, !0;
 	} });
-	window.addEventListener("test", Ai, Ai), window.removeEventListener("test", Ai, Ai);
+	window.addEventListener("test", Hi, Hi), window.removeEventListener("test", Hi, Hi);
 } catch {
-	ki = !1;
+	Vi = !1;
 }
-var ji = ki ? { passive: !1 } : !1, Mi = function(e) {
+var Ui = Vi ? { passive: !1 } : !1, Wi = function(e) {
 	return e.tagName === "TEXTAREA";
-}, Ni = function(e, t) {
+}, Gi = function(e, t) {
 	if (!(e instanceof Element)) return !1;
 	var n = window.getComputedStyle(e);
-	return n[t] !== "hidden" && !(n.overflowY === n.overflowX && !Mi(e) && n[t] === "visible");
-}, Pi = function(e) {
-	return Ni(e, "overflowY");
-}, Fi = function(e) {
-	return Ni(e, "overflowX");
-}, Ii = function(e, t) {
+	return n[t] !== "hidden" && !(n.overflowY === n.overflowX && !Wi(e) && n[t] === "visible");
+}, Ki = function(e) {
+	return Gi(e, "overflowY");
+}, qi = function(e) {
+	return Gi(e, "overflowX");
+}, Ji = function(e, t) {
 	var n = t.ownerDocument, r = t;
 	do {
-		if (typeof ShadowRoot < "u" && r instanceof ShadowRoot && (r = r.host), zi(e, r)) {
-			var i = Bi(e, r);
+		if (typeof ShadowRoot < "u" && r instanceof ShadowRoot && (r = r.host), Zi(e, r)) {
+			var i = Qi(e, r);
 			if (i[1] > i[2]) return !0;
 		}
 		r = r.parentNode;
 	} while (r && r !== n.body);
 	return !1;
-}, Li = function(e) {
+}, Yi = function(e) {
 	return [
 		e.scrollTop,
 		e.scrollHeight,
 		e.clientHeight
 	];
-}, Ri = function(e) {
+}, Xi = function(e) {
 	return [
 		e.scrollLeft,
 		e.scrollWidth,
 		e.clientWidth
 	];
-}, zi = function(e, t) {
-	return e === "v" ? Pi(t) : Fi(t);
-}, Bi = function(e, t) {
-	return e === "v" ? Li(t) : Ri(t);
-}, Vi = function(e, t) {
+}, Zi = function(e, t) {
+	return e === "v" ? Ki(t) : qi(t);
+}, Qi = function(e, t) {
+	return e === "v" ? Yi(t) : Xi(t);
+}, $i = function(e, t) {
 	return e === "h" && t === "rtl" ? -1 : 1;
-}, Hi = function(e, t, n, r, i) {
-	var a = Vi(e, window.getComputedStyle(t).direction), o = a * r, s = n.target, c = t.contains(s), l = !1, u = o > 0, d = 0, f = 0;
+}, ea = function(e, t, n, r, i) {
+	var a = $i(e, window.getComputedStyle(t).direction), o = a * r, s = n.target, c = t.contains(s), l = !1, u = o > 0, d = 0, f = 0;
 	do {
 		if (!s) break;
-		var p = Bi(e, s), m = p[0], h = p[1] - p[2] - a * m;
-		(m || h) && zi(e, s) && (d += h, f += m);
+		var p = Qi(e, s), m = p[0], h = p[1] - p[2] - a * m;
+		(m || h) && Zi(e, s) && (d += h, f += m);
 		var g = s.parentNode;
 		s = g && g.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? g.host : g;
 	} while (!c && s !== document.body || c && (t.contains(s) || t === s));
 	return (u && (i && Math.abs(d) < 1 || !i && o > d) || !u && (i && Math.abs(f) < 1 || !i && -o > f)) && (l = !0), l;
-}, Ui = function(e) {
+}, ta = function(e) {
 	return "changedTouches" in e ? [e.changedTouches[0].clientX, e.changedTouches[0].clientY] : [0, 0];
-}, Wi = function(e) {
+}, na = function(e) {
 	return [e.deltaX, e.deltaY];
-}, Gi = function(e) {
+}, ra = function(e) {
 	return e && "current" in e ? e.current : e;
-}, Ki = function(e, t) {
+}, ia = function(e, t) {
 	return e[0] === t[0] && e[1] === t[1];
-}, qi = function(e) {
+}, aa = function(e) {
 	return `
   .block-interactivity-${e} {pointer-events: none;}
   .allow-interactivity-${e} {pointer-events: all;}
 `;
-}, Ji = 0, Yi = [];
-function Xi(e) {
-	var t = r.useRef([]), n = r.useRef([0, 0]), i = r.useRef(), a = r.useState(Ji++)[0], o = r.useState(vi)[0], s = r.useRef(e);
+}, oa = 0, sa = [];
+function ca(e) {
+	var t = r.useRef([]), n = r.useRef([0, 0]), i = r.useRef(), a = r.useState(oa++)[0], o = r.useState(Ai)[0], s = r.useRef(e);
 	r.useEffect(function() {
 		s.current = e;
 	}, [e]), r.useEffect(function() {
 		if (e.inert) {
 			document.body.classList.add(`block-interactivity-${a}`);
-			var t = qr([e.lockRef.current], (e.shards || []).map(Gi), !0).filter(Boolean);
+			var t = ai([e.lockRef.current], (e.shards || []).map(ra), !0).filter(Boolean);
 			return t.forEach(function(e) {
 				return e.classList.add(`allow-interactivity-${a}`);
 			}), function() {
@@ -3447,28 +3513,28 @@ function Xi(e) {
 	]);
 	var c = r.useCallback(function(e, t) {
 		if ("touches" in e && e.touches.length === 2 || e.type === "wheel" && e.ctrlKey) return !s.current.allowPinchZoom;
-		var r = Ui(e), a = n.current, o = "deltaX" in e ? e.deltaX : a[0] - r[0], c = "deltaY" in e ? e.deltaY : a[1] - r[1], l, u = e.target, d = Math.abs(o) > Math.abs(c) ? "h" : "v";
+		var r = ta(e), a = n.current, o = "deltaX" in e ? e.deltaX : a[0] - r[0], c = "deltaY" in e ? e.deltaY : a[1] - r[1], l, u = e.target, d = Math.abs(o) > Math.abs(c) ? "h" : "v";
 		if ("touches" in e && d === "h" && u.type === "range") return !1;
 		var f = window.getSelection(), p = f && f.anchorNode;
 		if (p && (p === u || p.contains(u))) return !1;
-		var m = Ii(d, u);
+		var m = Ji(d, u);
 		if (!m) return !0;
-		if (m ? l = d : (l = d === "v" ? "h" : "v", m = Ii(d, u)), !m) return !1;
+		if (m ? l = d : (l = d === "v" ? "h" : "v", m = Ji(d, u)), !m) return !1;
 		if (!i.current && "changedTouches" in e && (o || c) && (i.current = l), !l) return !0;
 		var h = i.current || l;
-		return Hi(h, t, e, h === "h" ? o : c, !0);
+		return ea(h, t, e, h === "h" ? o : c, !0);
 	}, []), l = r.useCallback(function(e) {
 		var n = e;
-		if (!(!Yi.length || Yi[Yi.length - 1] !== o)) {
-			var r = "deltaY" in n ? Wi(n) : Ui(n), i = t.current.filter(function(e) {
-				return e.name === n.type && (e.target === n.target || n.target === e.shadowParent) && Ki(e.delta, r);
+		if (!(!sa.length || sa[sa.length - 1] !== o)) {
+			var r = "deltaY" in n ? na(n) : ta(n), i = t.current.filter(function(e) {
+				return e.name === n.type && (e.target === n.target || n.target === e.shadowParent) && ia(e.delta, r);
 			})[0];
 			if (i && i.should) {
 				n.cancelable && n.preventDefault();
 				return;
 			}
 			if (!i) {
-				var a = (s.current.shards || []).map(Gi).filter(Boolean).filter(function(e) {
+				var a = (s.current.shards || []).map(ra).filter(Boolean).filter(function(e) {
 					return e.contains(n.target);
 				});
 				(a.length > 0 ? c(n, a[0]) : !s.current.noIsolation) && n.cancelable && n.preventDefault();
@@ -3480,7 +3546,7 @@ function Xi(e) {
 			delta: n,
 			target: r,
 			should: i,
-			shadowParent: Zi(r)
+			shadowParent: la(r)
 		};
 		t.current.push(a), setTimeout(function() {
 			t.current = t.current.filter(function(e) {
@@ -3488,83 +3554,83 @@ function Xi(e) {
 			});
 		}, 1);
 	}, []), d = r.useCallback(function(e) {
-		n.current = Ui(e), i.current = void 0;
+		n.current = ta(e), i.current = void 0;
 	}, []), f = r.useCallback(function(t) {
-		u(t.type, Wi(t), t.target, c(t, e.lockRef.current));
+		u(t.type, na(t), t.target, c(t, e.lockRef.current));
 	}, []), p = r.useCallback(function(t) {
-		u(t.type, Ui(t), t.target, c(t, e.lockRef.current));
+		u(t.type, ta(t), t.target, c(t, e.lockRef.current));
 	}, []);
 	r.useEffect(function() {
-		return Yi.push(o), e.setCallbacks({
+		return sa.push(o), e.setCallbacks({
 			onScrollCapture: f,
 			onWheelCapture: f,
 			onTouchMoveCapture: p
-		}), document.addEventListener("wheel", l, ji), document.addEventListener("touchmove", l, ji), document.addEventListener("touchstart", d, ji), function() {
-			Yi = Yi.filter(function(e) {
+		}), document.addEventListener("wheel", l, Ui), document.addEventListener("touchmove", l, Ui), document.addEventListener("touchstart", d, Ui), function() {
+			sa = sa.filter(function(e) {
 				return e !== o;
-			}), document.removeEventListener("wheel", l, ji), document.removeEventListener("touchmove", l, ji), document.removeEventListener("touchstart", d, ji);
+			}), document.removeEventListener("wheel", l, Ui), document.removeEventListener("touchmove", l, Ui), document.removeEventListener("touchstart", d, Ui);
 		};
 	}, []);
 	var m = e.removeScrollBar, h = e.inert;
-	return r.createElement(r.Fragment, null, h ? r.createElement(o, { styles: qi(a) }) : null, m ? r.createElement(Oi, {
+	return r.createElement(r.Fragment, null, h ? r.createElement(o, { styles: aa(a) }) : null, m ? r.createElement(Bi, {
 		noRelative: e.noRelative,
 		gapMode: e.gapMode
 	}) : null);
 }
-function Zi(e) {
+function la(e) {
 	for (var t = null; e !== null;) e instanceof ShadowRoot && (t = e.host, e = e.host), e = e.parentNode;
 	return t;
 }
 //#endregion
 //#region node_modules/react-remove-scroll/dist/es2015/sidecar.js
-var Qi = si(ci, Xi), $i = r.forwardRef(function(e, t) {
-	return r.createElement(ui, Gr({}, e, {
+var ua = yi(bi, ca), da = r.forwardRef(function(e, t) {
+	return r.createElement(Si, ri({}, e, {
 		ref: t,
-		sideCar: Qi
+		sideCar: ua
 	}));
 });
-$i.classNames = ui.classNames;
+da.classNames = Si.classNames;
 //#endregion
 //#region src/lib/remove-scroll-gate.tsx
-var ea = r.createContext(!1);
-function ta({ allowBodyScroll: e, children: t }) {
-	return /* @__PURE__ */ C(ea.Provider, {
+var fa = r.createContext(!1);
+function pa({ allowBodyScroll: e, children: t }) {
+	return /* @__PURE__ */ C(fa.Provider, {
 		value: e,
 		children: t
 	});
 }
-function na() {
-	return r.useContext(ea);
+function ma() {
+	return r.useContext(fa);
 }
 //#endregion
 //#region src/lib/react-remove-scroll-shim.tsx
-var ra = r.forwardRef(function(e, t) {
-	let n = na() ? !1 : e.enabled !== !1;
-	return /* @__PURE__ */ C($i, {
+var ha = r.forwardRef(function(e, t) {
+	let n = ma() ? !1 : e.enabled !== !1;
+	return /* @__PURE__ */ C(da, {
 		...e,
 		ref: t,
 		enabled: n
 	});
 });
-ra.classNames = $i.classNames;
+ha.classNames = da.classNames;
 //#endregion
 //#region node_modules/aria-hidden/dist/es2015/index.js
-var ia = function(e) {
+var ga = function(e) {
 	return typeof document > "u" ? null : (Array.isArray(e) ? e[0] : e).ownerDocument.body;
-}, aa = /* @__PURE__ */ new WeakMap(), oa = /* @__PURE__ */ new WeakMap(), sa = {}, ca = 0, la = function(e) {
-	return e && (e.host || la(e.parentNode));
-}, ua = function(e, t) {
+}, _a = /* @__PURE__ */ new WeakMap(), va = /* @__PURE__ */ new WeakMap(), ya = {}, ba = 0, xa = function(e) {
+	return e && (e.host || xa(e.parentNode));
+}, Sa = function(e, t) {
 	return t.map(function(t) {
 		if (e.contains(t)) return t;
-		var n = la(t);
+		var n = xa(t);
 		return n && e.contains(n) ? n : (console.error("aria-hidden", t, "in not contained inside", e, ". Doing nothing"), null);
 	}).filter(function(e) {
 		return !!e;
 	});
-}, da = function(e, t, n, r) {
-	var i = ua(t, Array.isArray(e) ? e : [e]);
-	sa[n] || (sa[n] = /* @__PURE__ */ new WeakMap());
-	var a = sa[n], o = [], s = /* @__PURE__ */ new Set(), c = new Set(i), l = function(e) {
+}, Ca = function(e, t, n, r) {
+	var i = Sa(t, Array.isArray(e) ? e : [e]);
+	ya[n] || (ya[n] = /* @__PURE__ */ new WeakMap());
+	var a = ya[n], o = [], s = /* @__PURE__ */ new Set(), c = new Set(i), l = function(e) {
 		!e || s.has(e) || (s.add(e), l(e.parentNode));
 	};
 	i.forEach(l);
@@ -3572,32 +3638,32 @@ var ia = function(e) {
 		!e || c.has(e) || Array.prototype.forEach.call(e.children, function(e) {
 			if (s.has(e)) u(e);
 			else try {
-				var t = e.getAttribute(r), i = t !== null && t !== "false", c = (aa.get(e) || 0) + 1, l = (a.get(e) || 0) + 1;
-				aa.set(e, c), a.set(e, l), o.push(e), c === 1 && i && oa.set(e, !0), l === 1 && e.setAttribute(n, "true"), i || e.setAttribute(r, "true");
+				var t = e.getAttribute(r), i = t !== null && t !== "false", c = (_a.get(e) || 0) + 1, l = (a.get(e) || 0) + 1;
+				_a.set(e, c), a.set(e, l), o.push(e), c === 1 && i && va.set(e, !0), l === 1 && e.setAttribute(n, "true"), i || e.setAttribute(r, "true");
 			} catch (t) {
 				console.error("aria-hidden: cannot operate on ", e, t);
 			}
 		});
 	};
-	return u(t), s.clear(), ca++, function() {
+	return u(t), s.clear(), ba++, function() {
 		o.forEach(function(e) {
-			var t = aa.get(e) - 1, i = a.get(e) - 1;
-			aa.set(e, t), a.set(e, i), t || (oa.has(e) || e.removeAttribute(r), oa.delete(e)), i || e.removeAttribute(n);
-		}), ca--, ca || (aa = /* @__PURE__ */ new WeakMap(), aa = /* @__PURE__ */ new WeakMap(), oa = /* @__PURE__ */ new WeakMap(), sa = {});
+			var t = _a.get(e) - 1, i = a.get(e) - 1;
+			_a.set(e, t), a.set(e, i), t || (va.has(e) || e.removeAttribute(r), va.delete(e)), i || e.removeAttribute(n);
+		}), ba--, ba || (_a = /* @__PURE__ */ new WeakMap(), _a = /* @__PURE__ */ new WeakMap(), va = /* @__PURE__ */ new WeakMap(), ya = {});
 	};
-}, fa = function(e, t, n) {
+}, wa = function(e, t, n) {
 	n === void 0 && (n = "data-aria-hidden");
-	var r = Array.from(Array.isArray(e) ? e : [e]), i = t || ia(e);
-	return i ? (r.push.apply(r, Array.from(i.querySelectorAll("[aria-live], script"))), da(r, i, n, "aria-hidden")) : function() {
+	var r = Array.from(Array.isArray(e) ? e : [e]), i = t || ga(e);
+	return i ? (r.push.apply(r, Array.from(i.querySelectorAll("[aria-live], script"))), Ca(r, i, n, "aria-hidden")) : function() {
 		return null;
 	};
 };
 //#endregion
 //#region node_modules/@radix-ui/react-dialog/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function pa(e) {
-	let t = /* @__PURE__ */ ma(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(ga);
+function Ta(e) {
+	let t = /* @__PURE__ */ Ea(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(Oa);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ C(t, {
@@ -3615,22 +3681,22 @@ function pa(e) {
 	return n.displayName = `${e}.Slot`, n;
 }
 /* @__NO_SIDE_EFFECTS__ */
-function ma(e) {
+function Ea(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
-			let e = va(n), a = _a(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? mn(t, e) : e), r.cloneElement(n, a);
+			let e = Aa(n), a = ka(i, n.props);
+			return n.type !== r.Fragment && (a.ref = t ? En(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var ha = Symbol("radix.slottable");
-function ga(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === ha;
+var Da = Symbol("radix.slottable");
+function Oa(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === Da;
 }
-function _a(e, t) {
+function ka(e, t) {
 	let n = { ...t };
 	for (let r in t) {
 		let i = e[r], a = t[r];
@@ -3647,26 +3713,26 @@ function _a(e, t) {
 		...n
 	};
 }
-function va(e) {
+function Aa(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-dialog/dist/index.mjs
-var ya = "Dialog", [ba, xa] = En(ya), [Sa, Ca] = ba(ya), wa = (e) => {
-	let { __scopeDialog: t, children: n, open: i, defaultOpen: a, onOpenChange: o, modal: s = !0 } = e, c = r.useRef(null), l = r.useRef(null), [u, d] = Ln({
+var ja = "Dialog", [Ma, Na] = Rn(ja), [Pa, Fa] = Ma(ja), Ia = (e) => {
+	let { __scopeDialog: t, children: n, open: i, defaultOpen: a, onOpenChange: o, modal: s = !0 } = e, c = r.useRef(null), l = r.useRef(null), [u, d] = Yn({
 		prop: i,
 		defaultProp: a ?? !1,
 		onChange: o,
-		caller: ya
+		caller: ja
 	});
-	return /* @__PURE__ */ C(Sa, {
+	return /* @__PURE__ */ C(Pa, {
 		scope: t,
 		triggerRef: c,
 		contentRef: l,
-		contentId: qn(),
-		titleId: qn(),
-		descriptionId: qn(),
+		contentId: ar(),
+		titleId: ar(),
+		descriptionId: ar(),
 		open: u,
 		onOpenChange: d,
 		onOpenToggle: r.useCallback(() => d((e) => !e), [d]),
@@ -3674,29 +3740,29 @@ var ya = "Dialog", [ba, xa] = En(ya), [Sa, Ca] = ba(ya), wa = (e) => {
 		children: n
 	});
 };
-wa.displayName = ya;
-var Ta = "DialogTrigger", Ea = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, ...r } = e, i = Ca(Ta, n), a = K(t, i.triggerRef);
+Ia.displayName = ja;
+var La = "DialogTrigger", Ra = r.forwardRef((e, t) => {
+	let { __scopeDialog: n, ...r } = e, i = Fa(La, n), a = K(t, i.triggerRef);
 	return /* @__PURE__ */ C(q.button, {
 		type: "button",
 		"aria-haspopup": "dialog",
 		"aria-expanded": i.open,
 		"aria-controls": i.contentId,
-		"data-state": Ka(i.open),
+		"data-state": io(i.open),
 		...r,
 		ref: a,
 		onClick: J(e.onClick, i.onOpenToggle)
 	});
 });
-Ea.displayName = Ta;
-var Da = "DialogPortal", [Oa, ka] = ba(Da, { forceMount: void 0 }), Aa = (e) => {
-	let { __scopeDialog: t, forceMount: n, children: i, container: a } = e, o = Ca(Da, t);
-	return /* @__PURE__ */ C(Oa, {
+Ra.displayName = La;
+var za = "DialogPortal", [Ba, Va] = Ma(za, { forceMount: void 0 }), Ha = (e) => {
+	let { __scopeDialog: t, forceMount: n, children: i, container: a } = e, o = Fa(za, t);
+	return /* @__PURE__ */ C(Ba, {
 		scope: t,
 		forceMount: n,
-		children: r.Children.map(i, (e) => /* @__PURE__ */ C(Vn, {
+		children: r.Children.map(i, (e) => /* @__PURE__ */ C($n, {
 			present: n || o.open,
-			children: /* @__PURE__ */ C(Vr, {
+			children: /* @__PURE__ */ C($r, {
 				asChild: !0,
 				container: a,
 				children: e
@@ -3704,26 +3770,26 @@ var Da = "DialogPortal", [Oa, ka] = ba(Da, { forceMount: void 0 }), Aa = (e) => 
 		}))
 	});
 };
-Aa.displayName = Da;
-var ja = "DialogOverlay", Ma = r.forwardRef((e, t) => {
-	let n = ka(ja, e.__scopeDialog), { forceMount: r = n.forceMount, ...i } = e, a = Ca(ja, e.__scopeDialog);
-	return a.modal ? /* @__PURE__ */ C(Vn, {
+Ha.displayName = za;
+var Ua = "DialogOverlay", Wa = r.forwardRef((e, t) => {
+	let n = Va(Ua, e.__scopeDialog), { forceMount: r = n.forceMount, ...i } = e, a = Fa(Ua, e.__scopeDialog);
+	return a.modal ? /* @__PURE__ */ C($n, {
 		present: r || a.open,
-		children: /* @__PURE__ */ C(Pa, {
+		children: /* @__PURE__ */ C(Ka, {
 			...i,
 			ref: t
 		})
 	}) : null;
 });
-Ma.displayName = ja;
-var Na = /* @__PURE__ */ pa("DialogOverlay.RemoveScroll"), Pa = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, ...r } = e, i = Ca(ja, n);
-	return /* @__PURE__ */ C(ra, {
-		as: Na,
+Wa.displayName = Ua;
+var Ga = /* @__PURE__ */ Ta("DialogOverlay.RemoveScroll"), Ka = r.forwardRef((e, t) => {
+	let { __scopeDialog: n, ...r } = e, i = Fa(Ua, n);
+	return /* @__PURE__ */ C(ha, {
+		as: Ga,
 		allowPinchZoom: !0,
 		shards: [i.contentRef],
 		children: /* @__PURE__ */ C(q.div, {
-			"data-state": Ka(i.open),
+			"data-state": io(i.open),
 			...r,
 			ref: t,
 			style: {
@@ -3732,26 +3798,26 @@ var Na = /* @__PURE__ */ pa("DialogOverlay.RemoveScroll"), Pa = r.forwardRef((e,
 			}
 		})
 	});
-}), Fa = "DialogContent", Ia = r.forwardRef((e, t) => {
-	let n = ka(Fa, e.__scopeDialog), { forceMount: r = n.forceMount, ...i } = e, a = Ca(Fa, e.__scopeDialog);
-	return /* @__PURE__ */ C(Vn, {
+}), qa = "DialogContent", Ja = r.forwardRef((e, t) => {
+	let n = Va(qa, e.__scopeDialog), { forceMount: r = n.forceMount, ...i } = e, a = Fa(qa, e.__scopeDialog);
+	return /* @__PURE__ */ C($n, {
 		present: r || a.open,
-		children: a.modal ? /* @__PURE__ */ C(La, {
+		children: a.modal ? /* @__PURE__ */ C(Ya, {
 			...i,
 			ref: t
-		}) : /* @__PURE__ */ C(Ra, {
+		}) : /* @__PURE__ */ C(Xa, {
 			...i,
 			ref: t
 		})
 	});
 });
-Ia.displayName = Fa;
-var La = r.forwardRef((e, t) => {
-	let n = Ca(Fa, e.__scopeDialog), i = r.useRef(null), a = K(t, n.contentRef, i);
+Ja.displayName = qa;
+var Ya = r.forwardRef((e, t) => {
+	let n = Fa(qa, e.__scopeDialog), i = r.useRef(null), a = K(t, n.contentRef, i);
 	return r.useEffect(() => {
 		let e = i.current;
-		if (e) return fa(e);
-	}, []), /* @__PURE__ */ C(za, {
+		if (e) return wa(e);
+	}, []), /* @__PURE__ */ C(Za, {
 		...e,
 		ref: a,
 		trapFocus: n.open,
@@ -3765,9 +3831,9 @@ var La = r.forwardRef((e, t) => {
 		}),
 		onFocusOutside: J(e.onFocusOutside, (e) => e.preventDefault())
 	});
-}), Ra = r.forwardRef((e, t) => {
-	let n = Ca(Fa, e.__scopeDialog), i = r.useRef(!1), a = r.useRef(!1);
-	return /* @__PURE__ */ C(za, {
+}), Xa = r.forwardRef((e, t) => {
+	let n = Fa(qa, e.__scopeDialog), i = r.useRef(!1), a = r.useRef(!1);
+	return /* @__PURE__ */ C(Za, {
 		...e,
 		ref: t,
 		trapFocus: !1,
@@ -3781,48 +3847,48 @@ var La = r.forwardRef((e, t) => {
 			n.triggerRef.current?.contains(r) && t.preventDefault(), t.detail.originalEvent.type === "focusin" && a.current && t.preventDefault();
 		}
 	});
-}), za = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, trapFocus: i, onOpenAutoFocus: a, onCloseAutoFocus: o, ...s } = e, c = Ca(Fa, n), l = r.useRef(null), u = K(t, l);
-	return Ur(), /* @__PURE__ */ w(S, { children: [/* @__PURE__ */ C(Or, {
+}), Za = r.forwardRef((e, t) => {
+	let { __scopeDialog: n, trapFocus: i, onOpenAutoFocus: a, onCloseAutoFocus: o, ...s } = e, c = Fa(qa, n), l = r.useRef(null), u = K(t, l);
+	return ti(), /* @__PURE__ */ w(S, { children: [/* @__PURE__ */ C(Br, {
 		asChild: !0,
 		loop: !0,
 		trapped: i,
 		onMountAutoFocus: a,
 		onUnmountAutoFocus: o,
-		children: /* @__PURE__ */ C(_r, {
+		children: /* @__PURE__ */ C(kr, {
 			role: "dialog",
 			id: c.contentId,
 			"aria-describedby": c.descriptionId,
 			"aria-labelledby": c.titleId,
-			"data-state": Ka(c.open),
+			"data-state": io(c.open),
 			...s,
 			ref: u,
 			onDismiss: () => c.onOpenChange(!1)
 		})
-	}), /* @__PURE__ */ w(S, { children: [/* @__PURE__ */ C(Xa, { titleId: c.titleId }), /* @__PURE__ */ C(Qa, {
+	}), /* @__PURE__ */ w(S, { children: [/* @__PURE__ */ C(co, { titleId: c.titleId }), /* @__PURE__ */ C(uo, {
 		contentRef: l,
 		descriptionId: c.descriptionId
 	})] })] });
-}), Ba = "DialogTitle", Va = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, ...r } = e, i = Ca(Ba, n);
+}), Qa = "DialogTitle", $a = r.forwardRef((e, t) => {
+	let { __scopeDialog: n, ...r } = e, i = Fa(Qa, n);
 	return /* @__PURE__ */ C(q.h2, {
 		id: i.titleId,
 		...r,
 		ref: t
 	});
 });
-Va.displayName = Ba;
-var Ha = "DialogDescription", Ua = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, ...r } = e, i = Ca(Ha, n);
+$a.displayName = Qa;
+var eo = "DialogDescription", to = r.forwardRef((e, t) => {
+	let { __scopeDialog: n, ...r } = e, i = Fa(eo, n);
 	return /* @__PURE__ */ C(q.p, {
 		id: i.descriptionId,
 		...r,
 		ref: t
 	});
 });
-Ua.displayName = Ha;
-var Wa = "DialogClose", Ga = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, ...r } = e, i = Ca(Wa, n);
+to.displayName = eo;
+var no = "DialogClose", ro = r.forwardRef((e, t) => {
+	let { __scopeDialog: n, ...r } = e, i = Fa(no, n);
 	return /* @__PURE__ */ C(q.button, {
 		type: "button",
 		...r,
@@ -3830,16 +3896,16 @@ var Wa = "DialogClose", Ga = r.forwardRef((e, t) => {
 		onClick: J(e.onClick, () => i.onOpenChange(!1))
 	});
 });
-Ga.displayName = Wa;
-function Ka(e) {
+ro.displayName = no;
+function io(e) {
 	return e ? "open" : "closed";
 }
-var qa = "DialogTitleWarning", [Ja, Ya] = Tn(qa, {
-	contentName: Fa,
-	titleName: Ba,
+var ao = "DialogTitleWarning", [oo, so] = Ln(ao, {
+	contentName: qa,
+	titleName: Qa,
 	docsSlug: "dialog"
-}), Xa = ({ titleId: e }) => {
-	let t = Ya(qa), n = `\`${t.contentName}\` requires a \`${t.titleName}\` for the component to be accessible for screen reader users.
+}), co = ({ titleId: e }) => {
+	let t = so(ao), n = `\`${t.contentName}\` requires a \`${t.titleName}\` for the component to be accessible for screen reader users.
 
 If you want to hide the \`${t.titleName}\`, you can wrap it with our VisuallyHidden component.
 
@@ -3847,8 +3913,8 @@ For more information, see https://radix-ui.com/primitives/docs/components/${t.do
 	return r.useEffect(() => {
 		e && (document.getElementById(e) || console.error(n));
 	}, [n, e]), null;
-}, Za = "DialogDescriptionWarning", Qa = ({ contentRef: e, descriptionId: t }) => {
-	let n = `Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${Ya(Za).contentName}}.`;
+}, lo = "DialogDescriptionWarning", uo = ({ contentRef: e, descriptionId: t }) => {
+	let n = `Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${so(lo).contentName}}.`;
 	return r.useEffect(() => {
 		let r = e.current?.getAttribute("aria-describedby");
 		t && r && (document.getElementById(t) || console.warn(n));
@@ -3857,10 +3923,10 @@ For more information, see https://radix-ui.com/primitives/docs/components/${t.do
 		e,
 		t
 	]), null;
-}, $a = wa, eo = Aa, to = Ma, no = Ia, ro = Va, io = Ga;
+}, fo = Ia, po = Ha, mo = Wa, ho = Ja, go = $a, _o = ro;
 //#endregion
 //#region node_modules/@radix-ui/react-use-previous/dist/index.mjs
-function ao(e) {
+function vo(e) {
 	let t = r.useRef({
 		value: e,
 		previous: e
@@ -3869,9 +3935,9 @@ function ao(e) {
 }
 //#endregion
 //#region node_modules/@radix-ui/react-use-size/dist/index.mjs
-function oo(e) {
+function yo(e) {
 	let [t, n] = r.useState(void 0);
-	return Fn(() => {
+	return qn(() => {
 		if (e) {
 			n({
 				width: e.offsetWidth,
@@ -3895,13 +3961,13 @@ function oo(e) {
 }
 //#endregion
 //#region node_modules/@radix-ui/react-checkbox/dist/index.mjs
-var so = "Checkbox", [co, lo] = En(so), [uo, fo] = co(so);
-function po(e) {
-	let { __scopeCheckbox: t, checked: n, children: i, defaultChecked: a, disabled: o, form: s, name: c, onCheckedChange: l, required: u, value: d = "on", internal_do_not_use_render: f } = e, [p, m] = Ln({
+var bo = "Checkbox", [xo, So] = Rn(bo), [Co, wo] = xo(bo);
+function To(e) {
+	let { __scopeCheckbox: t, checked: n, children: i, defaultChecked: a, disabled: o, form: s, name: c, onCheckedChange: l, required: u, value: d = "on", internal_do_not_use_render: f } = e, [p, m] = Yn({
 		prop: n,
 		defaultProp: a ?? !1,
 		onChange: l,
-		caller: so
+		caller: bo
 	}), [h, g] = r.useState(null), [_, v] = r.useState(null), y = r.useRef(!1), b = h ? !!s || !!h.closest("form") : !0, x = {
 		checked: p,
 		disabled: o,
@@ -3913,19 +3979,19 @@ function po(e) {
 		value: d,
 		hasConsumerStoppedPropagationRef: y,
 		required: u,
-		defaultChecked: So(a) ? !1 : a,
+		defaultChecked: Po(a) ? !1 : a,
 		isFormControl: b,
 		bubbleInput: _,
 		setBubbleInput: v
 	};
-	return /* @__PURE__ */ C(uo, {
+	return /* @__PURE__ */ C(Co, {
 		scope: t,
 		...x,
-		children: xo(f) ? f(x) : i
+		children: No(f) ? f(x) : i
 	});
 }
-var mo = "CheckboxTrigger", ho = r.forwardRef(({ __scopeCheckbox: e, onKeyDown: t, onClick: n, ...i }, a) => {
-	let { control: o, value: s, disabled: c, checked: l, required: u, setControl: d, setChecked: f, hasConsumerStoppedPropagationRef: p, isFormControl: m, bubbleInput: h } = fo(mo, e), g = K(a, d), _ = r.useRef(l);
+var Eo = "CheckboxTrigger", Do = r.forwardRef(({ __scopeCheckbox: e, onKeyDown: t, onClick: n, ...i }, a) => {
+	let { control: o, value: s, disabled: c, checked: l, required: u, setControl: d, setChecked: f, hasConsumerStoppedPropagationRef: p, isFormControl: m, bubbleInput: h } = wo(Eo, e), g = K(a, d), _ = r.useRef(l);
 	return r.useEffect(() => {
 		let e = o?.form;
 		if (e) {
@@ -3935,9 +4001,9 @@ var mo = "CheckboxTrigger", ho = r.forwardRef(({ __scopeCheckbox: e, onKeyDown: 
 	}, [o, f]), /* @__PURE__ */ C(q.button, {
 		type: "button",
 		role: "checkbox",
-		"aria-checked": So(l) ? "mixed" : l,
+		"aria-checked": Po(l) ? "mixed" : l,
 		"aria-required": u,
-		"data-state": Co(l),
+		"data-state": Fo(l),
 		"data-disabled": c ? "" : void 0,
 		disabled: c,
 		value: s,
@@ -3947,14 +4013,14 @@ var mo = "CheckboxTrigger", ho = r.forwardRef(({ __scopeCheckbox: e, onKeyDown: 
 			e.key === "Enter" && e.preventDefault();
 		}),
 		onClick: J(n, (e) => {
-			f((e) => So(e) ? !0 : !e), h && m && (p.current = e.isPropagationStopped(), p.current || e.stopPropagation());
+			f((e) => Po(e) ? !0 : !e), h && m && (p.current = e.isPropagationStopped(), p.current || e.stopPropagation());
 		})
 	});
 });
-ho.displayName = mo;
-var go = r.forwardRef((e, t) => {
+Do.displayName = Eo;
+var Oo = r.forwardRef((e, t) => {
 	let { __scopeCheckbox: n, name: r, checked: i, defaultChecked: a, required: o, disabled: s, value: c, onCheckedChange: l, form: u, ...d } = e;
-	return /* @__PURE__ */ C(po, {
+	return /* @__PURE__ */ C(To, {
 		__scopeCheckbox: n,
 		checked: i,
 		defaultChecked: a,
@@ -3964,20 +4030,20 @@ var go = r.forwardRef((e, t) => {
 		name: r,
 		form: u,
 		value: c,
-		internal_do_not_use_render: ({ isFormControl: e }) => /* @__PURE__ */ w(S, { children: [/* @__PURE__ */ C(ho, {
+		internal_do_not_use_render: ({ isFormControl: e }) => /* @__PURE__ */ w(S, { children: [/* @__PURE__ */ C(Do, {
 			...d,
 			ref: t,
 			__scopeCheckbox: n
-		}), e && /* @__PURE__ */ C(bo, { __scopeCheckbox: n })] })
+		}), e && /* @__PURE__ */ C(Mo, { __scopeCheckbox: n })] })
 	});
 });
-go.displayName = so;
-var _o = "CheckboxIndicator", vo = r.forwardRef((e, t) => {
-	let { __scopeCheckbox: n, forceMount: r, ...i } = e, a = fo(_o, n);
-	return /* @__PURE__ */ C(Vn, {
-		present: r || So(a.checked) || a.checked === !0,
+Oo.displayName = bo;
+var ko = "CheckboxIndicator", Ao = r.forwardRef((e, t) => {
+	let { __scopeCheckbox: n, forceMount: r, ...i } = e, a = wo(ko, n);
+	return /* @__PURE__ */ C($n, {
+		present: r || Po(a.checked) || a.checked === !0,
 		children: /* @__PURE__ */ C(q.span, {
-			"data-state": Co(a.checked),
+			"data-state": Fo(a.checked),
 			"data-disabled": a.disabled ? "" : void 0,
 			...i,
 			ref: t,
@@ -3988,16 +4054,16 @@ var _o = "CheckboxIndicator", vo = r.forwardRef((e, t) => {
 		})
 	});
 });
-vo.displayName = _o;
-var yo = "CheckboxBubbleInput", bo = r.forwardRef(({ __scopeCheckbox: e, ...t }, n) => {
-	let { control: i, hasConsumerStoppedPropagationRef: a, checked: o, defaultChecked: s, required: c, disabled: l, name: u, value: d, form: f, bubbleInput: p, setBubbleInput: m } = fo(yo, e), h = K(n, m), g = ao(o), _ = oo(i);
+Ao.displayName = ko;
+var jo = "CheckboxBubbleInput", Mo = r.forwardRef(({ __scopeCheckbox: e, ...t }, n) => {
+	let { control: i, hasConsumerStoppedPropagationRef: a, checked: o, defaultChecked: s, required: c, disabled: l, name: u, value: d, form: f, bubbleInput: p, setBubbleInput: m } = wo(jo, e), h = K(n, m), g = vo(o), _ = yo(i);
 	r.useEffect(() => {
 		let e = p;
 		if (!e) return;
 		let t = window.HTMLInputElement.prototype, n = Object.getOwnPropertyDescriptor(t, "checked").set, r = !a.current;
 		if (g !== o && n) {
 			let t = new Event("click", { bubbles: r });
-			e.indeterminate = So(o), n.call(e, So(o) ? !1 : o), e.dispatchEvent(t);
+			e.indeterminate = Po(o), n.call(e, Po(o) ? !1 : o), e.dispatchEvent(t);
 		}
 	}, [
 		p,
@@ -4005,7 +4071,7 @@ var yo = "CheckboxBubbleInput", bo = r.forwardRef(({ __scopeCheckbox: e, ...t },
 		o,
 		a
 	]);
-	let v = r.useRef(So(o) ? !1 : o);
+	let v = r.useRef(Po(o) ? !1 : o);
 	return /* @__PURE__ */ C(q.input, {
 		type: "checkbox",
 		"aria-hidden": !0,
@@ -4029,92 +4095,92 @@ var yo = "CheckboxBubbleInput", bo = r.forwardRef(({ __scopeCheckbox: e, ...t },
 		}
 	});
 });
-bo.displayName = yo;
-function xo(e) {
+Mo.displayName = jo;
+function No(e) {
 	return typeof e == "function";
 }
-function So(e) {
+function Po(e) {
 	return e === "indeterminate";
 }
-function Co(e) {
-	return So(e) ? "indeterminate" : e ? "checked" : "unchecked";
+function Fo(e) {
+	return Po(e) ? "indeterminate" : e ? "checked" : "unchecked";
 }
 //#endregion
 //#region node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
-var wo = [
+var Io = [
 	"top",
 	"right",
 	"bottom",
 	"left"
-], To = Math.min, Eo = Math.max, Do = Math.round, Oo = Math.floor, ko = (e) => ({
+], Lo = Math.min, Ro = Math.max, zo = Math.round, Bo = Math.floor, Vo = (e) => ({
 	x: e,
 	y: e
-}), Ao = {
+}), Ho = {
 	left: "right",
 	right: "left",
 	bottom: "top",
 	top: "bottom"
 };
-function jo(e, t, n) {
-	return Eo(e, To(t, n));
+function Uo(e, t, n) {
+	return Ro(e, Lo(t, n));
 }
-function Mo(e, t) {
+function Wo(e, t) {
 	return typeof e == "function" ? e(t) : e;
 }
-function No(e) {
+function Go(e) {
 	return e.split("-")[0];
 }
-function Po(e) {
+function Ko(e) {
 	return e.split("-")[1];
 }
-function Fo(e) {
+function qo(e) {
 	return e === "x" ? "y" : "x";
 }
-function Io(e) {
+function Jo(e) {
 	return e === "y" ? "height" : "width";
 }
-function Lo(e) {
+function Yo(e) {
 	let t = e[0];
 	return t === "t" || t === "b" ? "y" : "x";
 }
-function Ro(e) {
-	return Fo(Lo(e));
+function Xo(e) {
+	return qo(Yo(e));
 }
-function zo(e, t, n) {
+function Zo(e, t, n) {
 	n === void 0 && (n = !1);
-	let r = Po(e), i = Ro(e), a = Io(i), o = i === "x" ? r === (n ? "end" : "start") ? "right" : "left" : r === "start" ? "bottom" : "top";
-	return t.reference[a] > t.floating[a] && (o = Jo(o)), [o, Jo(o)];
+	let r = Ko(e), i = Xo(e), a = Jo(i), o = i === "x" ? r === (n ? "end" : "start") ? "right" : "left" : r === "start" ? "bottom" : "top";
+	return t.reference[a] > t.floating[a] && (o = os(o)), [o, os(o)];
 }
-function Bo(e) {
-	let t = Jo(e);
+function Qo(e) {
+	let t = os(e);
 	return [
-		Vo(e),
+		$o(e),
 		t,
-		Vo(t)
+		$o(t)
 	];
 }
-function Vo(e) {
+function $o(e) {
 	return e.includes("start") ? e.replace("start", "end") : e.replace("end", "start");
 }
-var Ho = ["left", "right"], Uo = ["right", "left"], Wo = ["top", "bottom"], Go = ["bottom", "top"];
-function Ko(e, t, n) {
+var es = ["left", "right"], ts = ["right", "left"], ns = ["top", "bottom"], rs = ["bottom", "top"];
+function is(e, t, n) {
 	switch (e) {
 		case "top":
-		case "bottom": return n ? t ? Uo : Ho : t ? Ho : Uo;
+		case "bottom": return n ? t ? ts : es : t ? es : ts;
 		case "left":
-		case "right": return t ? Wo : Go;
+		case "right": return t ? ns : rs;
 		default: return [];
 	}
 }
-function qo(e, t, n, r) {
-	let i = Po(e), a = Ko(No(e), n === "start", r);
-	return i && (a = a.map((e) => e + "-" + i), t && (a = a.concat(a.map(Vo)))), a;
+function as(e, t, n, r) {
+	let i = Ko(e), a = is(Go(e), n === "start", r);
+	return i && (a = a.map((e) => e + "-" + i), t && (a = a.concat(a.map($o)))), a;
 }
-function Jo(e) {
-	let t = No(e);
-	return Ao[t] + e.slice(t.length);
+function os(e) {
+	let t = Go(e);
+	return Ho[t] + e.slice(t.length);
 }
-function Yo(e) {
+function ss(e) {
 	return {
 		top: 0,
 		right: 0,
@@ -4123,15 +4189,15 @@ function Yo(e) {
 		...e
 	};
 }
-function Xo(e) {
+function cs(e) {
 	return typeof e == "number" ? {
 		top: e,
 		right: e,
 		bottom: e,
 		left: e
-	} : Yo(e);
+	} : ss(e);
 }
-function Zo(e) {
+function ls(e) {
 	let { x: t, y: n, width: r, height: i } = e;
 	return {
 		width: r,
@@ -4146,8 +4212,8 @@ function Zo(e) {
 }
 //#endregion
 //#region node_modules/@floating-ui/core/dist/floating-ui.core.mjs
-function Qo(e, t, n) {
-	let { reference: r, floating: i } = e, a = Lo(t), o = Ro(t), s = Io(o), c = No(t), l = a === "y", u = r.x + r.width / 2 - i.width / 2, d = r.y + r.height / 2 - i.height / 2, f = r[s] / 2 - i[s] / 2, p;
+function us(e, t, n) {
+	let { reference: r, floating: i } = e, a = Yo(t), o = Xo(t), s = Jo(o), c = Go(t), l = a === "y", u = r.x + r.width / 2 - i.width / 2, d = r.y + r.height / 2 - i.height / 2, f = r[s] / 2 - i[s] / 2, p;
 	switch (c) {
 		case "top":
 			p = {
@@ -4178,7 +4244,7 @@ function Qo(e, t, n) {
 			y: r.y
 		};
 	}
-	switch (Po(t)) {
+	switch (Ko(t)) {
 		case "start":
 			p[o] -= f * (n && l ? -1 : 1);
 			break;
@@ -4188,9 +4254,9 @@ function Qo(e, t, n) {
 	}
 	return p;
 }
-async function $o(e, t) {
+async function ds(e, t) {
 	t === void 0 && (t = {});
-	let { x: n, y: r, platform: i, rects: a, elements: o, strategy: s } = e, { boundary: c = "clippingAncestors", rootBoundary: l = "viewport", elementContext: u = "floating", altBoundary: d = !1, padding: f = 0 } = Mo(t, e), p = Xo(f), m = o[d ? u === "floating" ? "reference" : "floating" : u], h = Zo(await i.getClippingRect({
+	let { x: n, y: r, platform: i, rects: a, elements: o, strategy: s } = e, { boundary: c = "clippingAncestors", rootBoundary: l = "viewport", elementContext: u = "floating", altBoundary: d = !1, padding: f = 0 } = Wo(t, e), p = cs(f), m = o[d ? u === "floating" ? "reference" : "floating" : u], h = ls(await i.getClippingRect({
 		element: await (i.isElement == null ? void 0 : i.isElement(m)) ?? !0 ? m : m.contextElement || await (i.getDocumentElement == null ? void 0 : i.getDocumentElement(o.floating)),
 		boundary: c,
 		rootBoundary: l,
@@ -4203,7 +4269,7 @@ async function $o(e, t) {
 	} : a.reference, _ = await (i.getOffsetParent == null ? void 0 : i.getOffsetParent(o.floating)), v = await (i.isElement == null ? void 0 : i.isElement(_)) && await (i.getScale == null ? void 0 : i.getScale(_)) || {
 		x: 1,
 		y: 1
-	}, y = Zo(i.convertOffsetParentRelativeRectToViewportRelativeRect ? await i.convertOffsetParentRelativeRectToViewportRelativeRect({
+	}, y = ls(i.convertOffsetParentRelativeRectToViewportRelativeRect ? await i.convertOffsetParentRelativeRectToViewportRelativeRect({
 		elements: o,
 		rect: g,
 		offsetParent: _,
@@ -4216,15 +4282,15 @@ async function $o(e, t) {
 		right: (y.right - h.right + p.right) / v.x
 	};
 }
-var es = 50, ts = async (e, t, n) => {
+var fs = 50, ps = async (e, t, n) => {
 	let { placement: r = "bottom", strategy: i = "absolute", middleware: a = [], platform: o } = n, s = o.detectOverflow ? o : {
 		...o,
-		detectOverflow: $o
+		detectOverflow: ds
 	}, c = await (o.isRTL == null ? void 0 : o.isRTL(t)), l = await o.getElementRects({
 		reference: e,
 		floating: t,
 		strategy: i
-	}), { x: u, y: d } = Qo(l, r, c), f = r, p = 0, m = {};
+	}), { x: u, y: d } = us(l, r, c), f = r, p = 0, m = {};
 	for (let n = 0; n < a.length; n++) {
 		let h = a[n];
 		if (!h) continue;
@@ -4245,11 +4311,11 @@ var es = 50, ts = async (e, t, n) => {
 		u = v ?? u, d = y ?? d, m[g] = {
 			...m[g],
 			...b
-		}, x && p < es && (p++, typeof x == "object" && (x.placement && (f = x.placement), x.rects && (l = x.rects === !0 ? await o.getElementRects({
+		}, x && p < fs && (p++, typeof x == "object" && (x.placement && (f = x.placement), x.rects && (l = x.rects === !0 ? await o.getElementRects({
 			reference: e,
 			floating: t,
 			strategy: i
-		}) : x.rects), {x: u, y: d} = Qo(l, f, c)), n = -1);
+		}) : x.rects), {x: u, y: d} = us(l, f, c)), n = -1);
 	}
 	return {
 		x: u,
@@ -4258,18 +4324,18 @@ var es = 50, ts = async (e, t, n) => {
 		strategy: i,
 		middlewareData: m
 	};
-}, ns = (e) => ({
+}, ms = (e) => ({
 	name: "arrow",
 	options: e,
 	async fn(t) {
-		let { x: n, y: r, placement: i, rects: a, platform: o, elements: s, middlewareData: c } = t, { element: l, padding: u = 0 } = Mo(e, t) || {};
+		let { x: n, y: r, placement: i, rects: a, platform: o, elements: s, middlewareData: c } = t, { element: l, padding: u = 0 } = Wo(e, t) || {};
 		if (l == null) return {};
-		let d = Xo(u), f = {
+		let d = cs(u), f = {
 			x: n,
 			y: r
-		}, p = Ro(i), m = Io(p), h = await o.getDimensions(l), g = p === "y", _ = g ? "top" : "left", v = g ? "bottom" : "right", y = g ? "clientHeight" : "clientWidth", b = a.reference[m] + a.reference[p] - f[p] - a.floating[m], x = f[p] - a.reference[p], S = await (o.getOffsetParent == null ? void 0 : o.getOffsetParent(l)), C = S ? S[y] : 0;
+		}, p = Xo(i), m = Jo(p), h = await o.getDimensions(l), g = p === "y", _ = g ? "top" : "left", v = g ? "bottom" : "right", y = g ? "clientHeight" : "clientWidth", b = a.reference[m] + a.reference[p] - f[p] - a.floating[m], x = f[p] - a.reference[p], S = await (o.getOffsetParent == null ? void 0 : o.getOffsetParent(l)), C = S ? S[y] : 0;
 		(!C || !await (o.isElement == null ? void 0 : o.isElement(S))) && (C = s.floating[y] || a.floating[m]);
-		let w = b / 2 - x / 2, T = C / 2 - h[m] / 2 - 1, E = To(d[_], T), D = To(d[v], T), O = E, k = C - h[m] - D, A = C / 2 - h[m] / 2 + w, j = jo(O, A, k), M = !c.arrow && Po(i) != null && A !== j && a.reference[m] / 2 - (A < O ? E : D) - h[m] / 2 < 0, N = M ? A < O ? A - O : A - k : 0;
+		let w = b / 2 - x / 2, T = C / 2 - h[m] / 2 - 1, E = Lo(d[_], T), D = Lo(d[v], T), O = E, k = C - h[m] - D, A = C / 2 - h[m] / 2 + w, j = Uo(O, A, k), M = !c.arrow && Ko(i) != null && A !== j && a.reference[m] / 2 - (A < O ? E : D) - h[m] / 2 < 0, N = M ? A < O ? A - O : A - k : 0;
 		return {
 			[p]: f[p] + N,
 			data: {
@@ -4280,19 +4346,19 @@ var es = 50, ts = async (e, t, n) => {
 			reset: M
 		};
 	}
-}), rs = function(e) {
+}), hs = function(e) {
 	return e === void 0 && (e = {}), {
 		name: "flip",
 		options: e,
 		async fn(t) {
 			var n;
-			let { placement: r, middlewareData: i, rects: a, initialPlacement: o, platform: s, elements: c } = t, { mainAxis: l = !0, crossAxis: u = !0, fallbackPlacements: d, fallbackStrategy: f = "bestFit", fallbackAxisSideDirection: p = "none", flipAlignment: m = !0, ...h } = Mo(e, t);
+			let { placement: r, middlewareData: i, rects: a, initialPlacement: o, platform: s, elements: c } = t, { mainAxis: l = !0, crossAxis: u = !0, fallbackPlacements: d, fallbackStrategy: f = "bestFit", fallbackAxisSideDirection: p = "none", flipAlignment: m = !0, ...h } = Wo(e, t);
 			if ((n = i.arrow) != null && n.alignmentOffset) return {};
-			let g = No(r), _ = Lo(o), v = No(o) === o, y = await (s.isRTL == null ? void 0 : s.isRTL(c.floating)), b = d || (v || !m ? [Jo(o)] : Bo(o)), x = p !== "none";
-			!d && x && b.push(...qo(o, m, p, y));
+			let g = Go(r), _ = Yo(o), v = Go(o) === o, y = await (s.isRTL == null ? void 0 : s.isRTL(c.floating)), b = d || (v || !m ? [os(o)] : Qo(o)), x = p !== "none";
+			!d && x && b.push(...as(o, m, p, y));
 			let S = [o, ...b], C = await s.detectOverflow(t, h), w = [], T = i.flip?.overflows || [];
 			if (l && w.push(C[g]), u) {
-				let e = zo(r, a, y);
+				let e = Zo(r, a, y);
 				w.push(C[e[0]], C[e[1]]);
 			}
 			if (T = [...T, {
@@ -4300,7 +4366,7 @@ var es = 50, ts = async (e, t, n) => {
 				overflows: w
 			}], !w.every((e) => e <= 0)) {
 				let e = (i.flip?.index || 0) + 1, t = S[e];
-				if (t && (!(u === "alignment" && _ !== Lo(t)) || T.every((e) => Lo(e.placement) === _ ? e.overflows[0] > 0 : !0))) return {
+				if (t && (!(u === "alignment" && _ !== Yo(t)) || T.every((e) => Yo(e.placement) === _ ? e.overflows[0] > 0 : !0))) return {
 					data: {
 						index: e,
 						overflows: T
@@ -4312,7 +4378,7 @@ var es = 50, ts = async (e, t, n) => {
 					case "bestFit": {
 						let e = T.filter((e) => {
 							if (x) {
-								let t = Lo(e.placement);
+								let t = Yo(e.placement);
 								return t === _ || t === "y";
 							}
 							return !0;
@@ -4330,7 +4396,7 @@ var es = 50, ts = async (e, t, n) => {
 		}
 	};
 };
-function is(e, t) {
+function gs(e, t) {
 	return {
 		top: e.top - t.height,
 		right: e.right - t.width,
@@ -4338,43 +4404,43 @@ function is(e, t) {
 		left: e.left - t.width
 	};
 }
-function as(e) {
-	return wo.some((t) => e[t] >= 0);
+function _s(e) {
+	return Io.some((t) => e[t] >= 0);
 }
-var os = function(e) {
+var vs = function(e) {
 	return e === void 0 && (e = {}), {
 		name: "hide",
 		options: e,
 		async fn(t) {
-			let { rects: n, platform: r } = t, { strategy: i = "referenceHidden", ...a } = Mo(e, t);
+			let { rects: n, platform: r } = t, { strategy: i = "referenceHidden", ...a } = Wo(e, t);
 			switch (i) {
 				case "referenceHidden": {
-					let e = is(await r.detectOverflow(t, {
+					let e = gs(await r.detectOverflow(t, {
 						...a,
 						elementContext: "reference"
 					}), n.reference);
 					return { data: {
 						referenceHiddenOffsets: e,
-						referenceHidden: as(e)
+						referenceHidden: _s(e)
 					} };
 				}
 				case "escaped": {
-					let e = is(await r.detectOverflow(t, {
+					let e = gs(await r.detectOverflow(t, {
 						...a,
 						altBoundary: !0
 					}), n.floating);
 					return { data: {
 						escapedOffsets: e,
-						escaped: as(e)
+						escaped: _s(e)
 					} };
 				}
 				default: return {};
 			}
 		}
 	};
-}, ss = /* @__PURE__ */ new Set(["left", "top"]);
-async function cs(e, t) {
-	let { placement: n, platform: r, elements: i } = e, a = await (r.isRTL == null ? void 0 : r.isRTL(i.floating)), o = No(n), s = Po(n), c = Lo(n) === "y", l = ss.has(o) ? -1 : 1, u = a && c ? -1 : 1, d = Mo(t, e), { mainAxis: f, crossAxis: p, alignmentAxis: m } = typeof d == "number" ? {
+}, ys = /* @__PURE__ */ new Set(["left", "top"]);
+async function bs(e, t) {
+	let { placement: n, platform: r, elements: i } = e, a = await (r.isRTL == null ? void 0 : r.isRTL(i.floating)), o = Go(n), s = Ko(n), c = Yo(n) === "y", l = ys.has(o) ? -1 : 1, u = a && c ? -1 : 1, d = Wo(t, e), { mainAxis: f, crossAxis: p, alignmentAxis: m } = typeof d == "number" ? {
 		mainAxis: d,
 		crossAxis: 0,
 		alignmentAxis: null
@@ -4391,13 +4457,13 @@ async function cs(e, t) {
 		y: p * u
 	};
 }
-var ls = function(e) {
+var xs = function(e) {
 	return e === void 0 && (e = 0), {
 		name: "offset",
 		options: e,
 		async fn(t) {
 			var n;
-			let { x: r, y: i, placement: a, middlewareData: o } = t, s = await cs(t, e);
+			let { x: r, y: i, placement: a, middlewareData: o } = t, s = await bs(t, e);
 			return a === o.offset?.placement && (n = o.arrow) != null && n.alignmentOffset ? {} : {
 				x: r + s.x,
 				y: i + s.y,
@@ -4408,7 +4474,7 @@ var ls = function(e) {
 			};
 		}
 	};
-}, us = function(e) {
+}, Ss = function(e) {
 	return e === void 0 && (e = {}), {
 		name: "shift",
 		options: e,
@@ -4419,17 +4485,17 @@ var ls = function(e) {
 					x: t,
 					y: n
 				};
-			} }, ...l } = Mo(e, t), u = {
+			} }, ...l } = Wo(e, t), u = {
 				x: n,
 				y: r
-			}, d = await a.detectOverflow(t, l), f = Lo(No(i)), p = Fo(f), m = u[p], h = u[f];
+			}, d = await a.detectOverflow(t, l), f = Yo(Go(i)), p = qo(f), m = u[p], h = u[f];
 			if (o) {
 				let e = p === "y" ? "top" : "left", t = p === "y" ? "bottom" : "right", n = m + d[e], r = m - d[t];
-				m = jo(n, m, r);
+				m = Uo(n, m, r);
 			}
 			if (s) {
 				let e = f === "y" ? "top" : "left", t = f === "y" ? "bottom" : "right", n = h + d[e], r = h - d[t];
-				h = jo(n, h, r);
+				h = Uo(n, h, r);
 			}
 			let g = c.fn({
 				...t,
@@ -4449,14 +4515,14 @@ var ls = function(e) {
 			};
 		}
 	};
-}, ds = function(e) {
+}, Cs = function(e) {
 	return e === void 0 && (e = {}), {
 		options: e,
 		fn(t) {
-			let { x: n, y: r, placement: i, rects: a, middlewareData: o } = t, { offset: s = 0, mainAxis: c = !0, crossAxis: l = !0 } = Mo(e, t), u = {
+			let { x: n, y: r, placement: i, rects: a, middlewareData: o } = t, { offset: s = 0, mainAxis: c = !0, crossAxis: l = !0 } = Wo(e, t), u = {
 				x: n,
 				y: r
-			}, d = Lo(i), f = Fo(d), p = u[f], m = u[d], h = Mo(s, t), g = typeof h == "number" ? {
+			}, d = Yo(i), f = qo(d), p = u[f], m = u[d], h = Wo(s, t), g = typeof h == "number" ? {
 				mainAxis: h,
 				crossAxis: 0
 			} : {
@@ -4469,7 +4535,7 @@ var ls = function(e) {
 				p < t ? p = t : p > n && (p = n);
 			}
 			if (l) {
-				let e = f === "y" ? "width" : "height", t = ss.has(No(i)), n = a.reference[d] - a.floating[e] + (t && o.offset?.[d] || 0) + (t ? 0 : g.crossAxis), r = a.reference[d] + a.reference[e] + (t ? 0 : o.offset?.[d] || 0) - (t ? g.crossAxis : 0);
+				let e = f === "y" ? "width" : "height", t = ys.has(Go(i)), n = a.reference[d] - a.floating[e] + (t && o.offset?.[d] || 0) + (t ? 0 : g.crossAxis), r = a.reference[d] + a.reference[e] + (t ? 0 : o.offset?.[d] || 0) - (t ? g.crossAxis : 0);
 				m < n ? m = n : m > r && (m = r);
 			}
 			return {
@@ -4478,18 +4544,18 @@ var ls = function(e) {
 			};
 		}
 	};
-}, fs = function(e) {
+}, ws = function(e) {
 	return e === void 0 && (e = {}), {
 		name: "size",
 		options: e,
 		async fn(t) {
 			var n, r;
-			let { placement: i, rects: a, platform: o, elements: s } = t, { apply: c = () => {}, ...l } = Mo(e, t), u = await o.detectOverflow(t, l), d = No(i), f = Po(i), p = Lo(i) === "y", { width: m, height: h } = a.floating, g, _;
+			let { placement: i, rects: a, platform: o, elements: s } = t, { apply: c = () => {}, ...l } = Wo(e, t), u = await o.detectOverflow(t, l), d = Go(i), f = Ko(i), p = Yo(i) === "y", { width: m, height: h } = a.floating, g, _;
 			d === "top" || d === "bottom" ? (g = d, _ = f === (await (o.isRTL == null ? void 0 : o.isRTL(s.floating)) ? "start" : "end") ? "left" : "right") : (_ = d, g = f === "end" ? "top" : "bottom");
-			let v = h - u.top - u.bottom, y = m - u.left - u.right, b = To(h - u[g], v), x = To(m - u[_], y), S = !t.middlewareData.shift, C = b, w = x;
+			let v = h - u.top - u.bottom, y = m - u.left - u.right, b = Lo(h - u[g], v), x = Lo(m - u[_], y), S = !t.middlewareData.shift, C = b, w = x;
 			if ((n = t.middlewareData.shift) != null && n.enabled.x && (w = y), (r = t.middlewareData.shift) != null && r.enabled.y && (C = v), S && !f) {
-				let e = Eo(u.left, 0), t = Eo(u.right, 0), n = Eo(u.top, 0), r = Eo(u.bottom, 0);
-				p ? w = m - 2 * (e !== 0 || t !== 0 ? e + t : Eo(u.left, u.right)) : C = h - 2 * (n !== 0 || r !== 0 ? n + r : Eo(u.top, u.bottom));
+				let e = Ro(u.left, 0), t = Ro(u.right, 0), n = Ro(u.top, 0), r = Ro(u.bottom, 0);
+				p ? w = m - 2 * (e !== 0 || t !== 0 ? e + t : Ro(u.left, u.right)) : C = h - 2 * (n !== 0 || r !== 0 ? n + r : Ro(u.top, u.bottom));
 			}
 			await c({
 				...t,
@@ -4503,39 +4569,39 @@ var ls = function(e) {
 };
 //#endregion
 //#region node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
-function ps() {
+function Ts() {
 	return typeof window < "u";
 }
-function ms(e) {
-	return _s(e) ? (e.nodeName || "").toLowerCase() : "#document";
+function Es(e) {
+	return ks(e) ? (e.nodeName || "").toLowerCase() : "#document";
 }
-function hs(e) {
+function Ds(e) {
 	var t;
 	return (e == null || (t = e.ownerDocument) == null ? void 0 : t.defaultView) || window;
 }
-function gs(e) {
-	return ((_s(e) ? e.ownerDocument : e.document) || window.document)?.documentElement;
+function Os(e) {
+	return ((ks(e) ? e.ownerDocument : e.document) || window.document)?.documentElement;
 }
-function _s(e) {
-	return ps() ? e instanceof Node || e instanceof hs(e).Node : !1;
+function ks(e) {
+	return Ts() ? e instanceof Node || e instanceof Ds(e).Node : !1;
 }
-function vs(e) {
-	return ps() ? e instanceof Element || e instanceof hs(e).Element : !1;
+function As(e) {
+	return Ts() ? e instanceof Element || e instanceof Ds(e).Element : !1;
 }
-function ys(e) {
-	return ps() ? e instanceof HTMLElement || e instanceof hs(e).HTMLElement : !1;
+function js(e) {
+	return Ts() ? e instanceof HTMLElement || e instanceof Ds(e).HTMLElement : !1;
 }
-function bs(e) {
-	return !ps() || typeof ShadowRoot > "u" ? !1 : e instanceof ShadowRoot || e instanceof hs(e).ShadowRoot;
+function Ms(e) {
+	return !Ts() || typeof ShadowRoot > "u" ? !1 : e instanceof ShadowRoot || e instanceof Ds(e).ShadowRoot;
 }
-function xs(e) {
-	let { overflow: t, overflowX: n, overflowY: r, display: i } = Ms(e);
+function Ns(e) {
+	let { overflow: t, overflowX: n, overflowY: r, display: i } = Ws(e);
 	return /auto|scroll|overlay|hidden|clip/.test(t + r + n) && i !== "inline" && i !== "contents";
 }
-function Ss(e) {
-	return /^(table|td|th)$/.test(ms(e));
+function Ps(e) {
+	return /^(table|td|th)$/.test(Es(e));
 }
-function Cs(e) {
+function Fs(e) {
 	try {
 		if (e.matches(":popover-open")) return !0;
 	} catch {}
@@ -4545,31 +4611,31 @@ function Cs(e) {
 		return !1;
 	}
 }
-var ws = /transform|translate|scale|rotate|perspective|filter/, Ts = /paint|layout|strict|content/, Es = (e) => !!e && e !== "none", Ds;
-function Os(e) {
-	let t = vs(e) ? Ms(e) : e;
-	return Es(t.transform) || Es(t.translate) || Es(t.scale) || Es(t.rotate) || Es(t.perspective) || !As() && (Es(t.backdropFilter) || Es(t.filter)) || ws.test(t.willChange || "") || Ts.test(t.contain || "");
+var Is = /transform|translate|scale|rotate|perspective|filter/, Ls = /paint|layout|strict|content/, Rs = (e) => !!e && e !== "none", zs;
+function Bs(e) {
+	let t = As(e) ? Ws(e) : e;
+	return Rs(t.transform) || Rs(t.translate) || Rs(t.scale) || Rs(t.rotate) || Rs(t.perspective) || !Hs() && (Rs(t.backdropFilter) || Rs(t.filter)) || Is.test(t.willChange || "") || Ls.test(t.contain || "");
 }
-function ks(e) {
-	let t = Ps(e);
-	for (; ys(t) && !js(t);) {
-		if (Os(t)) return t;
-		if (Cs(t)) return null;
-		t = Ps(t);
+function Vs(e) {
+	let t = Ks(e);
+	for (; js(t) && !Us(t);) {
+		if (Bs(t)) return t;
+		if (Fs(t)) return null;
+		t = Ks(t);
 	}
 	return null;
 }
-function As() {
-	return Ds ?? (Ds = typeof CSS < "u" && CSS.supports && CSS.supports("-webkit-backdrop-filter", "none")), Ds;
+function Hs() {
+	return zs ?? (zs = typeof CSS < "u" && CSS.supports && CSS.supports("-webkit-backdrop-filter", "none")), zs;
 }
-function js(e) {
-	return /^(html|body|#document)$/.test(ms(e));
+function Us(e) {
+	return /^(html|body|#document)$/.test(Es(e));
 }
-function Ms(e) {
-	return hs(e).getComputedStyle(e);
+function Ws(e) {
+	return Ds(e).getComputedStyle(e);
 }
-function Ns(e) {
-	return vs(e) ? {
+function Gs(e) {
+	return As(e) ? {
 		scrollLeft: e.scrollLeft,
 		scrollTop: e.scrollTop
 	} : {
@@ -4577,101 +4643,101 @@ function Ns(e) {
 		scrollTop: e.scrollY
 	};
 }
-function Ps(e) {
-	if (ms(e) === "html") return e;
-	let t = e.assignedSlot || e.parentNode || bs(e) && e.host || gs(e);
-	return bs(t) ? t.host : t;
+function Ks(e) {
+	if (Es(e) === "html") return e;
+	let t = e.assignedSlot || e.parentNode || Ms(e) && e.host || Os(e);
+	return Ms(t) ? t.host : t;
 }
-function Fs(e) {
-	let t = Ps(e);
-	return js(t) ? e.ownerDocument ? e.ownerDocument.body : e.body : ys(t) && xs(t) ? t : Fs(t);
+function qs(e) {
+	let t = Ks(e);
+	return Us(t) ? e.ownerDocument ? e.ownerDocument.body : e.body : js(t) && Ns(t) ? t : qs(t);
 }
-function Is(e, t, n) {
+function Js(e, t, n) {
 	t === void 0 && (t = []), n === void 0 && (n = !0);
-	let r = Fs(e), i = r === e.ownerDocument?.body, a = hs(r);
+	let r = qs(e), i = r === e.ownerDocument?.body, a = Ds(r);
 	if (i) {
-		let e = Ls(a);
-		return t.concat(a, a.visualViewport || [], xs(r) ? r : [], e && n ? Is(e) : []);
-	} else return t.concat(r, Is(r, [], n));
+		let e = Ys(a);
+		return t.concat(a, a.visualViewport || [], Ns(r) ? r : [], e && n ? Js(e) : []);
+	} else return t.concat(r, Js(r, [], n));
 }
-function Ls(e) {
+function Ys(e) {
 	return e.parent && Object.getPrototypeOf(e.parent) ? e.frameElement : null;
 }
 //#endregion
 //#region node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs
-function Rs(e) {
-	let t = Ms(e), n = parseFloat(t.width) || 0, r = parseFloat(t.height) || 0, i = ys(e), a = i ? e.offsetWidth : n, o = i ? e.offsetHeight : r, s = Do(n) !== a || Do(r) !== o;
+function Xs(e) {
+	let t = Ws(e), n = parseFloat(t.width) || 0, r = parseFloat(t.height) || 0, i = js(e), a = i ? e.offsetWidth : n, o = i ? e.offsetHeight : r, s = zo(n) !== a || zo(r) !== o;
 	return s && (n = a, r = o), {
 		width: n,
 		height: r,
 		$: s
 	};
 }
-function zs(e) {
-	return vs(e) ? e : e.contextElement;
+function Zs(e) {
+	return As(e) ? e : e.contextElement;
 }
-function Bs(e) {
-	let t = zs(e);
-	if (!ys(t)) return ko(1);
-	let n = t.getBoundingClientRect(), { width: r, height: i, $: a } = Rs(t), o = (a ? Do(n.width) : n.width) / r, s = (a ? Do(n.height) : n.height) / i;
+function Qs(e) {
+	let t = Zs(e);
+	if (!js(t)) return Vo(1);
+	let n = t.getBoundingClientRect(), { width: r, height: i, $: a } = Xs(t), o = (a ? zo(n.width) : n.width) / r, s = (a ? zo(n.height) : n.height) / i;
 	return (!o || !Number.isFinite(o)) && (o = 1), (!s || !Number.isFinite(s)) && (s = 1), {
 		x: o,
 		y: s
 	};
 }
-var Vs = /* @__PURE__ */ ko(0);
-function Hs(e) {
-	let t = hs(e);
-	return !As() || !t.visualViewport ? Vs : {
+var $s = /* @__PURE__ */ Vo(0);
+function ec(e) {
+	let t = Ds(e);
+	return !Hs() || !t.visualViewport ? $s : {
 		x: t.visualViewport.offsetLeft,
 		y: t.visualViewport.offsetTop
 	};
 }
-function Us(e, t, n) {
-	return t === void 0 && (t = !1), !n || t && n !== hs(e) ? !1 : t;
+function tc(e, t, n) {
+	return t === void 0 && (t = !1), !n || t && n !== Ds(e) ? !1 : t;
 }
-function Ws(e, t, n, r) {
+function nc(e, t, n, r) {
 	t === void 0 && (t = !1), n === void 0 && (n = !1);
-	let i = e.getBoundingClientRect(), a = zs(e), o = ko(1);
-	t && (r ? vs(r) && (o = Bs(r)) : o = Bs(e));
-	let s = Us(a, n, r) ? Hs(a) : ko(0), c = (i.left + s.x) / o.x, l = (i.top + s.y) / o.y, u = i.width / o.x, d = i.height / o.y;
+	let i = e.getBoundingClientRect(), a = Zs(e), o = Vo(1);
+	t && (r ? As(r) && (o = Qs(r)) : o = Qs(e));
+	let s = tc(a, n, r) ? ec(a) : Vo(0), c = (i.left + s.x) / o.x, l = (i.top + s.y) / o.y, u = i.width / o.x, d = i.height / o.y;
 	if (a) {
-		let e = hs(a), t = r && vs(r) ? hs(r) : r, n = e, i = Ls(n);
+		let e = Ds(a), t = r && As(r) ? Ds(r) : r, n = e, i = Ys(n);
 		for (; i && r && t !== n;) {
-			let e = Bs(i), t = i.getBoundingClientRect(), r = Ms(i), a = t.left + (i.clientLeft + parseFloat(r.paddingLeft)) * e.x, o = t.top + (i.clientTop + parseFloat(r.paddingTop)) * e.y;
-			c *= e.x, l *= e.y, u *= e.x, d *= e.y, c += a, l += o, n = hs(i), i = Ls(n);
+			let e = Qs(i), t = i.getBoundingClientRect(), r = Ws(i), a = t.left + (i.clientLeft + parseFloat(r.paddingLeft)) * e.x, o = t.top + (i.clientTop + parseFloat(r.paddingTop)) * e.y;
+			c *= e.x, l *= e.y, u *= e.x, d *= e.y, c += a, l += o, n = Ds(i), i = Ys(n);
 		}
 	}
-	return Zo({
+	return ls({
 		width: u,
 		height: d,
 		x: c,
 		y: l
 	});
 }
-function Gs(e, t) {
-	let n = Ns(e).scrollLeft;
-	return t ? t.left + n : Ws(gs(e)).left + n;
+function rc(e, t) {
+	let n = Gs(e).scrollLeft;
+	return t ? t.left + n : nc(Os(e)).left + n;
 }
-function Ks(e, t) {
+function ic(e, t) {
 	let n = e.getBoundingClientRect();
 	return {
-		x: n.left + t.scrollLeft - Gs(e, n),
+		x: n.left + t.scrollLeft - rc(e, n),
 		y: n.top + t.scrollTop
 	};
 }
-function qs(e) {
-	let { elements: t, rect: n, offsetParent: r, strategy: i } = e, a = i === "fixed", o = gs(r), s = t ? Cs(t.floating) : !1;
+function ac(e) {
+	let { elements: t, rect: n, offsetParent: r, strategy: i } = e, a = i === "fixed", o = Os(r), s = t ? Fs(t.floating) : !1;
 	if (r === o || s && a) return n;
 	let c = {
 		scrollLeft: 0,
 		scrollTop: 0
-	}, l = ko(1), u = ko(0), d = ys(r);
-	if ((d || !d && !a) && ((ms(r) !== "body" || xs(o)) && (c = Ns(r)), d)) {
-		let e = Ws(r);
-		l = Bs(r), u.x = e.x + r.clientLeft, u.y = e.y + r.clientTop;
+	}, l = Vo(1), u = Vo(0), d = js(r);
+	if ((d || !d && !a) && ((Es(r) !== "body" || Ns(o)) && (c = Gs(r)), d)) {
+		let e = nc(r);
+		l = Qs(r), u.x = e.x + r.clientLeft, u.y = e.y + r.clientTop;
 	}
-	let f = o && !d && !a ? Ks(o, c) : ko(0);
+	let f = o && !d && !a ? ic(o, c) : Vo(0);
 	return {
 		width: n.width * l.x,
 		height: n.height * l.y,
@@ -4679,31 +4745,31 @@ function qs(e) {
 		y: n.y * l.y - c.scrollTop * l.y + u.y + f.y
 	};
 }
-function Js(e) {
+function oc(e) {
 	return Array.from(e.getClientRects());
 }
-function Ys(e) {
-	let t = gs(e), n = Ns(e), r = e.ownerDocument.body, i = Eo(t.scrollWidth, t.clientWidth, r.scrollWidth, r.clientWidth), a = Eo(t.scrollHeight, t.clientHeight, r.scrollHeight, r.clientHeight), o = -n.scrollLeft + Gs(e), s = -n.scrollTop;
-	return Ms(r).direction === "rtl" && (o += Eo(t.clientWidth, r.clientWidth) - i), {
+function sc(e) {
+	let t = Os(e), n = Gs(e), r = e.ownerDocument.body, i = Ro(t.scrollWidth, t.clientWidth, r.scrollWidth, r.clientWidth), a = Ro(t.scrollHeight, t.clientHeight, r.scrollHeight, r.clientHeight), o = -n.scrollLeft + rc(e), s = -n.scrollTop;
+	return Ws(r).direction === "rtl" && (o += Ro(t.clientWidth, r.clientWidth) - i), {
 		width: i,
 		height: a,
 		x: o,
 		y: s
 	};
 }
-var Xs = 25;
-function Zs(e, t) {
-	let n = hs(e), r = gs(e), i = n.visualViewport, a = r.clientWidth, o = r.clientHeight, s = 0, c = 0;
+var cc = 25;
+function lc(e, t) {
+	let n = Ds(e), r = Os(e), i = n.visualViewport, a = r.clientWidth, o = r.clientHeight, s = 0, c = 0;
 	if (i) {
 		a = i.width, o = i.height;
-		let e = As();
+		let e = Hs();
 		(!e || e && t === "fixed") && (s = i.offsetLeft, c = i.offsetTop);
 	}
-	let l = Gs(r);
+	let l = rc(r);
 	if (l <= 0) {
 		let e = r.ownerDocument, t = e.body, n = getComputedStyle(t), i = e.compatMode === "CSS1Compat" && parseFloat(n.marginLeft) + parseFloat(n.marginRight) || 0, o = Math.abs(r.clientWidth - t.clientWidth - i);
-		o <= Xs && (a -= o);
-	} else l <= Xs && (a += l);
+		o <= cc && (a -= o);
+	} else l <= cc && (a += l);
 	return {
 		width: a,
 		height: o,
@@ -4711,8 +4777,8 @@ function Zs(e, t) {
 		y: c
 	};
 }
-function Qs(e, t) {
-	let n = Ws(e, !0, t === "fixed"), r = n.top + e.clientTop, i = n.left + e.clientLeft, a = ys(e) ? Bs(e) : ko(1);
+function uc(e, t) {
+	let n = nc(e, !0, t === "fixed"), r = n.top + e.clientTop, i = n.left + e.clientLeft, a = js(e) ? Qs(e) : Vo(1);
 	return {
 		width: e.clientWidth * a.x,
 		height: e.clientHeight * a.y,
@@ -4720,13 +4786,13 @@ function Qs(e, t) {
 		y: r * a.y
 	};
 }
-function $s(e, t, n) {
+function dc(e, t, n) {
 	let r;
-	if (t === "viewport") r = Zs(e, n);
-	else if (t === "document") r = Ys(gs(e));
-	else if (vs(t)) r = Qs(t, n);
+	if (t === "viewport") r = lc(e, n);
+	else if (t === "document") r = sc(Os(e));
+	else if (As(t)) r = uc(t, n);
 	else {
-		let n = Hs(e);
+		let n = ec(e);
 		r = {
 			x: t.x - n.x,
 			y: t.y - n.y,
@@ -4734,27 +4800,27 @@ function $s(e, t, n) {
 			height: t.height
 		};
 	}
-	return Zo(r);
+	return ls(r);
 }
-function ec(e, t) {
-	let n = Ps(e);
-	return n === t || !vs(n) || js(n) ? !1 : Ms(n).position === "fixed" || ec(n, t);
+function fc(e, t) {
+	let n = Ks(e);
+	return n === t || !As(n) || Us(n) ? !1 : Ws(n).position === "fixed" || fc(n, t);
 }
-function tc(e, t) {
+function pc(e, t) {
 	let n = t.get(e);
 	if (n) return n;
-	let r = Is(e, [], !1).filter((e) => vs(e) && ms(e) !== "body"), i = null, a = Ms(e).position === "fixed", o = a ? Ps(e) : e;
-	for (; vs(o) && !js(o);) {
-		let t = Ms(o), n = Os(o);
-		!n && t.position === "fixed" && (i = null), (a ? !n && !i : !n && t.position === "static" && i && (i.position === "absolute" || i.position === "fixed") || xs(o) && !n && ec(e, o)) ? r = r.filter((e) => e !== o) : i = t, o = Ps(o);
+	let r = Js(e, [], !1).filter((e) => As(e) && Es(e) !== "body"), i = null, a = Ws(e).position === "fixed", o = a ? Ks(e) : e;
+	for (; As(o) && !Us(o);) {
+		let t = Ws(o), n = Bs(o);
+		!n && t.position === "fixed" && (i = null), (a ? !n && !i : !n && t.position === "static" && i && (i.position === "absolute" || i.position === "fixed") || Ns(o) && !n && fc(e, o)) ? r = r.filter((e) => e !== o) : i = t, o = Ks(o);
 	}
 	return t.set(e, r), r;
 }
-function nc(e) {
-	let { element: t, boundary: n, rootBoundary: r, strategy: i } = e, a = [...n === "clippingAncestors" ? Cs(t) ? [] : tc(t, this._c) : [].concat(n), r], o = $s(t, a[0], i), s = o.top, c = o.right, l = o.bottom, u = o.left;
+function mc(e) {
+	let { element: t, boundary: n, rootBoundary: r, strategy: i } = e, a = [...n === "clippingAncestors" ? Fs(t) ? [] : pc(t, this._c) : [].concat(n), r], o = dc(t, a[0], i), s = o.top, c = o.right, l = o.bottom, u = o.left;
 	for (let e = 1; e < a.length; e++) {
-		let n = $s(t, a[e], i);
-		s = Eo(n.top, s), c = To(n.right, c), l = To(n.bottom, l), u = Eo(n.left, u);
+		let n = dc(t, a[e], i);
+		s = Ro(n.top, s), c = Lo(n.right, c), l = Lo(n.bottom, l), u = Ro(n.left, u);
 	}
 	return {
 		width: c - u,
@@ -4763,27 +4829,27 @@ function nc(e) {
 		y: s
 	};
 }
-function rc(e) {
-	let { width: t, height: n } = Rs(e);
+function hc(e) {
+	let { width: t, height: n } = Xs(e);
 	return {
 		width: t,
 		height: n
 	};
 }
-function ic(e, t, n) {
-	let r = ys(t), i = gs(t), a = n === "fixed", o = Ws(e, !0, a, t), s = {
+function gc(e, t, n) {
+	let r = js(t), i = Os(t), a = n === "fixed", o = nc(e, !0, a, t), s = {
 		scrollLeft: 0,
 		scrollTop: 0
-	}, c = ko(0);
+	}, c = Vo(0);
 	function l() {
-		c.x = Gs(i);
+		c.x = rc(i);
 	}
-	if (r || !r && !a) if ((ms(t) !== "body" || xs(i)) && (s = Ns(t)), r) {
-		let e = Ws(t, !0, a, t);
+	if (r || !r && !a) if ((Es(t) !== "body" || Ns(i)) && (s = Gs(t)), r) {
+		let e = nc(t, !0, a, t);
 		c.x = e.x + t.clientLeft, c.y = e.y + t.clientTop;
 	} else i && l();
 	a && !r && i && l();
-	let u = i && !r && !a ? Ks(i, s) : ko(0);
+	let u = i && !r && !a ? ic(i, s) : Vo(0);
 	return {
 		x: o.left + s.scrollLeft - c.x - u.x,
 		y: o.top + s.scrollTop - c.y - u.y,
@@ -4791,34 +4857,34 @@ function ic(e, t, n) {
 		height: o.height
 	};
 }
-function ac(e) {
-	return Ms(e).position === "static";
+function _c(e) {
+	return Ws(e).position === "static";
 }
-function oc(e, t) {
-	if (!ys(e) || Ms(e).position === "fixed") return null;
+function vc(e, t) {
+	if (!js(e) || Ws(e).position === "fixed") return null;
 	if (t) return t(e);
 	let n = e.offsetParent;
-	return gs(e) === n && (n = n.ownerDocument.body), n;
+	return Os(e) === n && (n = n.ownerDocument.body), n;
 }
-function sc(e, t) {
-	let n = hs(e);
-	if (Cs(e)) return n;
-	if (!ys(e)) {
-		let t = Ps(e);
-		for (; t && !js(t);) {
-			if (vs(t) && !ac(t)) return t;
-			t = Ps(t);
+function yc(e, t) {
+	let n = Ds(e);
+	if (Fs(e)) return n;
+	if (!js(e)) {
+		let t = Ks(e);
+		for (; t && !Us(t);) {
+			if (As(t) && !_c(t)) return t;
+			t = Ks(t);
 		}
 		return n;
 	}
-	let r = oc(e, t);
-	for (; r && Ss(r) && ac(r);) r = oc(r, t);
-	return r && js(r) && ac(r) && !Os(r) ? n : r || ks(e) || n;
+	let r = vc(e, t);
+	for (; r && Ps(r) && _c(r);) r = vc(r, t);
+	return r && Us(r) && _c(r) && !Bs(r) ? n : r || Vs(e) || n;
 }
-var cc = async function(e) {
-	let t = this.getOffsetParent || sc, n = this.getDimensions, r = await n(e.floating);
+var bc = async function(e) {
+	let t = this.getOffsetParent || yc, n = this.getDimensions, r = await n(e.floating);
 	return {
-		reference: ic(e.reference, await t(e.floating), e.strategy),
+		reference: gc(e.reference, await t(e.floating), e.strategy),
 		floating: {
 			x: 0,
 			y: 0,
@@ -4827,26 +4893,26 @@ var cc = async function(e) {
 		}
 	};
 };
-function lc(e) {
-	return Ms(e).direction === "rtl";
+function xc(e) {
+	return Ws(e).direction === "rtl";
 }
-var uc = {
-	convertOffsetParentRelativeRectToViewportRelativeRect: qs,
-	getDocumentElement: gs,
-	getClippingRect: nc,
-	getOffsetParent: sc,
-	getElementRects: cc,
-	getClientRects: Js,
-	getDimensions: rc,
-	getScale: Bs,
-	isElement: vs,
-	isRTL: lc
+var Sc = {
+	convertOffsetParentRelativeRectToViewportRelativeRect: ac,
+	getDocumentElement: Os,
+	getClippingRect: mc,
+	getOffsetParent: yc,
+	getElementRects: bc,
+	getClientRects: oc,
+	getDimensions: hc,
+	getScale: Qs,
+	isElement: As,
+	isRTL: xc
 };
-function dc(e, t) {
+function Cc(e, t) {
 	return e.x === t.x && e.y === t.y && e.width === t.width && e.height === t.height;
 }
-function fc(e, t) {
-	let n = null, r, i = gs(e);
+function wc(e, t) {
+	let n = null, r, i = Os(e);
 	function a() {
 		var e;
 		clearTimeout(r), (e = n) == null || e.disconnect(), n = null;
@@ -4855,9 +4921,9 @@ function fc(e, t) {
 		s === void 0 && (s = !1), c === void 0 && (c = 1), a();
 		let l = e.getBoundingClientRect(), { left: u, top: d, width: f, height: p } = l;
 		if (s || t(), !f || !p) return;
-		let m = Oo(d), h = Oo(i.clientWidth - (u + f)), g = Oo(i.clientHeight - (d + p)), _ = Oo(u), v = {
+		let m = Bo(d), h = Bo(i.clientWidth - (u + f)), g = Bo(i.clientHeight - (d + p)), _ = Bo(u), v = {
 			rootMargin: -m + "px " + -h + "px " + -g + "px " + -_ + "px",
-			threshold: Eo(0, To(1, c)) || 1
+			threshold: Ro(0, Lo(1, c)) || 1
 		}, y = !0;
 		function b(t) {
 			let n = t[0].intersectionRatio;
@@ -4867,7 +4933,7 @@ function fc(e, t) {
 					o(!1, 1e-7);
 				}, 1e3);
 			}
-			n === 1 && !dc(l, e.getBoundingClientRect()) && o(), y = !1;
+			n === 1 && !Cc(l, e.getBoundingClientRect()) && o(), y = !1;
 		}
 		try {
 			n = new IntersectionObserver(b, {
@@ -4881,13 +4947,13 @@ function fc(e, t) {
 	}
 	return o(!0), a;
 }
-function pc(e, t, n, r) {
+function Tc(e, t, n, r) {
 	r === void 0 && (r = {});
-	let { ancestorScroll: i = !0, ancestorResize: a = !0, elementResize: o = typeof ResizeObserver == "function", layoutShift: s = typeof IntersectionObserver == "function", animationFrame: c = !1 } = r, l = zs(e), u = i || a ? [...l ? Is(l) : [], ...t ? Is(t) : []] : [];
+	let { ancestorScroll: i = !0, ancestorResize: a = !0, elementResize: o = typeof ResizeObserver == "function", layoutShift: s = typeof IntersectionObserver == "function", animationFrame: c = !1 } = r, l = Zs(e), u = i || a ? [...l ? Js(l) : [], ...t ? Js(t) : []] : [];
 	u.forEach((e) => {
 		i && e.addEventListener("scroll", n, { passive: !0 }), a && e.addEventListener("resize", n);
 	});
-	let d = l && s ? fc(l, n) : null, f = -1, p = null;
+	let d = l && s ? wc(l, n) : null, f = -1, p = null;
 	o && (p = new ResizeObserver((e) => {
 		let [r] = e;
 		r && r.target === l && p && t && (p.unobserve(t), cancelAnimationFrame(f), f = requestAnimationFrame(() => {
@@ -4895,11 +4961,11 @@ function pc(e, t, n, r) {
 			(e = p) == null || e.observe(t);
 		})), n();
 	}), l && !c && p.observe(l), t && p.observe(t));
-	let m, h = c ? Ws(e) : null;
+	let m, h = c ? nc(e) : null;
 	c && g();
 	function g() {
-		let t = Ws(e);
-		h && !dc(h, t) && n(), h = t, m = requestAnimationFrame(g);
+		let t = nc(e);
+		h && !Cc(h, t) && n(), h = t, m = requestAnimationFrame(g);
 	}
 	return n(), () => {
 		var e;
@@ -4908,20 +4974,20 @@ function pc(e, t, n, r) {
 		}), d?.(), (e = p) == null || e.disconnect(), p = null, c && cancelAnimationFrame(m);
 	};
 }
-var mc = ls, hc = us, gc = rs, _c = fs, vc = os, yc = ns, bc = ds, xc = (e, t, n) => {
+var Ec = xs, Dc = Ss, Oc = hs, kc = ws, Ac = vs, jc = ms, Mc = Cs, Nc = (e, t, n) => {
 	let r = /* @__PURE__ */ new Map(), i = {
-		platform: uc,
+		platform: Sc,
 		...n
 	}, a = {
 		...i.platform,
 		_c: r
 	};
-	return ts(e, t, {
+	return ps(e, t, {
 		...i,
 		platform: a
 	});
-}, Sc = typeof document < "u" ? d : function() {};
-function Cc(e, t) {
+}, Pc = typeof document < "u" ? d : function() {};
+function Fc(e, t) {
 	if (e === t) return !0;
 	if (typeof e != typeof t) return !1;
 	if (typeof e == "function" && e.toString() === t.toString()) return !0;
@@ -4929,33 +4995,33 @@ function Cc(e, t) {
 	if (e && t && typeof e == "object") {
 		if (Array.isArray(e)) {
 			if (n = e.length, n !== t.length) return !1;
-			for (r = n; r-- !== 0;) if (!Cc(e[r], t[r])) return !1;
+			for (r = n; r-- !== 0;) if (!Fc(e[r], t[r])) return !1;
 			return !0;
 		}
 		if (i = Object.keys(e), n = i.length, n !== Object.keys(t).length) return !1;
 		for (r = n; r-- !== 0;) if (!{}.hasOwnProperty.call(t, i[r])) return !1;
 		for (r = n; r-- !== 0;) {
 			let n = i[r];
-			if (!(n === "_owner" && e.$$typeof) && !Cc(e[n], t[n])) return !1;
+			if (!(n === "_owner" && e.$$typeof) && !Fc(e[n], t[n])) return !1;
 		}
 		return !0;
 	}
 	return e !== e && t !== t;
 }
-function wc(e) {
+function Ic(e) {
 	return typeof window > "u" ? 1 : (e.ownerDocument.defaultView || window).devicePixelRatio || 1;
 }
-function Tc(e, t) {
-	let n = wc(e);
+function Lc(e, t) {
+	let n = Ic(e);
 	return Math.round(t * n) / n;
 }
-function Ec(e) {
+function Rc(e) {
 	let t = r.useRef(e);
-	return Sc(() => {
+	return Pc(() => {
 		t.current = e;
 	}), t;
 }
-function Dc(e) {
+function zc(e) {
 	e === void 0 && (e = {});
 	let { placement: t = "bottom", strategy: n = "absolute", middleware: i = [], platform: a, elements: { reference: o, floating: s } = {}, transform: c = !0, whileElementsMounted: l, open: u } = e, [d, f] = r.useState({
 		x: 0,
@@ -4965,24 +5031,24 @@ function Dc(e) {
 		middlewareData: {},
 		isPositioned: !1
 	}), [p, m] = r.useState(i);
-	Cc(p, i) || m(i);
+	Fc(p, i) || m(i);
 	let [h, g] = r.useState(null), [_, v] = r.useState(null), y = r.useCallback((e) => {
 		e !== C.current && (C.current = e, g(e));
 	}, []), b = r.useCallback((e) => {
 		e !== w.current && (w.current = e, v(e));
-	}, []), x = o || h, S = s || _, C = r.useRef(null), w = r.useRef(null), E = r.useRef(d), D = l != null, O = Ec(l), k = Ec(a), A = Ec(u), j = r.useCallback(() => {
+	}, []), x = o || h, S = s || _, C = r.useRef(null), w = r.useRef(null), E = r.useRef(d), D = l != null, O = Rc(l), k = Rc(a), A = Rc(u), j = r.useCallback(() => {
 		if (!C.current || !w.current) return;
 		let e = {
 			placement: t,
 			strategy: n,
 			middleware: p
 		};
-		k.current && (e.platform = k.current), xc(C.current, w.current, e).then((e) => {
+		k.current && (e.platform = k.current), Nc(C.current, w.current, e).then((e) => {
 			let t = {
 				...e,
 				isPositioned: A.current !== !1
 			};
-			M.current && !Cc(E.current, t) && (E.current = t, T.flushSync(() => {
+			M.current && !Fc(E.current, t) && (E.current = t, T.flushSync(() => {
 				f(t);
 			}));
 		});
@@ -4993,16 +5059,16 @@ function Dc(e) {
 		k,
 		A
 	]);
-	Sc(() => {
+	Pc(() => {
 		u === !1 && E.current.isPositioned && (E.current.isPositioned = !1, f((e) => ({
 			...e,
 			isPositioned: !1
 		})));
 	}, [u]);
 	let M = r.useRef(!1);
-	Sc(() => (M.current = !0, () => {
+	Pc(() => (M.current = !0, () => {
 		M.current = !1;
-	}), []), Sc(() => {
+	}), []), Pc(() => {
 		if (x && (C.current = x), S && (w.current = S), x && S) {
 			if (O.current) return O.current(x, S, j);
 			j();
@@ -5029,11 +5095,11 @@ function Dc(e) {
 			top: 0
 		};
 		if (!P.floating) return e;
-		let t = Tc(P.floating, d.x), r = Tc(P.floating, d.y);
+		let t = Lc(P.floating, d.x), r = Lc(P.floating, d.y);
 		return c ? {
 			...e,
 			transform: "translate(" + t + "px, " + r + "px)",
-			...wc(P.floating) >= 1.5 && { willChange: "transform" }
+			...Ic(P.floating) >= 1.5 && { willChange: "transform" }
 		} : {
 			position: n,
 			left: t,
@@ -5060,7 +5126,7 @@ function Dc(e) {
 		F
 	]);
 }
-var Oc = (e) => {
+var Bc = (e) => {
 	function t(e) {
 		return {}.hasOwnProperty.call(e, "current");
 	}
@@ -5069,61 +5135,61 @@ var Oc = (e) => {
 		options: e,
 		fn(n) {
 			let { element: r, padding: i } = typeof e == "function" ? e(n) : e;
-			return r && t(r) ? r.current == null ? {} : yc({
+			return r && t(r) ? r.current == null ? {} : jc({
 				element: r.current,
 				padding: i
-			}).fn(n) : r ? yc({
+			}).fn(n) : r ? jc({
 				element: r,
 				padding: i
 			}).fn(n) : {};
 		}
 	};
-}, kc = (e, t) => {
-	let n = mc(e);
+}, Vc = (e, t) => {
+	let n = Ec(e);
 	return {
 		name: n.name,
 		fn: n.fn,
 		options: [e, t]
 	};
-}, Ac = (e, t) => {
-	let n = hc(e);
+}, Hc = (e, t) => {
+	let n = Dc(e);
 	return {
 		name: n.name,
 		fn: n.fn,
 		options: [e, t]
 	};
-}, jc = (e, t) => ({
-	fn: bc(e).fn,
+}, Uc = (e, t) => ({
+	fn: Mc(e).fn,
 	options: [e, t]
-}), Mc = (e, t) => {
-	let n = gc(e);
-	return {
-		name: n.name,
-		fn: n.fn,
-		options: [e, t]
-	};
-}, Nc = (e, t) => {
-	let n = _c(e);
-	return {
-		name: n.name,
-		fn: n.fn,
-		options: [e, t]
-	};
-}, Pc = (e, t) => {
-	let n = vc(e);
-	return {
-		name: n.name,
-		fn: n.fn,
-		options: [e, t]
-	};
-}, Fc = (e, t) => {
+}), Wc = (e, t) => {
 	let n = Oc(e);
 	return {
 		name: n.name,
 		fn: n.fn,
 		options: [e, t]
 	};
-}, Ic = "Arrow", Lc = r.forwardRef((e, t) => {
+}, Gc = (e, t) => {
+	let n = kc(e);
+	return {
+		name: n.name,
+		fn: n.fn,
+		options: [e, t]
+	};
+}, Kc = (e, t) => {
+	let n = Ac(e);
+	return {
+		name: n.name,
+		fn: n.fn,
+		options: [e, t]
+	};
+}, qc = (e, t) => {
+	let n = Bc(e);
+	return {
+		name: n.name,
+		fn: n.fn,
+		options: [e, t]
+	};
+}, Jc = "Arrow", Yc = r.forwardRef((e, t) => {
 	let { children: n, width: r = 10, height: i = 5, ...a } = e;
 	return /* @__PURE__ */ C(q.svg, {
 		...a,
@@ -5135,19 +5201,19 @@ var Oc = (e) => {
 		children: e.asChild ? n : /* @__PURE__ */ C("polygon", { points: "0,0 30,0 15,10" })
 	});
 });
-Lc.displayName = Ic;
-var Rc = Lc, zc = "Popper", [Bc, Vc] = En(zc), [Hc, Uc] = Bc(zc), Wc = (e) => {
+Yc.displayName = Jc;
+var Xc = Yc, Zc = "Popper", [Qc, $c] = Rn(Zc), [el, tl] = Qc(Zc), nl = (e) => {
 	let { __scopePopper: t, children: n } = e, [i, a] = r.useState(null);
-	return /* @__PURE__ */ C(Hc, {
+	return /* @__PURE__ */ C(el, {
 		scope: t,
 		anchor: i,
 		onAnchorChange: a,
 		children: n
 	});
 };
-Wc.displayName = zc;
-var Gc = "PopperAnchor", Kc = r.forwardRef((e, t) => {
-	let { __scopePopper: n, virtualRef: i, ...a } = e, o = Uc(Gc, n), s = r.useRef(null), c = K(t, s), l = r.useRef(null);
+nl.displayName = Zc;
+var rl = "PopperAnchor", il = r.forwardRef((e, t) => {
+	let { __scopePopper: n, virtualRef: i, ...a } = e, o = tl(rl, n), s = r.useRef(null), c = K(t, s), l = r.useRef(null);
 	return r.useEffect(() => {
 		let e = l.current;
 		l.current = i?.current || s.current, e !== l.current && o.onAnchorChange(l.current);
@@ -5156,9 +5222,9 @@ var Gc = "PopperAnchor", Kc = r.forwardRef((e, t) => {
 		ref: c
 	});
 });
-Kc.displayName = Gc;
-var qc = "PopperContent", [Jc, Yc] = Bc(qc), Xc = r.forwardRef((e, t) => {
-	let { __scopePopper: n, side: i = "bottom", sideOffset: a = 0, align: o = "center", alignOffset: s = 0, arrowPadding: c = 0, avoidCollisions: l = !0, collisionBoundary: u = [], collisionPadding: d = 0, sticky: f = "partial", hideWhenDetached: p = !1, updatePositionStrategy: m = "optimized", onPlaced: h, ...g } = e, _ = Uc(qc, n), [v, y] = r.useState(null), b = K(t, (e) => y(e)), [x, S] = r.useState(null), w = oo(x), T = w?.width ?? 0, E = w?.height ?? 0, D = i + (o === "center" ? "" : "-" + o), O = typeof d == "number" ? d : {
+il.displayName = rl;
+var al = "PopperContent", [ol, sl] = Qc(al), cl = r.forwardRef((e, t) => {
+	let { __scopePopper: n, side: i = "bottom", sideOffset: a = 0, align: o = "center", alignOffset: s = 0, arrowPadding: c = 0, avoidCollisions: l = !0, collisionBoundary: u = [], collisionPadding: d = 0, sticky: f = "partial", hideWhenDetached: p = !1, updatePositionStrategy: m = "optimized", onPlaced: h, ...g } = e, _ = tl(al, n), [v, y] = r.useState(null), b = K(t, (e) => y(e)), [x, S] = r.useState(null), w = yo(x), T = w?.width ?? 0, E = w?.height ?? 0, D = i + (o === "center" ? "" : "-" + o), O = typeof d == "number" ? d : {
 		top: 0,
 		right: 0,
 		bottom: 0,
@@ -5166,51 +5232,51 @@ var qc = "PopperContent", [Jc, Yc] = Bc(qc), Xc = r.forwardRef((e, t) => {
 		...d
 	}, k = Array.isArray(u) ? u : [u], A = k.length > 0, j = {
 		padding: O,
-		boundary: k.filter(el),
+		boundary: k.filter(fl),
 		altBoundary: A
-	}, { refs: M, floatingStyles: N, placement: P, isPositioned: F, middlewareData: I } = Dc({
+	}, { refs: M, floatingStyles: N, placement: P, isPositioned: F, middlewareData: I } = zc({
 		strategy: "fixed",
 		placement: D,
-		whileElementsMounted: (...e) => pc(...e, { animationFrame: m === "always" }),
+		whileElementsMounted: (...e) => Tc(...e, { animationFrame: m === "always" }),
 		elements: { reference: _.anchor },
 		middleware: [
-			kc({
+			Vc({
 				mainAxis: a + E,
 				alignmentAxis: s
 			}),
-			l && Ac({
+			l && Hc({
 				mainAxis: !0,
 				crossAxis: !1,
-				limiter: f === "partial" ? jc() : void 0,
+				limiter: f === "partial" ? Uc() : void 0,
 				...j
 			}),
-			l && Mc({ ...j }),
-			Nc({
+			l && Wc({ ...j }),
+			Gc({
 				...j,
 				apply: ({ elements: e, rects: t, availableWidth: n, availableHeight: r }) => {
 					let { width: i, height: a } = t.reference, o = e.floating.style;
 					o.setProperty("--radix-popper-available-width", `${n}px`), o.setProperty("--radix-popper-available-height", `${r}px`), o.setProperty("--radix-popper-anchor-width", `${i}px`), o.setProperty("--radix-popper-anchor-height", `${a}px`);
 				}
 			}),
-			x && Fc({
+			x && qc({
 				element: x,
 				padding: c
 			}),
-			tl({
+			pl({
 				arrowWidth: T,
 				arrowHeight: E
 			}),
-			p && Pc({
+			p && Kc({
 				strategy: "referenceHidden",
 				...j
 			})
 		]
-	}), [L, ee] = nl(P), te = lr(h);
-	Fn(() => {
+	}), [L, ee] = ml(P), te = xr(h);
+	qn(() => {
 		F && te?.();
 	}, [F, te]);
 	let ne = I.arrow?.x, R = I.arrow?.y, z = I.arrow?.centerOffset !== 0, [re, ie] = r.useState();
-	return Fn(() => {
+	return qn(() => {
 		v && ie(window.getComputedStyle(v).zIndex);
 	}, [v]), /* @__PURE__ */ C("div", {
 		ref: M.setFloating,
@@ -5227,7 +5293,7 @@ var qc = "PopperContent", [Jc, Yc] = Bc(qc), Xc = r.forwardRef((e, t) => {
 			}
 		},
 		dir: e.dir,
-		children: /* @__PURE__ */ C(Jc, {
+		children: /* @__PURE__ */ C(ol, {
 			scope: n,
 			placedSide: L,
 			onArrowChange: S,
@@ -5247,14 +5313,14 @@ var qc = "PopperContent", [Jc, Yc] = Bc(qc), Xc = r.forwardRef((e, t) => {
 		})
 	});
 });
-Xc.displayName = qc;
-var Zc = "PopperArrow", Qc = {
+cl.displayName = al;
+var ll = "PopperArrow", ul = {
 	top: "bottom",
 	right: "left",
 	bottom: "top",
 	left: "right"
-}, $c = r.forwardRef(function(e, t) {
-	let { __scopePopper: n, ...r } = e, i = Yc(Zc, n), a = Qc[i.placedSide];
+}, dl = r.forwardRef(function(e, t) {
+	let { __scopePopper: n, ...r } = e, i = sl(ll, n), a = ul[i.placedSide];
 	return /* @__PURE__ */ C("span", {
 		ref: i.onArrowChange,
 		style: {
@@ -5276,7 +5342,7 @@ var Zc = "PopperArrow", Qc = {
 			}[i.placedSide],
 			visibility: i.shouldHideArrow ? "hidden" : void 0
 		},
-		children: /* @__PURE__ */ C(Rc, {
+		children: /* @__PURE__ */ C(Xc, {
 			...r,
 			ref: t,
 			style: {
@@ -5286,15 +5352,15 @@ var Zc = "PopperArrow", Qc = {
 		})
 	});
 });
-$c.displayName = Zc;
-function el(e) {
+dl.displayName = ll;
+function fl(e) {
 	return e !== null;
 }
-var tl = (e) => ({
+var pl = (e) => ({
 	name: "transformOrigin",
 	options: e,
 	fn(t) {
-		let { placement: n, rects: r, middlewareData: i } = t, a = i.arrow?.centerOffset !== 0, o = a ? 0 : e.arrowWidth, s = a ? 0 : e.arrowHeight, [c, l] = nl(n), u = {
+		let { placement: n, rects: r, middlewareData: i } = t, a = i.arrow?.centerOffset !== 0, o = a ? 0 : e.arrowWidth, s = a ? 0 : e.arrowHeight, [c, l] = ml(n), u = {
 			start: "0%",
 			center: "50%",
 			end: "100%"
@@ -5305,35 +5371,35 @@ var tl = (e) => ({
 		} };
 	}
 });
-function nl(e) {
+function ml(e) {
 	let [t, n = "center"] = e.split("-");
 	return [t, n];
 }
-var rl = Wc, il = Kc, al = Xc, ol = $c, sl = "rovingFocusGroup.onEntryFocus", cl = {
+var hl = nl, gl = il, _l = cl, vl = dl, yl = "rovingFocusGroup.onEntryFocus", bl = {
 	bubbles: !1,
 	cancelable: !0
-}, ll = "RovingFocusGroup", [ul, dl, fl] = Pn(ll), [pl, ml] = En(ll, [fl]), [hl, gl] = pl(ll), _l = r.forwardRef((e, t) => /* @__PURE__ */ C(ul.Provider, {
+}, xl = "RovingFocusGroup", [Sl, Cl, wl] = Kn(xl), [Tl, El] = Rn(xl, [wl]), [Dl, Ol] = Tl(xl), kl = r.forwardRef((e, t) => /* @__PURE__ */ C(Sl.Provider, {
 	scope: e.__scopeRovingFocusGroup,
-	children: /* @__PURE__ */ C(ul.Slot, {
+	children: /* @__PURE__ */ C(Sl.Slot, {
 		scope: e.__scopeRovingFocusGroup,
-		children: /* @__PURE__ */ C(vl, {
+		children: /* @__PURE__ */ C(Al, {
 			...e,
 			ref: t
 		})
 	})
 }));
-_l.displayName = ll;
-var vl = r.forwardRef((e, t) => {
-	let { __scopeRovingFocusGroup: n, orientation: i, loop: a = !1, dir: o, currentTabStopId: s, defaultCurrentTabStopId: c, onCurrentTabStopIdChange: l, onEntryFocus: u, preventScrollOnEntryFocus: d = !1, ...f } = e, p = r.useRef(null), m = K(t, p), h = cr(o), [g, _] = Ln({
+kl.displayName = xl;
+var Al = r.forwardRef((e, t) => {
+	let { __scopeRovingFocusGroup: n, orientation: i, loop: a = !1, dir: o, currentTabStopId: s, defaultCurrentTabStopId: c, onCurrentTabStopIdChange: l, onEntryFocus: u, preventScrollOnEntryFocus: d = !1, ...f } = e, p = r.useRef(null), m = K(t, p), h = br(o), [g, _] = Yn({
 		prop: s,
 		defaultProp: c ?? null,
 		onChange: l,
-		caller: ll
-	}), [v, y] = r.useState(!1), b = lr(u), x = dl(n), S = r.useRef(!1), [w, T] = r.useState(0);
+		caller: xl
+	}), [v, y] = r.useState(!1), b = xr(u), x = Cl(n), S = r.useRef(!1), [w, T] = r.useState(0);
 	return r.useEffect(() => {
 		let e = p.current;
-		if (e) return e.addEventListener(sl, b), () => e.removeEventListener(sl, b);
-	}, [b]), /* @__PURE__ */ C(hl, {
+		if (e) return e.addEventListener(yl, b), () => e.removeEventListener(yl, b);
+	}, [b]), /* @__PURE__ */ C(Dl, {
 		scope: n,
 		orientation: i,
 		dir: h,
@@ -5358,10 +5424,10 @@ var vl = r.forwardRef((e, t) => {
 			onFocus: J(e.onFocus, (e) => {
 				let t = !S.current;
 				if (e.target === e.currentTarget && t && !v) {
-					let t = new CustomEvent(sl, cl);
+					let t = new CustomEvent(yl, bl);
 					if (e.currentTarget.dispatchEvent(t), !t.defaultPrevented) {
 						let e = x().filter((e) => e.focusable);
-						wl([
+						Il([
 							e.find((e) => e.active),
 							e.find((e) => e.id === g),
 							...e
@@ -5373,15 +5439,15 @@ var vl = r.forwardRef((e, t) => {
 			onBlur: J(e.onBlur, () => y(!1))
 		})
 	});
-}), yl = "RovingFocusGroupItem", bl = r.forwardRef((e, t) => {
-	let { __scopeRovingFocusGroup: n, focusable: i = !0, active: a = !1, tabStopId: o, children: s, ...c } = e, l = qn(), u = o || l, d = gl(yl, n), f = d.currentTabStopId === u, p = dl(n), { onFocusableItemAdd: m, onFocusableItemRemove: h, currentTabStopId: g } = d;
+}), jl = "RovingFocusGroupItem", Ml = r.forwardRef((e, t) => {
+	let { __scopeRovingFocusGroup: n, focusable: i = !0, active: a = !1, tabStopId: o, children: s, ...c } = e, l = ar(), u = o || l, d = Ol(jl, n), f = d.currentTabStopId === u, p = Cl(n), { onFocusableItemAdd: m, onFocusableItemRemove: h, currentTabStopId: g } = d;
 	return r.useEffect(() => {
 		if (i) return m(), () => h();
 	}, [
 		i,
 		m,
 		h
-	]), /* @__PURE__ */ C(ul.ItemSlot, {
+	]), /* @__PURE__ */ C(Sl.ItemSlot, {
 		scope: n,
 		id: u,
 		focusable: i,
@@ -5401,7 +5467,7 @@ var vl = r.forwardRef((e, t) => {
 					return;
 				}
 				if (e.target !== e.currentTarget) return;
-				let t = Cl(e, d.orientation, d.dir);
+				let t = Fl(e, d.orientation, d.dir);
 				if (t !== void 0) {
 					if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
 					e.preventDefault();
@@ -5410,9 +5476,9 @@ var vl = r.forwardRef((e, t) => {
 					else if (t === "prev" || t === "next") {
 						t === "prev" && n.reverse();
 						let r = n.indexOf(e.currentTarget);
-						n = d.loop ? Tl(n, r + 1) : n.slice(r + 1);
+						n = d.loop ? Ll(n, r + 1) : n.slice(r + 1);
 					}
-					setTimeout(() => wl(n));
+					setTimeout(() => Il(n));
 				}
 			}),
 			children: typeof s == "function" ? s({
@@ -5422,8 +5488,8 @@ var vl = r.forwardRef((e, t) => {
 		})
 	});
 });
-bl.displayName = yl;
-var xl = {
+Ml.displayName = jl;
+var Nl = {
 	ArrowLeft: "prev",
 	ArrowUp: "prev",
 	ArrowRight: "next",
@@ -5433,27 +5499,27 @@ var xl = {
 	PageDown: "last",
 	End: "last"
 };
-function Sl(e, t) {
+function Pl(e, t) {
 	return t === "rtl" ? e === "ArrowLeft" ? "ArrowRight" : e === "ArrowRight" ? "ArrowLeft" : e : e;
 }
-function Cl(e, t, n) {
-	let r = Sl(e.key, n);
-	if (!(t === "vertical" && ["ArrowLeft", "ArrowRight"].includes(r)) && !(t === "horizontal" && ["ArrowUp", "ArrowDown"].includes(r))) return xl[r];
+function Fl(e, t, n) {
+	let r = Pl(e.key, n);
+	if (!(t === "vertical" && ["ArrowLeft", "ArrowRight"].includes(r)) && !(t === "horizontal" && ["ArrowUp", "ArrowDown"].includes(r))) return Nl[r];
 }
-function wl(e, t = !1) {
+function Il(e, t = !1) {
 	let n = document.activeElement;
 	for (let r of e) if (r === n || (r.focus({ preventScroll: t }), document.activeElement !== n)) return;
 }
-function Tl(e, t) {
+function Ll(e, t) {
 	return e.map((n, r) => e[(t + r) % e.length]);
 }
-var El = _l, Dl = bl;
+var Rl = kl, zl = Ml;
 //#endregion
 //#region node_modules/@radix-ui/react-menu/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function Ol(e) {
-	let t = /* @__PURE__ */ kl(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(jl);
+function Bl(e) {
+	let t = /* @__PURE__ */ Vl(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(Ul);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ C(t, {
@@ -5471,22 +5537,22 @@ function Ol(e) {
 	return n.displayName = `${e}.Slot`, n;
 }
 /* @__NO_SIDE_EFFECTS__ */
-function kl(e) {
+function Vl(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
-			let e = Nl(n), a = Ml(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? mn(t, e) : e), r.cloneElement(n, a);
+			let e = Gl(n), a = Wl(i, n.props);
+			return n.type !== r.Fragment && (a.ref = t ? En(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var Al = Symbol("radix.slottable");
-function jl(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === Al;
+var Hl = Symbol("radix.slottable");
+function Ul(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === Hl;
 }
-function Ml(e, t) {
+function Wl(e, t) {
 	let n = { ...t };
 	for (let r in t) {
 		let i = e[r], a = t[r];
@@ -5503,32 +5569,32 @@ function Ml(e, t) {
 		...n
 	};
 }
-function Nl(e) {
+function Gl(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-menu/dist/index.mjs
-var Pl = ["Enter", " "], Fl = [
+var Kl = ["Enter", " "], ql = [
 	"ArrowDown",
 	"PageUp",
 	"Home"
-], Il = [
+], Jl = [
 	"ArrowUp",
 	"PageDown",
 	"End"
-], Ll = [...Fl, ...Il], Rl = {
-	ltr: [...Pl, "ArrowRight"],
-	rtl: [...Pl, "ArrowLeft"]
-}, zl = {
+], Yl = [...ql, ...Jl], Xl = {
+	ltr: [...Kl, "ArrowRight"],
+	rtl: [...Kl, "ArrowLeft"]
+}, Zl = {
 	ltr: ["ArrowLeft"],
 	rtl: ["ArrowRight"]
-}, Bl = "Menu", [Vl, Hl, Ul] = Pn(Bl), [Wl, Gl] = En(Bl, [
-	Ul,
-	Vc,
-	ml
-]), Kl = Vc(), ql = ml(), [Jl, Yl] = Wl(Bl), [Xl, Zl] = Wl(Bl), Ql = (e) => {
-	let { __scopeMenu: t, open: n = !1, children: i, dir: a, onOpenChange: o, modal: s = !0 } = e, c = Kl(t), [l, u] = r.useState(null), d = r.useRef(!1), f = lr(o), p = cr(a);
+}, Ql = "Menu", [$l, eu, tu] = Kn(Ql), [nu, ru] = Rn(Ql, [
+	tu,
+	$c,
+	El
+]), iu = $c(), au = El(), [ou, su] = nu(Ql), [cu, lu] = nu(Ql), uu = (e) => {
+	let { __scopeMenu: t, open: n = !1, children: i, dir: a, onOpenChange: o, modal: s = !0 } = e, c = iu(t), [l, u] = r.useState(null), d = r.useRef(!1), f = xr(o), p = br(a);
 	return r.useEffect(() => {
 		let e = () => {
 			d.current = !0, document.addEventListener("pointerdown", t, {
@@ -5542,15 +5608,15 @@ var Pl = ["Enter", " "], Fl = [
 		return document.addEventListener("keydown", e, { capture: !0 }), () => {
 			document.removeEventListener("keydown", e, { capture: !0 }), document.removeEventListener("pointerdown", t, { capture: !0 }), document.removeEventListener("pointermove", t, { capture: !0 });
 		};
-	}, []), /* @__PURE__ */ C(rl, {
+	}, []), /* @__PURE__ */ C(hl, {
 		...c,
-		children: /* @__PURE__ */ C(Jl, {
+		children: /* @__PURE__ */ C(ou, {
 			scope: t,
 			open: n,
 			onOpenChange: f,
 			content: l,
 			onContentChange: u,
-			children: /* @__PURE__ */ C(Xl, {
+			children: /* @__PURE__ */ C(cu, {
 				scope: t,
 				onClose: r.useCallback(() => f(!1), [f]),
 				isUsingKeyboardRef: d,
@@ -5561,24 +5627,24 @@ var Pl = ["Enter", " "], Fl = [
 		})
 	});
 };
-Ql.displayName = Bl;
-var $l = "MenuAnchor", eu = r.forwardRef((e, t) => {
+uu.displayName = Ql;
+var du = "MenuAnchor", fu = r.forwardRef((e, t) => {
 	let { __scopeMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(il, {
-		...Kl(n),
+	return /* @__PURE__ */ C(gl, {
+		...iu(n),
 		...r,
 		ref: t
 	});
 });
-eu.displayName = $l;
-var tu = "MenuPortal", [nu, ru] = Wl(tu, { forceMount: void 0 }), iu = (e) => {
-	let { __scopeMenu: t, forceMount: n, children: r, container: i } = e, a = Yl(tu, t);
-	return /* @__PURE__ */ C(nu, {
+fu.displayName = du;
+var pu = "MenuPortal", [mu, hu] = nu(pu, { forceMount: void 0 }), gu = (e) => {
+	let { __scopeMenu: t, forceMount: n, children: r, container: i } = e, a = su(pu, t);
+	return /* @__PURE__ */ C(mu, {
 		scope: t,
 		forceMount: n,
-		children: /* @__PURE__ */ C(Vn, {
+		children: /* @__PURE__ */ C($n, {
 			present: n || a.open,
-			children: /* @__PURE__ */ C(Vr, {
+			children: /* @__PURE__ */ C($r, {
 				asChild: !0,
 				container: i,
 				children: r
@@ -5586,31 +5652,31 @@ var tu = "MenuPortal", [nu, ru] = Wl(tu, { forceMount: void 0 }), iu = (e) => {
 		})
 	});
 };
-iu.displayName = tu;
-var au = "MenuContent", [ou, su] = Wl(au), cu = r.forwardRef((e, t) => {
-	let n = ru(au, e.__scopeMenu), { forceMount: r = n.forceMount, ...i } = e, a = Yl(au, e.__scopeMenu), o = Zl(au, e.__scopeMenu);
-	return /* @__PURE__ */ C(Vl.Provider, {
+gu.displayName = pu;
+var _u = "MenuContent", [vu, yu] = nu(_u), bu = r.forwardRef((e, t) => {
+	let n = hu(_u, e.__scopeMenu), { forceMount: r = n.forceMount, ...i } = e, a = su(_u, e.__scopeMenu), o = lu(_u, e.__scopeMenu);
+	return /* @__PURE__ */ C($l.Provider, {
 		scope: e.__scopeMenu,
-		children: /* @__PURE__ */ C(Vn, {
+		children: /* @__PURE__ */ C($n, {
 			present: r || a.open,
-			children: /* @__PURE__ */ C(Vl.Slot, {
+			children: /* @__PURE__ */ C($l.Slot, {
 				scope: e.__scopeMenu,
-				children: o.modal ? /* @__PURE__ */ C(lu, {
+				children: o.modal ? /* @__PURE__ */ C(xu, {
 					...i,
 					ref: t
-				}) : /* @__PURE__ */ C(uu, {
+				}) : /* @__PURE__ */ C(Su, {
 					...i,
 					ref: t
 				})
 			})
 		})
 	});
-}), lu = r.forwardRef((e, t) => {
-	let n = Yl(au, e.__scopeMenu), i = r.useRef(null), a = K(t, i);
+}), xu = r.forwardRef((e, t) => {
+	let n = su(_u, e.__scopeMenu), i = r.useRef(null), a = K(t, i);
 	return r.useEffect(() => {
 		let e = i.current;
-		if (e) return fa(e);
-	}, []), /* @__PURE__ */ C(fu, {
+		if (e) return wa(e);
+	}, []), /* @__PURE__ */ C(wu, {
 		...e,
 		ref: a,
 		trapFocus: n.open,
@@ -5619,9 +5685,9 @@ var au = "MenuContent", [ou, su] = Wl(au), cu = r.forwardRef((e, t) => {
 		onFocusOutside: J(e.onFocusOutside, (e) => e.preventDefault(), { checkForDefaultPrevented: !1 }),
 		onDismiss: () => n.onOpenChange(!1)
 	});
-}), uu = r.forwardRef((e, t) => {
-	let n = Yl(au, e.__scopeMenu);
-	return /* @__PURE__ */ C(fu, {
+}), Su = r.forwardRef((e, t) => {
+	let n = su(_u, e.__scopeMenu);
+	return /* @__PURE__ */ C(wu, {
 		...e,
 		ref: t,
 		trapFocus: !1,
@@ -5629,19 +5695,19 @@ var au = "MenuContent", [ou, su] = Wl(au), cu = r.forwardRef((e, t) => {
 		disableOutsideScroll: !1,
 		onDismiss: () => n.onOpenChange(!1)
 	});
-}), du = /* @__PURE__ */ Ol("MenuContent.ScrollLock"), fu = r.forwardRef((e, t) => {
-	let { __scopeMenu: n, loop: i = !1, trapFocus: a, onOpenAutoFocus: o, onCloseAutoFocus: s, disableOutsidePointerEvents: c, onEntryFocus: l, onEscapeKeyDown: u, onPointerDownOutside: d, onFocusOutside: f, onInteractOutside: p, onDismiss: m, disableOutsideScroll: h, ...g } = e, _ = Yl(au, n), v = Zl(au, n), y = Kl(n), b = ql(n), x = Hl(n), [S, w] = r.useState(null), T = r.useRef(null), E = K(t, T, _.onContentChange), D = r.useRef(0), O = r.useRef(""), k = r.useRef(0), A = r.useRef(null), j = r.useRef("right"), M = r.useRef(0), N = h ? ra : r.Fragment, P = h ? {
-		as: du,
+}), Cu = /* @__PURE__ */ Bl("MenuContent.ScrollLock"), wu = r.forwardRef((e, t) => {
+	let { __scopeMenu: n, loop: i = !1, trapFocus: a, onOpenAutoFocus: o, onCloseAutoFocus: s, disableOutsidePointerEvents: c, onEntryFocus: l, onEscapeKeyDown: u, onPointerDownOutside: d, onFocusOutside: f, onInteractOutside: p, onDismiss: m, disableOutsideScroll: h, ...g } = e, _ = su(_u, n), v = lu(_u, n), y = iu(n), b = au(n), x = eu(n), [S, w] = r.useState(null), T = r.useRef(null), E = K(t, T, _.onContentChange), D = r.useRef(0), O = r.useRef(""), k = r.useRef(0), A = r.useRef(null), j = r.useRef("right"), M = r.useRef(0), N = h ? ha : r.Fragment, P = h ? {
+		as: Cu,
 		allowPinchZoom: !0
 	} : void 0, F = (e) => {
-		let t = O.current + e, n = x().filter((e) => !e.disabled), r = document.activeElement, i = n.find((e) => e.ref.current === r)?.textValue, a = Xu(n.map((e) => e.textValue), t, i), o = n.find((e) => e.textValue === a)?.ref.current;
+		let t = O.current + e, n = x().filter((e) => !e.disabled), r = document.activeElement, i = n.find((e) => e.ref.current === r)?.textValue, a = cd(n.map((e) => e.textValue), t, i), o = n.find((e) => e.textValue === a)?.ref.current;
 		(function e(t) {
 			O.current = t, window.clearTimeout(D.current), t !== "" && (D.current = window.setTimeout(() => e(""), 1e3));
 		})(t), o && setTimeout(() => o.focus());
 	};
-	r.useEffect(() => () => window.clearTimeout(D.current), []), Ur();
-	let I = r.useCallback((e) => j.current === A.current?.side && Qu(e, A.current?.area), []);
-	return /* @__PURE__ */ C(ou, {
+	r.useEffect(() => () => window.clearTimeout(D.current), []), ti();
+	let I = r.useCallback((e) => j.current === A.current?.side && ud(e, A.current?.area), []);
+	return /* @__PURE__ */ C(vu, {
 		scope: n,
 		searchRef: O,
 		onItemEnter: r.useCallback((e) => {
@@ -5659,14 +5725,14 @@ var au = "MenuContent", [ou, su] = Wl(au), cu = r.forwardRef((e, t) => {
 		}, []),
 		children: /* @__PURE__ */ C(N, {
 			...P,
-			children: /* @__PURE__ */ C(Or, {
+			children: /* @__PURE__ */ C(Br, {
 				asChild: !0,
 				trapped: a,
 				onMountAutoFocus: J(o, (e) => {
 					e.preventDefault(), T.current?.focus({ preventScroll: !0 });
 				}),
 				onUnmountAutoFocus: s,
-				children: /* @__PURE__ */ C(_r, {
+				children: /* @__PURE__ */ C(kr, {
 					asChild: !0,
 					disableOutsidePointerEvents: c,
 					onEscapeKeyDown: u,
@@ -5674,7 +5740,7 @@ var au = "MenuContent", [ou, su] = Wl(au), cu = r.forwardRef((e, t) => {
 					onFocusOutside: f,
 					onInteractOutside: p,
 					onDismiss: m,
-					children: /* @__PURE__ */ C(El, {
+					children: /* @__PURE__ */ C(Rl, {
 						asChild: !0,
 						...b,
 						dir: v.dir,
@@ -5686,10 +5752,10 @@ var au = "MenuContent", [ou, su] = Wl(au), cu = r.forwardRef((e, t) => {
 							v.isUsingKeyboardRef.current || e.preventDefault();
 						}),
 						preventScrollOnEntryFocus: !0,
-						children: /* @__PURE__ */ C(al, {
+						children: /* @__PURE__ */ C(_l, {
 							role: "menu",
 							"aria-orientation": "vertical",
-							"data-state": Gu(_.open),
+							"data-state": rd(_.open),
 							"data-radix-menu-content": "",
 							dir: v.dir,
 							...y,
@@ -5703,15 +5769,15 @@ var au = "MenuContent", [ou, su] = Wl(au), cu = r.forwardRef((e, t) => {
 								let t = e.target.closest("[data-radix-menu-content]") === e.currentTarget, n = e.ctrlKey || e.altKey || e.metaKey, r = e.key.length === 1;
 								t && (e.key === "Tab" && e.preventDefault(), !n && r && F(e.key));
 								let i = T.current;
-								if (e.target !== i || !Ll.includes(e.key)) return;
+								if (e.target !== i || !Yl.includes(e.key)) return;
 								e.preventDefault();
 								let a = x().filter((e) => !e.disabled).map((e) => e.ref.current);
-								Il.includes(e.key) && a.reverse(), Ju(a);
+								Jl.includes(e.key) && a.reverse(), od(a);
 							}),
 							onBlur: J(e.onBlur, (e) => {
 								e.currentTarget.contains(e.target) || (window.clearTimeout(D.current), O.current = "");
 							}),
-							onPointerMove: J(e.onPointerMove, $u((e) => {
+							onPointerMove: J(e.onPointerMove, dd((e) => {
 								let t = e.target, n = M.current !== e.clientX;
 								e.currentTarget.contains(t) && n && (j.current = e.clientX > M.current ? "right" : "left", M.current = e.clientX);
 							}))
@@ -5722,8 +5788,8 @@ var au = "MenuContent", [ou, su] = Wl(au), cu = r.forwardRef((e, t) => {
 		})
 	});
 });
-cu.displayName = au;
-var pu = "MenuGroup", mu = r.forwardRef((e, t) => {
+bu.displayName = _u;
+var Tu = "MenuGroup", Eu = r.forwardRef((e, t) => {
 	let { __scopeMenu: n, ...r } = e;
 	return /* @__PURE__ */ C(q.div, {
 		role: "group",
@@ -5731,27 +5797,27 @@ var pu = "MenuGroup", mu = r.forwardRef((e, t) => {
 		ref: t
 	});
 });
-mu.displayName = pu;
-var hu = "MenuLabel", gu = r.forwardRef((e, t) => {
+Eu.displayName = Tu;
+var Du = "MenuLabel", Ou = r.forwardRef((e, t) => {
 	let { __scopeMenu: n, ...r } = e;
 	return /* @__PURE__ */ C(q.div, {
 		...r,
 		ref: t
 	});
 });
-gu.displayName = hu;
-var _u = "MenuItem", vu = "menu.itemSelect", yu = r.forwardRef((e, t) => {
-	let { disabled: n = !1, onSelect: i, ...a } = e, o = r.useRef(null), s = Zl(_u, e.__scopeMenu), c = su(_u, e.__scopeMenu), l = K(t, o), u = r.useRef(!1), d = () => {
+Ou.displayName = Du;
+var ku = "MenuItem", Au = "menu.itemSelect", ju = r.forwardRef((e, t) => {
+	let { disabled: n = !1, onSelect: i, ...a } = e, o = r.useRef(null), s = lu(ku, e.__scopeMenu), c = yu(ku, e.__scopeMenu), l = K(t, o), u = r.useRef(!1), d = () => {
 		let e = o.current;
 		if (!n && e) {
-			let t = new CustomEvent(vu, {
+			let t = new CustomEvent(Au, {
 				bubbles: !0,
 				cancelable: !0
 			});
-			e.addEventListener(vu, (e) => i?.(e), { once: !0 }), xn(e, t), t.defaultPrevented ? u.current = !1 : s.onClose();
+			e.addEventListener(Au, (e) => i?.(e), { once: !0 }), Nn(e, t), t.defaultPrevented ? u.current = !1 : s.onClose();
 		}
 	};
-	return /* @__PURE__ */ C(bu, {
+	return /* @__PURE__ */ C(Mu, {
 		...a,
 		ref: l,
 		disabled: n,
@@ -5764,21 +5830,21 @@ var _u = "MenuItem", vu = "menu.itemSelect", yu = r.forwardRef((e, t) => {
 		}),
 		onKeyDown: J(e.onKeyDown, (e) => {
 			let t = c.searchRef.current !== "";
-			n || t && e.key === " " || Pl.includes(e.key) && (e.currentTarget.click(), e.preventDefault());
+			n || t && e.key === " " || Kl.includes(e.key) && (e.currentTarget.click(), e.preventDefault());
 		})
 	});
 });
-yu.displayName = _u;
-var bu = r.forwardRef((e, t) => {
-	let { __scopeMenu: n, disabled: i = !1, textValue: a, ...o } = e, s = su(_u, n), c = ql(n), l = r.useRef(null), u = K(t, l), [d, f] = r.useState(!1), [p, m] = r.useState("");
+ju.displayName = ku;
+var Mu = r.forwardRef((e, t) => {
+	let { __scopeMenu: n, disabled: i = !1, textValue: a, ...o } = e, s = yu(ku, n), c = au(n), l = r.useRef(null), u = K(t, l), [d, f] = r.useState(!1), [p, m] = r.useState("");
 	return r.useEffect(() => {
 		let e = l.current;
 		e && m((e.textContent ?? "").trim());
-	}, [o.children]), /* @__PURE__ */ C(Vl.ItemSlot, {
+	}, [o.children]), /* @__PURE__ */ C($l.ItemSlot, {
 		scope: n,
 		disabled: i,
 		textValue: a ?? p,
-		children: /* @__PURE__ */ C(Dl, {
+		children: /* @__PURE__ */ C(zl, {
 			asChild: !0,
 			...c,
 			focusable: !i,
@@ -5789,76 +5855,76 @@ var bu = r.forwardRef((e, t) => {
 				"data-disabled": i ? "" : void 0,
 				...o,
 				ref: u,
-				onPointerMove: J(e.onPointerMove, $u((e) => {
+				onPointerMove: J(e.onPointerMove, dd((e) => {
 					i ? s.onItemLeave(e) : (s.onItemEnter(e), e.defaultPrevented || e.currentTarget.focus({ preventScroll: !0 }));
 				})),
-				onPointerLeave: J(e.onPointerLeave, $u((e) => s.onItemLeave(e))),
+				onPointerLeave: J(e.onPointerLeave, dd((e) => s.onItemLeave(e))),
 				onFocus: J(e.onFocus, () => f(!0)),
 				onBlur: J(e.onBlur, () => f(!1))
 			})
 		})
 	});
-}), xu = "MenuCheckboxItem", Su = r.forwardRef((e, t) => {
+}), Nu = "MenuCheckboxItem", Pu = r.forwardRef((e, t) => {
 	let { checked: n = !1, onCheckedChange: r, ...i } = e;
-	return /* @__PURE__ */ C(Au, {
+	return /* @__PURE__ */ C(Hu, {
 		scope: e.__scopeMenu,
 		checked: n,
-		children: /* @__PURE__ */ C(yu, {
+		children: /* @__PURE__ */ C(ju, {
 			role: "menuitemcheckbox",
-			"aria-checked": Ku(n) ? "mixed" : n,
+			"aria-checked": id(n) ? "mixed" : n,
 			...i,
 			ref: t,
-			"data-state": qu(n),
-			onSelect: J(i.onSelect, () => r?.(Ku(n) ? !0 : !n), { checkForDefaultPrevented: !1 })
+			"data-state": ad(n),
+			onSelect: J(i.onSelect, () => r?.(id(n) ? !0 : !n), { checkForDefaultPrevented: !1 })
 		})
 	});
 });
-Su.displayName = xu;
-var Cu = "MenuRadioGroup", [wu, Tu] = Wl(Cu, {
+Pu.displayName = Nu;
+var Fu = "MenuRadioGroup", [Iu, Lu] = nu(Fu, {
 	value: void 0,
 	onValueChange: () => {}
-}), Eu = r.forwardRef((e, t) => {
-	let { value: n, onValueChange: r, ...i } = e, a = lr(r);
-	return /* @__PURE__ */ C(wu, {
+}), Ru = r.forwardRef((e, t) => {
+	let { value: n, onValueChange: r, ...i } = e, a = xr(r);
+	return /* @__PURE__ */ C(Iu, {
 		scope: e.__scopeMenu,
 		value: n,
 		onValueChange: a,
-		children: /* @__PURE__ */ C(mu, {
+		children: /* @__PURE__ */ C(Eu, {
 			...i,
 			ref: t
 		})
 	});
 });
-Eu.displayName = Cu;
-var Du = "MenuRadioItem", Ou = r.forwardRef((e, t) => {
-	let { value: n, ...r } = e, i = Tu(Du, e.__scopeMenu), a = n === i.value;
-	return /* @__PURE__ */ C(Au, {
+Ru.displayName = Fu;
+var zu = "MenuRadioItem", Bu = r.forwardRef((e, t) => {
+	let { value: n, ...r } = e, i = Lu(zu, e.__scopeMenu), a = n === i.value;
+	return /* @__PURE__ */ C(Hu, {
 		scope: e.__scopeMenu,
 		checked: a,
-		children: /* @__PURE__ */ C(yu, {
+		children: /* @__PURE__ */ C(ju, {
 			role: "menuitemradio",
 			"aria-checked": a,
 			...r,
 			ref: t,
-			"data-state": qu(a),
+			"data-state": ad(a),
 			onSelect: J(r.onSelect, () => i.onValueChange?.(n), { checkForDefaultPrevented: !1 })
 		})
 	});
 });
-Ou.displayName = Du;
-var ku = "MenuItemIndicator", [Au, ju] = Wl(ku, { checked: !1 }), Mu = r.forwardRef((e, t) => {
-	let { __scopeMenu: n, forceMount: r, ...i } = e, a = ju(ku, n);
-	return /* @__PURE__ */ C(Vn, {
-		present: r || Ku(a.checked) || a.checked === !0,
+Bu.displayName = zu;
+var Vu = "MenuItemIndicator", [Hu, Uu] = nu(Vu, { checked: !1 }), Wu = r.forwardRef((e, t) => {
+	let { __scopeMenu: n, forceMount: r, ...i } = e, a = Uu(Vu, n);
+	return /* @__PURE__ */ C($n, {
+		present: r || id(a.checked) || a.checked === !0,
 		children: /* @__PURE__ */ C(q.span, {
 			...i,
 			ref: t,
-			"data-state": qu(a.checked)
+			"data-state": ad(a.checked)
 		})
 	});
 });
-Mu.displayName = ku;
-var Nu = "MenuSeparator", Pu = r.forwardRef((e, t) => {
+Wu.displayName = Vu;
+var Gu = "MenuSeparator", Ku = r.forwardRef((e, t) => {
 	let { __scopeMenu: n, ...r } = e;
 	return /* @__PURE__ */ C(q.div, {
 		role: "separator",
@@ -5867,30 +5933,30 @@ var Nu = "MenuSeparator", Pu = r.forwardRef((e, t) => {
 		ref: t
 	});
 });
-Pu.displayName = Nu;
-var Fu = "MenuArrow", Iu = r.forwardRef((e, t) => {
+Ku.displayName = Gu;
+var qu = "MenuArrow", Ju = r.forwardRef((e, t) => {
 	let { __scopeMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(ol, {
-		...Kl(n),
+	return /* @__PURE__ */ C(vl, {
+		...iu(n),
 		...r,
 		ref: t
 	});
 });
-Iu.displayName = Fu;
-var Lu = "MenuSub", [Ru, zu] = Wl(Lu), Bu = (e) => {
-	let { __scopeMenu: t, children: n, open: i = !1, onOpenChange: a } = e, o = Yl(Lu, t), s = Kl(t), [c, l] = r.useState(null), [u, d] = r.useState(null), f = lr(a);
-	return r.useEffect(() => (o.open === !1 && f(!1), () => f(!1)), [o.open, f]), /* @__PURE__ */ C(rl, {
+Ju.displayName = qu;
+var Yu = "MenuSub", [Xu, Zu] = nu(Yu), Qu = (e) => {
+	let { __scopeMenu: t, children: n, open: i = !1, onOpenChange: a } = e, o = su(Yu, t), s = iu(t), [c, l] = r.useState(null), [u, d] = r.useState(null), f = xr(a);
+	return r.useEffect(() => (o.open === !1 && f(!1), () => f(!1)), [o.open, f]), /* @__PURE__ */ C(hl, {
 		...s,
-		children: /* @__PURE__ */ C(Jl, {
+		children: /* @__PURE__ */ C(ou, {
 			scope: t,
 			open: i,
 			onOpenChange: f,
 			content: u,
 			onContentChange: d,
-			children: /* @__PURE__ */ C(Ru, {
+			children: /* @__PURE__ */ C(Xu, {
 				scope: t,
-				contentId: qn(),
-				triggerId: qn(),
+				contentId: ar(),
+				triggerId: ar(),
 				trigger: c,
 				onTriggerChange: l,
 				children: n
@@ -5898,9 +5964,9 @@ var Lu = "MenuSub", [Ru, zu] = Wl(Lu), Bu = (e) => {
 		})
 	});
 };
-Bu.displayName = Lu;
-var Vu = "MenuSubTrigger", Hu = r.forwardRef((e, t) => {
-	let n = Yl(Vu, e.__scopeMenu), i = Zl(Vu, e.__scopeMenu), a = zu(Vu, e.__scopeMenu), o = su(Vu, e.__scopeMenu), s = r.useRef(null), { pointerGraceTimerRef: c, onPointerGraceIntentChange: l } = o, u = { __scopeMenu: e.__scopeMenu }, d = r.useCallback(() => {
+Qu.displayName = Yu;
+var $u = "MenuSubTrigger", ed = r.forwardRef((e, t) => {
+	let n = su($u, e.__scopeMenu), i = lu($u, e.__scopeMenu), a = Zu($u, e.__scopeMenu), o = yu($u, e.__scopeMenu), s = r.useRef(null), { pointerGraceTimerRef: c, onPointerGraceIntentChange: l } = o, u = { __scopeMenu: e.__scopeMenu }, d = r.useCallback(() => {
 		s.current && window.clearTimeout(s.current), s.current = null;
 	}, []);
 	return r.useEffect(() => d, [d]), r.useEffect(() => {
@@ -5908,26 +5974,26 @@ var Vu = "MenuSubTrigger", Hu = r.forwardRef((e, t) => {
 		return () => {
 			window.clearTimeout(e), l(null);
 		};
-	}, [c, l]), /* @__PURE__ */ C(eu, {
+	}, [c, l]), /* @__PURE__ */ C(fu, {
 		asChild: !0,
 		...u,
-		children: /* @__PURE__ */ C(bu, {
+		children: /* @__PURE__ */ C(Mu, {
 			id: a.triggerId,
 			"aria-haspopup": "menu",
 			"aria-expanded": n.open,
 			"aria-controls": a.contentId,
-			"data-state": Gu(n.open),
+			"data-state": rd(n.open),
 			...e,
-			ref: mn(t, a.onTriggerChange),
+			ref: En(t, a.onTriggerChange),
 			onClick: (t) => {
 				e.onClick?.(t), !(e.disabled || t.defaultPrevented) && (t.currentTarget.focus(), n.open || n.onOpenChange(!0));
 			},
-			onPointerMove: J(e.onPointerMove, $u((t) => {
+			onPointerMove: J(e.onPointerMove, dd((t) => {
 				o.onItemEnter(t), !t.defaultPrevented && !e.disabled && !n.open && !s.current && (o.onPointerGraceIntentChange(null), s.current = window.setTimeout(() => {
 					n.onOpenChange(!0), d();
 				}, 100));
 			})),
-			onPointerLeave: J(e.onPointerLeave, $u((e) => {
+			onPointerLeave: J(e.onPointerLeave, dd((e) => {
 				d();
 				let t = n.content?.getBoundingClientRect();
 				if (t) {
@@ -5964,21 +6030,21 @@ var Vu = "MenuSubTrigger", Hu = r.forwardRef((e, t) => {
 			})),
 			onKeyDown: J(e.onKeyDown, (t) => {
 				let r = o.searchRef.current !== "";
-				e.disabled || r && t.key === " " || Rl[i.dir].includes(t.key) && (n.onOpenChange(!0), n.content?.focus(), t.preventDefault());
+				e.disabled || r && t.key === " " || Xl[i.dir].includes(t.key) && (n.onOpenChange(!0), n.content?.focus(), t.preventDefault());
 			})
 		})
 	});
 });
-Hu.displayName = Vu;
-var Uu = "MenuSubContent", Wu = r.forwardRef((e, t) => {
-	let n = ru(au, e.__scopeMenu), { forceMount: i = n.forceMount, ...a } = e, o = Yl(au, e.__scopeMenu), s = Zl(au, e.__scopeMenu), c = zu(Uu, e.__scopeMenu), l = r.useRef(null), u = K(t, l);
-	return /* @__PURE__ */ C(Vl.Provider, {
+ed.displayName = $u;
+var td = "MenuSubContent", nd = r.forwardRef((e, t) => {
+	let n = hu(_u, e.__scopeMenu), { forceMount: i = n.forceMount, ...a } = e, o = su(_u, e.__scopeMenu), s = lu(_u, e.__scopeMenu), c = Zu(td, e.__scopeMenu), l = r.useRef(null), u = K(t, l);
+	return /* @__PURE__ */ C($l.Provider, {
 		scope: e.__scopeMenu,
-		children: /* @__PURE__ */ C(Vn, {
+		children: /* @__PURE__ */ C($n, {
 			present: i || o.open,
-			children: /* @__PURE__ */ C(Vl.Slot, {
+			children: /* @__PURE__ */ C($l.Slot, {
 				scope: e.__scopeMenu,
-				children: /* @__PURE__ */ C(fu, {
+				children: /* @__PURE__ */ C(wu, {
 					id: c.contentId,
 					"aria-labelledby": c.triggerId,
 					...a,
@@ -5999,7 +6065,7 @@ var Uu = "MenuSubContent", Wu = r.forwardRef((e, t) => {
 						s.onClose(), e.preventDefault();
 					}),
 					onKeyDown: J(e.onKeyDown, (e) => {
-						let t = e.currentTarget.contains(e.target), n = zl[s.dir].includes(e.key);
+						let t = e.currentTarget.contains(e.target), n = Zl[s.dir].includes(e.key);
 						t && n && (o.onOpenChange(!1), c.trigger?.focus(), e.preventDefault());
 					})
 				})
@@ -6007,30 +6073,30 @@ var Uu = "MenuSubContent", Wu = r.forwardRef((e, t) => {
 		})
 	});
 });
-Wu.displayName = Uu;
-function Gu(e) {
+nd.displayName = td;
+function rd(e) {
 	return e ? "open" : "closed";
 }
-function Ku(e) {
+function id(e) {
 	return e === "indeterminate";
 }
-function qu(e) {
-	return Ku(e) ? "indeterminate" : e ? "checked" : "unchecked";
+function ad(e) {
+	return id(e) ? "indeterminate" : e ? "checked" : "unchecked";
 }
-function Ju(e) {
+function od(e) {
 	let t = document.activeElement;
 	for (let n of e) if (n === t || (n.focus(), document.activeElement !== t)) return;
 }
-function Yu(e, t) {
+function sd(e, t) {
 	return e.map((n, r) => e[(t + r) % e.length]);
 }
-function Xu(e, t, n) {
-	let r = t.length > 1 && Array.from(t).every((e) => e === t[0]) ? t[0] : t, i = n ? e.indexOf(n) : -1, a = Yu(e, Math.max(i, 0));
+function cd(e, t, n) {
+	let r = t.length > 1 && Array.from(t).every((e) => e === t[0]) ? t[0] : t, i = n ? e.indexOf(n) : -1, a = sd(e, Math.max(i, 0));
 	r.length === 1 && (a = a.filter((e) => e !== n));
 	let o = a.find((e) => e.toLowerCase().startsWith(r.toLowerCase()));
 	return o === n ? void 0 : o;
 }
-function Zu(e, t) {
+function ld(e, t) {
 	let { x: n, y: r } = e, i = !1;
 	for (let e = 0, a = t.length - 1; e < t.length; a = e++) {
 		let o = t[e], s = t[a], c = o.x, l = o.y, u = s.x, d = s.y;
@@ -6038,32 +6104,32 @@ function Zu(e, t) {
 	}
 	return i;
 }
-function Qu(e, t) {
-	return t ? Zu({
+function ud(e, t) {
+	return t ? ld({
 		x: e.clientX,
 		y: e.clientY
 	}, t) : !1;
 }
-function $u(e) {
+function dd(e) {
 	return (t) => t.pointerType === "mouse" ? e(t) : void 0;
 }
-var ed = Ql, td = eu, nd = iu, rd = cu, id = mu, ad = gu, od = yu, sd = Su, cd = Eu, ld = Ou, ud = Mu, dd = Pu, fd = Iu, pd = Hu, md = Wu, hd = "DropdownMenu", [gd, _d] = En(hd, [Gl]), vd = Gl(), [yd, bd] = gd(hd), xd = (e) => {
-	let { __scopeDropdownMenu: t, children: n, dir: i, open: a, defaultOpen: o, onOpenChange: s, modal: c = !0 } = e, l = vd(t), u = r.useRef(null), [d, f] = Ln({
+var fd = uu, pd = fu, md = gu, hd = bu, gd = Eu, _d = Ou, vd = ju, yd = Pu, bd = Ru, xd = Bu, Sd = Wu, Cd = Ku, wd = Ju, Td = ed, Ed = nd, Dd = "DropdownMenu", [Od, kd] = Rn(Dd, [ru]), Ad = ru(), [jd, Md] = Od(Dd), Nd = (e) => {
+	let { __scopeDropdownMenu: t, children: n, dir: i, open: a, defaultOpen: o, onOpenChange: s, modal: c = !0 } = e, l = Ad(t), u = r.useRef(null), [d, f] = Yn({
 		prop: a,
 		defaultProp: o ?? !1,
 		onChange: s,
-		caller: hd
+		caller: Dd
 	});
-	return /* @__PURE__ */ C(yd, {
+	return /* @__PURE__ */ C(jd, {
 		scope: t,
-		triggerId: qn(),
+		triggerId: ar(),
 		triggerRef: u,
-		contentId: qn(),
+		contentId: ar(),
 		open: d,
 		onOpenChange: f,
 		onOpenToggle: r.useCallback(() => f((e) => !e), [f]),
 		modal: c,
-		children: /* @__PURE__ */ C(ed, {
+		children: /* @__PURE__ */ C(fd, {
 			...l,
 			open: d,
 			onOpenChange: f,
@@ -6073,12 +6139,12 @@ var ed = Ql, td = eu, nd = iu, rd = cu, id = mu, ad = gu, od = yu, sd = Su, cd =
 		})
 	});
 };
-xd.displayName = hd;
-var Sd = "DropdownMenuTrigger", Cd = r.forwardRef((e, t) => {
-	let { __scopeDropdownMenu: n, disabled: r = !1, ...i } = e, a = bd(Sd, n);
-	return /* @__PURE__ */ C(td, {
+Nd.displayName = Dd;
+var Pd = "DropdownMenuTrigger", Fd = r.forwardRef((e, t) => {
+	let { __scopeDropdownMenu: n, disabled: r = !1, ...i } = e, a = Md(Pd, n);
+	return /* @__PURE__ */ C(pd, {
 		asChild: !0,
-		...vd(n),
+		...Ad(n),
 		children: /* @__PURE__ */ C(q.button, {
 			type: "button",
 			id: a.triggerId,
@@ -6089,7 +6155,7 @@ var Sd = "DropdownMenuTrigger", Cd = r.forwardRef((e, t) => {
 			"data-disabled": r ? "" : void 0,
 			disabled: r,
 			...i,
-			ref: mn(t, a.triggerRef),
+			ref: En(t, a.triggerRef),
 			onPointerDown: J(e.onPointerDown, (e) => {
 				!r && e.button === 0 && e.ctrlKey === !1 && (a.onOpenToggle(), a.open || e.preventDefault());
 			}),
@@ -6103,18 +6169,18 @@ var Sd = "DropdownMenuTrigger", Cd = r.forwardRef((e, t) => {
 		})
 	});
 });
-Cd.displayName = Sd;
-var wd = "DropdownMenuPortal", Td = (e) => {
+Fd.displayName = Pd;
+var Id = "DropdownMenuPortal", Ld = (e) => {
 	let { __scopeDropdownMenu: t, ...n } = e;
-	return /* @__PURE__ */ C(nd, {
-		...vd(t),
+	return /* @__PURE__ */ C(md, {
+		...Ad(t),
 		...n
 	});
 };
-Td.displayName = wd;
-var Ed = "DropdownMenuContent", Dd = r.forwardRef((e, t) => {
-	let { __scopeDropdownMenu: n, ...i } = e, a = bd(Ed, n), o = vd(n), s = r.useRef(!1);
-	return /* @__PURE__ */ C(rd, {
+Ld.displayName = Id;
+var Rd = "DropdownMenuContent", zd = r.forwardRef((e, t) => {
+	let { __scopeDropdownMenu: n, ...i } = e, a = Md(Rd, n), o = Ad(n), s = r.useRef(!1);
+	return /* @__PURE__ */ C(hd, {
 		id: a.contentId,
 		"aria-labelledby": a.triggerId,
 		...o,
@@ -6137,101 +6203,101 @@ var Ed = "DropdownMenuContent", Dd = r.forwardRef((e, t) => {
 		}
 	});
 });
-Dd.displayName = Ed;
-var Od = "DropdownMenuGroup", kd = r.forwardRef((e, t) => {
-	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(id, {
-		...vd(n),
-		...r,
-		ref: t
-	});
-});
-kd.displayName = Od;
-var Ad = "DropdownMenuLabel", jd = r.forwardRef((e, t) => {
-	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(ad, {
-		...vd(n),
-		...r,
-		ref: t
-	});
-});
-jd.displayName = Ad;
-var Md = "DropdownMenuItem", Nd = r.forwardRef((e, t) => {
-	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(od, {
-		...vd(n),
-		...r,
-		ref: t
-	});
-});
-Nd.displayName = Md;
-var Pd = "DropdownMenuCheckboxItem", Fd = r.forwardRef((e, t) => {
-	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(sd, {
-		...vd(n),
-		...r,
-		ref: t
-	});
-});
-Fd.displayName = Pd;
-var Id = "DropdownMenuRadioGroup", Ld = r.forwardRef((e, t) => {
-	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(cd, {
-		...vd(n),
-		...r,
-		ref: t
-	});
-});
-Ld.displayName = Id;
-var Rd = "DropdownMenuRadioItem", zd = r.forwardRef((e, t) => {
-	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(ld, {
-		...vd(n),
-		...r,
-		ref: t
-	});
-});
 zd.displayName = Rd;
-var Bd = "DropdownMenuItemIndicator", Vd = r.forwardRef((e, t) => {
+var Bd = "DropdownMenuGroup", Vd = r.forwardRef((e, t) => {
 	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(ud, {
-		...vd(n),
+	return /* @__PURE__ */ C(gd, {
+		...Ad(n),
 		...r,
 		ref: t
 	});
 });
 Vd.displayName = Bd;
-var Hd = "DropdownMenuSeparator", Ud = r.forwardRef((e, t) => {
+var Hd = "DropdownMenuLabel", Ud = r.forwardRef((e, t) => {
 	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(dd, {
-		...vd(n),
+	return /* @__PURE__ */ C(_d, {
+		...Ad(n),
 		...r,
 		ref: t
 	});
 });
 Ud.displayName = Hd;
-var Wd = "DropdownMenuArrow", Gd = r.forwardRef((e, t) => {
+var Wd = "DropdownMenuItem", Gd = r.forwardRef((e, t) => {
 	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(fd, {
-		...vd(n),
+	return /* @__PURE__ */ C(vd, {
+		...Ad(n),
 		...r,
 		ref: t
 	});
 });
 Gd.displayName = Wd;
-var Kd = "DropdownMenuSubTrigger", qd = r.forwardRef((e, t) => {
+var Kd = "DropdownMenuCheckboxItem", qd = r.forwardRef((e, t) => {
 	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(pd, {
-		...vd(n),
+	return /* @__PURE__ */ C(yd, {
+		...Ad(n),
 		...r,
 		ref: t
 	});
 });
 qd.displayName = Kd;
-var Jd = "DropdownMenuSubContent", Yd = r.forwardRef((e, t) => {
+var Jd = "DropdownMenuRadioGroup", Yd = r.forwardRef((e, t) => {
 	let { __scopeDropdownMenu: n, ...r } = e;
-	return /* @__PURE__ */ C(md, {
-		...vd(n),
+	return /* @__PURE__ */ C(bd, {
+		...Ad(n),
+		...r,
+		ref: t
+	});
+});
+Yd.displayName = Jd;
+var Xd = "DropdownMenuRadioItem", Zd = r.forwardRef((e, t) => {
+	let { __scopeDropdownMenu: n, ...r } = e;
+	return /* @__PURE__ */ C(xd, {
+		...Ad(n),
+		...r,
+		ref: t
+	});
+});
+Zd.displayName = Xd;
+var Qd = "DropdownMenuItemIndicator", $d = r.forwardRef((e, t) => {
+	let { __scopeDropdownMenu: n, ...r } = e;
+	return /* @__PURE__ */ C(Sd, {
+		...Ad(n),
+		...r,
+		ref: t
+	});
+});
+$d.displayName = Qd;
+var ef = "DropdownMenuSeparator", tf = r.forwardRef((e, t) => {
+	let { __scopeDropdownMenu: n, ...r } = e;
+	return /* @__PURE__ */ C(Cd, {
+		...Ad(n),
+		...r,
+		ref: t
+	});
+});
+tf.displayName = ef;
+var nf = "DropdownMenuArrow", rf = r.forwardRef((e, t) => {
+	let { __scopeDropdownMenu: n, ...r } = e;
+	return /* @__PURE__ */ C(wd, {
+		...Ad(n),
+		...r,
+		ref: t
+	});
+});
+rf.displayName = nf;
+var af = "DropdownMenuSubTrigger", of = r.forwardRef((e, t) => {
+	let { __scopeDropdownMenu: n, ...r } = e;
+	return /* @__PURE__ */ C(Td, {
+		...Ad(n),
+		...r,
+		ref: t
+	});
+});
+of.displayName = af;
+var sf = "DropdownMenuSubContent", cf = r.forwardRef((e, t) => {
+	let { __scopeDropdownMenu: n, ...r } = e;
+	return /* @__PURE__ */ C(Ed, {
+		...Ad(n),
 		...r,
 		ref: t,
 		style: {
@@ -6244,27 +6310,27 @@ var Jd = "DropdownMenuSubContent", Yd = r.forwardRef((e, t) => {
 		}
 	});
 });
-Yd.displayName = Jd;
-var Xd = xd, Zd = Cd, Qd = Td, $d = Dd, ef = jd, tf = Fd, nf = Vd, rf = "Label", af = r.forwardRef((e, t) => /* @__PURE__ */ C(q.label, {
+cf.displayName = sf;
+var lf = Nd, uf = Fd, df = Ld, ff = zd, pf = Ud, mf = qd, hf = $d, gf = "Label", _f = r.forwardRef((e, t) => /* @__PURE__ */ C(q.label, {
 	...e,
 	ref: t,
 	onMouseDown: (t) => {
 		t.target.closest("button, input, select, textarea") || (e.onMouseDown?.(t), !t.defaultPrevented && t.detail > 1 && t.preventDefault());
 	}
 }));
-af.displayName = rf;
-var of = af;
+_f.displayName = gf;
+var vf = _f;
 //#endregion
 //#region node_modules/@radix-ui/number/dist/index.mjs
-function sf(e, [t, n]) {
+function yf(e, [t, n]) {
 	return Math.min(n, Math.max(t, e));
 }
 //#endregion
 //#region node_modules/@radix-ui/react-select/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function cf(e) {
-	let t = /* @__PURE__ */ lf(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(df);
+function bf(e) {
+	let t = /* @__PURE__ */ xf(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(Cf);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ C(t, {
@@ -6282,22 +6348,22 @@ function cf(e) {
 	return n.displayName = `${e}.Slot`, n;
 }
 /* @__NO_SIDE_EFFECTS__ */
-function lf(e) {
+function xf(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
-			let e = pf(n), a = ff(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? mn(t, e) : e), r.cloneElement(n, a);
+			let e = Tf(n), a = wf(i, n.props);
+			return n.type !== r.Fragment && (a.ref = t ? En(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var uf = Symbol("radix.slottable");
-function df(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === uf;
+var Sf = Symbol("radix.slottable");
+function Cf(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === Sf;
 }
-function ff(e, t) {
+function wf(e, t) {
 	let n = { ...t };
 	for (let r in t) {
 		let i = e[r], a = t[r];
@@ -6314,32 +6380,32 @@ function ff(e, t) {
 		...n
 	};
 }
-function pf(e) {
+function Tf(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-select/dist/index.mjs
-var mf = [
+var Ef = [
 	" ",
 	"Enter",
 	"ArrowUp",
 	"ArrowDown"
-], hf = [" ", "Enter"], gf = "Select", [_f, vf, yf] = Pn(gf), [bf, xf] = En(gf, [yf, Vc]), Sf = Vc(), [Cf, wf] = bf(gf), [Tf, Ef] = bf(gf), Df = (e) => {
-	let { __scopeSelect: t, children: n, open: i, defaultOpen: a, onOpenChange: o, value: s, defaultValue: c, onValueChange: l, dir: u, name: d, autoComplete: f, disabled: p, required: m, form: h } = e, g = Sf(t), [_, v] = r.useState(null), [y, b] = r.useState(null), [x, S] = r.useState(!1), T = cr(u), [E, D] = Ln({
+], Df = [" ", "Enter"], Of = "Select", [kf, Af, jf] = Kn(Of), [Mf, Nf] = Rn(Of, [jf, $c]), Pf = $c(), [Ff, If] = Mf(Of), [Lf, Rf] = Mf(Of), zf = (e) => {
+	let { __scopeSelect: t, children: n, open: i, defaultOpen: a, onOpenChange: o, value: s, defaultValue: c, onValueChange: l, dir: u, name: d, autoComplete: f, disabled: p, required: m, form: h } = e, g = Pf(t), [_, v] = r.useState(null), [y, b] = r.useState(null), [x, S] = r.useState(!1), T = br(u), [E, D] = Yn({
 		prop: i,
 		defaultProp: a ?? !1,
 		onChange: o,
-		caller: gf
-	}), [O, k] = Ln({
+		caller: Of
+	}), [O, k] = Yn({
 		prop: s,
 		defaultProp: c,
 		onChange: l,
-		caller: gf
+		caller: Of
 	}), A = r.useRef(null), j = _ ? h || !!_.closest("form") : !0, [M, N] = r.useState(/* @__PURE__ */ new Set()), P = Array.from(M).map((e) => e.props.value).join(";");
-	return /* @__PURE__ */ C(rl, {
+	return /* @__PURE__ */ C(hl, {
 		...g,
-		children: /* @__PURE__ */ w(Cf, {
+		children: /* @__PURE__ */ w(Ff, {
 			required: m,
 			scope: t,
 			trigger: _,
@@ -6348,7 +6414,7 @@ var mf = [
 			onValueNodeChange: b,
 			valueNodeHasChildren: x,
 			onValueNodeHasChildrenChange: S,
-			contentId: qn(),
+			contentId: ar(),
 			value: O,
 			onValueChange: k,
 			open: E,
@@ -6356,9 +6422,9 @@ var mf = [
 			dir: T,
 			triggerPointerDownPosRef: A,
 			disabled: p,
-			children: [/* @__PURE__ */ C(_f.Provider, {
+			children: [/* @__PURE__ */ C(kf.Provider, {
 				scope: t,
-				children: /* @__PURE__ */ C(Tf, {
+				children: /* @__PURE__ */ C(Lf, {
 					scope: e.__scopeSelect,
 					onNativeOptionAdd: r.useCallback((e) => {
 						N((t) => new Set(t).add(e));
@@ -6371,7 +6437,7 @@ var mf = [
 					}, []),
 					children: n
 				})
-			}), j ? /* @__PURE__ */ w(Sp, {
+			}), j ? /* @__PURE__ */ w(Pp, {
 				"aria-hidden": !0,
 				required: m,
 				tabIndex: -1,
@@ -6386,10 +6452,10 @@ var mf = [
 		})
 	});
 };
-Df.displayName = gf;
-var Of = "SelectTrigger", kf = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, disabled: i = !1, ...a } = e, o = Sf(n), s = wf(Of, n), c = s.disabled || i, l = K(t, s.onTriggerChange), u = vf(n), d = r.useRef("touch"), [f, p, m] = wp((e) => {
-		let t = u().filter((e) => !e.disabled), n = Tp(t, e, t.find((e) => e.value === s.value));
+zf.displayName = Of;
+var Bf = "SelectTrigger", Vf = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, disabled: i = !1, ...a } = e, o = Pf(n), s = If(Bf, n), c = s.disabled || i, l = K(t, s.onTriggerChange), u = Af(n), d = r.useRef("touch"), [f, p, m] = Ip((e) => {
+		let t = u().filter((e) => !e.disabled), n = Lp(t, e, t.find((e) => e.value === s.value));
 		n !== void 0 && s.onValueChange(n.value);
 	}), h = (e) => {
 		c || (s.onOpenChange(!0), m()), e && (s.triggerPointerDownPosRef.current = {
@@ -6397,7 +6463,7 @@ var Of = "SelectTrigger", kf = r.forwardRef((e, t) => {
 			y: Math.round(e.pageY)
 		});
 	};
-	return /* @__PURE__ */ C(il, {
+	return /* @__PURE__ */ C(gl, {
 		asChild: !0,
 		...o,
 		children: /* @__PURE__ */ C(q.button, {
@@ -6411,7 +6477,7 @@ var Of = "SelectTrigger", kf = r.forwardRef((e, t) => {
 			"data-state": s.open ? "open" : "closed",
 			disabled: c,
 			"data-disabled": c ? "" : void 0,
-			"data-placeholder": Cp(s.value) ? "" : void 0,
+			"data-placeholder": Fp(s.value) ? "" : void 0,
 			...a,
 			ref: l,
 			onClick: J(a.onClick, (e) => {
@@ -6424,25 +6490,25 @@ var Of = "SelectTrigger", kf = r.forwardRef((e, t) => {
 			}),
 			onKeyDown: J(a.onKeyDown, (e) => {
 				let t = f.current !== "";
-				!(e.ctrlKey || e.altKey || e.metaKey) && e.key.length === 1 && p(e.key), !(t && e.key === " ") && mf.includes(e.key) && (h(), e.preventDefault());
+				!(e.ctrlKey || e.altKey || e.metaKey) && e.key.length === 1 && p(e.key), !(t && e.key === " ") && Ef.includes(e.key) && (h(), e.preventDefault());
 			})
 		})
 	});
 });
-kf.displayName = Of;
-var Af = "SelectValue", jf = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, className: r, style: i, children: a, placeholder: o = "", ...s } = e, c = wf(Af, n), { onValueNodeHasChildrenChange: l } = c, u = a !== void 0, d = K(t, c.onValueNodeChange);
-	return Fn(() => {
+Vf.displayName = Bf;
+var Hf = "SelectValue", Uf = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, className: r, style: i, children: a, placeholder: o = "", ...s } = e, c = If(Hf, n), { onValueNodeHasChildrenChange: l } = c, u = a !== void 0, d = K(t, c.onValueNodeChange);
+	return qn(() => {
 		l(u);
 	}, [l, u]), /* @__PURE__ */ C(q.span, {
 		...s,
 		ref: d,
 		style: { pointerEvents: "none" },
-		children: Cp(c.value) ? /* @__PURE__ */ C(S, { children: o }) : a
+		children: Fp(c.value) ? /* @__PURE__ */ C(S, { children: o }) : a
 	});
 });
-jf.displayName = Af;
-var Mf = "SelectIcon", Nf = r.forwardRef((e, t) => {
+Uf.displayName = Hf;
+var Wf = "SelectIcon", Gf = r.forwardRef((e, t) => {
 	let { __scopeSelect: n, children: r, ...i } = e;
 	return /* @__PURE__ */ C(q.span, {
 		"aria-hidden": !0,
@@ -6451,37 +6517,37 @@ var Mf = "SelectIcon", Nf = r.forwardRef((e, t) => {
 		children: r || "▼"
 	});
 });
-Nf.displayName = Mf;
-var Pf = "SelectPortal", Ff = (e) => /* @__PURE__ */ C(Vr, {
+Gf.displayName = Wf;
+var Kf = "SelectPortal", qf = (e) => /* @__PURE__ */ C($r, {
 	asChild: !0,
 	...e
 });
-Ff.displayName = Pf;
-var If = "SelectContent", Lf = r.forwardRef((e, t) => {
-	let n = wf(If, e.__scopeSelect), [i, a] = r.useState();
-	if (Fn(() => {
+qf.displayName = Kf;
+var Jf = "SelectContent", Yf = r.forwardRef((e, t) => {
+	let n = If(Jf, e.__scopeSelect), [i, a] = r.useState();
+	if (qn(() => {
 		a(new DocumentFragment());
 	}, []), !n.open) {
 		let t = i;
-		return t ? T.createPortal(/* @__PURE__ */ C(zf, {
+		return t ? T.createPortal(/* @__PURE__ */ C(Zf, {
 			scope: e.__scopeSelect,
-			children: /* @__PURE__ */ C(_f.Slot, {
+			children: /* @__PURE__ */ C(kf.Slot, {
 				scope: e.__scopeSelect,
 				children: /* @__PURE__ */ C("div", { children: e.children })
 			})
 		}), t) : null;
 	}
-	return /* @__PURE__ */ C(Uf, {
+	return /* @__PURE__ */ C(tp, {
 		...e,
 		ref: t
 	});
 });
-Lf.displayName = If;
-var Rf = 10, [zf, Bf] = bf(If), Vf = "SelectContentImpl", Hf = /* @__PURE__ */ cf("SelectContent.RemoveScroll"), Uf = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, position: i = "item-aligned", onCloseAutoFocus: a, onEscapeKeyDown: o, onPointerDownOutside: s, side: c, sideOffset: l, align: u, alignOffset: d, arrowPadding: f, collisionBoundary: p, collisionPadding: m, sticky: h, hideWhenDetached: g, avoidCollisions: _, ...v } = e, y = wf(If, n), [b, x] = r.useState(null), [S, w] = r.useState(null), T = K(t, (e) => x(e)), [E, D] = r.useState(null), [O, k] = r.useState(null), A = vf(n), [j, M] = r.useState(!1), N = r.useRef(!1);
+Yf.displayName = Jf;
+var Xf = 10, [Zf, Qf] = Mf(Jf), $f = "SelectContentImpl", ep = /* @__PURE__ */ bf("SelectContent.RemoveScroll"), tp = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, position: i = "item-aligned", onCloseAutoFocus: a, onEscapeKeyDown: o, onPointerDownOutside: s, side: c, sideOffset: l, align: u, alignOffset: d, arrowPadding: f, collisionBoundary: p, collisionPadding: m, sticky: h, hideWhenDetached: g, avoidCollisions: _, ...v } = e, y = If(Jf, n), [b, x] = r.useState(null), [S, w] = r.useState(null), T = K(t, (e) => x(e)), [E, D] = r.useState(null), [O, k] = r.useState(null), A = Af(n), [j, M] = r.useState(!1), N = r.useRef(!1);
 	r.useEffect(() => {
-		if (b) return fa(b);
-	}, [b]), Ur();
+		if (b) return wa(b);
+	}, [b]), ti();
 	let P = r.useCallback((e) => {
 		let [t, ...n] = A().map((e) => e.ref.current), [r] = n.slice(-1), i = document.activeElement;
 		for (let n of e) if (n === i || (n?.scrollIntoView({ block: "nearest" }), n === t && S && (S.scrollTop = 0), n === r && S && (S.scrollTop = S.scrollHeight), n?.focus(), document.activeElement !== i)) return;
@@ -6524,8 +6590,8 @@ var Rf = 10, [zf, Bf] = bf(If), Vf = "SelectContentImpl", Hf = /* @__PURE__ */ c
 			window.removeEventListener("blur", e), window.removeEventListener("resize", e);
 		};
 	}, [I]);
-	let [ee, te] = wp((e) => {
-		let t = A().filter((e) => !e.disabled), n = Tp(t, e, t.find((e) => e.ref.current === document.activeElement));
+	let [ee, te] = Ip((e) => {
+		let t = A().filter((e) => !e.disabled), n = Lp(t, e, t.find((e) => e.ref.current === document.activeElement));
 		n && setTimeout(() => n.ref.current.focus());
 	}), ne = r.useCallback((e, t, n) => {
 		let r = !N.current && !n;
@@ -6533,7 +6599,7 @@ var Rf = 10, [zf, Bf] = bf(If), Vf = "SelectContentImpl", Hf = /* @__PURE__ */ c
 	}, [y.value]), R = r.useCallback(() => b?.focus(), [b]), z = r.useCallback((e, t, n) => {
 		let r = !N.current && !n;
 		(y.value !== void 0 && y.value === t || r) && k(e);
-	}, [y.value]), re = i === "popper" ? qf : Gf, ie = re === qf ? {
+	}, [y.value]), re = i === "popper" ? ap : rp, ie = re === ap ? {
 		side: c,
 		sideOffset: l,
 		align: u,
@@ -6545,7 +6611,7 @@ var Rf = 10, [zf, Bf] = bf(If), Vf = "SelectContentImpl", Hf = /* @__PURE__ */ c
 		hideWhenDetached: g,
 		avoidCollisions: _
 	} : {};
-	return /* @__PURE__ */ C(zf, {
+	return /* @__PURE__ */ C(Zf, {
 		scope: n,
 		content: b,
 		viewport: S,
@@ -6559,10 +6625,10 @@ var Rf = 10, [zf, Bf] = bf(If), Vf = "SelectContentImpl", Hf = /* @__PURE__ */ c
 		position: i,
 		isPositioned: j,
 		searchRef: ee,
-		children: /* @__PURE__ */ C(ra, {
-			as: Hf,
+		children: /* @__PURE__ */ C(ha, {
+			as: ep,
 			allowPinchZoom: !0,
-			children: /* @__PURE__ */ C(Or, {
+			children: /* @__PURE__ */ C(Br, {
 				asChild: !0,
 				trapped: y.open,
 				onMountAutoFocus: (e) => {
@@ -6571,7 +6637,7 @@ var Rf = 10, [zf, Bf] = bf(If), Vf = "SelectContentImpl", Hf = /* @__PURE__ */ c
 				onUnmountAutoFocus: J(a, (e) => {
 					y.trigger?.focus({ preventScroll: !0 }), e.preventDefault();
 				}),
-				children: /* @__PURE__ */ C(_r, {
+				children: /* @__PURE__ */ C(kr, {
 					asChild: !0,
 					disableOutsidePointerEvents: !0,
 					onEscapeKeyDown: o,
@@ -6616,19 +6682,19 @@ var Rf = 10, [zf, Bf] = bf(If), Vf = "SelectContentImpl", Hf = /* @__PURE__ */ c
 		})
 	});
 });
-Uf.displayName = Vf;
-var Wf = "SelectItemAlignedPosition", Gf = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, onPlaced: i, ...a } = e, o = wf(If, n), s = Bf(If, n), [c, l] = r.useState(null), [u, d] = r.useState(null), f = K(t, (e) => d(e)), p = vf(n), m = r.useRef(!1), h = r.useRef(!0), { viewport: g, selectedItem: _, selectedItemText: v, focusSelectedItem: y } = s, b = r.useCallback(() => {
+tp.displayName = $f;
+var np = "SelectItemAlignedPosition", rp = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, onPlaced: i, ...a } = e, o = If(Jf, n), s = Qf(Jf, n), [c, l] = r.useState(null), [u, d] = r.useState(null), f = K(t, (e) => d(e)), p = Af(n), m = r.useRef(!1), h = r.useRef(!0), { viewport: g, selectedItem: _, selectedItemText: v, focusSelectedItem: y } = s, b = r.useCallback(() => {
 		if (o.trigger && o.valueNode && c && u && g && _ && v) {
 			let e = o.trigger.getBoundingClientRect(), t = u.getBoundingClientRect(), n = o.valueNode.getBoundingClientRect(), r = v.getBoundingClientRect();
 			if (o.dir !== "rtl") {
-				let i = r.left - t.left, a = n.left - i, o = e.left - a, s = e.width + o, l = Math.max(s, t.width), u = window.innerWidth - Rf, d = sf(a, [Rf, Math.max(Rf, u - l)]);
+				let i = r.left - t.left, a = n.left - i, o = e.left - a, s = e.width + o, l = Math.max(s, t.width), u = window.innerWidth - Xf, d = yf(a, [Xf, Math.max(Xf, u - l)]);
 				c.style.minWidth = s + "px", c.style.left = d + "px";
 			} else {
-				let i = t.right - r.right, a = window.innerWidth - n.right - i, o = window.innerWidth - e.right - a, s = e.width + o, l = Math.max(s, t.width), u = window.innerWidth - Rf, d = sf(a, [Rf, Math.max(Rf, u - l)]);
+				let i = t.right - r.right, a = window.innerWidth - n.right - i, o = window.innerWidth - e.right - a, s = e.width + o, l = Math.max(s, t.width), u = window.innerWidth - Xf, d = yf(a, [Xf, Math.max(Xf, u - l)]);
 				c.style.minWidth = s + "px", c.style.right = d + "px";
 			}
-			let a = p(), s = window.innerHeight - Rf * 2, l = g.scrollHeight, d = window.getComputedStyle(u), f = parseInt(d.borderTopWidth, 10), h = parseInt(d.paddingTop, 10), y = parseInt(d.borderBottomWidth, 10), b = parseInt(d.paddingBottom, 10), x = f + h + l + b + y, S = Math.min(_.offsetHeight * 5, x), C = window.getComputedStyle(g), w = parseInt(C.paddingTop, 10), T = parseInt(C.paddingBottom, 10), E = e.top + e.height / 2 - Rf, D = s - E, O = _.offsetHeight / 2, k = _.offsetTop + O, A = f + h + k, j = x - A;
+			let a = p(), s = window.innerHeight - Xf * 2, l = g.scrollHeight, d = window.getComputedStyle(u), f = parseInt(d.borderTopWidth, 10), h = parseInt(d.paddingTop, 10), y = parseInt(d.borderBottomWidth, 10), b = parseInt(d.paddingBottom, 10), x = f + h + l + b + y, S = Math.min(_.offsetHeight * 5, x), C = window.getComputedStyle(g), w = parseInt(C.paddingTop, 10), T = parseInt(C.paddingBottom, 10), E = e.top + e.height / 2 - Xf, D = s - E, O = _.offsetHeight / 2, k = _.offsetTop + O, A = f + h + k, j = x - A;
 			if (A <= E) {
 				let e = a.length > 0 && _ === a[a.length - 1].ref.current;
 				c.style.bottom = "0px";
@@ -6640,7 +6706,7 @@ var Wf = "SelectItemAlignedPosition", Gf = r.forwardRef((e, t) => {
 				let t = Math.max(E, f + g.offsetTop + (e ? w : 0) + O) + j;
 				c.style.height = t + "px", g.scrollTop = A - E + g.offsetTop;
 			}
-			c.style.margin = `${Rf}px 0`, c.style.minHeight = S + "px", c.style.maxHeight = s + "px", i?.(), requestAnimationFrame(() => m.current = !0);
+			c.style.margin = `${Xf}px 0`, c.style.minHeight = S + "px", c.style.maxHeight = s + "px", i?.(), requestAnimationFrame(() => m.current = !0);
 		}
 	}, [
 		p,
@@ -6654,11 +6720,11 @@ var Wf = "SelectItemAlignedPosition", Gf = r.forwardRef((e, t) => {
 		o.dir,
 		i
 	]);
-	Fn(() => b(), [b]);
+	qn(() => b(), [b]);
 	let [x, S] = r.useState();
-	return Fn(() => {
+	return qn(() => {
 		u && S(window.getComputedStyle(u).zIndex);
-	}, [u]), /* @__PURE__ */ C(Jf, {
+	}, [u]), /* @__PURE__ */ C(op, {
 		scope: n,
 		contentWrapper: c,
 		shouldExpandOnScrollRef: m,
@@ -6685,11 +6751,11 @@ var Wf = "SelectItemAlignedPosition", Gf = r.forwardRef((e, t) => {
 		})
 	});
 });
-Gf.displayName = Wf;
-var Kf = "SelectPopperPosition", qf = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, align: r = "start", collisionPadding: i = Rf, ...a } = e;
-	return /* @__PURE__ */ C(al, {
-		...Sf(n),
+rp.displayName = np;
+var ip = "SelectPopperPosition", ap = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, align: r = "start", collisionPadding: i = Xf, ...a } = e;
+	return /* @__PURE__ */ C(_l, {
+		...Pf(n),
 		...a,
 		ref: t,
 		align: r,
@@ -6705,13 +6771,13 @@ var Kf = "SelectPopperPosition", qf = r.forwardRef((e, t) => {
 		}
 	});
 });
-qf.displayName = Kf;
-var [Jf, Yf] = bf(If, {}), Xf = "SelectViewport", Zf = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, nonce: i, ...a } = e, o = Bf(Xf, n), s = Yf(Xf, n), c = K(t, o.onViewportChange), l = r.useRef(0);
+ap.displayName = ip;
+var [op, sp] = Mf(Jf, {}), cp = "SelectViewport", lp = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, nonce: i, ...a } = e, o = Qf(cp, n), s = sp(cp, n), c = K(t, o.onViewportChange), l = r.useRef(0);
 	return /* @__PURE__ */ w(S, { children: [/* @__PURE__ */ C("style", {
 		dangerouslySetInnerHTML: { __html: "[data-radix-select-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-select-viewport]::-webkit-scrollbar{display:none}" },
 		nonce: i
-	}), /* @__PURE__ */ C(_f.Slot, {
+	}), /* @__PURE__ */ C(kf.Slot, {
 		scope: n,
 		children: /* @__PURE__ */ C(q.div, {
 			"data-radix-select-viewport": "",
@@ -6729,7 +6795,7 @@ var [Jf, Yf] = bf(If, {}), Xf = "SelectViewport", Zf = r.forwardRef((e, t) => {
 				if (r?.current && n) {
 					let e = Math.abs(l.current - t.scrollTop);
 					if (e > 0) {
-						let r = window.innerHeight - Rf * 2, i = parseFloat(n.style.minHeight), a = parseFloat(n.style.height), o = Math.max(i, a);
+						let r = window.innerHeight - Xf * 2, i = parseFloat(n.style.minHeight), a = parseFloat(n.style.height), o = Math.max(i, a);
 						if (o < r) {
 							let i = o + e, a = Math.min(r, i), s = i - a;
 							n.style.height = a + "px", n.style.bottom === "0px" && (t.scrollTop = s > 0 ? s : 0, n.style.justifyContent = "flex-end");
@@ -6741,10 +6807,10 @@ var [Jf, Yf] = bf(If, {}), Xf = "SelectViewport", Zf = r.forwardRef((e, t) => {
 		})
 	})] });
 });
-Zf.displayName = Xf;
-var Qf = "SelectGroup", [$f, ep] = bf(Qf), tp = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, ...r } = e, i = qn();
-	return /* @__PURE__ */ C($f, {
+lp.displayName = cp;
+var up = "SelectGroup", [dp, fp] = Mf(up), pp = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, ...r } = e, i = ar();
+	return /* @__PURE__ */ C(dp, {
 		scope: n,
 		id: i,
 		children: /* @__PURE__ */ C(q.div, {
@@ -6755,22 +6821,22 @@ var Qf = "SelectGroup", [$f, ep] = bf(Qf), tp = r.forwardRef((e, t) => {
 		})
 	});
 });
-tp.displayName = Qf;
-var np = "SelectLabel", rp = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, ...r } = e, i = ep(np, n);
+pp.displayName = up;
+var mp = "SelectLabel", hp = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, ...r } = e, i = fp(mp, n);
 	return /* @__PURE__ */ C(q.div, {
 		id: i.id,
 		...r,
 		ref: t
 	});
 });
-rp.displayName = np;
-var ip = "SelectItem", [ap, op] = bf(ip), sp = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, value: i, disabled: a = !1, textValue: o, ...s } = e, c = wf(ip, n), l = Bf(ip, n), u = c.value === i, [d, f] = r.useState(o ?? ""), [p, m] = r.useState(!1), h = K(t, (e) => l.itemRefCallback?.(e, i, a)), g = qn(), _ = r.useRef("touch"), v = () => {
+hp.displayName = mp;
+var gp = "SelectItem", [_p, vp] = Mf(gp), yp = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, value: i, disabled: a = !1, textValue: o, ...s } = e, c = If(gp, n), l = Qf(gp, n), u = c.value === i, [d, f] = r.useState(o ?? ""), [p, m] = r.useState(!1), h = K(t, (e) => l.itemRefCallback?.(e, i, a)), g = ar(), _ = r.useRef("touch"), v = () => {
 		a || (c.onValueChange(i), c.onOpenChange(!1));
 	};
 	if (i === "") throw Error("A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.");
-	return /* @__PURE__ */ C(ap, {
+	return /* @__PURE__ */ C(_p, {
 		scope: n,
 		value: i,
 		disabled: a,
@@ -6779,7 +6845,7 @@ var ip = "SelectItem", [ap, op] = bf(ip), sp = r.forwardRef((e, t) => {
 		onItemTextChange: r.useCallback((e) => {
 			f((t) => t || (e?.textContent ?? "").trim());
 		}, []),
-		children: /* @__PURE__ */ C(_f.ItemSlot, {
+		children: /* @__PURE__ */ C(kf.ItemSlot, {
 			scope: n,
 			value: i,
 			disabled: a,
@@ -6813,15 +6879,15 @@ var ip = "SelectItem", [ap, op] = bf(ip), sp = r.forwardRef((e, t) => {
 					e.currentTarget === document.activeElement && l.onItemLeave?.();
 				}),
 				onKeyDown: J(s.onKeyDown, (e) => {
-					l.searchRef?.current !== "" && e.key === " " || (hf.includes(e.key) && v(), e.key === " " && e.preventDefault());
+					l.searchRef?.current !== "" && e.key === " " || (Df.includes(e.key) && v(), e.key === " " && e.preventDefault());
 				})
 			})
 		})
 	});
 });
-sp.displayName = ip;
-var cp = "SelectItemText", lp = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, className: i, style: a, ...o } = e, s = wf(cp, n), c = Bf(cp, n), l = op(cp, n), u = Ef(cp, n), [d, f] = r.useState(null), p = K(t, (e) => f(e), l.onItemTextChange, (e) => c.itemTextRefCallback?.(e, l.value, l.disabled)), m = d?.textContent, h = r.useMemo(() => /* @__PURE__ */ C("option", {
+yp.displayName = gp;
+var bp = "SelectItemText", xp = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, className: i, style: a, ...o } = e, s = If(bp, n), c = Qf(bp, n), l = vp(bp, n), u = Rf(bp, n), [d, f] = r.useState(null), p = K(t, (e) => f(e), l.onItemTextChange, (e) => c.itemTextRefCallback?.(e, l.value, l.disabled)), m = d?.textContent, h = r.useMemo(() => /* @__PURE__ */ C("option", {
 		value: l.value,
 		disabled: l.disabled,
 		children: m
@@ -6830,7 +6896,7 @@ var cp = "SelectItemText", lp = r.forwardRef((e, t) => {
 		l.value,
 		m
 	]), { onNativeOptionAdd: g, onNativeOptionRemove: _ } = u;
-	return Fn(() => (g(h), () => _(h)), [
+	return qn(() => (g(h), () => _(h)), [
 		g,
 		_,
 		h
@@ -6840,26 +6906,26 @@ var cp = "SelectItemText", lp = r.forwardRef((e, t) => {
 		ref: p
 	}), l.isSelected && s.valueNode && !s.valueNodeHasChildren ? T.createPortal(o.children, s.valueNode) : null] });
 });
-lp.displayName = cp;
-var up = "SelectItemIndicator", dp = r.forwardRef((e, t) => {
+xp.displayName = bp;
+var Sp = "SelectItemIndicator", Cp = r.forwardRef((e, t) => {
 	let { __scopeSelect: n, ...r } = e;
-	return op(up, n).isSelected ? /* @__PURE__ */ C(q.span, {
+	return vp(Sp, n).isSelected ? /* @__PURE__ */ C(q.span, {
 		"aria-hidden": !0,
 		...r,
 		ref: t
 	}) : null;
 });
-dp.displayName = up;
-var fp = "SelectScrollUpButton", pp = r.forwardRef((e, t) => {
-	let n = Bf(fp, e.__scopeSelect), i = Yf(fp, e.__scopeSelect), [a, o] = r.useState(!1), s = K(t, i.onScrollButtonChange);
-	return Fn(() => {
+Cp.displayName = Sp;
+var wp = "SelectScrollUpButton", Tp = r.forwardRef((e, t) => {
+	let n = Qf(wp, e.__scopeSelect), i = sp(wp, e.__scopeSelect), [a, o] = r.useState(!1), s = K(t, i.onScrollButtonChange);
+	return qn(() => {
 		if (n.viewport && n.isPositioned) {
 			let e = function() {
 				o(t.scrollTop > 0);
 			}, t = n.viewport;
 			return e(), t.addEventListener("scroll", e), () => t.removeEventListener("scroll", e);
 		}
-	}, [n.viewport, n.isPositioned]), a ? /* @__PURE__ */ C(gp, {
+	}, [n.viewport, n.isPositioned]), a ? /* @__PURE__ */ C(Op, {
 		...e,
 		ref: s,
 		onAutoScroll: () => {
@@ -6868,10 +6934,10 @@ var fp = "SelectScrollUpButton", pp = r.forwardRef((e, t) => {
 		}
 	}) : null;
 });
-pp.displayName = fp;
-var mp = "SelectScrollDownButton", hp = r.forwardRef((e, t) => {
-	let n = Bf(mp, e.__scopeSelect), i = Yf(mp, e.__scopeSelect), [a, o] = r.useState(!1), s = K(t, i.onScrollButtonChange);
-	return Fn(() => {
+Tp.displayName = wp;
+var Ep = "SelectScrollDownButton", Dp = r.forwardRef((e, t) => {
+	let n = Qf(Ep, e.__scopeSelect), i = sp(Ep, e.__scopeSelect), [a, o] = r.useState(!1), s = K(t, i.onScrollButtonChange);
+	return qn(() => {
 		if (n.viewport && n.isPositioned) {
 			let e = function() {
 				let e = t.scrollHeight - t.clientHeight;
@@ -6879,7 +6945,7 @@ var mp = "SelectScrollDownButton", hp = r.forwardRef((e, t) => {
 			}, t = n.viewport;
 			return e(), t.addEventListener("scroll", e), () => t.removeEventListener("scroll", e);
 		}
-	}, [n.viewport, n.isPositioned]), a ? /* @__PURE__ */ C(gp, {
+	}, [n.viewport, n.isPositioned]), a ? /* @__PURE__ */ C(Op, {
 		...e,
 		ref: s,
 		onAutoScroll: () => {
@@ -6888,12 +6954,12 @@ var mp = "SelectScrollDownButton", hp = r.forwardRef((e, t) => {
 		}
 	}) : null;
 });
-hp.displayName = mp;
-var gp = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, onAutoScroll: i, ...a } = e, o = Bf("SelectScrollButton", n), s = r.useRef(null), c = vf(n), l = r.useCallback(() => {
+Dp.displayName = Ep;
+var Op = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, onAutoScroll: i, ...a } = e, o = Qf("SelectScrollButton", n), s = r.useRef(null), c = Af(n), l = r.useCallback(() => {
 		s.current !== null && (window.clearInterval(s.current), s.current = null);
 	}, []);
-	return r.useEffect(() => () => l(), [l]), Fn(() => {
+	return r.useEffect(() => () => l(), [l]), qn(() => {
 		c().find((e) => e.ref.current === document.activeElement)?.ref.current?.scrollIntoView({ block: "nearest" });
 	}, [c]), /* @__PURE__ */ C(q.div, {
 		"aria-hidden": !0,
@@ -6913,7 +6979,7 @@ var gp = r.forwardRef((e, t) => {
 			l();
 		})
 	});
-}), _p = "SelectSeparator", vp = r.forwardRef((e, t) => {
+}), kp = "SelectSeparator", Ap = r.forwardRef((e, t) => {
 	let { __scopeSelect: n, ...r } = e;
 	return /* @__PURE__ */ C(q.div, {
 		"aria-hidden": !0,
@@ -6921,18 +6987,18 @@ var gp = r.forwardRef((e, t) => {
 		ref: t
 	});
 });
-vp.displayName = _p;
-var yp = "SelectArrow", bp = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, ...r } = e, i = Sf(n), a = wf(yp, n), o = Bf(yp, n);
-	return a.open && o.position === "popper" ? /* @__PURE__ */ C(ol, {
+Ap.displayName = kp;
+var jp = "SelectArrow", Mp = r.forwardRef((e, t) => {
+	let { __scopeSelect: n, ...r } = e, i = Pf(n), a = If(jp, n), o = Qf(jp, n);
+	return a.open && o.position === "popper" ? /* @__PURE__ */ C(vl, {
 		...i,
 		...r,
 		ref: t
 	}) : null;
 });
-bp.displayName = yp;
-var xp = "SelectBubbleInput", Sp = r.forwardRef(({ __scopeSelect: e, value: t, ...n }, i) => {
-	let a = r.useRef(null), o = K(i, a), s = ao(t);
+Mp.displayName = jp;
+var Np = "SelectBubbleInput", Pp = r.forwardRef(({ __scopeSelect: e, value: t, ...n }, i) => {
+	let a = r.useRef(null), o = K(i, a), s = vo(t);
 	return r.useEffect(() => {
 		let e = a.current;
 		if (!e) return;
@@ -6944,19 +7010,19 @@ var xp = "SelectBubbleInput", Sp = r.forwardRef(({ __scopeSelect: e, value: t, .
 	}, [s, t]), /* @__PURE__ */ C(q.select, {
 		...n,
 		style: {
-			...Sn,
+			...Pn,
 			...n.style
 		},
 		ref: o,
 		defaultValue: t
 	});
 });
-Sp.displayName = xp;
-function Cp(e) {
+Pp.displayName = Np;
+function Fp(e) {
 	return e === "" || e === void 0;
 }
-function wp(e) {
-	let t = lr(e), n = r.useRef(""), i = r.useRef(0), a = r.useCallback((e) => {
+function Ip(e) {
+	let t = xr(e), n = r.useRef(""), i = r.useRef(0), a = r.useCallback((e) => {
 		let r = n.current + e;
 		t(r), (function e(t) {
 			n.current = t, window.clearTimeout(i.current), t !== "" && (i.current = window.setTimeout(() => e(""), 1e3));
@@ -6970,22 +7036,22 @@ function wp(e) {
 		o
 	];
 }
-function Tp(e, t, n) {
-	let r = t.length > 1 && Array.from(t).every((e) => e === t[0]) ? t[0] : t, i = n ? e.indexOf(n) : -1, a = Ep(e, Math.max(i, 0));
+function Lp(e, t, n) {
+	let r = t.length > 1 && Array.from(t).every((e) => e === t[0]) ? t[0] : t, i = n ? e.indexOf(n) : -1, a = Rp(e, Math.max(i, 0));
 	r.length === 1 && (a = a.filter((e) => e !== n));
 	let o = a.find((e) => e.textValue.toLowerCase().startsWith(r.toLowerCase()));
 	return o === n ? void 0 : o;
 }
-function Ep(e, t) {
+function Rp(e, t) {
 	return e.map((n, r) => e[(t + r) % e.length]);
 }
-var Dp = Df, Op = kf, kp = jf, Ap = Nf, jp = Ff, Mp = Lf, Np = Zf, Pp = sp, Fp = lp, Ip = dp, Lp = pp, Rp = hp;
+var zp = zf, Bp = Vf, Vp = Uf, Hp = Gf, Up = qf, Wp = Yf, Gp = lp, Kp = yp, qp = xp, Jp = Cp, Yp = Tp, Xp = Dp;
 //#endregion
 //#region node_modules/radix-ui/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function zp(e) {
-	let t = /* @__PURE__ */ Vp(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(Up);
+function Zp(e) {
+	let t = /* @__PURE__ */ $p(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(tm);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ C(t, {
@@ -7002,24 +7068,24 @@ function zp(e) {
 	});
 	return n.displayName = `${e}.Slot`, n;
 }
-var Bp = /* @__PURE__ */ zp("Slot");
+var Qp = /* @__PURE__ */ Zp("Slot");
 /* @__NO_SIDE_EFFECTS__ */
-function Vp(e) {
+function $p(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
-			let e = Gp(n), a = Wp(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? mn(t, e) : e), r.cloneElement(n, a);
+			let e = rm(n), a = nm(i, n.props);
+			return n.type !== r.Fragment && (a.ref = t ? En(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var Hp = Symbol("radix.slottable");
-function Up(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === Hp;
+var em = Symbol("radix.slottable");
+function tm(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === em;
 }
-function Wp(e, t) {
+function nm(e, t) {
 	let n = { ...t };
 	for (let r in t) {
 		let i = e[r], a = t[r];
@@ -7036,20 +7102,20 @@ function Wp(e, t) {
 		...n
 	};
 }
-function Gp(e) {
+function rm(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-switch/dist/index.mjs
-var Kp = "Switch", [qp, Jp] = En(Kp), [Yp, Xp] = qp(Kp), Zp = r.forwardRef((e, t) => {
-	let { __scopeSwitch: n, name: i, checked: a, defaultChecked: o, required: s, disabled: c, value: l = "on", onCheckedChange: u, form: d, ...f } = e, [p, m] = r.useState(null), h = K(t, (e) => m(e)), g = r.useRef(!1), _ = p ? d || !!p.closest("form") : !0, [v, y] = Ln({
+var im = "Switch", [am, om] = Rn(im), [sm, cm] = am(im), lm = r.forwardRef((e, t) => {
+	let { __scopeSwitch: n, name: i, checked: a, defaultChecked: o, required: s, disabled: c, value: l = "on", onCheckedChange: u, form: d, ...f } = e, [p, m] = r.useState(null), h = K(t, (e) => m(e)), g = r.useRef(!1), _ = p ? d || !!p.closest("form") : !0, [v, y] = Yn({
 		prop: a,
 		defaultProp: o ?? !1,
 		onChange: u,
-		caller: Kp
+		caller: im
 	});
-	return /* @__PURE__ */ w(Yp, {
+	return /* @__PURE__ */ w(sm, {
 		scope: n,
 		checked: v,
 		disabled: c,
@@ -7058,7 +7124,7 @@ var Kp = "Switch", [qp, Jp] = En(Kp), [Yp, Xp] = qp(Kp), Zp = r.forwardRef((e, t
 			role: "switch",
 			"aria-checked": v,
 			"aria-required": s,
-			"data-state": nm(v),
+			"data-state": mm(v),
 			"data-disabled": c ? "" : void 0,
 			disabled: c,
 			value: l,
@@ -7067,7 +7133,7 @@ var Kp = "Switch", [qp, Jp] = En(Kp), [Yp, Xp] = qp(Kp), Zp = r.forwardRef((e, t
 			onClick: J(e.onClick, (e) => {
 				y((e) => !e), _ && (g.current = e.isPropagationStopped(), g.current || e.stopPropagation());
 			})
-		}), _ && /* @__PURE__ */ C(tm, {
+		}), _ && /* @__PURE__ */ C(pm, {
 			control: p,
 			bubbles: !g.current,
 			name: i,
@@ -7080,19 +7146,19 @@ var Kp = "Switch", [qp, Jp] = En(Kp), [Yp, Xp] = qp(Kp), Zp = r.forwardRef((e, t
 		})]
 	});
 });
-Zp.displayName = Kp;
-var Qp = "SwitchThumb", $p = r.forwardRef((e, t) => {
-	let { __scopeSwitch: n, ...r } = e, i = Xp(Qp, n);
+lm.displayName = im;
+var um = "SwitchThumb", dm = r.forwardRef((e, t) => {
+	let { __scopeSwitch: n, ...r } = e, i = cm(um, n);
 	return /* @__PURE__ */ C(q.span, {
-		"data-state": nm(i.checked),
+		"data-state": mm(i.checked),
 		"data-disabled": i.disabled ? "" : void 0,
 		...r,
 		ref: t
 	});
 });
-$p.displayName = Qp;
-var em = "SwitchBubbleInput", tm = r.forwardRef(({ __scopeSwitch: e, control: t, checked: n, bubbles: i = !0, ...a }, o) => {
-	let s = r.useRef(null), c = K(s, o), l = ao(n), u = oo(t);
+dm.displayName = um;
+var fm = "SwitchBubbleInput", pm = r.forwardRef(({ __scopeSwitch: e, control: t, checked: n, bubbles: i = !0, ...a }, o) => {
+	let s = r.useRef(null), c = K(s, o), l = vo(n), u = yo(t);
 	return r.useEffect(() => {
 		let e = s.current;
 		if (!e) return;
@@ -7122,11 +7188,11 @@ var em = "SwitchBubbleInput", tm = r.forwardRef(({ __scopeSwitch: e, control: t,
 		}
 	});
 });
-tm.displayName = em;
-function nm(e) {
+pm.displayName = fm;
+function mm(e) {
 	return e ? "checked" : "unchecked";
 }
-var rm = Zp, im = $p, am = fn("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
+var hm = lm, gm = dm, _m = wn("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
 	variants: { variant: {
 		default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
 		secondary: "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
@@ -7137,52 +7203,52 @@ var rm = Zp, im = $p, am = fn("inline-flex w-fit shrink-0 items-center justify-c
 	} },
 	defaultVariants: { variant: "default" }
 });
-function om({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
-	return /* @__PURE__ */ C(n ? Bp : "span", {
+function vm({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
+	return /* @__PURE__ */ C(n ? Qp : "span", {
 		"data-slot": "badge",
 		"data-variant": t,
-		className: G(am({ variant: t }), e),
+		className: G(_m({ variant: t }), e),
 		...r
 	});
 }
 //#endregion
 //#region src/components/ui/card.tsx
-var sm = {
+var ym = {
 	default: "",
 	stat: "wd-card-stat",
 	hero: "wd-card-hero",
 	glass: "wd-card-glass"
 };
-function cm({ className: e, variant: t = "default", ...n }) {
+function bm({ className: e, variant: t = "default", ...n }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "card",
 		"data-variant": t,
-		className: G("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", sm[t], e),
+		className: G("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", ym[t], e),
 		...n
 	});
 }
-function lm({ className: e, ...t }) {
+function xm({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "card-header",
 		className: G("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 text-start has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", e),
 		...t
 	});
 }
-function um({ className: e, ...t }) {
+function Sm({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "card-title",
 		className: G("leading-none font-semibold", e),
 		...t
 	});
 }
-function dm({ className: e, ...t }) {
+function Cm({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "card-description",
 		className: G("text-sm text-muted-foreground", e),
 		...t
 	});
 }
-function fm({ className: e, ...t }) {
+function wm({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "card-content",
 		className: G("px-6 text-start", e),
@@ -7191,20 +7257,20 @@ function fm({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/collapsible.tsx
-function pm({ ...e }) {
-	return /* @__PURE__ */ C(or, {
+function Tm({ ...e }) {
+	return /* @__PURE__ */ C(vr, {
 		"data-slot": "collapsible",
 		...e
 	});
 }
-function mm({ ...e }) {
-	return /* @__PURE__ */ C(tr, {
+function Em({ ...e }) {
+	return /* @__PURE__ */ C(pr, {
 		"data-slot": "collapsible-trigger",
 		...e
 	});
 }
-function hm({ className: e, ...t }) {
-	return /* @__PURE__ */ C(rr, {
+function Dm({ className: e, ...t }) {
+	return /* @__PURE__ */ C(hr, {
 		"data-slot": "collapsible-content",
 		className: G("overflow-hidden text-start", e),
 		...t
@@ -7212,36 +7278,36 @@ function hm({ className: e, ...t }) {
 }
 //#endregion
 //#region src/hooks/use-mobile.ts
-var gm = 768;
-function _m() {
+var Om = 768;
+function km() {
 	let [e, t] = r.useState(void 0);
 	return r.useEffect(() => {
-		let e = window.matchMedia(`(max-width: ${gm - 1}px)`), n = () => {
-			t(window.innerWidth < gm);
+		let e = window.matchMedia(`(max-width: ${Om - 1}px)`), n = () => {
+			t(window.innerWidth < Om);
 		};
-		return e.addEventListener("change", n), t(window.innerWidth < gm), () => e.removeEventListener("change", n);
+		return e.addEventListener("change", n), t(window.innerWidth < Om), () => e.removeEventListener("change", n);
 	}, []), !!e;
 }
 //#endregion
 //#region src/components/ListFiltersCollapsible.tsx
-function vm({ children: e, activeCount: t = 0, className: n, defaultOpen: r }) {
-	let { t: i } = g(), a = _m(), [o, s] = m(() => r ?? !a);
+function Am({ children: e, activeCount: t = 0, className: n, defaultOpen: r }) {
+	let { t: i } = g(), a = km(), [o, s] = m(() => r ?? !a);
 	return u(() => {
 		r === void 0 && s(!a);
-	}, [a, r]), /* @__PURE__ */ C(pm, {
+	}, [a, r]), /* @__PURE__ */ C(Tm, {
 		open: o,
 		onOpenChange: s,
 		className: G(n),
-		children: /* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ C(lm, {
+		children: /* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ C(xm, {
 			className: "p-0",
-			children: /* @__PURE__ */ C(mm, {
+			children: /* @__PURE__ */ C(Em, {
 				asChild: !0,
 				children: /* @__PURE__ */ w("button", {
 					type: "button",
 					className: "flex w-full items-center justify-between gap-3 px-4 py-3 text-start hover:bg-muted/40",
 					children: [/* @__PURE__ */ w("span", {
 						className: "flex items-center gap-2 text-sm font-medium",
-						children: [i("list.filters"), t > 0 ? /* @__PURE__ */ C(om, {
+						children: [i("list.filters"), t > 0 ? /* @__PURE__ */ C(vm, {
 							variant: "secondary",
 							className: "rounded-full px-2 py-0 text-[11px]",
 							children: t
@@ -7249,7 +7315,7 @@ function vm({ children: e, activeCount: t = 0, className: n, defaultOpen: r }) {
 					}), /* @__PURE__ */ C(z, { className: G("text-muted-foreground size-4 shrink-0 transition-transform", o && "rotate-180") })]
 				})
 			})
-		}), /* @__PURE__ */ C(hm, { children: /* @__PURE__ */ C(fm, {
+		}), /* @__PURE__ */ C(Dm, { children: /* @__PURE__ */ C(wm, {
 			className: "border-t pt-4",
 			children: e
 		}) })] })
@@ -7257,7 +7323,7 @@ function vm({ children: e, activeCount: t = 0, className: n, defaultOpen: r }) {
 }
 //#endregion
 //#region src/components/MobileListCard.tsx
-function ym({ children: e, className: t, leading: n, actions: r, media: i }) {
+function jm({ children: e, className: t, leading: n, actions: r, media: i }) {
 	return /* @__PURE__ */ w("article", {
 		className: G("bg-card text-card-foreground flex flex-col gap-3 rounded-xl border p-3 shadow-sm", t),
 		children: [
@@ -7284,7 +7350,7 @@ function ym({ children: e, className: t, leading: n, actions: r, media: i }) {
 }
 //#endregion
 //#region src/components/PageShell.tsx
-function bm({ title: e, description: t, eyebrow: n, children: r }) {
+function Mm({ title: e, description: t, eyebrow: n, children: r }) {
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-5",
 		children: [/* @__PURE__ */ w("header", {
@@ -7308,7 +7374,7 @@ function bm({ title: e, description: t, eyebrow: n, children: r }) {
 }
 //#endregion
 //#region src/components/ui/skeleton.tsx
-function xm({ className: e, ...t }) {
+function Nm({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "skeleton",
 		className: G("animate-pulse rounded-md bg-accent", e),
@@ -7317,19 +7383,19 @@ function xm({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/TableListSkeleton.tsx
-function Sm({ rows: e = 6, columns: t = 4 }) {
+function Pm({ rows: e = 6, columns: t = 4 }) {
 	return /* @__PURE__ */ C("div", {
 		className: "p-4 space-y-3",
 		"aria-hidden": !0,
 		children: Array.from({ length: e }).map((e, n) => /* @__PURE__ */ C("div", {
 			className: "flex gap-2",
-			children: Array.from({ length: t }).map((e, t) => /* @__PURE__ */ C(xm, { className: "h-8 flex-1" }, t))
+			children: Array.from({ length: t }).map((e, t) => /* @__PURE__ */ C(Nm, { className: "h-8 flex-1" }, t))
 		}, n))
 	});
 }
 //#endregion
 //#region src/components/ui/button.tsx
-var Cm = fn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
+var Fm = wn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
 	variants: {
 		variant: {
 			default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
@@ -7356,11 +7422,11 @@ var Cm = fn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md t
 	}
 });
 function Y({ className: e, variant: t = "default", size: n = "default", asChild: r = !1, ...i }) {
-	return /* @__PURE__ */ C(r ? Bp : "button", {
+	return /* @__PURE__ */ C(r ? Qp : "button", {
 		"data-slot": "button",
 		"data-variant": t,
 		"data-size": n,
-		className: G(Cm({
+		className: G(Fm({
 			variant: t,
 			size: n,
 			className: e
@@ -7370,12 +7436,12 @@ function Y({ className: e, variant: t = "default", size: n = "default", asChild:
 }
 //#endregion
 //#region src/components/ui/checkbox.tsx
-function wm({ className: e, ...t }) {
-	return /* @__PURE__ */ C(go, {
+function Im({ className: e, ...t }) {
+	return /* @__PURE__ */ C(Oo, {
 		"data-slot": "checkbox",
 		className: G("peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary", e),
 		...t,
-		children: /* @__PURE__ */ C(vo, {
+		children: /* @__PURE__ */ C(Ao, {
 			"data-slot": "checkbox-indicator",
 			className: "grid place-content-center text-current transition-none",
 			children: /* @__PURE__ */ C(R, { className: "size-3.5" })
@@ -7394,12 +7460,12 @@ function X({ className: e, type: t, ...n }) {
 }
 //#endregion
 //#region src/components/ui/formatted-number-input.tsx
-var Tm = Object.fromEntries([...an].map((e, t) => [e, String(t)]));
-function Em(e) {
+var Lm = Object.fromEntries([...fn].map((e, t) => [e, String(t)]));
+function Rm(e) {
 	let t = "", n = !1;
 	for (let r of e) {
-		if (Tm[r] != null) {
-			t += Tm[r];
+		if (Lm[r] != null) {
+			t += Lm[r];
 			continue;
 		}
 		if (r >= "0" && r <= "9") {
@@ -7410,72 +7476,72 @@ function Em(e) {
 	}
 	return t;
 }
-function Dm(e, t) {
+function zm(e, t) {
 	if (!e) return "";
 	let n = e.startsWith("-"), r = n ? e.slice(1) : e, i = r.endsWith("."), [a, o] = r.split("."), s = Number(a || "0");
 	if (!Number.isFinite(s) && a !== "") return e;
-	let c = on(t) ? "fa-IR" : "en-US", l = new Intl.NumberFormat(c, { maximumFractionDigits: 0 }).format(a === "" ? 0 : s);
+	let c = mn(t) ? "fa-IR" : "en-US", l = new Intl.NumberFormat(c, { maximumFractionDigits: 0 }).format(a === "" ? 0 : s);
 	if (o != null || i) {
-		let e = on(t) ? "٫" : ".", n = o ?? "";
-		l += e + (on(t) ? n.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e) : n);
+		let e = mn(t) ? "٫" : ".", n = o ?? "";
+		l += e + (mn(t) ? n.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e) : n);
 	}
 	return n ? `-${l}` : l;
 }
-function Om({ value: e, onChange: t, className: n, onBlur: r, ...i }) {
-	let { i18n: a } = g(), o = a.language, s = f(() => Dm(e, o), [e, o]);
+function Bm({ value: e, onChange: t, className: n, onBlur: r, ...i }) {
+	let { i18n: a } = g(), o = a.language, s = f(() => zm(e, o), [e, o]);
 	return /* @__PURE__ */ C(X, {
 		...i,
 		inputMode: "decimal",
 		className: G(n),
 		value: s,
-		onChange: (e) => t(Em(e.target.value)),
+		onChange: (e) => t(Rm(e.target.value)),
 		onBlur: r
 	});
 }
 //#endregion
 //#region src/hooks/use-text-direction.ts
-function km() {
+function Vm() {
 	let { i18n: e } = g();
 	return e.dir() === "rtl" ? "rtl" : "ltr";
 }
 //#endregion
 //#region src/components/ui/dropdown-menu.tsx
-function Am({ modal: e = !1, ...t }) {
-	return /* @__PURE__ */ C(Xd, {
+function Hm({ modal: e = !1, ...t }) {
+	return /* @__PURE__ */ C(lf, {
 		"data-slot": "dropdown-menu",
 		modal: e,
 		...t
 	});
 }
-function jm({ ...e }) {
-	return /* @__PURE__ */ C(Zd, {
+function Um({ ...e }) {
+	return /* @__PURE__ */ C(uf, {
 		"data-slot": "dropdown-menu-trigger",
 		...e
 	});
 }
-function Mm({ className: e, sideOffset: t = 4, ...n }) {
-	return /* @__PURE__ */ C(Qd, { children: /* @__PURE__ */ C($d, {
+function Wm({ className: e, sideOffset: t = 4, ...n }) {
+	return /* @__PURE__ */ C(df, { children: /* @__PURE__ */ C(ff, {
 		"data-slot": "dropdown-menu-content",
-		dir: km(),
+		dir: Vm(),
 		sideOffset: t,
 		className: G("z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-start text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", e),
 		...n
 	}) });
 }
-function Nm({ className: e, children: t, checked: n, ...r }) {
-	return /* @__PURE__ */ w(tf, {
+function Gm({ className: e, children: t, checked: n, ...r }) {
+	return /* @__PURE__ */ w(mf, {
 		"data-slot": "dropdown-menu-checkbox-item",
 		className: G("relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pe-2 ps-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", e),
 		checked: n,
 		...r,
 		children: [/* @__PURE__ */ C("span", {
 			className: "pointer-events-none absolute start-2 flex size-3.5 items-center justify-center",
-			children: /* @__PURE__ */ C(nf, { children: /* @__PURE__ */ C(R, { className: "size-4" }) })
+			children: /* @__PURE__ */ C(hf, { children: /* @__PURE__ */ C(R, { className: "size-4" }) })
 		}), t]
 	});
 }
-function Pm({ className: e, inset: t, ...n }) {
-	return /* @__PURE__ */ C(ef, {
+function Km({ className: e, inset: t, ...n }) {
+	return /* @__PURE__ */ C(pf, {
 		"data-slot": "dropdown-menu-label",
 		"data-inset": t,
 		className: G("px-2 py-1.5 text-sm font-medium data-[inset]:ps-8", e),
@@ -7485,7 +7551,7 @@ function Pm({ className: e, inset: t, ...n }) {
 //#endregion
 //#region src/components/ui/label.tsx
 function Z({ className: e, ...t }) {
-	return /* @__PURE__ */ C(of, {
+	return /* @__PURE__ */ C(vf, {
 		"data-slot": "label",
 		className: G("flex items-center gap-2 text-start text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", e),
 		...t
@@ -7493,7 +7559,7 @@ function Z({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/lazy-image.tsx
-function Fm({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i, ...a }) {
+function qm({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i, ...a }) {
 	return /* @__PURE__ */ C("img", {
 		className: G(e),
 		loading: n ?? (t ? "eager" : "lazy"),
@@ -7505,74 +7571,74 @@ function Fm({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i,
 }
 //#endregion
 //#region src/components/ui/select.tsx
-function Im({ ...e }) {
-	return /* @__PURE__ */ C(Dp, {
+function Jm({ ...e }) {
+	return /* @__PURE__ */ C(zp, {
 		"data-slot": "select",
 		...e
 	});
 }
-function Lm({ ...e }) {
-	return /* @__PURE__ */ C(kp, {
+function Ym({ ...e }) {
+	return /* @__PURE__ */ C(Vp, {
 		"data-slot": "select-value",
 		...e
 	});
 }
-function Rm({ className: e, size: t = "default", children: n, ...r }) {
-	return /* @__PURE__ */ w(Op, {
+function Xm({ className: e, size: t = "default", children: n, ...r }) {
+	return /* @__PURE__ */ w(Bp, {
 		"data-slot": "select-trigger",
 		"data-size": t,
-		dir: km(),
+		dir: Vm(),
 		className: G("flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap text-start shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", e),
 		...r,
-		children: [n, /* @__PURE__ */ C(Ap, {
+		children: [n, /* @__PURE__ */ C(Hp, {
 			asChild: !0,
 			children: /* @__PURE__ */ C(z, { className: "size-4 opacity-50" })
 		})]
 	});
 }
-function zm({ className: e, children: t, position: n = "popper", align: r = "start", ...i }) {
-	return /* @__PURE__ */ C(ta, {
+function Zm({ className: e, children: t, position: n = "popper", align: r = "start", ...i }) {
+	return /* @__PURE__ */ C(pa, {
 		allowBodyScroll: !0,
-		children: /* @__PURE__ */ C(jp, { children: /* @__PURE__ */ w(Mp, {
+		children: /* @__PURE__ */ C(Up, { children: /* @__PURE__ */ w(Wp, {
 			"data-slot": "select-content",
-			dir: km(),
+			dir: Vm(),
 			className: G("relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-start text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", n === "popper" && "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1", e),
 			position: n,
 			align: r,
 			...i,
 			children: [
-				/* @__PURE__ */ C(Bm, {}),
-				/* @__PURE__ */ C(Np, {
+				/* @__PURE__ */ C(Qm, {}),
+				/* @__PURE__ */ C(Gp, {
 					className: G("p-1", n === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"),
 					children: t
 				}),
-				/* @__PURE__ */ C(Vm, {})
+				/* @__PURE__ */ C($m, {})
 			]
 		}) })
 	});
 }
 function Q({ className: e, children: t, ...n }) {
-	return /* @__PURE__ */ w(Pp, {
+	return /* @__PURE__ */ w(Kp, {
 		"data-slot": "select-item",
 		className: G("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pe-8 ps-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2", e),
 		...n,
 		children: [/* @__PURE__ */ C("span", {
 			"data-slot": "select-item-indicator",
 			className: "absolute end-2 flex size-3.5 items-center justify-center",
-			children: /* @__PURE__ */ C(Ip, { children: /* @__PURE__ */ C(R, { className: "size-4" }) })
-		}), /* @__PURE__ */ C(Fp, { children: t })]
+			children: /* @__PURE__ */ C(Jp, { children: /* @__PURE__ */ C(R, { className: "size-4" }) })
+		}), /* @__PURE__ */ C(qp, { children: t })]
 	});
 }
-function Bm({ className: e, ...t }) {
-	return /* @__PURE__ */ C(Lp, {
+function Qm({ className: e, ...t }) {
+	return /* @__PURE__ */ C(Yp, {
 		"data-slot": "select-scroll-up-button",
 		className: G("flex cursor-default items-center justify-center py-1", e),
 		...t,
 		children: /* @__PURE__ */ C(re, { className: "size-4" })
 	});
 }
-function Vm({ className: e, ...t }) {
-	return /* @__PURE__ */ C(Rp, {
+function $m({ className: e, ...t }) {
+	return /* @__PURE__ */ C(Xp, {
 		"data-slot": "select-scroll-down-button",
 		className: G("flex cursor-default items-center justify-center py-1", e),
 		...t,
@@ -7581,7 +7647,7 @@ function Vm({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/table.tsx
-function Hm({ className: e, ...t }) {
+function eh({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "table-container",
 		className: "relative w-full overflow-x-auto",
@@ -7592,35 +7658,35 @@ function Hm({ className: e, ...t }) {
 		})
 	});
 }
-function Um({ className: e, ...t }) {
+function th({ className: e, ...t }) {
 	return /* @__PURE__ */ C("thead", {
 		"data-slot": "table-header",
 		className: G("[&_tr]:border-b", e),
 		...t
 	});
 }
-function Wm({ className: e, ...t }) {
+function nh({ className: e, ...t }) {
 	return /* @__PURE__ */ C("tbody", {
 		"data-slot": "table-body",
 		className: G("[&_tr:last-child]:border-0", e),
 		...t
 	});
 }
-function Gm({ className: e, ...t }) {
+function rh({ className: e, ...t }) {
 	return /* @__PURE__ */ C("tr", {
 		"data-slot": "table-row",
 		className: G("border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted", e),
 		...t
 	});
 }
-function Km({ className: e, ...t }) {
+function ih({ className: e, ...t }) {
 	return /* @__PURE__ */ C("th", {
 		"data-slot": "table-head",
 		className: G("h-10 px-2 text-start align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]", e),
 		...t
 	});
 }
-function qm({ className: e, ...t }) {
+function ah({ className: e, ...t }) {
 	return /* @__PURE__ */ C("td", {
 		"data-slot": "table-cell",
 		className: G("p-2 text-start align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]", e),
@@ -7629,10 +7695,10 @@ function qm({ className: e, ...t }) {
 }
 //#endregion
 //#region src/hooks/useQueryErrorToast.ts
-function Jm(e) {
+function oh(e) {
 	let { t } = g(), n = p(!1);
 	u(() => {
-		e.isError && e.error ? n.current || (n.current = !0, x.error(De(t, e.error))) : n.current = !1;
+		e.isError && e.error ? n.current || (n.current = !0, x.error(Pe(t, e.error))) : n.current = !1;
 	}, [
 		e.isError,
 		e.error,
@@ -7642,40 +7708,40 @@ function Jm(e) {
 }
 //#endregion
 //#region src/lib/bootstrapQuery.ts
-function Ym(e) {
+function sh(e) {
 	let { nav_group: t, children: n, navGroup: r, ...i } = e;
 	return {
 		...i,
 		navGroup: r ?? t,
-		children: n?.map((e) => Ym(e))
+		children: n?.map((e) => sh(e))
 	};
 }
-function Xm(e) {
-	return e?.length ? e.map((e) => Ym(e)) : e;
+function ch(e) {
+	return e?.length ? e.map((e) => sh(e)) : e;
 }
-var Zm = ["bootstrap"];
-function Qm(e) {
+var lh = ["bootstrap"];
+function uh(e) {
 	return Array.isArray(e) ? e.filter((e) => typeof e == "string" && e.length > 0) : [];
 }
-function $m(e) {
+function dh(e) {
 	return {
 		...e,
-		capabilities: Qm(e.capabilities),
-		modules: Xm(e.modules) ?? e.modules,
+		capabilities: uh(e.capabilities),
+		modules: ch(e.modules) ?? e.modules,
 		installedModuleSlugs: Array.isArray(e.installedModuleSlugs) ? e.installedModuleSlugs.filter((e) => typeof e == "string" && e.length > 0) : e.installedModuleSlugs
 	};
 }
-function eh() {
+function fh() {
 	let e = window.webinoDashboard.bootstrap;
-	if (e) return $m(e);
+	if (e) return dh(e);
 }
 //#endregion
 //#region src/hooks/useBootstrapQuery.ts
-function th() {
-	let e = f(() => eh(), []), n = !!(e && e.embedMinimal);
+function ph() {
+	let e = f(() => fh(), []), n = !!(e && e.embedMinimal);
 	return t({
-		queryKey: Zm,
-		queryFn: async () => $m(await V("bootstrap")),
+		queryKey: lh,
+		queryFn: async () => dh(await V("bootstrap")),
 		initialData: e,
 		initialDataUpdatedAt: e ? n ? 0 : Date.now() : void 0,
 		staleTime: n ? 0 : 12e4,
@@ -7688,17 +7754,17 @@ function th() {
 }
 //#endregion
 //#region src/hooks/useStoreCurrency.ts
-function nh() {
-	let e = th(), t = e.data?.site.currency ?? "", n = e.data?.site.currency_symbol ?? "";
+function mh() {
+	let e = ph(), t = e.data?.site.currency ?? "", n = e.data?.site.currency_symbol ?? "";
 	return {
 		currency: t,
 		currencySymbol: n,
-		isToman: rn(t, n)
+		isToman: dn(t, n)
 	};
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/pages/WfcpBulkEditorPage.tsx
-var rh = "webino-wfcp-bulk-columns", ih = {
+var hh = "webino-wfcp-bulk-columns", gh = {
 	image: !1,
 	name: !0,
 	attrs: !0,
@@ -7714,7 +7780,7 @@ var rh = "webino-wfcp-bulk-columns", ih = {
 	sell_by: !1,
 	discount: !1,
 	lock: !0
-}, ah = {
+}, _h = {
 	image: "wfcp.colImage",
 	name: "wfcp.colName",
 	attrs: "wfcp.colAttrs",
@@ -7731,42 +7797,42 @@ var rh = "webino-wfcp-bulk-columns", ih = {
 	discount: "wfcp.colDiscount",
 	lock: "wfcp.colLock"
 };
-function oh() {
+function vh() {
 	try {
-		let e = localStorage.getItem(rh);
-		if (!e) return ih;
-		let t = JSON.parse(e), n = { ...ih };
-		for (let e of Object.keys(ih)) typeof t[e] == "boolean" && (n[e] = t[e]);
+		let e = localStorage.getItem(hh);
+		if (!e) return gh;
+		let t = JSON.parse(e), n = { ...gh };
+		for (let e of Object.keys(gh)) typeof t[e] == "boolean" && (n[e] = t[e]);
 		return n;
 	} catch {
-		return ih;
+		return gh;
 	}
 }
-function sh(e) {
+function yh(e) {
 	try {
-		localStorage.setItem(rh, JSON.stringify(e));
+		localStorage.setItem(hh, JSON.stringify(e));
 	} catch {}
 }
-function ch(e, t) {
+function bh(e, t) {
 	let [n, r] = m(e);
 	return u(() => {
 		let n = window.setTimeout(() => r(e), t);
 		return () => window.clearTimeout(n);
 	}, [e, t]), n;
 }
-function lh(e) {
+function xh(e) {
 	if (e == null || e === "") return "";
 	let t = typeof e == "number" ? e : Number(String(e).replace(/,/g, ""));
 	return String(Number.isFinite(t) ? t : e);
 }
-function uh({ value: e, disabled: t, className: n, onCommit: r }) {
-	let [i, a] = m(() => lh(e)), [o, s] = m(!1);
+function Sh({ value: e, disabled: t, className: n, onCommit: r }) {
+	let [i, a] = m(() => xh(e)), [o, s] = m(!1);
 	u(() => {
-		a(lh(e));
+		a(xh(e));
 	}, [e]);
 	async function c() {
 		let n = i.trim();
-		if (!(n === lh(e) || t)) {
+		if (!(n === xh(e) || t)) {
 			s(!0);
 			try {
 				await r(n);
@@ -7775,7 +7841,7 @@ function uh({ value: e, disabled: t, className: n, onCommit: r }) {
 			}
 		}
 	}
-	return /* @__PURE__ */ C(Om, {
+	return /* @__PURE__ */ C(Bm, {
 		className: G("h-9 w-full min-w-0 text-sm md:h-8 md:w-28 md:text-xs", n),
 		value: i,
 		disabled: t || o,
@@ -7786,14 +7852,14 @@ function uh({ value: e, disabled: t, className: n, onCommit: r }) {
 		}
 	});
 }
-function dh(e) {
+function Ch(e) {
 	return e.variation_label ? e.variation_label : Object.values(e.attributes || {}).join(" · ");
 }
-function fh(e) {
+function wh(e) {
 	return e.is_variation ? e.parent_id ?? e.id : e.id;
 }
-function ph() {
-	let { t: r, i18n: i } = g(), a = n(), o = i.language, s = nh(), [l, d] = m(1), [p, h] = m(""), v = ch(p, 350), [y, b] = m(""), [T, E] = m(""), [D, O] = m(""), [k, A] = m(""), [j, M] = m(""), [N, P] = m(""), [F, I] = m("date_desc"), [L, ee] = m(oh);
+function Th() {
+	let { t: r, i18n: i } = g(), a = n(), o = i.language, s = mh(), [l, d] = m(1), [p, h] = m(""), v = bh(p, 350), [y, b] = m(""), [T, E] = m(""), [D, O] = m(""), [k, A] = m(""), [j, M] = m(""), [N, P] = m(""), [F, I] = m("date_desc"), [L, ee] = m(vh);
 	u(() => {
 		d(1);
 	}, [
@@ -7813,7 +7879,7 @@ function ph() {
 				...n,
 				[e]: t
 			};
-			return sh(r), r;
+			return yh(r), r;
 		});
 	}
 	let R = t({
@@ -7841,7 +7907,7 @@ function ph() {
 			return e.set("page", String(l)), v.trim() && e.set("search", v.trim()), y && e.set("category", y), T && e.set("brand", T), D && e.set("stock_status", D), k && e.set("type", k), j && e.set("locked", j), N && e.set("has_purchase", N), F && e.set("sort", F), V(`wfcp/bulk-products?${e.toString()}`);
 		}
 	});
-	Jm(re);
+	oh(re);
 	let B = c(() => {
 		a.invalidateQueries({ queryKey: ["wfcp", "bulk-products"] });
 	}, [a]), ae = e({
@@ -7853,7 +7919,7 @@ function ph() {
 		onSuccess: () => {
 			B(), x.success(r("wfcp.savedInline"));
 		},
-		onError: (e) => Oe(r, e)
+		onError: (e) => Fe(r, e)
 	}), oe = e({
 		mutationFn: ({ id: e, price: t, price_type: n }) => V(`wfcp/bulk-products/${e}/wc-price`, {
 			method: "PATCH",
@@ -7866,7 +7932,7 @@ function ph() {
 		onSuccess: () => {
 			B(), x.success(r("wfcp.savedInline"));
 		},
-		onError: (e) => Oe(r, e)
+		onError: (e) => Fe(r, e)
 	}), se = e({
 		mutationFn: (e) => V(`wfcp/bulk-products/${e.id}/stock`, {
 			method: "PATCH",
@@ -7880,7 +7946,7 @@ function ph() {
 		onSuccess: () => {
 			B(), x.success(r("wfcp.savedInline"));
 		},
-		onError: (e) => Oe(r, e)
+		onError: (e) => Fe(r, e)
 	}), ce = e({
 		mutationFn: ({ id: e, locked: t }) => V(`wfcp/bulk-products/${e}/lock`, {
 			method: "PATCH",
@@ -7890,7 +7956,7 @@ function ph() {
 		onSuccess: () => {
 			B(), x.success(r("wfcp.savedInline"));
 		},
-		onError: (e) => Oe(r, e)
+		onError: (e) => Fe(r, e)
 	}), le = e({
 		mutationFn: ({ id: e, min_qty: t, min_weight: n, sell_by: r, discount_percent: i }) => V(`wfcp/bulk-products/${e}/wholesale-rule`, {
 			method: "PATCH",
@@ -7905,15 +7971,15 @@ function ph() {
 		onSuccess: () => {
 			B(), x.success(r("wfcp.savedInline"));
 		},
-		onError: (e) => Oe(r, e)
+		onError: (e) => Fe(r, e)
 	}), ue = re.data?.items ?? [], de = Math.max(1, re.data?.total_pages ?? 1), fe = R.data?.items ?? z.data?.categories ?? [], pe = z.data?.brands ?? [];
 	function me(e) {
-		let t = dh(e);
+		let t = Ch(e);
 		return /* @__PURE__ */ w("div", {
 			className: "min-w-0",
 			children: [
 				/* @__PURE__ */ C(_, {
-					to: `/shop/products/${fh(e)}`,
+					to: `/shop/products/${wh(e)}`,
 					className: "line-clamp-2 font-medium hover:underline",
 					children: e.parent_name || e.name
 				}),
@@ -7929,16 +7995,16 @@ function ph() {
 		});
 	}
 	function he(e) {
-		return /* @__PURE__ */ w(Im, {
+		return /* @__PURE__ */ w(Jm, {
 			value: e.stock_status || "instock",
 			onValueChange: (t) => void se.mutateAsync({
 				id: e.id,
 				stock_status: t
 			}),
-			children: [/* @__PURE__ */ C(Rm, {
+			children: [/* @__PURE__ */ C(Xm, {
 				className: "h-8 w-full text-xs md:w-28",
-				children: /* @__PURE__ */ C(Lm, {})
-			}), /* @__PURE__ */ w(zm, { children: [
+				children: /* @__PURE__ */ C(Ym, {})
+			}), /* @__PURE__ */ w(Zm, { children: [
 				/* @__PURE__ */ C(Q, {
 					value: "instock",
 					children: r("wfcp.stock.instock")
@@ -7955,7 +8021,7 @@ function ph() {
 		});
 	}
 	function ge(e) {
-		return /* @__PURE__ */ C(uh, {
+		return /* @__PURE__ */ C(Sh, {
 			value: e.manage_stock ? e.stock_quantity ?? "" : "",
 			className: "md:w-20",
 			onCommit: async (t) => {
@@ -7977,7 +8043,7 @@ function ph() {
 		});
 	}
 	function _e(e) {
-		return e.retail ? /* @__PURE__ */ C(ln, {
+		return e.retail ? /* @__PURE__ */ C(xn, {
 			amount: e.retail,
 			currency: s.currency,
 			currencySymbol: s.currencySymbol,
@@ -7988,7 +8054,7 @@ function ph() {
 		});
 	}
 	function ve(e) {
-		return /* @__PURE__ */ C(uh, {
+		return /* @__PURE__ */ C(Sh, {
 			value: e.purchase_price,
 			disabled: e.locked,
 			onCommit: async (t) => {
@@ -8001,7 +8067,7 @@ function ph() {
 		});
 	}
 	function ye(e) {
-		return /* @__PURE__ */ C(uh, {
+		return /* @__PURE__ */ C(Sh, {
 			value: e.wc_regular,
 			disabled: e.locked,
 			onCommit: async (t) => {
@@ -8014,7 +8080,7 @@ function ph() {
 		});
 	}
 	function be(e) {
-		return /* @__PURE__ */ C(uh, {
+		return /* @__PURE__ */ C(Sh, {
 			value: e.wc_sale,
 			disabled: e.locked,
 			onCommit: async (t) => {
@@ -8026,13 +8092,13 @@ function ph() {
 			}
 		});
 	}
-	return /* @__PURE__ */ w(bm, {
+	return /* @__PURE__ */ w(Mm, {
 		title: r("wfcp.bulkTitle"),
 		description: r("wfcp.bulkDescription"),
 		children: [
 			/* @__PURE__ */ C("div", {
 				className: "mb-4 flex flex-wrap items-center justify-end gap-2",
-				children: /* @__PURE__ */ w(Am, { children: [/* @__PURE__ */ C(jm, {
+				children: /* @__PURE__ */ w(Hm, { children: [/* @__PURE__ */ C(Um, {
 					asChild: !0,
 					children: /* @__PURE__ */ w(Y, {
 						type: "button",
@@ -8040,17 +8106,17 @@ function ph() {
 						size: "sm",
 						children: [/* @__PURE__ */ C(ie, { className: "size-4" }), r("wfcp.columns")]
 					})
-				}), /* @__PURE__ */ w(Mm, {
+				}), /* @__PURE__ */ w(Wm, {
 					align: "end",
 					className: "max-h-80 overflow-y-auto",
-					children: [/* @__PURE__ */ C(Pm, { children: r("wfcp.columns") }), Object.keys(ah).map((e) => /* @__PURE__ */ C(Nm, {
+					children: [/* @__PURE__ */ C(Km, { children: r("wfcp.columns") }), Object.keys(_h).map((e) => /* @__PURE__ */ C(Gm, {
 						checked: L[e],
 						onCheckedChange: (t) => ne(e, t === !0),
-						children: r(ah[e])
+						children: r(_h[e])
 					}, e))]
 				})] })
 			}),
-			/* @__PURE__ */ C(vm, {
+			/* @__PURE__ */ C(Am, {
 				className: "mb-4",
 				children: /* @__PURE__ */ w("div", {
 					className: "grid gap-3 md:grid-cols-2 xl:grid-cols-4",
@@ -8065,13 +8131,13 @@ function ph() {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterCategory") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterCategory") }), /* @__PURE__ */ w(Jm, {
 								value: y || "__all",
 								onValueChange: (e) => b(e === "__all" ? "" : e),
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 									value: "__all",
 									children: r("wfcp.all")
 								}), fe.map((e) => /* @__PURE__ */ C(Q, {
@@ -8082,13 +8148,13 @@ function ph() {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterBrand") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterBrand") }), /* @__PURE__ */ w(Jm, {
 								value: T || "__all",
 								onValueChange: (e) => E(e === "__all" ? "" : e),
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 									value: "__all",
 									children: r("wfcp.all")
 								}), pe.map((e) => /* @__PURE__ */ C(Q, {
@@ -8099,13 +8165,13 @@ function ph() {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.stock") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.stock") }), /* @__PURE__ */ w(Jm, {
 								value: D || "__all",
 								onValueChange: (e) => O(e === "__all" ? "" : e),
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [
 									/* @__PURE__ */ C(Q, {
 										value: "__all",
 										children: r("wfcp.all")
@@ -8127,13 +8193,13 @@ function ph() {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterType") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterType") }), /* @__PURE__ */ w(Jm, {
 								value: k || "__all",
 								onValueChange: (e) => A(e === "__all" ? "" : e),
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [
 									/* @__PURE__ */ C(Q, {
 										value: "__all",
 										children: r("wfcp.all")
@@ -8151,13 +8217,13 @@ function ph() {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterLocked") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterLocked") }), /* @__PURE__ */ w(Jm, {
 								value: j || "__all",
 								onValueChange: (e) => M(e === "__all" ? "" : e),
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [
 									/* @__PURE__ */ C(Q, {
 										value: "__all",
 										children: r("wfcp.all")
@@ -8175,13 +8241,13 @@ function ph() {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterHasPurchase") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.filterHasPurchase") }), /* @__PURE__ */ w(Jm, {
 								value: N || "__all",
 								onValueChange: (e) => P(e === "__all" ? "" : e),
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [
 									/* @__PURE__ */ C(Q, {
 										value: "__all",
 										children: r("wfcp.all")
@@ -8199,13 +8265,13 @@ function ph() {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.sort") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.sort") }), /* @__PURE__ */ w(Jm, {
 								value: F,
 								onValueChange: I,
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [
 									/* @__PURE__ */ C(Q, {
 										value: "date_desc",
 										children: r("wfcp.sort.date_desc")
@@ -8236,11 +8302,11 @@ function ph() {
 					]
 				})
 			}),
-			re.isLoading ? /* @__PURE__ */ C(cm, {
+			re.isLoading ? /* @__PURE__ */ C(bm, {
 				className: "shadow-sm",
-				children: /* @__PURE__ */ C(fm, {
+				children: /* @__PURE__ */ C(wm, {
 					className: "p-0",
-					children: /* @__PURE__ */ C(Sm, {
+					children: /* @__PURE__ */ C(Pm, {
 						rows: 8,
 						columns: Math.max(4, te)
 					})
@@ -8250,11 +8316,11 @@ function ph() {
 				children: ue.length === 0 ? /* @__PURE__ */ C("p", {
 					className: "text-muted-foreground py-8 text-center text-sm",
 					children: r("wfcp.emptyBulk")
-				}) : ue.map((e) => /* @__PURE__ */ C(ym, {
+				}) : ue.map((e) => /* @__PURE__ */ C(jm, {
 					className: G("min-w-0", e.locked && "bg-muted/30"),
 					media: /* @__PURE__ */ w("div", {
 						className: "flex gap-3",
-						children: [L.image ? e.image_url ? /* @__PURE__ */ C(Fm, {
+						children: [L.image ? e.image_url ? /* @__PURE__ */ C(qm, {
 							src: e.image_url,
 							alt: e.name,
 							className: "size-14 shrink-0 rounded-lg object-cover"
@@ -8311,7 +8377,7 @@ function ph() {
 							}), be(e)] }) : null,
 							L.lock ? /* @__PURE__ */ w("label", {
 								className: "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-								children: [/* @__PURE__ */ C(wm, {
+								children: [/* @__PURE__ */ C(Im, {
 									checked: e.locked,
 									onCheckedChange: (t) => void ce.mutateAsync({
 										id: e.id,
@@ -8322,39 +8388,39 @@ function ph() {
 						]
 					})
 				}, e.id))
-			}), /* @__PURE__ */ C(cm, {
+			}), /* @__PURE__ */ C(bm, {
 				className: "hidden shadow-sm md:block",
-				children: /* @__PURE__ */ C(fm, {
+				children: /* @__PURE__ */ C(wm, {
 					className: "overflow-x-auto p-0",
-					children: /* @__PURE__ */ w(Hm, { children: [/* @__PURE__ */ C(Um, { children: /* @__PURE__ */ w(Gm, { children: [
-						L.image ? /* @__PURE__ */ C(Km, {
+					children: /* @__PURE__ */ w(eh, { children: [/* @__PURE__ */ C(th, { children: /* @__PURE__ */ w(rh, { children: [
+						L.image ? /* @__PURE__ */ C(ih, {
 							className: "w-14",
 							children: r("wfcp.colImage")
 						}) : null,
-						L.name ? /* @__PURE__ */ C(Km, { children: r("wfcp.colName") }) : null,
-						L.attrs ? /* @__PURE__ */ C(Km, { children: r("wfcp.colAttrs") }) : null,
-						L.sku ? /* @__PURE__ */ C(Km, { children: r("wfcp.colSku") }) : null,
-						L.stock_qty ? /* @__PURE__ */ C(Km, { children: r("wfcp.colStockQty") }) : null,
-						L.stock_status ? /* @__PURE__ */ C(Km, { children: r("wfcp.colStock") }) : null,
-						L.purchase ? /* @__PURE__ */ C(Km, { children: r("wfcp.colPurchase") }) : null,
-						L.retail ? /* @__PURE__ */ C(Km, { children: r("wfcp.colRetail") }) : null,
-						L.wc_regular ? /* @__PURE__ */ C(Km, { children: r("wfcp.colWcRegular") }) : null,
-						L.wc_sale ? /* @__PURE__ */ C(Km, { children: r("wfcp.colWcSale") }) : null,
-						L.min_qty ? /* @__PURE__ */ C(Km, { children: r("wfcp.colMinQty") }) : null,
-						L.min_weight ? /* @__PURE__ */ C(Km, { children: r("wfcp.colMinWeight") }) : null,
-						L.sell_by ? /* @__PURE__ */ C(Km, { children: r("wfcp.colSellBy") }) : null,
-						L.discount ? /* @__PURE__ */ C(Km, { children: r("wfcp.colDiscount") }) : null,
-						L.lock ? /* @__PURE__ */ C(Km, { children: r("wfcp.colLock") }) : null
-					] }) }), /* @__PURE__ */ C(Wm, { children: ue.length === 0 ? /* @__PURE__ */ C(Gm, { children: /* @__PURE__ */ C(qm, {
+						L.name ? /* @__PURE__ */ C(ih, { children: r("wfcp.colName") }) : null,
+						L.attrs ? /* @__PURE__ */ C(ih, { children: r("wfcp.colAttrs") }) : null,
+						L.sku ? /* @__PURE__ */ C(ih, { children: r("wfcp.colSku") }) : null,
+						L.stock_qty ? /* @__PURE__ */ C(ih, { children: r("wfcp.colStockQty") }) : null,
+						L.stock_status ? /* @__PURE__ */ C(ih, { children: r("wfcp.colStock") }) : null,
+						L.purchase ? /* @__PURE__ */ C(ih, { children: r("wfcp.colPurchase") }) : null,
+						L.retail ? /* @__PURE__ */ C(ih, { children: r("wfcp.colRetail") }) : null,
+						L.wc_regular ? /* @__PURE__ */ C(ih, { children: r("wfcp.colWcRegular") }) : null,
+						L.wc_sale ? /* @__PURE__ */ C(ih, { children: r("wfcp.colWcSale") }) : null,
+						L.min_qty ? /* @__PURE__ */ C(ih, { children: r("wfcp.colMinQty") }) : null,
+						L.min_weight ? /* @__PURE__ */ C(ih, { children: r("wfcp.colMinWeight") }) : null,
+						L.sell_by ? /* @__PURE__ */ C(ih, { children: r("wfcp.colSellBy") }) : null,
+						L.discount ? /* @__PURE__ */ C(ih, { children: r("wfcp.colDiscount") }) : null,
+						L.lock ? /* @__PURE__ */ C(ih, { children: r("wfcp.colLock") }) : null
+					] }) }), /* @__PURE__ */ C(nh, { children: ue.length === 0 ? /* @__PURE__ */ C(rh, { children: /* @__PURE__ */ C(ah, {
 						colSpan: Math.max(1, te),
 						className: "text-muted-foreground py-8 text-center text-sm",
 						children: r("wfcp.emptyBulk")
 					}) }) : ue.map((e) => {
-						let t = dh(e);
-						return /* @__PURE__ */ w(Gm, {
+						let t = Ch(e);
+						return /* @__PURE__ */ w(rh, {
 							className: G(e.locked && "bg-muted/30"),
 							children: [
-								L.image ? /* @__PURE__ */ C(qm, { children: e.image_url ? /* @__PURE__ */ C(Fm, {
+								L.image ? /* @__PURE__ */ C(ah, { children: e.image_url ? /* @__PURE__ */ C(qm, {
 									src: e.image_url,
 									alt: e.name,
 									className: "size-10 rounded object-cover"
@@ -8362,25 +8428,25 @@ function ph() {
 									className: "text-muted-foreground text-xs",
 									children: "—"
 								}) }) : null,
-								L.name ? /* @__PURE__ */ C(qm, {
+								L.name ? /* @__PURE__ */ C(ah, {
 									className: "max-w-[16rem]",
 									children: me(e)
 								}) : null,
-								L.attrs ? /* @__PURE__ */ C(qm, {
+								L.attrs ? /* @__PURE__ */ C(ah, {
 									className: "text-muted-foreground max-w-[10rem] text-xs",
 									children: t || "—"
 								}) : null,
-								L.sku ? /* @__PURE__ */ C(qm, {
+								L.sku ? /* @__PURE__ */ C(ah, {
 									className: "text-xs",
 									children: e.sku || "—"
 								}) : null,
-								L.stock_qty ? /* @__PURE__ */ C(qm, { children: ge(e) }) : null,
-								L.stock_status ? /* @__PURE__ */ C(qm, { children: he(e) }) : null,
-								L.purchase ? /* @__PURE__ */ C(qm, { children: ve(e) }) : null,
-								L.retail ? /* @__PURE__ */ C(qm, { children: _e(e) }) : null,
-								L.wc_regular ? /* @__PURE__ */ C(qm, { children: ye(e) }) : null,
-								L.wc_sale ? /* @__PURE__ */ C(qm, { children: be(e) }) : null,
-								L.min_qty ? /* @__PURE__ */ C(qm, { children: /* @__PURE__ */ C(uh, {
+								L.stock_qty ? /* @__PURE__ */ C(ah, { children: ge(e) }) : null,
+								L.stock_status ? /* @__PURE__ */ C(ah, { children: he(e) }) : null,
+								L.purchase ? /* @__PURE__ */ C(ah, { children: ve(e) }) : null,
+								L.retail ? /* @__PURE__ */ C(ah, { children: _e(e) }) : null,
+								L.wc_regular ? /* @__PURE__ */ C(ah, { children: ye(e) }) : null,
+								L.wc_sale ? /* @__PURE__ */ C(ah, { children: be(e) }) : null,
+								L.min_qty ? /* @__PURE__ */ C(ah, { children: /* @__PURE__ */ C(Sh, {
 									value: e.min_qty ?? 0,
 									onCommit: async (t) => {
 										let n = parseFloat(t);
@@ -8390,7 +8456,7 @@ function ph() {
 										});
 									}
 								}) }) : null,
-								L.min_weight ? /* @__PURE__ */ C(qm, { children: /* @__PURE__ */ C(uh, {
+								L.min_weight ? /* @__PURE__ */ C(ah, { children: /* @__PURE__ */ C(Sh, {
 									value: e.min_weight ?? 0,
 									onCommit: async (t) => {
 										let n = parseFloat(t);
@@ -8400,16 +8466,16 @@ function ph() {
 										});
 									}
 								}) }) : null,
-								L.sell_by ? /* @__PURE__ */ C(qm, { children: /* @__PURE__ */ w(Im, {
+								L.sell_by ? /* @__PURE__ */ C(ah, { children: /* @__PURE__ */ w(Jm, {
 									value: e.sell_by === "weight" ? "weight" : "unit",
 									onValueChange: (t) => void le.mutateAsync({
 										id: e.id,
 										sell_by: t
 									}),
-									children: [/* @__PURE__ */ C(Rm, {
+									children: [/* @__PURE__ */ C(Xm, {
 										className: "h-8 w-28 text-xs",
-										children: /* @__PURE__ */ C(Lm, {})
-									}), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+										children: /* @__PURE__ */ C(Ym, {})
+									}), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 										value: "unit",
 										children: r("wfcp.sellByUnit")
 									}), /* @__PURE__ */ C(Q, {
@@ -8417,7 +8483,7 @@ function ph() {
 										children: r("wfcp.sellByWeight")
 									})] })]
 								}) }) : null,
-								L.discount ? /* @__PURE__ */ C(qm, { children: /* @__PURE__ */ C(uh, {
+								L.discount ? /* @__PURE__ */ C(ah, { children: /* @__PURE__ */ C(Sh, {
 									value: e.discount_percent ?? "",
 									onCommit: async (t) => {
 										let n = parseFloat(t);
@@ -8427,9 +8493,9 @@ function ph() {
 										});
 									}
 								}) }) : null,
-								L.lock ? /* @__PURE__ */ C(qm, { children: /* @__PURE__ */ w("label", {
+								L.lock ? /* @__PURE__ */ C(ah, { children: /* @__PURE__ */ w("label", {
 									className: "flex items-center gap-2 text-xs",
-									children: [/* @__PURE__ */ C(wm, {
+									children: [/* @__PURE__ */ C(Im, {
 										checked: e.locked,
 										onCheckedChange: (t) => void ce.mutateAsync({
 											id: e.id,
@@ -8447,8 +8513,8 @@ function ph() {
 				children: [/* @__PURE__ */ C("p", {
 					className: "text-muted-foreground text-sm",
 					children: r("wfcp.pageOf", {
-						page: cn(l, o),
-						total: cn(de, o)
+						page: vn(l, o),
+						total: vn(de, o)
 					})
 				}), /* @__PURE__ */ w("div", {
 					className: "flex gap-2",
@@ -8474,26 +8540,26 @@ function ph() {
 }
 //#endregion
 //#region src/components/data/DumpUi.tsx
-var mh = {
+var Eh = {
 	default: "",
 	success: "border-transparent bg-emerald-600 text-white dark:bg-emerald-500",
 	warning: "border-transparent bg-amber-500 text-white",
 	destructive: "",
 	secondary: ""
 };
-function hh(e) {
+function Dh(e) {
 	let t = String(e ?? "").toLowerCase();
 	return t === "done" || t === "completed" || t === "success" || t === "ok" ? "success" : t === "failed" || t === "error" || t === "cancelled" || t === "canceled" ? "destructive" : t === "running" || t === "processing" ? "warning" : t === "pending" || t === "queued" ? "secondary" : "default";
 }
-function gh({ status: e, tone: t, className: n }) {
-	let r = t ?? hh(e), i = e == null || e === "" ? "—" : String(e);
-	return /* @__PURE__ */ C(om, {
+function Oh({ status: e, tone: t, className: n }) {
+	let r = t ?? Dh(e), i = e == null || e === "" ? "—" : String(e);
+	return /* @__PURE__ */ C(vm, {
 		variant: r === "destructive" ? "destructive" : r === "secondary" ? "secondary" : "outline",
-		className: G(mh[r], n),
+		className: G(Eh[r], n),
 		children: i
 	});
 }
-function _h({ rows: e, emptyLabel: t = "—", className: n }) {
+function kh({ rows: e, emptyLabel: t = "—", className: n }) {
 	return e.length ? /* @__PURE__ */ C("dl", {
 		className: G("divide-border divide-y text-sm", n),
 		children: e.map((e, n) => /* @__PURE__ */ w("div", {
@@ -8513,7 +8579,7 @@ function _h({ rows: e, emptyLabel: t = "—", className: n }) {
 }
 //#endregion
 //#region src/components/ui/textarea.tsx
-function vh({ className: e, ...t }) {
+function Ah({ className: e, ...t }) {
 	return /* @__PURE__ */ C("textarea", {
 		"data-slot": "textarea",
 		className: G("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
@@ -8522,14 +8588,14 @@ function vh({ className: e, ...t }) {
 }
 //#endregion
 //#region src/lib/enumLabels.ts
-function yh(e, t, n) {
+function jh(e, t, n) {
 	if (!n) return e("common.emptyValue");
 	let r = `${t}.${n}`, i = e(r);
 	return i === r ? n : i;
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/pages/WfcpPriceChangerPage.tsx
-function bh() {
+function Mh() {
 	let { t: r } = g(), i = n(), [a, o] = m("fixed"), [s, c] = m("0"), [l, u] = m(!1), [d, f] = m(""), [p, h] = m(""), [_, v] = m(!1), [y, b] = m(!1), [S, T] = m("50000"), [E, D] = m("1000"), O = t({
 		queryKey: [
 			"wfcp",
@@ -8537,8 +8603,22 @@ function bh() {
 			"state"
 		],
 		queryFn: () => V("wfcp/bulk-price-change/state"),
-		refetchInterval: 5e3
-	}), k = e({
+		refetchInterval: (e) => e.state.data?.locked ? 2500 : 5e3
+	}), k = !!O.data?.locked, A = e({
+		mutationFn: () => V("wfcp/bulk-price-change/cancel", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({})
+		}),
+		onSuccess: () => {
+			i.invalidateQueries({ queryKey: [
+				"wfcp",
+				"bpc",
+				"state"
+			] }), x.success(r("wfcp.bpcCanceled", { defaultValue: "Bulk price job canceled" }));
+		},
+		onError: (e) => Fe(r, e)
+	}), j = e({
 		mutationFn: () => V("wfcp/bulk-price-change/start", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -8561,9 +8641,9 @@ function bh() {
 				"state"
 			] }), x.success(r("wfcp.bpcQueued"));
 		},
-		onError: (e) => Oe(r, e)
+		onError: (e) => Fe(r, e)
 	});
-	return /* @__PURE__ */ C(bm, {
+	return /* @__PURE__ */ C(Mm, {
 		title: r("wfcp.bpcTitle"),
 		description: r("wfcp.bpcDescription"),
 		children: /* @__PURE__ */ w("div", {
@@ -8573,18 +8653,19 @@ function bh() {
 				children: [
 					/* @__PURE__ */ w("div", {
 						className: "space-y-2",
-						children: [/* @__PURE__ */ C(Z, { children: r("wfcp.bpcType") }), /* @__PURE__ */ w(Im, {
+						children: [/* @__PURE__ */ C(Z, { children: r("wfcp.bpcType") }), /* @__PURE__ */ w(Jm, {
 							value: a,
 							onValueChange: (e) => o(e),
-							children: [/* @__PURE__ */ C(Rm, {
+							disabled: k,
+							children: [/* @__PURE__ */ C(Xm, {
 								className: "w-full",
-								children: /* @__PURE__ */ C(Lm, {})
-							}), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+								children: /* @__PURE__ */ C(Ym, {})
+							}), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 								value: "fixed",
-								children: yh(r, "wfcp.priceMode", "fixed")
+								children: jh(r, "wfcp.priceMode", "fixed")
 							}), /* @__PURE__ */ C(Q, {
 								value: "percent",
-								children: yh(r, "wfcp.priceMode", "percent")
+								children: jh(r, "wfcp.priceMode", "percent")
 							})] })]
 						})]
 					}),
@@ -8592,14 +8673,16 @@ function bh() {
 						className: "space-y-2",
 						children: [/* @__PURE__ */ C(Z, { children: r("wfcp.bpcValue") }), /* @__PURE__ */ C(X, {
 							value: s,
-							onChange: (e) => c(e.target.value)
+							onChange: (e) => c(e.target.value),
+							disabled: k
 						})]
 					}),
 					/* @__PURE__ */ w("div", {
 						className: "flex items-center gap-2",
-						children: [/* @__PURE__ */ C(wm, {
+						children: [/* @__PURE__ */ C(Im, {
 							id: "bpc-apply-sale",
 							checked: l,
+							disabled: k,
 							onCheckedChange: (e) => u(e === !0)
 						}), /* @__PURE__ */ C(Z, {
 							htmlFor: "bpc-apply-sale",
@@ -8613,7 +8696,8 @@ function bh() {
 							/* @__PURE__ */ C(Z, { children: r("wfcp.bpcCategories") }),
 							/* @__PURE__ */ C(X, {
 								value: d,
-								onChange: (e) => f(e.target.value)
+								onChange: (e) => f(e.target.value),
+								disabled: k
 							}),
 							/* @__PURE__ */ C("p", {
 								className: "text-xs text-muted-foreground",
@@ -8623,17 +8707,19 @@ function bh() {
 					}),
 					/* @__PURE__ */ w("div", {
 						className: "space-y-2",
-						children: [/* @__PURE__ */ C(Z, { children: r("wfcp.bpcRangeRules") }), /* @__PURE__ */ C(vh, {
+						children: [/* @__PURE__ */ C(Z, { children: r("wfcp.bpcRangeRules") }), /* @__PURE__ */ C(Ah, {
 							className: "min-h-20",
 							value: p,
-							onChange: (e) => h(e.target.value)
+							onChange: (e) => h(e.target.value),
+							disabled: k
 						})]
 					}),
 					/* @__PURE__ */ w("div", {
 						className: "flex items-center gap-2",
-						children: [/* @__PURE__ */ C(wm, {
+						children: [/* @__PURE__ */ C(Im, {
 							id: "bpc-rules-combine",
 							checked: _,
+							disabled: k,
 							onCheckedChange: (e) => v(e === !0)
 						}), /* @__PURE__ */ C(Z, {
 							htmlFor: "bpc-rules-combine",
@@ -8643,9 +8729,10 @@ function bh() {
 					}),
 					/* @__PURE__ */ w("div", {
 						className: "flex items-center gap-2",
-						children: [/* @__PURE__ */ C(wm, {
+						children: [/* @__PURE__ */ C(Im, {
 							id: "bpc-rounding",
 							checked: y,
+							disabled: k,
 							onCheckedChange: (e) => b(e === !0)
 						}), /* @__PURE__ */ C(Z, {
 							htmlFor: "bpc-rounding",
@@ -8659,21 +8746,32 @@ function bh() {
 							className: "space-y-2",
 							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.bpcRoundTh") }), /* @__PURE__ */ C(X, {
 								value: S,
-								onChange: (e) => T(e.target.value)
+								onChange: (e) => T(e.target.value),
+								disabled: k
 							})]
 						}), /* @__PURE__ */ w("div", {
 							className: "space-y-2",
 							children: [/* @__PURE__ */ C(Z, { children: r("wfcp.bpcRoundVal") }), /* @__PURE__ */ C(X, {
 								value: E,
-								onChange: (e) => D(e.target.value)
+								onChange: (e) => D(e.target.value),
+								disabled: k
 							})]
 						})]
 					}),
-					/* @__PURE__ */ C(Y, {
-						type: "button",
-						disabled: k.isPending,
-						onClick: () => void k.mutateAsync(),
-						children: r("wfcp.bpcStart")
+					/* @__PURE__ */ w("div", {
+						className: "flex flex-wrap gap-2",
+						children: [/* @__PURE__ */ C(Y, {
+							type: "button",
+							disabled: j.isPending || k,
+							onClick: () => void j.mutateAsync(),
+							children: r("wfcp.bpcStart")
+						}), k ? /* @__PURE__ */ C(Y, {
+							type: "button",
+							variant: "outline",
+							disabled: A.isPending,
+							onClick: () => void A.mutateAsync(),
+							children: r("wfcp.bpcCancel", { defaultValue: "Cancel job" })
+						}) : null]
 					})
 				]
 			}), /* @__PURE__ */ w("div", {
@@ -8685,14 +8783,14 @@ function bh() {
 					className: "mt-2 space-y-3",
 					children: [/* @__PURE__ */ w("div", {
 						className: "flex flex-wrap items-center gap-2",
-						children: [/* @__PURE__ */ C(gh, {
-							status: O.data?.locked ? "locked" : "idle",
-							tone: O.data?.locked ? "warning" : "secondary"
+						children: [/* @__PURE__ */ C(Oh, {
+							status: k ? "locked" : "idle",
+							tone: k ? "warning" : "secondary"
 						}), O.data?.last?.run ? /* @__PURE__ */ C("span", {
 							className: "text-muted-foreground text-xs",
 							children: String(O.data.last.run)
 						}) : null]
-					}), /* @__PURE__ */ C(_h, {
+					}), /* @__PURE__ */ C(kh, {
 						emptyLabel: r("common.empty"),
 						rows: [...Object.entries(O.data?.state ?? {}).map(([e, t]) => ({
 							label: e,
@@ -8709,8 +8807,8 @@ function bh() {
 }
 //#endregion
 //#region src/i18n/locales/fa.json
-var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
-	Sh = {
+var Nh = /* @__PURE__ */ A({ default: () => Ph }), Ph, Fh = k((() => {
+	Ph = {
 		"app.title": "داشبورد",
 		"chart.totalVisitors": "کل بازدیدها",
 		"chart.descriptionLong": "جمع سه ماه اخیر",
@@ -8787,7 +8885,34 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"nav.module.pages": "برگه‌های سایت",
 		"nav.module.shop": "فروشگاه",
 		"nav.module.products": "محصولات",
+		"nav.module.product-catalog": "دیتابیس محصولات",
 		"nav.module.product-new": "افزودن محصول",
+		"catalog.pageTitle": "دیتابیس محصولات",
+		"catalog.pageDesc": "بین دیتابیس‌های خارجی جستجو کن و محصول را به‌صورت پیش‌نویس به فروشگاه اضافه کن.",
+		"catalog.settingsLink": "کلیدهای API",
+		"catalog.settingsTitle": "تنظیمات دیتابیس محصولات",
+		"catalog.settingsDesc": "منابع رایگان بدون کلید کار می‌کنند. برای گوگل‌بوکس، BarcodeNest، GTINHub و Buycott کلید وارد کن.",
+		"catalog.settingsSaved": "تنظیمات ذخیره شد",
+		"catalog.keyGoogleBooks": "Google Books API key",
+		"catalog.keyBarcodeNest": "BarcodeNest API key",
+		"catalog.keyGtinHub": "GTINHub API key",
+		"catalog.keyBuycott": "Buycott access token",
+		"catalog.cat.food": "غذا و سوپرمارکت",
+		"catalog.cat.beauty": "آرایشی و بهداشتی",
+		"catalog.cat.pet": "غذای حیوانات",
+		"catalog.cat.general": "محصولات عمومی",
+		"catalog.cat.books": "کتاب",
+		"catalog.cat.merchandise": "الکترونیک و عمومی",
+		"catalog.searchLabel": "جستجو",
+		"catalog.searchPlaceholder": "نام محصول…",
+		"catalog.barcodeLabel": "بارکد",
+		"catalog.search": "جستجو",
+		"catalog.searching": "در حال جستجو…",
+		"catalog.empty": "نتیجه‌ای پیدا نشد",
+		"catalog.addDraft": "افزودن به سایت",
+		"catalog.imported": "پیش‌نویس محصول ساخته شد",
+		"catalog.openProduct": "باز کردن",
+		"catalog.loadMore": "بیشتر",
 		"nav.module.brands": "برندها",
 		"nav.module.product-cats": "دسته محصول",
 		"nav.module.attributes": "ویژگی‌های محصول",
@@ -8834,12 +8959,20 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"nav.module.tickets": "تیکت",
 		"nav.module.order-reports": "گزارش‌ها",
 		"nav.module.marketing": "بازاریابی",
-		"nav.module.coupons": "کدهای تخفیف",
+		"nav.module.coupons": "کوپن‌ساز",
+		"nav.module.sale-prices": "قیمت خط‌خورده",
 		"nav.module.users": "کاربران",
 		"nav.module.user-list": "کاربران",
 		"nav.module.user-new": "کاربر جدید",
 		"nav.module.user-employees": "کارمندان",
 		"nav.module.comments": "دیدگاه‌ها",
+		"nav.module.security-module": "امنیت",
+		"nav.module.security-overview": "نمای کلی",
+		"nav.module.security-firewall": "فایروال",
+		"nav.module.security-scan": "اسکن سایت",
+		"nav.module.security-tools": "ابزارها",
+		"nav.module.security-reports": "گزارش‌ها",
+		"nav.module.security-settings": "تنظیمات",
 		"nav.module.analytics": "آمار",
 		"nav.module.analytics-overview": "مرور کلی",
 		"nav.module.analytics-visitors": "تحلیل بازدیدکنندگان",
@@ -9011,6 +9144,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"home.traffic.onlineVisitors": "بازدیدکنندگان آنلاین",
 		"home.traffic.recentDays": "روزهای اخیر",
 		"home.panels.license": "لایسنس",
+		"home.panels.security": "امنیت",
+		"home.panels.securityHint": "WAF {{mode}} · {{findings}} یافته باز",
 		"home.panels.active": "فعال",
 		"home.panels.inactive": "غیرفعال",
 		"home.panels.webhookOk": "وب‌هوک فعال",
@@ -9186,6 +9321,16 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"torobExtractor.autoSync": "همگام‌سازی خودکار",
 		"torobExtractor.syncInterval": "بازه همگام‌سازی (ساعت)",
 		"torobpay.title": "ترب‌پی",
+		"torobpay.displayTitle": "نمایش ترب‌پی",
+		"torobpay.ordersTitle": "سفارش‌های ترب‌پی",
+		"torobpay.campaignTitle": "کمپین ترب‌پی",
+		"torobpay.logsTitle": "لاگ ترب‌پی",
+		"torobpay.description": "پرداخت اقساطی ترب‌پی — پیاده‌سازی اختصاصی وبینو",
+		"torobpay.officialNotice": "افزونه رسمی ترب‌پی فعال است؛ تنظیمات از همان منبع استفاده می‌شود.",
+		"torobpay.saved": "ذخیره شد",
+		"torobpay.testOk": "اتصال برقرار شد",
+		"torobpay.credsOk": "اطلاعات کاربری دریافت شد",
+		"torobpay.campaignHint": "نتایج کمپین از API پذیرنده ترب‌پی.",
 		"torobpay.pageTitle": "درگاه ترب‌پی",
 		"torobpay.runtimeStatus": "وضعیت اجرا",
 		"torobpay.wcReady": "ووکامرس",
@@ -9201,6 +9346,14 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"torobpay.apiKey": "کلید API",
 		"torobpay.sandbox": "حالت آزمایشی (Sandbox)",
 		"snapppay.title": "اسنپ‌پی",
+		"snapppay.logsTitle": "لاگ اسنپ‌پی",
+		"snapppay.description": "درگاه اقساطی اسنپ‌پی — پیاده‌سازی اختصاصی وبینو",
+		"snapppay.officialNotice": "افزونه رسمی اسنپ‌پی فعال است؛ تنظیمات از همان منبع خوانده/نوشته می‌شود و درگاه وبینو ثبت نمی‌شود.",
+		"snapppay.saved": "ذخیره شد",
+		"snapppay.testOk": "اتصال برقرار شد",
+		"snapppay.test": "تست اتصال",
+		"snapppay.enabled": "فعال‌سازی درگاه",
+		"snapppay.noLogs": "هنوز لاگی نیست.",
 		"snapppay.pageTitle": "درگاه اسنپ‌پی",
 		"snapppay.runtimeStatus": "وضعیت اجرا",
 		"snapppay.wcReady": "ووکامرس",
@@ -9214,12 +9367,12 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"snapppay.fieldTitle": "عنوان",
 		"snapppay.fieldDescription": "توضیحات",
 		"snapppay.merchantId": "شناسه پذیرنده",
-		"snapppay.clientId": "شناسه کلاینت",
-		"snapppay.clientSecret": "سکرت کلاینت",
+		"snapppay.clientId": "شناسه کاربری درگاه",
+		"snapppay.clientSecret": "رمز مخفی",
 		"snapppay.sandbox": "حالت آزمایشی (Sandbox)",
 		"basalam.title": "باسلام",
-		"basalam.subtitle": "یکپارچه‌سازی کامل باسلام با فروشگاه آنلاین و داشبورد.",
-		"basalam.settingsTitle": "تنظیمات اتصال",
+		"basalam.subtitle": "اتصال غرفه باسلام به فروشگاه و مدیریت سفارش و محصولات.",
+		"basalam.settingsTitle": "تنظیمات همگام‌سازی",
 		"basalam.statusTitle": "وضعیت عملیاتی",
 		"basalam.coverageTitle": "پوشش endpointها",
 		"basalam.reconcileNow": "اجرای بازتطبیق",
@@ -9229,31 +9382,78 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.subscriptionsTitle": "اشتراک‌های باسلام",
 		"basalam.webhooksTitle": "وب‌هوک‌های باسلام",
 		"basalam.operationsTitle": "عملیات باسلام",
-		"basalam.connection": "اتصال",
-		"basalam.connectionHint": "غرفه‌ی باسلام را از طریق OAuth متصل کنید.",
-		"basalam.oauthWafHint": "اول «اتصال به باسلام» را بزنید (ورود SSO). صفحهٔ انگلیسی 403 CDN یعنی توکن هنوز در دیتابیس ذخیره نشده — URL کامل را از نوار آدرس همان صفحهٔ خطا کپی و پایین بچسبانید. توکن داخل URL به‌تنهایی یعنی اتصال برقرار است نیست.",
-		"basalam.oauthPasteTitle": "تکمیل اتصال با آدرس بازگشت",
-		"basalam.oauthPasteHint": "کل آدرس نوار آدرس صفحهٔ 403 (شامل access_token) را اینجا بچسبانید و ذخیره کنید. ارسال با admin-ajax است و JWT در GET به CDN نمی‌رود.",
-		"basalam.oauthPastePlaceholder": "https://yoursite.com/wp-admin/admin.php?page=basalam-save-token&access_token=…",
-		"basalam.oauthPasteSave": "ذخیره توکن از آدرس",
+		"basalam.connection": "اتصال غرفه",
+		"basalam.connectionHint": "غرفه‌ی باسلام را به فروشگاه وصل کنید.",
+		"basalam.connectionHintWebina": "اتصال از طریق SSO وبینو (webina.dev). رمز کلاینت فقط روی WebinaCRM می‌ماند.",
+		"basalam.oauthWafHint": "اول «اتصال به باسلام» را بزنید (SSO از طریق وبینو). اگر CDN آدرس بازگشت را مسدود کرد، URL کامل را پایین بچسبانید.",
+		"basalam.oauthPasteTitle": "تکمیل با آدرس بازگشت",
+		"basalam.oauthPasteHint": "کل آدرس نوار آدرس (شامل access_token) را اینجا بچسبانید و ذخیره کنید.",
+		"basalam.oauthPastePlaceholder": "آدرس کامل صفحه بازگشت را بچسبانید",
+		"basalam.oauthPasteSave": "ذخیره اتصال",
+		"basalam.manualTokenTitle": "ورود دستی اطلاعات اتصال",
+		"basalam.manualTokenHint": "در صورت عدم دسترسی به SSO، access و refresh توکن را وارد کنید.",
+		"basalam.manualTokenSave": "ذخیره",
+		"basalam.refreshToken": "تمدید توکن",
+		"basalam.tokenRefreshed": "توکن دسترسی تمدید شد.",
+		"basalam.disconnect": "قطع اتصال",
+		"basalam.disconnected": "اتصال قطع شد.",
+		"basalam.setupWebhook": "راه‌اندازی دریافت خودکار سفارش",
+		"basalam.nav.home": "خانه",
 		"basalam.connected": "متصل",
 		"basalam.notConnected": "متصل نیست",
 		"basalam.connectOAuth": "اتصال به باسلام",
 		"basalam.oauthMissingUrl": "آدرس OAuth یافت نشد",
-		"basalam.operations": "عملیات",
+		"basalam.operations": "عملیات فروشگاه",
 		"basalam.operationsHint": "همگام‌سازی کامل محصولات و سفارش‌ها با موتور باسلام.",
 		"basalam.pullOrders": "دریافت سفارش‌ها",
-		"basalam.ordersPullQueued": "جاب دریافت سفارش در صف قرار گرفت.",
-		"basalam.webhook": "آدرس وب‌هوک سفارش",
+		"basalam.pullOrdersDays": "بازهٔ دریافت سفارشات قبلی",
+		"basalam.pullDays.7": "۷ روز",
+		"basalam.pullDays.30": "۳۰ روز",
+		"basalam.pullDays.90": "۹۰ روز",
+		"basalam.pullDays.180": "۱۸۰ روز",
+		"basalam.pullDays.365": "۳۶۵ روز",
+		"basalam.ordersPullQueued": "دریافت سفارش‌های {{days}} روز اخیر در صف قرار گرفت.",
+		"basalam.webhook": "آدرس دریافت سفارش (پیشرفته)",
 		"basalam.nav.products": "محصولات",
+		"basalam.nav.booth": "غرفه",
 		"basalam.nav.orders": "سفارش‌ها",
+		"basalam.archiveOne": "آرشیو",
+		"basalam.restoreOne": "بازگردانی",
+		"basalam.connectOne": "اتصال با شناسه",
+		"basalam.boothTitle": "غرفه باسلام",
+		"basalam.boothSubtitle": "پروفایل، ارسال، تخفیف و چت با خریدار.",
+		"basalam.boothProfile": "پروفایل غرفه",
+		"basalam.boothProfileHint": "عنوان و معرفی غرفه را به‌روز کنید.",
+		"basalam.saveBooth": "ذخیره",
+		"basalam.boothSaved": "پروفایل ذخیره شد.",
+		"basalam.shippingTitle": "پروفایل‌های ارسال",
+		"basalam.shippingHint": "پروفایل ارسال برای سفارش‌های باسلام بسازید.",
+		"basalam.saveShipping": "ذخیره روش‌های ارسال",
+		"basalam.shippingSaved": "پروفایل ارسال ذخیره شد.",
+		"basalam.shippingProfileTitle": "عنوان پروفایل",
+		"basalam.createShippingProfile": "افزودن",
+		"basalam.shippingProfileDeleted": "پروفایل حذف شد.",
+		"basalam.webhookManage": "وب‌هوک‌ها",
+		"basalam.rotateWebhook": "راه‌اندازی مجدد پیشرفته",
+		"basalam.webhookRotated": "وب‌هوک چرخانده شد.",
+		"basalam.webhookDeleted": "وب‌هوک حذف شد.",
+		"basalam.discountsTitle": "تخفیف محصولات",
+		"basalam.discountsHint": "محصول متصل را انتخاب کنید و درصد تخفیف بگذارید.",
+		"basalam.createDiscount": "ثبت تخفیف",
+		"basalam.discountCreated": "تخفیف ثبت شد.",
+		"basalam.invalidJson": "JSON نامعتبر",
+		"basalam.chatTitle": "چت با خریدار",
+		"basalam.chatHint": "گفتگو با خریداران باسلام از همین صفحه.",
+		"basalam.chatLoaded": "چت آماده است.",
+		"basalam.chatDisabled": "برای چت ابتدا غرفه را متصل کنید.",
+		"basalam.openAdminChat": "باز کردن صفحه کلاسیک ادمین باسلام",
 		"basalam.nav.categories": "دسته‌بندی",
 		"basalam.nav.settings": "تنظیمات",
 		"basalam.nav.finance": "مالی",
 		"basalam.nav.tickets": "تیکت‌ها",
-		"basalam.nav.logs": "لاگ‌ها",
+		"basalam.nav.logs": "وضعیت همگام‌سازی",
 		"basalam.productsTitle": "محصولات باسلام",
-		"basalam.productsSubtitle": "ایجاد، بروزرسانی و اتصال خودکار محصولات ووکامرس به باسلام.",
+		"basalam.productsSubtitle": "افزودن و بروزرسانی محصولات فروشگاه در غرفه باسلام.",
 		"basalam.productActions": "اقدامات گروهی",
 		"basalam.createAll": "افزودن همه",
 		"basalam.updateAll": "بروزرسانی همه",
@@ -9261,38 +9461,85 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.autoConnect": "اتصال خودکار",
 		"basalam.cancelJobs": "لغو جاب‌ها",
 		"basalam.jobQueued": "جاب در صف قرار گرفت.",
-		"basalam.recentJobs": "جاب‌های اخیر",
+		"basalam.recentJobs": "کارهای اخیر",
 		"basalam.ordersTitle": "سفارش‌های باسلام",
 		"basalam.ordersSubtitle": "دریافت مرسوله‌ها و اقدامات غرفه‌دار.",
 		"basalam.vendorActions": "اقدامات غرفه‌دار",
 		"basalam.wcOrderId": "شناسه سفارش ووکامرس",
 		"basalam.trackingCode": "کد رهگیری",
-		"basalam.confirmOrder": "تایید",
-		"basalam.cancelOrder": "لغو",
-		"basalam.shipOrder": "ارسال / رهگیری",
-		"basalam.orderActionOk": "اقدام سفارش ارسال شد.",
-		"basalam.categoriesTitle": "نگاشت دسته‌بندی",
-		"basalam.categoriesSubtitle": "نگاشت دسته‌های ووکامرس به درخت باسلام.",
+		"basalam.confirmOrder": "تایید سفارش",
+		"basalam.cancelOrder": "لغو سفارش",
+		"basalam.shipOrder": "ثبت ارسال",
+		"basalam.delayOrder": "درخواست تأخیر",
+		"basalam.delayDays": "روز",
+		"basalam.delayDesc": "دلیل تأخیر",
+		"basalam.cancelRequest": "درخواست لغو",
+		"basalam.cancelRequestDesc": "دلیل درخواست لغو",
+		"basalam.createSettlement": "درخواست تسویه",
+		"basalam.createSettlementHint": "مبلغ را به ریال وارد کنید و روش تسویه را انتخاب کنید.",
+		"basalam.settlementAmountRial": "مبلغ (ریال)",
+		"basalam.settlementMethod": "شناسه روش",
+		"basalam.selectBank": "انتخاب حساب بانکی",
+		"basalam.submitSettlement": "ثبت درخواست",
+		"basalam.settlementCreatedOk": "تسویه ایجاد شد.",
+		"basalam.detectCategory": "تشخیص دسته‌بندی",
+		"basalam.detectTitlePlaceholder": "عنوان محصول برای پیش‌بینی دسته باسلام",
+		"basalam.runDetect": "تشخیص",
+		"basalam.detectOk": "پیشنهاد آماده شد.",
+		"basalam.optionMaps": "نگاشت ویژگی‌ها",
+		"basalam.wooAttrName": "نام ویژگی ووکامرس",
+		"basalam.basalamAttrName": "نام ویژگی باسلام",
+		"basalam.saveOptionMap": "ذخیره نگاشت ویژگی",
+		"basalam.optionMapSaved": "نگاشت ویژگی ذخیره شد.",
+		"basalam.selectiveSync": "همگام‌سازی انتخابی فیلدهای محصول",
+		"basalam.syncAllFields": "همه فیلدها",
+		"basalam.syncCustomFields": "فیلدهای سفارشی",
+		"basalam.roundPrice": "گرد کردن قیمت",
+		"basalam.addAttrToDesc": "ویژگی‌ها → توضیحات",
+		"basalam.addShortDesc": "توضیح کوتاه → توضیحات",
+		"basalam.allWholesale": "همه محصولات عمده",
+		"basalam.capPrep": "سقف آماده‌سازی دسته",
+		"basalam.tasksAuto": "تسک در دقیقه خودکار",
+		"basalam.field.defaultStock": "موجودی پیش‌فرض",
+		"basalam.field.discountDays": "روزهای تخفیف",
+		"basalam.field.discountPercent": "درصد تخفیف",
+		"basalam.field.customerPrefix": "پیشوند نام مشتری",
+		"basalam.field.customerSuffix": "پسوند نام مشتری",
+		"basalam.field.videoMeta": "کلید متای ویدئو",
+		"basalam.field.videoSource": "منبع ویدئو",
+		"basalam.field.videoInherit": "حالت ارث‌بری ویدئو",
+		"basalam.field.orderStatusMode": "حالت وضعیت سفارش",
+		"basalam.field.shippingMethod": "شناسه روش ارسال سفارش",
+		"basalam.field.variableStockSource": "منبع موجودی محصول متغیر",
+		"basalam.field.productPriceField": "فیلد قیمت محصول",
+		"basalam.ticketsDisabledTitle": "تیکت‌های همسلام حذف شد",
+		"basalam.ticketsDisabledHint": "تیکت پشتیبانی دیگر از همسلام نمی‌رود. از کانال‌های پشتیبانی وبینو استفاده کنید.",
+		"basalam.ticketsSubtitle": "تیکت‌های پشتیبانی همسلام.",
+		"basalam.orderActionOk": "انجام شد.",
+		"basalam.categoriesTitle": "دسته‌بندی باسلام",
+		"basalam.categoriesSubtitle": "دسته‌های فروشگاه را به دسته‌های باسلام وصل کنید.",
 		"basalam.addMapping": "افزودن نگاشت",
 		"basalam.saveMapping": "ذخیره نگاشت",
 		"basalam.mappingSaved": "نگاشت ذخیره شد.",
 		"basalam.mappingDeleted": "نگاشت حذف شد.",
-		"basalam.mappings": "نگاشت‌ها",
+		"basalam.mappings": "نگاشت‌های ذخیره شده",
 		"basalam.delete": "حذف",
-		"basalam.settingsSubtitle": "کلیدهای همگام‌سازی محصول/سفارش (تنظیمات باسلام).",
-		"basalam.syncToggles": "کلیدهای همگام‌سازی",
-		"basalam.syncProducts": "همگام‌سازی خودکار محصول",
-		"basalam.syncOrders": "همگام‌سازی خودکار سفارش",
+		"basalam.settingsSubtitle": "آنچه از فروشگاه به باسلام می‌رود را تنظیم کنید.",
+		"basalam.variationAsProductHintTitle": "محصولات متغیر",
+		"basalam.variationAsProductHint": "هر متغیر ووکامرس به‌صورت یک محصول جدا در باسلام ثبت می‌شود. عنوان = نام والد + مقادیر ویژگی (مثال: قهوه عربیکا کنیا ۱ کیلوگرم). محصولات قبلی که با مدل یک محصول + variants وصل شده‌اند باید قطع اتصال و دوباره متصل شوند.",
+		"basalam.syncToggles": "همگام‌سازی",
+		"basalam.syncProducts": "همگام‌سازی محصولات",
+		"basalam.syncOrders": "همگام‌سازی سفارش‌ها",
 		"basalam.autoConfirm": "تایید خودکار سفارش",
 		"basalam.developerMode": "حالت توسعه‌دهنده",
 		"basalam.settingsSaved": "تنظیمات ذخیره شد.",
 		"basalam.rawSettings": "همه تنظیمات",
-		"basalam.financeTitle": "مالی",
-		"basalam.financeSubtitle": "موجودی و تسویه (accounting.basalam.com).",
+		"basalam.financeTitle": "مالی باسلام",
+		"basalam.financeSubtitle": "موجودی غرفه و درخواست تسویه.",
 		"basalam.financeWpAdminHint": "رابط کامل مالی در منوی WP-Admin باسلام نیز در دسترس است.",
 		"basalam.financeLoading": "در حال بارگذاری…",
 		"basalam.financeError": "دریافت اطلاعات مالی ناموفق بود.",
-		"basalam.boothBalance": "تراز غرفه",
+		"basalam.boothBalance": "موجودی غرفه باسلام",
 		"basalam.balanceAsOf": "تراز غرفه تا {{time}}",
 		"basalam.settledBankYtd": "تسویه بانکی سال جاری",
 		"basalam.settledWalletYtd": "تسویه کیف پول سال جاری",
@@ -9309,14 +9556,15 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.balance": "موجودی",
 		"basalam.settlements": "تسویه‌ها",
 		"basalam.ticketsTitle": "تیکت‌ها",
-		"basalam.ticketsSubtitle": "تیکت‌های پشتیبانی همسلام.",
 		"basalam.ticketsHint": "برای ایجاد/پاسخ کامل به تیکت از منوی WP-Admin باسلام استفاده کنید.",
-		"basalam.logsTitle": "لاگ و پوشش",
-		"basalam.logsSubtitle": "جاب‌ها، ماتریس پوشش و راهنمای لاگ.",
+		"basalam.logsTitle": "وضعیت همگام‌سازی",
+		"basalam.logsSubtitle": "وضعیت کارهای در حال انجام بین فروشگاه و باسلام.",
 		"basalam.coverage": "پوشش API",
-		"basalam.oauthConnected": "اتصال باسلام برقرار شد.",
-		"basalam.webhookConfigured": "وب‌هوک ثبت شده است.",
-		"basalam.webhookPending": "پس از OAuth وب‌هوک تنظیم می‌شود.",
+		"basalam.oauthConnected": "غرفه با موفقیت متصل شد.",
+		"basalam.oauthError": "اتصال باسلام ناموفق بود. دوباره تلاش کنید.",
+		"basalam.oauthVendorError": "شناسه غرفه از باسلام دریافت نشد. با حساب غرفه‌دار وارد شوید و دوباره وصل کنید.",
+		"basalam.webhookConfigured": "دریافت خودکار سفارش فعال است.",
+		"basalam.webhookPending": "دریافت خودکار هنوز کامل نشده.",
 		"basalam.productList": "لیست محصولات",
 		"basalam.filter.all": "همه",
 		"basalam.filter.connected": "متصل",
@@ -9327,13 +9575,12 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.col.status": "وضعیت",
 		"basalam.col.actions": "اقدامات",
 		"basalam.col.type": "نوع",
-		"basalam.col.error": "خطا",
+		"basalam.col.error": "توضیح",
 		"basalam.col.invoice": "فاکتور",
 		"basalam.col.customer": "مشتری",
 		"basalam.col.total": "مبلغ",
 		"basalam.createOne": "ایجاد",
 		"basalam.updateOne": "بروزرسانی",
-		"basalam.disconnect": "قطع اتصال",
 		"basalam.connectedOrders": "سفارش‌های متصل",
 		"basalam.noOrders": "هنوز سفارش متصلی نیست. دریافت سفارش را اجرا کنید.",
 		"basalam.syncFields": "فیلدهای همگام‌سازی",
@@ -9343,6 +9590,19 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.field.defaultPreparation": "زمان آماده‌سازی",
 		"basalam.field.tasksPerMinute": "وظیفه در دقیقه",
 		"basalam.field.priceChange": "تغییر قیمت",
+		"basalam.commission.title": "قیمت و کارمزد باسلام",
+		"basalam.commission.hint": "تعرفه مهر ۱۴۰۵ داخل پلاگین است؛ با «بارگذاری تعرفه» روی دسته‌های باسلام تطبیق می‌شود (قیمت = فروشگاه ÷ (۱ − کارمزد)). یا درصد ثابت دستی (−۳۵ تا ۳۵) بگذارید.",
+		"basalam.commission.status": "{{count}} نرخ همگام · {{unmatched}} بدون تطبیق · آخرین بارگذاری: {{at}}",
+		"basalam.commission.neverImported": "هنوز بارگذاری نشده",
+		"basalam.commission.enable": "کارمزد دسته‌بندی فعال",
+		"basalam.commission.seedTariff": "بارگذاری / به‌روزرسانی تعرفه مهر ۱۴۰۵",
+		"basalam.commission.uploadCsv": "آپلود CSV تعرفه",
+		"basalam.commission.applyUpdate": "اعمال کارمزد روی محصولات متصل",
+		"basalam.commission.importOk": "{{matched}} نرخ ذخیره شد ({{unmatched}} بدون تطبیق).",
+		"basalam.commission.seedOk": "{{matched}} نرخ از تعرفه مهر ۱۴۰۵ ذخیره شد ({{unmatched}} بدون تطبیق).",
+		"basalam.commission.applyQueued": "آپدیت قیمت با کارمزد در صف قرار گرفت.",
+		"basalam.commission.manualPercent": "درصد ثابت دستی (−۳۵ تا ۳۵)",
+		"basalam.commission.manualPercentHint": "markup افزایشی روی قیمت فروشگاه؛ با حالت کارمزد دسته‌بندی همزمان نیست.",
 		"basalam.field.productPrefix": "پیشوند عنوان",
 		"basalam.field.productSuffix": "پسوند عنوان",
 		"basalam.field.safeStock": "موجودی ایمن",
@@ -9354,7 +9614,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"zarinpal.operationsTitle": "عملیات زرین‌پال",
 		"zarinpal.coverageTitle": "پوشش زرین‌پال",
 		"zarinpal.settingsSubtitle": "اتصال پذیرنده و حالت آزمایشی",
-		"zarinpal.paymentsSubtitle": "عنوان تسویه‌حساب، پیام‌ها و پرداخت‌کننده کارمزد",
+		"zarinpal.paymentsSubtitle": "عنوان، آیکون، پیام‌ها و برچسب‌های چک‌اوت",
 		"zarinpal.operationsSubtitle": "همگام‌سازی پرداخت‌های تأییدنشده و جستجوی تراکنش",
 		"zarinpal.merchantId": "شناسه پذیرنده",
 		"zarinpal.accessToken": "توکن دسترسی (GraphQL)",
@@ -9373,10 +9633,21 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"zarinpal.fieldTitle": "عنوان در تسویه‌حساب",
 		"zarinpal.fieldDescription": "توضیحات",
 		"zarinpal.fieldInstructions": "دستورالعمل‌ها",
+		"zarinpal.orderButtonText": "متن دکمه پرداخت",
+		"zarinpal.feeLabel": "برچسب کارمزد",
+		"zarinpal.iconUrl": "آدرس آیکون درگاه",
+		"zarinpal.iconUrlPlaceholder": "خالی = لوگوی باندل‌شده",
+		"zarinpal.iconUrlHint": "در صورت خالی بودن، لوگوی رسمی باندل‌شده زرین‌پال استفاده می‌شود.",
+		"zarinpal.paymentDescription": "توضیح پرداخت API",
+		"zarinpal.paymentDescriptionHint": "جایگزین: {order_id}",
 		"zarinpal.successMessage": "پیام موفقیت",
 		"zarinpal.failedMessage": "پیام ناموفق",
+		"zarinpal.cancelledMessage": "متن خطای انصراف",
+		"zarinpal.invalidTokenMessage": "متن خطای توکن نامعتبر",
 		"zarinpal.successHint": "جایگزین: {transaction_id}",
 		"zarinpal.failedHint": "جایگزین: {fault}",
+		"zarinpal.cancelledHint": "مقدار {fault} وقتی مشتری در زرین‌پال انصراف می‌دهد.",
+		"zarinpal.invalidTokenHint": "مقدار {fault} وقتی Authority نامعتبر است.",
 		"zarinpal.feePayer": "پرداخت‌کننده کارمزد",
 		"zarinpal.feePayerMerchant": "فروشنده",
 		"zarinpal.feePayerCustomer": "خریدار",
@@ -9474,7 +9745,50 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"accounting.nav.checks": "چک‌ها",
 		"accounting.nav.warehouses": "انبار",
 		"accounting.nav.moadian": "صف مودیان",
+		"accounting.nav.tax": "کابین مالیات",
 		"accounting.nav.hesabfa": "سینک حسابفا",
+		"accounting.tax.from": "از تاریخ",
+		"accounting.tax.to": "تا تاریخ",
+		"accounting.tax.revenue": "درآمد",
+		"accounting.tax.profit": "سود",
+		"accounting.tax.loss": "زیان",
+		"accounting.tax.vatNet": "ارزش افزوده خالص",
+		"accounting.tax.incomeTax": "برآورد مالیات عملکرد",
+		"accounting.tax.tips": "نکات مالیاتی",
+		"accounting.tax.dismiss": "نادیده گرفتن",
+		"accounting.tax.disclaimer": "برآورد بر اساس پیکربندی و جداول نسخه‌دار است؛ تأیید نهایی با مشاور مالیاتی.",
+		"accounting.taxTip.setupIncomplete": "ویزارد مالیات هنوز کامل نشده است.",
+		"accounting.taxTip.moadianKeys": "شناسه حافظه یا کلید خصوصی مودیان ناقص است.",
+		"accounting.taxTip.thresholdNear": "فروش به {{pct}}٪ حد نصاب نزدیک شده است.",
+		"accounting.taxTip.moadianFailed": "{{count}} ارسال مودیان ناموفق است.",
+		"accounting.taxTip.missingSstid": "{{count}} قلم فاکتور بدون شناسه کالا/خدمت (SSTID).",
+		"accounting.taxTip.vatDeadline": "مهلت تقریبی اظهار VAT: حدود {{days}} روز.",
+		"accounting.taxTip.rateVersion": "نسخه نرخ مالیاتی به‌روز شد: {{label}}",
+		"accounting.taxWizard.title": "راه‌اندازی مالیات",
+		"accounting.taxWizard.subtitle": "نوع مودی، اینتاکد و اتصال مودیان را یک‌بار تنظیم کنید.",
+		"accounting.taxWizard.stepOf": "گام {{step}} از {{total}}",
+		"accounting.taxWizard.taxpayerType": "نوع مودی",
+		"accounting.taxWizard.individual": "حقیقی",
+		"accounting.taxWizard.corporate": "حقوقی",
+		"accounting.taxWizard.company": "نام شرکت / کسب‌وکار",
+		"accounting.taxWizard.economic": "شناسه اقتصادی",
+		"accounting.taxWizard.nationalId": "کد ملی / شناسه ملی",
+		"accounting.taxWizard.postal": "کد پستی",
+		"accounting.taxWizard.tracking": "کد پیگیری پرونده مالیاتی",
+		"accounting.taxWizard.intaSearch": "جستجوی اینتاکد",
+		"accounting.taxWizard.intaCode": "اینتاکد",
+		"accounting.taxWizard.profitRatio": "نسبت سود (%)",
+		"accounting.taxWizard.corporateRate": "نرخ مالیات شرکتی (%)",
+		"accounting.taxWizard.transport": "مسیر ارسال مودیان",
+		"accounting.taxWizard.transportDirect": "مستقیم (self-tsp)",
+		"accounting.taxWizard.transportTsp": "شرکت معتمد (TSP)",
+		"accounting.taxWizard.tspUrl": "آدرس پایه TSP",
+		"accounting.taxWizard.tspKey": "کلید API معتمد",
+		"accounting.taxWizard.summaryVat": "نرخ عمومی VAT",
+		"accounting.taxWizard.disclaimer": "نرخ‌ها از جداول نسخه‌دار ماژول می‌آیند؛ بخشنامه‌های جدید را از سایت سازمان چک کنید.",
+		"accounting.taxWizard.finish": "پایان و ورود به کابین",
+		"accounting.taxWizard.done": "پیکربندی مالیات ذخیره شد",
+		"accounting.taxWizard.reopen": "ویزارد پیکربندی",
 		"accounting.nav.payroll": "حقوق",
 		"accounting.nav.projects": "پروژه‌ها",
 		"accounting.nav.reports": "گزارش‌ها",
@@ -9641,7 +9955,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.shopSms.syncPattern": "ثبت/همگام پترن",
 		"settings.shopSms.bindPattern": "اتصال کد پترن موجود",
 		"settings.shopSms.patternSynced": "پترن همگام شد.",
-		"settings.shopSms.patternOnlyHint": "ارسال پیامک سفارش فقط از طریق پترن تأییدشده انجام می‌شود.",
+		"settings.shopSms.patternOnlyHint": "ارسال پیامک سفارش (مشتری و مدیر) فقط از طریق پترن تأییدشده و فقط وقتی سوییچ همان وضعیت روشن باشد.",
 		"settings.shopSms.eventColumn": "رویداد / وضعیت",
 		"settings.shopSms.patternColumn": "پترن",
 		"settings.shopSms.patternCode": "کد پترن",
@@ -9680,6 +9994,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.shopSms.events.courier": "تحویل پیک",
 		"settings.shopSms.events.post": "تحویل پست",
 		"settings.shopSms.events.tipax": "تحویل تیپاکس",
+		"settings.shopSms.events.chapar": "تحویل چاپار",
+		"settings.shopSms.events.other": "سایر (رهگیری)",
 		"settings.shopSms.events.on-hold": "در انتظار بررسی",
 		"settings.shopSms.events.completed": "تکمیل شده",
 		"settings.shopSms.events.cancelled": "لغو شده",
@@ -9708,6 +10024,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.shopSms.recoveryExpires": "انقضا (روز)",
 		"settings.shopSms.recoveryUsage": "حد مصرف",
 		"settings.shopSms.postBarcodeMergedHint": "با ثبت بارکد پستی هم از همین پترن «تحویل پست» استفاده می‌شود.",
+		"settings.shopSms.trackingVarsHint": "برای رهگیری از متغیرهای {tracking} و {tracking_url} در پترن استفاده کنید.",
+		"settings.shopSms.posPaymentVarsHint": "برای پیامک پرداخت صندوق، متغیرهای پترن را به {customer_name} (اسم)، {customer_phone} (شماره) و {payment_url} (لینک) وصل کنید. معادل‌ها: {name}، {phone}/{mobile}، {link}/{payment_link}. اختیاری: {pattern_code}.",
 		"settings.site.fieldSiteTitle": "عنوان سایت",
 		"settings.site.fieldTagline": "شعار",
 		"settings.site.fieldAdminEmail": "ایمیل مدیر",
@@ -9779,7 +10097,19 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.shop.shippingNewZone": "نام منطقه جدید",
 		"settings.shop.shippingAddZone": "افزودن منطقه",
 		"settings.shop.shippingMethodCount": "{{count}} روش",
+		"settings.shop.shippingLocationCount": "{{count}} موقعیت",
 		"settings.shop.shippingOptions": "گزینه‌های حمل",
+		"settings.shop.shippingEditZone": "ویرایش منطقه",
+		"settings.shop.shippingZoneName": "نام منطقه",
+		"settings.shop.shippingLocations": "محدوده جغرافیایی",
+		"settings.shop.shippingLocIran": "کل ایران (کشور)",
+		"settings.shop.shippingPostcode": "کدپستی / شهر (اختیاری)",
+		"settings.shop.shippingRestOfWorldHint": "منطقه «بقیه جهان» فقط روش‌های حمل را می‌پذیرد.",
+		"settings.shop.shippingMethods": "روش‌های حمل‌ونقل",
+		"settings.shop.shippingPickMethod": "انتخاب روش…",
+		"settings.shop.shippingAddMethod": "افزودن روش",
+		"settings.shop.shippingNoMethods": "هنوز روشی اضافه نشده.",
+		"settings.shop.shippingMethodEnabled": "فعال‌سازی روش",
 		"settings.shop.gatewayEnabled": "فعال‌سازی درگاه",
 		"settings.shop.emailEnabled": "فعال‌سازی ایمیل",
 		"settings.shop.emailGlobal": "تنظیمات فرستنده ایمیل",
@@ -9822,6 +10152,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"common.nextPage": "صفحهٔ بعد",
 		"common.emptyValue": "—",
 		"common.cancel": "انصراف",
+		"common.confirm": "تأیید",
 		"common.back": "بازگشت",
 		"common.unlimited": "نامحدود",
 		"settings.langEn": "English",
@@ -10662,6 +10993,25 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.total": "جمع",
 		"orders.newStatus": "وضعیت جدید",
 		"orders.applyStatus": "اعمال وضعیت",
+		"orders.statusPipeline": "مراحل سفارش",
+		"orders.statusStep.processing": "پردازش",
+		"orders.statusStep.packaged": "بسته‌بندی",
+		"orders.statusStep.ready": "آماده ارسال",
+		"orders.statusStep.ship": "ارسال",
+		"orders.statusStep.completed": "تکمیل",
+		"orders.statusConfirmTitle": "تغییر وضعیت سفارش",
+		"orders.statusConfirmBody": "وضعیت از «{{from}}» به «{{to}}» تغییر کند؟",
+		"orders.cancelOrder": "لغو سفارش",
+		"orders.cancelConfirmTitle": "تأیید لغو سفارش",
+		"orders.cancelConfirmInstallment": "این سفارش اقساطی است. با لغو، مبلغ به‌صورت خودکار توسط درگاه پرداخت به حساب مشتری برمی‌گردد و نیازی به اقدام دستی نیست.",
+		"orders.cancelConfirmCash": "این سفارش نقدی است. با لغو، استرداد وجه را باید به‌صورت دستی انجام دهید{{gateway}}.",
+		"orders.cancelConfirmCashGateway": " (درگاه: {{gateway}})",
+		"orders.printMore": "سایر چاپ‌ها",
+		"orders.otherStatuses": "سایر وضعیت‌ها",
+		"orders.shipDialog.title": "ارسال سفارش",
+		"orders.shipDialog.description": "کد رهگیری را وارد کنید و در صورت نیاز پیامک را برای مشتری بفرستید.",
+		"orders.shipDialog.open": "ثبت / ارسال رهگیری",
+		"orders.shipDialog.noTrackingYet": "هنوز کد رهگیری ثبت نشده است.",
 		"orders.wcStatus.pending": "در انتظار",
 		"orders.wcStatus.processing": "در حال پردازش",
 		"orders.wcStatus.on-hold": "معلق",
@@ -10772,10 +11122,18 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.printStoreLabel": "چاپ برچسب فروشگاه",
 		"orders.printNewLabels": "چاپ لیبل سفارش‌های جدید",
 		"orders.printNewLabelsEmpty": "سفارش پردازش‌شده یا در انتظار بدون لیبل چاپ‌نشده پیدا نشد.",
-		"orders.panelTracking": "رهگیری پست",
+		"orders.panelTracking": "رهگیری سفارش",
 		"orders.trackingCode": "کد رهگیری",
 		"orders.trackingProvider": "ارائه‌دهنده",
 		"orders.trackingLink": "پیگیری مرسوله",
+		"orders.selectTrackingProvider": "انتخاب ارائه‌دهنده",
+		"orders.trackingProviderWithPattern": "{{title}} — پترن: {{pattern}}",
+		"orders.trackingProviderPatternBound": "{{title}} — پترن متصل",
+		"orders.trackingNoActiveProviders": "هیچ ارائه‌دهنده‌ای با پترن پیامک متصل نیست. ابتدا در تنظیمات پیامک پترن پست/پیک/تیپاکس/چاپار/سایر را بایند کنید.",
+		"orders.sendTrackingSms": "ارسال پیامک رهگیری",
+		"orders.trackingSmsSent": "پیامک رهگیری ارسال شد",
+		"orders.trackingSmsNeedCodeProvider": "کد رهگیری و ارائه‌دهنده را مشخص کنید",
+		"orders.trackingSmsNoPattern": "برای این ارائه‌دهنده پترن پیامک متصل نیست",
 		"orders.deliverySlot": "زمان تحویل",
 		"orders.panelDigipay": "دیجی‌پی",
 		"orders.digipayTransaction": "شناسه تراکنش",
@@ -10785,7 +11143,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.digipayGateway": "درگاه",
 		"orders.digipayDelivered": "تحویل به دیجی‌پی",
 		"digipay.settingsTitle": "تنظیمات دیجی‌پی",
-		"digipay.settingsSubtitle": "تنظیمات اتصال، محیط اجرا و لاگ تراکنش‌های DigiPay UPG.",
+		"digipay.settingsSubtitle": "تنظیمات اتصال، محیط اجرا و لاگ تراکنش‌های دیجی‌پی.",
 		"digipay.transactionsTitle": "تراکنش‌های دیجی‌پی",
 		"digipay.testConnection": "تست اتصال",
 		"digipay.testSuccess": "اتصال با موفقیت برقرار شد",
@@ -10800,8 +11158,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"digipay.status.ok": "موفق",
 		"digipay.status.failed": "ناموفق",
 		"digipay.field.version": "نسخه دیجی‌پی",
-		"digipay.field.clientId": "شناسه کلاینت",
-		"digipay.field.clientSecret": "سکرت کلاینت",
+		"digipay.field.clientId": "شناسه کاربری درگاه",
+		"digipay.field.clientSecret": "رمز مخفی",
 		"digipay.field.username": "نام کاربری",
 		"digipay.field.password": "رمز عبور",
 		"digipay.field.sellerId": "شناسه فروشنده",
@@ -10846,6 +11204,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.historyAov": "میانگین سفارش",
 		"orders.stats.orders": "سفارش‌ها",
 		"orders.stats.revenue": "فروش",
+		"orders.stats.periodMonth": "بازه آماری: ماه جاری ({{label}})",
+		"orders.stats.periodCustom": "بازه آماری: {{after}} تا {{before}}",
 		"orders.stats.aov": "میانگین سفارش",
 		"orders.stats.processing": "در حال پردازش",
 		"orders.stats.completed": "تکمیل‌شده",
@@ -10879,6 +11239,17 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.contact.openUser": "مشاهده کاربر",
 		"orders.panelSmsHistory": "تاریخچه پیامک",
 		"orders.smsHistoryEmpty": "پیامکی برای این سفارش ثبت نشده.",
+		"orders.smsRole.customer": "مشتری",
+		"orders.smsRole.admin": "مدیر",
+		"orders.smsReason.event_off": "سوییچ وضعیت برای این نقش خاموش است.",
+		"orders.smsReason.disabled": "پنل پیامک فروشگاه غیرفعال است.",
+		"orders.smsReason.no_phone": "شماره مشتری ثبت نشده.",
+		"orders.smsReason.no_admin_phone": "شماره مدیر تنظیم نشده.",
+		"orders.smsReason.pattern_missing": "الگوی همگام‌سازی‌شده برای این وضعیت وجود ندارد.",
+		"orders.smsReason.template_missing": "قالب پیامک یافت نشد.",
+		"orders.smsReason.empty_template": "متن قالب خالی است.",
+		"orders.smsReason.insufficient_balance": "اعتبار پیامک کافی نیست.",
+		"orders.smsReason.send_failed": "ارسال ناموفق بود.",
 		"orders.smsStatus.delivered": "رسیده",
 		"orders.smsStatus.sent": "ارسال‌شده",
 		"orders.smsStatus.queued": "در صف",
@@ -10924,6 +11295,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.comparePrevious": "مقایسه با دوره قبل",
 		"reports.comparePeriod": "دوره قبل",
 		"reports.statusFilter": "وضعیت سفارش",
+		"reports.statusFilterHint": "خالی = همه فروش‌های موفق (بدون لغو، ناموفق، در انتظار پرداخت و استرداد).",
 		"reports.exportCsv": "خروجی CSV",
 		"reports.deltaNew": "جدید",
 		"reports.preset.today": "امروز",
@@ -10943,6 +11315,9 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.status.cancelled": "لغو شده",
 		"reports.status.refunded": "استرداد شده",
 		"reports.status.failed": "ناموفق",
+		"reports.status.webino-packaged": "بسته‌بندی‌شده",
+		"reports.status.webino-ready-to-ship": "آماده ارسال",
+		"reports.status.webino-shipping": "در حال ارسال",
 		"reports.kpi.revenue": "درآمد ناخالص",
 		"reports.kpi.netRevenue": "درآمد خالص",
 		"reports.kpi.orders": "تعداد سفارش",
@@ -10993,7 +11368,65 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.heatmap.legendMax": "بیشتر",
 		"reports.wfcpDisabledHint": "WFCP غیرفعال",
 		"reports.cogsApproxHint": "قیمت خرید از متای فعلی محصول است، نه snapshot زمان سفارش.",
+		"salePrices.title": "قیمت خط‌خورده",
+		"salePrices.banner": "تخفیف فقط روی محصولات این لیست اعمال می‌شود. محصولات بایگانی‌شده یا در انتظار تأیید در این لیست نیستند.",
+		"salePrices.selectHint": "محصولات را انتخاب کنید",
+		"salePrices.selectedCount": "{{count}} محصول انتخاب شده",
+		"salePrices.selectAllPage": "انتخاب همهٔ این صفحه",
+		"salePrices.needSelection": "حداقل یک محصول را انتخاب کنید",
+		"salePrices.empty": "محصولی یافت نشد",
+		"salePrices.apply": "اعمال تخفیف",
+		"salePrices.remove": "حذف تخفیف",
+		"salePrices.applyAllFiltered": "اعمال روی همهٔ فیلترشده",
+		"salePrices.removeAllFiltered": "حذف از همهٔ فیلترشده",
+		"salePrices.applyTitle": "اعمال تخفیف",
+		"salePrices.percent": "درصد تخفیف",
+		"salePrices.percentPlaceholder": "مثلا ۱۰ درصد",
+		"salePrices.durationLabel": "مدت اعتبار تخفیف",
+		"salePrices.duration.1d": "۱ روز",
+		"salePrices.duration.3d": "۳ روز",
+		"salePrices.duration.1w": "۱ هفته",
+		"salePrices.duration.1m": "۱ ماه",
+		"salePrices.duration.custom": "مدت دلخواه",
+		"salePrices.previewCta": "پیش‌نمایش قیمت‌های خط‌خورده",
+		"salePrices.confirmApply": "تأیید و اعمال تخفیف",
+		"salePrices.previewCount": "{{count}} محصول مشمول",
+		"salePrices.applyDone": "{{ok}} محصول به‌روز شد (رد شده: {{skipped}})",
+		"salePrices.removeDone": "تخفیف از {{ok}} محصول حذف شد",
+		"salePrices.removeConfirmTitle": "حذف تخفیف؟",
+		"salePrices.removeConfirmBody": "قیمت فروش و تاریخ‌های تخفیف از محصولات انتخاب‌شده پاک می‌شود.",
 		"coupons.title": "کدهای تخفیف",
+		"coupons.builder.title": "کوپن‌ساز",
+		"coupons.builder.publicNote": "همه مشتری‌ها کوپنت رو می‌بینن؛ مشتری توی هر سفارش فقط از یک کوپن می‌تونه استفاده کنه؛ وقتی شرایط برقرار باشه کوپن بدون نیاز به کد روی سبد اعمال می‌شه.",
+		"coupons.builder.create": "ساخت کوپن",
+		"coupons.builder.advanced": "حالت تخصصی",
+		"coupons.builder.classicList": "لیست کلاسیک",
+		"coupons.builder.wizardTitle": "ساخت سریع کوپن",
+		"coupons.builder.wizardHint": "برای هر کوپن فقط یک شرط انتخاب کن.",
+		"coupons.builder.conditionType": "شرط کوپن",
+		"coupons.builder.conditionValue": "مقدار شرط",
+		"coupons.builder.rewardType": "نوع پاداش",
+		"coupons.builder.rewardAmount": "مقدار پاداش",
+		"coupons.builder.cond.orderNth": "تعداد دفعات سفارش",
+		"coupons.builder.cond.minAmount": "حداقل مبلغ سفارش",
+		"coupons.builder.cond.minItems": "حداقل تعداد اقلام",
+		"coupons.builder.reward.fixed": "تخفیف ثابت",
+		"coupons.builder.reward.percent": "تخفیف درصدی",
+		"coupons.builder.reward.freeShip": "ارسال رایگان",
+		"coupons.builder.reward.shipPct": "درصد تخفیف ارسال",
+		"coupons.builder.publish": "انتشار کوپن",
+		"coupons.builder.suggested": "کوپن‌های پیشنهادی",
+		"coupons.builder.suggestedHint": "می‌تونی کوپن‌های پیشنهادی رو انتخاب و به کوپن‌هات اضافه کنی.",
+		"coupons.builder.owned": "کوپن‌های فروشگاه",
+		"coupons.builder.ownedEmpty": "هنوز کوپن پیشنهادی یا سازنده‌ای اضافه نکرده‌ای.",
+		"coupons.builder.less": "کمتر",
+		"coupons.builder.more": "بیشتر",
+		"coupons.builder.youHave": "این کوپن رو داری",
+		"coupons.builder.addSuggested": "افزودن به کوپن‌ها",
+		"coupons.builder.added": "کوپن اضافه شد",
+		"coupons.builder.alreadyOwned": "این کوپن از قبل وجود دارد",
+		"coupons.builder.customDesc": "کوپن ساخته‌شده از کوپن‌ساز",
+		"coupons.builder.upTo": "تا {{amount}} تومان",
 		"coupons.create": "کوپن جدید",
 		"coupons.amount": "مبلغ",
 		"coupons.submitCreate": "ایجاد",
@@ -11232,6 +11665,79 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.smsModirpayamakPanel": "باز کردن پنل پیامکی",
 		"marketing.sms.serviceUnavailable": "سرویس پیامک در دسترس نیست. می‌توانید صفحه را ببینید؛ ارسال و شارژ پس از برقراری اتصال فعال می‌شود.",
 		"marketing.sms.dashboardTitle": "پنل پیامکی",
+		"marketing.smsAds.heroTitle": "با هر پیامک شانس فروشت رو بیشتر کن",
+		"marketing.smsAds.heroDesc": "اینجا می‌تونی پیامک‌های هدفمند بفرستی تا مشتری‌های بیشتری باهات آشنا بشن.",
+		"marketing.smsAds.createCta": "ایجاد تبلیغ پیامکی",
+		"marketing.smsAds.bannerVolume": "۱٬۰۰۰+ پیامک در ماه",
+		"marketing.smsAds.bannerVolumeDesc": "هر ماه فروشگاه‌ها پیامک‌هاشون رو از قبل رزرو می‌کنن تا ارتباطشون با مشتری قطع نشه.",
+		"marketing.smsAds.bannerSegments": "ارسال به گروه‌های هدف",
+		"marketing.smsAds.bannerSegmentsDesc": "گروه هدف مناسب رو انتخاب کن؛ تبلیغ پیامکیت دقیق اجرا می‌شه.",
+		"marketing.smsAds.bannerCopy": "اختیار کامل روی متن",
+		"marketing.smsAds.bannerCopyDesc": "می‌تونی پیامک‌هات رو از متن‌های آماده انتخاب کنی یا خودت بنویسی.",
+		"marketing.smsAds.campaignsTitle": "تبلیغات اخیر",
+		"marketing.smsAds.noCampaigns": "هنوز تبلیغی نساختی.",
+		"marketing.smsAds.wizardTitle": "ایجاد تبلیغ پیامکی و نوتیفیکیشن",
+		"marketing.smsAds.detailTitle": "آمار تبلیغ پیامکی",
+		"marketing.smsAds.stepTarget": "گروه هدف",
+		"marketing.smsAds.stepSettings": "تنظیمات",
+		"marketing.smsAds.stepPay": "پرداخت",
+		"marketing.smsAds.whoQuestion": "تبلیغت برای چه گروهی ارسال بشه؟",
+		"marketing.smsAds.seg.system_suggest.title": "پیشنهاد سیستم",
+		"marketing.smsAds.seg.system_suggest.desc": "بهترین گروه‌ها مثل سبد رهاشده و خریداران دسته‌های پرفروش.",
+		"marketing.smsAds.seg.retarget.title": "هدف‌گیری مجدد مشتریان",
+		"marketing.smsAds.seg.retarget.desc": "با یادآوری به‌موقع، مشتری‌های قبلی رو برگردون.",
+		"marketing.smsAds.seg.acquire.title": "جذب مشتری جدید",
+		"marketing.smsAds.seg.acquire.desc": "مشترکین خبرنامه که هنوز خرید نکردن.",
+		"marketing.smsAds.seg.city_customers.title": "همشهری‌های مشتری",
+		"marketing.smsAds.seg.city_customers.desc": "مشتریانی که شهر صورتحساب‌شان با شهر فروشگاه یکی است.",
+		"marketing.smsAds.seg.all_city.title": "همه همشهری‌ها",
+		"marketing.smsAds.seg.all_city.desc": "همه مخاطبین همان شهر، حتی بدون خرید قبلی.",
+		"marketing.smsAds.seg.vip_buyers.title": "مشتریان وفادار",
+		"marketing.smsAds.seg.vip_buyers.desc": "خریدارانی با حداقل ۳ سفارش موفق.",
+		"marketing.smsAds.seg.followers.title": "دنبال‌کنندگان / خبرنامه",
+		"marketing.smsAds.seg.followers.desc": "مشترکین خبرنامه و دفترچه تلفن.",
+		"marketing.smsAds.segmentCount": "{{count}} مخاطب",
+		"marketing.smsAds.nameLabel": "نام تبلیغ‌ت رو بنویس",
+		"marketing.smsAds.nameHint": "نام تبلیغ فقط برای خودت قابل مشاهده است.",
+		"marketing.smsAds.channelLabel": "تبلیغت از چه طریقی ارسال بشه؟",
+		"marketing.smsAds.channelSms": "پیامک",
+		"marketing.smsAds.channelNotif": "نوتیفیکیشن",
+		"marketing.smsAds.dateLabel": "تاریخ اجرای تبلیغ رو تنظیم کن",
+		"marketing.smsAds.dateHint": "از فردا می‌تونی رزرو کنی.",
+		"marketing.smsAds.contentLabel": "چه محتوایی رو می‌خوای تبلیغ کنی؟",
+		"marketing.smsAds.content.product": "محصول",
+		"marketing.smsAds.content.category": "دسته‌بندی",
+		"marketing.smsAds.productId": "شناسه محصول",
+		"marketing.smsAds.categoryId": "شناسه دسته",
+		"marketing.smsAds.messageLabel": "متن پیامک",
+		"marketing.smsAds.messagePlaceholder": "متن تبلیغ… از {link} و {coupon} می‌تونی استفاده کنی.",
+		"marketing.smsAds.messageHint": "لینک محصول/دسته با UTM خودکار اضافه می‌شود.",
+		"marketing.smsAds.couponOptional": "کد تخفیف (اختیاری)",
+		"marketing.smsAds.recipients": "تعداد مخاطب",
+		"marketing.smsAds.unitPrice": "نرخ واحد",
+		"marketing.smsAds.volumeDiscount": "تخفیف پلکانی",
+		"marketing.smsAds.total": "مبلغ کل",
+		"marketing.smsAds.refreshQuote": "بروزرسانی برآورد هزینه",
+		"marketing.smsAds.prev": "مرحله قبل",
+		"marketing.smsAds.next": "مرحله بعد",
+		"marketing.smsAds.confirmPay": "تأیید و رزرو تبلیغ",
+		"marketing.smsAds.created": "تبلیغ رزرو شد",
+		"marketing.smsAds.notFound": "تبلیغ پیدا نشد",
+		"marketing.smsAds.backHome": "بازگشت به پنل پیامک",
+		"marketing.smsAds.attributedOrders": "سفارش‌های نسبت‌داده‌شده",
+		"marketing.smsAds.noOrders": "هنوز سفارشی با این کمپین ثبت نشده.",
+		"marketing.smsAds.kpi.sent": "ارسال‌شده",
+		"marketing.smsAds.kpi.failed": "ناموفق",
+		"marketing.smsAds.kpi.cost": "هزینه",
+		"marketing.smsAds.kpi.orders": "سفارش",
+		"marketing.smsAds.kpi.revenue": "درآمد",
+		"marketing.smsAds.kpi.roas": "ROAS",
+		"marketing.smsAds.kpi.conversion": "نرخ تبدیل",
+		"marketing.smsAds.status.scheduled": "زمان‌بندی‌شده",
+		"marketing.smsAds.status.sending": "در حال ارسال",
+		"marketing.smsAds.status.sent": "ارسال‌شده",
+		"marketing.smsAds.status.failed": "ناموفق",
+		"marketing.smsAds.status.cancelled": "لغو شده",
 		"marketing.botBroadcast": "پیام همگانی ربات",
 		"marketing.botCampaigns": "کمپین‌های ربات",
 		"marketing.sms.dashboardDesc": "موجودی، ارسال و گزارش از طریق پنل پیامکی.",
@@ -11431,6 +11937,13 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"analytics.period7": "۷ روز",
 		"analytics.period30": "۳۰ روز",
 		"analytics.period90": "۹۰ روز",
+		"analytics.periodPreset.thisMonth": "این ماه",
+		"analytics.periodPreset.lastMonth": "ماه قبل",
+		"analytics.periodPreset.last7": "۷ روز",
+		"analytics.periodPreset.last30": "۳۰ روز",
+		"analytics.periodPreset.custom": "سفارشی",
+		"analytics.dateFrom": "از تاریخ",
+		"analytics.dateTo": "تا تاریخ",
 		"analytics.chartTitle": "درآمد روزانه",
 		"analytics.emptyChart": "برای این بازه داده‌ای نیست.",
 		"analytics.settings.tracking": "ردیابی",
@@ -12032,6 +12545,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"marketplace.module.ai-content-module": "محتوای هوش مصنوعی",
 		"marketplace.module.ai-content-module-settings": "تنظیمات هوش مصنوعی",
 		"marketplace.module.wnc-core-module": "بازارچه",
+		"marketplace.module.security-module": "امنیت",
+		"marketplace.module.bots-hub": "ربات‌ها",
 		"wfcp.tab.digikala": "دیجیکالا",
 		"wfcp.tab.basalam": "باسلام",
 		"wfcp.tab.technolife": "تکنولایف",
@@ -12089,11 +12604,18 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"wnc.cred.order_status_enabled": "درگاه وضعیت سفارش",
 		"wnc.cred.orders_list_api_enabled": "API لیست سفارش‌های ترب",
 		"wnc.cred.product_page_webhook_enabled": "وب‌هوک تغییرات محصول",
+		"wnc.cred.action_tracking_enabled": "API ردیابی اکشن (خرید)",
+		"wnc.cred.expand_variations": "هر متغیر به‌عنوان محصول جدا (نام + ویژگی)",
 		"wnc.torobPreview": "پیش‌نمایش محصولات فید",
 		"wnc.torobQueue": "صف وب‌هوک محصول",
 		"wnc.torobQueuePending": "در انتظار",
 		"wnc.torobQueueLast": "آخرین اجرا",
 		"wnc.torobQueueNext": "اجرای بعدی",
+		"wnc.torobProductsV3Url": "Product API v3 (POST، Torob-Sync)",
+		"wnc.torobProductsLegacyUrl": "فید قدیمی محصول (POST wcpe)",
+		"wnc.torobActionsUrl": "API ردیابی اکشن (GET /torob/v1/actions)",
+		"wnc.torobSetTokenUrl": "ثبت توکن وب‌هوک (POST set-token)",
+		"wnc.torobOrdersListLegacyUrl": "لیست سفارش قدیمی (GET torob-api)",
 		"wnc.autoSync": "همگام‌سازی خودکار قیمت/موجودی",
 		"wnc.noCredentialsYet": "اطلاعات اتصال را وارد کنید.",
 		"wnc.cred.base_url": "آدرس پایه (base URL)",
@@ -12685,6 +13207,25 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.financial.allPayments": "همه درگاه‌ها",
 		"reports.financial.allUtm": "همه",
 		"reports.financial.directNone": "مستقیم / بدون UTM",
+		"reports.utm.direct": "مستقیم",
+		"reports.utm.instagram": "اینستاگرام",
+		"reports.utm.torob": "ترب",
+		"reports.utm.torobpay": "ترب‌پی",
+		"reports.utm.snapppay": "اسنپ‌پی",
+		"reports.utm.google": "گوگل",
+		"reports.utm.telegram": "تلگرام",
+		"reports.utm.facebook": "فیسبوک",
+		"reports.utm.basalam": "باسلام",
+		"reports.utm.digikala": "دیجیکالا",
+		"reports.utm.snappshop": "اسنپ‌شاپ",
+		"reports.utm.tapsishop": "تپسی‌شاپ",
+		"reports.utm.technolife": "تکنولایف",
+		"reports.utm.emalls": "ایمالز",
+		"reports.utm.zarehbin": "ذره‌بین",
+		"reports.utm.organic": "ارگانیک",
+		"reports.utm.referral": "ارجاعی",
+		"reports.utm.email": "ایمیل",
+		"reports.utm.sms": "پیامک",
 		"reports.financial.ordersFor": "سفارشات — {label}",
 		"reports.financial.clearFilters": "پاک کردن فیلترها",
 		"reports.table.aov": "میانگین سفارش",
@@ -12760,6 +13301,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.stockFilter.outofstock": "ناموجود",
 		"reports.stockFilter.lowstock": "موجودی کم",
 		"reports.stockFilter.missing_cost": "بدون قیمت خرید",
+		"reports.stockFilter.onbackorder": "پیش‌سفارش",
+		"reports.stock.categoryAll": "همه دسته‌ها",
 		"reports.stock.valueBy.purchase": "بر اساس خرید",
 		"reports.stock.valueBy.retail": "بر اساس نقدی",
 		"reports.stock.valueBy.current": "بر اساس قیمت فعلی",
@@ -13094,6 +13637,10 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"marketplace.badge.snappshop": "اسنپ‌شاپ",
 		"marketplace.badge.tapsishop": "تپسی‌شاپ",
 		"marketplace.badge.technolife": "تکنولایف",
+		"marketplace.badge.torob": "ترب",
+		"marketplace.badge.emalls": "ایمالز",
+		"marketplace.badge.zarehbin": "ذره‌بین",
+		"marketplace.badge.snapppay-search": "اسنپ‌پی سرچ",
 		"digikala.settingsTitle": "تنظیمات دیجیکالا",
 		"digikala.settingsSubtitle": "کد کلاینت، آدرس پایه، همگام‌سازی خودکار.",
 		"digikala.settingsSaved": "تنظیمات ذخیره شد.",
@@ -13110,6 +13657,28 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"marketing.sms.statuses.error": "خطا",
 		"marketing.sms.statuses.processing": "در حال پردازش",
 		"marketing.sms.statuses.rejected": "رد شده",
+		"marketing.sms.statuses.creating": "در حال ایجاد",
+		"marketing.sms.statuses.invalid_recipients": "گیرنده نامعتبر",
+		"marketing.sms.statuses.send_queue": "صف ارسال",
+		"marketing.sms.statuses.insufficient_credit": "اعتبار ناکافی",
+		"marketing.sms.statuses.finish": "پایان یافته",
+		"marketing.sms.statuses.finished": "پایان یافته",
+		"marketing.sms.statuses.skipped": "رد شده (بدون ارسال)",
+		"marketing.sms.senderLine": "خط ارسال",
+		"marketing.sms.recipientsCount": "تعداد گیرنده",
+		"marketing.sms.exitCount": "خروجی موفق",
+		"marketing.sms.stateId": "کد وضعیت",
+		"marketing.sms.event": "رویداد",
+		"marketing.sms.role": "نقش",
+		"marketing.sms.details": "جزئیات",
+		"marketing.sms.outboxDetail": "جزئیات ارسال",
+		"marketing.sms.valid": "تأیید مانیتورینگ",
+		"marketing.sms.part": "تعداد بخش",
+		"marketing.sms.seen": "خوانده‌شده",
+		"marketing.sms.unseen": "خوانده‌نشده",
+		"marketing.sms.toLine": "خط دریافت",
+		"marketing.sms.refresh": "بروزرسانی",
+		"marketing.sms.pageOf": "صفحه {{page}}",
 		"marketing.sms.goToWallet": "رفتن به کیف پول",
 		"marketing.sms.editDraft": "ویرایش",
 		"marketing.sms.phonebookDeleteUnavailable": "حذف دفترچه/مخاطب هنوز در API موجود نیست.",
@@ -13523,6 +14092,9 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"pos.customerSearch": "جستجو با موبایل یا نام…",
 		"pos.newPhone": "موبایل",
 		"pos.newName": "نام",
+		"pos.newFirstName": "نام",
+		"pos.newLastName": "نام خانوادگی",
+		"pos.customerHint": "مشتری موجود را انتخاب کنید، یا با موبایل و نام، مشتری جدید بسازید.",
 		"pos.channel": "کانال فروش",
 		"pos.channel.in_store": "حضوری",
 		"pos.channel.phone": "تلفنی",
@@ -13538,6 +14110,12 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"pos.tender.pos_terminal": "کارتخوان",
 		"pos.tender.online": "آنلاین",
 		"pos.tender.other": "سایر",
+		"pos.tender.payment_sms": "ارسال پیامک پرداخت",
+		"pos.paymentSms.hint": "لینک پرداخت فقط همین سفارش ساخته می‌شود و از پنل پیامک فروشگاه برای مشتری ارسال می‌گردد.",
+		"pos.paymentSms.checkout": "ثبت و ارسال پیامک پرداخت",
+		"pos.paymentSms.sent": "سفارش #{{id}} ثبت شد — پیامک پرداخت ارسال شد",
+		"pos.paymentSms.failed": "سفارش #{{id}} ثبت شد ولی پیامک ارسال نشد: {{error}}",
+		"pos.paymentSms.createdNoSms": "سفارش #{{id}} ثبت شد — لینک پرداخت آماده است (پیامک ارسال نشد)",
 		"pos.showExtras": "نمایش تخفیف / ارسال",
 		"pos.hideExtras": "مخفی کردن موارد اضافی",
 		"pos.discount": "تخفیف",
@@ -13617,10 +14195,973 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"accounting.backup": "پشتیبان ZIP",
 		"accounting.exportCsv": "خروجی CSV فاکتورها",
 		"accounting.calculator": "ماشین‌حساب نمونه ٪",
-		"accounting.moadianProxy": "پروکسی HTTP (هاست خارج)"
+		"accounting.moadianProxy": "پروکسی HTTP (هاست خارج)",
+		"security.overviewTitle": "امنیت",
+		"security.firewallTitle": "فایروال",
+		"security.liveTrafficTitle": "ترافیک زنده",
+		"security.rulesTitle": "قوانین فایروال",
+		"security.blockingTitle": "لیست مسدود و مجاز",
+		"security.scanTitle": "اسکن سایت",
+		"security.scanJobTitle": "کار اسکن",
+		"security.toolsTitle": "ابزارهای امنیت",
+		"security.toolTitle": "ابزار",
+		"security.reportsTitle": "گزارش‌ها",
+		"security.reportDetailTitle": "جزئیات گزارش",
+		"security.settingsTitle": "تنظیمات امنیت",
+		"security.navOverview": "نمای کلی",
+		"security.navFirewall": "فایروال",
+		"security.navScan": "اسکن سایت",
+		"security.navTools": "ابزارها",
+		"security.navReports": "گزارش‌ها",
+		"security.navSettings": "تنظیمات",
+		"security.wizardTitle": "تکمیل راه‌اندازی امنیت",
+		"security.wizardHint": "تنظیمات را بررسی کنید و ویزارد اولین اجرا را تکمیل کنید.",
+		"security.wizardCta": "باز کردن تنظیمات",
+		"security.wizardSettingsHint": "یک پروفایل اعمال کنید، گزینه‌های کلیدی را تنظیم کنید، سپس راه‌اندازی را تکمیل کنید.",
+		"security.wizardComplete": "علامت‌گذاری تکمیل راه‌اندازی",
+		"security.wizardCompleted": "راه‌اندازی تکمیل شد",
+		"security.kpi.score": "امتیاز امنیت",
+		"security.kpi.blocks24h": "مسدودسازی (۲۴ ساعت)",
+		"security.kpi.openFindings": "یافته‌های باز",
+		"security.kpi.wafMode": "حالت WAF",
+		"security.lastScanTitle": "آخرین اسکن",
+		"security.noScanYet": "هنوز اسکنی اجرا نشده است.",
+		"security.viewScan": "مشاهده اسکن",
+		"security.findingsBySeverity": "یافته‌های باز بر اساس شدت",
+		"security.findingsCount": "{{count}} یافته",
+		"security.feedFreshness": "تازگی فیدهای تهدید",
+		"security.manageFeeds": "مدیریت فیدها",
+		"security.noFeeds": "وضعیت فیدی ثبت نشده است.",
+		"security.feedSummary": "{{total}} فید · {{stale}} با خطا",
+		"security.feedStale": "کهنه",
+		"security.feedOk": "سالم",
+		"security.never": "هرگز",
+		"security.yes": "بله",
+		"security.no": "خیر",
+		"security.active": "فعال",
+		"security.inactive": "غیرفعال",
+		"security.wafMode.off": "خاموش",
+		"security.wafMode.learning": "یادگیری",
+		"security.wafMode.enforce": "اجرا",
+		"security.severity.critical": "بحرانی",
+		"security.severity.high": "بالا",
+		"security.severity.medium": "متوسط",
+		"security.severity.low": "پایین",
+		"security.severity.info": "اطلاع",
+		"security.firewall.enabled": "WAF فعال",
+		"security.firewall.bypass": "دور زدن اضطراری",
+		"security.firewall.bypassActive": "دور زدن فعال",
+		"security.firewall.bypassOff": "عادی",
+		"security.firewall.layers": "لایه‌های محافظت",
+		"security.firewall.noLayers": "وضعیت لایه در دسترس نیست.",
+		"security.filterAction": "اقدام",
+		"security.filterPath": "مسیر شامل",
+		"security.filterAll": "همه",
+		"security.noLiveEvents": "رویداد ترافیکی در بازه انتخاب‌شده نیست.",
+		"security.action.block": "مسدود",
+		"security.action.challenge": "چالش",
+		"security.action.log": "لاگ",
+		"security.action.allow": "مجاز",
+		"security.col.time": "زمان",
+		"security.col.action": "اقدام",
+		"security.col.method": "متد",
+		"security.col.path": "مسیر",
+		"security.col.rule": "قانون",
+		"security.col.country": "کشور",
+		"security.col.name": "نام",
+		"security.col.ruleId": "شناسه قانون",
+		"security.col.priority": "اولویت",
+		"security.col.enabled": "فعال",
+		"security.col.actions": "عملیات",
+		"security.col.type": "نوع",
+		"security.col.value": "مقدار",
+		"security.col.reason": "دلیل",
+		"security.col.note": "یادداشت",
+		"security.col.source": "منبع",
+		"security.col.minutes": "مدت (دقیقه)",
+		"security.col.profile": "پروفایل",
+		"security.col.status": "وضعیت",
+		"security.col.progress": "پیشرفت",
+		"security.col.findings": "یافته‌ها",
+		"security.col.started": "شروع",
+		"security.col.severity": "شدت",
+		"security.col.title": "عنوان",
+		"security.col.created": "ایجاد",
+		"security.noRules": "قانون سفارشی وجود ندارد.",
+		"security.noRulesHint": "یک قانون مبتنی بر مسیر بسازید یا پس از تحلیل ترافیک، قانون یادگیری را ارتقا دهید.",
+		"security.createRuleTitle": "ایجاد قانون فایروال",
+		"security.createRule": "ایجاد قانون",
+		"security.pathContains": "مسیر شامل",
+		"security.learningMode": "حالت یادگیری",
+		"security.ruleCreated": "قانون ایجاد شد",
+		"security.ruleUpdated": "قانون به‌روز شد",
+		"security.ruleDeleted": "قانون حذف شد",
+		"security.rulePromoted": "قانون یادگیری ارتقا یافت",
+		"security.promoteLearning": "ارتقا",
+		"security.testRuleTitle": "آزمایش قانون",
+		"security.testRuleJson": "JSON قانون",
+		"security.testRequestJson": "JSON درخواست",
+		"security.runTest": "اجرای آزمایش",
+		"security.ruleTestDone": "آزمایش قانون انجام شد",
+		"security.invalidJson": "JSON نامعتبر",
+		"security.delete": "حذف",
+		"security.quarantineEmpty": "فایلی در قرنطینه نیست.",
+		"security.quarantineRestore": "بازیابی",
+		"security.quarantineRestored": "فایل از قرنطینه بازیابی شد",
+		"security.healNoActions": "یافتهٔ قابل ترمیم خودکار نیست.",
+		"security.fileSize": "اندازه",
+		"security.tools.file-browser.title": "مرورگر فایل",
+		"security.tools.file-browser.desc": "مرور فقط‌خواندنی فایل‌های سایت زیر ABSPATH.",
+		"security.twoFaTitle": "احراز هویت دو مرحله‌ای (TOTP)",
+		"security.twoFaHint": "اپلیکیشن احراز هویت را برای حساب خود تنظیم کنید. WebAuthn در این نسخه موجود نیست.",
+		"security.twoFaSetup": "تولید رمز",
+		"security.twoFaEnable": "فعال‌سازی با کد",
+		"security.twoFaDisable": "غیرفعال‌سازی 2FA",
+		"security.twoFaCode": "کد احراز هویت",
+		"security.twoFaSetupReady": "رمز آماده است — در اپلیکیشن خود وارد کنید",
+		"security.twoFaEnabled": "2FA فعال شد",
+		"security.twoFaDisabled": "2FA غیرفعال شد",
+		"security.twoFaEnabledUsers": "{{count}} کاربر با 2FA",
+		"security.twoFaYouEnabled": "برای شما فعال است",
+		"security.healTitle": "اقدامات ترمیم",
+		"security.healPreview": "پیش‌نمایش ترمیم",
+		"security.healApply": "اعمال ترمیم",
+		"security.healRollback": "بازگشت آخرین اسنپ‌شات",
+		"security.healPreviewDone": "پیش‌نمایش آماده است",
+		"security.healApplied": "ترمیم اعمال شد",
+		"security.healRolledBack": "بازگشت انجام شد",
+		"security.healSelectFinding": "یافته‌ها را برای ترمیم انتخاب کنید",
+		"security.healNoSnapshot": "اسنپ‌شاتی برای بازگشت نیست",
+		"security.tabBlocks": "لیست مسدود",
+		"security.tabAllows": "لیست مجاز",
+		"security.blockType.ip": "آدرس IP",
+		"security.blockType.cidr": "محدوده CIDR",
+		"security.blockType.ua": "User-Agent",
+		"security.addBlock": "افزودن مسدود",
+		"security.addAllow": "افزودن مجاز",
+		"security.blockAdded": "مسدود اضافه شد",
+		"security.blockRemoved": "مسدود حذف شد",
+		"security.allowAdded": "مجاز اضافه شد",
+		"security.allowRemoved": "مجاز حذف شد",
+		"security.noBlocks": "موردی مسدود نشده است.",
+		"security.noAllows": "مورد مجازی وجود ندارد.",
+		"security.optional": "اختیاری",
+		"security.startScan": "شروع اسکن",
+		"security.scanProfile.quick": "اسکن سریع",
+		"security.scanProfile.standard": "اسکن استاندارد",
+		"security.scanProfile.deep": "اسکن عمیق",
+		"security.scheduleNoteTitle": "اسکن زمان‌بندی‌شده",
+		"security.scheduleNote": "اسکن می‌تواند از تنظیمات امنیت زمان‌بندی شود. اسکن دستی بلافاصله در پس‌زمینه شروع می‌شود.",
+		"security.scanJobs": "کارهای اسکن",
+		"security.noScans": "کار اسکنی وجود ندارد.",
+		"security.scanStarted": "اسکن در صف قرار گرفت",
+		"security.scanCancelled": "اسکن لغو شد",
+		"security.scanStatus.queued": "در صف",
+		"security.scanStatus.running": "در حال اجرا",
+		"security.scanStatus.done": "تمام",
+		"security.scanStatus.failed": "ناموفق",
+		"security.scanStatus.cancelled": "لغو شده",
+		"security.view": "مشاهده",
+		"security.cancel": "لغو",
+		"security.invalidScanId": "شناسه اسکن نامعتبر است.",
+		"security.scanNotFound": "اسکن یافت نشد.",
+		"security.findingsTitle": "یافته‌ها",
+		"security.noFindings": "یافته باز برای این اسکن نیست.",
+		"security.ackFinding": "تأیید",
+		"security.ignoreFinding": "نادیده",
+		"security.findingUpdated": "یافته به‌روز شد",
+		"security.toolDefaultDesc": "اجرای تشخیص و عملیات نگهداری.",
+		"security.unknownTool": "ابزار ناشناخته.",
+		"security.backToTools": "بازگشت به ابزارها",
+		"security.toolRunGet": "اجرای GET",
+		"security.toolRunPost": "اجرای POST",
+		"security.toolPostBody": "بدنه POST (JSON)",
+		"security.toolResult": "نتیجه",
+		"security.toolNoResult": "ابزار را اجرا کنید تا نتیجه نمایش داده شود.",
+		"security.toolRunDone": "ابزار اجرا شد",
+		"security.toolField.ip": "آدرس IP",
+		"security.toolField.path": "مسیر",
+		"security.tools.whois.title": "WHOIS / موقعیت IP",
+		"security.tools.whois.desc": "موقعیت جغرافیایی و رویدادهای اخیر IP.",
+		"security.tools.ip-lookup.title": "جستجوی IP",
+		"security.tools.ip-lookup.desc": "معادل WHOIS.",
+		"security.tools.diagnostics.title": "تشخیص",
+		"security.tools.diagnostics.desc": "PHP، وردپرس، لایه‌ها و تداخل‌ها.",
+		"security.tools.integrity-diff.title": "تفاوت یکپارچگی",
+		"security.tools.integrity-diff.desc": "مقایسه هش فایل با هسته رسمی.",
+		"security.tools.quarantine.title": "قرنطینه",
+		"security.tools.quarantine.desc": "فهرست یا بازیابی فایل‌های قرنطینه.",
+		"security.tools.snapshots.title": "اسنپ‌شات ترمیم",
+		"security.tools.snapshots.desc": "فهرست اسنپ‌شات‌های بازگشت.",
+		"security.tools.sessions.title": "نشست‌ها",
+		"security.tools.sessions.desc": "نشست‌های فعال Shield.",
+		"security.tools.password-audit.title": "ممیزی رمز",
+		"security.tools.password-audit.desc": "مدیران بدون 2FA.",
+		"security.tools.headers-tester.title": "آزمایش هدرها",
+		"security.tools.headers-tester.desc": "بررسی هدرهای امنیتی فرانت.",
+		"security.tools.tls-dns.title": "TLS و DNS",
+		"security.tools.tls-dns.desc": "راهنمای SSL و رکوردهای DNS.",
+		"security.tools.secrets-search.title": "جستجوی رازها",
+		"security.tools.secrets-search.desc": "اسکن مسیر برای رازهای افشا.",
+		"security.tools.canary.title": "طعمه‌ها",
+		"security.tools.canary.desc": "مدیریت توکن‌های فریب.",
+		"security.tools.honeypot.title": "هانی‌پات",
+		"security.tools.honeypot.desc": "آمار برخورد هانی‌پات.",
+		"security.tools.import-export.title": "ورود / خروج",
+		"security.tools.import-export.desc": "پشتیبان یا بازیابی JSON تنظیمات.",
+		"security.tools.waf-learning.title": "یادگیری WAF",
+		"security.tools.waf-learning.desc": "بررسی برخوردهای یادگیری.",
+		"security.tools.incident.title": "حوادث",
+		"security.tools.incident.desc": "خط زمانی جنایی.",
+		"security.tools.compat.title": "سازگاری",
+		"security.tools.compat.desc": "تشخیص افزونه‌های امنیتی متداخل.",
+		"security.tools.cli-recipes.title": "دستورات CLI",
+		"security.tools.cli-recipes.desc": "دستورات پیشنهادی WP-CLI.",
+		"security.tools.heal-wizard.title": "ویزارد ترمیم",
+		"security.tools.heal-wizard.desc": "پیش‌نمایش ترمیم خودکار امن.",
+		"security.generateReport": "تولید گزارش",
+		"security.reportType.executive": "خلاصه مدیریتی",
+		"security.reportType.firewall": "فعالیت فایروال",
+		"security.reportType.vulnerabilities": "آسیب‌پذیری‌ها",
+		"security.reportType.malware": "بدافزار",
+		"security.reportType.hardening": "چک‌لیست سخت‌سازی",
+		"security.generatedReports": "گزارش‌های تولیدشده",
+		"security.noReports": "گزارشی تولید نشده است.",
+		"security.reportGenerated": "گزارش تولید شد",
+		"security.invalidReportId": "شناسه گزارش نامعتبر است.",
+		"security.reportNotFound": "گزارش یافت نشد.",
+		"security.backToReports": "بازگشت به گزارش‌ها",
+		"security.reportPayload": "داده گزارش",
+		"security.settingsProfile": "پروفایل پیکربندی",
+		"security.profileLabel": "پروفایل",
+		"security.profile.beginner": "مبتدی",
+		"security.profile.recommended": "پیشنهادی",
+		"security.profile.store": "فروشگاه",
+		"security.profile.paranoid": "پارانوئید",
+		"security.applyProfile": "اعمال پروفایل",
+		"security.saveSettings": "ذخیره تنظیمات",
+		"security.settingsSaved": "تنظیمات ذخیره شد",
+		"security.profileApplied": "پروفایل اعمال شد",
+		"security.syncFeeds": "همگام‌سازی فیدها",
+		"security.feedsSynced": "همگام‌سازی فید شروع شد",
+		"security.feedsStatus": "{{count}} فید پیکربندی شده",
+		"security.section.general": "عمومی",
+		"security.section.privacy": "حریم خصوصی و نگهداری",
+		"security.section.waf": "فایروال وب",
+		"security.section.login": "محافظت ورود",
+		"security.section.headers": "هدرهای امنیتی",
+		"security.section.scan": "اسکنر",
+		"security.section.heal": "ترمیم و قرنطینه",
+		"security.section.feeds": "فیدهای تهدید",
+		"security.section.notify": "اعلان‌ها",
+		"security.general.enabled": "فعال‌سازی Webino Shield",
+		"security.general.learningMode": "حالت یادگیری (سراسری)",
+		"security.general.selfGuard": "محافظت از فایل‌های ماژول",
+		"security.privacy.anonymizeIp": "ناشناس‌سازی IP در خروجی UI",
+		"security.privacy.storeBody": "ذخیره بدنه درخواست در لاگ",
+		"security.privacy.retentionEvents": "نگهداری رویداد (روز)",
+		"security.waf.enabled": "فعال‌سازی WAF",
+		"security.waf.mode": "حالت WAF",
+		"security.waf.failOpen": "عبور در خطای داخلی",
+		"security.login.protect": "محافظت brute-force",
+		"security.login.disableXmlrpc": "غیرفعال XML-RPC",
+		"security.login.honeypot": "فیلد هانی‌پات ورود",
+		"security.login.twoFaOptional": "2FA اختیاری برای مدیران",
+		"security.headers.enabled": "ارسال هدرهای امنیتی",
+		"security.headers.hsts": "HSTS",
+		"security.headers.cspMode": "حالت CSP",
+		"security.scan.defaultProfile": "پروفایل پیش‌فرض اسکن",
+		"security.scan.includeDb": "شامل اسکن دیتابیس",
+		"security.scan.includeVuln": "شامل اسکن آسیب‌پذیری",
+		"security.heal.snapshotAlways": "همیشه اسنپ‌شات قبل از ترمیم",
+		"security.heal.allowDelete": "اجازه حذف دائمی",
+		"security.feeds.crmMirror": "استفاده از آینه WebinaCRM",
+		"security.feeds.directFallback": "Fallback اینترنت مستقیم",
+		"security.notify.email": "اعلان ایمیل",
+		"security.notify.site": "اعلان داشبورد",
+		"security.notify.sms": "اعلان SMS",
+		"security.incidentsTitle": "رویدادهای باز",
+		"security.viewIncidents": "مشاهده همه",
+		"security.incidentOpen": "رویداد باز",
+		"security.incidentsOpen": "رویداد باز",
+		"security.suggestedActions": "اقدامات پیشنهادی",
+		"security.healWizard": "جادوگر ترمیم",
+		"security.noActions": "هیچ اقدام فوری لازم نیست.",
+		"security.reportType.compliance_hint": "راهنمای انطباق",
+		"security.reportType.incident": "گزارش رویداد",
+		"security.reportType.feed_health": "سلامت فیدها",
+		"security.reportSummary": "خلاصه",
+		"security.reportStructured": "جزئیات گزارش",
+		"security.reportRawJson": "نمایش JSON خام",
+		"security.reportDownload": "دانلود JSON",
+		"security.auditTitle": "گزارش حسابرسی",
+		"security.auditEmpty": "هنوز رویداد حسابرسی وجود ندارد.",
+		"security.auditEmptyCta": "پیکربندی تنظیمات امنیتی",
+		"security.startFirstScan": "اولین اسکن را اجرا کنید",
+		"security.noFindingsHint": "این اسکن مشکلی پیدا نکرد. می‌توانید هر زمان اسکن دیگری اجرا کنید.",
+		"security.backToScan": "بازگشت به اسکن‌ها",
+		"security.healNotAvailable": "ترمیم خودکار در دسترس نیست",
+		"security.toolsSearch": "جستجوی ابزارها…",
+		"security.toolsNoMatch": "هیچ ابزاری با جستجوی شما مطابقت ندارد.",
+		"security.refresh": "بازخوانی",
+		"security.incidentNoItems": "هیچ رویدادی ثبت نشده است.",
+		"security.diag.layers": "لایه‌های فعال",
+		"security.diag.objectCache": "کش شیء",
+		"security.diag.cron": "کرون Shield",
+		"security.diag.conflicts": "تداخل افزونه‌ها",
+		"security.diag.noConflicts": "هیچ تداخل افزونه‌ای شناسایی نشد.",
+		"security.snapshotsEmpty": "هیچ اسنپ‌شاتی یافت نشد.",
+		"security.passAudit.checked": "رمزهای عبور رایج بررسی شده: {{count}}",
+		"security.passAudit.noIssues": "همه حساب‌های ادمین/ویرایشگر سالم هستند.",
+		"security.importExport.exportTitle": "صادرکردن تنظیمات",
+		"security.importExport.download": "دانلود JSON",
+		"security.importExport.importTitle": "وارد کردن تنظیمات JSON",
+		"security.importExport.import": "وارد کردن",
+		"security.importExport.importDone": "تنظیمات با موفقیت وارد شد.",
+		"security.col.login": "نام کاربری",
+		"security.col.issues": "مشکلات",
+		"security.col.user": "کاربر",
+		"security.ruleAction.block": "مسدود کردن",
+		"security.ruleAction.challenge": "چالش",
+		"security.ruleAction.log": "ثبت گزارش",
+		"security.ruleAction.allow": "اجازه دادن",
+		"security.wizard.prev": "→ قبلی",
+		"security.wizard.next": "بعدی ←",
+		"security.wizard.step": "مرحله {{step}} از {{total}}",
+		"security.wizard.step1.title": "IP مدیر خود را به لیست مجاز اضافه کنید",
+		"security.wizard.step1.hint": "پیش از فعال‌سازی حالت اجرایی، IP فعلی خود را به لیست مجاز اضافه کنید تا قفل نشوید.",
+		"security.wizard.step1.cta": "رفتن به بلوک‌کردن / لیست مجاز",
+		"security.wizard.step2.title": "یک پروفایل امنیتی انتخاب کنید",
+		"security.wizard.step2.hint": "پروفایل مناسب سایت خود را انتخاب و روی «اعمال پروفایل» کلیک کنید.",
+		"security.wizard.step2.profiles": "مبتدی → اصطکاک کم · پیشنهادی · فروشگاه · پارانوید → حداکثر",
+		"security.wizard.step3.title": "برنامه اسکن",
+		"security.wizard.step3.hint": "یک اسکن اولیه اجرا کنید تا خط پایه تعیین شود، سپس اسکن خودکار را از طریق WP-Cron پیکربندی کنید.",
+		"security.wizard.step3.cta": "اجرای اسکن",
+		"security.wizard.step4.title": "فعال‌سازی اعلان‌ها",
+		"security.wizard.step4.hint": "هشدارهای ایمیل یا داشبورد را برای رویدادهای امنیتی پیکربندی کنید.",
+		"security.wizard.step5.title": "بررسی هم‌زیستی",
+		"security.wizard.step5.conflicts": "افزونه‌های در تعارض شناسایی شدند:",
+		"security.wizard.step5.conflictHint": "قوانین WAF تکراری را در آن افزونه‌ها قبل از فعال‌سازی حالت اجرایی غیرفعال کنید.",
+		"security.wizard.step5.ok": "هیچ افزونه امنیتی در تعارض شناسایی نشد.",
+		"security.wizard.step6.title": "تکمیل راه‌اندازی",
+		"security.wizard.step6.hint": "تنظیمات خود را ذخیره کنید، سپس جادوگر را کامل کنید تا این بنر مخفی شود.",
+		"basalam.fieldAccess": "کلید دسترسی",
+		"basalam.fieldRefresh": "کلید تمدید",
+		"basalam.fieldVendorOptional": "شناسه غرفه (اختیاری)",
+		"basalam.advanced": "پیشرفته",
+		"basalam.syncProductsNow": "همگام‌سازی محصولات",
+		"basalam.productsSyncQueued": "همگام‌سازی محصولات شروع شد.",
+		"basalam.openPricing": "قیمت‌گذاری بازارگاه‌ها",
+		"basalam.boothNamed": "غرفه {{id}}",
+		"basalam.nav.connection": "اتصال",
+		"basalam.boothTitleField": "عنوان غرفه",
+		"basalam.boothSummaryField": "معرفی کوتاه",
+		"basalam.ordersAutoTitle": "دریافت خودکار سفارش‌ها",
+		"basalam.ordersAutoOn": "سفارش‌ها به‌صورت خودکار دریافت می‌شوند.",
+		"basalam.ordersAutoOff": "دریافت خودکار هنوز فعال نیست.",
+		"basalam.ordersAutoEnable": "فعال‌سازی",
+		"basalam.ordersAutoResetBtn": "راه‌اندازی مجدد",
+		"basalam.ordersAutoOk": "دریافت خودکار فعال شد.",
+		"basalam.ordersAutoReset": "دریافت خودکار دوباره راه‌اندازی شد.",
+		"basalam.selectProduct": "انتخاب محصول",
+		"basalam.discountPercent": "درصد تخفیف",
+		"basalam.chatShow": "باز کردن چت",
+		"basalam.chatHide": "بستن چت",
+		"basalam.chatNotify": "اطلاع از پیام جدید باسلام",
+		"basalam.wooCategory": "دسته فروشگاه",
+		"basalam.selectWooCategory": "انتخاب دسته فروشگاه",
+		"basalam.selectCategory": "انتخاب کنید",
+		"basalam.bslLevel1": "دسته اصلی باسلام",
+		"basalam.bslLevel2": "زیردسته",
+		"basalam.bslLevel3": "دسته نهایی",
+		"basalam.autoSuggest": "پیشنهاد خودکار",
+		"basalam.orderActions": "اقدامات باسلام",
+		"basalam.basalamInvoice": "شماره سفارش باسلام",
+		"basalam.cancelReasonLabel": "دلیل لغو",
+		"basalam.shipMethodLabel": "روش ارسال",
+		"basalam.cancelReason.buyerRequest": "درخواست خریدار",
+		"basalam.cancelReason.outOfStock": "ناموجودی",
+		"basalam.cancelReason.other": "سایر",
+		"basalam.shipMethod.post": "پست",
+		"basalam.shipMethod.tipax": "تیپاکس",
+		"basalam.shipMethod.courier": "پیک",
+		"basalam.syncStatus.pending": "در صف",
+		"basalam.syncStatus.done": "انجام‌شده",
+		"basalam.syncStatus.failed": "ناموفق",
+		"basalam.job.fetchOrders": "دریافت سفارش‌ها",
+		"basalam.job.createProduct": "افزودن محصول",
+		"basalam.job.updateProduct": "بروزرسانی محصول",
+		"basalam.job.updateAll": "بروزرسانی همه محصولات",
+		"basalam.job.autoConnect": "اتصال خودکار",
+		"basalam.job.discounts": "تخفیف‌ها",
+		"basalam.job.quickUpdate": "بروزرسانی سریع",
+		"basalam.jobStatus.pending": "در انتظار",
+		"basalam.jobStatus.processing": "در حال اجرا",
+		"basalam.jobStatus.completed": "انجام شد",
+		"basalam.jobStatus.failed": "ناموفق",
+		"basalam.col.time": "زمان",
+		"basalam.defaultProductValues": "مقادیر پیش‌فرض محصول",
+		"basalam.fillFromCatalog": "پر کردن از محصولات فروشگاه",
+		"basalam.defaultsFilled": "مقادیر از محصولات پیشنهاد شد.",
+		"basalam.balanceInReports": "موجودی قابل برداشت در باسلام",
+		"basalam.financeDetailsLink": "جزئیات مالی باسلام",
+		"basalam.settlementAmount": "مبلغ (ریال)",
+		"basalam.settleMethod.bank": "واریز به حساب بانکی",
+		"basalam.settleMethod.wallet": "کیف پول",
+		"basalam.bankAccount": "حساب بانکی",
+		"basalam.syncField.name": "نام",
+		"basalam.syncField.photos": "تصاویر",
+		"basalam.syncField.price": "قیمت",
+		"basalam.syncField.stock": "موجودی",
+		"basalam.syncField.weight": "وزن",
+		"basalam.syncField.description": "توضیحات",
+		"basalam.syncField.attr": "ویژگی‌ها",
+		"basalam.syncField.video": "ویدیو",
+		"basalam.syncField.variant_price": "قیمت تنوع",
+		"basalam.syncField.variant_stock": "موجودی تنوع",
+		"basalam.addFullDesc": "توضیحات کامل (نقد و بررسی)",
+		"basalam.job.createAllProducts": "افزودن همه محصولات",
+		"basalam.job.updateAllProducts": "بروزرسانی همه محصولات",
+		"basalam.job.bulkUpdateProducts": "بروزرسانی سریع محصولات",
+		"basalam.boothIdentity": "غرفه باسلام",
+		"basalam.boothUntitled": "غرفه بدون عنوان",
+		"basalam.boothIdLabel": "شناسه {{id}}",
+		"basalam.chatWithBuyer": "چت با خریدار",
+		"basalam.shippingProfiles": "پروفایل‌های ارسال",
+		"basalam.shippingCarriers": "روش‌های ارسال فعال",
+		"basalam.noShippingProfiles": "هنوز پروفایلی نساخته‌اید.",
+		"basalam.noCarriers": "حامل فعالی ثبت نشده.",
+		"gateway.section.connection": "اتصال درگاه",
+		"gateway.section.connectionHint": "فعال‌سازی و اطلاعات ورود به درگاه پرداخت.",
+		"gateway.section.checkout": "تسویه‌حساب",
+		"gateway.section.checkoutHint": "قوانین و رفتار درگاه در صفحهٔ پرداخت فروشگاه.",
+		"gateway.section.display": "نمایش فروشگاه",
+		"gateway.section.displayHint": "ویجت‌ها و المان‌های نمایشی روی صفحهٔ محصول و فروشگاه.",
+		"gateway.section.messages": "پیام‌ها",
+		"gateway.section.messagesHint": "متن‌هایی که پس از پرداخت موفق، ناموفق یا انصراف به مشتری نشان داده می‌شود.",
+		"gateway.section.advanced": "پیشرفته",
+		"gateway.section.advancedHint": "تنظیمات فنی و رفع‌اشکال اتصال.",
+		"gateway.meta.source": "منبع",
+		"gateway.meta.sourceOfficial": "افزونه رسمی",
+		"gateway.meta.sourceWebino": "وبینو",
+		"gateway.meta.serverIp": "آی‌پی سرور",
+		"gateway.meta.callback": "آدرس بازگشت",
+		"gateway.field.title": "عنوان درگاه",
+		"gateway.field.description": "توضیح کوتاه",
+		"gateway.field.orderButtonText": "متن دکمه پرداخت",
+		"gateway.field.iconUrl": "آدرس آیکون درگاه",
+		"gateway.field.iconUrlHint": "خالی = لوگوی باندل‌شده.",
+		"gateway.field.baseUrl": "آدرس پایهٔ API",
+		"gateway.field.clientId": "شناسه کاربری درگاه",
+		"gateway.field.clientSecret": "رمز مخفی",
+		"gateway.field.clientSecretKeep": "رمز مخفی (خالی = بدون تغییر)",
+		"gateway.field.username": "نام کاربری",
+		"gateway.field.password": "رمز عبور",
+		"gateway.field.passwordKeep": "رمز عبور (خالی = بدون تغییر)",
+		"gateway.field.successMessage": "پیام موفقیت",
+		"gateway.field.failedMessage": "پیام ناموفق",
+		"gateway.field.cancelledMessage": "پیام انصراف",
+		"gateway.field.messageVars": "می‌توانید از متغیرهایی مثل {order_id} استفاده کنید.",
+		"gateway.flag.requireMobile": "موبایل اجباری",
+		"gateway.flag.requireMobileHint": "بدون شماره موبایل معتبر، پرداخت با این درگاه شروع نمی‌شود.",
+		"gateway.flag.requirePostcode": "کدپستی اجباری",
+		"gateway.flag.requirePostcodeHint": "کدپستی برای ادامهٔ پرداخت الزامی می‌شود.",
+		"gateway.flag.defaultEligible": "درگاه پیش‌فرض در صورت واجدشرایط بودن",
+		"gateway.flag.defaultEligibleHint": "اگر سبد واجدشرایط باشد، این درگاه به‌عنوان گزینهٔ پیش‌فرض انتخاب می‌شود.",
+		"gateway.flag.directRedirect": "ریدایرکت مستقیم",
+		"gateway.flag.directRedirectHint": "پس از انتخاب درگاه، مشتری مستقیم به صفحهٔ پرداخت هدایت می‌شود.",
+		"snapppay.enabledHint": "نمایش اسنپ‌پی در روش‌های پرداخت ووکامرس.",
+		"snapppay.baseUrlHint": "معمولاً api.snapppay.ir — فقط در صورت اعلام رسمی تغییر دهید.",
+		"snapppay.flag.commission": "کمیسیون دسته",
+		"snapppay.flag.commissionHint": "محاسبهٔ کمیسیون بر اساس دسته‌بندی محصولات.",
+		"snapppay.flag.pdp": "ویجت صفحهٔ محصول",
+		"snapppay.flag.pdpHint": "نمایش وضعیت اقساط روی صفحهٔ محصول.",
+		"snapppay.flag.darkPdp": "حالت تیرهٔ ویجت",
+		"snapppay.flag.darkPdpHint": "ظاهر تیره برای ویجت صفحهٔ محصول.",
+		"snapppay.logsSubtitle": "رویدادها و پاسخ‌های اخیر اسنپ‌پی.",
+		"torobpay.enabled": "فعال‌سازی درگاه",
+		"torobpay.enabledHint": "نمایش ترب‌پی در روش‌های پرداخت ووکامرس.",
+		"torobpay.baseUrlHint": "معمولاً cpg.torobpay.com — فقط در صورت اعلام رسمی تغییر دهید.",
+		"torobpay.fetchCreds": "واکشی اعتبارنامه",
+		"torobpay.test": "تست اتصال",
+		"torobpay.nav.settings": "تنظیمات",
+		"torobpay.nav.display": "نمایش",
+		"torobpay.nav.orders": "سفارش‌ها",
+		"torobpay.nav.campaign": "کمپین",
+		"torobpay.nav.logs": "لاگ‌ها",
+		"torobpay.displaySubtitle": "ویجت، نشان و المان‌های نمایشی ترب‌پی در فروشگاه.",
+		"torobpay.ordersSubtitle": "سفارش‌های مرتبط با ترب‌پی و وضعیت پرداخت.",
+		"torobpay.logsSubtitle": "رویدادها و پاسخ‌های اخیر ترب‌پی.",
+		"torobpay.flag.disableRetry": "غیرفعال‌سازی تلاش مجدد",
+		"torobpay.flag.disableRetryHint": "اگر پرداخت ناموفق شد، دکمهٔ تلاش مجدد نشان داده نشود.",
+		"torobpay.flag.utmAuto": "ارسال خودکار UTM ترب",
+		"torobpay.flag.utmAutoHint": "پارامترهای UTM ترب به‌صورت خودکار به درخواست‌ها اضافه می‌شود.",
+		"torobpay.flag.utmExclusive": "فقط ترافیک UTM ترب",
+		"torobpay.flag.utmExclusiveHint": "درگاه فقط برای بازدیدکنندگانی که از لینک ترب آمده‌اند نمایش داده می‌شود.",
+		"torobpay.flag.widget": "ویجت صفحهٔ محصول",
+		"torobpay.flag.widgetHint": "نمایش وضعیت اقساط روی صفحهٔ محصول.",
+		"torobpay.flag.badge": "نشان ترب‌پی",
+		"torobpay.flag.badgeHint": "نمایش نشان کوچک ترب‌پی در فروشگاه.",
+		"torobpay.flag.marquee": "نوار متحرک",
+		"torobpay.flag.marqueeHint": "نمایش پیام متحرک ترب‌پی.",
+		"torobpay.flag.topbar": "نوار بالای سایت",
+		"torobpay.flag.topbarHint": "نمایش نوار اطلاع‌رسانی در بالای فروشگاه.",
+		"torobpay.flag.slider": "اسلایدر",
+		"torobpay.flag.sliderHint": "نمایش اسلایدر تبلیغاتی ترب‌پی.",
+		"torobpay.flag.smartDns": "DNS هوشمند",
+		"torobpay.flag.smartDnsHint": "در صورت اختلال، از مسیر جایگزین DNS استفاده می‌شود.",
+		"torobpay.field.dnsOverride": "آدرس جایگزین DNS",
+		"torobpay.field.dnsOverrideHint": "اختیاری؛ فقط اگر پشتیبانی ترب اعلام کرده باشد.",
+		"torobpay.probe": "بررسی وضعیت",
+		"torobpay.probed": "وضعیت بررسی شد",
+		"torobpay.refund": "استرداد",
+		"torobpay.refunded": "استرداد ثبت شد",
+		"torobpay.remoteStatus": "وضعیت از راه دور",
+		"digipay.nav.settings": "تنظیمات",
+		"digipay.nav.transactions": "تراکنش‌ها",
+		"digipay.officialNotice": "افزونه رسمی دیجی‌پی فعال است؛ برای جلوگیری از ثبت تکراری، درگاه وبینو ثبت نمی‌شود.",
+		"digipay.section.connectionHint": "محیط، OAuth و آدرس بازگشت دیجی‌پی.",
+		"digipay.section.merchant": "پذیرنده و تأمین‌کننده",
+		"digipay.section.merchantHint": "شناسه‌های فروشنده، تأمین‌کننده و دسته‌بندی در UPG.",
+		"digipay.section.checkoutHint": "عنوان چک‌اوت، دکمه، پیام‌ها و آیکون روش‌های دیجی‌پی.",
+		"digipay.field.titleIpg": "عنوان IPG",
+		"digipay.field.titleWallet": "عنوان کیف پول",
+		"digipay.field.titleCpg": "عنوان CPG",
+		"digipay.field.titleBpg": "عنوان BPG",
+		"digipay.field.descIpg": "توضیح IPG",
+		"digipay.field.descWallet": "توضیح کیف پول",
+		"digipay.field.descCpg": "توضیح CPG",
+		"digipay.field.descBpg": "توضیح BPG",
+		"digipay.transactionsSubtitle": "لاگ تراکنش‌های اخیر دیجی‌پی.",
+		"balePay.enabledHint": "نمایش بله‌پی در روش‌های پرداخت ووکامرس.",
+		"wallet.enabledHint": "اجازهٔ پرداخت از موجودی کیف پول مشتری.",
+		"wallet.sectionHint": "حداقل شارژ و عنوان نمایشی در تسویه‌حساب.",
+		"c2c.enabledHint": "نمایش کارت‌به‌کارت در روش‌های پرداخت ووکامرس.",
+		"c2c.cardsHint": "شماره کارت‌هایی که مشتری باید به آن‌ها واریز کند.",
+		"c2c.deadlineHint": "مهلت ارسال رسید پس از ثبت سفارش.",
+		"zarinpal.sandboxHint": "پرداخت‌های آزمایشی در محیط سندباکس زرین‌پال.",
+		"paymentsHub.zarinpalDesc": "پرداخت آنلاین زرین‌پال با پیگیری خودکار تراکنش‌ها.",
+		"paymentsHub.digipayDesc": "درگاه یکپارچه دیجی‌پی (IPG، اقساط، اعتبار و کیف پول).",
+		"paymentsHub.snapppayDesc": "خرید اقساطی اسنپ‌پی برای مشتریان واجدشرایط.",
+		"paymentsHub.torobpayDesc": "پرداخت اقساطی ترب‌پی با ویجت و کمپین فروشگاهی.",
+		"paymentsHub.balePayDesc": "پرداخت از طریق ربات بله.",
+		"paymentsHub.walletDesc": "پرداخت از موجودی کیف پول مشتری در فروشگاه.",
+		"paymentsHub.c2cDesc": "پرداخت کارت‌به‌کارت با ثبت رسید توسط مشتری.",
+		"common.copied": "کپی شد",
+		"common.copyFailed": "کپی انجام نشد",
+		"basalam.jobsCancelled": "جاب‌های در صف لغو شدند.",
+		"basalam.cancelJobsConfirm": "همهٔ جاب‌های در انتظار و در حال اجرا لغو شوند؟",
+		"basalam.jobError.cancelled": "لغو شد توسط کاربر",
+		"basalam.createAllQueued": "{{count}} محصول واجدشرایط به صف افزودن اضافه شد.",
+		"basalam.createAllNoneEligible": "هیچ محصول واجدشرایطی برای افزودن به باسلام نیست (تصویر، قیمت بالای ۱۰۰۰، موجودی، یا اتصال قبلی را بررسی کنید).",
+		"marketplace.module.shipping-module": "حمل‌ونقل",
+		"nav.module.shipping-module": "حمل‌ونقل",
+		"shipping.hubTitle": "حمل‌ونقل",
+		"shipping.hubHint": "هاب ارسال، بسته‌بندی، تاپین، ابزارها، شهرها، نقشه و قوانین حمل.",
+		"shipping.packagingTitle": "بسته‌بندی پستی",
+		"shipping.packagingCardHint": "جعبه‌های استاندارد پست ایران (سایز ۱ تا ۹)، قیمت هر جعبه و افزودن به هزینه ارسال مشتری.",
+		"shipping.packagingHint": "ابعاد جعبه‌ها ثابت است؛ فقط قیمت و فعال بودن هر سایز را تنظیم کنید. محصولات و تنوع‌ها باید طول/عرض/ارتفاع داشته باشند.",
+		"shipping.openPackaging": "تنظیمات بسته‌بندی",
+		"shipping.zonesTitle": "مناطق ارسال ووکامرس",
+		"shipping.zonesHint": "مناطق و روش‌های ارسال کلاسیک ووکامرس (از جمله فعال‌سازی روش بسته‌بندی).",
+		"shipping.openZones": "باز کردن مناطق ارسال",
+		"shipping.methodSetupTitle": "فعال‌سازی در چک‌اوت",
+		"shipping.methodSetupHint": "در مناطق ارسال، روش «بسته‌بندی پستی وبینو» (Webino packaging) را به زون موردنظر اضافه کنید. اگر سوییچ «افزودن به هزینه ارسال» روشن باشد، جمع قیمت جعبه‌های انتخاب‌شده به مشتری محاسبه می‌شود.",
+		"shipping.checkoutToggleTitle": "هزینه در چک‌اوت",
+		"shipping.checkoutToggleHint": "با خاموش کردن، پیشنهاد جعبه روی سفارش باقی می‌ماند ولی به مشتری شارژ نمی‌شود.",
+		"shipping.addPackagingToCheckout": "افزودن هزینه جعبه‌ها به ارسال مشتری",
+		"shipping.professionalFeeTitle": "بسته‌بندی حرفه‌ای (هزینه ثابت)",
+		"shipping.professionalFeeHint": "گزینهٔ اختیاری در سبد و چک‌اوت. به‌صورت پیش‌فرض با انتخاب آن هزینه جعبه پستی شارژ نمی‌شود (بدون شارژ مضاعف).",
+		"shipping.professionalFeeEnable": "فعال‌سازی بسته‌بندی حرفه‌ای",
+		"shipping.professionalFeeLabel": "عنوان",
+		"shipping.professionalFeeLabelPlaceholder": "بسته‌بندی حرفه‌ای",
+		"shipping.professionalFeeAmount": "مبلغ ثابت",
+		"shipping.professionalFeeDescription": "توضیح کوتاه برای مشتری",
+		"shipping.professionalFeeDescriptionPlaceholder": "بسته‌بندی شکیل و ایمن با لوازم محافظ",
+		"shipping.professionalFeeDefaultOn": "به‌صورت پیش‌فرض انتخاب‌شده باشد",
+		"shipping.professionalFeeReplacesCarton": "با انتخاب بسته‌بندی حرفه‌ای، هزینه جعبه پستی شارژ نشود (جلوگیری از شارژ مضاعف)",
+		"shipping.professionalFeeOrderSelected": "بسته‌بندی حرفه‌ای انتخاب شده",
+		"shipping.boxesTitle": "جعبه‌های استاندارد پست",
+		"shipping.boxesHint": "ابعاد به سانتی‌متر؛ قیمت به واحد پول فروشگاه.",
+		"shipping.boxSize": "سایز",
+		"shipping.boxDims": "ابعاد",
+		"shipping.boxPrice": "قیمت",
+		"shipping.boxTare": "وزن خالی (گرم)",
+		"shipping.boxEnabled": "فعال",
+		"shipping.sizeN": "سایز {{n}}",
+		"shipping.orderPackagingTitle": "بسته‌بندی سفارش",
+		"shipping.recalcPlan": "محاسبه مجدد",
+		"shipping.recalcOk": "پلن بسته‌بندی به‌روز شد.",
+		"shipping.noPackagingPlan": "هنوز پلنی ثبت نشده. محاسبه مجدد را بزنید.",
+		"shipping.boxCount": "{{count}} جعبه",
+		"shipping.oversized": "بزرگ‌تر از استاندارد",
+		"shipping.basalamWeightTitle": "سینک وزن با باسلام",
+		"shipping.basalamWeightHint": "وزن محصول/تنوع به‌عنوان weight و وزن خالی کوچک‌ترین جعبهٔ مناسب به‌عنوان بخشی از package_weight به باسلام فرستاده می‌شود. اگر ماژول حمل‌ونقل خاموش باشد، از «وزن بسته‌بندی» پیش‌فرض باسلام استفاده می‌شود.",
+		"basalam.packagingWeightHint": "با ماژول حمل‌ونقل فعال: package_weight = وزن کالا + وزن خالی جعبهٔ پستی. فیلد «وزن بسته‌بندی» فقط وقتی ماژول حمل‌ونقل در دسترس نباشد به‌عنوان fallback است.",
+		"marketplace.module.tapin-module": "تاپین",
+		"nav.module.tapin-module": "تاپین",
+		"tapin.settingsTitle": "ارسال تاپین",
+		"tapin.settingsSubtitle": "اتصال فروشگاه، روش‌های ارسال، تعرفه و ثبت مرسوله — ساده و یکجا.",
+		"tapin.hubCardTitle": "تاپین",
+		"tapin.hubCardHint": "پیشتاز، ویژه، تیپاکس و پیک؛ ثبت بارکد و برچسب از داشبورد.",
+		"tapin.openSettings": "تنظیمات تاپین",
+		"tapin.tabConnect": "اتصال",
+		"tapin.tabOrigin": "مبدأ",
+		"tapin.tabMethods": "روش‌ها",
+		"tapin.tabTariffs": "تعرفه",
+		"tapin.tabShip": "ثبت مرسوله",
+		"tapin.tabNotify": "اطلاع به مشتری",
+		"tapin.connectTitle": "اتصال فروشگاه",
+		"tapin.connectHint": "توکن وب‌سرویس را از پنل تاپین بگیرید و فروشگاه را انتخاب کنید.",
+		"tapin.enabled": "فعال بودن ارسال تاپین",
+		"tapin.token": "توکن اتصال",
+		"tapin.tokenPlaceholder": "توکن را اینجا وارد کنید",
+		"tapin.testConnection": "بررسی اتصال",
+		"tapin.syncLocations": "به‌روزرسانی استان و شهر",
+		"tapin.shop": "فروشگاه",
+		"tapin.pickShop": "انتخاب فروشگاه",
+		"tapin.connected": "اتصال برقرار شد.",
+		"tapin.connectFailed": "اتصال برقرار نشد.",
+		"tapin.needShop": "فروشگاه را انتخاب کنید تا آماده‌سازی کامل شود.",
+		"tapin.needLocations": "یک‌بار «به‌روزرسانی استان و شهر» را بزنید.",
+		"tapin.readyHint": "همه‌چیز برای محاسبه هزینه و ثبت مرسوله آماده است.",
+		"tapin.locationsCount": "{{count}} استان در فهرست",
+		"tapin.originTitle": "مبدأ ارسال",
+		"tapin.originHint": "استان و شهری که بسته‌ها از آنجا جمع‌آوری می‌شوند.",
+		"tapin.province": "استان",
+		"tapin.city": "شهر",
+		"tapin.pickProvince": "انتخاب استان",
+		"tapin.pickCity": "انتخاب شهر",
+		"tapin.methodsTitle": "روش‌های ارسال",
+		"tapin.methodsHint": "روش‌های فعال را روشن کنید و در مناطق ارسال ووکامرس اضافه‌شان کنید.",
+		"tapin.methodPishtaz": "پیشتاز",
+		"tapin.methodVip": "پست ویژه",
+		"tapin.methodTipax": "تیپاکس",
+		"tapin.methodCourier": "پیک موتوری",
+		"tapin.courierPrice": "هزینه پایه پیک",
+		"tapin.freeMin": "ارسال رایگان از مبلغ",
+		"tapin.extraPercent": "افزایش درصدی هزینه",
+		"tapin.zonesReminder": "بعد از ذخیره، هر روش را به منطقه ارسال فروشگاه اضافه کنید.",
+		"tapin.tariffsTitle": "تعرفه پشتیبان",
+		"tapin.tariffsHint": "اگر استعلام لحظه‌ای در دسترس نباشد، از این جدول استفاده می‌شود. وزن به گرم است.",
+		"tapin.addRow": "ردیف جدید",
+		"tapin.minWeight": "از وزن",
+		"tapin.maxWeight": "تا وزن",
+		"tapin.price": "هزینه",
+		"tapin.shipTitle": "ثبت مرسوله",
+		"tapin.shipHint": "می‌توانید فقط هزینه را حساب کنید، یا مرسوله را هم در تاپین ثبت کنید.",
+		"tapin.autoRegister": "ثبت خودکار هنگام تغییر وضعیت سفارش",
+		"tapin.autoRegisterWhen": "ثبت خودکار در وضعیت",
+		"tapin.statusProcessing": "در حال انجام",
+		"tapin.statusPackaged": "بسته‌بندی‌شده",
+		"tapin.statusCompleted": "تکمیل‌شده",
+		"tapin.registerType": "نوع ثبت",
+		"tapin.registerType0": "بدون بارکد",
+		"tapin.registerType1": "با بارکد — آماده پرینت",
+		"tapin.registerType2": "با بارکد — آماده ارسال",
+		"tapin.insurance": "بیمه مرسوله",
+		"tapin.notifyTitle": "اطلاع به مشتری",
+		"tapin.notifyHint": "پیامک و اعلان از تنظیمات فروشگاه شما ارسال می‌شود.",
+		"tapin.notifyBody": "وقتی بارکد ثبت شود، همان اعلان‌های «پست» در پنل پیامک فروشگاه فعال می‌شوند. متن و روشن/خاموش بودن را آنجا تنظیم کنید.",
+		"tapin.openSms": "تنظیمات پیامک فروشگاه",
+		"tapin.orderTitle": "ارسال تاپین",
+		"tapin.saveAddress": "ذخیره استان و شهر",
+		"tapin.barcode": "بارکد",
+		"tapin.noBarcode": "هنوز بارکدی ثبت نشده است.",
+		"tapin.registerShipment": "ثبت ارسال",
+		"tapin.printLabel": "برچسب",
+		"tapin.refreshStatus": "بروزرسانی وضعیت",
+		"shipping.toolsTitle": "ابزارهای حمل",
+		"shipping.toolsHint": "مخفی نرخ، وزن، ابزارهای Pro (عنوان رایگان، کشور، اولین سفارش)، وضعیت‌ها و تصویر روش.",
+		"shipping.toolsCardHint": "تنظیمات سراسری نرخ و وزن و وضعیت سفارش.",
+		"shipping.openTools": "باز کردن ابزارها",
+		"shipping.toolsRatesTitle": "نمایش نرخ‌ها",
+		"shipping.hideWhenFree": "مخفی کردن سایر روش‌ها وقتی ارسال رایگان هست",
+		"shipping.hideWhenCourier": "فقط نمایش پیک وقتی پیک موجود است",
+		"shipping.statusEnable": "فعال‌سازی وضعیت‌های سفارشی حمل",
+		"shipping.toolsWeightTitle": "وزن‌ها",
+		"shipping.defaultProductWeight": "وزن پیش‌فرض محصول (گرم)",
+		"shipping.defaultPackageWeight": "وزن بسته‌بندی اضافه (گرم)",
+		"shipping.postWeightLimit": "سقف وزن پست (کیلو)",
+		"shipping.methodImagesTitle": "تصویر روش‌های ارسال",
+		"shipping.methodImagesHint": "URL تصویر برای نمایش در چک‌اوت.",
+		"shipping.citiesTitle": "شهرها و محله‌ها",
+		"shipping.citiesHint": "استان‌ها و شهرها به‌صورت خودکار آماده‌اند؛ محله، قیمت انبوه و زون شهری را از اینجا مدیریت کنید.",
+		"shipping.citiesCardHint": "taxonomy شهرها، محله و قیمت به ازای متد زون.",
+		"shipping.openCities": "مدیریت شهرها",
+		"shipping.reinstallCities": "بروزرسانی / تکمیل شهرها",
+		"shipping.pickState": "انتخاب استان",
+		"shipping.citiesInstalled": "لیست استان‌ها و شهرها آماده است.",
+		"shipping.citiesNotInstalled": "در حال آماده‌سازی خودکار لیست شهرها…",
+		"shipping.citiesLoading": "در حال بارگذاری شهرها…",
+		"shipping.citiesSeeding": "لیست در حال تکمیل خودکار است؛ یک‌بار دیگر صفحه را باز کنید یا بروزرسانی را بزنید.",
+		"shipping.citiesSeedProgress": "{{done}} از {{total}} استان",
+		"shipping.bulkPrices": "قیمت انبوه شهری",
+		"shipping.tipaxOn": "تیپاکس فعال",
+		"shipping.createZonesFromCities": "ساخت زون از شهرها (۲۰ اول)",
+		"shipping.zonesCreated": "زون‌ها ساخته شد.",
+		"shipping.mapTitle": "نقشه ارسال",
+		"shipping.mapHint": "پین موقعیت در چک‌اوت و سفارش، فاصله تا فروشگاه.",
+		"shipping.mapCardHint": "OSM / نشان / Map.ir و پین اجباری.",
+		"shipping.openMap": "تنظیمات نقشه",
+		"shipping.mapEnabled": "فعال بودن نقشه در چک‌اوت",
+		"shipping.mapRequired": "اجباری بودن پین موقعیت",
+		"shipping.mapProvider": "ارائه‌دهنده",
+		"shipping.mapPlacement": "محل نمایش",
+		"shipping.mapAfterNotes": "بعد از یادداشت سفارش",
+		"shipping.mapBeforeDetails": "قبل از جزئیات مشتری",
+		"shipping.mapDistance": "محاسبه فاصله",
+		"shipping.mapDistNone": "بدون فاصله",
+		"shipping.mapDistDirect": "خط مستقیم",
+		"shipping.mapDistReal": "مسیریابی ORS",
+		"shipping.storeLat": "عرض جغرافیایی فروشگاه",
+		"shipping.storeLng": "طول جغرافیایی فروشگاه",
+		"shipping.orderMapTitle": "موقعیت روی نقشه",
+		"shipping.rulesTitle": "قوانین حمل",
+		"shipping.rulesHint": "قوانین چندشرطی و چنداکشنی روی نرخ‌های چک‌اوت.",
+		"shipping.rulesCardHint": "قوانین حرفه‌ای: مخفی‌کردن، رایگان، تغییر قیمت.",
+		"shipping.openRules": "مدیریت قوانین",
+		"shipping.addRule": "قانون جدید",
+		"shipping.ruleN": "قانون {{n}}",
+		"shipping.ruleTitle": "عنوان",
+		"shipping.rulePriority": "اولویت",
+		"shipping.condType": "نوع شرط",
+		"shipping.condValue": "مقدار شرط",
+		"shipping.actionType": "نوع اکشن",
+		"shipping.actionMethod": "شناسه روش",
+		"shipping.actionValue": "مقدار اکشن",
+		"tapin.gateway": "درگاه سرویس",
+		"tapin.showCredit": "نمایش اعتبار",
+		"tapin.credit": "اعتبار",
+		"tapin.methodTipaxApi": "تیپاکس تاپین",
+		"tapin.methodAlonomic": "الونومیک تاپین",
+		"tapin.courierPerKg": "هزینه هر کیلو پیک",
+		"tapin.extraFixed": "افزایش مبلغ ثابت",
+		"tapin.defaultBox": "جعبه پیش‌فرض",
+		"tapin.usePwsFormula": "فرمول تعرفه کامل (آفلاین PWS)",
+		"tapin.syncPackingBoxes": "همگام‌سازی جعبه‌های تاپین",
+		"tapin.payType": "نوع پرداخت ارسال",
+		"tapin.employeeCode": "کد کارمند",
+		"tapin.tipaxPickup": "نوع جمع‌آوری تیپاکس",
+		"tapin.tipaxDelivery": "نوع تحویل تیپاکس",
+		"tapin.boxSize": "سایز جعبه / پاکت",
+		"tapin.contentType": "نوع محتوا",
+		"tapin.orderWeight": "وزن (گرم)",
+		"tapin.saveParcelMeta": "ذخیره مشخصات بسته",
+		"tapin.status": "وضعیت تاپین",
+		"tapin.readyToShip": "آماده به ارسال",
+		"shipping.proUxTitle": "ابزارهای حرفه‌ای چک‌اوت",
+		"shipping.freeShippingTitle": "عنوان ارسال رایگان",
+		"shipping.hideCountry": "مخفی‌سازی فیلد کشور",
+		"shipping.swapStateCity": "جابجایی استان و شهر",
+		"shipping.disableDefaultMethod": "عدم انتخاب پیش‌فرض روش ارسال",
+		"shipping.freeFirstOrder": "ارسال رایگان اولین سفارش",
+		"shipping.honorFreeCoupon": "احترام به کوپن ارسال رایگان",
+		"shipping.citySearch": "جستجوی سریع شهر",
+		"shipping.citySearchPlaceholder": "حداقل ۲ حرف بنویسید…",
+		"shipping.districtsTitle": "محله‌ها",
+		"shipping.districtsHint": "محله را زیر شهر اضافه کنید؛ در چک‌اوت و حساب کاربری نمایش داده می‌شود.",
+		"shipping.districtName": "نام محله",
+		"shipping.addDistrict": "افزودن محله",
+		"shipping.noDistricts": "هنوز محله‌ای برای این شهر نیست.",
+		"shipping.conditions": "شرط‌ها (همه باید برقرار باشند)",
+		"shipping.actions": "اکشن‌ها",
+		"shipping.addCondition": "افزودن شرط",
+		"shipping.addAction": "افزودن اکشن",
+		"common.create": "ایجاد",
+		"tapin.opsTitle": "عملیات تاپین",
+		"tapin.opsHint": "لیست مرسوله، وضعیت/برچسب گروهی و گزارش وضعیت.",
+		"tapin.openOps": "باز کردن عملیات",
+		"tapin.financeTitle": "مالی تاپین",
+		"tapin.financeHint": "اعتبار، شارژ، تاریخچه و جزئیات فروشگاه.",
+		"tapin.openFinance": "باز کردن مالی",
+		"tapin.catalogTitle": "کاتالوگ تاپین",
+		"tapin.catalogHint": "محصولات، مشتریان، کارمندان و کارها.",
+		"tapin.openCatalog": "باز کردن کاتالوگ",
+		"tapin.editShipment": "ویرایش مرسوله",
+		"tapin.printLabelNative": "برچسب اختصاصی",
+		"tapin.printBarcode": "بارکد HTML",
+		"tapin.fetchDetail": "دریافت جزئیات",
+		"tapin.kiosk": "کیوسک",
+		"tapin.kioskNone": "بدون کیوسک",
+		"tapin.defaultKiosk": "کیوسک پیش‌فرض",
+		"tapin.tapinOrderId": "شناسه سفارش تاپین",
+		"tapin.tapinOrdersList": "مرسوله‌های تاپین",
+		"tapin.bulkOps": "عملیات گروهی (شناسه سفارش ووکامرس)",
+		"tapin.wcOrderIds": "شناسه سفارش‌های ووکامرس",
+		"tapin.bulkStatus": "کد وضعیت تاپین",
+		"tapin.applyBulkStatus": "اعمال وضعیت گروهی",
+		"tapin.bulkLabels": "برچسب HTML گروهی",
+		"tapin.fromDate": "از تاریخ",
+		"tapin.toDate": "تا تاریخ",
+		"tapin.labelsByDate": "برچسب بر اساس تاریخ",
+		"tapin.changeReport": "گزارش تغییر وضعیت",
+		"tapin.lastChange": "آخرین تغییر وضعیت",
+		"tapin.recipient": "گیرنده",
+		"tapin.topupAmount": "مبلغ شارژ (ریال)",
+		"tapin.startTopup": "شروع شارژ",
+		"tapin.creditHistory": "تاریخچه شارژ",
+		"tapin.createdAt": "تاریخ ایجاد",
+		"tapin.shopDetail": "جزئیات فروشگاه",
+		"tapin.products": "محصولات",
+		"tapin.customers": "مشتریان",
+		"tapin.employees": "کارمندان",
+		"tapin.tasks": "کارها",
+		"tapin.createProduct": "ایجاد محصول تاپین",
+		"tapin.productTitle": "عنوان محصول",
+		"tapin.pushWcProduct": "ارسال محصول ووکامرس به تاپین",
+		"tapin.wcProductId": "شناسه محصول ووکامرس",
+		"tapin.syncToTapin": "همگام‌سازی با تاپین",
+		"tapin.mobile": "موبایل",
+		"tapin.taskDetail": "جزئیات کار",
+		"tapin.clearLocal": "پاک‌سازی متای محلی تاپین",
+		"tapin.clearLocalConfirm": "متای محلی (بارکد/شناسه) پاک شود تا دوباره ثبت کنید؟ مرسوله در تاپین حذف نمی‌شود.",
+		"tapin.createShop": "ایجاد فروشگاه تاپین",
+		"tapin.shopName": "نام فروشگاه",
+		"tapin.firstName": "نام",
+		"tapin.lastName": "نام خانوادگی",
+		"tapin.productCategories": "دسته‌بندی محصولات",
+		"tapin.customerCategories": "دسته‌بندی مشتریان",
+		"tapin.statusReport": "گزارش وضعیت",
+		"tapin.tapinOrderIds": "شناسه/UUID سفارش‌های تاپین",
+		"tapin.fetchStatusReport": "دریافت گزارش وضعیت",
+		"nav.module.analytics-commerce": "فروش",
+		"nav.module.analytics-compare": "ترافیک تطبیقی",
+		"nav.module.analytics-seo": "سئو",
+		"nav.module.analytics-support": "پشتیبانی",
+		"nav.module.analytics-content": "محتوا",
+		"nav.module.analytics-month-summary": "خلاصه ماه",
+		"nav.module.analytics-module-commerce": "فروش",
+		"nav.module.analytics-module-compare": "ترافیک تطبیقی",
+		"nav.module.analytics-module-seo": "سئو",
+		"nav.module.analytics-module-support": "پشتیبانی",
+		"nav.module.analytics-module-content": "محتوا",
+		"nav.module.analytics-module-month-summary": "خلاصه ماه",
+		"analytics.sections.commerce": "فروش",
+		"analytics.sections.compare": "ترافیک تطبیقی",
+		"analytics.sections.seo": "سئو",
+		"analytics.sections.support": "پشتیبانی",
+		"analytics.sections.content": "محتوا",
+		"analytics.sections.monthSummary": "خلاصه ماه",
+		"analytics.kpi.orders": "تعداد سفارش",
+		"analytics.kpi.revenue": "مبلغ کل فروش",
+		"analytics.kpi.aov": "میانگین ارزش سفارش",
+		"analytics.kpi.conversion": "نرخ تبدیل بازدید به خرید",
+		"analytics.kpi.salesSite": "فروش از سایت",
+		"analytics.kpi.salesInstagram": "فروش از اینستاگرام",
+		"analytics.kpi.salesOther": "فروش از سایر",
+		"analytics.kpi.newCustomers": "مشتریان جدید",
+		"analytics.kpi.returningCustomers": "مشتریان تکراری",
+		"analytics.compare.metric": "شاخص",
+		"analytics.compare.thisMonth": "این ماه",
+		"analytics.compare.lastMonth": "ماه قبل",
+		"analytics.compare.change": "درصد تغییر",
+		"analytics.compare.visitors": "بازدیدکننده یکتا",
+		"analytics.compare.views": "صفحه دیده‌شده",
+		"analytics.compare.avgDuration": "میانگین زمان ماندگاری",
+		"analytics.compare.bounce": "نرخ پرش",
+		"analytics.compare.topSources": "منابع ورودی اصلی",
+		"analytics.compare.topPages": "صفحات پربازدید",
+		"analytics.compare.siteConversion": "نرخ تبدیل کلی سایت",
+		"analytics.compare.sessionNote": "پس از جمع‌آوری نشست‌ها نمایش داده می‌شود.",
+		"analytics.seo.keywords": "کلمات کلیدی کارشده",
+		"analytics.seo.optimizedPages": "صفحات بهینه‌سازی‌شده",
+		"analytics.seo.internalLinks": "لینک‌سازی داخلی",
+		"analytics.seo.externalLinks": "لینک‌سازی خارجی",
+		"analytics.seo.noindexShare": "سهم noindex (Rank Math)",
+		"analytics.seo.rankPlaceholder": "رتبه واقعی نیاز به اتصال Search Console دارد.",
+		"analytics.seo.indexPlaceholder": "وضعیت ایندکس واقعی نیاز به اتصال Search Console دارد.",
+		"analytics.seo.gscMissing": "Search Console متصل نیست",
+		"analytics.support.tickets": "تیکت‌های ایجادشده",
+		"analytics.support.replies": "پیام پاسخ‌داده‌شده",
+		"analytics.support.csat": "رضایت مشتریان",
+		"analytics.support.csatCount": "تعداد امتیاز",
+		"analytics.support.frequent": "مشکلات پرتکرار",
+		"analytics.support.rateLabel": "امتیاز رضایت (۱ تا ۵)",
+		"analytics.content.productsCreated": "محصولات درج‌شده",
+		"analytics.content.productsUpdated": "محصولات به‌روزرسانی‌شده",
+		"analytics.content.postsPublished": "محتوای بلاگ منتشرشده",
+		"analytics.content.aiProducts": "محصولات تکمیل‌شده با هوش مصنوعی",
+		"analytics.content.aiBlog": "بلاگ نوشته‌شده با هوش مصنوعی",
+		"analytics.content.aiPages": "صفحات تکمیل‌شده با هوش مصنوعی",
+		"analytics.pct": "درصد تغییر",
+		"analytics.col.metric": "شاخص",
+		"analytics.col.count": "تعداد",
+		"analytics.col.subject": "موضوع",
+		"analytics.monthSummary.score": "امتیاز ماه",
+		"analytics.monthSummary.status.growth": "رشد",
+		"analytics.monthSummary.status.stable": "پایدار",
+		"analytics.monthSummary.status.decline": "افت",
+		"analytics.monthSummary.achievement": "دستاورد برتر",
+		"analytics.monthSummary.challenge": "چالش اصلی",
+		"analytics.monthSummary.noAchievement": "بدون رشد قابل‌توجه",
+		"analytics.monthSummary.noChallenge": "چالش برجسته‌ای شناسایی نشد",
+		"analytics.monthSummary.kpi.revenue": "درآمد",
+		"analytics.monthSummary.kpi.orders": "تعداد سفارش",
+		"analytics.monthSummary.kpi.visitors": "بازدیدکننده یکتا",
+		"analytics.monthSummary.kpi.conversion": "نرخ تبدیل",
+		"migrate.title": "مهاجرت کامل به سیستم اختصاصی وبینو",
+		"migrate.description": "فروشگاه ووکامرس را به‌صورت دسته‌ای و قابل‌ادامه به مستاجر وبینو بفرستید. نمونه: parisma.ir به parisma.webinaagency.ir.",
+		"migrate.connection": "اتصال",
+		"migrate.schema": "طرح داده: {{schema}}",
+		"migrate.siteUrl": "آدرس سایت وبینو",
+		"migrate.token": "توکن API",
+		"migrate.tokenSaved": "ذخیره شده ({{hint}}). برای جایگزینی، توکن جدید وارد کنید.",
+		"migrate.clearToken": "حذف توکن ذخیره‌شده",
+		"migrate.batchSize": "اندازه دسته",
+		"migrate.delay": "فاصله بین دسته‌ها (میلی‌ثانیه)",
+		"migrate.timeout": "مهلت هر درخواست (ثانیه)",
+		"migrate.dryRun": "پیش‌نمایش (ساخت دسته بدون ارسال)",
+		"migrate.dryRunBadge": "پیش‌نمایش",
+		"migrate.entities": "موارد مهاجرت",
+		"migrate.mode": "دامنه",
+		"migrate.modeFull": "کامل (همه‌چیز)",
+		"migrate.modeSelective": "انتخابی",
+		"migrate.modeHint": "حالت کامل همه منابع را روشن می‌کند. حالت انتخابی فقط جعبه‌های علامت‌خورده را می‌فرستد. منبعی که وبینو هنوز وارد نمی‌کند با هشدار رد می‌شود و بقیه کار ادامه پیدا می‌کند.",
+		"migrate.unsupported": "منتظر واردکننده وبینو",
+		"migrate.entity.media": "تصاویر",
+		"migrate.entity.media_files": "سایر رسانه‌ها (ویدیو، PDF، SVG)",
+		"migrate.entity.categories": "دسته‌های محصول",
+		"migrate.entity.tags": "برچسب‌های محصول",
+		"migrate.entity.brands": "برندها",
+		"migrate.entity.customers": "مشتریان",
+		"migrate.entity.staff": "کارکنان (دعوت، بدون رمز)",
+		"migrate.entity.products": "محصولات و متغیرها",
+		"migrate.entity.coupons": "کوپن‌ها",
+		"migrate.entity.reviews": "دیدگاه‌ها و امتیاز محصول",
+		"migrate.entity.pages": "برگه‌ها",
+		"migrate.entity.posts": "نوشته‌ها",
+		"migrate.entity.elementor_templates": "قالب‌های المنتور",
+		"migrate.entity.orders": "سفارش‌ها",
+		"migrate.entity.menus": "فهرست‌ها",
+		"migrate.entity.redirects": "ریدایرکت‌ها",
+		"migrate.entity.settings": "تنظیمات فروشگاه",
+		"migrate.entity.stats": "آمار روزانه",
+		"migrate.entity.waiting_list": "لیست انتظار",
+		"migrate.entity.permalinks": "نقشه پیوندها",
+		"migrate.entity.review_queue": "صف بررسی (کیف پول، تیکت، مرجوعی)",
+		"migrate.endpoints": "مسیرهای API",
+		"migrate.save": "ذخیره تنظیمات",
+		"migrate.saved": "تنظیمات مهاجرت ذخیره شد.",
+		"migrate.test": "آزمایش اتصال",
+		"migrate.testOk": "اتصال برقرار شد.",
+		"migrate.progress": "پیشرفت",
+		"migrate.notStarted": "هنوز مهاجرتی شروع نشده است.",
+		"migrate.start": "شروع مهاجرت",
+		"migrate.resume": "ادامه",
+		"migrate.pause": "توقف",
+		"migrate.reset": "پاک کردن وضعیت",
+		"migrate.confirmStart": "مهاجرت از ابتدا شروع شود؟ پیشرفت فعلی این کار پاک می‌شود.",
+		"migrate.confirmReset": "وضعیت مهاجرت پاک شود؟",
+		"migrate.passwordNote": "هش رمز مشتریان منتقل نمی‌شود. ورود در وبینو با کد یکبارمصرف یا بازنشانی رمز است. بستن این صفحه کار در حال اجرا را قطع نمی‌کند؛ کرون وردپرس هر دقیقه یک دسته می‌فرستد.",
+		"migrate.status.idle": "آماده",
+		"migrate.status.running": "در حال اجرا",
+		"migrate.status.paused": "متوقف",
+		"migrate.status.failed": "ناموفق",
+		"migrate.status.completed": "کامل شد"
 	};
-})), wh = /* @__PURE__ */ A({ default: () => Th }), Th, Eh = k((() => {
-	Th = {
+})), Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
+	Lh = {
 		"app.title": "Dashboard",
 		"chart.totalVisitors": "Total visitors",
 		"chart.descriptionLong": "Total for the last 3 months",
@@ -13697,7 +15238,34 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"nav.module.pages": "Site pages",
 		"nav.module.shop": "Store",
 		"nav.module.products": "Products",
+		"nav.module.product-catalog": "Product database",
 		"nav.module.product-new": "Add product",
+		"catalog.pageTitle": "Product database",
+		"catalog.pageDesc": "Search external product databases and add a draft product to your store.",
+		"catalog.settingsLink": "API keys",
+		"catalog.settingsTitle": "Product catalog settings",
+		"catalog.settingsDesc": "Free sources work without keys. Add keys for Google Books, BarcodeNest, GTINHub, and Buycott.",
+		"catalog.settingsSaved": "Settings saved",
+		"catalog.keyGoogleBooks": "Google Books API key",
+		"catalog.keyBarcodeNest": "BarcodeNest API key",
+		"catalog.keyGtinHub": "GTINHub API key",
+		"catalog.keyBuycott": "Buycott access token",
+		"catalog.cat.food": "Food & grocery",
+		"catalog.cat.beauty": "Beauty",
+		"catalog.cat.pet": "Pet food",
+		"catalog.cat.general": "General products",
+		"catalog.cat.books": "Books",
+		"catalog.cat.merchandise": "Electronics & general",
+		"catalog.searchLabel": "Search",
+		"catalog.searchPlaceholder": "Product name…",
+		"catalog.barcodeLabel": "Barcode",
+		"catalog.search": "Search",
+		"catalog.searching": "Searching…",
+		"catalog.empty": "No results",
+		"catalog.addDraft": "Add to site",
+		"catalog.imported": "Draft product created",
+		"catalog.openProduct": "Open",
+		"catalog.loadMore": "Load more",
 		"nav.module.brands": "Brands",
 		"nav.module.product-cats": "Product categories",
 		"nav.module.attributes": "Attributes",
@@ -13744,12 +15312,20 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"nav.module.tickets": "Tickets",
 		"nav.module.order-reports": "Reports",
 		"nav.module.marketing": "Marketing",
-		"nav.module.coupons": "Coupons",
+		"nav.module.coupons": "Coupon builder",
+		"nav.module.sale-prices": "Strikethrough prices",
 		"nav.module.users": "Users",
 		"nav.module.user-list": "Users",
 		"nav.module.user-new": "New user",
 		"nav.module.user-employees": "Employees",
 		"nav.module.comments": "Comments",
+		"nav.module.security-module": "Security",
+		"nav.module.security-overview": "Overview",
+		"nav.module.security-firewall": "Firewall",
+		"nav.module.security-scan": "Site scan",
+		"nav.module.security-tools": "Tools",
+		"nav.module.security-reports": "Reports",
+		"nav.module.security-settings": "Settings",
 		"nav.module.analytics": "Analytics",
 		"nav.module.analytics-overview": "Overview",
 		"nav.module.analytics-visitors": "Visitor analytics",
@@ -13921,6 +15497,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"home.traffic.onlineVisitors": "Online visitors",
 		"home.traffic.recentDays": "Recent days",
 		"home.panels.license": "License",
+		"home.panels.security": "Security",
+		"home.panels.securityHint": "WAF {{mode}} · {{findings}} open findings",
 		"home.panels.active": "Active",
 		"home.panels.inactive": "Inactive",
 		"home.panels.webhookOk": "Webhook OK",
@@ -14096,6 +15674,16 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"torobExtractor.autoSync": "Auto sync",
 		"torobExtractor.syncInterval": "Sync interval (hours)",
 		"torobpay.title": "TorobPay",
+		"torobpay.displayTitle": "TorobPay display",
+		"torobpay.ordersTitle": "TorobPay orders",
+		"torobpay.campaignTitle": "TorobPay campaign",
+		"torobpay.logsTitle": "TorobPay logs",
+		"torobpay.description": "TorobPay installment BNPL — Webina first-party",
+		"torobpay.officialNotice": "Official TorobPay plugin is active — dashboard uses its settings.",
+		"torobpay.saved": "Saved",
+		"torobpay.testOk": "Connection OK",
+		"torobpay.credsOk": "Credentials fetched",
+		"torobpay.campaignHint": "Campaign results from TorobPay merchant API.",
 		"torobpay.pageTitle": "TorobPay Gateway",
 		"torobpay.runtimeStatus": "Runtime status",
 		"torobpay.wcReady": "WooCommerce",
@@ -14111,6 +15699,14 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"torobpay.apiKey": "API key",
 		"torobpay.sandbox": "Sandbox",
 		"snapppay.title": "SnappPay",
+		"snapppay.logsTitle": "SnappPay logs",
+		"snapppay.description": "SnappPay installment gateway — Webina first-party",
+		"snapppay.officialNotice": "Official SnappPay plugin is active — dashboard reads/writes its settings.",
+		"snapppay.saved": "Saved",
+		"snapppay.testOk": "Connection OK",
+		"snapppay.test": "Test connection",
+		"snapppay.enabled": "Enable gateway",
+		"snapppay.noLogs": "No logs yet.",
 		"snapppay.pageTitle": "SnappPay Gateway",
 		"snapppay.runtimeStatus": "Runtime status",
 		"snapppay.wcReady": "WooCommerce",
@@ -14124,12 +15720,12 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"snapppay.fieldTitle": "Title",
 		"snapppay.fieldDescription": "Description",
 		"snapppay.merchantId": "Merchant ID",
-		"snapppay.clientId": "Client ID",
-		"snapppay.clientSecret": "Client secret",
+		"snapppay.clientId": "Gateway username / client ID",
+		"snapppay.clientSecret": "Secret",
 		"snapppay.sandbox": "Sandbox",
 		"basalam.title": "Basalam",
-		"basalam.subtitle": "Full Basalam integration with your online store and dashboard.",
-		"basalam.settingsTitle": "Connection settings",
+		"basalam.subtitle": "Connect your Basalam booth to the store and manage orders and products.",
+		"basalam.settingsTitle": "Sync settings",
 		"basalam.statusTitle": "Operational status",
 		"basalam.coverageTitle": "Endpoint coverage",
 		"basalam.reconcileNow": "Run reconcile",
@@ -14139,29 +15735,76 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.subscriptionsTitle": "Basalam Subscriptions",
 		"basalam.webhooksTitle": "Basalam Webhooks",
 		"basalam.operationsTitle": "Basalam Operations",
-		"basalam.connection": "Connection",
+		"basalam.connection": "Booth connection",
 		"basalam.connectionHint": "Connect your Basalam booth via OAuth.",
-		"basalam.oauthWafHint": "First click Connect (Basalam SSO). An English CDN 403 page means the token was NOT saved yet — copy the full address-bar URL from that error page and paste it below. A JWT in the URL alone does not mean the dashboard is connected.",
+		"basalam.connectionHintWebina": "Connect via Webina SSO (webina.dev). Client secret never leaves WebinaCRM.",
+		"basalam.oauthWafHint": "First click Connect (Basalam SSO via Webina). If a CDN blocks the return URL, paste the full address-bar URL below.",
 		"basalam.oauthPasteTitle": "Complete connection from return URL",
-		"basalam.oauthPasteHint": "Paste the full address-bar URL from the 403 page (including access_token) and save. It posts via admin-ajax so the JWT never hits the CDN as a GET.",
-		"basalam.oauthPastePlaceholder": "https://yoursite.com/wp-admin/admin.php?page=basalam-save-token&access_token=…",
+		"basalam.oauthPasteHint": "Paste the full address-bar URL (including access_token) and save.",
+		"basalam.oauthPastePlaceholder": "https://yoursite.com/wp-admin/admin.php?page=webino_basalam-save-token&access_token=…",
 		"basalam.oauthPasteSave": "Save token from URL",
+		"basalam.manualTokenTitle": "Manual tokens (test / recovery)",
+		"basalam.manualTokenHint": "Paste vendor access and refresh tokens when SSO is unavailable.",
+		"basalam.manualTokenSave": "Save tokens",
+		"basalam.refreshToken": "Refresh token",
+		"basalam.tokenRefreshed": "Access token refreshed.",
+		"basalam.disconnect": "Disconnect",
+		"basalam.disconnected": "Basalam disconnected.",
+		"basalam.setupWebhook": "Enable automatic order intake",
+		"basalam.nav.home": "Home",
 		"basalam.connected": "Connected",
 		"basalam.notConnected": "Not connected",
-		"basalam.connectOAuth": "Connect with Basalam",
+		"basalam.connectOAuth": "Connect to Basalam",
 		"basalam.oauthMissingUrl": "OAuth URL missing",
-		"basalam.operations": "Operations",
+		"basalam.operations": "Store operations",
 		"basalam.operationsHint": "Sync products and orders with the Basalam engine.",
-		"basalam.pullOrders": "Pull orders",
-		"basalam.ordersPullQueued": "Order pull job queued.",
+		"basalam.pullOrders": "Fetch orders",
+		"basalam.pullOrdersDays": "Past orders lookback",
+		"basalam.pullDays.7": "7 days",
+		"basalam.pullDays.30": "30 days",
+		"basalam.pullDays.90": "90 days",
+		"basalam.pullDays.180": "180 days",
+		"basalam.pullDays.365": "365 days",
+		"basalam.ordersPullQueued": "Order pull for the last {{days}} days was queued.",
 		"basalam.webhook": "Order webhook URL",
 		"basalam.nav.products": "Products",
+		"basalam.nav.booth": "Booth",
 		"basalam.nav.orders": "Orders",
+		"basalam.archiveOne": "Archive",
+		"basalam.restoreOne": "Restore",
+		"basalam.connectOne": "Connect ID",
+		"basalam.boothTitle": "Basalam booth",
+		"basalam.boothSubtitle": "Profile, shipping, discounts, and buyer chat.",
+		"basalam.boothProfile": "Booth profile",
+		"basalam.boothProfileHint": "Update title and summary on Basalam.",
+		"basalam.saveBooth": "Save profile",
+		"basalam.boothSaved": "Booth profile saved.",
+		"basalam.shippingTitle": "Shipping profiles",
+		"basalam.shippingHint": "Basalam Shipping Service (profiles, carriers) — replaces deprecated Core shipping-methods.",
+		"basalam.saveShipping": "Save shipping methods",
+		"basalam.shippingSaved": "Shipping profile saved.",
+		"basalam.shippingProfileTitle": "New profile title",
+		"basalam.createShippingProfile": "Create profile",
+		"basalam.shippingProfileDeleted": "Shipping profile deleted.",
+		"basalam.webhookManage": "Webhooks",
+		"basalam.rotateWebhook": "Rotate secret & re-register",
+		"basalam.webhookRotated": "Webhook rotated.",
+		"basalam.webhookDeleted": "Webhook deleted.",
+		"basalam.discountsTitle": "Vendor discounts",
+		"basalam.discountsHint": "List and create discounts via Basalam API (JSON body).",
+		"basalam.createDiscount": "Create discount",
+		"basalam.discountCreated": "Discount created.",
+		"basalam.invalidJson": "Invalid JSON",
+		"basalam.chatTitle": "Buyer chat",
+		"basalam.chatHint": "Loads Basalam chat widget when connected.",
+		"basalam.chatLoaded": "Chat widget script injected.",
+		"basalam.chatDisabled": "Connect Basalam first to enable chat.",
+		"basalam.openAdminChat": "Open classic admin Basalam page",
 		"basalam.nav.categories": "Categories",
 		"basalam.nav.settings": "Settings",
 		"basalam.nav.finance": "Finance",
 		"basalam.nav.tickets": "Tickets",
-		"basalam.nav.logs": "Logs",
+		"basalam.nav.logs": "Sync status",
 		"basalam.productsTitle": "Basalam products",
 		"basalam.productsSubtitle": "Create, update, and auto-connect WooCommerce products to Basalam.",
 		"basalam.productActions": "Bulk actions",
@@ -14180,6 +15823,54 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.confirmOrder": "Confirm",
 		"basalam.cancelOrder": "Cancel",
 		"basalam.shipOrder": "Ship / tracking",
+		"basalam.delayOrder": "Request delay",
+		"basalam.delayDays": "Days",
+		"basalam.delayDesc": "Delay reason",
+		"basalam.cancelRequest": "Cancel request",
+		"basalam.cancelRequestDesc": "Cancel-request reason",
+		"basalam.createSettlement": "Create settlement",
+		"basalam.createSettlementHint": "Amount is in rials. Method depends on Basalam accounting API.",
+		"basalam.settlementAmountRial": "Amount (rial)",
+		"basalam.settlementMethod": "Method id",
+		"basalam.selectBank": "Bank account (optional)",
+		"basalam.submitSettlement": "Submit settlement",
+		"basalam.settlementCreatedOk": "Settlement created.",
+		"basalam.detectCategory": "Category detection",
+		"basalam.detectTitlePlaceholder": "Product title for Basalam category predict",
+		"basalam.runDetect": "Detect",
+		"basalam.detectOk": "Category predicted.",
+		"basalam.optionMaps": "Attribute option maps",
+		"basalam.wooAttrName": "Woo attribute name",
+		"basalam.basalamAttrName": "Basalam attribute name",
+		"basalam.saveOptionMap": "Save option map",
+		"basalam.optionMapSaved": "Option map saved.",
+		"basalam.selectiveSync": "Selective product field sync",
+		"basalam.syncAllFields": "All fields",
+		"basalam.syncCustomFields": "Custom fields",
+		"basalam.roundPrice": "Round price",
+		"basalam.addAttrToDesc": "Attrs → description",
+		"basalam.addShortDesc": "Short desc → description",
+		"basalam.allWholesale": "All products wholesale",
+		"basalam.capPrep": "Cap prep to category max",
+		"basalam.tasksAuto": "Auto tasks/minute",
+		"basalam.field.defaultStock": "Default stock",
+		"basalam.field.discountDays": "Discount days",
+		"basalam.field.discountPercent": "Discount %",
+		"basalam.field.customerPrefix": "Customer name prefix",
+		"basalam.field.customerSuffix": "Customer name suffix",
+		"basalam.field.videoMeta": "Video meta key",
+		"basalam.field.videoSource": "Video source",
+		"basalam.field.videoInherit": "Video inherit mode",
+		"basalam.field.orderStatusMode": "Order status mode",
+		"basalam.field.shippingMethod": "Order shipping method id",
+		"basalam.field.variableStockSource": "Variable product stock source",
+		"basalam.field.productPriceField": "Product price field",
+		"basalam.ticketsDisabledTitle": "Hamsalam tickets removed",
+		"basalam.ticketsDisabledHint": "Support tickets no longer go through Hamsalam. Use Webina support channels.",
+		"basalam.ticketsSubtitle": "Hamsalam support tickets.",
+		"basalam.settingsSubtitle": "Choose what syncs from your store to Basalam.",
+		"basalam.variationAsProductHintTitle": "Variable products",
+		"basalam.variationAsProductHint": "Each WooCommerce variation is created as a separate Basalam product. The title is the parent name plus attribute values (example: قهوه عربیکا کنیا ۱ کیلوگرم). Products previously synced as one parent with nested variants must be disconnected and reconnected.",
 		"basalam.orderActionOk": "Order action sent.",
 		"basalam.categoriesTitle": "Category mapping",
 		"basalam.categoriesSubtitle": "Map WooCommerce categories to Basalam category tree.",
@@ -14187,9 +15878,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.saveMapping": "Save mapping",
 		"basalam.mappingSaved": "Mapping saved.",
 		"basalam.mappingDeleted": "Mapping deleted.",
-		"basalam.mappings": "Mappings",
+		"basalam.mappings": "Saved mappings",
 		"basalam.delete": "Delete",
-		"basalam.settingsSubtitle": "Product/order sync toggles (Basalam settings).",
 		"basalam.syncToggles": "Sync toggles",
 		"basalam.syncProducts": "Auto sync products",
 		"basalam.syncOrders": "Auto sync orders",
@@ -14202,7 +15892,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.financeWpAdminHint": "Full finance UI is also available under the Webino Basalam WP-Admin menu.",
 		"basalam.financeLoading": "Loading…",
 		"basalam.financeError": "Failed to load finance data.",
-		"basalam.boothBalance": "Booth balance",
+		"basalam.boothBalance": "Basalam booth balance",
 		"basalam.balanceAsOf": "Balance as of {{time}}",
 		"basalam.settledBankYtd": "Bank settlements (YTD)",
 		"basalam.settledWalletYtd": "Wallet settlements (YTD)",
@@ -14219,12 +15909,13 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.balance": "Balance",
 		"basalam.settlements": "Settlements",
 		"basalam.ticketsTitle": "Tickets",
-		"basalam.ticketsSubtitle": "Hamsalam support tickets.",
 		"basalam.ticketsHint": "Use WP-Admin Basalam → Tickets for full ticket compose/reply.",
-		"basalam.logsTitle": "Logs & coverage",
-		"basalam.logsSubtitle": "Jobs, coverage matrix, and log hints.",
+		"basalam.logsTitle": "Sync status",
+		"basalam.logsSubtitle": "Recent sync work between your store and Basalam.",
 		"basalam.coverage": "API coverage",
-		"basalam.oauthConnected": "Basalam connected successfully.",
+		"basalam.oauthConnected": "Booth connected successfully.",
+		"basalam.oauthError": "Basalam connection failed. Try again.",
+		"basalam.oauthVendorError": "Could not resolve a Basalam vendor id. Sign in with a vendor booth account and reconnect.",
 		"basalam.webhookConfigured": "Webhook is registered.",
 		"basalam.webhookPending": "Webhook is set up after OAuth.",
 		"basalam.productList": "Product list",
@@ -14243,7 +15934,6 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.col.total": "Total",
 		"basalam.createOne": "Create",
 		"basalam.updateOne": "Update",
-		"basalam.disconnect": "Disconnect",
 		"basalam.connectedOrders": "Connected orders",
 		"basalam.noOrders": "No connected orders yet. Run pull orders.",
 		"basalam.syncFields": "Sync fields",
@@ -14253,6 +15943,19 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"basalam.field.defaultPreparation": "Preparation time",
 		"basalam.field.tasksPerMinute": "Tasks per minute",
 		"basalam.field.priceChange": "Price change",
+		"basalam.commission.title": "Basalam price & commission",
+		"basalam.commission.hint": "Mehr 1405 tariff is bundled. Use “Load tariff” to match Basalam categories (sent price = store ÷ (1 − commission)), or set a fixed manual percent (−35…35).",
+		"basalam.commission.status": "{{count}} rates · {{unmatched}} unmatched · last load: {{at}}",
+		"basalam.commission.neverImported": "not loaded yet",
+		"basalam.commission.enable": "Category commission on",
+		"basalam.commission.seedTariff": "Load / refresh Mehr 1405 tariff",
+		"basalam.commission.uploadCsv": "Upload tariff CSV",
+		"basalam.commission.applyUpdate": "Apply commission to connected products",
+		"basalam.commission.importOk": "Saved {{matched}} rates ({{unmatched}} unmatched).",
+		"basalam.commission.seedOk": "Saved {{matched}} rates from Mehr 1405 tariff ({{unmatched}} unmatched).",
+		"basalam.commission.applyQueued": "Price update with commission was queued.",
+		"basalam.commission.manualPercent": "Fixed manual percent (−35…35)",
+		"basalam.commission.manualPercentHint": "Additive store markup; not used together with category commission mode.",
 		"basalam.field.productPrefix": "Title prefix",
 		"basalam.field.productSuffix": "Title suffix",
 		"basalam.field.safeStock": "Safe stock",
@@ -14264,7 +15967,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"zarinpal.operationsTitle": "Zarinpal Operations",
 		"zarinpal.coverageTitle": "Zarinpal Coverage",
 		"zarinpal.settingsSubtitle": "Connect merchant credentials and sandbox mode",
-		"zarinpal.paymentsSubtitle": "Checkout title, messages, and fee payer",
+		"zarinpal.paymentsSubtitle": "Checkout title, icon, messages, and fee labels",
 		"zarinpal.operationsSubtitle": "Reconcile unverified payments and look up transactions",
 		"zarinpal.merchantId": "Merchant ID",
 		"zarinpal.accessToken": "Access token (GraphQL)",
@@ -14283,10 +15986,21 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"zarinpal.fieldTitle": "Checkout title",
 		"zarinpal.fieldDescription": "Description",
 		"zarinpal.fieldInstructions": "Instructions",
+		"zarinpal.orderButtonText": "Checkout button text",
+		"zarinpal.feeLabel": "Fee label",
+		"zarinpal.iconUrl": "Gateway icon URL",
+		"zarinpal.iconUrlPlaceholder": "Leave empty for bundled logo",
+		"zarinpal.iconUrlHint": "Empty uses the official bundled Zarinpal logo.",
+		"zarinpal.paymentDescription": "API payment description",
+		"zarinpal.paymentDescriptionHint": "Placeholder: {order_id}",
 		"zarinpal.successMessage": "Success message",
 		"zarinpal.failedMessage": "Failed message",
+		"zarinpal.cancelledMessage": "Cancellation fault text",
+		"zarinpal.invalidTokenMessage": "Invalid token fault text",
 		"zarinpal.successHint": "Placeholder: {transaction_id}",
 		"zarinpal.failedHint": "Placeholder: {fault}",
+		"zarinpal.cancelledHint": "Fills {fault} when the customer cancels on Zarinpal.",
+		"zarinpal.invalidTokenHint": "Fills {fault} when the payment authority is invalid.",
 		"zarinpal.feePayer": "Fee payer",
 		"zarinpal.feePayerMerchant": "Merchant",
 		"zarinpal.feePayerCustomer": "Customer",
@@ -14384,7 +16098,50 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"accounting.nav.checks": "Checks",
 		"accounting.nav.warehouses": "Warehouses",
 		"accounting.nav.moadian": "Moadian queue",
+		"accounting.nav.tax": "Tax cockpit",
 		"accounting.nav.hesabfa": "Hesabfa sync",
+		"accounting.tax.from": "From",
+		"accounting.tax.to": "To",
+		"accounting.tax.revenue": "Revenue",
+		"accounting.tax.profit": "Profit",
+		"accounting.tax.loss": "Loss",
+		"accounting.tax.vatNet": "Net VAT",
+		"accounting.tax.incomeTax": "Income tax estimate",
+		"accounting.tax.tips": "Tax tips",
+		"accounting.tax.dismiss": "Dismiss",
+		"accounting.tax.disclaimer": "Estimates use configured rules and versioned tables; confirm with a licensed tax advisor.",
+		"accounting.taxTip.setupIncomplete": "Tax setup wizard is not finished.",
+		"accounting.taxTip.moadianKeys": "Fiscal ID or Moadian private key is missing.",
+		"accounting.taxTip.thresholdNear": "Sales are at {{pct}}% of the configured threshold.",
+		"accounting.taxTip.moadianFailed": "{{count}} Moadian send jobs failed.",
+		"accounting.taxTip.missingSstid": "{{count}} invoice lines missing SSTID.",
+		"accounting.taxTip.vatDeadline": "Approximate VAT filing window: ~{{days}} days.",
+		"accounting.taxTip.rateVersion": "Tax rate version updated: {{label}}",
+		"accounting.taxWizard.title": "Tax setup",
+		"accounting.taxWizard.subtitle": "Configure taxpayer type, intacode, and Moadian connection once.",
+		"accounting.taxWizard.stepOf": "Step {{step}} of {{total}}",
+		"accounting.taxWizard.taxpayerType": "Taxpayer type",
+		"accounting.taxWizard.individual": "Individual",
+		"accounting.taxWizard.corporate": "Corporate",
+		"accounting.taxWizard.company": "Company / business name",
+		"accounting.taxWizard.economic": "Economic code",
+		"accounting.taxWizard.nationalId": "National ID",
+		"accounting.taxWizard.postal": "Postal code",
+		"accounting.taxWizard.tracking": "Tax file tracking code",
+		"accounting.taxWizard.intaSearch": "Search intacode",
+		"accounting.taxWizard.intaCode": "Intacode",
+		"accounting.taxWizard.profitRatio": "Profit ratio (%)",
+		"accounting.taxWizard.corporateRate": "Corporate tax rate (%)",
+		"accounting.taxWizard.transport": "Moadian transport",
+		"accounting.taxWizard.transportDirect": "Direct (self-tsp)",
+		"accounting.taxWizard.transportTsp": "Trusted provider (TSP)",
+		"accounting.taxWizard.tspUrl": "TSP base URL",
+		"accounting.taxWizard.tspKey": "TSP API key",
+		"accounting.taxWizard.summaryVat": "General VAT rate",
+		"accounting.taxWizard.disclaimer": "Rates come from versioned module tables; check intamedia.ir for new circulars.",
+		"accounting.taxWizard.finish": "Finish and open cockpit",
+		"accounting.taxWizard.done": "Tax setup saved",
+		"accounting.taxWizard.reopen": "Setup wizard",
 		"accounting.nav.payroll": "Payroll",
 		"accounting.nav.projects": "Projects",
 		"accounting.nav.reports": "Reports",
@@ -14551,7 +16308,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.shopSms.syncPattern": "Sync / register pattern",
 		"settings.shopSms.bindPattern": "Bind existing pattern code",
 		"settings.shopSms.patternSynced": "Pattern synced.",
-		"settings.shopSms.patternOnlyHint": "Order SMS is sent only via an approved SMS pattern.",
+		"settings.shopSms.patternOnlyHint": "Order SMS (customer and admin) is sent only via an approved pattern, and only when that status switch is on.",
 		"settings.shopSms.eventColumn": "Event / status",
 		"settings.shopSms.patternColumn": "Pattern",
 		"settings.shopSms.patternCode": "Pattern code",
@@ -14590,6 +16347,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.shopSms.events.courier": "Courier delivery",
 		"settings.shopSms.events.post": "Post delivery",
 		"settings.shopSms.events.tipax": "Tipax delivery",
+		"settings.shopSms.events.chapar": "Chapar delivery",
+		"settings.shopSms.events.other": "Other (tracking)",
 		"settings.shopSms.events.on-hold": "On hold",
 		"settings.shopSms.events.completed": "Completed",
 		"settings.shopSms.events.cancelled": "Cancelled",
@@ -14618,6 +16377,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.shopSms.recoveryExpires": "Expires (days)",
 		"settings.shopSms.recoveryUsage": "Usage limit",
 		"settings.shopSms.postBarcodeMergedHint": "Saving a post barcode also uses this “Post delivery” pattern.",
+		"settings.shopSms.trackingVarsHint": "Use {tracking} and {tracking_url} in patterns for post/courier/tipax/chapar/other.",
+		"settings.shopSms.posPaymentVarsHint": "For POS payment SMS, map pattern variables to {customer_name} (اسم), {customer_phone} (شماره), {payment_url} (لینک). Aliases: {name}, {phone}/{mobile}, {link}/{payment_link}. Optional: {pattern_code}.",
 		"settings.site.fieldSiteTitle": "Site title",
 		"settings.site.fieldTagline": "Tagline",
 		"settings.site.fieldAdminEmail": "Admin email",
@@ -14689,7 +16450,19 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.shop.shippingNewZone": "New zone name",
 		"settings.shop.shippingAddZone": "Add zone",
 		"settings.shop.shippingMethodCount": "{{count}} methods",
+		"settings.shop.shippingLocationCount": "{{count}} locations",
 		"settings.shop.shippingOptions": "Shipping options",
+		"settings.shop.shippingEditZone": "Edit zone",
+		"settings.shop.shippingZoneName": "Zone name",
+		"settings.shop.shippingLocations": "Geographic coverage",
+		"settings.shop.shippingLocIran": "All of Iran (country)",
+		"settings.shop.shippingPostcode": "Postcode / city (optional)",
+		"settings.shop.shippingRestOfWorldHint": "Rest of the world only accepts shipping methods.",
+		"settings.shop.shippingMethods": "Shipping methods",
+		"settings.shop.shippingPickMethod": "Choose method…",
+		"settings.shop.shippingAddMethod": "Add method",
+		"settings.shop.shippingNoMethods": "No methods yet.",
+		"settings.shop.shippingMethodEnabled": "Enable method",
 		"settings.shop.gatewayEnabled": "Enable gateway",
 		"settings.shop.emailEnabled": "Enable email",
 		"settings.shop.emailGlobal": "Email sender options",
@@ -14732,6 +16505,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"common.nextPage": "Next page",
 		"common.emptyValue": "—",
 		"common.cancel": "Cancel",
+		"common.confirm": "Confirm",
 		"common.back": "Back",
 		"common.unlimited": "Unlimited",
 		"settings.langEn": "English",
@@ -15572,6 +17346,25 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.total": "Total",
 		"orders.newStatus": "New status",
 		"orders.applyStatus": "Apply status",
+		"orders.statusPipeline": "Order stages",
+		"orders.statusStep.processing": "Processing",
+		"orders.statusStep.packaged": "Packaged",
+		"orders.statusStep.ready": "Ready to ship",
+		"orders.statusStep.ship": "Ship",
+		"orders.statusStep.completed": "Completed",
+		"orders.statusConfirmTitle": "Change order status",
+		"orders.statusConfirmBody": "Change status from “{{from}}” to “{{to}}”?",
+		"orders.cancelOrder": "Cancel order",
+		"orders.cancelConfirmTitle": "Confirm cancel order",
+		"orders.cancelConfirmInstallment": "This is an installment order. After cancellation, the payment gateway will refund the customer automatically — no manual action is needed.",
+		"orders.cancelConfirmCash": "This is a cash order. After cancellation, you must refund the customer manually{{gateway}}.",
+		"orders.cancelConfirmCashGateway": " (gateway: {{gateway}})",
+		"orders.printMore": "More prints",
+		"orders.otherStatuses": "Other statuses",
+		"orders.shipDialog.title": "Ship order",
+		"orders.shipDialog.description": "Enter the tracking code and optionally send an SMS to the customer.",
+		"orders.shipDialog.open": "Add / send tracking",
+		"orders.shipDialog.noTrackingYet": "No tracking code yet.",
 		"orders.wcStatus.pending": "Pending",
 		"orders.wcStatus.processing": "Processing",
 		"orders.wcStatus.on-hold": "On hold",
@@ -15683,10 +17476,18 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.printStoreLabel": "Print store label",
 		"orders.printNewLabels": "Print new order labels",
 		"orders.printNewLabelsEmpty": "No processing or on-hold orders without a printed shipping label.",
-		"orders.panelTracking": "Post tracking",
+		"orders.panelTracking": "Order tracking",
 		"orders.trackingCode": "Tracking code",
 		"orders.trackingProvider": "Provider",
 		"orders.trackingLink": "Track shipment",
+		"orders.selectTrackingProvider": "Select provider",
+		"orders.trackingProviderWithPattern": "{{title}} — pattern: {{pattern}}",
+		"orders.trackingProviderPatternBound": "{{title}} — pattern bound",
+		"orders.trackingNoActiveProviders": "No providers with a bound SMS pattern. Bind post/courier/tipax/chapar/other patterns in SMS settings first.",
+		"orders.sendTrackingSms": "Send tracking SMS",
+		"orders.trackingSmsSent": "Tracking SMS sent",
+		"orders.trackingSmsNeedCodeProvider": "Enter a tracking code and select a provider",
+		"orders.trackingSmsNoPattern": "No SMS pattern is bound for this provider",
 		"orders.deliverySlot": "Delivery slot",
 		"orders.panelDigipay": "Digipay",
 		"orders.digipayTransaction": "Transaction ID",
@@ -15711,8 +17512,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"digipay.status.ok": "OK",
 		"digipay.status.failed": "Failed",
 		"digipay.field.version": "Digipay version",
-		"digipay.field.clientId": "Client ID",
-		"digipay.field.clientSecret": "Client secret",
+		"digipay.field.clientId": "Gateway username / client ID",
+		"digipay.field.clientSecret": "Secret",
 		"digipay.field.username": "Username",
 		"digipay.field.password": "Password",
 		"digipay.field.sellerId": "Seller ID",
@@ -15757,6 +17558,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.historyAov": "Average order value",
 		"orders.stats.orders": "Orders",
 		"orders.stats.revenue": "Revenue",
+		"orders.stats.periodMonth": "Stats period: this month ({{label}})",
+		"orders.stats.periodCustom": "Stats period: {{after}} to {{before}}",
 		"orders.stats.aov": "Avg. order",
 		"orders.stats.processing": "Processing",
 		"orders.stats.completed": "Completed",
@@ -15790,6 +17593,17 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"orders.contact.openUser": "Open user",
 		"orders.panelSmsHistory": "SMS history",
 		"orders.smsHistoryEmpty": "No SMS logs for this order.",
+		"orders.smsRole.customer": "Customer",
+		"orders.smsRole.admin": "Admin",
+		"orders.smsReason.event_off": "Event switch is off for this role.",
+		"orders.smsReason.disabled": "Shop SMS panel is disabled.",
+		"orders.smsReason.no_phone": "Customer phone is missing.",
+		"orders.smsReason.no_admin_phone": "Admin phone is not configured.",
+		"orders.smsReason.pattern_missing": "No synced pattern for this status.",
+		"orders.smsReason.template_missing": "SMS template is missing.",
+		"orders.smsReason.empty_template": "Template body is empty.",
+		"orders.smsReason.insufficient_balance": "Insufficient SMS credit.",
+		"orders.smsReason.send_failed": "Send failed.",
 		"orders.smsStatus.delivered": "Delivered",
 		"orders.smsStatus.sent": "Sent",
 		"orders.smsStatus.queued": "Queued",
@@ -15835,6 +17649,7 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.comparePrevious": "Compare to previous period",
 		"reports.comparePeriod": "Previous period",
 		"reports.statusFilter": "Order status",
+		"reports.statusFilterHint": "Empty = all successful sales (excludes cancelled, failed, pending payment, refunds).",
 		"reports.exportCsv": "Export CSV",
 		"reports.deltaNew": "New",
 		"reports.preset.today": "Today",
@@ -15854,6 +17669,9 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.status.cancelled": "Cancelled",
 		"reports.status.refunded": "Refunded",
 		"reports.status.failed": "Failed",
+		"reports.status.webino-packaged": "Packaged",
+		"reports.status.webino-ready-to-ship": "Ready to ship",
+		"reports.status.webino-shipping": "Shipping",
 		"reports.kpi.revenue": "Gross revenue",
 		"reports.kpi.netRevenue": "Net revenue",
 		"reports.kpi.orders": "Orders",
@@ -15904,7 +17722,65 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.heatmap.legendMax": "More orders",
 		"reports.wfcpDisabledHint": "WFCP inactive",
 		"reports.cogsApproxHint": "Purchase prices use current product meta, not historical snapshots.",
+		"salePrices.title": "Strikethrough prices",
+		"salePrices.banner": "Discounts apply only to products in this list. Archived or pending products are not included.",
+		"salePrices.selectHint": "Select products",
+		"salePrices.selectedCount": "{{count}} products selected",
+		"salePrices.selectAllPage": "Select all on this page",
+		"salePrices.needSelection": "Select at least one product",
+		"salePrices.empty": "No products found",
+		"salePrices.apply": "Apply discount",
+		"salePrices.remove": "Remove discount",
+		"salePrices.applyAllFiltered": "Apply to all filtered",
+		"salePrices.removeAllFiltered": "Remove from all filtered",
+		"salePrices.applyTitle": "Apply discount",
+		"salePrices.percent": "Discount percent",
+		"salePrices.percentPlaceholder": "e.g. 10",
+		"salePrices.durationLabel": "Discount duration",
+		"salePrices.duration.1d": "1 day",
+		"salePrices.duration.3d": "3 days",
+		"salePrices.duration.1w": "1 week",
+		"salePrices.duration.1m": "1 month",
+		"salePrices.duration.custom": "Custom",
+		"salePrices.previewCta": "Preview strikethrough prices",
+		"salePrices.confirmApply": "Confirm and apply",
+		"salePrices.previewCount": "{{count}} products eligible",
+		"salePrices.applyDone": "{{ok}} products updated (skipped: {{skipped}})",
+		"salePrices.removeDone": "Discount removed from {{ok}} products",
+		"salePrices.removeConfirmTitle": "Remove discount?",
+		"salePrices.removeConfirmBody": "Sale price and sale dates will be cleared on the selected products.",
 		"coupons.title": "Coupons",
+		"coupons.builder.title": "Coupon builder",
+		"coupons.builder.publicNote": "All customers can see your coupons; only one coupon per order; when conditions are met the coupon auto-applies without needing a code.",
+		"coupons.builder.create": "Create coupon",
+		"coupons.builder.advanced": "Advanced mode",
+		"coupons.builder.classicList": "Classic list",
+		"coupons.builder.wizardTitle": "Quick coupon",
+		"coupons.builder.wizardHint": "Each coupon can have only one condition.",
+		"coupons.builder.conditionType": "Condition",
+		"coupons.builder.conditionValue": "Condition value",
+		"coupons.builder.rewardType": "Reward type",
+		"coupons.builder.rewardAmount": "Reward amount",
+		"coupons.builder.cond.orderNth": "Order number",
+		"coupons.builder.cond.minAmount": "Minimum order amount",
+		"coupons.builder.cond.minItems": "Minimum item count",
+		"coupons.builder.reward.fixed": "Fixed discount",
+		"coupons.builder.reward.percent": "Percent discount",
+		"coupons.builder.reward.freeShip": "Free shipping",
+		"coupons.builder.reward.shipPct": "Shipping percent off",
+		"coupons.builder.publish": "Publish coupon",
+		"coupons.builder.suggested": "Suggested coupons",
+		"coupons.builder.suggestedHint": "Pick suggested coupons and add them to your list.",
+		"coupons.builder.owned": "Your store coupons",
+		"coupons.builder.ownedEmpty": "No builder coupons yet.",
+		"coupons.builder.less": "Less",
+		"coupons.builder.more": "More",
+		"coupons.builder.youHave": "You already have this",
+		"coupons.builder.addSuggested": "Add to coupons",
+		"coupons.builder.added": "Coupon added",
+		"coupons.builder.alreadyOwned": "Already added",
+		"coupons.builder.customDesc": "Created from coupon builder",
+		"coupons.builder.upTo": "Up to {{amount}}",
 		"coupons.create": "Create coupon",
 		"coupons.amount": "Amount",
 		"coupons.submitCreate": "Create",
@@ -16143,6 +18019,79 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"settings.smsModirpayamakPanel": "Open SMS panel",
 		"marketing.sms.serviceUnavailable": "SMS service is unavailable. You can browse this page; sending and top-up work once the connection is restored.",
 		"marketing.sms.dashboardTitle": "SMS panel",
+		"marketing.smsAds.heroTitle": "Grow sales with every SMS",
+		"marketing.smsAds.heroDesc": "Send targeted SMS so more customers discover your store.",
+		"marketing.smsAds.createCta": "Create SMS ad",
+		"marketing.smsAds.bannerVolume": "1,000+ SMS / month",
+		"marketing.smsAds.bannerVolumeDesc": "Shops reserve campaigns ahead so they stay in touch with customers.",
+		"marketing.smsAds.bannerSegments": "Targeted audiences",
+		"marketing.smsAds.bannerSegmentsDesc": "Pick the right segment; we run your SMS ad precisely.",
+		"marketing.smsAds.bannerCopy": "Full control of copy",
+		"marketing.smsAds.bannerCopyDesc": "Use templates or write your own message.",
+		"marketing.smsAds.campaignsTitle": "Recent ads",
+		"marketing.smsAds.noCampaigns": "No ads yet.",
+		"marketing.smsAds.wizardTitle": "Create SMS & notification ad",
+		"marketing.smsAds.detailTitle": "SMS ad analytics",
+		"marketing.smsAds.stepTarget": "Audience",
+		"marketing.smsAds.stepSettings": "Settings",
+		"marketing.smsAds.stepPay": "Payment",
+		"marketing.smsAds.whoQuestion": "Who should receive this ad?",
+		"marketing.smsAds.seg.system_suggest.title": "System suggestion",
+		"marketing.smsAds.seg.system_suggest.desc": "Best groups such as abandoned carts and buyers of top categories.",
+		"marketing.smsAds.seg.retarget.title": "Customer retargeting",
+		"marketing.smsAds.seg.retarget.desc": "Bring past buyers back with a timely reminder.",
+		"marketing.smsAds.seg.acquire.title": "Acquire new customers",
+		"marketing.smsAds.seg.acquire.desc": "Newsletter subscribers who have not purchased yet.",
+		"marketing.smsAds.seg.city_customers.title": "City customers",
+		"marketing.smsAds.seg.city_customers.desc": "Customers whose billing city matches your store city.",
+		"marketing.smsAds.seg.all_city.title": "Everyone in the city",
+		"marketing.smsAds.seg.all_city.desc": "All contacts in that city, including non-buyers.",
+		"marketing.smsAds.seg.vip_buyers.title": "Loyal customers",
+		"marketing.smsAds.seg.vip_buyers.desc": "Buyers with at least 3 successful orders.",
+		"marketing.smsAds.seg.followers.title": "Followers / newsletter",
+		"marketing.smsAds.seg.followers.desc": "Newsletter subscribers and phonebook contacts.",
+		"marketing.smsAds.segmentCount": "{{count}} recipients",
+		"marketing.smsAds.nameLabel": "Name your ad",
+		"marketing.smsAds.nameHint": "Visible only to you.",
+		"marketing.smsAds.channelLabel": "How should it be sent?",
+		"marketing.smsAds.channelSms": "SMS",
+		"marketing.smsAds.channelNotif": "Notification",
+		"marketing.smsAds.dateLabel": "Schedule the ad",
+		"marketing.smsAds.dateHint": "You can reserve starting tomorrow.",
+		"marketing.smsAds.contentLabel": "What should we promote?",
+		"marketing.smsAds.content.product": "Product",
+		"marketing.smsAds.content.category": "Category",
+		"marketing.smsAds.productId": "Product ID",
+		"marketing.smsAds.categoryId": "Category ID",
+		"marketing.smsAds.messageLabel": "Message",
+		"marketing.smsAds.messagePlaceholder": "Ad copy… you can use {link} and {coupon}.",
+		"marketing.smsAds.messageHint": "Product/category link with UTM is appended automatically.",
+		"marketing.smsAds.couponOptional": "Coupon code (optional)",
+		"marketing.smsAds.recipients": "Recipients",
+		"marketing.smsAds.unitPrice": "Unit price",
+		"marketing.smsAds.volumeDiscount": "Volume discount",
+		"marketing.smsAds.total": "Total",
+		"marketing.smsAds.refreshQuote": "Refresh quote",
+		"marketing.smsAds.prev": "Previous",
+		"marketing.smsAds.next": "Next",
+		"marketing.smsAds.confirmPay": "Confirm & schedule",
+		"marketing.smsAds.created": "Ad scheduled",
+		"marketing.smsAds.notFound": "Ad not found",
+		"marketing.smsAds.backHome": "Back to SMS panel",
+		"marketing.smsAds.attributedOrders": "Attributed orders",
+		"marketing.smsAds.noOrders": "No orders attributed to this campaign yet.",
+		"marketing.smsAds.kpi.sent": "Sent",
+		"marketing.smsAds.kpi.failed": "Failed",
+		"marketing.smsAds.kpi.cost": "Cost",
+		"marketing.smsAds.kpi.orders": "Orders",
+		"marketing.smsAds.kpi.revenue": "Revenue",
+		"marketing.smsAds.kpi.roas": "ROAS",
+		"marketing.smsAds.kpi.conversion": "Conversion",
+		"marketing.smsAds.status.scheduled": "Scheduled",
+		"marketing.smsAds.status.sending": "Sending",
+		"marketing.smsAds.status.sent": "Sent",
+		"marketing.smsAds.status.failed": "Failed",
+		"marketing.smsAds.status.cancelled": "Cancelled",
 		"marketing.botBroadcast": "Bot broadcast",
 		"marketing.botCampaigns": "Bot campaigns",
 		"marketing.sms.dashboardDesc": "Balance, send, and reports via the SMS panel.",
@@ -16342,6 +18291,13 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"analytics.period7": "7 days",
 		"analytics.period30": "30 days",
 		"analytics.period90": "90 days",
+		"analytics.periodPreset.thisMonth": "This month",
+		"analytics.periodPreset.lastMonth": "Last month",
+		"analytics.periodPreset.last7": "Last 7 days",
+		"analytics.periodPreset.last30": "Last 30 days",
+		"analytics.periodPreset.custom": "Custom",
+		"analytics.dateFrom": "From",
+		"analytics.dateTo": "To",
 		"analytics.chartTitle": "Daily revenue",
 		"analytics.emptyChart": "No data for this range.",
 		"analytics.settings.tracking": "Tracking",
@@ -16943,6 +18899,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"marketplace.module.ai-content-module": "AI Content",
 		"marketplace.module.ai-content-module-settings": "AI Content settings",
 		"marketplace.module.wnc-core-module": "Marketplace",
+		"marketplace.module.security-module": "Security",
+		"marketplace.module.bots-hub": "Bots",
 		"wfcp.tab.digikala": "Digikala",
 		"wfcp.tab.basalam": "Basalam",
 		"wfcp.tab.technolife": "Technolife",
@@ -17000,11 +18958,18 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"wnc.cred.order_status_enabled": "Order status gateway",
 		"wnc.cred.orders_list_api_enabled": "Torob orders list API",
 		"wnc.cred.product_page_webhook_enabled": "Product change webhooks",
+		"wnc.cred.action_tracking_enabled": "Action tracking API (purchases)",
+		"wnc.cred.expand_variations": "Each variation as a separate product (name + attributes)",
 		"wnc.torobPreview": "Feed product preview",
 		"wnc.torobQueue": "Product webhook queue",
 		"wnc.torobQueuePending": "Pending",
 		"wnc.torobQueueLast": "Last run",
 		"wnc.torobQueueNext": "Next run",
+		"wnc.torobProductsV3Url": "Product API v3 (POST, Torob-Sync)",
+		"wnc.torobProductsLegacyUrl": "Legacy product feed (POST wcpe)",
+		"wnc.torobActionsUrl": "Action tracking API (GET /torob/v1/actions)",
+		"wnc.torobSetTokenUrl": "Webhook set-token (POST)",
+		"wnc.torobOrdersListLegacyUrl": "Orders list legacy (GET torob-api)",
 		"wnc.autoSync": "Auto sync price/stock",
 		"wnc.noCredentialsYet": "Add credentials below (saved into WebinaConnector settings).",
 		"wnc.cred.base_url": "Base URL",
@@ -17596,6 +19561,25 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.financial.allPayments": "All gateways",
 		"reports.financial.allUtm": "All",
 		"reports.financial.directNone": "Direct / none",
+		"reports.utm.direct": "Direct",
+		"reports.utm.instagram": "Instagram",
+		"reports.utm.torob": "Torob",
+		"reports.utm.torobpay": "Torob Pay",
+		"reports.utm.snapppay": "Snapp Pay",
+		"reports.utm.google": "Google",
+		"reports.utm.telegram": "Telegram",
+		"reports.utm.facebook": "Facebook",
+		"reports.utm.basalam": "Basalam",
+		"reports.utm.digikala": "Digikala",
+		"reports.utm.snappshop": "SnappShop",
+		"reports.utm.tapsishop": "TapsiShop",
+		"reports.utm.technolife": "Technolife",
+		"reports.utm.emalls": "Emalls",
+		"reports.utm.zarehbin": "Zarehbin",
+		"reports.utm.organic": "Organic",
+		"reports.utm.referral": "Referral",
+		"reports.utm.email": "Email",
+		"reports.utm.sms": "SMS",
 		"reports.financial.ordersFor": "Orders — {label}",
 		"reports.financial.clearFilters": "Clear filters",
 		"reports.table.aov": "AOV",
@@ -17671,6 +19655,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"reports.stockFilter.outofstock": "Out of stock",
 		"reports.stockFilter.lowstock": "Low stock",
 		"reports.stockFilter.missing_cost": "Missing cost",
+		"reports.stockFilter.onbackorder": "On backorder",
+		"reports.stock.categoryAll": "All categories",
 		"reports.stock.valueBy.purchase": "Value by purchase",
 		"reports.stock.valueBy.retail": "Value by retail",
 		"reports.stock.valueBy.current": "Value by current price",
@@ -18005,6 +19991,10 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"marketplace.badge.snappshop": "SnappShop",
 		"marketplace.badge.tapsishop": "TapsiShop",
 		"marketplace.badge.technolife": "Technolife",
+		"marketplace.badge.torob": "Torob",
+		"marketplace.badge.emalls": "Emalls",
+		"marketplace.badge.zarehbin": "Zarehbin",
+		"marketplace.badge.snapppay-search": "SnappPay Search",
 		"digikala.settingsTitle": "Digikala settings",
 		"digikala.settingsSubtitle": "Client code, base URL, auto-sync.",
 		"digikala.settingsSaved": "Settings saved.",
@@ -18021,6 +20011,28 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"marketing.sms.statuses.error": "Error",
 		"marketing.sms.statuses.processing": "Processing",
 		"marketing.sms.statuses.rejected": "Rejected",
+		"marketing.sms.statuses.creating": "Creating",
+		"marketing.sms.statuses.invalid_recipients": "Invalid recipients",
+		"marketing.sms.statuses.send_queue": "Send queue",
+		"marketing.sms.statuses.insufficient_credit": "Insufficient credit",
+		"marketing.sms.statuses.finish": "Finished",
+		"marketing.sms.statuses.finished": "Finished",
+		"marketing.sms.statuses.skipped": "Skipped",
+		"marketing.sms.senderLine": "Sender line",
+		"marketing.sms.recipientsCount": "Recipients",
+		"marketing.sms.exitCount": "Delivered count",
+		"marketing.sms.stateId": "State code",
+		"marketing.sms.event": "Event",
+		"marketing.sms.role": "Role",
+		"marketing.sms.details": "Details",
+		"marketing.sms.outboxDetail": "Send details",
+		"marketing.sms.valid": "Monitoring",
+		"marketing.sms.part": "Parts",
+		"marketing.sms.seen": "Seen",
+		"marketing.sms.unseen": "Unseen",
+		"marketing.sms.toLine": "Inbox line",
+		"marketing.sms.refresh": "Refresh",
+		"marketing.sms.pageOf": "Page {{page}}",
 		"marketing.sms.goToWallet": "Go to wallet",
 		"marketing.sms.editDraft": "Edit",
 		"marketing.sms.phonebookDeleteUnavailable": "Delete phonebook/contact is not available in the API yet.",
@@ -18316,6 +20328,8 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"wallet.enabled": "Enable at checkout",
 		"wallet.checkoutTitle": "Gateway title",
 		"wallet.minTopup": "Minimum top-up",
+		"wallet.loginPrompt": "Login prompt",
+		"wallet.balanceLabel": "Balance label",
 		"wallet.minTopupHint": "Minimum top-up amount: {{amount}}",
 		"wallet.accountTitle": "Wallet",
 		"wallet.accountSubtitle": "Balance, top-up, withdrawal, and ledger.",
@@ -18434,6 +20448,9 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"pos.customerSearch": "Search by phone or name…",
 		"pos.newPhone": "Mobile",
 		"pos.newName": "Name",
+		"pos.newFirstName": "First name",
+		"pos.newLastName": "Last name",
+		"pos.customerHint": "Pick an existing customer, or enter mobile + name to create one.",
 		"pos.channel": "Sales channel",
 		"pos.channel.in_store": "In store",
 		"pos.channel.phone": "Phone",
@@ -18449,6 +20466,12 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"pos.tender.pos_terminal": "Card terminal",
 		"pos.tender.online": "Online",
 		"pos.tender.other": "Other",
+		"pos.tender.payment_sms": "Send payment SMS",
+		"pos.paymentSms.hint": "Creates a pay-only link and texts it to the customer via the store SMS panel.",
+		"pos.paymentSms.checkout": "Create & send payment SMS",
+		"pos.paymentSms.sent": "Order #{{id}} created — payment SMS sent",
+		"pos.paymentSms.failed": "Order #{{id}} created but SMS was not sent: {{error}}",
+		"pos.paymentSms.createdNoSms": "Order #{{id}} created — payment link ready (SMS not sent)",
 		"pos.showExtras": "Show discount / shipping",
 		"pos.hideExtras": "Hide extras",
 		"pos.discount": "Discount",
@@ -18528,30 +20551,989 @@ var xh = /* @__PURE__ */ A({ default: () => Sh }), Sh, Ch = k((() => {
 		"accounting.backup": "Backup ZIP",
 		"accounting.exportCsv": "Export invoices CSV",
 		"accounting.calculator": "Sample % calculator",
-		"accounting.moadianProxy": "HTTP proxy (foreign hosts)"
+		"accounting.moadianProxy": "HTTP proxy (foreign hosts)",
+		"security.overviewTitle": "Security",
+		"security.firewallTitle": "Firewall",
+		"security.liveTrafficTitle": "Live traffic",
+		"security.rulesTitle": "Firewall rules",
+		"security.blockingTitle": "Block & allow lists",
+		"security.scanTitle": "Site scan",
+		"security.scanJobTitle": "Scan job",
+		"security.toolsTitle": "Security tools",
+		"security.toolTitle": "Tool",
+		"security.reportsTitle": "Reports",
+		"security.reportDetailTitle": "Report detail",
+		"security.settingsTitle": "Security settings",
+		"security.navOverview": "Overview",
+		"security.navFirewall": "Firewall",
+		"security.navScan": "Site scan",
+		"security.navTools": "Tools",
+		"security.navReports": "Reports",
+		"security.navSettings": "Settings",
+		"security.wizardTitle": "Complete security setup",
+		"security.wizardHint": "Review settings and finish the first-run wizard to enable full protection.",
+		"security.wizardCta": "Open settings",
+		"security.wizardSettingsHint": "Apply a profile, adjust key options, then mark setup complete.",
+		"security.wizardComplete": "Mark setup complete",
+		"security.wizardCompleted": "Setup marked complete",
+		"security.kpi.score": "Security score",
+		"security.kpi.blocks24h": "Blocks (24h)",
+		"security.kpi.openFindings": "Open findings",
+		"security.kpi.wafMode": "WAF mode",
+		"security.lastScanTitle": "Last scan",
+		"security.noScanYet": "No scans have been run yet.",
+		"security.viewScan": "View scan",
+		"security.findingsBySeverity": "Open findings by severity",
+		"security.findingsCount": "{{count}} findings",
+		"security.feedFreshness": "Threat feed freshness",
+		"security.manageFeeds": "Manage feeds",
+		"security.noFeeds": "No feed status recorded yet.",
+		"security.feedSummary": "{{total}} feeds tracked · {{stale}} with errors",
+		"security.feedStale": "Stale",
+		"security.feedOk": "OK",
+		"security.never": "Never",
+		"security.yes": "Yes",
+		"security.no": "No",
+		"security.active": "Active",
+		"security.inactive": "Inactive",
+		"security.wafMode.off": "Off",
+		"security.wafMode.learning": "Learning",
+		"security.wafMode.enforce": "Enforce",
+		"security.severity.critical": "Critical",
+		"security.severity.high": "High",
+		"security.severity.medium": "Medium",
+		"security.severity.low": "Low",
+		"security.severity.info": "Info",
+		"security.firewall.enabled": "WAF enabled",
+		"security.firewall.bypass": "Emergency bypass",
+		"security.firewall.bypassActive": "Bypass active",
+		"security.firewall.bypassOff": "Normal",
+		"security.firewall.layers": "Protection layers",
+		"security.firewall.noLayers": "No layer status available.",
+		"security.filterAction": "Action",
+		"security.filterPath": "Path contains",
+		"security.filterAll": "All",
+		"security.noLiveEvents": "No traffic events in the selected window.",
+		"security.action.block": "Block",
+		"security.action.challenge": "Challenge",
+		"security.action.log": "Log",
+		"security.action.allow": "Allow",
+		"security.col.time": "Time",
+		"security.col.action": "Action",
+		"security.col.method": "Method",
+		"security.col.path": "Path",
+		"security.col.rule": "Rule",
+		"security.col.country": "Country",
+		"security.col.name": "Name",
+		"security.col.ruleId": "Rule ID",
+		"security.col.priority": "Priority",
+		"security.col.enabled": "Enabled",
+		"security.col.actions": "Actions",
+		"security.col.type": "Type",
+		"security.col.value": "Value",
+		"security.col.reason": "Reason",
+		"security.col.note": "Note",
+		"security.col.source": "Source",
+		"security.col.minutes": "Duration (minutes)",
+		"security.col.profile": "Profile",
+		"security.col.status": "Status",
+		"security.col.progress": "Progress",
+		"security.col.findings": "Findings",
+		"security.col.started": "Started",
+		"security.col.severity": "Severity",
+		"security.col.title": "Title",
+		"security.col.created": "Created",
+		"security.noRules": "No custom rules yet.",
+		"security.noRulesHint": "Create a path-based rule below, or promote a learning-mode rule after traffic analysis.",
+		"security.createRuleTitle": "Create firewall rule",
+		"security.createRule": "Create rule",
+		"security.pathContains": "Path contains",
+		"security.learningMode": "Learning mode",
+		"security.ruleCreated": "Rule created",
+		"security.ruleUpdated": "Rule updated",
+		"security.ruleDeleted": "Rule deleted",
+		"security.rulePromoted": "Learning rule promoted",
+		"security.promoteLearning": "Promote",
+		"security.testRuleTitle": "Test rule",
+		"security.testRuleJson": "Rule JSON",
+		"security.testRequestJson": "Request JSON",
+		"security.runTest": "Run test",
+		"security.ruleTestDone": "Rule test completed",
+		"security.invalidJson": "Invalid JSON",
+		"security.delete": "Delete",
+		"security.quarantineEmpty": "No quarantined files.",
+		"security.quarantineRestore": "Restore",
+		"security.quarantineRestored": "File restored from quarantine",
+		"security.healNoActions": "No auto-healable findings.",
+		"security.fileSize": "Size",
+		"security.tools.file-browser.title": "File browser",
+		"security.tools.file-browser.desc": "Read-only browse of site files under ABSPATH.",
+		"security.twoFaTitle": "Two-factor authentication (TOTP)",
+		"security.twoFaHint": "Set up an authenticator app for your account. WebAuthn is not available in this release.",
+		"security.twoFaSetup": "Generate secret",
+		"security.twoFaEnable": "Enable with code",
+		"security.twoFaDisable": "Disable 2FA",
+		"security.twoFaCode": "Authenticator code",
+		"security.twoFaSetupReady": "Secret ready — scan or copy into your authenticator",
+		"security.twoFaEnabled": "2FA enabled",
+		"security.twoFaDisabled": "2FA disabled",
+		"security.twoFaEnabledUsers": "{{count}} users with 2FA",
+		"security.twoFaYouEnabled": "enabled for you",
+		"security.healTitle": "Heal actions",
+		"security.healPreview": "Preview heal",
+		"security.healApply": "Apply heal",
+		"security.healRollback": "Rollback last snapshot",
+		"security.healPreviewDone": "Heal preview ready",
+		"security.healApplied": "Heal applied",
+		"security.healRolledBack": "Rollback completed",
+		"security.healSelectFinding": "Select findings to heal",
+		"security.healNoSnapshot": "No snapshot to roll back",
+		"security.tabBlocks": "Block list",
+		"security.tabAllows": "Allow list",
+		"security.blockType.ip": "IP address",
+		"security.blockType.cidr": "CIDR range",
+		"security.blockType.ua": "User agent",
+		"security.addBlock": "Add block",
+		"security.addAllow": "Add allow",
+		"security.blockAdded": "Block added",
+		"security.blockRemoved": "Block removed",
+		"security.allowAdded": "Allow entry added",
+		"security.allowRemoved": "Allow entry removed",
+		"security.noBlocks": "No blocked entries.",
+		"security.noAllows": "No allow entries.",
+		"security.optional": "Optional",
+		"security.startScan": "Start scan",
+		"security.scanProfile.quick": "Quick scan",
+		"security.scanProfile.standard": "Standard scan",
+		"security.scanProfile.deep": "Deep scan",
+		"security.scheduleNoteTitle": "Scheduled scans",
+		"security.scheduleNote": "Scans can run on a schedule from Security settings. Manual scans start immediately in the background.",
+		"security.scanJobs": "Scan jobs",
+		"security.noScans": "No scan jobs yet.",
+		"security.scanStarted": "Scan queued",
+		"security.scanCancelled": "Scan cancelled",
+		"security.scanStatus.queued": "Queued",
+		"security.scanStatus.running": "Running",
+		"security.scanStatus.done": "Done",
+		"security.scanStatus.failed": "Failed",
+		"security.scanStatus.cancelled": "Cancelled",
+		"security.view": "View",
+		"security.cancel": "Cancel",
+		"security.invalidScanId": "Invalid scan ID.",
+		"security.scanNotFound": "Scan not found.",
+		"security.findingsTitle": "Findings",
+		"security.noFindings": "No open findings for this scan.",
+		"security.ackFinding": "Acknowledge",
+		"security.ignoreFinding": "Ignore",
+		"security.findingUpdated": "Finding updated",
+		"security.toolDefaultDesc": "Run diagnostics and maintenance actions.",
+		"security.unknownTool": "Unknown tool.",
+		"security.backToTools": "Back to tools",
+		"security.toolRunGet": "Run (GET)",
+		"security.toolRunPost": "Run (POST)",
+		"security.toolPostBody": "POST body (JSON)",
+		"security.toolResult": "Result",
+		"security.toolNoResult": "Run the tool to see results.",
+		"security.toolRunDone": "Tool finished",
+		"security.toolField.ip": "IP address",
+		"security.toolField.path": "Path",
+		"security.tools.whois.title": "WHOIS / geo lookup",
+		"security.tools.whois.desc": "Lookup IP geography and recent events.",
+		"security.tools.ip-lookup.title": "IP lookup",
+		"security.tools.ip-lookup.desc": "Alias for WHOIS lookup.",
+		"security.tools.diagnostics.title": "Diagnostics",
+		"security.tools.diagnostics.desc": "PHP, WordPress, layers, and conflicts.",
+		"security.tools.integrity-diff.title": "Integrity diff",
+		"security.tools.integrity-diff.desc": "Compare a file hash with official core.",
+		"security.tools.quarantine.title": "Quarantine",
+		"security.tools.quarantine.desc": "List or restore quarantined files.",
+		"security.tools.snapshots.title": "Heal snapshots",
+		"security.tools.snapshots.desc": "List rollback snapshots.",
+		"security.tools.sessions.title": "Sessions",
+		"security.tools.sessions.desc": "Active Shield sessions.",
+		"security.tools.password-audit.title": "Password audit",
+		"security.tools.password-audit.desc": "Admins without 2FA.",
+		"security.tools.headers-tester.title": "Headers tester",
+		"security.tools.headers-tester.desc": "Check front-end security headers.",
+		"security.tools.tls-dns.title": "TLS & DNS hints",
+		"security.tools.tls-dns.desc": "SSL and DNS record hints.",
+		"security.tools.secrets-search.title": "Secrets search",
+		"security.tools.secrets-search.desc": "Scan a path for exposed secrets.",
+		"security.tools.canary.title": "Canaries",
+		"security.tools.canary.desc": "Manage deception tokens.",
+		"security.tools.honeypot.title": "Honeypot",
+		"security.tools.honeypot.desc": "Honeypot hit statistics.",
+		"security.tools.import-export.title": "Import / export",
+		"security.tools.import-export.desc": "Backup or restore settings JSON.",
+		"security.tools.waf-learning.title": "WAF learning",
+		"security.tools.waf-learning.desc": "Review learning hits.",
+		"security.tools.incident.title": "Incidents",
+		"security.tools.incident.desc": "Forensic incident timeline.",
+		"security.tools.compat.title": "Compatibility",
+		"security.tools.compat.desc": "Detect conflicting security plugins.",
+		"security.tools.cli-recipes.title": "CLI recipes",
+		"security.tools.cli-recipes.desc": "Suggested WP-CLI commands.",
+		"security.tools.heal-wizard.title": "Heal wizard",
+		"security.tools.heal-wizard.desc": "Preview safe auto-heal actions.",
+		"security.generateReport": "Generate report",
+		"security.reportType.executive": "Executive summary",
+		"security.reportType.firewall": "Firewall activity",
+		"security.reportType.vulnerabilities": "Vulnerabilities",
+		"security.reportType.malware": "Malware",
+		"security.reportType.hardening": "Hardening checklist",
+		"security.generatedReports": "Generated reports",
+		"security.noReports": "No reports generated yet.",
+		"security.reportGenerated": "Report generated",
+		"security.invalidReportId": "Invalid report ID.",
+		"security.reportNotFound": "Report not found.",
+		"security.backToReports": "Back to reports",
+		"security.reportPayload": "Report data",
+		"security.settingsProfile": "Configuration profile",
+		"security.profileLabel": "Profile",
+		"security.profile.beginner": "Beginner",
+		"security.profile.recommended": "Recommended",
+		"security.profile.store": "Store",
+		"security.profile.paranoid": "Paranoid",
+		"security.applyProfile": "Apply profile",
+		"security.saveSettings": "Save settings",
+		"security.settingsSaved": "Settings saved",
+		"security.profileApplied": "Profile applied",
+		"security.syncFeeds": "Sync feeds now",
+		"security.feedsSynced": "Feed sync started",
+		"security.feedsStatus": "{{count}} feeds configured",
+		"security.section.general": "General",
+		"security.section.privacy": "Privacy & retention",
+		"security.section.waf": "Web application firewall",
+		"security.section.login": "Login protection",
+		"security.section.headers": "Security headers",
+		"security.section.scan": "Scanner",
+		"security.section.heal": "Heal & quarantine",
+		"security.section.feeds": "Threat feeds",
+		"security.section.notify": "Notifications",
+		"security.general.enabled": "Enable Webino Shield",
+		"security.general.learningMode": "Learning mode (global)",
+		"security.general.selfGuard": "Self-guard module files",
+		"security.privacy.anonymizeIp": "Anonymize IP in UI exports",
+		"security.privacy.storeBody": "Store request bodies in logs",
+		"security.privacy.retentionEvents": "Event retention (days)",
+		"security.waf.enabled": "Enable WAF",
+		"security.waf.mode": "WAF mode",
+		"security.waf.failOpen": "Fail open on internal errors",
+		"security.login.protect": "Brute-force protection",
+		"security.login.disableXmlrpc": "Disable XML-RPC",
+		"security.login.honeypot": "Login honeypot field",
+		"security.login.twoFaOptional": "Optional 2FA for admins",
+		"security.headers.enabled": "Send security headers",
+		"security.headers.hsts": "HTTP Strict Transport Security",
+		"security.headers.cspMode": "Content-Security-Policy mode",
+		"security.scan.defaultProfile": "Default scan profile",
+		"security.scan.includeDb": "Include database scan",
+		"security.scan.includeVuln": "Include vulnerability scan",
+		"security.heal.snapshotAlways": "Always snapshot before heal",
+		"security.heal.allowDelete": "Allow permanent delete actions",
+		"security.feeds.crmMirror": "Use WebinaCRM intel mirror",
+		"security.feeds.directFallback": "Direct internet fallback",
+		"security.notify.email": "Email notifications",
+		"security.notify.site": "Dashboard notifications",
+		"security.notify.sms": "SMS notifications",
+		"security.incidentsTitle": "Open Incidents",
+		"security.viewIncidents": "View all",
+		"security.incidentOpen": "open incident",
+		"security.incidentsOpen": "open incidents",
+		"security.suggestedActions": "Suggested Actions",
+		"security.healWizard": "Heal Wizard",
+		"security.noActions": "No immediate actions required.",
+		"security.reportType.compliance_hint": "Compliance hints",
+		"security.reportType.incident": "Incident report",
+		"security.reportType.feed_health": "Feed health",
+		"security.reportSummary": "Summary",
+		"security.reportStructured": "Report details",
+		"security.reportRawJson": "Show raw JSON",
+		"security.reportDownload": "Download JSON",
+		"security.auditTitle": "Audit log",
+		"security.auditEmpty": "No audit events yet.",
+		"security.auditEmptyCta": "Configure security settings",
+		"security.startFirstScan": "Run your first scan",
+		"security.noFindingsHint": "This scan found no issues. You can run another scan at any time.",
+		"security.backToScan": "Back to scans",
+		"security.healNotAvailable": "Auto-heal not available",
+		"security.toolsSearch": "Search tools…",
+		"security.toolsNoMatch": "No tools match your search.",
+		"security.refresh": "Refresh",
+		"security.incidentNoItems": "No incidents recorded.",
+		"security.diag.layers": "Active layers",
+		"security.diag.objectCache": "Object cache",
+		"security.diag.cron": "Shield cron",
+		"security.diag.conflicts": "Plugin conflicts",
+		"security.diag.noConflicts": "No plugin conflicts detected.",
+		"security.snapshotsEmpty": "No snapshots found.",
+		"security.passAudit.checked": "Common passwords checked: {{count}}",
+		"security.passAudit.noIssues": "All admin/editor accounts look good.",
+		"security.importExport.exportTitle": "Export settings",
+		"security.importExport.download": "Download JSON",
+		"security.importExport.importTitle": "Import settings JSON",
+		"security.importExport.import": "Import",
+		"security.importExport.importDone": "Settings imported successfully.",
+		"security.col.login": "Login",
+		"security.col.issues": "Issues",
+		"security.col.user": "User",
+		"security.ruleAction.block": "Block",
+		"security.ruleAction.challenge": "Challenge",
+		"security.ruleAction.log": "Log",
+		"security.ruleAction.allow": "Allow",
+		"security.wizard.prev": "← Back",
+		"security.wizard.next": "Next →",
+		"security.wizard.step": "Step {{step}} of {{total}}",
+		"security.wizard.step1.title": "Allowlist your admin IP",
+		"security.wizard.step1.hint": "Before enabling enforce mode, add your current IP to the allowlist to avoid locking yourself out.",
+		"security.wizard.step1.cta": "Go to blocking / allowlist",
+		"security.wizard.step2.title": "Choose a security profile",
+		"security.wizard.step2.hint": "Select the profile that best fits your site and click \"Apply profile\" below.",
+		"security.wizard.step2.profiles": "Beginner → low friction · Recommended → balanced · Store → e-commerce hardened · Paranoid → maximum",
+		"security.wizard.step3.title": "Scan schedule",
+		"security.wizard.step3.hint": "Run a first scan now to establish a baseline, then configure automatic scans via WP-Cron.",
+		"security.wizard.step3.cta": "Run a scan now",
+		"security.wizard.step4.title": "Enable notifications",
+		"security.wizard.step4.hint": "Configure email or dashboard alerts for security events. Settings are in the Notifications section below.",
+		"security.wizard.step5.title": "Coexistence check",
+		"security.wizard.step5.conflicts": "Conflicting plugins detected:",
+		"security.wizard.step5.conflictHint": "Disable duplicate WAF rules in those plugins before enabling enforce mode.",
+		"security.wizard.step5.ok": "No conflicting security plugins detected. You're good to go.",
+		"security.wizard.step6.title": "Complete setup",
+		"security.wizard.step6.hint": "Save your settings, then mark the wizard as complete to hide this banner.",
+		"basalam.advanced": "Advanced",
+		"basalam.syncProductsNow": "Sync products",
+		"basalam.nav.connection": "Connection",
+		"basalam.ordersAutoTitle": "Automatic order intake",
+		"basalam.ordersAutoOn": "Orders are received automatically.",
+		"basalam.ordersAutoOff": "Automatic intake is not enabled yet.",
+		"basalam.ordersAutoEnable": "Enable",
+		"basalam.ordersAutoResetBtn": "Reset",
+		"basalam.chatShow": "Open chat",
+		"basalam.chatHide": "Close chat",
+		"basalam.chatNotify": "Notify me about new Basalam messages",
+		"basalam.autoSuggest": "Auto suggest",
+		"basalam.orderActions": "Basalam actions",
+		"basalam.balanceInReports": "Withdrawable balance on Basalam",
+		"basalam.financeDetailsLink": "Basalam finance details",
+		"basalam.settleMethod.bank": "Bank transfer",
+		"basalam.settleMethod.wallet": "Wallet",
+		"basalam.fillFromCatalog": "Fill from store products",
+		"basalam.defaultsFilled": "Defaults suggested from products.",
+		"basalam.cancelReason.buyerRequest": "Buyer request",
+		"basalam.cancelReason.outOfStock": "Out of stock",
+		"basalam.cancelReason.other": "Other",
+		"basalam.shipMethod.post": "Post",
+		"basalam.shipMethod.tipax": "Tipax",
+		"basalam.shipMethod.courier": "Courier",
+		"basalam.job.fetchOrders": "Fetch orders",
+		"basalam.job.createProduct": "Create product",
+		"basalam.job.updateProduct": "Update product",
+		"basalam.job.updateAll": "Update all products",
+		"basalam.job.autoConnect": "Auto connect",
+		"basalam.job.discounts": "Discounts",
+		"basalam.job.quickUpdate": "Quick update",
+		"basalam.jobStatus.pending": "Pending",
+		"basalam.jobStatus.processing": "Processing",
+		"basalam.jobStatus.completed": "Done",
+		"basalam.jobStatus.failed": "Failed",
+		"basalam.syncStatus.pending": "Queued",
+		"basalam.syncStatus.done": "Done",
+		"basalam.syncStatus.failed": "Failed",
+		"basalam.fieldAccess": "Access key",
+		"basalam.fieldRefresh": "Refresh key",
+		"basalam.fieldVendorOptional": "Booth id (optional)",
+		"basalam.openPricing": "Marketplace pricing",
+		"basalam.boothNamed": "Booth {{id}}",
+		"basalam.selectProduct": "Select product",
+		"basalam.discountPercent": "Discount %",
+		"basalam.selectWooCategory": "Select store category",
+		"basalam.selectCategory": "Select",
+		"basalam.bslLevel1": "Basalam main category",
+		"basalam.bslLevel2": "Subcategory",
+		"basalam.bslLevel3": "Leaf category",
+		"basalam.basalamInvoice": "Basalam order no.",
+		"basalam.cancelReasonLabel": "Cancel reason",
+		"basalam.shipMethodLabel": "Shipping method",
+		"basalam.col.time": "Time",
+		"basalam.defaultProductValues": "Default product values",
+		"basalam.settlementAmount": "Amount (IRR)",
+		"basalam.bankAccount": "Bank account",
+		"basalam.syncField.name": "Name",
+		"basalam.syncField.photos": "Photos",
+		"basalam.syncField.price": "Price",
+		"basalam.syncField.stock": "Stock",
+		"basalam.syncField.weight": "Weight",
+		"basalam.syncField.description": "Description",
+		"basalam.syncField.attr": "Attributes",
+		"basalam.syncField.video": "Video",
+		"basalam.syncField.variant_price": "Variant price",
+		"basalam.syncField.variant_stock": "Variant stock",
+		"basalam.addFullDesc": "Full description (reviews)",
+		"basalam.job.createAllProducts": "Create all products",
+		"basalam.job.updateAllProducts": "Update all products",
+		"basalam.job.bulkUpdateProducts": "Quick update products",
+		"basalam.boothIdentity": "Basalam booth",
+		"basalam.boothUntitled": "Untitled booth",
+		"basalam.boothIdLabel": "ID {{id}}",
+		"basalam.chatWithBuyer": "Chat with buyer",
+		"basalam.shippingProfiles": "Shipping profiles",
+		"basalam.shippingCarriers": "Active carriers",
+		"basalam.noShippingProfiles": "No profiles yet.",
+		"basalam.noCarriers": "No carriers listed.",
+		"gateway.section.connection": "Connection",
+		"gateway.section.connectionHint": "Enable the gateway and enter API credentials.",
+		"gateway.section.checkout": "Checkout",
+		"gateway.section.checkoutHint": "Checkout rules and redirect behaviour.",
+		"gateway.section.display": "Store display",
+		"gateway.section.displayHint": "Widgets and storefront display elements.",
+		"gateway.section.messages": "Messages",
+		"gateway.section.messagesHint": "Customer messages after success, failure, or cancellation.",
+		"gateway.section.advanced": "Advanced",
+		"gateway.section.advancedHint": "Technical and troubleshooting options.",
+		"gateway.meta.source": "Source",
+		"gateway.meta.sourceOfficial": "Official plugin",
+		"gateway.meta.sourceWebino": "Webina",
+		"gateway.meta.serverIp": "Server IP",
+		"gateway.meta.callback": "Return URL",
+		"gateway.field.title": "Gateway title",
+		"gateway.field.description": "Short description",
+		"gateway.field.orderButtonText": "Checkout button text",
+		"gateway.field.iconUrl": "Gateway icon URL",
+		"gateway.field.iconUrlHint": "Leave empty to use the bundled logo.",
+		"gateway.field.baseUrl": "API base URL",
+		"gateway.field.clientId": "Gateway username / client ID",
+		"gateway.field.clientSecret": "Secret",
+		"gateway.field.clientSecretKeep": "Secret (leave blank to keep)",
+		"gateway.field.username": "Username",
+		"gateway.field.password": "Password",
+		"gateway.field.passwordKeep": "Password (leave blank to keep)",
+		"gateway.field.successMessage": "Success message",
+		"gateway.field.failedMessage": "Failure message",
+		"gateway.field.cancelledMessage": "Cancellation message",
+		"gateway.field.messageVars": "You can use placeholders like {order_id}.",
+		"gateway.flag.requireMobile": "Require mobile number",
+		"gateway.flag.requireMobileHint": "Payment cannot start without a valid mobile number.",
+		"gateway.flag.requirePostcode": "Require postcode",
+		"gateway.flag.requirePostcodeHint": "Postcode becomes required before paying.",
+		"gateway.flag.defaultEligible": "Default when eligible",
+		"gateway.flag.defaultEligibleHint": "Select this gateway by default when the cart is eligible.",
+		"gateway.flag.directRedirect": "Direct redirect",
+		"gateway.flag.directRedirectHint": "Send the customer straight to the payment page after selecting this gateway.",
+		"snapppay.enabledHint": "Show SnappPay among WooCommerce payment methods.",
+		"snapppay.baseUrlHint": "Usually api.snapppay.ir — change only if SnappPay instructs you to.",
+		"snapppay.flag.commission": "Category commission",
+		"snapppay.flag.commissionHint": "Compute commission from product categories.",
+		"snapppay.flag.pdp": "Product page widget",
+		"snapppay.flag.pdpHint": "Show installment eligibility on the product page.",
+		"snapppay.flag.darkPdp": "Dark widget theme",
+		"snapppay.flag.darkPdpHint": "Dark appearance for the product-page widget.",
+		"snapppay.logsSubtitle": "Recent SnappPay events and responses.",
+		"torobpay.enabled": "Enable gateway",
+		"torobpay.enabledHint": "Show TorobPay among WooCommerce payment methods.",
+		"torobpay.baseUrlHint": "Usually cpg.torobpay.com — change only if TorobPay instructs you to.",
+		"torobpay.fetchCreds": "Fetch credentials",
+		"torobpay.test": "Test connection",
+		"torobpay.nav.settings": "Settings",
+		"torobpay.nav.display": "Display",
+		"torobpay.nav.orders": "Orders",
+		"torobpay.nav.campaign": "Campaign",
+		"torobpay.nav.logs": "Logs",
+		"torobpay.displaySubtitle": "TorobPay widgets and storefront elements.",
+		"torobpay.ordersSubtitle": "TorobPay-related orders and payment status.",
+		"torobpay.logsSubtitle": "Recent TorobPay events and responses.",
+		"torobpay.flag.disableRetry": "Disable payment retry",
+		"torobpay.flag.disableRetryHint": "Hide the retry button after a failed payment.",
+		"torobpay.flag.utmAuto": "Auto-send Torob UTM",
+		"torobpay.flag.utmAutoHint": "Attach Torob UTM parameters to requests automatically.",
+		"torobpay.flag.utmExclusive": "Torob UTM traffic only",
+		"torobpay.flag.utmExclusiveHint": "Show the gateway only for visitors coming from Torob links.",
+		"torobpay.flag.widget": "Product page widget",
+		"torobpay.flag.widgetHint": "Show installment status on the product page.",
+		"torobpay.flag.badge": "TorobPay badge",
+		"torobpay.flag.badgeHint": "Show a small TorobPay badge in the store.",
+		"torobpay.flag.marquee": "Marquee",
+		"torobpay.flag.marqueeHint": "Show a scrolling TorobPay message.",
+		"torobpay.flag.topbar": "Top bar",
+		"torobpay.flag.topbarHint": "Show a notice bar at the top of the store.",
+		"torobpay.flag.slider": "Slider",
+		"torobpay.flag.sliderHint": "Show the TorobPay promo slider.",
+		"torobpay.flag.smartDns": "Smart DNS",
+		"torobpay.flag.smartDnsHint": "Use an alternate DNS path when connectivity fails.",
+		"torobpay.field.dnsOverride": "DNS override host",
+		"torobpay.field.dnsOverrideHint": "Optional; only if Torob support provides one.",
+		"torobpay.probe": "Check status",
+		"torobpay.probed": "Status checked",
+		"torobpay.refund": "Refund",
+		"torobpay.refunded": "Refund recorded",
+		"torobpay.remoteStatus": "Remote status",
+		"digipay.nav.settings": "Settings",
+		"digipay.nav.transactions": "Transactions",
+		"digipay.officialNotice": "Official DigiPay plugin is active — Webina will not register a duplicate gateway.",
+		"digipay.section.connectionHint": "Environment, OAuth credentials, and return URL.",
+		"digipay.section.merchant": "Merchant & supplier",
+		"digipay.section.merchantHint": "Seller, supplier, and category IDs for DigiPay UPG.",
+		"digipay.section.checkoutHint": "Checkout titles, button text, messages, and icon for DigiPay methods.",
+		"digipay.field.titleIpg": "IPG title",
+		"digipay.field.titleWallet": "Wallet title",
+		"digipay.field.titleCpg": "CPG title",
+		"digipay.field.titleBpg": "BPG title",
+		"digipay.field.descIpg": "IPG description",
+		"digipay.field.descWallet": "Wallet description",
+		"digipay.field.descCpg": "CPG description",
+		"digipay.field.descBpg": "BPG description",
+		"digipay.transactionsSubtitle": "Recent DigiPay transaction logs.",
+		"balePay.enabledHint": "Show Bale Pay among WooCommerce payment methods.",
+		"wallet.enabledHint": "Allow customers to pay from their wallet balance.",
+		"wallet.sectionHint": "Minimum top-up and checkout title.",
+		"c2c.enabledHint": "Show card-to-card among WooCommerce payment methods.",
+		"c2c.cardsHint": "Card numbers customers should transfer to.",
+		"c2c.deadlineHint": "Deadline for uploading the transfer receipt after ordering.",
+		"zarinpal.sandboxHint": "Use Zarinpal sandbox for test payments.",
+		"paymentsHub.zarinpalDesc": "Online payments via Zarinpal with automatic reconciliation.",
+		"paymentsHub.digipayDesc": "DigiPay UPG (IPG, installments, credit, and wallet).",
+		"paymentsHub.snapppayDesc": "SnappPay installments for eligible customers.",
+		"paymentsHub.torobpayDesc": "TorobPay installments with store widgets and campaigns.",
+		"paymentsHub.balePayDesc": "Payments through the Bale bot.",
+		"paymentsHub.walletDesc": "Pay from the customer’s store wallet balance.",
+		"paymentsHub.c2cDesc": "Card-to-card payments with customer receipt upload.",
+		"common.copied": "Copied",
+		"common.copyFailed": "Copy failed",
+		"basalam.jobsCancelled": "Queued jobs were cancelled.",
+		"basalam.cancelJobsConfirm": "Cancel all pending and processing jobs?",
+		"basalam.jobError.cancelled": "Cancelled by user",
+		"basalam.createAllQueued": "{{count}} eligible products were queued for create.",
+		"basalam.createAllNoneEligible": "No eligible products to create on Basalam (check image, price > 1000, stock, or existing link).",
+		"marketplace.module.shipping-module": "Transport",
+		"nav.module.shipping-module": "Transport",
+		"shipping.hubTitle": "Transport",
+		"shipping.hubHint": "Shipping hub: packaging, Tapin, tools, cities, map, and rules.",
+		"shipping.packagingTitle": "Postal packaging",
+		"shipping.packagingCardHint": "Iran Post standard cartons (sizes 1–9), per-box prices, and optional checkout charge.",
+		"shipping.packagingHint": "Box dimensions are fixed; set price and enable/disable each size. Products and variations need length/width/height.",
+		"shipping.openPackaging": "Packaging settings",
+		"shipping.zonesTitle": "WooCommerce shipping zones",
+		"shipping.zonesHint": "Classic Woo zones and methods (including enabling the packaging method).",
+		"shipping.openZones": "Open shipping zones",
+		"shipping.methodSetupTitle": "Checkout setup",
+		"shipping.methodSetupHint": "In shipping zones, add the “Webino packaging (Iran Post boxes)” method. When “add packaging to checkout” is on, the sum of selected box prices is charged to the customer.",
+		"shipping.checkoutToggleTitle": "Checkout cost",
+		"shipping.checkoutToggleHint": "When off, the packing plan is still stored on the order but not charged to the customer.",
+		"shipping.addPackagingToCheckout": "Add box costs to customer shipping",
+		"shipping.professionalFeeTitle": "Professional packaging (fixed fee)",
+		"shipping.professionalFeeHint": "Optional cart/checkout add-on. By default it replaces carton box charges when selected (no double charge).",
+		"shipping.professionalFeeEnable": "Enable professional packaging",
+		"shipping.professionalFeeLabel": "Label",
+		"shipping.professionalFeeLabelPlaceholder": "Professional packaging",
+		"shipping.professionalFeeAmount": "Fixed amount",
+		"shipping.professionalFeeDescription": "Short customer description",
+		"shipping.professionalFeeDescriptionPlaceholder": "Secure, polished packaging with protective materials",
+		"shipping.professionalFeeDefaultOn": "Selected by default",
+		"shipping.professionalFeeReplacesCarton": "When professional packaging is selected, skip carton box shipping charges (prevents double charge)",
+		"shipping.professionalFeeOrderSelected": "Professional packaging selected",
+		"shipping.boxesTitle": "Standard post cartons",
+		"shipping.boxesHint": "Dimensions in cm; prices in store currency.",
+		"shipping.boxSize": "Size",
+		"shipping.boxDims": "Dimensions",
+		"shipping.boxPrice": "Price",
+		"shipping.boxTare": "Empty box (g)",
+		"shipping.boxEnabled": "Enabled",
+		"shipping.sizeN": "Size {{n}}",
+		"shipping.orderPackagingTitle": "Order packaging",
+		"shipping.recalcPlan": "Recalculate",
+		"shipping.recalcOk": "Packaging plan updated.",
+		"shipping.noPackagingPlan": "No plan saved yet. Run recalculate.",
+		"shipping.boxCount": "{{count}} boxes",
+		"shipping.oversized": "Oversized",
+		"shipping.basalamWeightTitle": "Basalam weight sync",
+		"shipping.basalamWeightHint": "Product/variation weight is sent as Basalam weight; empty-carton tare of the smallest fitting box is added into package_weight. If Transport is off, Basalam’s default package weight is used as fallback.",
+		"basalam.packagingWeightHint": "With Transport active: package_weight = product weight + postal box tare. The “package weight” default is only a fallback when Transport is unavailable.",
+		"marketplace.module.tapin-module": "Tapin",
+		"nav.module.tapin-module": "Tapin",
+		"tapin.settingsTitle": "Tapin shipping",
+		"tapin.settingsSubtitle": "Connect your shop, shipping methods, rates, and parcel registration — in one place.",
+		"tapin.hubCardTitle": "Tapin",
+		"tapin.hubCardHint": "Express post, VIP, Tipax, and courier — with barcode and labels from the dashboard.",
+		"tapin.openSettings": "Tapin settings",
+		"tapin.tabConnect": "Connect",
+		"tapin.tabOrigin": "Origin",
+		"tapin.tabMethods": "Methods",
+		"tapin.tabTariffs": "Rates",
+		"tapin.tabShip": "Register",
+		"tapin.tabNotify": "Notify",
+		"tapin.connectTitle": "Shop connection",
+		"tapin.connectHint": "Paste your Tapin webservice token and pick the shop.",
+		"tapin.enabled": "Enable Tapin shipping",
+		"tapin.token": "Connection token",
+		"tapin.tokenPlaceholder": "Paste token here",
+		"tapin.testConnection": "Test connection",
+		"tapin.syncLocations": "Refresh provinces & cities",
+		"tapin.shop": "Shop",
+		"tapin.pickShop": "Choose a shop",
+		"tapin.connected": "Connected.",
+		"tapin.connectFailed": "Could not connect.",
+		"tapin.needShop": "Choose a shop to finish setup.",
+		"tapin.needLocations": "Run “Refresh provinces & cities” once.",
+		"tapin.readyHint": "Ready to quote rates and register parcels.",
+		"tapin.locationsCount": "{{count}} provinces listed",
+		"tapin.originTitle": "Ship-from location",
+		"tapin.originHint": "Province and city where parcels are collected.",
+		"tapin.province": "Province",
+		"tapin.city": "City",
+		"tapin.pickProvince": "Choose province",
+		"tapin.pickCity": "Choose city",
+		"tapin.methodsTitle": "Shipping methods",
+		"tapin.methodsHint": "Toggle methods, then add them to your WooCommerce shipping zones.",
+		"tapin.methodPishtaz": "Express post",
+		"tapin.methodVip": "VIP post",
+		"tapin.methodTipax": "Tipax",
+		"tapin.methodCourier": "Courier",
+		"tapin.courierPrice": "Courier base price",
+		"tapin.freeMin": "Free shipping from",
+		"tapin.extraPercent": "Extra percent on rates",
+		"tapin.zonesReminder": "After saving, add each method to a shipping zone.",
+		"tapin.tariffsTitle": "Fallback rates",
+		"tapin.tariffsHint": "Used when live quote is unavailable. Weights are in grams.",
+		"tapin.addRow": "Add row",
+		"tapin.minWeight": "From weight",
+		"tapin.maxWeight": "To weight",
+		"tapin.price": "Price",
+		"tapin.shipTitle": "Parcel registration",
+		"tapin.shipHint": "You can quote rates only, or also register parcels in Tapin.",
+		"tapin.autoRegister": "Auto-register when order status changes",
+		"tapin.autoRegisterWhen": "Register when status is",
+		"tapin.statusProcessing": "Processing",
+		"tapin.statusPackaged": "Packaged",
+		"tapin.statusCompleted": "Completed",
+		"tapin.registerType": "Registration type",
+		"tapin.registerType0": "Without barcode",
+		"tapin.registerType1": "With barcode — ready to print",
+		"tapin.registerType2": "With barcode — ready to ship",
+		"tapin.insurance": "Insure parcel",
+		"tapin.notifyTitle": "Customer updates",
+		"tapin.notifyHint": "SMS and alerts use your shop notification settings.",
+		"tapin.notifyBody": "When a barcode is saved, the shop SMS “post” events fire. Configure wording and toggles there.",
+		"tapin.openSms": "Shop SMS settings",
+		"tapin.orderTitle": "Tapin shipping",
+		"tapin.saveAddress": "Save province & city",
+		"tapin.barcode": "Barcode",
+		"tapin.noBarcode": "No barcode yet.",
+		"tapin.registerShipment": "Register shipment",
+		"tapin.printLabel": "Label",
+		"tapin.refreshStatus": "Refresh status",
+		"shipping.toolsTitle": "Shipping tools",
+		"shipping.toolsHint": "Hide rates, weights, Pro UX (free title, country, first order), statuses, method images.",
+		"shipping.toolsCardHint": "Global rate, weight, and status options.",
+		"shipping.openTools": "Open tools",
+		"shipping.toolsRatesTitle": "Rate visibility",
+		"shipping.hideWhenFree": "Hide other methods when free shipping is available",
+		"shipping.hideWhenCourier": "Show only courier when courier is available",
+		"shipping.statusEnable": "Enable custom shipping order statuses",
+		"shipping.toolsWeightTitle": "Weights",
+		"shipping.defaultProductWeight": "Default product weight (g)",
+		"shipping.defaultPackageWeight": "Extra package weight (g)",
+		"shipping.postWeightLimit": "Post weight limit (kg)",
+		"shipping.methodImagesTitle": "Shipping method images",
+		"shipping.methodImagesHint": "Image URL shown next to method labels at checkout.",
+		"shipping.citiesTitle": "Cities & districts",
+		"shipping.citiesHint": "Provinces and cities are prepared automatically; manage districts, bulk prices, and city-bound zones here.",
+		"shipping.citiesCardHint": "City taxonomy, districts, per-zone method prices.",
+		"shipping.openCities": "Manage cities",
+		"shipping.reinstallCities": "Refresh / complete cities",
+		"shipping.pickState": "Select province",
+		"shipping.citiesInstalled": "Province and city list is ready.",
+		"shipping.citiesNotInstalled": "Preparing city list automatically…",
+		"shipping.citiesLoading": "Loading cities…",
+		"shipping.citiesSeeding": "List is seeding automatically — reopen this page or tap refresh.",
+		"shipping.citiesSeedProgress": "{{done}} of {{total}} provinces",
+		"shipping.bulkPrices": "Bulk city prices",
+		"shipping.tipaxOn": "Tipax on",
+		"shipping.createZonesFromCities": "Create zones from cities (first 20)",
+		"shipping.zonesCreated": "Zones created.",
+		"shipping.mapTitle": "Shipping map",
+		"shipping.mapHint": "Checkout/order map pin and distance to store.",
+		"shipping.mapCardHint": "OSM / Neshan / Map.ir and required pin.",
+		"shipping.openMap": "Map settings",
+		"shipping.mapEnabled": "Enable checkout map",
+		"shipping.mapRequired": "Require location pin",
+		"shipping.mapProvider": "Provider",
+		"shipping.mapPlacement": "Placement",
+		"shipping.mapAfterNotes": "After order notes",
+		"shipping.mapBeforeDetails": "Before customer details",
+		"shipping.mapDistance": "Distance mode",
+		"shipping.mapDistNone": "None",
+		"shipping.mapDistDirect": "Straight line",
+		"shipping.mapDistReal": "ORS routing",
+		"shipping.storeLat": "Store latitude",
+		"shipping.storeLng": "Store longitude",
+		"shipping.orderMapTitle": "Map location",
+		"shipping.rulesTitle": "Shipping rules",
+		"shipping.rulesHint": "Multi-condition / multi-action rules on checkout rates.",
+		"shipping.rulesCardHint": "Pro-style rules: hide, free, set cost.",
+		"shipping.openRules": "Manage rules",
+		"shipping.addRule": "Add rule",
+		"shipping.ruleN": "Rule {{n}}",
+		"shipping.ruleTitle": "Title",
+		"shipping.rulePriority": "Priority",
+		"shipping.condType": "Condition type",
+		"shipping.condValue": "Condition value",
+		"shipping.actionType": "Action type",
+		"shipping.actionMethod": "Method ID",
+		"shipping.actionValue": "Action value",
+		"tapin.gateway": "Service gateway",
+		"tapin.showCredit": "Show credit",
+		"tapin.credit": "Credit",
+		"tapin.methodTipaxApi": "Tapin Tipax",
+		"tapin.methodAlonomic": "Tapin Alonomic",
+		"tapin.courierPerKg": "Courier per kg",
+		"tapin.extraFixed": "Fixed rate extra",
+		"tapin.defaultBox": "Default box",
+		"tapin.usePwsFormula": "Full offline PWS tariff formula",
+		"tapin.syncPackingBoxes": "Sync Tapin packing boxes",
+		"tapin.payType": "Shipping pay type",
+		"tapin.employeeCode": "Employee code",
+		"tapin.tipaxPickup": "Tipax pickup type",
+		"tapin.tipaxDelivery": "Tipax delivery type",
+		"tapin.boxSize": "Box / pocket size",
+		"tapin.contentType": "Content type",
+		"tapin.orderWeight": "Weight (g)",
+		"tapin.saveParcelMeta": "Save parcel details",
+		"tapin.status": "Tapin status",
+		"tapin.readyToShip": "Ready to ship",
+		"shipping.proUxTitle": "Checkout Pro UX",
+		"shipping.freeShippingTitle": "Free shipping title",
+		"shipping.hideCountry": "Hide country field",
+		"shipping.swapStateCity": "Swap province/city fields",
+		"shipping.disableDefaultMethod": "Disable default shipping method selection",
+		"shipping.freeFirstOrder": "Free shipping on first order",
+		"shipping.honorFreeCoupon": "Honor free shipping coupons",
+		"shipping.citySearch": "Quick city search",
+		"shipping.citySearchPlaceholder": "Type at least 2 characters…",
+		"shipping.districtsTitle": "Districts",
+		"shipping.districtsHint": "Add districts under a city; they appear at checkout and My Account.",
+		"shipping.districtName": "District name",
+		"shipping.addDistrict": "Add district",
+		"shipping.noDistricts": "No districts for this city yet.",
+		"shipping.conditions": "Conditions (all must match)",
+		"shipping.actions": "Actions",
+		"shipping.addCondition": "Add condition",
+		"shipping.addAction": "Add action",
+		"common.create": "Create",
+		"tapin.opsTitle": "Tapin operations",
+		"tapin.opsHint": "Order list, bulk status/labels, and status reports.",
+		"tapin.openOps": "Open operations",
+		"tapin.financeTitle": "Tapin finance",
+		"tapin.financeHint": "Wallet credit, top-up, history, and shop detail.",
+		"tapin.openFinance": "Open finance",
+		"tapin.catalogTitle": "Tapin catalog",
+		"tapin.catalogHint": "Products, customers, employees, and background tasks.",
+		"tapin.openCatalog": "Open catalog",
+		"tapin.editShipment": "Edit shipment",
+		"tapin.printLabelNative": "Native label",
+		"tapin.printBarcode": "Barcode HTML",
+		"tapin.fetchDetail": "Fetch detail",
+		"tapin.kiosk": "Kiosk",
+		"tapin.kioskNone": "No kiosk",
+		"tapin.defaultKiosk": "Default kiosk ID",
+		"tapin.tapinOrderId": "Tapin order ID",
+		"tapin.tapinOrdersList": "Tapin parcels",
+		"tapin.bulkOps": "Bulk operations (Woo order IDs)",
+		"tapin.wcOrderIds": "WooCommerce order IDs",
+		"tapin.bulkStatus": "Tapin status code",
+		"tapin.applyBulkStatus": "Apply bulk status",
+		"tapin.bulkLabels": "Bulk HTML labels",
+		"tapin.fromDate": "From date",
+		"tapin.toDate": "To date",
+		"tapin.labelsByDate": "Labels by date",
+		"tapin.changeReport": "Change-status report",
+		"tapin.lastChange": "Last change status",
+		"tapin.recipient": "Recipient",
+		"tapin.topupAmount": "Top-up amount (IRR)",
+		"tapin.startTopup": "Start top-up",
+		"tapin.creditHistory": "Top-up history",
+		"tapin.createdAt": "Created at",
+		"tapin.shopDetail": "Shop detail",
+		"tapin.products": "Products",
+		"tapin.customers": "Customers",
+		"tapin.employees": "Employees",
+		"tapin.tasks": "Tasks",
+		"tapin.createProduct": "Create Tapin product",
+		"tapin.productTitle": "Product title",
+		"tapin.pushWcProduct": "Push Woo product to Tapin",
+		"tapin.wcProductId": "WooCommerce product ID",
+		"tapin.syncToTapin": "Sync to Tapin",
+		"tapin.mobile": "Mobile",
+		"tapin.taskDetail": "Task detail",
+		"tapin.clearLocal": "Clear local Tapin meta",
+		"tapin.clearLocalConfirm": "Clear local Tapin barcode/order id so you can register again? The Tapin parcel is not deleted.",
+		"tapin.createShop": "Create Tapin shop",
+		"tapin.shopName": "Shop name",
+		"tapin.firstName": "First name",
+		"tapin.lastName": "Last name",
+		"tapin.productCategories": "Product categories",
+		"tapin.customerCategories": "Customer categories",
+		"tapin.statusReport": "Status report (get-status/report)",
+		"tapin.tapinOrderIds": "Tapin order UUIDs",
+		"tapin.fetchStatusReport": "Fetch status report",
+		"nav.module.analytics-commerce": "Commerce",
+		"nav.module.analytics-compare": "Traffic compare",
+		"nav.module.analytics-seo": "SEO",
+		"nav.module.analytics-support": "Support",
+		"nav.module.analytics-content": "Content",
+		"nav.module.analytics-month-summary": "Monthly summary",
+		"nav.module.analytics-module-commerce": "Commerce",
+		"nav.module.analytics-module-compare": "Traffic compare",
+		"nav.module.analytics-module-seo": "SEO",
+		"nav.module.analytics-module-support": "Support",
+		"nav.module.analytics-module-content": "Content",
+		"nav.module.analytics-module-month-summary": "Monthly summary",
+		"analytics.sections.commerce": "Commerce",
+		"analytics.sections.compare": "Traffic compare",
+		"analytics.sections.seo": "SEO",
+		"analytics.sections.support": "Support",
+		"analytics.sections.content": "Content",
+		"analytics.sections.monthSummary": "Monthly summary",
+		"analytics.kpi.orders": "Orders",
+		"analytics.kpi.revenue": "Total sales",
+		"analytics.kpi.aov": "Average order value",
+		"analytics.kpi.conversion": "Visit-to-purchase rate",
+		"analytics.kpi.salesSite": "Sales from site",
+		"analytics.kpi.salesInstagram": "Sales from Instagram",
+		"analytics.kpi.salesOther": "Sales from other",
+		"analytics.kpi.newCustomers": "New customers",
+		"analytics.kpi.returningCustomers": "Returning customers",
+		"analytics.compare.metric": "Metric",
+		"analytics.compare.thisMonth": "This month",
+		"analytics.compare.lastMonth": "Last month",
+		"analytics.compare.change": "Change %",
+		"analytics.compare.visitors": "Unique visitors",
+		"analytics.compare.views": "Page views",
+		"analytics.compare.avgDuration": "Avg. time on site",
+		"analytics.compare.bounce": "Bounce rate",
+		"analytics.compare.topSources": "Top inbound sources",
+		"analytics.compare.topPages": "Top pages",
+		"analytics.compare.siteConversion": "Overall conversion rate",
+		"analytics.compare.sessionNote": "Shown after session data starts collecting.",
+		"analytics.seo.keywords": "Keywords in use",
+		"analytics.seo.optimizedPages": "Optimized pages",
+		"analytics.seo.internalLinks": "Internal links",
+		"analytics.seo.externalLinks": "External links",
+		"analytics.seo.noindexShare": "noindex share (Rank Math)",
+		"analytics.seo.rankPlaceholder": "Live rankings require Search Console.",
+		"analytics.seo.indexPlaceholder": "Live index status requires Search Console.",
+		"analytics.seo.gscMissing": "Search Console is not connected",
+		"analytics.support.tickets": "Tickets created",
+		"analytics.support.replies": "Staff replies",
+		"analytics.support.csat": "Customer satisfaction",
+		"analytics.support.csatCount": "Ratings",
+		"analytics.support.frequent": "Frequent problems",
+		"analytics.support.rateLabel": "Satisfaction rating (1–5)",
+		"analytics.content.productsCreated": "Products created",
+		"analytics.content.productsUpdated": "Products updated",
+		"analytics.content.postsPublished": "Blog posts published",
+		"analytics.content.aiProducts": "AI-completed products",
+		"analytics.content.aiBlog": "AI blog writes",
+		"analytics.content.aiPages": "AI page fills",
+		"analytics.pct": "Change %",
+		"analytics.col.metric": "Metric",
+		"analytics.col.count": "Count",
+		"analytics.col.subject": "Subject",
+		"analytics.monthSummary.score": "Month score",
+		"analytics.monthSummary.status.growth": "Growth",
+		"analytics.monthSummary.status.stable": "Stable",
+		"analytics.monthSummary.status.decline": "Decline",
+		"analytics.monthSummary.achievement": "Top achievement",
+		"analytics.monthSummary.challenge": "Top challenge",
+		"analytics.monthSummary.noAchievement": "No meaningful growth",
+		"analytics.monthSummary.noChallenge": "No standout challenge identified",
+		"analytics.monthSummary.kpi.revenue": "Revenue",
+		"analytics.monthSummary.kpi.orders": "Orders",
+		"analytics.monthSummary.kpi.visitors": "Unique visitors",
+		"analytics.monthSummary.kpi.conversion": "Conversion rate",
+		"migrate.title": "Migrate to Webino",
+		"migrate.description": "Send this WooCommerce store to a Webino tenant in resumable batches. Example: parisma.ir → parisma.webinaagency.ir.",
+		"migrate.connection": "Connection",
+		"migrate.schema": "Payload schema: {{schema}}",
+		"migrate.siteUrl": "Webino site URL",
+		"migrate.token": "API token",
+		"migrate.tokenSaved": "Saved ({{hint}}). Enter a new token to replace it.",
+		"migrate.clearToken": "Remove the saved token",
+		"migrate.batchSize": "Batch size",
+		"migrate.delay": "Delay between batches (ms)",
+		"migrate.timeout": "Request timeout (seconds)",
+		"migrate.dryRun": "Dry run (build batches, do not send)",
+		"migrate.dryRunBadge": "dry run",
+		"migrate.entities": "What to migrate",
+		"migrate.mode": "Scope",
+		"migrate.modeFull": "Full (everything)",
+		"migrate.modeSelective": "Selective",
+		"migrate.modeHint": "Full turns every resource on. Selective sends only the boxes you check. Resources Webino does not import yet are skipped with a warning so the rest of the job continues.",
+		"migrate.unsupported": "waiting for a Webino importer",
+		"migrate.entity.media": "Images",
+		"migrate.entity.media_files": "Other media (video, PDF, SVG)",
+		"migrate.entity.categories": "Product categories",
+		"migrate.entity.tags": "Product tags",
+		"migrate.entity.brands": "Brands",
+		"migrate.entity.customers": "Customers",
+		"migrate.entity.staff": "Staff (invite, no passwords)",
+		"migrate.entity.products": "Products and variations",
+		"migrate.entity.coupons": "Coupons",
+		"migrate.entity.reviews": "Reviews",
+		"migrate.entity.pages": "Pages",
+		"migrate.entity.posts": "Posts",
+		"migrate.entity.elementor_templates": "Elementor templates",
+		"migrate.entity.orders": "Orders",
+		"migrate.entity.menus": "Menus",
+		"migrate.entity.redirects": "Redirects",
+		"migrate.entity.settings": "Store settings",
+		"migrate.entity.stats": "Daily analytics",
+		"migrate.entity.waiting_list": "Waiting list",
+		"migrate.entity.permalinks": "Permalink map",
+		"migrate.entity.review_queue": "Review queue (wallet, tickets, returns)",
+		"migrate.endpoints": "API paths",
+		"migrate.save": "Save settings",
+		"migrate.saved": "Migration settings saved.",
+		"migrate.test": "Test connection",
+		"migrate.testOk": "Connection succeeded.",
+		"migrate.progress": "Progress",
+		"migrate.notStarted": "No migration has been started.",
+		"migrate.start": "Start migration",
+		"migrate.resume": "Resume",
+		"migrate.pause": "Pause",
+		"migrate.reset": "Clear status",
+		"migrate.confirmStart": "Start from the beginning? The current progress for this job will be cleared.",
+		"migrate.confirmReset": "Clear the migration status?",
+		"migrate.passwordNote": "Customer password hashes are not exported. People sign in on Webino with a one-time code or a password reset. Closing this page does not stop a running job; WordPress cron keeps sending one batch per minute.",
+		"migrate.status.idle": "Ready",
+		"migrate.status.running": "Running",
+		"migrate.status.paused": "Paused",
+		"migrate.status.failed": "Failed",
+		"migrate.status.completed": "Completed"
 	};
-})), Dh = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", Oh = /* @__PURE__ */ new Set();
-async function kh(e) {
-	return e === "fa" ? (await Promise.resolve().then(() => (Ch(), xh))).default : (await Promise.resolve().then(() => (Eh(), wh))).default;
+})), zh = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", Bh = /* @__PURE__ */ new Set();
+async function Vh(e) {
+	return e === "fa" ? (await Promise.resolve().then(() => (Fh(), Nh))).default : (await Promise.resolve().then(() => (Rh(), Ih))).default;
 }
-function Ah(e) {
+async function Hh(e) {
+	if (Bh.has(e)) return;
+	let t = await Vh(e);
+	D.addResourceBundle(e, "translation", t, !0, !0), Bh.add(e);
+}
+function Uh(e) {
 	return e === "fa" ? "rtl" : "ltr";
 }
-var jh = {
+var Wh = {
 	type: "postProcessor",
 	name: "faDigits",
 	process(e, t, n) {
-		return n.lng !== "fa" && !n.lng?.startsWith("fa") ? e : sn(e);
+		return n.lng !== "fa" && !n.lng?.startsWith("fa") ? e : hn(e);
 	}
 };
 (async () => {
-	let e = Dh === "fa" ? "en" : "fa", [t, n] = await Promise.all([kh(Dh), kh(e)]);
-	Oh.add(Dh), Oh.add(e), await D.use(jh).use(h).init({
-		resources: {
-			[Dh]: { translation: t },
-			[e]: { translation: n }
-		},
-		lng: Dh,
+	let e = await Vh(zh);
+	Bh.add(zh), await D.use(Wh).use(h).init({
+		resources: { [zh]: { translation: e } },
+		lng: zh,
 		fallbackLng: "en",
 		keySeparator: !1,
 		nsSeparator: !1,
@@ -18561,39 +21543,41 @@ var jh = {
 			bindI18n: "languageChanged loaded added",
 			useSuspense: !1
 		}
-	}), document.documentElement.lang = Dh, document.documentElement.dir = Ah(Dh);
+	}), document.documentElement.lang = zh, document.documentElement.dir = Uh(zh), Hh(zh === "fa" ? "en" : "fa").catch((e) => {
+		console.warn("[Webino Dashboard] Secondary locale preload failed", e);
+	});
 })();
 //#endregion
 //#region src/components/ui/dialog.tsx
-function Mh({ ...e }) {
-	return /* @__PURE__ */ C($a, {
+function Gh({ ...e }) {
+	return /* @__PURE__ */ C(fo, {
 		"data-slot": "dialog",
 		...e
 	});
 }
-function Nh({ ...e }) {
-	return /* @__PURE__ */ C(eo, {
+function Kh({ ...e }) {
+	return /* @__PURE__ */ C(po, {
 		"data-slot": "dialog-portal",
 		...e
 	});
 }
-function Ph({ className: e, ...t }) {
-	return /* @__PURE__ */ C(to, {
+function qh({ className: e, ...t }) {
+	return /* @__PURE__ */ C(mo, {
 		"data-slot": "dialog-overlay",
 		className: G("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", e),
 		...t
 	});
 }
-function Fh({ className: e, children: t, showCloseButton: n = !0, ...r }) {
-	return /* @__PURE__ */ C(ta, {
+function Jh({ className: e, children: t, showCloseButton: n = !0, ...r }) {
+	return /* @__PURE__ */ C(pa, {
 		allowBodyScroll: !0,
-		children: /* @__PURE__ */ w(Nh, {
+		children: /* @__PURE__ */ w(Kh, {
 			"data-slot": "dialog-portal",
-			children: [/* @__PURE__ */ C(Ph, {}), /* @__PURE__ */ w(no, {
+			children: [/* @__PURE__ */ C(qh, {}), /* @__PURE__ */ w(ho, {
 				"data-slot": "dialog-content",
 				className: G("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg", e),
 				...r,
-				children: [t, n && /* @__PURE__ */ w(io, {
+				children: [t, n && /* @__PURE__ */ w(_o, {
 					"data-slot": "dialog-close",
 					className: "absolute top-4 end-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 					children: [/* @__PURE__ */ C(ae, {}), /* @__PURE__ */ C("span", {
@@ -18605,19 +21589,19 @@ function Fh({ className: e, children: t, showCloseButton: n = !0, ...r }) {
 		})
 	});
 }
-function Ih({ className: e, ...t }) {
+function Yh({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "dialog-header",
 		className: G("flex flex-col gap-2 text-center sm:text-start", e),
 		...t
 	});
 }
-function Lh({ className: e, showCloseButton: t = !1, children: n, ...r }) {
+function Xh({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 	return /* @__PURE__ */ w("div", {
 		"data-slot": "dialog-footer",
 		className: G("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", e),
 		...r,
-		children: [n, t && /* @__PURE__ */ C(io, {
+		children: [n, t && /* @__PURE__ */ C(_o, {
 			asChild: !0,
 			children: /* @__PURE__ */ C(Y, {
 				variant: "outline",
@@ -18626,8 +21610,8 @@ function Lh({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 		})]
 	});
 }
-function Rh({ className: e, ...t }) {
-	return /* @__PURE__ */ C(ro, {
+function Zh({ className: e, ...t }) {
+	return /* @__PURE__ */ C(go, {
 		"data-slot": "dialog-title",
 		className: G("text-lg leading-none font-semibold", e),
 		...t
@@ -18635,7 +21619,7 @@ function Rh({ className: e, ...t }) {
 }
 //#endregion
 //#region src/lib/categoryTree.ts
-function zh(e) {
+function Qh(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) {
 		let e = n.parent || 0, r = t.get(e) ?? [];
@@ -18653,20 +21637,20 @@ function zh(e) {
 }
 //#endregion
 //#region src/components/magazine/MediaPickerDialog.tsx
-function Bh(e, t, n) {
+function $h(e, t, n) {
 	let r = new URLSearchParams({
 		page: "1",
 		per_page: "60"
 	});
 	return e > 0 && r.set("folder", String(e)), t > 0 && r.set("category", String(t)), n.trim() && r.set("search", n.trim()), `content/media?${r.toString()}`;
 }
-function Vh(e) {
+function eg(e) {
 	return {
 		...e,
 		url: ""
 	};
 }
-function Hh({ open: e, onOpenChange: n, onSelect: r }) {
+function tg({ open: e, onOpenChange: n, onSelect: r }) {
 	let { t: i } = g(), [a, o] = m(0), [s, c] = m(0), [l, d] = m(""), [p, h] = m("");
 	u(() => {
 		if (!e) return;
@@ -18685,28 +21669,28 @@ function Hh({ open: e, onOpenChange: n, onSelect: r }) {
 			s,
 			p
 		],
-		queryFn: () => V(Bh(a, s, p)),
+		queryFn: () => V($h(a, s, p)),
 		enabled: e
-	}), y = f(() => zh((_.data?.folders ?? []).map(Vh)), [_.data?.folders]), b = f(() => zh((_.data?.categories ?? []).map(Vh)), [_.data?.categories]), x = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
-	return /* @__PURE__ */ C(Mh, {
+	}), y = f(() => Qh((_.data?.folders ?? []).map(eg)), [_.data?.folders]), b = f(() => Qh((_.data?.categories ?? []).map(eg)), [_.data?.categories]), x = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
+	return /* @__PURE__ */ C(Gh, {
 		open: e,
 		onOpenChange: n,
-		children: /* @__PURE__ */ w(Fh, {
+		children: /* @__PURE__ */ w(Jh, {
 			className: "max-h-[85vh] overflow-hidden sm:max-w-3xl",
 			children: [
-				/* @__PURE__ */ C(Ih, { children: /* @__PURE__ */ C(Rh, { children: i("posts.selectFeaturedImage") }) }),
+				/* @__PURE__ */ C(Yh, { children: /* @__PURE__ */ C(Zh, { children: i("posts.selectFeaturedImage") }) }),
 				/* @__PURE__ */ w("div", {
 					className: "grid gap-3 sm:grid-cols-3",
 					children: [
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: i("media.filterFolder") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: i("media.filterFolder") }), /* @__PURE__ */ w(Jm, {
 								value: String(a),
 								onValueChange: (e) => o(parseInt(e, 10) || 0),
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 									value: "0",
 									children: i("media.allFolders")
 								}), y.map(({ node: e, depth: t }) => /* @__PURE__ */ C(Q, {
@@ -18717,13 +21701,13 @@ function Hh({ open: e, onOpenChange: n, onSelect: r }) {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ C(Z, { children: i("media.filterCategory") }), /* @__PURE__ */ w(Im, {
+							children: [/* @__PURE__ */ C(Z, { children: i("media.filterCategory") }), /* @__PURE__ */ w(Jm, {
 								value: String(s),
 								onValueChange: (e) => c(parseInt(e, 10) || 0),
-								children: [/* @__PURE__ */ C(Rm, {
+								children: [/* @__PURE__ */ C(Xm, {
 									className: "w-full",
-									children: /* @__PURE__ */ C(Lm, {})
-								}), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+									children: /* @__PURE__ */ C(Ym, {})
+								}), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 									value: "0",
 									children: i("media.allCategories")
 								}), b.map(({ node: e, depth: t }) => /* @__PURE__ */ C(Q, {
@@ -18750,7 +21734,7 @@ function Hh({ open: e, onOpenChange: n, onSelect: r }) {
 					className: "max-h-[50vh] overflow-y-auto",
 					children: v.isLoading ? /* @__PURE__ */ C("div", {
 						className: "grid grid-cols-3 gap-3 sm:grid-cols-4",
-						children: Array.from({ length: 8 }).map((e, t) => /* @__PURE__ */ C(xm, { className: "aspect-square rounded-md" }, t))
+						children: Array.from({ length: 8 }).map((e, t) => /* @__PURE__ */ C(Nm, { className: "aspect-square rounded-md" }, t))
 					}) : x.length === 0 ? /* @__PURE__ */ C("p", {
 						className: "py-8 text-center text-sm text-muted-foreground",
 						children: i("media.empty")
@@ -18776,7 +21760,7 @@ function Hh({ open: e, onOpenChange: n, onSelect: r }) {
 						}, e.id))
 					})
 				}),
-				/* @__PURE__ */ C(Lh, { children: /* @__PURE__ */ C(Y, {
+				/* @__PURE__ */ C(Xh, { children: /* @__PURE__ */ C(Y, {
 					type: "button",
 					variant: "outline",
 					onClick: () => n(!1),
@@ -18788,13 +21772,13 @@ function Hh({ open: e, onOpenChange: n, onSelect: r }) {
 }
 //#endregion
 //#region src/components/wfcp/QuickAddImagePanel.tsx
-function Uh({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
+function ng({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 	let { t: o } = g(), s = n(), c = p(null), [l, u] = m(!1), d = e({
-		mutationFn: (e) => ge("content/media", e),
+		mutationFn: (e) => Ce("content/media", e),
 		onSuccess: (e) => {
 			e.id > 0 && (i(e), s.invalidateQueries({ queryKey: ["media", "picker"] }), x.success(o("wfcp.uploadImageOk")));
 		},
-		onError: (e) => Oe(o, e)
+		onError: (e) => Fe(o, e)
 	});
 	return /* @__PURE__ */ w(S, { children: [/* @__PURE__ */ w("div", {
 		className: "space-y-2",
@@ -18802,7 +21786,7 @@ function Uh({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 			/* @__PURE__ */ C(Z, { children: o("wfcp.productImage") }),
 			t > 0 && r ? /* @__PURE__ */ C("div", {
 				className: "overflow-hidden rounded-md border border-border",
-				children: /* @__PURE__ */ C(Fm, {
+				children: /* @__PURE__ */ C(qm, {
 					src: r,
 					alt: o("a11y.thumbnail"),
 					className: "aspect-video w-full object-cover"
@@ -18849,7 +21833,7 @@ function Uh({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 				}
 			})
 		]
-	}), /* @__PURE__ */ C(Hh, {
+	}), /* @__PURE__ */ C(tg, {
 		open: l,
 		onOpenChange: u,
 		onSelect: (e) => i(e)
@@ -18857,7 +21841,7 @@ function Uh({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/pages/WfcpQuickAddPage.tsx
-function Wh() {
+function rg() {
 	let { t } = g(), [n, r] = m(""), [i, a] = m(""), [o, s] = m(0), [c, l] = m(""), u = e({
 		mutationFn: () => V("wfcp/quick-add", {
 			method: "POST",
@@ -18871,14 +21855,14 @@ function Wh() {
 		onSuccess: (e) => {
 			x.success(t("wfcp.quickCreated", { id: e.product_id })), r(""), a(""), s(0), l("");
 		},
-		onError: (e) => Oe(t, e)
+		onError: (e) => Fe(t, e)
 	});
-	return /* @__PURE__ */ C(bm, {
+	return /* @__PURE__ */ C(Mm, {
 		title: t("wfcp.quickTitle"),
 		description: t("wfcp.quickDescription"),
-		children: /* @__PURE__ */ C(cm, {
+		children: /* @__PURE__ */ C(bm, {
 			className: "mx-auto max-w-md shadow-sm",
-			children: /* @__PURE__ */ w(fm, {
+			children: /* @__PURE__ */ w(wm, {
 				className: "space-y-4 pt-6",
 				children: [
 					/* @__PURE__ */ w("div", {
@@ -18896,7 +21880,7 @@ function Wh() {
 							onChange: (e) => a(e.target.value)
 						})]
 					}),
-					/* @__PURE__ */ C(Uh, {
+					/* @__PURE__ */ C(ng, {
 						imageId: o,
 						imageUrl: c,
 						onChange: (e) => {
@@ -18919,32 +21903,32 @@ function Wh() {
 }
 //#endregion
 //#region src/components/skeletons/FormSettingsSkeleton.tsx
-function Gh({ cards: e = 2, fieldsPerCard: t = 5 }) {
+function ig({ cards: e = 2, fieldsPerCard: t = 5 }) {
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4 max-w-2xl",
 		"aria-busy": "true",
-		children: [Array.from({ length: e }).map((e, n) => /* @__PURE__ */ w(cm, {
+		children: [Array.from({ length: e }).map((e, n) => /* @__PURE__ */ w(bm, {
 			className: "shadow-sm",
-			children: [/* @__PURE__ */ C(lm, { children: /* @__PURE__ */ C(xm, { className: "h-6 w-40" }) }), /* @__PURE__ */ C(fm, {
+			children: [/* @__PURE__ */ C(xm, { children: /* @__PURE__ */ C(Nm, { className: "h-6 w-40" }) }), /* @__PURE__ */ C(wm, {
 				className: "space-y-4",
 				children: Array.from({ length: t }).map((e, t) => /* @__PURE__ */ w("div", {
 					className: "space-y-2",
-					children: [/* @__PURE__ */ C(xm, { className: "h-4 w-28" }), /* @__PURE__ */ C(xm, { className: "h-10 w-full" })]
+					children: [/* @__PURE__ */ C(Nm, { className: "h-4 w-28" }), /* @__PURE__ */ C(Nm, { className: "h-10 w-full" })]
 				}, t))
 			})]
-		}, n)), /* @__PURE__ */ C(xm, { className: "h-9 w-24" })]
+		}, n)), /* @__PURE__ */ C(Nm, { className: "h-9 w-24" })]
 	});
 }
 //#endregion
 //#region src/components/ui/switch.tsx
-function Kh({ className: e, size: t = "default", ...n }) {
-	return /* @__PURE__ */ C(rm, {
+function ag({ className: e, size: t = "default", ...n }) {
+	return /* @__PURE__ */ C(hm, {
 		"data-slot": "switch",
 		"data-size": t,
 		className: G("peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80", e),
 		...n,
 		dir: "ltr",
-		children: /* @__PURE__ */ C(im, {
+		children: /* @__PURE__ */ C(gm, {
 			"data-slot": "switch-thumb",
 			className: G("pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground")
 		})
@@ -18952,18 +21936,18 @@ function Kh({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region src/pages/settings/shop/wfcpPricingTabs.ts
-var qh = [
+var og = [
 	"digikala",
 	"basalam",
 	"technolife",
 	"snappshop",
 	"tapsishop"
-], Jh = [
+], sg = [
 	"zarehbin",
 	"emalls",
 	"snapppay-search",
 	"torob"
-], Yh = [
+], cg = [
 	"dashboard",
 	"exchange",
 	"retail",
@@ -18975,13 +21959,13 @@ var qh = [
 	"notifications",
 	"style",
 	"advanced"
-], Xh = new Set(qh), Zh = new Set(Jh), Qh = new Set(Yh);
-function $h(e) {
+], lg = new Set(og), ug = new Set(sg), dg = new Set(cg);
+function fg(e) {
 	let t = e && /^[a-z0-9-]+$/.test(e) ? e : "dashboard";
-	return Xh.has(t) || t === "platform" ? "marketplaces" : Zh.has(t) ? "search-engines" : t === "currency" ? "exchange" : Qh.has(t) ? t : "dashboard";
+	return lg.has(t) || t === "platform" ? "marketplaces" : ug.has(t) ? "search-engines" : t === "currency" ? "exchange" : dg.has(t) ? t : "dashboard";
 }
-function eg(e) {
-	return Zh.has(e);
+function pg(e) {
+	return ug.has(e);
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/pages/WfcpSettingsPage.tsx
@@ -18998,7 +21982,7 @@ function $({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled:
 				className: "text-muted-foreground text-xs",
 				children: n
 			}) : null]
-		}), /* @__PURE__ */ C(Kh, {
+		}), /* @__PURE__ */ C(ag, {
 			id: e,
 			checked: r,
 			onCheckedChange: i,
@@ -19006,8 +21990,8 @@ function $({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled:
 		})]
 	});
 }
-function tg() {
-	let { tab: r } = b(), i = $h(r), a = i, { t: o } = g(), s = n(), c = y().pathname.includes("/settings/shop/pricing"), l = "/settings/shop/pricing", d = !!(r && r !== i), p = t({
+function mg() {
+	let { tab: r } = b(), i = fg(r), a = i, { t: o } = g(), s = n(), c = y().pathname.includes("/settings/shop/pricing"), l = "/settings/shop/pricing", d = !!(r && r !== i), p = t({
 		queryKey: ["wfcp", "settings"],
 		queryFn: () => V("wfcp/settings"),
 		enabled: !d
@@ -19030,14 +22014,14 @@ function tg() {
 		onSuccess: async (e, t) => {
 			await s.invalidateQueries({ queryKey: ["wfcp", "settings"] }), await s.invalidateQueries({ queryKey: ["wfcp", "stats"] }), x.success(o("common.saved")), (t.section === "general" || t.section === "exchange") && s.invalidateQueries({ queryKey: ["bootstrap"] });
 		},
-		onError: (e) => Oe(o, e)
+		onError: (e) => Fe(o, e)
 	}), D = S.general ?? {}, O = S.retail ?? {}, k = S.credit ?? {}, A = S.installment ?? {}, j = S.wholesale ?? {}, M = S.notifications ?? {}, N = S.style ?? {}, P = Array.isArray(A.plans) ? A.plans : [{
 		months: 3,
 		interest: 5
 	}, {
 		months: 6,
 		interest: 10
-	}], F = f(() => Yh.map((e) => /* @__PURE__ */ C(_, {
+	}], F = f(() => cg.map((e) => /* @__PURE__ */ C(_, {
 		to: `${l}/${e}`,
 		className: `rounded-md px-2 py-1 text-sm ${a === e ? "bg-muted font-medium" : "hover:bg-muted/60"}`,
 		children: o(`wfcp.tab.${e}`)
@@ -19058,7 +22042,7 @@ function tg() {
 		}), /* @__PURE__ */ w("div", {
 			className: "min-w-0 flex-1 space-y-4",
 			children: [
-				p.isLoading ? /* @__PURE__ */ C(Gh, {
+				p.isLoading ? /* @__PURE__ */ C(ig, {
 					cards: 2,
 					fieldsPerCard: 4
 				}) : null,
@@ -19066,7 +22050,7 @@ function tg() {
 					className: "text-sm text-destructive",
 					children: p.error.message
 				}),
-				a === "dashboard" && /* @__PURE__ */ C(ng, {
+				a === "dashboard" && /* @__PURE__ */ C(hg, {
 					general: D,
 					creditEnabled: !!k.enabled,
 					installmentEnabled: !!A.enabled,
@@ -19085,7 +22069,7 @@ function tg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "exchange" && /* @__PURE__ */ C(fg, {
+				a === "exchange" && /* @__PURE__ */ C(Tg, {
 					general: D,
 					setGeneral: (e) => T((t) => ({
 						...t,
@@ -19100,13 +22084,13 @@ function tg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "retail" && /* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ w(lm, {
+				a === "retail" && /* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ w(xm, {
 					className: "pb-2",
-					children: [/* @__PURE__ */ C(um, {
+					children: [/* @__PURE__ */ C(Sm, {
 						className: "text-base",
 						children: o("wfcp.tab.retail")
-					}), /* @__PURE__ */ C(dm, { children: o("wfcp.formula.retail") })]
-				}), /* @__PURE__ */ w(fm, {
+					}), /* @__PURE__ */ C(Cm, { children: o("wfcp.formula.retail") })]
+				}), /* @__PURE__ */ w(wm, {
 					className: "space-y-4",
 					children: [
 						/* @__PURE__ */ w("div", {
@@ -19151,7 +22135,7 @@ function tg() {
 								}))
 							})]
 						}),
-						/* @__PURE__ */ C(lg, {
+						/* @__PURE__ */ C(Sg, {
 							selected: Array.isArray(O.gateways) ? O.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -19172,13 +22156,13 @@ function tg() {
 						})
 					]
 				})] }),
-				a === "credit" && /* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ w(lm, {
+				a === "credit" && /* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ w(xm, {
 					className: "pb-2",
-					children: [/* @__PURE__ */ C(um, {
+					children: [/* @__PURE__ */ C(Sm, {
 						className: "text-base",
 						children: o("wfcp.tab.credit")
-					}), /* @__PURE__ */ C(dm, { children: o("wfcp.formula.credit") })]
-				}), /* @__PURE__ */ w(fm, {
+					}), /* @__PURE__ */ C(Cm, { children: o("wfcp.formula.credit") })]
+				}), /* @__PURE__ */ w(wm, {
 					className: "space-y-4",
 					children: [
 						/* @__PURE__ */ C($, {
@@ -19208,7 +22192,7 @@ function tg() {
 								}))
 							})]
 						}),
-						/* @__PURE__ */ C(lg, {
+						/* @__PURE__ */ C(Sg, {
 							selected: Array.isArray(k.gateways) ? k.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -19229,13 +22213,13 @@ function tg() {
 						})
 					]
 				})] }),
-				a === "installment" && /* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ w(lm, {
+				a === "installment" && /* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ w(xm, {
 					className: "pb-2",
-					children: [/* @__PURE__ */ C(um, {
+					children: [/* @__PURE__ */ C(Sm, {
 						className: "text-base",
 						children: o("wfcp.tab.installment")
-					}), /* @__PURE__ */ C(dm, { children: o("wfcp.formula.installment") })]
-				}), /* @__PURE__ */ w(fm, {
+					}), /* @__PURE__ */ C(Cm, { children: o("wfcp.formula.installment") })]
+				}), /* @__PURE__ */ w(wm, {
 					className: "space-y-4",
 					children: [
 						/* @__PURE__ */ C($, {
@@ -19281,7 +22265,7 @@ function tg() {
 							className: "space-y-2 max-w-xs",
 							children: [
 								/* @__PURE__ */ C(Z, { children: o("wfcp.pdpTheme") }),
-								/* @__PURE__ */ w(Im, {
+								/* @__PURE__ */ w(Jm, {
 									value: String(A.pdp_theme ?? "classic") === "timeline" ? "timeline" : "classic",
 									onValueChange: (e) => T((t) => ({
 										...t,
@@ -19290,7 +22274,7 @@ function tg() {
 											pdp_theme: e
 										}
 									})),
-									children: [/* @__PURE__ */ C(Rm, { children: /* @__PURE__ */ C(Lm, {}) }), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+									children: [/* @__PURE__ */ C(Xm, { children: /* @__PURE__ */ C(Ym, {}) }), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 										value: "classic",
 										children: o("wfcp.pdpThemeClassic")
 									}), /* @__PURE__ */ C(Q, {
@@ -19406,7 +22390,7 @@ function tg() {
 								})
 							]
 						}),
-						/* @__PURE__ */ C(lg, {
+						/* @__PURE__ */ C(Sg, {
 							selected: Array.isArray(A.gateways) ? A.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -19432,7 +22416,7 @@ function tg() {
 						})
 					]
 				})] }),
-				a === "wholesale" && /* @__PURE__ */ C(og, {
+				a === "wholesale" && /* @__PURE__ */ C(yg, {
 					wholesale: j,
 					setWholesale: (e) => T((t) => ({
 						...t,
@@ -19444,21 +22428,21 @@ function tg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "marketplaces" && /* @__PURE__ */ C(ig, {
-					channels: [...qh],
+				a === "marketplaces" && /* @__PURE__ */ C(_g, {
+					channels: [...og],
 					draft: S,
 					setDraft: T,
 					save: E,
 					compare: !1
 				}),
-				a === "search-engines" && /* @__PURE__ */ C(ig, {
-					channels: [...Jh],
+				a === "search-engines" && /* @__PURE__ */ C(_g, {
+					channels: [...sg],
 					draft: S,
 					setDraft: T,
 					save: E,
 					compare: !0
 				}),
-				a === "notifications" && /* @__PURE__ */ C(sg, {
+				a === "notifications" && /* @__PURE__ */ C(bg, {
 					notifications: M,
 					setNotifications: (e) => T((t) => ({
 						...t,
@@ -19470,7 +22454,7 @@ function tg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "style" && /* @__PURE__ */ C(cg, {
+				a === "style" && /* @__PURE__ */ C(xg, {
 					style: N,
 					notifications: M,
 					setStyle: (e) => T((t) => ({
@@ -19486,17 +22470,17 @@ function tg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "advanced" && /* @__PURE__ */ C(pg, {})
+				a === "advanced" && /* @__PURE__ */ C(Eg, {})
 			]
 		})]
 	});
-	return c ? I : /* @__PURE__ */ C(bm, {
+	return c ? I : /* @__PURE__ */ C(Mm, {
 		title: o("wfcp.settingsTitle"),
 		description: o("wfcp.settingsDescription"),
 		children: I
 	});
 }
-function ng({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, statsLoading: i, setGeneral: a, onSave: o, saving: s }) {
+function hg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, statsLoading: i, setGeneral: a, onSave: o, saving: s }) {
 	let { t: c } = g();
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4",
@@ -19508,35 +22492,35 @@ function ng({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 			/* @__PURE__ */ w("div", {
 				className: "grid gap-3 sm:grid-cols-2 lg:grid-cols-4",
 				children: [
-					/* @__PURE__ */ C(rg, {
+					/* @__PURE__ */ C(gg, {
 						title: c("wfcp.stats.total"),
 						value: r?.total_products,
 						loading: i
 					}),
-					/* @__PURE__ */ C(rg, {
+					/* @__PURE__ */ C(gg, {
 						title: c("wfcp.stats.withPurchase"),
 						value: r?.products_with_price,
 						loading: i
 					}),
-					/* @__PURE__ */ C(rg, {
+					/* @__PURE__ */ C(gg, {
 						title: c("wfcp.stats.locked"),
 						value: r?.products_locked,
 						loading: i
 					}),
-					/* @__PURE__ */ C(rg, {
+					/* @__PURE__ */ C(gg, {
 						title: c("wfcp.stats.exchange"),
 						value: r ? `${r.exchange_rate || "—"} ${r.currency || ""}`.trim() : void 0,
 						loading: i
 					})
 				]
 			}),
-			/* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ w(lm, {
+			/* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ w(xm, {
 				className: "pb-2",
-				children: [/* @__PURE__ */ C(um, {
+				children: [/* @__PURE__ */ C(Sm, {
 					className: "text-base",
 					children: c("wfcp.tab.dashboard")
-				}), /* @__PURE__ */ C(dm, { children: c("wfcp.defaultPurchaseTypeHint") })]
-			}), /* @__PURE__ */ w(fm, {
+				}), /* @__PURE__ */ C(Cm, { children: c("wfcp.defaultPurchaseTypeHint") })]
+			}), /* @__PURE__ */ w(wm, {
 				className: "space-y-4",
 				children: [
 					/* @__PURE__ */ C($, {
@@ -19550,14 +22534,14 @@ function ng({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 						children: [/* @__PURE__ */ C(Z, {
 							htmlFor: "wfcp-default-purchase-type",
 							children: c("wfcp.defaultPurchaseType")
-						}), /* @__PURE__ */ w(Im, {
+						}), /* @__PURE__ */ w(Jm, {
 							value: String(e.default_purchase_type ?? "cash"),
 							onValueChange: (e) => a({ default_purchase_type: e }),
-							children: [/* @__PURE__ */ C(Rm, {
+							children: [/* @__PURE__ */ C(Xm, {
 								id: "wfcp-default-purchase-type",
 								className: "max-w-xs",
-								children: /* @__PURE__ */ C(Lm, {})
-							}), /* @__PURE__ */ w(zm, { children: [
+								children: /* @__PURE__ */ C(Ym, {})
+							}), /* @__PURE__ */ w(Zm, { children: [
 								/* @__PURE__ */ C(Q, {
 									value: "cash",
 									children: c("wfcp.purchaseTypeCash")
@@ -19584,16 +22568,16 @@ function ng({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 		]
 	});
 }
-function rg({ title: e, value: t, loading: n }) {
-	return /* @__PURE__ */ C(cm, { children: /* @__PURE__ */ w(lm, {
+function gg({ title: e, value: t, loading: n }) {
+	return /* @__PURE__ */ C(bm, { children: /* @__PURE__ */ w(xm, {
 		className: "pb-1",
-		children: [/* @__PURE__ */ C(dm, { children: e }), /* @__PURE__ */ C(um, {
+		children: [/* @__PURE__ */ C(Cm, { children: e }), /* @__PURE__ */ C(Sm, {
 			className: "text-2xl tabular-nums",
 			children: n ? "…" : t ?? "—"
 		})]
 	}) });
 }
-function ig({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
+function _g({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 	let { t: a } = g();
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-3",
@@ -19602,7 +22586,7 @@ function ig({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 			children: a(i ? "wfcp.formula.compare" : "wfcp.formula.marketplace")
 		}), /* @__PURE__ */ C("div", {
 			className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3",
-			children: e.map((e) => /* @__PURE__ */ C(ag, {
+			children: e.map((e) => /* @__PURE__ */ C(vg, {
 				slug: e,
 				settings: t[e] ?? {},
 				onChange: (t) => n((n) => ({
@@ -19618,15 +22602,15 @@ function ig({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 		})]
 	});
 }
-function ag({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
-	let { t: a } = g(), o = e === "digikala" ? "rial" : "toman", s = eg(e), c = String(t.price_mode ?? (s ? "retail" : "markup")), l = !s || c === "markup";
-	return /* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ w(lm, {
+function vg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
+	let { t: a } = g(), o = e === "digikala" ? "rial" : "toman", s = pg(e), c = String(t.price_mode ?? (s ? "retail" : "markup")), l = !s || c === "markup";
+	return /* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ w(xm, {
 		className: "pb-2",
-		children: [/* @__PURE__ */ C(um, {
+		children: [/* @__PURE__ */ C(Sm, {
 			className: "text-base",
 			children: a(`wfcp.tab.${e}`)
-		}), /* @__PURE__ */ C(dm, { children: a(s ? "wfcp.formula.compare" : "wfcp.formula.marketplace") })]
-	}), /* @__PURE__ */ w(fm, {
+		}), /* @__PURE__ */ C(Cm, { children: a(s ? "wfcp.formula.compare" : "wfcp.formula.marketplace") })]
+	}), /* @__PURE__ */ w(wm, {
 		className: "space-y-4",
 		children: [
 			/* @__PURE__ */ C($, {
@@ -19642,13 +22626,13 @@ function ag({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 				className: "space-y-2",
 				children: [
 					/* @__PURE__ */ C(Z, { children: a("wfcp.priceMode") }),
-					/* @__PURE__ */ w(Im, {
+					/* @__PURE__ */ w(Jm, {
 						value: c === "markup" ? "markup" : "retail",
 						onValueChange: (e) => n({
 							...t,
 							price_mode: e
 						}),
-						children: [/* @__PURE__ */ C(Rm, { children: /* @__PURE__ */ C(Lm, {}) }), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+						children: [/* @__PURE__ */ C(Xm, { children: /* @__PURE__ */ C(Ym, {}) }), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 							value: "retail",
 							children: a("wfcp.priceModeRetail")
 						}), /* @__PURE__ */ C(Q, {
@@ -19710,13 +22694,13 @@ function ag({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 			}),
 			/* @__PURE__ */ w("div", {
 				className: "space-y-2",
-				children: [/* @__PURE__ */ C(Z, { children: a("wfcp.priceUnit") }), /* @__PURE__ */ w(Im, {
+				children: [/* @__PURE__ */ C(Z, { children: a("wfcp.priceUnit") }), /* @__PURE__ */ w(Jm, {
 					value: String(t.price_unit ?? o),
 					onValueChange: (e) => n({
 						...t,
 						price_unit: e
 					}),
-					children: [/* @__PURE__ */ C(Rm, { children: /* @__PURE__ */ C(Lm, {}) }), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+					children: [/* @__PURE__ */ C(Xm, { children: /* @__PURE__ */ C(Ym, {}) }), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 						value: "toman",
 						children: a("wfcp.unitToman")
 					}), /* @__PURE__ */ C(Q, {
@@ -19735,7 +22719,7 @@ function ag({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 		]
 	})] });
 }
-function og({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
+function yg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 	let { t: a } = g(), o = e.category_rules ?? {}, s = e.category_variety_rules ?? {}, c = e.defaults && typeof e.defaults == "object" ? e.defaults : {}, l = t({
 		queryKey: ["product-categories", "wfcp-wholesale"],
 		queryFn: () => V("shop/product-categories?sort=name_asc&per_page=200")
@@ -19765,13 +22749,13 @@ function og({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 				className: "text-muted-foreground text-xs",
 				children: a("wfcp.formula.wholesale")
 			}),
-			/* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ w(lm, {
+			/* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ w(xm, {
 				className: "pb-2",
-				children: [/* @__PURE__ */ C(um, {
+				children: [/* @__PURE__ */ C(Sm, {
 					className: "text-base",
 					children: a("wfcp.wholesaleModeNormal")
-				}), /* @__PURE__ */ C(dm, { children: a("wfcp.wholesaleThresholdHint") })]
-			}), /* @__PURE__ */ w(fm, {
+				}), /* @__PURE__ */ C(Cm, { children: a("wfcp.wholesaleThresholdHint") })]
+			}), /* @__PURE__ */ w(wm, {
 				className: "space-y-4",
 				children: [
 					/* @__PURE__ */ C($, {
@@ -19825,13 +22809,13 @@ function og({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 					})
 				]
 			})] }),
-			/* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ w(lm, {
+			/* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ w(xm, {
 				className: "pb-2",
-				children: [/* @__PURE__ */ C(um, {
+				children: [/* @__PURE__ */ C(Sm, {
 					className: "text-base",
 					children: a("wfcp.wholesaleModeAdvanced")
-				}), /* @__PURE__ */ C(dm, { children: a("wfcp.wholesalePartnerHint") })]
-			}), /* @__PURE__ */ w(fm, {
+				}), /* @__PURE__ */ C(Cm, { children: a("wfcp.wholesalePartnerHint") })]
+			}), /* @__PURE__ */ w(wm, {
 				className: "space-y-4",
 				children: [
 					/* @__PURE__ */ C($, {
@@ -19951,14 +22935,14 @@ function og({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 							})
 						]
 					}),
-					/* @__PURE__ */ C(lg, {
+					/* @__PURE__ */ C(Sg, {
 						selected: Array.isArray(e.gateways) ? e.gateways : [],
 						onChange: (t) => n({
 							...e,
 							gateways: t
 						})
 					}),
-					/* @__PURE__ */ C(ug, {
+					/* @__PURE__ */ C(Cg, {
 						selected: Array.isArray(e.shipping_methods) ? e.shipping_methods : [],
 						onChange: (t) => n({
 							...e,
@@ -19976,12 +22960,12 @@ function og({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 		]
 	});
 }
-function sg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
+function bg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 	let { t: i } = g(), a = (n, r) => t({
 		...e,
 		[n]: r
 	});
-	return /* @__PURE__ */ C(cm, { children: /* @__PURE__ */ w(fm, {
+	return /* @__PURE__ */ C(bm, { children: /* @__PURE__ */ w(wm, {
 		className: "space-y-4 pt-6",
 		children: [
 			[
@@ -20003,7 +22987,7 @@ function sg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 				"wholesale_description"
 			].map((t) => /* @__PURE__ */ w("div", {
 				className: "space-y-1",
-				children: [/* @__PURE__ */ C(Z, { children: i(`wfcp.field.${t}`, t) }), /* @__PURE__ */ C(vh, {
+				children: [/* @__PURE__ */ C(Z, { children: i(`wfcp.field.${t}`, t) }), /* @__PURE__ */ C(Ah, {
 					className: "max-w-sm",
 					value: String(e[t] ?? ""),
 					onChange: (e) => a(t, e.target.value)
@@ -20098,7 +23082,7 @@ function sg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 						label: i(`wfcp.field.${r}`),
 						checked: !!(e[n] ?? !0),
 						onCheckedChange: (e) => a(n, e)
-					}), /* @__PURE__ */ C(vh, {
+					}), /* @__PURE__ */ C(Ah, {
 						className: "max-w-sm",
 						value: String(e[r] ?? ""),
 						onChange: (e) => a(r, e.target.value)
@@ -20114,23 +23098,23 @@ function sg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 		]
 	}) });
 }
-function cg({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
+function xg({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
 	let { t: a } = g(), o = (t, n) => String(e[t] ?? n), s = Number(e.border_radius ?? 8), c = String(e.placement ?? "before_cart"), l = (t, r) => n({
 		...e,
 		[t]: r
 	});
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4",
-		children: [/* @__PURE__ */ w(cm, { children: [/* @__PURE__ */ w(lm, { children: [/* @__PURE__ */ C(um, { children: a("wfcp.placement") }), /* @__PURE__ */ C(dm, { children: /* @__PURE__ */ C(_, {
+		children: [/* @__PURE__ */ w(bm, { children: [/* @__PURE__ */ w(xm, { children: [/* @__PURE__ */ C(Sm, { children: a("wfcp.placement") }), /* @__PURE__ */ C(Cm, { children: /* @__PURE__ */ C(_, {
 			to: "/settings/site/style",
 			className: "text-primary underline-offset-2 hover:underline",
 			children: a("settings.style.movedHint")
-		}) })] }), /* @__PURE__ */ w(fm, { children: [/* @__PURE__ */ w("div", {
+		}) })] }), /* @__PURE__ */ w(wm, { children: [/* @__PURE__ */ w("div", {
 			className: "space-y-2 max-w-md",
-			children: [/* @__PURE__ */ C(Z, { children: a("wfcp.placement") }), /* @__PURE__ */ w(Im, {
+			children: [/* @__PURE__ */ C(Z, { children: a("wfcp.placement") }), /* @__PURE__ */ w(Jm, {
 				value: c,
 				onValueChange: (e) => l("placement", e),
-				children: [/* @__PURE__ */ C(Rm, { children: /* @__PURE__ */ C(Lm, {}) }), /* @__PURE__ */ w(zm, { children: [
+				children: [/* @__PURE__ */ C(Xm, { children: /* @__PURE__ */ C(Ym, {}) }), /* @__PURE__ */ w(Zm, { children: [
 					/* @__PURE__ */ C(Q, {
 						value: "summary",
 						children: a("wfcp.placementSummary")
@@ -20233,7 +23217,7 @@ function cg({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
 		})]
 	});
 }
-function lg({ selected: e, onChange: n }) {
+function Sg({ selected: e, onChange: n }) {
 	let { t: r } = g(), i = t({
 		queryKey: ["payment-gateways"],
 		queryFn: () => V("shop/payment-gateways")
@@ -20259,7 +23243,7 @@ function lg({ selected: e, onChange: n }) {
 				className: "space-y-2 rounded-md border border-border p-3",
 				children: a.map((t) => /* @__PURE__ */ w("div", {
 					className: "flex items-center gap-2",
-					children: [/* @__PURE__ */ C(wm, {
+					children: [/* @__PURE__ */ C(Im, {
 						id: `wfcp-gw-${t.id}`,
 						checked: e.includes(t.id),
 						onCheckedChange: (e) => o(t.id, e === !0)
@@ -20273,7 +23257,7 @@ function lg({ selected: e, onChange: n }) {
 		]
 	});
 }
-function ug({ selected: e, onChange: n }) {
+function Cg({ selected: e, onChange: n }) {
 	let { t: r } = g(), i = t({
 		queryKey: ["wfcp", "shipping-methods"],
 		queryFn: () => V("wfcp/shipping-methods")
@@ -20303,7 +23287,7 @@ function ug({ selected: e, onChange: n }) {
 				className: "space-y-2 rounded-md border border-border p-3",
 				children: a.map((t) => /* @__PURE__ */ w("div", {
 					className: "flex items-center gap-2",
-					children: [/* @__PURE__ */ C(wm, {
+					children: [/* @__PURE__ */ C(Im, {
 						id: `wfcp-ship-${t.id}`,
 						checked: e.includes(t.id),
 						onCheckedChange: (e) => o(t.id, e === !0)
@@ -20317,7 +23301,7 @@ function ug({ selected: e, onChange: n }) {
 		]
 	});
 }
-function dg({ pollKey: e }) {
+function wg({ pollKey: e }) {
 	let { t: n } = g(), r = t({
 		queryKey: e,
 		queryFn: () => V("wfcp/advanced/recalculate-state"),
@@ -20327,7 +23311,7 @@ function dg({ pollKey: e }) {
 		className: "space-y-2 rounded-lg border border-border p-3",
 		children: /* @__PURE__ */ w("div", {
 			className: "flex flex-wrap items-center gap-2",
-			children: [/* @__PURE__ */ C(gh, {
+			children: [/* @__PURE__ */ C(Oh, {
 				status: a ? "running" : u ? "done" : "idle",
 				tone: a ? "warning" : u ? "success" : "secondary"
 			}), /* @__PURE__ */ C("span", {
@@ -20343,7 +23327,7 @@ function dg({ pollKey: e }) {
 		})
 	});
 }
-function fg({ general: t, setGeneral: r, onSave: i, saving: a }) {
+function Tg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 	let { t: o } = g(), s = n(), [c, l] = m(""), u = e({
 		mutationFn: () => V("wfcp/advanced/recalculate-all", {
 			method: "POST",
@@ -20357,9 +23341,9 @@ function fg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 				"state"
 			] }), x.success(o("wfcp.recalcQueued", { total: e.total ?? 0 }));
 		},
-		onError: (e) => Oe(o, e)
+		onError: (e) => Fe(o, e)
 	});
-	return /* @__PURE__ */ C(cm, { children: /* @__PURE__ */ w(fm, {
+	return /* @__PURE__ */ C(bm, { children: /* @__PURE__ */ w(wm, {
 		className: "space-y-4 pt-6",
 		children: [
 			/* @__PURE__ */ w("div", {
@@ -20395,13 +23379,13 @@ function fg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 			}),
 			/* @__PURE__ */ w("div", {
 				className: "space-y-2",
-				children: [/* @__PURE__ */ C(Z, { children: o("wfcp.purchaseCurrency") }), /* @__PURE__ */ w(Im, {
+				children: [/* @__PURE__ */ C(Z, { children: o("wfcp.purchaseCurrency") }), /* @__PURE__ */ w(Jm, {
 					value: String(t.purchase_currency ?? "base"),
 					onValueChange: (e) => r({ purchase_currency: e }),
-					children: [/* @__PURE__ */ C(Rm, {
+					children: [/* @__PURE__ */ C(Xm, {
 						className: "max-w-xs",
-						children: /* @__PURE__ */ C(Lm, {})
-					}), /* @__PURE__ */ w(zm, { children: [/* @__PURE__ */ C(Q, {
+						children: /* @__PURE__ */ C(Ym, {})
+					}), /* @__PURE__ */ w(Zm, { children: [/* @__PURE__ */ C(Q, {
 						value: "base",
 						children: o("wfcp.purchaseCurrencyBase")
 					}), /* @__PURE__ */ C(Q, {
@@ -20489,7 +23473,7 @@ function fg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 				className: "text-muted-foreground text-xs",
 				children: o("wfcp.applyAllPricesHint")
 			}),
-			/* @__PURE__ */ C(dg, { pollKey: [
+			/* @__PURE__ */ C(wg, { pollKey: [
 				"wfcp",
 				"recalc",
 				"state"
@@ -20501,7 +23485,7 @@ function fg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 		]
 	}) });
 }
-function pg() {
+function Eg() {
 	let { t } = g(), r = n(), [i, a] = m(""), [o, s] = m(!1), c = e({
 		mutationFn: () => V("wfcp/advanced/recalculate-all", {
 			method: "POST",
@@ -20515,20 +23499,20 @@ function pg() {
 				"state"
 			] }), x.success(t("wfcp.recalcQueued", { total: e.total ?? 0 }));
 		},
-		onError: (e) => Oe(t, e)
+		onError: (e) => Fe(t, e)
 	}), l = e({
 		mutationFn: () => V("wfcp/advanced/delete-transients", {
 			method: "POST",
 			body: "{}"
 		}),
 		onSuccess: () => x.success(t("wfcp.transientsCleared")),
-		onError: (e) => Oe(t, e)
+		onError: (e) => Fe(t, e)
 	}), u = e({
 		mutationFn: () => V("wfcp/advanced/export-settings"),
 		onSuccess: (e) => {
 			navigator.clipboard.writeText(e.json).catch(() => {}), x.success(t("wfcp.exportCopied"));
 		},
-		onError: (e) => Oe(t, e)
+		onError: (e) => Fe(t, e)
 	}), d = e({
 		mutationFn: () => V("wfcp/advanced/import-settings", {
 			method: "POST",
@@ -20538,9 +23522,9 @@ function pg() {
 		onSuccess: async () => {
 			await r.invalidateQueries({ queryKey: ["wfcp", "settings"] }), x.success(t("common.saved"));
 		},
-		onError: (e) => Oe(t, e)
+		onError: (e) => Fe(t, e)
 	});
-	return /* @__PURE__ */ C(cm, { children: /* @__PURE__ */ w(fm, {
+	return /* @__PURE__ */ C(bm, { children: /* @__PURE__ */ w(wm, {
 		className: "space-y-4 pt-6",
 		children: [
 			/* @__PURE__ */ w("div", { children: [
@@ -20558,7 +23542,7 @@ function pg() {
 					onClick: () => void c.mutateAsync(),
 					children: t("wfcp.recalculateAll")
 				}),
-				/* @__PURE__ */ C(dg, { pollKey: [
+				/* @__PURE__ */ C(wg, { pollKey: [
 					"wfcp",
 					"recalc",
 					"state"
@@ -20582,7 +23566,7 @@ function pg() {
 				className: "space-y-2",
 				children: [
 					/* @__PURE__ */ C(Z, { children: t("wfcp.importJson") }),
-					/* @__PURE__ */ C(vh, {
+					/* @__PURE__ */ C(Ah, {
 						className: "min-h-24 max-w-sm",
 						value: i,
 						onChange: (e) => a(e.target.value)
@@ -20601,11 +23585,11 @@ function pg() {
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/module-entry.tsx
-var mg = {
-	"shop/wfcp/quick-add": Wh,
-	"shop/wfcp/bulk-editor": ph,
-	"shop/wfcp/price-changer": bh,
-	"settings/shop/pricing/:tab": tg
-}, hg = { routes: mg };
+var Dg = {
+	"shop/wfcp/quick-add": rg,
+	"shop/wfcp/bulk-editor": Th,
+	"shop/wfcp/price-changer": Mh,
+	"settings/shop/pricing/:tab": mg
+}, Og = { routes: Dg };
 //#endregion
-export { hg as default, mg as routes };
+export { Og as default, Dg as routes };

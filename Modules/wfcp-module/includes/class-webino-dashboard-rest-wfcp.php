@@ -459,6 +459,16 @@ final class Webino_Dashboard_REST_WFCP {
 				'permission_callback' => array( __CLASS__, 'perm_price_changer' ),
 			)
 		);
+
+		register_rest_route(
+			self::NS,
+			'/wfcp/bulk-price-change/cancel',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'bulk_price_cancel' ),
+				'permission_callback' => array( __CLASS__, 'perm_price_changer' ),
+			)
+		);
 	}
 
 	/**
@@ -1072,11 +1082,11 @@ final class Webino_Dashboard_REST_WFCP {
 		if ( ! $product ) {
 			return new WP_Error( 'wfcp_nf', __( 'Product not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
 		}
-		update_post_meta( $product_id, '_wfcp_purchase_price', $price );
-		if ( ! WFCP_Helper::is_product_price_locked( $product_id ) ) {
-			$retail = WFCP_Calculator::calculate_price( $price, 'retail', $product_id );
-			update_post_meta( $product_id, '_regular_price', $retail );
-			update_post_meta( $product_id, '_price', $retail );
+		$product->update_meta_data( '_wfcp_purchase_price', $price );
+		$product->save();
+		if ( ! WFCP_Helper::is_product_price_locked( $product_id ) && class_exists( 'WFCP_Helper', false ) ) {
+			WFCP_Helper::sync_retail_price_from_purchase( $product_id, $price );
+		} else {
 			wc_delete_product_transients( $product_id );
 		}
 		return new WP_REST_Response( array( 'success' => true ) );
@@ -1104,15 +1114,16 @@ final class Webino_Dashboard_REST_WFCP {
 		} else {
 			$product->set_regular_price( $price );
 		}
-		$product->save();
-		$meta_key = ( 'sale' === $price_type ) ? '_sale_price' : '_regular_price';
-		update_post_meta( $product_id, $meta_key, $price );
-		if ( 'regular' === $price_type ) {
-			$current_sale = get_post_meta( $product_id, '_sale_price', true );
-			if ( '' === $current_sale || (float) $current_sale <= 0 ) {
-				update_post_meta( $product_id, '_price', $price );
-			}
+		$reg  = $product->get_regular_price( 'edit' );
+		$sale = $product->get_sale_price( 'edit' );
+		if ( '' !== $sale && is_numeric( $sale ) && (float) $sale > 0 && '' !== $reg && is_numeric( $reg ) && (float) $sale < (float) $reg ) {
+			$product->set_price( (string) wc_format_decimal( $sale ) );
+		} elseif ( '' !== $reg && is_numeric( $reg ) ) {
+			$product->set_price( (string) wc_format_decimal( $reg ) );
+		} else {
+			$product->set_price( '' );
 		}
+		$product->save();
 		wc_delete_product_transients( $product_id );
 		return new WP_REST_Response( array( 'success' => true ) );
 	}
@@ -1395,5 +1406,24 @@ final class Webino_Dashboard_REST_WFCP {
 				'last'   => get_option( WFCP_Bulk_Price_Change::LASTLOG_KEY ),
 			)
 		);
+	}
+
+	/**
+	 * Cancel a running/queued bulk price change job and clear lock.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function bulk_price_cancel() {
+		$params = get_option( WFCP_Bulk_Price_Change::PARAMS_KEY );
+		if ( is_array( $params ) && isset( $params['job_type'] ) && 'import' === $params['job_type'] && ! empty( $params['file_path'] ) ) {
+			$file = (string) $params['file_path'];
+			if ( file_exists( $file ) ) {
+				wp_delete_file( $file );
+			}
+		}
+		delete_transient( WFCP_Bulk_Price_Change::LOCK_KEY );
+		delete_option( WFCP_Bulk_Price_Change::PARAMS_KEY );
+		delete_option( WFCP_Bulk_Price_Change::STATE_KEY );
+		return new WP_REST_Response( array( 'success' => true, 'canceled' => true ) );
 	}
 }

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
+import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -821,6 +822,7 @@ function VariationCard({
   onMapped: () => void
 }) {
   const { t, i18n } = useTranslation()
+  const { currency: storeCurrency, currencySymbol: storeCurrencySymbol } = useStoreCurrency()
   const locale = i18n.language?.startsWith('fa') ? 'fa-IR' : 'en-US'
   const [sku, setSku] = useState(variation.sku ?? '')
   const [price, setPrice] = useState(variation.regular_price ?? '')
@@ -1036,7 +1038,7 @@ function VariationCard({
                   <p className="text-sm font-semibold">{dkIdentity}</p>
                   <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 text-xs">
                     <span>{orphanIdLine}</span>
-                    {hasPrice ? <MoneyDisplay amount={priceNum} currency="IRT" locale={locale} /> : null}
+                    {hasPrice ? <MoneyDisplay amount={priceNum} currency={storeCurrency} currencySymbol={storeCurrencySymbol} locale={locale} /> : null}
                     {hasStock ? (
                       <span>
                         {t('products.fieldStock')}: {stock}
@@ -1049,7 +1051,7 @@ function VariationCard({
                 <>
                   <p className="flex flex-wrap items-center gap-x-2 text-sm font-semibold">
                     {sku.trim() ? <span>{sku.trim()}</span> : null}
-                    {hasPrice ? <MoneyDisplay amount={priceNum} currency="IRT" locale={locale} /> : null}
+                    {hasPrice ? <MoneyDisplay amount={priceNum} currency={storeCurrency} currencySymbol={storeCurrencySymbol} locale={locale} /> : null}
                     {hasStock ? (
                       <span className="text-muted-foreground font-normal text-xs">
                         {t('products.fieldStock')}: {stock}
@@ -1404,13 +1406,13 @@ function VariationCard({
           {retail != null && retail > 0 ? (
             <span>
               {t('products.colRetail')}:{' '}
-              <MoneyDisplay amount={Number(retail)} currency="IRT" locale={locale} />
+              <MoneyDisplay amount={Number(retail)} currency={storeCurrency} currencySymbol={storeCurrencySymbol} locale={locale} />
             </span>
           ) : null}
           {installmentPrice != null ? (
             <span>
               {t('products.colInstallment')}:{' '}
-              <MoneyDisplay amount={Number(installmentPrice)} currency="IRT" locale={locale} />
+              <MoneyDisplay amount={Number(installmentPrice)} currency={storeCurrency} currencySymbol={storeCurrencySymbol} locale={locale} />
             </span>
           ) : null}
         </div>

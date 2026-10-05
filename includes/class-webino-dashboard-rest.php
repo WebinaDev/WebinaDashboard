@@ -3055,8 +3055,17 @@ class Webino_Dashboard_REST {
 		}
 		if ( isset( $wfcp['regular_price'] ) ) {
 			$price = wc_format_decimal( $wfcp['regular_price'] );
-			$p->set_regular_price( $price );
-			$p->set_price( $price );
+			if ( class_exists( 'WFCP_Helper', false ) && method_exists( 'WFCP_Helper', 'set_regular_preserving_sale' ) ) {
+				WFCP_Helper::set_regular_preserving_sale( $p, $price );
+			} else {
+				$p->set_regular_price( $price );
+				$sale = $p->get_sale_price( 'edit' );
+				if ( '' !== $sale && is_numeric( $sale ) && (float) $sale > 0 && (float) $sale < (float) $price ) {
+					$p->set_price( (string) wc_format_decimal( $sale ) );
+				} else {
+					$p->set_price( $price );
+				}
+			}
 		}
 
 		$p->save();
