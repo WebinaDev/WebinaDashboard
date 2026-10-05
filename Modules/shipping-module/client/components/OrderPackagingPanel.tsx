@@ -9,12 +9,17 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
 
-import type { PackagingPlan } from '../types'
+import type { PackagingPlan, ProfessionalPackagingFee } from '../types'
 
 type Props = {
   orderId: number
   currency?: string
   locale?: string
+}
+
+type PackagingResponse = {
+  plan: PackagingPlan | null
+  professional_fee?: ProfessionalPackagingFee | null
 }
 
 export function OrderPackagingPanel({ orderId, currency = 'IRT', locale = 'fa-IR' }: Props) {
@@ -23,26 +28,31 @@ export function OrderPackagingPanel({ orderId, currency = 'IRT', locale = 'fa-IR
 
   const q = useQuery({
     queryKey: ['shipping-order-packaging', orderId],
-    queryFn: () => apiFetch<{ plan: PackagingPlan | null }>(`shipping/orders/${orderId}/packaging`),
+    queryFn: () => apiFetch<PackagingResponse>(`shipping/orders/${orderId}/packaging`),
     enabled: orderId > 0,
   })
   useQueryErrorToast(q)
 
   const recalc = useMutation({
     mutationFn: () =>
-      apiFetch<{ plan: PackagingPlan }>(`shipping/orders/${orderId}/packaging`, {
+      apiFetch<PackagingResponse>(`shipping/orders/${orderId}/packaging`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: '{}',
       }),
     onSuccess: (data) => {
-      qc.setQueryData(['shipping-order-packaging', orderId], data)
+      qc.setQueryData(['shipping-order-packaging', orderId], (prev: PackagingResponse | undefined) => ({
+        ...prev,
+        ...data,
+        professional_fee: prev?.professional_fee ?? data.professional_fee,
+      }))
       toast.success(t('shipping.recalcOk'))
     },
     onError: (e: Error) => toastApiError(t, e),
   })
 
   const plan = q.data?.plan
+  const fee = q.data?.professional_fee
 
   return (
     <Card className="shadow-sm">
@@ -96,6 +106,12 @@ export function OrderPackagingPanel({ orderId, currency = 'IRT', locale = 'fa-IR
             </div>
           </>
         )}
+        {fee?.selected ? (
+          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2">
+            <span>{fee.label || t('shipping.professionalFeeOrderSelected')}</span>
+            <MoneyDisplay amount={fee.amount || 0} currency={currency} locale={locale} />
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   )
