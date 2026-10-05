@@ -1,0 +1,69 @@
+{
+  "slug": "bale-bot-module",
+  "name": "Bale shop bot",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Bale bot",
+    "sections": [
+      {
+        "id": "dashboard",
+        "route": "/bots/bale",
+        "title": "Bale bot"
+      }
+    ]
+  },
+  "sidebar": [
+    {
+      "parent_id": "bots",
+      "nodes": [
+        {
+          "id": "bale-bot-module",
+          "title": "Bale bot (WooBale)",
+          "path": "/bots/bale",
+          "capability": "manage_woocommerce",
+          "requires_woocommerce": true
+        }
+      ]
+    },
+    {
+      "parent_id": "marketing",
+      "nodes": [
+        {
+          "id": "bot-broadcast",
+          "title": "Bot broadcast",
+          "path": "/marketing/bot-broadcast",
+          "capability": "manage_woocommerce"
+        },
+        {
+          "id": "bot-campaigns",
+          "title": "Bot campaigns",
+          "path": "/marketing/bot-campaigns",
+          "capability": "manage_woocommerce"
+        }
+      ]
+    }
+  ],
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "bots/bale",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "bots.baleTitle"
+      },
+      {
+        "path": "marketing/bot-broadcast",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "marketing.botBroadcast"
+      },
+      {
+        "path": "marketing/bot-campaigns",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "marketing.botCampaigns"
+      }
+    ]
+  }
+}

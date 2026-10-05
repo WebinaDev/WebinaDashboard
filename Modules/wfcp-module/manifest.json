@@ -1,0 +1,133 @@
+{
+  "slug": "wfcp-module",
+  "name": "Webina Woo Core Pricing",
+  "version": "2.0.2",
+  "is_builtin": true,
+  "is_first_party": true,
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Pricing (WFCP)",
+    "sections": [
+      {
+        "id": "dashboard",
+        "route": "/settings/shop/pricing/dashboard",
+        "title": "Dashboard",
+        "titleKey": "wfcp.tab.dashboard"
+      },
+      {
+        "id": "exchange",
+        "route": "/settings/shop/pricing/exchange",
+        "title": "Currency & exchange",
+        "titleKey": "wfcp.tab.exchange"
+      },
+      {
+        "id": "retail",
+        "route": "/settings/shop/pricing/retail",
+        "title": "Retail",
+        "titleKey": "wfcp.tab.retail"
+      },
+      {
+        "id": "credit",
+        "route": "/settings/shop/pricing/credit",
+        "title": "Credit",
+        "titleKey": "wfcp.tab.credit"
+      },
+      {
+        "id": "installment",
+        "route": "/settings/shop/pricing/installment",
+        "title": "Installment",
+        "titleKey": "wfcp.tab.installment"
+      },
+      {
+        "id": "wholesale",
+        "route": "/settings/shop/pricing/wholesale",
+        "title": "Wholesale",
+        "titleKey": "wfcp.tab.wholesale"
+      },
+      {
+        "id": "marketplaces",
+        "route": "/settings/shop/pricing/marketplaces",
+        "title": "Marketplaces",
+        "titleKey": "wfcp.tab.marketplaces"
+      },
+      {
+        "id": "search-engines",
+        "route": "/settings/shop/pricing/search-engines",
+        "title": "Search engines",
+        "titleKey": "wfcp.tab.search-engines"
+      },
+      {
+        "id": "notifications",
+        "route": "/settings/shop/pricing/notifications",
+        "title": "Notifications",
+        "titleKey": "wfcp.tab.notifications"
+      },
+      {
+        "id": "style",
+        "route": "/settings/shop/pricing/style",
+        "title": "Style",
+        "titleKey": "wfcp.tab.style"
+      },
+      {
+        "id": "advanced",
+        "route": "/settings/shop/pricing/advanced",
+        "title": "Advanced",
+        "titleKey": "wfcp.tab.advanced"
+      }
+    ]
+  },
+  "sidebar": {
+    "parent_id": "shop",
+    "nodes": [
+      {
+        "id": "wfcp-module-quick",
+        "title": "Quick add products",
+        "path": "/shop/wfcp/quick-add",
+        "capability": "edit_products",
+        "requires_wfcp-module": true
+      },
+      {
+        "id": "wfcp-module-bulk",
+        "title": "Bulk price list",
+        "path": "/shop/wfcp/bulk-editor",
+        "capability": "edit_products",
+        "requires_wfcp-module": true
+      },
+      {
+        "id": "wfcp-module-price",
+        "title": "Bulk price change",
+        "path": "/shop/wfcp/price-changer",
+        "capability": "manage_woocommerce",
+        "requires_wfcp-module": true
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "shop/wfcp/quick-add",
+        "capability": "edit_products",
+        "headerTitleKey": "wfcp.headerQuickAdd"
+      },
+      {
+        "path": "shop/wfcp/bulk-editor",
+        "capability": "edit_products",
+        "headerTitleKey": "wfcp.headerBulk"
+      },
+      {
+        "path": "shop/wfcp/price-changer",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "wfcp.headerPriceChanger"
+      },
+      {
+        "path": "settings/shop/pricing/:tab",
+        "capability": "edit_products",
+        "headerTitleKey": "wfcp.headerSettings",
+        "headerParamKeys": { "tab": "tab" }
+      }
+    ]
+  }
+}

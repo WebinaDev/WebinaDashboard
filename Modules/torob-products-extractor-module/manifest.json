@@ -1,0 +1,35 @@
+{
+  "slug": "torob-products-extractor-module",
+  "name": "Torob Products Extractor",
+  "version": "2.1.3",
+  "is_builtin": true,
+  "parent_slug": "wnc-core-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "vendor": {
+    "required_paths": [
+      "vendor/products-extractor-for-woocommerce/wcpe.php"
+    ]
+  },
+  "settings": {
+    "area": "shop",
+    "title": "Torob Extractor",
+    "sections": [
+      {
+        "id": "connection",
+        "route": "/settings/shop/torob-extractor",
+        "title": "Torob Extractor"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/torob-extractor",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "torobExtractor.title"
+      }
+    ]
+  }
+}

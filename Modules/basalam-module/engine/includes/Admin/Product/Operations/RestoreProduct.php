@@ -1,0 +1,69 @@
+<?php
+
+namespace WebinoBasalam\Admin\Product\Operations;
+
+use WebinoBasalam\Admin\Product\Operations\AbstractProductOperation;
+use WebinoBasalam\Services\Products\UpdateSingleProductService;
+use WebinoBasalam\Utilities\ProductMetaKey;
+
+defined('ABSPATH') || exit;
+
+class RestoreProduct extends AbstractProductOperation
+{
+    private $updateProductService;
+    private const STATUS_ACTIVE = 2976;
+
+    public function __construct($updateProductService = null)
+    {
+        parent::__construct();
+        $this->updateProductService = $updateProductService ?: webinoBasalamContainer()->get(UpdateSingleProductService::class);
+    }
+
+
+    protected function run(int $product_id, array $args = []): array
+    {
+        $product = wc_get_product($product_id);
+        if ($product && $product->is_type('variable')) {
+            $count = 0;
+            foreach ($product->get_children() as $variationId) {
+                if (empty(get_post_meta((int) $variationId, ProductMetaKey::basalamProductId(), true))) {
+                    continue;
+                }
+                $this->updateProductService->updateProductStatus((int) $variationId, self::STATUS_ACTIVE);
+                $count++;
+            }
+            return [
+                'success' => true,
+                'message' => sprintf('تعداد %d محصول متغیر بازگردانی شد.', $count),
+                'status_code' => 200,
+                'product_id' => $product_id,
+                'restored' => true,
+            ];
+        }
+
+        $result = $this->updateProductService->updateProductStatus($product_id, self::STATUS_ACTIVE);
+
+        if (!$result) throw new \Exception('بازگردانی وضعیت محصول ناموفق بود');
+
+        return [
+            'success' => true,
+            'message' => sprintf('محصول با موفقیت بازگردانی شد.'),
+            'status_code' => 200,
+            'product_id' => $product_id,
+            'restored' => true
+        ];
+    }
+
+    public function validate(int $product_id): bool
+    {
+        if (!parent::validate($product_id)) return false;
+
+        $validation = $this->validator->validateBasalamConnection($product_id);
+        if (!$validation['valid']) {
+            $this->validator->logValidationResult($product_id, $validation, $this->getOperationNameFromClass());
+            return false;
+        }
+
+        return true;
+    }
+}

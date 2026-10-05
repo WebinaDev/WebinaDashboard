@@ -1,0 +1,125 @@
+{
+  "slug": "analytics-module",
+  "name": "Analytics",
+  "version": "1.1.0",
+  "is_builtin": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "site",
+    "title": "Analytics",
+    "sections": [
+      {
+        "id": "settings",
+        "route": "/settings/site/analytics",
+        "title": "Analytics"
+      }
+    ]
+  },
+  "sidebar": {
+    "module_id": "analytics-module",
+    "title": "Analytics",
+    "path": "/analytics/overview",
+    "capability": "view_woocommerce_reports",
+    "icon": "bar-chart-2",
+    "nav_group": "reports",
+    "children": [
+      {
+        "id": "analytics-module-overview",
+        "title": "Overview",
+        "path": "/analytics/overview",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-visitors",
+        "title": "Visitor analytics",
+        "path": "/analytics/visitors",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-pages",
+        "title": "Page analytics",
+        "path": "/analytics/pages",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-referrals",
+        "title": "Referrals",
+        "path": "/analytics/referrals",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-geo",
+        "title": "Geography",
+        "path": "/analytics/geo",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-devices",
+        "title": "Devices",
+        "path": "/analytics/devices",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-commerce",
+        "title": "Commerce",
+        "path": "/analytics/commerce",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-compare",
+        "title": "Traffic compare",
+        "path": "/analytics/compare",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-seo",
+        "title": "SEO",
+        "path": "/analytics/seo",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-support",
+        "title": "Support",
+        "path": "/analytics/support",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-content",
+        "title": "Content ops",
+        "path": "/analytics/content",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      },
+      {
+        "id": "analytics-module-month-summary",
+        "title": "Monthly summary",
+        "path": "/analytics/month-summary",
+        "capability": "view_woocommerce_reports",
+        "exclude_from_module_toggle": true
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "analytics/:section",
+        "capability": "view_woocommerce_reports",
+        "headerTitleKey": "analytics.title",
+        "headerParamKeys": {
+          "section": "section"
+        }
+      }
+    ]
+  }
+}

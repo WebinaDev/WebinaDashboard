@@ -1,0 +1,130 @@
+{
+  "slug": "basalam-module",
+  "name": "Basalam",
+  "version": "2.1.13",
+  "is_builtin": true,
+  "parent_slug": "wnc-core-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "باسلام",
+    "sections": [
+      {
+        "id": "home",
+        "route": "/settings/shop/basalam",
+        "title": "اتصال"
+      },
+      {
+        "id": "booth",
+        "route": "/settings/shop/basalam/booth",
+        "title": "غرفه"
+      },
+      {
+        "id": "products",
+        "route": "/settings/shop/basalam/products",
+        "title": "محصولات"
+      },
+      {
+        "id": "orders",
+        "route": "/orders?marketplace=basalam",
+        "title": "سفارش‌ها"
+      },
+      {
+        "id": "categories",
+        "route": "/settings/shop/basalam/categories",
+        "title": "دسته‌بندی"
+      },
+      {
+        "id": "settings",
+        "route": "/settings/shop/basalam/settings",
+        "title": "تنظیمات"
+      },
+      {
+        "id": "finance",
+        "route": "/settings/shop/basalam/finance",
+        "title": "مالی"
+      },
+      {
+        "id": "logs",
+        "route": "/settings/shop/basalam/logs",
+        "title": "وضعیت همگام‌سازی"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/basalam",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.title"
+      },
+      {
+        "path": "settings/shop/basalam/booth",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.boothTitle"
+      },
+      {
+        "path": "settings/shop/basalam/products",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.productsTitle"
+      },
+      {
+        "path": "settings/shop/basalam/orders",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.ordersTitle"
+      },
+      {
+        "path": "settings/shop/basalam/categories",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.categoriesTitle"
+      },
+      {
+        "path": "settings/shop/basalam/settings",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.settingsTitle"
+      },
+      {
+        "path": "settings/shop/basalam/finance",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.financeTitle"
+      },
+      {
+        "path": "settings/shop/basalam/logs",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.logsTitle"
+      },
+      {
+        "path": "settings/shop/basalam/tickets",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.title"
+      },
+      {
+        "path": "settings/shop/basalam/payments",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.title"
+      },
+      {
+        "path": "settings/shop/basalam/wallet",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.financeTitle"
+      },
+      {
+        "path": "settings/shop/basalam/subscriptions",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.title"
+      },
+      {
+        "path": "settings/shop/basalam/webhooks",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.boothTitle"
+      },
+      {
+        "path": "settings/shop/basalam/operations",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "basalam.productsTitle"
+      }
+    ]
+  }
+}

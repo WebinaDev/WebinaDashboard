@@ -1,0 +1,34 @@
+{
+  "slug": "digikala-sellers-module",
+  "name": "Digikala Sellers",
+  "version": "2.0.0",
+  "is_builtin": true,
+  "is_first_party": true,
+  "parent_slug": "wnc-core-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Digikala Sellers",
+    "sections": [
+      { "id": "connection", "route": "/settings/shop/digikala", "title": "Connection" },
+      { "id": "products", "route": "/settings/shop/digikala/products", "title": "Products" },
+      { "id": "orders", "route": "/settings/shop/digikala/orders", "title": "Orders" },
+      { "id": "jobs", "route": "/settings/shop/digikala/jobs", "title": "Jobs" },
+      { "id": "settings", "route": "/settings/shop/digikala/settings", "title": "Settings" },
+      { "id": "logs", "route": "/settings/shop/digikala/logs", "title": "Logs" }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      { "path": "settings/shop/digikala", "capability": "manage_woocommerce", "headerTitleKey": "digikala.title" },
+      { "path": "settings/shop/digikala/products", "capability": "manage_woocommerce", "headerTitleKey": "digikala.productsTitle" },
+      { "path": "settings/shop/digikala/orders", "capability": "manage_woocommerce", "headerTitleKey": "digikala.ordersTitle" },
+      { "path": "settings/shop/digikala/jobs", "capability": "manage_woocommerce", "headerTitleKey": "digikala.jobsTitle" },
+      { "path": "settings/shop/digikala/settings", "capability": "manage_woocommerce", "headerTitleKey": "digikala.settingsTitle" },
+      { "path": "settings/shop/digikala/logs", "capability": "manage_woocommerce", "headerTitleKey": "digikala.logsTitle" },
+      { "path": "settings/shop/digikala/sync", "capability": "manage_woocommerce", "headerTitleKey": "digikala.productsTitle" }
+    ]
+  }
+}

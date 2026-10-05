@@ -1,0 +1,21 @@
+<?php
+
+namespace WebinoBasalam\Admin\Product\Data\Validators;
+
+use WebinoBasalam\Utilities\ProductMetaKey;
+
+defined('ABSPATH') || exit;
+
+class ImageValidator implements ValidatorInterface
+{
+    public function validate($product): void
+    {
+        $basalamProductId = get_post_meta($product->get_id(), ProductMetaKey::basalamProductId(), true);
+        
+        if (!empty($basalamProductId)) return;
+
+        if (!$product->get_image_id()) {
+            throw new \InvalidArgumentException('محصول فاقد تصویر است.');
+        }
+    }
+}

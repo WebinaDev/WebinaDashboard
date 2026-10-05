@@ -1,0 +1,27 @@
+{
+  "slug": "zarinpal-gateway-module",
+  "name": "Zarinpal Gateway",
+  "version": "1.1.1",
+  "is_builtin": true,
+  "parent_slug": "payment-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "Zarinpal",
+    "sections": [
+      { "id": "connection", "route": "/settings/shop/zarinpal", "title": "Connection" },
+      { "id": "payments", "route": "/settings/shop/zarinpal/payments", "title": "Payments" },
+      { "id": "operations", "route": "/settings/shop/zarinpal/operations", "title": "Operations" }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      { "path": "settings/shop/zarinpal", "capability": "manage_woocommerce", "headerTitleKey": "zarinpal.title" },
+      { "path": "settings/shop/zarinpal/payments", "capability": "manage_woocommerce", "headerTitleKey": "zarinpal.paymentsTitle" },
+      { "path": "settings/shop/zarinpal/operations", "capability": "manage_woocommerce", "headerTitleKey": "zarinpal.operationsTitle" },
+      { "path": "settings/shop/zarinpal/coverage", "capability": "manage_woocommerce", "headerTitleKey": "zarinpal.coverageTitle" }
+    ]
+  }
+}

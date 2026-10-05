@@ -1,0 +1,325 @@
+<?php
+
+namespace WebinoBasalam;
+
+defined('ABSPATH') || exit;
+
+class JobManager
+{
+    private $jobManagerTableName;
+
+    private const ALLOWED_COLUMNS = [
+        'id', 'job_type', 'status', 'payload',
+        'attempts', 'max_attempts', 'retry_after',
+        'started_at', 'created_at', 'completed_at', 'failed_at', 'error_message',
+    ];
+
+    function __construct()
+    {
+        global $wpdb;
+        $this->jobManagerTableName = $wpdb->prefix . 'webino_basalam_job_manager';
+    }
+
+    public function createJob($jobType, $status = 'pending', $payload = null, $maxAttempts = 3)
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; no object cache for these operational queries.
+        return $wpdb->insert(
+            $this->jobManagerTableName,
+            array(
+                'job_type'      => $jobType,
+                'status'        => $status,
+                'payload'       => $payload,
+                'attempts'      => 0,
+                'max_attempts'  => $maxAttempts,
+                'created_at'    => time(),
+            )
+        );
+    }
+
+    public function getNextEligibleJob(string $jobType): ?object
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifier from $wpdb->prefix, not user input.
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$this->jobManagerTableName}
+             WHERE job_type = %s
+               AND status = 'pending'
+               AND (retry_after IS NULL OR retry_after <= %d)
+             ORDER BY id ASC
+             LIMIT 1",
+            $jobType,
+            time()
+        ));
+    }
+
+    public function hasAnyProcessingJob(): bool
+    {
+        return $this->getCountJobs(['status' => 'processing']) > 0;
+    }
+
+    public function getJob($where = array())
+    {
+        global $wpdb;
+
+        if (empty($where)) return null;
+
+        $conditions = [];
+        $values     = [];
+
+        foreach ($where as $column => $value) {
+            if (!in_array($column, self::ALLOWED_COLUMNS, true)) {
+                throw new \InvalidArgumentException(esc_html("Invalid column: {$column}"));
+            }
+            $conditions[] = "{$column} = %s";
+            $values[]     = $value;
+        }
+
+        $sql = "SELECT * FROM {$this->jobManagerTableName} WHERE " . implode(" AND ", $conditions) . " LIMIT 1";
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifiers from $wpdb->prefix and whitelisted column list, not user input; values are prepared.
+        return $wpdb->get_row($wpdb->prepare($sql, $values));
+    }
+
+    public function getCountJobs($where = array())
+    {
+        global $wpdb;
+
+        if (empty($where)) return 0;
+
+        $conditions = [];
+        $values     = [];
+
+        foreach ($where as $column => $value) {
+            if (!in_array($column, self::ALLOWED_COLUMNS, true)) {
+                throw new \InvalidArgumentException(esc_html("Invalid column: {$column}"));
+            }
+            if (is_array($value)) {
+                $placeholders = array_fill(0, count($value), '%s');
+                $conditions[] = "{$column} IN (" . implode(',', $placeholders) . ")";
+                $values = array_merge($values, $value);
+            } else {
+                $conditions[] = "{$column} = %s";
+                $values[]     = $value;
+            }
+        }
+
+        $sql = "SELECT COUNT(*) FROM {$this->jobManagerTableName} WHERE " . implode(" AND ", $conditions);
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifiers from $wpdb->prefix and whitelisted column list, not user input; values are prepared.
+        return (int) $wpdb->get_var($wpdb->prepare($sql, $values));
+    }
+
+    public function updateJob($jobData, $where = array())
+    {
+        global $wpdb;
+
+        if (empty($where) || empty($jobData)) return false;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; no object cache for these operational queries.
+        return $wpdb->update($this->jobManagerTableName, $jobData, $where);
+    }
+
+    public function deleteJob($where = array())
+    {
+        global $wpdb;
+
+        if (empty($where)) return false;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; no object cache for these operational queries.
+        return $wpdb->delete($this->jobManagerTableName, $where);
+    }
+
+    public function ConvertStaleProcessingJobs($timeoutSeconds = 120)
+    {
+        global $wpdb;
+
+        $timeoutTimestamp = time() - $timeoutSeconds;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifier from $wpdb->prefix, not user input.
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->jobManagerTableName}
+                SET status = CASE
+                        WHEN attempts + 1 >= max_attempts THEN 'failed'
+                        ELSE 'pending'
+                    END,
+                    attempts = attempts + 1,
+                    started_at = NULL,
+                    failed_at = CASE
+                        WHEN attempts + 1 >= max_attempts THEN %d
+                        ELSE failed_at
+                    END
+                WHERE status = 'processing'
+                AND started_at IS NOT NULL
+                AND started_at < %d",
+                time(),
+                $timeoutTimestamp
+            )
+        );
+    }
+
+    public function hasProductJobInProgress(int $productId, string $jobType): bool
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifier from $wpdb->prefix, not user input.
+        $jobs = $wpdb->get_results($wpdb->prepare(
+            "SELECT payload FROM {$this->jobManagerTableName}
+            WHERE job_type = %s
+            AND (status = %s OR status = %s)",
+            $jobType,
+            'pending',
+            'processing'
+        ));
+
+        if (empty($jobs)) {
+            return false;
+        }
+
+        foreach ($jobs as $job) {
+            $payload = json_decode($job->payload, true);
+            $jobProductId = $payload['product_id'] ?? $payload;
+
+            if (intval($jobProductId) === intval($productId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function retryJob(int $jobId, ?string $errorMessage = null): bool
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifier from $wpdb->prefix, not user input.
+        $job = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$this->jobManagerTableName} WHERE id = %d",
+            $jobId
+        ));
+
+        if (!$job) return false;
+
+        $newAttempts = intval($job->attempts) + 1;
+
+        $errorMessages = [];
+        if (!empty($job->error_message)) {
+            $decoded = json_decode($job->error_message, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) $errorMessages = $decoded;
+        }
+
+        if ($errorMessage) $errorMessages[$newAttempts] = $errorMessage;
+
+        $encodedErrors = json_encode($errorMessages, JSON_UNESCAPED_UNICODE);
+
+        if ($newAttempts >= intval($job->max_attempts)) {
+            $this->updateJob(
+                [
+                    'status'        => 'failed',
+                    'error_message' => $encodedErrors,
+                    'failed_at'     => time(),
+                    'started_at'    => 0,
+                    'attempts'      => $newAttempts,
+                ],
+                ['id' => $jobId]
+            );
+            return false;
+        }
+
+        // Progressive exponential backoff: 30s, 60s, 120s, 240s, ...
+        $delaySeconds = 30 * (int) pow(2, $newAttempts - 1);
+        $retryAfter   = time() + $delaySeconds;
+
+        // Atomic DELETE + INSERT inside a transaction so a crash can't lose the job.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control for atomic job requeue; no object cache applicable.
+        $wpdb->query('START TRANSACTION');
+        try {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; no object cache for these operational queries.
+            $wpdb->delete($this->jobManagerTableName, ['id' => $jobId]);
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; no object cache for these operational queries.
+            $wpdb->insert(
+                $this->jobManagerTableName,
+                [
+                    'job_type'      => $job->job_type,
+                    'status'        => 'pending',
+                    'payload'       => $job->payload,
+                    'attempts'      => $newAttempts,
+                    'max_attempts'  => $job->max_attempts,
+                    'error_message' => $encodedErrors,
+                    'created_at'    => $job->created_at,
+                    'retry_after'   => $retryAfter,
+                    'started_at'    => 0,
+                ]
+            );
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control for atomic job requeue; no object cache applicable.
+            $wpdb->query('COMMIT');
+        } catch (\Exception $e) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control for atomic job requeue; no object cache applicable.
+            $wpdb->query('ROLLBACK');
+            throw $e;
+        }
+
+        return true;
+    }
+
+    public function failJob(int $jobId, ?string $errorMessage = null): bool
+    {
+        return $this->updateJob(
+            [
+                'status' => 'failed',
+                'error_message' => $errorMessage,
+                'failed_at' => time(),
+                'started_at' => 0,
+            ],
+            ['id' => $jobId]
+        );
+    }
+
+    /**
+     * Mark a job as completed (kept for UI history) instead of deleting it.
+     *
+     * @param int         $jobId   Job id.
+     * @param string|null $message Optional summary (JSON or plain text).
+     * @return bool
+     */
+    public function completeJob(int $jobId, ?string $message = null): bool
+    {
+        $data = [
+            'status'       => 'completed',
+            'completed_at' => time(),
+            'started_at'   => 0,
+        ];
+        if (null !== $message && '' !== $message) {
+            $data['error_message'] = $message;
+        }
+        return $this->updateJob($data, ['id' => $jobId]);
+    }
+
+    /**
+     * Delete completed jobs older than the given age (seconds).
+     *
+     * @param int $maxAgeSeconds Max age to keep.
+     * @return int Rows deleted.
+     */
+    public function pruneCompletedJobs(int $maxAgeSeconds = 604800): int
+    {
+        global $wpdb;
+        $cutoff = time() - max(3600, $maxAgeSeconds);
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        return (int) $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$this->jobManagerTableName}
+                WHERE status = 'completed'
+                AND completed_at > 0
+                AND completed_at < %d",
+                $cutoff
+            )
+        );
+    }
+
+}

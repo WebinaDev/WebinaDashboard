@@ -1,0 +1,30 @@
+{
+  "slug": "torobpay-gateway-module",
+  "name": "TorobPay Gateway",
+  "version": "5.0.2",
+  "is_builtin": true,
+  "parent_slug": "payment-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "TorobPay",
+    "sections": [
+      { "id": "gateway", "route": "/settings/shop/torobpay", "title": "TorobPay" },
+      { "id": "display", "route": "/settings/shop/torobpay/display", "title": "Display" },
+      { "id": "orders", "route": "/settings/shop/torobpay/orders", "title": "Orders" },
+      { "id": "campaign", "route": "/settings/shop/torobpay/campaign", "title": "Campaign" },
+      { "id": "logs", "route": "/settings/shop/torobpay/logs", "title": "Logs" }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      { "path": "settings/shop/torobpay", "capability": "manage_woocommerce", "headerTitleKey": "torobpay.title" },
+      { "path": "settings/shop/torobpay/display", "capability": "manage_woocommerce", "headerTitleKey": "torobpay.displayTitle" },
+      { "path": "settings/shop/torobpay/orders", "capability": "manage_woocommerce", "headerTitleKey": "torobpay.ordersTitle" },
+      { "path": "settings/shop/torobpay/campaign", "capability": "manage_woocommerce", "headerTitleKey": "torobpay.campaignTitle" },
+      { "path": "settings/shop/torobpay/logs", "capability": "manage_woocommerce", "headerTitleKey": "torobpay.logsTitle" }
+    ]
+  }
+}

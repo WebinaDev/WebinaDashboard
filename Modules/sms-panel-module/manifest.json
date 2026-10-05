@@ -1,0 +1,69 @@
+{
+  "slug": "sms-panel-module",
+  "name": "SMS panel",
+  "version": "1.0.0",
+  "is_builtin": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "SMS panel",
+    "sections": [
+      {
+        "id": "dashboard",
+        "route": "/marketing/sms",
+        "title": "SMS panel"
+      }
+    ]
+  },
+  "sidebar": {
+    "parent_id": "marketing",
+    "nodes": [
+      {
+        "id": "sms-panel-module",
+        "title": "SMS panel",
+        "path": "/marketing/sms",
+        "capability": "manage_options",
+        "icon": "message-square",
+        "children": [
+          { "id": "sms-home", "title": "Home", "path": "/marketing/sms", "capability": "manage_options" },
+          { "id": "sms-ads-new", "title": "SMS ads", "path": "/marketing/sms/ads/new", "capability": "manage_options" },
+          { "id": "sms-send", "title": "Send", "path": "/marketing/sms/send", "capability": "manage_options" },
+          { "id": "sms-reports", "title": "Reports", "path": "/marketing/sms/reports", "capability": "manage_options" },
+          { "id": "sms-targeted", "title": "Targeted reports", "path": "/marketing/sms/targeted", "capability": "manage_options" },
+          { "id": "sms-inbox", "title": "Inbox", "path": "/marketing/sms/inbox", "capability": "manage_options" },
+          { "id": "sms-drafts", "title": "Drafts", "path": "/marketing/sms/drafts", "capability": "manage_options" },
+          { "id": "sms-phonebook", "title": "Contacts", "path": "/marketing/sms/phonebook", "capability": "manage_options" },
+          { "id": "sms-scheduled", "title": "Scheduled", "path": "/marketing/sms/scheduled", "capability": "manage_options" },
+          { "id": "sms-patterns", "title": "Patterns", "path": "/marketing/sms/patterns", "capability": "manage_options" },
+          { "id": "sms-secretaries", "title": "Secretaries", "path": "/marketing/sms/secretaries", "capability": "manage_options" },
+          { "id": "sms-wallet", "title": "Wallet", "path": "/marketing/sms/wallet", "capability": "manage_options" },
+          { "id": "sms-lines", "title": "Lines", "path": "/marketing/sms/lines", "capability": "manage_options" },
+          { "id": "sms-newsletter", "title": "Newsletter", "path": "/marketing/sms/newsletter", "capability": "manage_options" },
+          { "id": "sms-topup", "title": "Top up", "path": "/marketing/sms/topup", "capability": "manage_options" }
+        ]
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      { "path": "marketing/sms", "capability": "manage_options", "headerTitleKey": "marketing.sms.dashboardTitle" },
+      { "path": "marketing/sms/ads/new", "capability": "manage_options", "headerTitleKey": "marketing.smsAds.wizardTitle" },
+      { "path": "marketing/sms/ads/:adId", "capability": "manage_options", "headerTitleKey": "marketing.smsAds.detailTitle" },
+      { "path": "marketing/sms/send", "capability": "manage_options", "headerTitleKey": "marketing.sms.sendTitle" },
+      { "path": "marketing/sms/reports", "capability": "manage_options", "headerTitleKey": "marketing.sms.reportsTitle" },
+      { "path": "marketing/sms/targeted", "capability": "manage_options", "headerTitleKey": "marketing.sms.targetedTitle" },
+      { "path": "marketing/sms/inbox", "capability": "manage_options", "headerTitleKey": "marketing.sms.inboxTitle" },
+      { "path": "marketing/sms/drafts", "capability": "manage_options", "headerTitleKey": "marketing.sms.draftsTitle" },
+      { "path": "marketing/sms/phonebook", "capability": "manage_options", "headerTitleKey": "marketing.sms.phonebookTitle" },
+      { "path": "marketing/sms/scheduled", "capability": "manage_options", "headerTitleKey": "marketing.sms.scheduledTitle" },
+      { "path": "marketing/sms/patterns", "capability": "manage_options", "headerTitleKey": "marketing.sms.patternsTitle" },
+      { "path": "marketing/sms/secretaries", "capability": "manage_options", "headerTitleKey": "marketing.sms.secretariesTitle" },
+      { "path": "marketing/sms/wallet", "capability": "manage_options", "headerTitleKey": "marketing.sms.walletTitle" },
+      { "path": "marketing/sms/lines", "capability": "manage_options", "headerTitleKey": "marketing.sms.linesTitle" },
+      { "path": "marketing/sms/newsletter", "capability": "manage_options", "headerTitleKey": "marketing.sms.newsletterTitle" },
+      { "path": "marketing/sms/topup", "capability": "manage_options", "headerTitleKey": "marketing.sms.topupTitle" },
+      { "path": "marketing/sms/payment-callback", "capability": "manage_options", "headerTitleKey": "marketing.sms.paymentCallback" }
+    ]
+  }
+}

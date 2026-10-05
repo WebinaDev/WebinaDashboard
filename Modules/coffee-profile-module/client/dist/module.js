@@ -9,7 +9,7 @@ import { Fragment as b, jsx as x, jsxs as S } from "react/jsx-runtime";
 import { Link as C, useMatch as w, useNavigate as T, useParams as E } from "react-router-dom";
 import D from "i18next";
 //#region \0rolldown/runtime.js
-var O = Object.defineProperty, ee = (e, t) => () => (e && (t = e(e = 0)), t), k = (e, t) => {
+var O = Object.defineProperty, k = (e, t) => () => (e && (t = e(e = 0)), t), A = (e, t) => {
 	let n = {};
 	for (var r in e) O(n, r, {
 		get: e[r],
@@ -19,33 +19,33 @@ var O = Object.defineProperty, ee = (e, t) => () => (e && (t = e(e = 0)), t), k 
 };
 //#endregion
 //#region node_modules/clsx/dist/clsx.mjs
-function A(e) {
+function j(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
 	else if (typeof e == "object") if (Array.isArray(e)) {
 		var i = e.length;
-		for (t = 0; t < i; t++) e[t] && (n = A(e[t])) && (r && (r += " "), r += n);
+		for (t = 0; t < i; t++) e[t] && (n = j(e[t])) && (r && (r += " "), r += n);
 	} else for (n in e) e[n] && (r && (r += " "), r += n);
 	return r;
 }
-function j() {
-	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = A(e)) && (r && (r += " "), r += t);
+function M() {
+	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = j(e)) && (r && (r += " "), r += t);
 	return r;
 }
 //#endregion
 //#region node_modules/class-variance-authority/dist/index.mjs
-var M = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, N = j, P = (e, t) => (n) => {
-	if (t?.variants == null) return N(e, n?.class, n?.className);
+var N = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, P = M, F = (e, t) => (n) => {
+	if (t?.variants == null) return P(e, n?.class, n?.className);
 	let { variants: r, defaultVariants: i } = t, a = Object.keys(r).map((e) => {
 		let t = n?.[e], a = i?.[e];
 		if (t === null) return null;
-		let o = M(t) || M(a);
+		let o = N(t) || N(a);
 		return r[e][o];
 	}), o = n && Object.entries(n).reduce((e, t) => {
 		let [n, r] = t;
 		return r === void 0 || (e[n] = r), e;
 	}, {});
-	return N(e, a, t?.compoundVariants?.reduce((e, t) => {
+	return P(e, a, t?.compoundVariants?.reduce((e, t) => {
 		let { class: n, className: r, ...a } = t;
 		return Object.entries(a).every((e) => {
 			let [t, n] = e;
@@ -65,32 +65,32 @@ var M = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, N = j, P = (e
 };
 //#endregion
 //#region node_modules/@radix-ui/react-compose-refs/dist/index.mjs
-function F(e, t) {
+function I(e, t) {
 	if (typeof e == "function") return e(t);
 	e != null && (e.current = t);
 }
-function te(...e) {
+function ee(...e) {
 	return (t) => {
 		let n = !1, r = e.map((e) => {
-			let r = F(e, t);
+			let r = I(e, t);
 			return !n && typeof r == "function" && (n = !0), r;
 		});
 		if (n) return () => {
 			for (let t = 0; t < r.length; t++) {
 				let n = r[t];
-				typeof n == "function" ? n() : F(e[t], null);
+				typeof n == "function" ? n() : I(e[t], null);
 			}
 		};
 	};
 }
-function I(...e) {
-	return r.useCallback(te(...e), e);
+function L(...e) {
+	return r.useCallback(ee(...e), e);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function ne(e) {
-	let t = /* @__PURE__ */ re(e), n = r.forwardRef((e, n) => {
+function te(e) {
+	let t = /* @__PURE__ */ ne(e), n = r.forwardRef((e, n) => {
 		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(ie);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
@@ -109,20 +109,20 @@ function ne(e) {
 	return n.displayName = `${e}.Slot`, n;
 }
 /* @__NO_SIDE_EFFECTS__ */
-function re(e) {
+function ne(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = oe(n), a = ae(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? ee(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var L = Symbol("radix.slottable");
+var re = Symbol("radix.slottable");
 function ie(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === L;
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === re;
 }
 function ae(e, t) {
 	let n = { ...t };
@@ -166,7 +166,7 @@ var R = [
 	"svg",
 	"ul"
 ].reduce((e, t) => {
-	let n = /* @__PURE__ */ ne(`Primitive.${t}`), i = r.forwardRef((e, r) => {
+	let n = /* @__PURE__ */ te(`Primitive.${t}`), i = r.forwardRef((e, r) => {
 		let { asChild: i, ...a } = e, o = i ? n : t;
 		return typeof window < "u" && (window[Symbol.for("radix-ui")] = !0), /* @__PURE__ */ x(o, {
 			...a,
@@ -304,7 +304,7 @@ function he(e) {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = ye(n), a = ve(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? ee(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
@@ -352,13 +352,13 @@ function be(e) {
 	let c = e + "CollectionSlot", l = /* @__PURE__ */ me(c), u = i.forwardRef((e, t) => {
 		let { scope: n, children: r } = e;
 		return /* @__PURE__ */ x(l, {
-			ref: I(t, o(c, n).collectionRef),
+			ref: L(t, o(c, n).collectionRef),
 			children: r
 		});
 	});
 	u.displayName = c;
 	let d = e + "CollectionItemSlot", f = "data-radix-collection-item", p = /* @__PURE__ */ me(d), m = i.forwardRef((e, t) => {
-		let { scope: n, children: r, ...a } = e, s = i.useRef(null), c = I(t, s), l = o(d, n);
+		let { scope: n, children: r, ...a } = e, s = i.useRef(null), c = L(t, s), l = o(d, n);
 		return i.useEffect(() => (l.itemMap.set(s, {
 			ref: s,
 			...a
@@ -442,7 +442,7 @@ function Ee(e, t) {
 	return r.useReducer((e, n) => t[e][n] ?? e, e);
 }
 var De = (e) => {
-	let { present: t, children: n } = e, i = Oe(t), a = typeof n == "function" ? n({ present: i.isPresent }) : r.Children.only(n), o = I(i.ref, Ae(a));
+	let { present: t, children: n } = e, i = Oe(t), a = typeof n == "function" ? n({ present: i.isPresent }) : r.Children.only(n), o = L(i.ref, Ae(a));
 	return typeof n == "function" || i.isPresent ? r.cloneElement(a, { ref: o }) : null;
 };
 De.displayName = "Presence";
@@ -540,7 +540,7 @@ var Re = "DismissableLayer", ze = "dismissableLayer.update", Be = "dismissableLa
 	layersWithOutsidePointerEventsDisabled: /* @__PURE__ */ new Set(),
 	branches: /* @__PURE__ */ new Set()
 }), We = r.forwardRef((e, t) => {
-	let { disableOutsidePointerEvents: n = !1, onEscapeKeyDown: i, onPointerDownOutside: a, onFocusOutside: o, onInteractOutside: s, onDismiss: c, ...l } = e, u = r.useContext(Ue), [d, f] = r.useState(null), p = d?.ownerDocument ?? globalThis?.document, [, m] = r.useState({}), h = I(t, (e) => f(e)), g = Array.from(u.layers), [_] = [...u.layersWithOutsidePointerEventsDisabled].slice(-1), v = g.indexOf(_), y = d ? g.indexOf(d) : -1, b = u.layersWithOutsidePointerEventsDisabled.size > 0, S = y >= v, C = qe((e) => {
+	let { disableOutsidePointerEvents: n = !1, onEscapeKeyDown: i, onPointerDownOutside: a, onFocusOutside: o, onInteractOutside: s, onDismiss: c, ...l } = e, u = r.useContext(Ue), [d, f] = r.useState(null), p = d?.ownerDocument ?? globalThis?.document, [, m] = r.useState({}), h = L(t, (e) => f(e)), g = Array.from(u.layers), [_] = [...u.layersWithOutsidePointerEventsDisabled].slice(-1), v = g.indexOf(_), y = d ? g.indexOf(d) : -1, b = u.layersWithOutsidePointerEventsDisabled.size > 0, S = y >= v, C = qe((e) => {
 		let t = e.target, n = [...u.branches].some((e) => e.contains(t));
 		!S || n || (a?.(e), s?.(e), e.defaultPrevented || c?.());
 	}, p), w = Je((e) => {
@@ -577,7 +577,7 @@ var Re = "DismissableLayer", ze = "dismissableLayer.update", Be = "dismissableLa
 });
 We.displayName = Re;
 var Ge = "DismissableLayerBranch", Ke = r.forwardRef((e, t) => {
-	let n = r.useContext(Ue), i = r.useRef(null), a = I(t, i);
+	let n = r.useContext(Ue), i = r.useRef(null), a = L(t, i);
 	return r.useEffect(() => {
 		let e = i.current;
 		if (e) return n.branches.add(e), () => {
@@ -638,7 +638,7 @@ var Ze = "focusScope.autoFocusOnMount", Qe = "focusScope.autoFocusOnUnmount", $e
 	bubbles: !1,
 	cancelable: !0
 }, et = "FocusScope", tt = r.forwardRef((e, t) => {
-	let { loop: n = !1, trapped: i = !1, onMountAutoFocus: a, onUnmountAutoFocus: o, ...s } = e, [c, l] = r.useState(null), u = Ie(a), d = Ie(o), f = r.useRef(null), p = I(t, (e) => l(e)), m = r.useRef({
+	let { loop: n = !1, trapped: i = !1, onMountAutoFocus: a, onUnmountAutoFocus: o, ...s } = e, [c, l] = r.useState(null), u = Ie(a), d = Ie(o), f = r.useRef(null), p = L(t, (e) => l(e)), m = r.useRef({
 		paused: !1,
 		pause() {
 			this.paused = !0;
@@ -1389,7 +1389,7 @@ function Hn(e) {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = Kn(n), a = Gn(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? ee(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
@@ -1445,7 +1445,7 @@ var qn = "Dialog", [Jn, Yn] = fe(qn), [Xn, Zn] = Jn(qn), Qn = (e) => {
 };
 Qn.displayName = qn;
 var $n = "DialogTrigger", er = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, ...r } = e, i = Zn($n, n), a = I(t, i.triggerRef);
+	let { __scopeDialog: n, ...r } = e, i = Zn($n, n), a = L(t, i.triggerRef);
 	return /* @__PURE__ */ x(R.button, {
 		type: "button",
 		"aria-haspopup": "dialog",
@@ -1516,7 +1516,7 @@ var sr = /* @__PURE__ */ Vn("DialogOverlay.RemoveScroll"), cr = r.forwardRef((e,
 });
 ur.displayName = lr;
 var dr = r.forwardRef((e, t) => {
-	let n = Zn(lr, e.__scopeDialog), i = r.useRef(null), a = I(t, n.contentRef, i);
+	let n = Zn(lr, e.__scopeDialog), i = r.useRef(null), a = L(t, n.contentRef, i);
 	return r.useEffect(() => {
 		let e = i.current;
 		if (e) return Bn(e);
@@ -1551,7 +1551,7 @@ var dr = r.forwardRef((e, t) => {
 		}
 	});
 }), pr = r.forwardRef((e, t) => {
-	let { __scopeDialog: n, trapFocus: i, onOpenAutoFocus: a, onCloseAutoFocus: o, ...s } = e, c = Zn(lr, n), l = r.useRef(null), u = I(t, l);
+	let { __scopeDialog: n, trapFocus: i, onOpenAutoFocus: a, onCloseAutoFocus: o, ...s } = e, c = Zn(lr, n), l = r.useRef(null), u = L(t, l);
 	return gt(), /* @__PURE__ */ S(b, { children: [/* @__PURE__ */ x(tt, {
 		asChild: !0,
 		loop: !0,
@@ -1670,7 +1670,7 @@ var Kr = "AlertDialogOverlay", qr = r.forwardRef((e, t) => {
 });
 qr.displayName = Kr;
 var Jr = "AlertDialogContent", [Yr, Xr] = Rr(Jr), Zr = /* @__PURE__ */ Ir("AlertDialogContent"), Qr = r.forwardRef((e, t) => {
-	let { __scopeAlertDialog: n, children: i, ...a } = e, o = Br(n), s = r.useRef(null), c = I(t, s), l = r.useRef(null);
+	let { __scopeAlertDialog: n, children: i, ...a } = e, o = Br(n), s = r.useRef(null), c = L(t, s), l = r.useRef(null);
 	return /* @__PURE__ */ x(Sr, {
 		contentName: Jr,
 		titleName: $r,
@@ -1722,7 +1722,7 @@ var ri = "AlertDialogAction", ii = r.forwardRef((e, t) => {
 });
 ii.displayName = ri;
 var ai = "AlertDialogCancel", oi = r.forwardRef((e, t) => {
-	let { __scopeAlertDialog: n, ...r } = e, { cancelRef: i } = Xr(ai, n), a = Br(n), o = I(t, i);
+	let { __scopeAlertDialog: n, ...r } = e, { cancelRef: i } = Xr(ai, n), a = Br(n), o = L(t, i);
 	return /* @__PURE__ */ x(Pr, {
 		...a,
 		...r,
@@ -1809,7 +1809,7 @@ function Ci(e) {
 	});
 }
 var wi = "CheckboxTrigger", Ti = r.forwardRef(({ __scopeCheckbox: e, onKeyDown: t, onClick: n, ...i }, a) => {
-	let { control: o, value: s, disabled: c, checked: l, required: u, setControl: d, setChecked: f, hasConsumerStoppedPropagationRef: p, isFormControl: m, bubbleInput: h } = Si(wi, e), g = I(a, d), _ = r.useRef(l);
+	let { control: o, value: s, disabled: c, checked: l, required: u, setControl: d, setChecked: f, hasConsumerStoppedPropagationRef: p, isFormControl: m, bubbleInput: h } = Si(wi, e), g = L(a, d), _ = r.useRef(l);
 	return r.useEffect(() => {
 		let e = o?.form;
 		if (e) {
@@ -1874,7 +1874,7 @@ var Di = "CheckboxIndicator", Oi = r.forwardRef((e, t) => {
 });
 Oi.displayName = Di;
 var ki = "CheckboxBubbleInput", Ai = r.forwardRef(({ __scopeCheckbox: e, ...t }, n) => {
-	let { control: i, hasConsumerStoppedPropagationRef: a, checked: o, defaultChecked: s, required: c, disabled: l, name: u, value: d, form: f, bubbleInput: p, setBubbleInput: m } = Si(ki, e), h = I(n, m), g = gi(o), _ = _i(i);
+	let { control: i, hasConsumerStoppedPropagationRef: a, checked: o, defaultChecked: s, required: c, disabled: l, name: u, value: d, form: f, bubbleInput: p, setBubbleInput: m } = Si(ki, e), h = L(n, m), g = gi(o), _ = _i(i);
 	r.useEffect(() => {
 		let e = p;
 		if (!e) return;
@@ -2153,15 +2153,15 @@ var ua = 50, da = async (e, t, n) => {
 			y: r
 		}, p = Ji(i), m = Ki(p), h = await o.getDimensions(l), g = p === "y", _ = g ? "top" : "left", v = g ? "bottom" : "right", y = g ? "clientHeight" : "clientWidth", b = a.reference[m] + a.reference[p] - f[p] - a.floating[m], x = f[p] - a.reference[p], S = await (o.getOffsetParent == null ? void 0 : o.getOffsetParent(l)), C = S ? S[y] : 0;
 		(!C || !await (o.isElement == null ? void 0 : o.isElement(S))) && (C = s.floating[y] || a.floating[m]);
-		let w = b / 2 - x / 2, T = C / 2 - h[m] / 2 - 1, E = Fi(d[_], T), D = Fi(d[v], T), O = E, ee = C - h[m] - D, k = C / 2 - h[m] / 2 + w, A = Vi(O, k, ee), j = !c.arrow && Wi(i) != null && k !== A && a.reference[m] / 2 - (k < O ? E : D) - h[m] / 2 < 0, M = j ? k < O ? k - O : k - ee : 0;
+		let w = b / 2 - x / 2, T = C / 2 - h[m] / 2 - 1, E = Fi(d[_], T), D = Fi(d[v], T), O = E, k = C - h[m] - D, A = C / 2 - h[m] / 2 + w, j = Vi(O, A, k), M = !c.arrow && Wi(i) != null && A !== j && a.reference[m] / 2 - (A < O ? E : D) - h[m] / 2 < 0, N = M ? A < O ? A - O : A - k : 0;
 		return {
-			[p]: f[p] + M,
+			[p]: f[p] + N,
 			data: {
-				[p]: A,
-				centerOffset: k - A - M,
-				...j && { alignmentOffset: M }
+				[p]: j,
+				centerOffset: A - j - N,
+				...M && { alignmentOffset: N }
 			},
-			reset: j
+			reset: M
 		};
 	}
 }), pa = function(e) {
@@ -2854,19 +2854,19 @@ function Ro(e) {
 		e !== w.current && (w.current = e, g(e));
 	}, []), x = r.useCallback((e) => {
 		e !== T.current && (T.current = e, y(e));
-	}, []), S = o || h, C = s || _, w = r.useRef(null), T = r.useRef(null), E = r.useRef(d), D = l != null, O = Lo(l), ee = Lo(a), k = Lo(u), A = r.useCallback(() => {
+	}, []), S = o || h, C = s || _, w = r.useRef(null), T = r.useRef(null), E = r.useRef(d), D = l != null, O = Lo(l), k = Lo(a), A = Lo(u), j = r.useCallback(() => {
 		if (!w.current || !T.current) return;
 		let e = {
 			placement: t,
 			strategy: n,
 			middleware: p
 		};
-		ee.current && (e.platform = ee.current), Mo(w.current, T.current, e).then((e) => {
+		k.current && (e.platform = k.current), Mo(w.current, T.current, e).then((e) => {
 			let t = {
 				...e,
-				isPositioned: k.current !== !1
+				isPositioned: A.current !== !1
 			};
-			j.current && !Po(E.current, t) && (E.current = t, v.flushSync(() => {
+			M.current && !Po(E.current, t) && (E.current = t, v.flushSync(() => {
 				f(t);
 			}));
 		});
@@ -2874,8 +2874,8 @@ function Ro(e) {
 		p,
 		t,
 		n,
-		ee,
-		k
+		k,
+		A
 	]);
 	No(() => {
 		u === !1 && E.current.isPositioned && (E.current.isPositioned = !1, f((e) => ({
@@ -2883,41 +2883,41 @@ function Ro(e) {
 			isPositioned: !1
 		})));
 	}, [u]);
-	let j = r.useRef(!1);
-	No(() => (j.current = !0, () => {
-		j.current = !1;
+	let M = r.useRef(!1);
+	No(() => (M.current = !0, () => {
+		M.current = !1;
 	}), []), No(() => {
 		if (S && (w.current = S), C && (T.current = C), S && C) {
-			if (O.current) return O.current(S, C, A);
-			A();
+			if (O.current) return O.current(S, C, j);
+			j();
 		}
 	}, [
 		S,
 		C,
-		A,
+		j,
 		O,
 		D
 	]);
-	let M = r.useMemo(() => ({
+	let N = r.useMemo(() => ({
 		reference: w,
 		floating: T,
 		setReference: b,
 		setFloating: x
-	}), [b, x]), N = r.useMemo(() => ({
+	}), [b, x]), P = r.useMemo(() => ({
 		reference: S,
 		floating: C
-	}), [S, C]), P = r.useMemo(() => {
+	}), [S, C]), F = r.useMemo(() => {
 		let e = {
 			position: n,
 			left: 0,
 			top: 0
 		};
-		if (!N.floating) return e;
-		let t = Io(N.floating, d.x), r = Io(N.floating, d.y);
+		if (!P.floating) return e;
+		let t = Io(P.floating, d.x), r = Io(P.floating, d.y);
 		return c ? {
 			...e,
 			transform: "translate(" + t + "px, " + r + "px)",
-			...Fo(N.floating) >= 1.5 && { willChange: "transform" }
+			...Fo(P.floating) >= 1.5 && { willChange: "transform" }
 		} : {
 			position: n,
 			left: t,
@@ -2926,22 +2926,22 @@ function Ro(e) {
 	}, [
 		n,
 		c,
-		N.floating,
+		P.floating,
 		d.x,
 		d.y
 	]);
 	return r.useMemo(() => ({
 		...d,
-		update: A,
-		refs: M,
-		elements: N,
-		floatingStyles: P
+		update: j,
+		refs: N,
+		elements: P,
+		floatingStyles: F
 	}), [
 		d,
-		A,
-		M,
+		j,
 		N,
-		P
+		P,
+		F
 	]);
 }
 var zo = (e) => {
@@ -3031,7 +3031,7 @@ var Yo = Jo, Xo = "Popper", [Zo, Qo] = fe(Xo), [$o, es] = Zo(Xo), ts = (e) => {
 };
 ts.displayName = Xo;
 var ns = "PopperAnchor", rs = r.forwardRef((e, t) => {
-	let { __scopePopper: n, virtualRef: i, ...a } = e, o = es(ns, n), s = r.useRef(null), c = I(t, s), l = r.useRef(null);
+	let { __scopePopper: n, virtualRef: i, ...a } = e, o = es(ns, n), s = r.useRef(null), c = L(t, s), l = r.useRef(null);
 	return r.useEffect(() => {
 		let e = l.current;
 		l.current = i?.current || s.current, e !== l.current && o.onAnchorChange(l.current);
@@ -3042,17 +3042,17 @@ var ns = "PopperAnchor", rs = r.forwardRef((e, t) => {
 });
 rs.displayName = ns;
 var is = "PopperContent", [as, os] = Zo(is), ss = r.forwardRef((e, t) => {
-	let { __scopePopper: n, side: i = "bottom", sideOffset: a = 0, align: o = "center", alignOffset: s = 0, arrowPadding: c = 0, avoidCollisions: l = !0, collisionBoundary: u = [], collisionPadding: d = 0, sticky: f = "partial", hideWhenDetached: p = !1, updatePositionStrategy: m = "optimized", onPlaced: h, ...g } = e, _ = es(is, n), [v, y] = r.useState(null), b = I(t, (e) => y(e)), [S, C] = r.useState(null), w = _i(S), T = w?.width ?? 0, E = w?.height ?? 0, D = i + (o === "center" ? "" : "-" + o), O = typeof d == "number" ? d : {
+	let { __scopePopper: n, side: i = "bottom", sideOffset: a = 0, align: o = "center", alignOffset: s = 0, arrowPadding: c = 0, avoidCollisions: l = !0, collisionBoundary: u = [], collisionPadding: d = 0, sticky: f = "partial", hideWhenDetached: p = !1, updatePositionStrategy: m = "optimized", onPlaced: h, ...g } = e, _ = es(is, n), [v, y] = r.useState(null), b = L(t, (e) => y(e)), [S, C] = r.useState(null), w = _i(S), T = w?.width ?? 0, E = w?.height ?? 0, D = i + (o === "center" ? "" : "-" + o), O = typeof d == "number" ? d : {
 		top: 0,
 		right: 0,
 		bottom: 0,
 		left: 0,
 		...d
-	}, ee = Array.isArray(u) ? u : [u], k = ee.length > 0, A = {
+	}, k = Array.isArray(u) ? u : [u], A = k.length > 0, j = {
 		padding: O,
-		boundary: ee.filter(ds),
-		altBoundary: k
-	}, { refs: j, floatingStyles: M, placement: N, isPositioned: P, middlewareData: F } = Ro({
+		boundary: k.filter(ds),
+		altBoundary: A
+	}, { refs: M, floatingStyles: N, placement: P, isPositioned: F, middlewareData: I } = Ro({
 		strategy: "fixed",
 		placement: D,
 		whileElementsMounted: (...e) => wo(...e, { animationFrame: m === "always" }),
@@ -3066,11 +3066,11 @@ var is = "PopperContent", [as, os] = Zo(is), ss = r.forwardRef((e, t) => {
 				mainAxis: !0,
 				crossAxis: !1,
 				limiter: f === "partial" ? Ho() : void 0,
-				...A
+				...j
 			}),
-			l && Uo({ ...A }),
+			l && Uo({ ...j }),
 			Wo({
-				...A,
+				...j,
 				apply: ({ elements: e, rects: t, availableWidth: n, availableHeight: r }) => {
 					let { width: i, height: a } = t.reference, o = e.floating.style;
 					o.setProperty("--radix-popper-available-width", `${n}px`), o.setProperty("--radix-popper-available-height", `${r}px`), o.setProperty("--radix-popper-anchor-width", `${i}px`), o.setProperty("--radix-popper-anchor-height", `${a}px`);
@@ -3086,26 +3086,26 @@ var is = "PopperContent", [as, os] = Zo(is), ss = r.forwardRef((e, t) => {
 			}),
 			p && Go({
 				strategy: "referenceHidden",
-				...A
+				...j
 			})
 		]
-	}), [te, ne] = ps(N), re = Ie(h);
+	}), [ee, te] = ps(P), ne = Ie(h);
 	xe(() => {
-		P && re?.();
-	}, [P, re]);
-	let L = F.arrow?.x, ie = F.arrow?.y, ae = F.arrow?.centerOffset !== 0, [oe, se] = r.useState();
+		F && ne?.();
+	}, [F, ne]);
+	let re = I.arrow?.x, ie = I.arrow?.y, ae = I.arrow?.centerOffset !== 0, [oe, se] = r.useState();
 	return xe(() => {
 		v && se(window.getComputedStyle(v).zIndex);
 	}, [v]), /* @__PURE__ */ x("div", {
-		ref: j.setFloating,
+		ref: M.setFloating,
 		"data-radix-popper-content-wrapper": "",
 		style: {
-			...M,
-			transform: P ? M.transform : "translate(0, -200%)",
+			...N,
+			transform: F ? N.transform : "translate(0, -200%)",
 			minWidth: "max-content",
 			zIndex: oe,
-			"--radix-popper-transform-origin": [F.transformOrigin?.x, F.transformOrigin?.y].join(" "),
-			...F.hide?.referenceHidden && {
+			"--radix-popper-transform-origin": [I.transformOrigin?.x, I.transformOrigin?.y].join(" "),
+			...I.hide?.referenceHidden && {
 				visibility: "hidden",
 				pointerEvents: "none"
 			}
@@ -3113,19 +3113,19 @@ var is = "PopperContent", [as, os] = Zo(is), ss = r.forwardRef((e, t) => {
 		dir: e.dir,
 		children: /* @__PURE__ */ x(as, {
 			scope: n,
-			placedSide: te,
+			placedSide: ee,
 			onArrowChange: C,
-			arrowX: L,
+			arrowX: re,
 			arrowY: ie,
 			shouldHideArrow: ae,
 			children: /* @__PURE__ */ x(R.div, {
-				"data-side": te,
-				"data-align": ne,
+				"data-side": ee,
+				"data-align": te,
 				...g,
 				ref: b,
 				style: {
 					...g.style,
-					animation: P ? void 0 : "none"
+					animation: F ? void 0 : "none"
 				}
 			})
 		})
@@ -3208,7 +3208,7 @@ var ms = ts, hs = rs, gs = ss, _s = us, vs = "rovingFocusGroup.onEntryFocus", ys
 }));
 Os.displayName = bs;
 var ks = r.forwardRef((e, t) => {
-	let { __scopeRovingFocusGroup: n, orientation: i, loop: a = !1, dir: o, currentTabStopId: s, defaultCurrentTabStopId: c, onCurrentTabStopIdChange: l, onEntryFocus: u, preventScrollOnEntryFocus: d = !1, ...f } = e, p = r.useRef(null), m = I(t, p), h = Fe(o), [g, _] = Ce({
+	let { __scopeRovingFocusGroup: n, orientation: i, loop: a = !1, dir: o, currentTabStopId: s, defaultCurrentTabStopId: c, onCurrentTabStopIdChange: l, onEntryFocus: u, preventScrollOnEntryFocus: d = !1, ...f } = e, p = r.useRef(null), m = L(t, p), h = Fe(o), [g, _] = Ce({
 		prop: s,
 		defaultProp: c ?? null,
 		onChange: l,
@@ -3373,7 +3373,7 @@ function Ws(e) {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = Js(n), a = qs(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? ee(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
@@ -3417,12 +3417,12 @@ var Ys = [
 		defaultProp: a ?? !1,
 		onChange: o,
 		caller: Zs
-	}), [O, ee] = Ce({
+	}), [O, k] = Ce({
 		prop: s,
 		defaultProp: c,
 		onChange: l,
 		caller: Zs
-	}), k = r.useRef(null), A = _ ? h || !!_.closest("form") : !0, [j, M] = r.useState(/* @__PURE__ */ new Set()), N = Array.from(j).map((e) => e.props.value).join(";");
+	}), A = r.useRef(null), j = _ ? h || !!_.closest("form") : !0, [M, N] = r.useState(/* @__PURE__ */ new Set()), P = Array.from(M).map((e) => e.props.value).join(";");
 	return /* @__PURE__ */ x(ms, {
 		...g,
 		children: /* @__PURE__ */ S(ic, {
@@ -3436,45 +3436,45 @@ var Ys = [
 			onValueNodeHasChildrenChange: w,
 			contentId: Ne(),
 			value: O,
-			onValueChange: ee,
+			onValueChange: k,
 			open: E,
 			onOpenChange: D,
 			dir: T,
-			triggerPointerDownPosRef: k,
+			triggerPointerDownPosRef: A,
 			disabled: p,
 			children: [/* @__PURE__ */ x(Qs.Provider, {
 				scope: t,
 				children: /* @__PURE__ */ x(oc, {
 					scope: e.__scopeSelect,
 					onNativeOptionAdd: r.useCallback((e) => {
-						M((t) => new Set(t).add(e));
+						N((t) => new Set(t).add(e));
 					}, []),
 					onNativeOptionRemove: r.useCallback((e) => {
-						M((t) => {
+						N((t) => {
 							let n = new Set(t);
 							return n.delete(e), n;
 						});
 					}, []),
 					children: n
 				})
-			}), A ? /* @__PURE__ */ S(rl, {
+			}), j ? /* @__PURE__ */ S(rl, {
 				"aria-hidden": !0,
 				required: m,
 				tabIndex: -1,
 				name: d,
 				autoComplete: f,
 				value: O,
-				onChange: (e) => ee(e.target.value),
+				onChange: (e) => k(e.target.value),
 				disabled: p,
 				form: h,
-				children: [O === void 0 ? /* @__PURE__ */ x("option", { value: "" }) : null, Array.from(j)]
-			}, N) : null]
+				children: [O === void 0 ? /* @__PURE__ */ x("option", { value: "" }) : null, Array.from(M)]
+			}, P) : null]
 		})
 	});
 };
 cc.displayName = Zs;
 var lc = "SelectTrigger", uc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, disabled: i = !1, ...a } = e, o = rc(n), s = ac(lc, n), c = s.disabled || i, l = I(t, s.onTriggerChange), u = $s(n), d = r.useRef("touch"), [f, p, m] = al((e) => {
+	let { __scopeSelect: n, disabled: i = !1, ...a } = e, o = rc(n), s = ac(lc, n), c = s.disabled || i, l = L(t, s.onTriggerChange), u = $s(n), d = r.useRef("touch"), [f, p, m] = al((e) => {
 		let t = u().filter((e) => !e.disabled), n = ol(t, e, t.find((e) => e.value === s.value));
 		n !== void 0 && s.onValueChange(n.value);
 	}), h = (e) => {
@@ -3517,7 +3517,7 @@ var lc = "SelectTrigger", uc = r.forwardRef((e, t) => {
 });
 uc.displayName = lc;
 var dc = "SelectValue", fc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, className: r, style: i, children: a, placeholder: o = "", ...s } = e, c = ac(dc, n), { onValueNodeHasChildrenChange: l } = c, u = a !== void 0, d = I(t, c.onValueNodeChange);
+	let { __scopeSelect: n, className: r, style: i, children: a, placeholder: o = "", ...s } = e, c = ac(dc, n), { onValueNodeHasChildrenChange: l } = c, u = a !== void 0, d = L(t, c.onValueNodeChange);
 	return xe(() => {
 		l(u);
 	}, [l, u]), /* @__PURE__ */ x(R.span, {
@@ -3564,22 +3564,22 @@ var _c = "SelectContent", vc = r.forwardRef((e, t) => {
 });
 vc.displayName = _c;
 var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ Us("SelectContent.RemoveScroll"), wc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, position: i = "item-aligned", onCloseAutoFocus: a, onEscapeKeyDown: o, onPointerDownOutside: s, side: c, sideOffset: l, align: u, alignOffset: d, arrowPadding: f, collisionBoundary: p, collisionPadding: m, sticky: h, hideWhenDetached: g, avoidCollisions: _, ...v } = e, y = ac(_c, n), [b, S] = r.useState(null), [C, w] = r.useState(null), T = I(t, (e) => S(e)), [E, D] = r.useState(null), [O, ee] = r.useState(null), k = $s(n), [A, j] = r.useState(!1), M = r.useRef(!1);
+	let { __scopeSelect: n, position: i = "item-aligned", onCloseAutoFocus: a, onEscapeKeyDown: o, onPointerDownOutside: s, side: c, sideOffset: l, align: u, alignOffset: d, arrowPadding: f, collisionBoundary: p, collisionPadding: m, sticky: h, hideWhenDetached: g, avoidCollisions: _, ...v } = e, y = ac(_c, n), [b, S] = r.useState(null), [C, w] = r.useState(null), T = L(t, (e) => S(e)), [E, D] = r.useState(null), [O, k] = r.useState(null), A = $s(n), [j, M] = r.useState(!1), N = r.useRef(!1);
 	r.useEffect(() => {
 		if (b) return Bn(b);
 	}, [b]), gt();
-	let N = r.useCallback((e) => {
-		let [t, ...n] = k().map((e) => e.ref.current), [r] = n.slice(-1), i = document.activeElement;
+	let P = r.useCallback((e) => {
+		let [t, ...n] = A().map((e) => e.ref.current), [r] = n.slice(-1), i = document.activeElement;
 		for (let n of e) if (n === i || (n?.scrollIntoView({ block: "nearest" }), n === t && C && (C.scrollTop = 0), n === r && C && (C.scrollTop = C.scrollHeight), n?.focus(), document.activeElement !== i)) return;
-	}, [k, C]), P = r.useCallback(() => N([E, b]), [
-		N,
+	}, [A, C]), F = r.useCallback(() => P([E, b]), [
+		P,
 		E,
 		b
 	]);
 	r.useEffect(() => {
-		A && P();
-	}, [A, P]);
-	let { onOpenChange: F, triggerPointerDownPosRef: te } = y;
+		j && F();
+	}, [j, F]);
+	let { onOpenChange: I, triggerPointerDownPosRef: ee } = y;
 	r.useEffect(() => {
 		if (b) {
 			let e = {
@@ -3587,13 +3587,13 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 				y: 0
 			}, t = (t) => {
 				e = {
-					x: Math.abs(Math.round(t.pageX) - (te.current?.x ?? 0)),
-					y: Math.abs(Math.round(t.pageY) - (te.current?.y ?? 0))
+					x: Math.abs(Math.round(t.pageX) - (ee.current?.x ?? 0)),
+					y: Math.abs(Math.round(t.pageY) - (ee.current?.y ?? 0))
 				};
 			}, n = (n) => {
-				e.x <= 10 && e.y <= 10 ? n.preventDefault() : b.contains(n.target) || F(!1), document.removeEventListener("pointermove", t), te.current = null;
+				e.x <= 10 && e.y <= 10 ? n.preventDefault() : b.contains(n.target) || I(!1), document.removeEventListener("pointermove", t), ee.current = null;
 			};
-			return te.current !== null && (document.addEventListener("pointermove", t), document.addEventListener("pointerup", n, {
+			return ee.current !== null && (document.addEventListener("pointermove", t), document.addEventListener("pointerup", n, {
 				capture: !0,
 				once: !0
 			})), () => {
@@ -3602,23 +3602,23 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 		}
 	}, [
 		b,
-		F,
-		te
+		I,
+		ee
 	]), r.useEffect(() => {
-		let e = () => F(!1);
+		let e = () => I(!1);
 		return window.addEventListener("blur", e), window.addEventListener("resize", e), () => {
 			window.removeEventListener("blur", e), window.removeEventListener("resize", e);
 		};
-	}, [F]);
-	let [ne, re] = al((e) => {
-		let t = k().filter((e) => !e.disabled), n = ol(t, e, t.find((e) => e.ref.current === document.activeElement));
+	}, [I]);
+	let [te, ne] = al((e) => {
+		let t = A().filter((e) => !e.disabled), n = ol(t, e, t.find((e) => e.ref.current === document.activeElement));
 		n && setTimeout(() => n.ref.current.focus());
-	}), L = r.useCallback((e, t, n) => {
-		let r = !M.current && !n;
-		(y.value !== void 0 && y.value === t || r) && (D(e), r && (M.current = !0));
+	}), re = r.useCallback((e, t, n) => {
+		let r = !N.current && !n;
+		(y.value !== void 0 && y.value === t || r) && (D(e), r && (N.current = !0));
 	}, [y.value]), ie = r.useCallback(() => b?.focus(), [b]), ae = r.useCallback((e, t, n) => {
-		let r = !M.current && !n;
-		(y.value !== void 0 && y.value === t || r) && ee(e);
+		let r = !N.current && !n;
+		(y.value !== void 0 && y.value === t || r) && k(e);
 	}, [y.value]), oe = i === "popper" ? Oc : Ec, R = oe === Oc ? {
 		side: c,
 		sideOffset: l,
@@ -3636,15 +3636,15 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 		content: b,
 		viewport: C,
 		onViewportChange: w,
-		itemRefCallback: L,
+		itemRefCallback: re,
 		selectedItem: E,
 		onItemLeave: ie,
 		itemTextRefCallback: ae,
-		focusSelectedItem: P,
+		focusSelectedItem: F,
 		selectedItemText: O,
 		position: i,
-		isPositioned: A,
-		searchRef: ne,
+		isPositioned: j,
+		searchRef: te,
 		children: /* @__PURE__ */ x(jn, {
 			as: Cc,
 			allowPinchZoom: !0,
@@ -3672,7 +3672,7 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 						onContextMenu: (e) => e.preventDefault(),
 						...v,
 						...R,
-						onPlaced: () => j(!0),
+						onPlaced: () => M(!0),
 						ref: T,
 						style: {
 							display: "flex",
@@ -3682,18 +3682,18 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 						},
 						onKeyDown: z(v.onKeyDown, (e) => {
 							let t = e.ctrlKey || e.altKey || e.metaKey;
-							if (e.key === "Tab" && e.preventDefault(), !t && e.key.length === 1 && re(e.key), [
+							if (e.key === "Tab" && e.preventDefault(), !t && e.key.length === 1 && ne(e.key), [
 								"ArrowUp",
 								"ArrowDown",
 								"Home",
 								"End"
 							].includes(e.key)) {
-								let t = k().filter((e) => !e.disabled).map((e) => e.ref.current);
+								let t = A().filter((e) => !e.disabled).map((e) => e.ref.current);
 								if (["ArrowUp", "End"].includes(e.key) && (t = t.slice().reverse()), ["ArrowUp", "ArrowDown"].includes(e.key)) {
 									let n = e.target, r = t.indexOf(n);
 									t = t.slice(r + 1);
 								}
-								setTimeout(() => N(t)), e.preventDefault();
+								setTimeout(() => P(t)), e.preventDefault();
 							}
 						})
 					})
@@ -3704,7 +3704,7 @@ var yc = 10, [bc, xc] = tc(_c), Sc = "SelectContentImpl", Cc = /* @__PURE__ */ U
 });
 wc.displayName = Sc;
 var Tc = "SelectItemAlignedPosition", Ec = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, onPlaced: i, ...a } = e, o = ac(_c, n), s = xc(_c, n), [c, l] = r.useState(null), [u, d] = r.useState(null), f = I(t, (e) => d(e)), p = $s(n), m = r.useRef(!1), h = r.useRef(!0), { viewport: g, selectedItem: _, selectedItemText: v, focusSelectedItem: y } = s, b = r.useCallback(() => {
+	let { __scopeSelect: n, onPlaced: i, ...a } = e, o = ac(_c, n), s = xc(_c, n), [c, l] = r.useState(null), [u, d] = r.useState(null), f = L(t, (e) => d(e)), p = $s(n), m = r.useRef(!1), h = r.useRef(!0), { viewport: g, selectedItem: _, selectedItemText: v, focusSelectedItem: y } = s, b = r.useCallback(() => {
 		if (o.trigger && o.valueNode && c && u && g && _ && v) {
 			let e = o.trigger.getBoundingClientRect(), t = u.getBoundingClientRect(), n = o.valueNode.getBoundingClientRect(), r = v.getBoundingClientRect();
 			if (o.dir !== "rtl") {
@@ -3714,17 +3714,17 @@ var Tc = "SelectItemAlignedPosition", Ec = r.forwardRef((e, t) => {
 				let i = t.right - r.right, a = window.innerWidth - n.right - i, o = window.innerWidth - e.right - a, s = e.width + o, l = Math.max(s, t.width), u = window.innerWidth - yc, d = Hs(a, [yc, Math.max(yc, u - l)]);
 				c.style.minWidth = s + "px", c.style.right = d + "px";
 			}
-			let a = p(), s = window.innerHeight - yc * 2, l = g.scrollHeight, d = window.getComputedStyle(u), f = parseInt(d.borderTopWidth, 10), h = parseInt(d.paddingTop, 10), y = parseInt(d.borderBottomWidth, 10), b = parseInt(d.paddingBottom, 10), x = f + h + l + b + y, S = Math.min(_.offsetHeight * 5, x), C = window.getComputedStyle(g), w = parseInt(C.paddingTop, 10), T = parseInt(C.paddingBottom, 10), E = e.top + e.height / 2 - yc, D = s - E, O = _.offsetHeight / 2, ee = _.offsetTop + O, k = f + h + ee, A = x - k;
-			if (k <= E) {
+			let a = p(), s = window.innerHeight - yc * 2, l = g.scrollHeight, d = window.getComputedStyle(u), f = parseInt(d.borderTopWidth, 10), h = parseInt(d.paddingTop, 10), y = parseInt(d.borderBottomWidth, 10), b = parseInt(d.paddingBottom, 10), x = f + h + l + b + y, S = Math.min(_.offsetHeight * 5, x), C = window.getComputedStyle(g), w = parseInt(C.paddingTop, 10), T = parseInt(C.paddingBottom, 10), E = e.top + e.height / 2 - yc, D = s - E, O = _.offsetHeight / 2, k = _.offsetTop + O, A = f + h + k, j = x - A;
+			if (A <= E) {
 				let e = a.length > 0 && _ === a[a.length - 1].ref.current;
 				c.style.bottom = "0px";
-				let t = u.clientHeight - g.offsetTop - g.offsetHeight, n = k + Math.max(D, O + (e ? T : 0) + t + y);
+				let t = u.clientHeight - g.offsetTop - g.offsetHeight, n = A + Math.max(D, O + (e ? T : 0) + t + y);
 				c.style.height = n + "px";
 			} else {
 				let e = a.length > 0 && _ === a[0].ref.current;
 				c.style.top = "0px";
-				let t = Math.max(E, f + g.offsetTop + (e ? w : 0) + O) + A;
-				c.style.height = t + "px", g.scrollTop = k - E + g.offsetTop;
+				let t = Math.max(E, f + g.offsetTop + (e ? w : 0) + O) + j;
+				c.style.height = t + "px", g.scrollTop = A - E + g.offsetTop;
 			}
 			c.style.margin = `${yc}px 0`, c.style.minHeight = S + "px", c.style.maxHeight = s + "px", i?.(), requestAnimationFrame(() => m.current = !0);
 		}
@@ -3793,7 +3793,7 @@ var Dc = "SelectPopperPosition", Oc = r.forwardRef((e, t) => {
 });
 Oc.displayName = Dc;
 var [kc, Ac] = tc(_c, {}), jc = "SelectViewport", Mc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, nonce: i, ...a } = e, o = xc(jc, n), s = Ac(jc, n), c = I(t, o.onViewportChange), l = r.useRef(0);
+	let { __scopeSelect: n, nonce: i, ...a } = e, o = xc(jc, n), s = Ac(jc, n), c = L(t, o.onViewportChange), l = r.useRef(0);
 	return /* @__PURE__ */ S(b, { children: [/* @__PURE__ */ x("style", {
 		dangerouslySetInnerHTML: { __html: "[data-radix-select-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-select-viewport]::-webkit-scrollbar{display:none}" },
 		nonce: i
@@ -3852,7 +3852,7 @@ var Lc = "SelectLabel", Rc = r.forwardRef((e, t) => {
 });
 Rc.displayName = Lc;
 var zc = "SelectItem", [Bc, Vc] = tc(zc), Hc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, value: i, disabled: a = !1, textValue: o, ...s } = e, c = ac(zc, n), l = xc(zc, n), u = c.value === i, [d, f] = r.useState(o ?? ""), [p, m] = r.useState(!1), h = I(t, (e) => l.itemRefCallback?.(e, i, a)), g = Ne(), _ = r.useRef("touch"), v = () => {
+	let { __scopeSelect: n, value: i, disabled: a = !1, textValue: o, ...s } = e, c = ac(zc, n), l = xc(zc, n), u = c.value === i, [d, f] = r.useState(o ?? ""), [p, m] = r.useState(!1), h = L(t, (e) => l.itemRefCallback?.(e, i, a)), g = Ne(), _ = r.useRef("touch"), v = () => {
 		a || (c.onValueChange(i), c.onOpenChange(!1));
 	};
 	if (i === "") throw Error("A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.");
@@ -3907,7 +3907,7 @@ var zc = "SelectItem", [Bc, Vc] = tc(zc), Hc = r.forwardRef((e, t) => {
 });
 Hc.displayName = zc;
 var Uc = "SelectItemText", Wc = r.forwardRef((e, t) => {
-	let { __scopeSelect: n, className: i, style: a, ...o } = e, s = ac(Uc, n), c = xc(Uc, n), l = Vc(Uc, n), u = sc(Uc, n), [d, f] = r.useState(null), p = I(t, (e) => f(e), l.onItemTextChange, (e) => c.itemTextRefCallback?.(e, l.value, l.disabled)), m = d?.textContent, h = r.useMemo(() => /* @__PURE__ */ x("option", {
+	let { __scopeSelect: n, className: i, style: a, ...o } = e, s = ac(Uc, n), c = xc(Uc, n), l = Vc(Uc, n), u = sc(Uc, n), [d, f] = r.useState(null), p = L(t, (e) => f(e), l.onItemTextChange, (e) => c.itemTextRefCallback?.(e, l.value, l.disabled)), m = d?.textContent, h = r.useMemo(() => /* @__PURE__ */ x("option", {
 		value: l.value,
 		disabled: l.disabled,
 		children: m
@@ -3937,7 +3937,7 @@ var Gc = "SelectItemIndicator", Kc = r.forwardRef((e, t) => {
 });
 Kc.displayName = Gc;
 var qc = "SelectScrollUpButton", Jc = r.forwardRef((e, t) => {
-	let n = xc(qc, e.__scopeSelect), i = Ac(qc, e.__scopeSelect), [a, o] = r.useState(!1), s = I(t, i.onScrollButtonChange);
+	let n = xc(qc, e.__scopeSelect), i = Ac(qc, e.__scopeSelect), [a, o] = r.useState(!1), s = L(t, i.onScrollButtonChange);
 	return xe(() => {
 		if (n.viewport && n.isPositioned) {
 			let e = function() {
@@ -3956,7 +3956,7 @@ var qc = "SelectScrollUpButton", Jc = r.forwardRef((e, t) => {
 });
 Jc.displayName = qc;
 var Yc = "SelectScrollDownButton", Xc = r.forwardRef((e, t) => {
-	let n = xc(Yc, e.__scopeSelect), i = Ac(Yc, e.__scopeSelect), [a, o] = r.useState(!1), s = I(t, i.onScrollButtonChange);
+	let n = xc(Yc, e.__scopeSelect), i = Ac(Yc, e.__scopeSelect), [a, o] = r.useState(!1), s = L(t, i.onScrollButtonChange);
 	return xe(() => {
 		if (n.viewport && n.isPositioned) {
 			let e = function() {
@@ -4018,7 +4018,7 @@ var el = "SelectArrow", tl = r.forwardRef((e, t) => {
 });
 tl.displayName = el;
 var nl = "SelectBubbleInput", rl = r.forwardRef(({ __scopeSelect: e, value: t, ...n }, i) => {
-	let a = r.useRef(null), o = I(i, a), s = gi(t);
+	let a = r.useRef(null), o = L(i, a), s = gi(t);
 	return r.useEffect(() => {
 		let e = a.current;
 		if (!e) return;
@@ -4095,7 +4095,7 @@ function Sl(e) {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
 			let e = El(n), a = Tl(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? te(t, e) : e), r.cloneElement(n, a);
+			return n.type !== r.Fragment && (a.ref = t ? ee(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
@@ -4129,7 +4129,7 @@ function El(e) {
 //#endregion
 //#region node_modules/@radix-ui/react-switch/dist/index.mjs
 var Dl = "Switch", [Ol, kl] = fe(Dl), [Al, jl] = Ol(Dl), Ml = r.forwardRef((e, t) => {
-	let { __scopeSwitch: n, name: i, checked: a, defaultChecked: o, required: s, disabled: c, value: l = "on", onCheckedChange: u, form: d, ...f } = e, [p, m] = r.useState(null), h = I(t, (e) => m(e)), g = r.useRef(!1), _ = p ? d || !!p.closest("form") : !0, [v, y] = Ce({
+	let { __scopeSwitch: n, name: i, checked: a, defaultChecked: o, required: s, disabled: c, value: l = "on", onCheckedChange: u, form: d, ...f } = e, [p, m] = r.useState(null), h = L(t, (e) => m(e)), g = r.useRef(!1), _ = p ? d || !!p.closest("form") : !0, [v, y] = Ce({
 		prop: a,
 		defaultProp: o ?? !1,
 		onChange: u,
@@ -4178,7 +4178,7 @@ var Nl = "SwitchThumb", Pl = r.forwardRef((e, t) => {
 });
 Pl.displayName = Nl;
 var Fl = "SwitchBubbleInput", Il = r.forwardRef(({ __scopeSwitch: e, control: t, checked: n, bubbles: i = !0, ...a }, o) => {
-	let s = r.useRef(null), c = I(s, o), l = gi(n), u = _i(t);
+	let s = r.useRef(null), c = L(s, o), l = gi(n), u = _i(t);
 	return r.useEffect(() => {
 		let e = s.current;
 		if (!e) return;
@@ -4611,14 +4611,14 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		"auto",
 		U,
 		H
-	], ee = () => [
+	], k = () => [
 		"auto",
 		"min",
 		"max",
 		"fr",
 		U,
 		H
-	], k = () => [
+	], A = () => [
 		"start",
 		"end",
 		"center",
@@ -4629,14 +4629,14 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		"baseline",
 		"center-safe",
 		"end-safe"
-	], A = () => [
+	], j = () => [
 		"start",
 		"end",
 		"center",
 		"stretch",
 		"center-safe",
 		"end-safe"
-	], j = () => ["auto", ...w()], M = () => [
+	], M = () => ["auto", ...w()], N = () => [
 		Gu,
 		"auto",
 		"full",
@@ -4650,7 +4650,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		"max",
 		"fit",
 		...w()
-	], N = () => [
+	], P = () => [
 		Gu,
 		"screen",
 		"full",
@@ -4661,7 +4661,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		"max",
 		"fit",
 		...w()
-	], P = () => [
+	], F = () => [
 		Gu,
 		"screen",
 		"full",
@@ -4673,33 +4673,33 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 		"max",
 		"fit",
 		...w()
-	], F = () => [
+	], I = () => [
 		e,
 		U,
 		H
-	], te = () => [
+	], ee = () => [
 		...b(),
 		dd,
 		od,
 		{ position: [U, H] }
-	], I = () => ["no-repeat", { repeat: [
+	], L = () => ["no-repeat", { repeat: [
 		"",
 		"x",
 		"y",
 		"space",
 		"round"
-	] }], ne = () => [
+	] }], te = () => [
 		"auto",
 		"cover",
 		"contain",
 		fd,
 		td,
 		{ size: [U, H] }
-	], re = () => [
+	], ne = () => [
 		qu,
 		ld,
 		nd
-	], L = () => [
+	], re = () => [
 		"",
 		"none",
 		"full",
@@ -5002,24 +5002,24 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"row-dense",
 				"col-dense"
 			] }],
-			"auto-cols": [{ "auto-cols": ee() }],
-			"auto-rows": [{ "auto-rows": ee() }],
+			"auto-cols": [{ "auto-cols": k() }],
+			"auto-rows": [{ "auto-rows": k() }],
 			gap: [{ gap: w() }],
 			"gap-x": [{ "gap-x": w() }],
 			"gap-y": [{ "gap-y": w() }],
-			"justify-content": [{ justify: [...k(), "normal"] }],
-			"justify-items": [{ "justify-items": [...A(), "normal"] }],
-			"justify-self": [{ "justify-self": ["auto", ...A()] }],
-			"align-content": [{ content: ["normal", ...k()] }],
-			"align-items": [{ items: [...A(), { baseline: ["", "last"] }] }],
+			"justify-content": [{ justify: [...A(), "normal"] }],
+			"justify-items": [{ "justify-items": [...j(), "normal"] }],
+			"justify-self": [{ "justify-self": ["auto", ...j()] }],
+			"align-content": [{ content: ["normal", ...A()] }],
+			"align-items": [{ items: [...j(), { baseline: ["", "last"] }] }],
 			"align-self": [{ self: [
 				"auto",
-				...A(),
+				...j(),
 				{ baseline: ["", "last"] }
 			] }],
-			"place-content": [{ "place-content": k() }],
-			"place-items": [{ "place-items": [...A(), "baseline"] }],
-			"place-self": [{ "place-self": ["auto", ...A()] }],
+			"place-content": [{ "place-content": A() }],
+			"place-items": [{ "place-items": [...j(), "baseline"] }],
+			"place-self": [{ "place-self": ["auto", ...j()] }],
 			p: [{ p: w() }],
 			px: [{ px: w() }],
 			py: [{ py: w() }],
@@ -5031,38 +5031,38 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 			pr: [{ pr: w() }],
 			pb: [{ pb: w() }],
 			pl: [{ pl: w() }],
-			m: [{ m: j() }],
-			mx: [{ mx: j() }],
-			my: [{ my: j() }],
-			ms: [{ ms: j() }],
-			me: [{ me: j() }],
-			mbs: [{ mbs: j() }],
-			mbe: [{ mbe: j() }],
-			mt: [{ mt: j() }],
-			mr: [{ mr: j() }],
-			mb: [{ mb: j() }],
-			ml: [{ ml: j() }],
+			m: [{ m: M() }],
+			mx: [{ mx: M() }],
+			my: [{ my: M() }],
+			ms: [{ ms: M() }],
+			me: [{ me: M() }],
+			mbs: [{ mbs: M() }],
+			mbe: [{ mbe: M() }],
+			mt: [{ mt: M() }],
+			mr: [{ mr: M() }],
+			mb: [{ mb: M() }],
+			ml: [{ ml: M() }],
 			"space-x": [{ "space-x": w() }],
 			"space-x-reverse": ["space-x-reverse"],
 			"space-y": [{ "space-y": w() }],
 			"space-y-reverse": ["space-y-reverse"],
-			size: [{ size: M() }],
-			"inline-size": [{ inline: ["auto", ...N()] }],
-			"min-inline-size": [{ "min-inline": ["auto", ...N()] }],
-			"max-inline-size": [{ "max-inline": ["none", ...N()] }],
-			"block-size": [{ block: ["auto", ...P()] }],
-			"min-block-size": [{ "min-block": ["auto", ...P()] }],
-			"max-block-size": [{ "max-block": ["none", ...P()] }],
+			size: [{ size: N() }],
+			"inline-size": [{ inline: ["auto", ...P()] }],
+			"min-inline-size": [{ "min-inline": ["auto", ...P()] }],
+			"max-inline-size": [{ "max-inline": ["none", ...P()] }],
+			"block-size": [{ block: ["auto", ...F()] }],
+			"min-block-size": [{ "min-block": ["auto", ...F()] }],
+			"max-block-size": [{ "max-block": ["none", ...F()] }],
 			w: [{ w: [
 				s,
 				"screen",
-				...M()
+				...N()
 			] }],
 			"min-w": [{ "min-w": [
 				s,
 				"screen",
 				"none",
-				...M()
+				...N()
 			] }],
 			"max-w": [{ "max-w": [
 				s,
@@ -5070,23 +5070,23 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"none",
 				"prose",
 				{ screen: [o] },
-				...M()
+				...N()
 			] }],
 			h: [{ h: [
 				"screen",
 				"lh",
-				...M()
+				...N()
 			] }],
 			"min-h": [{ "min-h": [
 				"screen",
 				"lh",
 				"none",
-				...M()
+				...N()
 			] }],
 			"max-h": [{ "max-h": [
 				"screen",
 				"lh",
-				...M()
+				...N()
 			] }],
 			"font-size": [{ text: [
 				"base",
@@ -5159,8 +5159,8 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"start",
 				"end"
 			] }],
-			"placeholder-color": [{ placeholder: F() }],
-			"text-color": [{ text: F() }],
+			"placeholder-color": [{ placeholder: I() }],
+			"text-color": [{ text: I() }],
 			"text-decoration": [
 				"underline",
 				"overline",
@@ -5175,7 +5175,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				U,
 				nd
 			] }],
-			"text-decoration-color": [{ decoration: F() }],
+			"text-decoration-color": [{ decoration: I() }],
 			"underline-offset": [{ "underline-offset": [
 				V,
 				"auto",
@@ -5257,9 +5257,9 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"padding",
 				"content"
 			] }],
-			"bg-position": [{ bg: te() }],
-			"bg-repeat": [{ bg: I() }],
-			"bg-size": [{ bg: ne() }],
+			"bg-position": [{ bg: ee() }],
+			"bg-repeat": [{ bg: L() }],
+			"bg-size": [{ bg: te() }],
 			"bg-image": [{ bg: [
 				"none",
 				{
@@ -5292,28 +5292,28 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				pd,
 				sd
 			] }],
-			"bg-color": [{ bg: F() }],
-			"gradient-from-pos": [{ from: re() }],
-			"gradient-via-pos": [{ via: re() }],
-			"gradient-to-pos": [{ to: re() }],
-			"gradient-from": [{ from: F() }],
-			"gradient-via": [{ via: F() }],
-			"gradient-to": [{ to: F() }],
-			rounded: [{ rounded: L() }],
-			"rounded-s": [{ "rounded-s": L() }],
-			"rounded-e": [{ "rounded-e": L() }],
-			"rounded-t": [{ "rounded-t": L() }],
-			"rounded-r": [{ "rounded-r": L() }],
-			"rounded-b": [{ "rounded-b": L() }],
-			"rounded-l": [{ "rounded-l": L() }],
-			"rounded-ss": [{ "rounded-ss": L() }],
-			"rounded-se": [{ "rounded-se": L() }],
-			"rounded-ee": [{ "rounded-ee": L() }],
-			"rounded-es": [{ "rounded-es": L() }],
-			"rounded-tl": [{ "rounded-tl": L() }],
-			"rounded-tr": [{ "rounded-tr": L() }],
-			"rounded-br": [{ "rounded-br": L() }],
-			"rounded-bl": [{ "rounded-bl": L() }],
+			"bg-color": [{ bg: I() }],
+			"gradient-from-pos": [{ from: ne() }],
+			"gradient-via-pos": [{ via: ne() }],
+			"gradient-to-pos": [{ to: ne() }],
+			"gradient-from": [{ from: I() }],
+			"gradient-via": [{ via: I() }],
+			"gradient-to": [{ to: I() }],
+			rounded: [{ rounded: re() }],
+			"rounded-s": [{ "rounded-s": re() }],
+			"rounded-e": [{ "rounded-e": re() }],
+			"rounded-t": [{ "rounded-t": re() }],
+			"rounded-r": [{ "rounded-r": re() }],
+			"rounded-b": [{ "rounded-b": re() }],
+			"rounded-l": [{ "rounded-l": re() }],
+			"rounded-ss": [{ "rounded-ss": re() }],
+			"rounded-se": [{ "rounded-se": re() }],
+			"rounded-ee": [{ "rounded-ee": re() }],
+			"rounded-es": [{ "rounded-es": re() }],
+			"rounded-tl": [{ "rounded-tl": re() }],
+			"rounded-tr": [{ "rounded-tr": re() }],
+			"rounded-br": [{ "rounded-br": re() }],
+			"rounded-bl": [{ "rounded-bl": re() }],
 			"border-w": [{ border: ie() }],
 			"border-w-x": [{ "border-x": ie() }],
 			"border-w-y": [{ "border-y": ie() }],
@@ -5339,18 +5339,18 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"hidden",
 				"none"
 			] }],
-			"border-color": [{ border: F() }],
-			"border-color-x": [{ "border-x": F() }],
-			"border-color-y": [{ "border-y": F() }],
-			"border-color-s": [{ "border-s": F() }],
-			"border-color-e": [{ "border-e": F() }],
-			"border-color-bs": [{ "border-bs": F() }],
-			"border-color-be": [{ "border-be": F() }],
-			"border-color-t": [{ "border-t": F() }],
-			"border-color-r": [{ "border-r": F() }],
-			"border-color-b": [{ "border-b": F() }],
-			"border-color-l": [{ "border-l": F() }],
-			"divide-color": [{ divide: F() }],
+			"border-color": [{ border: I() }],
+			"border-color-x": [{ "border-x": I() }],
+			"border-color-y": [{ "border-y": I() }],
+			"border-color-s": [{ "border-s": I() }],
+			"border-color-e": [{ "border-e": I() }],
+			"border-color-bs": [{ "border-bs": I() }],
+			"border-color-be": [{ "border-be": I() }],
+			"border-color-t": [{ "border-t": I() }],
+			"border-color-r": [{ "border-r": I() }],
+			"border-color-b": [{ "border-b": I() }],
+			"border-color-l": [{ "border-l": I() }],
+			"divide-color": [{ divide: I() }],
 			"outline-style": [{ outline: [
 				...ae(),
 				"none",
@@ -5367,7 +5367,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				ld,
 				nd
 			] }],
-			"outline-color": [{ outline: F() }],
+			"outline-color": [{ outline: I() }],
 			shadow: [{ shadow: [
 				"",
 				"none",
@@ -5375,28 +5375,28 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				md,
 				cd
 			] }],
-			"shadow-color": [{ shadow: F() }],
+			"shadow-color": [{ shadow: I() }],
 			"inset-shadow": [{ "inset-shadow": [
 				"none",
 				d,
 				md,
 				cd
 			] }],
-			"inset-shadow-color": [{ "inset-shadow": F() }],
+			"inset-shadow-color": [{ "inset-shadow": I() }],
 			"ring-w": [{ ring: ie() }],
 			"ring-w-inset": ["ring-inset"],
-			"ring-color": [{ ring: F() }],
+			"ring-color": [{ ring: I() }],
 			"ring-offset-w": [{ "ring-offset": [V, nd] }],
-			"ring-offset-color": [{ "ring-offset": F() }],
+			"ring-offset-color": [{ "ring-offset": I() }],
 			"inset-ring-w": [{ "inset-ring": ie() }],
-			"inset-ring-color": [{ "inset-ring": F() }],
+			"inset-ring-color": [{ "inset-ring": I() }],
 			"text-shadow": [{ "text-shadow": [
 				"none",
 				f,
 				md,
 				cd
 			] }],
-			"text-shadow-color": [{ "text-shadow": F() }],
+			"text-shadow-color": [{ "text-shadow": I() }],
 			opacity: [{ opacity: [
 				V,
 				U,
@@ -5425,37 +5425,37 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 			"mask-image-linear-pos": [{ "mask-linear": [V] }],
 			"mask-image-linear-from-pos": [{ "mask-linear-from": R() }],
 			"mask-image-linear-to-pos": [{ "mask-linear-to": R() }],
-			"mask-image-linear-from-color": [{ "mask-linear-from": F() }],
-			"mask-image-linear-to-color": [{ "mask-linear-to": F() }],
+			"mask-image-linear-from-color": [{ "mask-linear-from": I() }],
+			"mask-image-linear-to-color": [{ "mask-linear-to": I() }],
 			"mask-image-t-from-pos": [{ "mask-t-from": R() }],
 			"mask-image-t-to-pos": [{ "mask-t-to": R() }],
-			"mask-image-t-from-color": [{ "mask-t-from": F() }],
-			"mask-image-t-to-color": [{ "mask-t-to": F() }],
+			"mask-image-t-from-color": [{ "mask-t-from": I() }],
+			"mask-image-t-to-color": [{ "mask-t-to": I() }],
 			"mask-image-r-from-pos": [{ "mask-r-from": R() }],
 			"mask-image-r-to-pos": [{ "mask-r-to": R() }],
-			"mask-image-r-from-color": [{ "mask-r-from": F() }],
-			"mask-image-r-to-color": [{ "mask-r-to": F() }],
+			"mask-image-r-from-color": [{ "mask-r-from": I() }],
+			"mask-image-r-to-color": [{ "mask-r-to": I() }],
 			"mask-image-b-from-pos": [{ "mask-b-from": R() }],
 			"mask-image-b-to-pos": [{ "mask-b-to": R() }],
-			"mask-image-b-from-color": [{ "mask-b-from": F() }],
-			"mask-image-b-to-color": [{ "mask-b-to": F() }],
+			"mask-image-b-from-color": [{ "mask-b-from": I() }],
+			"mask-image-b-to-color": [{ "mask-b-to": I() }],
 			"mask-image-l-from-pos": [{ "mask-l-from": R() }],
 			"mask-image-l-to-pos": [{ "mask-l-to": R() }],
-			"mask-image-l-from-color": [{ "mask-l-from": F() }],
-			"mask-image-l-to-color": [{ "mask-l-to": F() }],
+			"mask-image-l-from-color": [{ "mask-l-from": I() }],
+			"mask-image-l-to-color": [{ "mask-l-to": I() }],
 			"mask-image-x-from-pos": [{ "mask-x-from": R() }],
 			"mask-image-x-to-pos": [{ "mask-x-to": R() }],
-			"mask-image-x-from-color": [{ "mask-x-from": F() }],
-			"mask-image-x-to-color": [{ "mask-x-to": F() }],
+			"mask-image-x-from-color": [{ "mask-x-from": I() }],
+			"mask-image-x-to-color": [{ "mask-x-to": I() }],
 			"mask-image-y-from-pos": [{ "mask-y-from": R() }],
 			"mask-image-y-to-pos": [{ "mask-y-to": R() }],
-			"mask-image-y-from-color": [{ "mask-y-from": F() }],
-			"mask-image-y-to-color": [{ "mask-y-to": F() }],
+			"mask-image-y-from-color": [{ "mask-y-from": I() }],
+			"mask-image-y-to-color": [{ "mask-y-to": I() }],
 			"mask-image-radial": [{ "mask-radial": [U, H] }],
 			"mask-image-radial-from-pos": [{ "mask-radial-from": R() }],
 			"mask-image-radial-to-pos": [{ "mask-radial-to": R() }],
-			"mask-image-radial-from-color": [{ "mask-radial-from": F() }],
-			"mask-image-radial-to-color": [{ "mask-radial-to": F() }],
+			"mask-image-radial-from-color": [{ "mask-radial-from": I() }],
+			"mask-image-radial-to-color": [{ "mask-radial-to": I() }],
 			"mask-image-radial-shape": [{ "mask-radial": ["circle", "ellipse"] }],
 			"mask-image-radial-size": [{ "mask-radial": [{
 				closest: ["side", "corner"],
@@ -5465,8 +5465,8 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 			"mask-image-conic-pos": [{ "mask-conic": [V] }],
 			"mask-image-conic-from-pos": [{ "mask-conic-from": R() }],
 			"mask-image-conic-to-pos": [{ "mask-conic-to": R() }],
-			"mask-image-conic-from-color": [{ "mask-conic-from": F() }],
-			"mask-image-conic-to-color": [{ "mask-conic-to": F() }],
+			"mask-image-conic-from-color": [{ "mask-conic-from": I() }],
+			"mask-image-conic-to-color": [{ "mask-conic-to": I() }],
 			"mask-mode": [{ mask: [
 				"alpha",
 				"luminance",
@@ -5480,9 +5480,9 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				"stroke",
 				"view"
 			] }],
-			"mask-position": [{ mask: te() }],
-			"mask-repeat": [{ mask: I() }],
-			"mask-size": [{ mask: ne() }],
+			"mask-position": [{ mask: ee() }],
+			"mask-repeat": [{ mask: L() }],
+			"mask-size": [{ mask: te() }],
 			"mask-type": [{ "mask-type": ["alpha", "luminance"] }],
 			"mask-image": [{ mask: [
 				"none",
@@ -5513,7 +5513,7 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				md,
 				cd
 			] }],
-			"drop-shadow-color": [{ "drop-shadow": F() }],
+			"drop-shadow-color": [{ "drop-shadow": I() }],
 			grayscale: [{ grayscale: [
 				"",
 				V,
@@ -5668,9 +5668,9 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 			"translate-y": [{ "translate-y": de() }],
 			"translate-z": [{ "translate-z": de() }],
 			"translate-none": ["translate-none"],
-			accent: [{ accent: F() }],
+			accent: [{ accent: I() }],
 			appearance: [{ appearance: ["none", "auto"] }],
-			"caret-color": [{ caret: F() }],
+			"caret-color": [{ caret: I() }],
 			"color-scheme": [{ scheme: [
 				"normal",
 				"dark",
@@ -5794,14 +5794,14 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 				U,
 				H
 			] }],
-			fill: [{ fill: ["none", ...F()] }],
+			fill: [{ fill: ["none", ...I()] }],
 			"stroke-w": [{ stroke: [
 				V,
 				ld,
 				nd,
 				rd
 			] }],
-			stroke: [{ stroke: ["none", ...F()] }],
+			stroke: [{ stroke: ["none", ...I()] }],
 			"forced-color-adjust": [{ "forced-color-adjust": ["auto", "none"] }]
 		},
 		conflictingClassGroups: {
@@ -5989,11 +5989,11 @@ var tu = Kl, nu = Jl, ru = Xl, iu = Ql, au = (e, t) => {
 //#endregion
 //#region src/lib/utils.ts
 function W(...e) {
-	return Ed(j(e));
+	return Ed(M(e));
 }
 //#endregion
 //#region src/components/ui/button.tsx
-var Dd = P("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
+var Dd = F("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
 	variants: {
 		variant: {
 			default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
@@ -6448,8 +6448,39 @@ function vf(e, t) {
 	_.error(_f(e, t));
 }
 //#endregion
+//#region src/lib/queryClient.ts
+var yf = null;
+function bf() {
+	return yf;
+}
+//#endregion
+//#region src/lib/authLost.ts
+var xf = ["auth", "session"], Sf = new Set([
+	"rest_cookie_invalid_nonce",
+	"rest_not_logged_in",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function Cf(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !0;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (Sf.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
+}
+function wf(e) {
+	let t = e ?? bf();
+	t && t.setQueryData(xf, { logged_in: !1 });
+}
+function Tf(e) {
+	Cf(e) && wf();
+}
+//#endregion
 //#region src/lib/safeUrl.ts
-function yf(e) {
+function Ef(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -6461,38 +6492,38 @@ function yf(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function bf() {
+function Df() {
 	return window.webinoDashboard;
 }
-var xf = 3e4;
-function Sf(e) {
+var Of = 3e4;
+function kf(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function Cf(e) {
-	let t = bf();
+function Af(e) {
+	let t = Df();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (Sf(e) || yf(e)) return e;
+	if (kf(e) || Ef(e)) return e;
 	throw new ff("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function wf(e, t) {
+function jf(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function Tf(e) {
+function Mf(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
-	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : null;
+	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function Ef(e, t) {
+function Nf(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -6508,12 +6539,12 @@ function Ef(e, t) {
 		code: "invalid_json"
 	};
 }
-function Df(e, t) {
+function Pf(e, t) {
 	let n = e.toLowerCase();
 	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
 }
-async function Of(e, t, n = {}) {
-	let r = Tf(e), i = bf();
+async function Ff(e, t, n = {}) {
+	let r = Mf(e), i = Df();
 	if (!r || !i.ajaxUrl) throw new ff("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
@@ -6527,7 +6558,7 @@ async function Of(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = wf({}, t);
+	let { signal: l, clear: u } = jf({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -6539,18 +6570,21 @@ async function Of(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new ff(Df(t, e.status), {
+			throw new ff(Pf(t, e.status), {
 				code: "invalid_json",
 				status: e.status
 			});
 		}
-		if (!n.success) throw new ff(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
-			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
-			status: e.status
-		});
+		if (!n.success) {
+			let t = new ff(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
+				status: e.status
+			});
+			throw Tf(t), t;
+		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof ff ? e : e instanceof DOMException && e.name === "AbortError" ? new ff("Request timed out", {
+		throw e instanceof ff ? (Tf(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ff("Request timed out", {
 			code: "timeout",
 			status: 0
 		}) : e instanceof TypeError ? new ff("Network unavailable", {
@@ -6561,11 +6595,11 @@ async function Of(e, t, n = {}) {
 		u();
 	}
 }
-async function $(e, t = {}, n = xf) {
-	if (Tf(e) && bf().ajaxUrl) return Of(e, n, t);
-	let r = Cf(e), i = bf(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
-	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce);
-	let { signal: s, clear: c } = wf(t, n);
+async function $(e, t = {}, n = Of) {
+	if (Mf(e) && Df().ajaxUrl) return Ff(e, n, t);
+	let r = Af(e), i = Df(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
+	let { signal: s, clear: c } = jf(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -6576,22 +6610,22 @@ async function $(e, t = {}, n = xf) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = Ef(n, e.status);
+			let t = Nf(n, e.status);
 			throw new ff(t.message, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		if (!e.ok) {
-			let t = i;
-			throw new ff(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			let t = i, n = new ff(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
+			throw Tf(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof ff ? e : e instanceof DOMException && e.name === "AbortError" ? new ff("Request timed out", {
+		throw e instanceof ff ? (Tf(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ff("Request timed out", {
 			code: "timeout",
 			status: 0
 		}) : e instanceof TypeError ? new ff("Network unavailable", {
@@ -6604,40 +6638,40 @@ async function $(e, t = {}, n = xf) {
 }
 //#endregion
 //#region src/lib/bootstrapQuery.ts
-function kf(e) {
+function If(e) {
 	let { nav_group: t, children: n, navGroup: r, ...i } = e;
 	return {
 		...i,
 		navGroup: r ?? t,
-		children: n?.map((e) => kf(e))
+		children: n?.map((e) => If(e))
 	};
 }
-function Af(e) {
-	return e?.length ? e.map((e) => kf(e)) : e;
+function Lf(e) {
+	return e?.length ? e.map((e) => If(e)) : e;
 }
-var jf = ["bootstrap"];
-function Mf(e) {
+var Rf = ["bootstrap"];
+function zf(e) {
 	return Array.isArray(e) ? e.filter((e) => typeof e == "string" && e.length > 0) : [];
 }
-function Nf(e) {
+function Bf(e) {
 	return {
 		...e,
-		capabilities: Mf(e.capabilities),
-		modules: Af(e.modules) ?? e.modules,
+		capabilities: zf(e.capabilities),
+		modules: Lf(e.modules) ?? e.modules,
 		installedModuleSlugs: Array.isArray(e.installedModuleSlugs) ? e.installedModuleSlugs.filter((e) => typeof e == "string" && e.length > 0) : e.installedModuleSlugs
 	};
 }
-function Pf() {
+function Vf() {
 	let e = window.webinoDashboard.bootstrap;
-	if (e) return Nf(e);
+	if (e) return Bf(e);
 }
 //#endregion
 //#region src/hooks/useBootstrapQuery.ts
-function Ff() {
-	let e = f(() => Pf(), []), n = !!(e && e.embedMinimal);
+function Hf() {
+	let e = f(() => Vf(), []), n = !!(e && e.embedMinimal);
 	return t({
-		queryKey: jf,
-		queryFn: async () => Nf(await $("bootstrap")),
+		queryKey: Rf,
+		queryFn: async () => Bf(await $("bootstrap")),
 		initialData: e,
 		initialDataUpdatedAt: e ? n ? 0 : Date.now() : void 0,
 		staleTime: n ? 0 : 12e4,
@@ -6650,7 +6684,7 @@ function Ff() {
 }
 //#endregion
 //#region src/lib/aiJobProgress.ts
-var If = [
+var Uf = [
 	"queued",
 	"layout",
 	"visual",
@@ -6659,15 +6693,15 @@ var If = [
 	"writing",
 	"done"
 ];
-function Lf(e) {
+function Wf(e) {
 	if (!e) return "queued";
 	if (e.status === "done") return "done";
 	if (e.status === "failed") return "failed";
 	if (e.status === "cancelled") return "cancelled";
 	let t = String(e.result_summary || "").toLowerCase();
-	return If.includes(t) ? t : e.status === "running" ? "provider" : "queued";
+	return Uf.includes(t) ? t : e.status === "running" ? "provider" : "queued";
 }
-function Rf(e) {
+function Gf(e) {
 	return {
 		queued: 8,
 		layout: 22,
@@ -6680,17 +6714,17 @@ function Rf(e) {
 		cancelled: 100
 	}[e] ?? 15;
 }
-function zf(e) {
+function Kf(e) {
 	return new Promise((t) => window.setTimeout(t, e));
 }
 //#endregion
 //#region src/components/AiGenerateButton.tsx
-var Bf = 2e3, Vf = 480 * 1e3;
-function Hf(e) {
+var qf = 2e3, Jf = 480 * 1e3;
+function Yf(e) {
 	return e === "done" || e === "failed" || e === "cancelled";
 }
-function Uf({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant: s = "outline", className: c }) {
-	let { t: l } = g(), u = n(), d = (Ff().data?.activeModuleClients ?? []).some((e) => e.slug === "ai-content-module"), [f, p] = m(null), [h, v] = m(!1), y = (e) => {
+function Xf({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant: s = "outline", className: c }) {
+	let { t: l } = g(), u = n(), d = (Hf().data?.activeModuleClients ?? []).some((e) => e.slug === "ai-content-module"), [f, p] = m(null), [h, v] = m(!1), y = (e) => {
 		_.success(l("aiContent.generateDone")), u.invalidateQueries({ queryKey: ["ai-content"] }), t === "product" && r && (u.invalidateQueries({ queryKey: ["coffee-profile", r] }), u.invalidateQueries({ queryKey: ["product", r] }), u.invalidateQueries({ queryKey: [
 			"shop",
 			"products",
@@ -6725,15 +6759,15 @@ function Uf({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 			}, 3e4).then((e) => {
 				e?.job && p(e.job);
 			}).catch(() => {});
-			let a = Date.now() + Vf, o = e.job ?? {
+			let a = Date.now() + Jf, o = e.job ?? {
 				id: n,
 				status: "pending",
 				result_summary: "queued"
 			};
 			for (; Date.now() < a;) {
-				await zf(Bf);
+				await Kf(qf);
 				try {
-					if (o = await $(`ai-content/jobs/${n}`), p(o), Hf(o.status)) return o;
+					if (o = await $(`ai-content/jobs/${n}`), p(o), Yf(o.status)) return o;
 				} catch {}
 			}
 			try {
@@ -6775,7 +6809,7 @@ function Uf({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 		onError: (e) => vf(l, e)
 	});
 	if (!d) return null;
-	let T = Lf(f), E = Rf(T), D = !!f && (h || f?.status === "done" || f?.status === "failed" || f?.status === "cancelled"), O = f ? Hf(f.status) : !1;
+	let T = Wf(f), E = Gf(T), D = !!f && (h || f?.status === "done" || f?.status === "failed" || f?.status === "cancelled"), O = f ? Yf(f.status) : !1;
 	return /* @__PURE__ */ S(b, { children: [/* @__PURE__ */ S(G, {
 		type: "button",
 		size: o,
@@ -6831,26 +6865,26 @@ function Uf({ type: t, id: r = 0, payload: i, onDone: a, size: o = "sm", variant
 }
 //#endregion
 //#region src/lib/digits.ts
-var Wf = "۰۱۲۳۴۵۶۷۸۹";
-function Gf(e) {
+var Zf = "۰۱۲۳۴۵۶۷۸۹";
+function Qf(e) {
 	return e.toLowerCase().startsWith("fa");
 }
-function Kf(e) {
+function $f(e) {
 	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
 }
 //#endregion
 //#region src/lib/formatNumber.ts
-function qf(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = Gf(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return Gf(t) ? Kf(i) : i;
+function ep(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = Qf(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return Qf(t) ? $f(i) : i;
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeFlag.tsx
-function Jf(e) {
+function tp(e) {
 	let t = e.toUpperCase();
 	return /^[A-Z]{2}$/.test(t) ? String.fromCodePoint(...[...t].map((e) => 127397 + e.charCodeAt(0))) : "";
 }
-function Yf({ origin: e, useFlagcdn: t = !0, className: n = "size-5 rounded-sm object-cover" }) {
+function np({ origin: e, useFlagcdn: t = !0, className: n = "size-5 rounded-sm object-cover" }) {
 	let r = (e.iso_code || "").toLowerCase();
 	if (e.thumbnail_url) return /* @__PURE__ */ x("img", {
 		src: e.thumbnail_url,
@@ -6867,7 +6901,7 @@ function Yf({ origin: e, useFlagcdn: t = !0, className: n = "size-5 rounded-sm o
 		alt: "",
 		className: n
 	});
-	let i = e.flag_emoji || Jf(r);
+	let i = e.flag_emoji || tp(r);
 	return i ? /* @__PURE__ */ x("span", {
 		className: "text-base leading-none",
 		"aria-hidden": !0,
@@ -6879,7 +6913,7 @@ function Yf({ origin: e, useFlagcdn: t = !0, className: n = "size-5 rounded-sm o
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeProfileProductPanel.tsx
-function Xf() {
+function rp() {
 	return {
 		blend_robusta: 0,
 		blend_arabica: 0,
@@ -6906,15 +6940,15 @@ function Xf() {
 		origin_ids: []
 	};
 }
-function Zf(e) {
-	let t = Xf().visible, n = {
+function ip(e) {
+	let t = rp().visible, n = {
 		...t,
 		...e ?? {}
 	};
 	return Object.values(n).every((e) => !e) ? t : n;
 }
-function Qf({ productId: r, registerSave: i }) {
-	let { t: a, i18n: o } = g(), s = n(), [l, d] = m(Xf), h = p(l);
+function ap({ productId: r, registerSave: i }) {
+	let { t: a, i18n: o } = g(), s = n(), [l, d] = m(rp), h = p(l);
 	h.current = l;
 	let v = p(null), y = p(!1), b = t({
 		queryKey: ["coffee-profile", r],
@@ -6926,12 +6960,12 @@ function Qf({ productId: r, registerSave: i }) {
 		staleTime: 6e4
 	});
 	u(() => {
-		v.current = null, y.current = !1, d(Xf());
+		v.current = null, y.current = !1, d(rp());
 	}, [r]), u(() => {
-		!b.data?.profile || !r || v.current === r && y.current || (v.current = r, y.current = !1, d($f({
-			...Xf(),
+		!b.data?.profile || !r || v.current === r && y.current || (v.current = r, y.current = !1, d(op({
+			...rp(),
 			...b.data.profile,
-			visible: Zf(b.data.profile.visible)
+			visible: ip(b.data.profile.visible)
 		}, C.data?.base_mixes ?? [])));
 	}, [
 		b.data,
@@ -6946,9 +6980,9 @@ function Qf({ productId: r, registerSave: i }) {
 			body: JSON.stringify(h.current)
 		});
 		y.current = !1, t.profile && d({
-			...Xf(),
+			...rp(),
 			...t.profile,
-			visible: Zf(t.profile.visible)
+			visible: ip(t.profile.visible)
 		}), s.setQueryData(["coffee-profile", r], t), e?.toast !== !1 && _.success(a("common.saved"));
 	}, [
 		r,
@@ -6958,14 +6992,14 @@ function Qf({ productId: r, registerSave: i }) {
 	u(() => {
 		if (i) return i(() => O({ toast: !1 })), () => i(null);
 	}, [i, O]);
-	let ee = e({
+	let k = e({
 		mutationFn: () => O(),
 		onError: (e) => vf(a, e)
-	}), k = f(() => new Map(T.map((e) => [e.id, e])), [T]), A = f(() => {
+	}), A = f(() => new Map(T.map((e) => [e.id, e])), [T]), j = f(() => {
 		let e = /* @__PURE__ */ new Map();
 		for (let t of C.data?.beans ?? []) typeof t.after_roast == "number" && e.set(t.id, t.after_roast);
 		return e;
-	}, [C.data?.beans]), j = f(() => ep(l.price_parts, A), [l.price_parts, A]), M = f(() => tp(l.price_parts, C.data?.base_mixes ?? []), [l.price_parts, C.data?.base_mixes]);
+	}, [C.data?.beans]), M = f(() => sp(l.price_parts, j), [l.price_parts, j]), N = f(() => cp(l.price_parts, C.data?.base_mixes ?? []), [l.price_parts, C.data?.base_mixes]);
 	if (!r) return /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: a("coffeeProfile.productTitle") }) }), /* @__PURE__ */ x(Y, { children: /* @__PURE__ */ x("p", {
 		className: "text-muted-foreground text-sm",
 		children: a("coffeeProfile.saveProductFirst")
@@ -6985,11 +7019,11 @@ function Qf({ productId: r, registerSave: i }) {
 		className: "text-muted-foreground text-sm",
 		children: a("common.loading")
 	}) })] });
-	function N(e) {
+	function P(e) {
 		y.current = !0, d(e);
 	}
-	function P(e, t) {
-		N((n) => {
+	function F(e, t) {
+		P((n) => {
 			let r = {
 				...n,
 				visible: {
@@ -7000,9 +7034,9 @@ function Qf({ productId: r, registerSave: i }) {
 			return e === "blend" && t && n.blend_robusta + n.blend_arabica === 0 && (r.blend_robusta = 70, r.blend_arabica = 30), r;
 		});
 	}
-	function F(e) {
+	function I(e) {
 		let t = Math.max(0, Math.min(100, Math.round(e)));
-		N((e) => ({
+		P((e) => ({
 			...e,
 			blend_robusta: t,
 			blend_arabica: 100 - t,
@@ -7012,8 +7046,8 @@ function Qf({ productId: r, registerSave: i }) {
 			}
 		}));
 	}
-	function te(e, t) {
-		N((n) => ({
+	function ee(e, t) {
+		P((n) => ({
 			...n,
 			acidity: {
 				...n.acidity,
@@ -7025,8 +7059,8 @@ function Qf({ productId: r, registerSave: i }) {
 			}
 		}));
 	}
-	function I(e, t) {
-		N((n) => {
+	function L(e, t) {
+		P((n) => {
 			let r = e === "caffeine_mg" ? "caffeine" : e;
 			return {
 				...n,
@@ -7038,8 +7072,8 @@ function Qf({ productId: r, registerSave: i }) {
 			};
 		});
 	}
-	function ne(e, t) {
-		N((n) => {
+	function te(e, t) {
+		P((n) => {
 			let r = new Set(n.origin_ids);
 			t ? r.add(e) : r.delete(e);
 			let i = [...r];
@@ -7057,7 +7091,7 @@ function Qf({ productId: r, registerSave: i }) {
 		className: "flex flex-row items-center justify-between gap-3",
 		children: [/* @__PURE__ */ x(J, { children: a("coffeeProfile.productTitle") }), /* @__PURE__ */ S("div", {
 			className: "flex items-center gap-2",
-			children: [/* @__PURE__ */ x(Uf, {
+			children: [/* @__PURE__ */ x(Xf, {
 				type: "product",
 				id: r,
 				onDone: () => {
@@ -7066,19 +7100,19 @@ function Qf({ productId: r, registerSave: i }) {
 			}), /* @__PURE__ */ x(G, {
 				type: "button",
 				size: "sm",
-				disabled: ee.isPending,
-				onClick: () => void ee.mutateAsync(),
+				disabled: k.isPending,
+				onClick: () => void k.mutateAsync(),
 				children: a("common.save")
 			})]
 		})]
 	}), /* @__PURE__ */ S(Y, {
 		className: "space-y-6",
 		children: [
-			/* @__PURE__ */ S(np, {
+			/* @__PURE__ */ S(lp, {
 				id: "blend",
 				label: a("coffeeProfile.showBlend"),
 				checked: l.visible.blend,
-				onCheckedChange: (e) => P("blend", e),
+				onCheckedChange: (e) => F("blend", e),
 				children: [/* @__PURE__ */ S("div", {
 					className: "flex justify-between text-sm",
 					children: [/* @__PURE__ */ S("span", { children: [
@@ -7095,15 +7129,15 @@ function Qf({ productId: r, registerSave: i }) {
 					min: 0,
 					max: 100,
 					value: l.blend_robusta,
-					onChange: (e) => F(Number(e.target.value)),
+					onChange: (e) => I(Number(e.target.value)),
 					className: "w-full accent-primary"
 				})]
 			}),
-			/* @__PURE__ */ x(np, {
+			/* @__PURE__ */ x(lp, {
 				id: "acidity",
 				label: a("coffeeProfile.showAcidity"),
 				checked: l.visible.acidity,
-				onCheckedChange: (e) => P("acidity", e),
+				onCheckedChange: (e) => F("acidity", e),
 				children: /* @__PURE__ */ x("div", {
 					className: "grid gap-3 sm:grid-cols-2",
 					children: w.acidity_levels.map((e) => /* @__PURE__ */ S("div", {
@@ -7120,17 +7154,17 @@ function Qf({ productId: r, registerSave: i }) {
 							min: E,
 							max: D,
 							value: l.acidity[e.id] ?? E,
-							onChange: (t) => te(e.id, Number(t.target.value)),
+							onChange: (t) => ee(e.id, Number(t.target.value)),
 							className: "w-full accent-primary"
 						})]
 					}, e.id))
 				})
 			}),
-			/* @__PURE__ */ x(np, {
+			/* @__PURE__ */ x(lp, {
 				id: "caffeine",
 				label: a("coffeeProfile.showCaffeine"),
 				checked: l.visible.caffeine,
-				onCheckedChange: (e) => P("caffeine", e),
+				onCheckedChange: (e) => F("caffeine", e),
 				children: /* @__PURE__ */ S("div", {
 					className: "flex flex-wrap items-end gap-3",
 					children: [/* @__PURE__ */ S("div", {
@@ -7144,7 +7178,7 @@ function Qf({ productId: r, registerSave: i }) {
 							min: 0,
 							max: 5e3,
 							value: l.caffeine_mg,
-							onChange: (e) => I("caffeine_mg", Number(e.target.value) || 0),
+							onChange: (e) => L("caffeine_mg", Number(e.target.value) || 0),
 							className: "w-32"
 						})]
 					}), /* @__PURE__ */ S("p", {
@@ -7161,11 +7195,11 @@ function Qf({ productId: r, registerSave: i }) {
 				["bitterness", "showBitterness"],
 				["sweetness", "showSweetness"],
 				["body", "showBody"]
-			].map(([e, t]) => /* @__PURE__ */ S(np, {
+			].map(([e, t]) => /* @__PURE__ */ S(lp, {
 				id: e,
 				label: a(`coffeeProfile.${t}`),
 				checked: l.visible[e],
-				onCheckedChange: (t) => P(e, t),
+				onCheckedChange: (t) => F(e, t),
 				children: [/* @__PURE__ */ S("div", {
 					className: "flex justify-between text-sm",
 					children: [/* @__PURE__ */ x("span", { children: a(`coffeeProfile.${e}`) }), /* @__PURE__ */ x("span", { children: l[e] })]
@@ -7174,7 +7208,7 @@ function Qf({ productId: r, registerSave: i }) {
 					min: E,
 					max: D,
 					value: l[e],
-					onChange: (t) => I(e, Number(t.target.value)),
+					onChange: (t) => L(e, Number(t.target.value)),
 					className: "w-full accent-primary"
 				})]
 			}, e)),
@@ -7190,7 +7224,7 @@ function Qf({ productId: r, registerSave: i }) {
 						type: "number",
 						min: 1,
 						value: l.pack_weight_g,
-						onChange: (e) => N((t) => ({
+						onChange: (e) => P((t) => ({
 							...t,
 							pack_weight_g: Number(e.target.value) || 1e3
 						})),
@@ -7214,7 +7248,7 @@ function Qf({ productId: r, registerSave: i }) {
 							type: "button",
 							size: "sm",
 							variant: "outline",
-							onClick: () => N((e) => ({
+							onClick: () => P((e) => ({
 								...e,
 								price_mode: "custom",
 								price_parts: [...e.price_parts, {
@@ -7234,7 +7268,7 @@ function Qf({ productId: r, registerSave: i }) {
 						children: [
 							/* @__PURE__ */ S($d, {
 								value: e.bean_id || void 0,
-								onValueChange: (e) => N((n) => ({
+								onValueChange: (e) => P((n) => ({
 									...n,
 									price_mode: "custom",
 									price_parts: n.price_parts.map((n, r) => r === t ? {
@@ -7257,7 +7291,7 @@ function Qf({ productId: r, registerSave: i }) {
 								min: 0,
 								max: 100,
 								value: e.percent,
-								onChange: (e) => N((n) => ({
+								onChange: (e) => P((n) => ({
 									...n,
 									price_mode: "custom",
 									price_parts: n.price_parts.map((n, r) => r === t ? {
@@ -7274,7 +7308,7 @@ function Qf({ productId: r, registerSave: i }) {
 								type: "button",
 								size: "sm",
 								variant: "ghost",
-								onClick: () => N((e) => {
+								onClick: () => P((e) => {
 									let n = e.price_parts.filter((e, n) => n !== t);
 									return {
 										...e,
@@ -7286,9 +7320,9 @@ function Qf({ productId: r, registerSave: i }) {
 							})
 						]
 					}, `part-${t}`)),
-					M ? /* @__PURE__ */ x("p", {
+					N ? /* @__PURE__ */ x("p", {
 						className: "text-sm",
-						children: a("coffeeProfile.pricePatternDetected", { name: M.name })
+						children: a("coffeeProfile.pricePatternDetected", { name: N.name })
 					}) : null,
 					l.price_parts.length > 0 ? /* @__PURE__ */ S("p", {
 						className: "text-muted-foreground text-sm",
@@ -7298,17 +7332,17 @@ function Qf({ productId: r, registerSave: i }) {
 							" ",
 							/* @__PURE__ */ x("span", {
 								className: "text-foreground font-medium",
-								children: qf(Math.round(j), o.language)
+								children: ep(Math.round(M), o.language)
 							})
 						]
 					}) : null
 				]
 			}),
-			/* @__PURE__ */ x(np, {
+			/* @__PURE__ */ x(lp, {
 				id: "origin",
 				label: a("coffeeProfile.showOrigin"),
 				checked: l.visible.origin,
-				onCheckedChange: (e) => P("origin", e),
+				onCheckedChange: (e) => F("origin", e),
 				children: T.length === 0 ? /* @__PURE__ */ x("p", {
 					className: "text-muted-foreground text-sm",
 					children: a("coffeeProfile.noOrigins")
@@ -7319,10 +7353,10 @@ function Qf({ productId: r, registerSave: i }) {
 						children: [
 							/* @__PURE__ */ x(Zd, {
 								checked: l.origin_ids.includes(e.id),
-								onCheckedChange: (t) => ne(e.id, t === !0)
+								onCheckedChange: (t) => te(e.id, t === !0)
 							}),
-							/* @__PURE__ */ x(Yf, {
-								origin: k.get(e.id) ?? e,
+							/* @__PURE__ */ x(np, {
+								origin: A.get(e.id) ?? e,
 								useFlagcdn: w.use_flagcdn
 							}),
 							/* @__PURE__ */ x("span", { children: e.name })
@@ -7333,7 +7367,7 @@ function Qf({ productId: r, registerSave: i }) {
 		]
 	})] });
 }
-function $f(e, t) {
+function op(e, t) {
 	if (e.price_parts?.length) return {
 		...e,
 		price_mode: "custom"
@@ -7359,7 +7393,7 @@ function $f(e, t) {
 	}
 	return e;
 }
-function ep(e, t) {
+function sp(e, t) {
 	let n = 0, r = 0;
 	for (let i of e) {
 		let e = t.get(i.bean_id);
@@ -7367,7 +7401,7 @@ function ep(e, t) {
 	}
 	return r <= 0 ? 0 : (Math.abs(r - 100) > .5 && (n *= 100 / r), n);
 }
-function tp(e, t) {
+function cp(e, t) {
 	let n = /* @__PURE__ */ new Map();
 	for (let t of e) !t.bean_id || t.percent <= 0 || n.set(t.bean_id, (n.get(t.bean_id) ?? 0) + t.percent);
 	if (!n.size) return null;
@@ -7393,7 +7427,7 @@ function tp(e, t) {
 	}
 	return null;
 }
-function np({ id: e, label: t, checked: n, onCheckedChange: r, children: i }) {
+function lp({ id: e, label: t, checked: n, onCheckedChange: r, children: i }) {
 	return /* @__PURE__ */ S("div", {
 		className: "space-y-3 rounded-lg border p-4",
 		children: [/* @__PURE__ */ S("div", {
@@ -7411,12 +7445,12 @@ function np({ id: e, label: t, checked: n, onCheckedChange: r, children: i }) {
 }
 //#endregion
 //#region src/components/ui/formatted-number-input.tsx
-var rp = Object.fromEntries([...Wf].map((e, t) => [e, String(t)]));
-function ip(e) {
+var up = Object.fromEntries([...Zf].map((e, t) => [e, String(t)]));
+function dp(e) {
 	let t = "", n = !1;
 	for (let r of e) {
-		if (rp[r] != null) {
-			t += rp[r];
+		if (up[r] != null) {
+			t += up[r];
 			continue;
 		}
 		if (r >= "0" && r <= "9") {
@@ -7427,31 +7461,31 @@ function ip(e) {
 	}
 	return t;
 }
-function ap(e, t) {
+function fp(e, t) {
 	if (!e) return "";
 	let n = e.startsWith("-"), r = n ? e.slice(1) : e, i = r.endsWith("."), [a, o] = r.split("."), s = Number(a || "0");
 	if (!Number.isFinite(s) && a !== "") return e;
-	let c = Gf(t) ? "fa-IR" : "en-US", l = new Intl.NumberFormat(c, { maximumFractionDigits: 0 }).format(a === "" ? 0 : s);
+	let c = Qf(t) ? "fa-IR" : "en-US", l = new Intl.NumberFormat(c, { maximumFractionDigits: 0 }).format(a === "" ? 0 : s);
 	if (o != null || i) {
-		let e = Gf(t) ? "٫" : ".", n = o ?? "";
-		l += e + (Gf(t) ? n.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e) : n);
+		let e = Qf(t) ? "٫" : ".", n = o ?? "";
+		l += e + (Qf(t) ? n.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e) : n);
 	}
 	return n ? `-${l}` : l;
 }
-function op({ value: e, onChange: t, className: n, onBlur: r, ...i }) {
-	let { i18n: a } = g(), o = a.language, s = f(() => ap(e, o), [e, o]);
+function pp({ value: e, onChange: t, className: n, onBlur: r, ...i }) {
+	let { i18n: a } = g(), o = a.language, s = f(() => fp(e, o), [e, o]);
 	return /* @__PURE__ */ x(X, {
 		...i,
 		inputMode: "decimal",
 		className: W(n),
 		value: s,
-		onChange: (e) => t(ip(e.target.value)),
+		onChange: (e) => t(dp(e.target.value)),
 		onBlur: r
 	});
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeWeightPricingPanel.tsx
-function sp({ productId: e }) {
+function mp({ productId: e }) {
 	let { t } = g(), [n, r] = m(""), [i, a] = m([]), [o, s] = m([]), [c, l] = m(!1), [d, f] = m(!1), [p, h] = m(!1);
 	async function v(n) {
 		if (e) {
@@ -7564,7 +7598,7 @@ function sp({ productId: e }) {
 							children: [/* @__PURE__ */ x(Z, {
 								className: "text-xs",
 								children: t("products.fieldPurchase")
-							}), /* @__PURE__ */ x(op, {
+							}), /* @__PURE__ */ x(pp, {
 								value: e.purchase_price,
 								onChange: (t) => y(e.term, "purchase_price", t)
 							})]
@@ -7574,7 +7608,7 @@ function sp({ productId: e }) {
 							children: [/* @__PURE__ */ x(Z, {
 								className: "text-xs",
 								children: t("products.fieldStock")
-							}), /* @__PURE__ */ x(op, {
+							}), /* @__PURE__ */ x(pp, {
 								value: e.stock_quantity,
 								onChange: (t) => y(e.term, "stock_quantity", t)
 							})]
@@ -7590,7 +7624,7 @@ function sp({ productId: e }) {
 }
 //#endregion
 //#region src/components/PageShell.tsx
-function cp({ title: e, description: t, eyebrow: n, children: r }) {
+function hp({ title: e, description: t, eyebrow: n, children: r }) {
 	return /* @__PURE__ */ S("div", {
 		className: "space-y-5",
 		children: [/* @__PURE__ */ S("header", {
@@ -7614,8 +7648,8 @@ function cp({ title: e, description: t, eyebrow: n, children: r }) {
 }
 //#endregion
 //#region src/i18n/locales/fa.json
-var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
-	up = {
+var gp = /* @__PURE__ */ A({ default: () => _p }), _p, vp = k((() => {
+	_p = {
 		"app.title": "داشبورد",
 		"chart.totalVisitors": "کل بازدیدها",
 		"chart.descriptionLong": "جمع سه ماه اخیر",
@@ -7692,7 +7726,34 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"nav.module.pages": "برگه‌های سایت",
 		"nav.module.shop": "فروشگاه",
 		"nav.module.products": "محصولات",
+		"nav.module.product-catalog": "دیتابیس محصولات",
 		"nav.module.product-new": "افزودن محصول",
+		"catalog.pageTitle": "دیتابیس محصولات",
+		"catalog.pageDesc": "بین دیتابیس‌های خارجی جستجو کن و محصول را به‌صورت پیش‌نویس به فروشگاه اضافه کن.",
+		"catalog.settingsLink": "کلیدهای API",
+		"catalog.settingsTitle": "تنظیمات دیتابیس محصولات",
+		"catalog.settingsDesc": "منابع رایگان بدون کلید کار می‌کنند. برای گوگل‌بوکس، BarcodeNest، GTINHub و Buycott کلید وارد کن.",
+		"catalog.settingsSaved": "تنظیمات ذخیره شد",
+		"catalog.keyGoogleBooks": "Google Books API key",
+		"catalog.keyBarcodeNest": "BarcodeNest API key",
+		"catalog.keyGtinHub": "GTINHub API key",
+		"catalog.keyBuycott": "Buycott access token",
+		"catalog.cat.food": "غذا و سوپرمارکت",
+		"catalog.cat.beauty": "آرایشی و بهداشتی",
+		"catalog.cat.pet": "غذای حیوانات",
+		"catalog.cat.general": "محصولات عمومی",
+		"catalog.cat.books": "کتاب",
+		"catalog.cat.merchandise": "الکترونیک و عمومی",
+		"catalog.searchLabel": "جستجو",
+		"catalog.searchPlaceholder": "نام محصول…",
+		"catalog.barcodeLabel": "بارکد",
+		"catalog.search": "جستجو",
+		"catalog.searching": "در حال جستجو…",
+		"catalog.empty": "نتیجه‌ای پیدا نشد",
+		"catalog.addDraft": "افزودن به سایت",
+		"catalog.imported": "پیش‌نویس محصول ساخته شد",
+		"catalog.openProduct": "باز کردن",
+		"catalog.loadMore": "بیشتر",
 		"nav.module.brands": "برندها",
 		"nav.module.product-cats": "دسته محصول",
 		"nav.module.attributes": "ویژگی‌های محصول",
@@ -7739,12 +7800,20 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"nav.module.tickets": "تیکت",
 		"nav.module.order-reports": "گزارش‌ها",
 		"nav.module.marketing": "بازاریابی",
-		"nav.module.coupons": "کدهای تخفیف",
+		"nav.module.coupons": "کوپن‌ساز",
+		"nav.module.sale-prices": "قیمت خط‌خورده",
 		"nav.module.users": "کاربران",
 		"nav.module.user-list": "کاربران",
 		"nav.module.user-new": "کاربر جدید",
 		"nav.module.user-employees": "کارمندان",
 		"nav.module.comments": "دیدگاه‌ها",
+		"nav.module.security-module": "امنیت",
+		"nav.module.security-overview": "نمای کلی",
+		"nav.module.security-firewall": "فایروال",
+		"nav.module.security-scan": "اسکن سایت",
+		"nav.module.security-tools": "ابزارها",
+		"nav.module.security-reports": "گزارش‌ها",
+		"nav.module.security-settings": "تنظیمات",
 		"nav.module.analytics": "آمار",
 		"nav.module.analytics-overview": "مرور کلی",
 		"nav.module.analytics-visitors": "تحلیل بازدیدکنندگان",
@@ -7916,6 +7985,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"home.traffic.onlineVisitors": "بازدیدکنندگان آنلاین",
 		"home.traffic.recentDays": "روزهای اخیر",
 		"home.panels.license": "لایسنس",
+		"home.panels.security": "امنیت",
+		"home.panels.securityHint": "WAF {{mode}} · {{findings}} یافته باز",
 		"home.panels.active": "فعال",
 		"home.panels.inactive": "غیرفعال",
 		"home.panels.webhookOk": "وب‌هوک فعال",
@@ -8091,6 +8162,16 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"torobExtractor.autoSync": "همگام‌سازی خودکار",
 		"torobExtractor.syncInterval": "بازه همگام‌سازی (ساعت)",
 		"torobpay.title": "ترب‌پی",
+		"torobpay.displayTitle": "نمایش ترب‌پی",
+		"torobpay.ordersTitle": "سفارش‌های ترب‌پی",
+		"torobpay.campaignTitle": "کمپین ترب‌پی",
+		"torobpay.logsTitle": "لاگ ترب‌پی",
+		"torobpay.description": "پرداخت اقساطی ترب‌پی — پیاده‌سازی اختصاصی وبینو",
+		"torobpay.officialNotice": "افزونه رسمی ترب‌پی فعال است؛ تنظیمات از همان منبع استفاده می‌شود.",
+		"torobpay.saved": "ذخیره شد",
+		"torobpay.testOk": "اتصال برقرار شد",
+		"torobpay.credsOk": "اطلاعات کاربری دریافت شد",
+		"torobpay.campaignHint": "نتایج کمپین از API پذیرنده ترب‌پی.",
 		"torobpay.pageTitle": "درگاه ترب‌پی",
 		"torobpay.runtimeStatus": "وضعیت اجرا",
 		"torobpay.wcReady": "ووکامرس",
@@ -8106,6 +8187,14 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"torobpay.apiKey": "کلید API",
 		"torobpay.sandbox": "حالت آزمایشی (Sandbox)",
 		"snapppay.title": "اسنپ‌پی",
+		"snapppay.logsTitle": "لاگ اسنپ‌پی",
+		"snapppay.description": "درگاه اقساطی اسنپ‌پی — پیاده‌سازی اختصاصی وبینو",
+		"snapppay.officialNotice": "افزونه رسمی اسنپ‌پی فعال است؛ تنظیمات از همان منبع خوانده/نوشته می‌شود و درگاه وبینو ثبت نمی‌شود.",
+		"snapppay.saved": "ذخیره شد",
+		"snapppay.testOk": "اتصال برقرار شد",
+		"snapppay.test": "تست اتصال",
+		"snapppay.enabled": "فعال‌سازی درگاه",
+		"snapppay.noLogs": "هنوز لاگی نیست.",
 		"snapppay.pageTitle": "درگاه اسنپ‌پی",
 		"snapppay.runtimeStatus": "وضعیت اجرا",
 		"snapppay.wcReady": "ووکامرس",
@@ -8119,12 +8208,12 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"snapppay.fieldTitle": "عنوان",
 		"snapppay.fieldDescription": "توضیحات",
 		"snapppay.merchantId": "شناسه پذیرنده",
-		"snapppay.clientId": "شناسه کلاینت",
-		"snapppay.clientSecret": "سکرت کلاینت",
+		"snapppay.clientId": "شناسه کاربری درگاه",
+		"snapppay.clientSecret": "رمز مخفی",
 		"snapppay.sandbox": "حالت آزمایشی (Sandbox)",
 		"basalam.title": "باسلام",
-		"basalam.subtitle": "یکپارچه‌سازی کامل باسلام با فروشگاه آنلاین و داشبورد.",
-		"basalam.settingsTitle": "تنظیمات اتصال",
+		"basalam.subtitle": "اتصال غرفه باسلام به فروشگاه و مدیریت سفارش و محصولات.",
+		"basalam.settingsTitle": "تنظیمات همگام‌سازی",
 		"basalam.statusTitle": "وضعیت عملیاتی",
 		"basalam.coverageTitle": "پوشش endpointها",
 		"basalam.reconcileNow": "اجرای بازتطبیق",
@@ -8134,31 +8223,78 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.subscriptionsTitle": "اشتراک‌های باسلام",
 		"basalam.webhooksTitle": "وب‌هوک‌های باسلام",
 		"basalam.operationsTitle": "عملیات باسلام",
-		"basalam.connection": "اتصال",
-		"basalam.connectionHint": "غرفه‌ی باسلام را از طریق OAuth متصل کنید.",
-		"basalam.oauthWafHint": "اول «اتصال به باسلام» را بزنید (ورود SSO). صفحهٔ انگلیسی 403 CDN یعنی توکن هنوز در دیتابیس ذخیره نشده — URL کامل را از نوار آدرس همان صفحهٔ خطا کپی و پایین بچسبانید. توکن داخل URL به‌تنهایی یعنی اتصال برقرار است نیست.",
-		"basalam.oauthPasteTitle": "تکمیل اتصال با آدرس بازگشت",
-		"basalam.oauthPasteHint": "کل آدرس نوار آدرس صفحهٔ 403 (شامل access_token) را اینجا بچسبانید و ذخیره کنید. ارسال با admin-ajax است و JWT در GET به CDN نمی‌رود.",
-		"basalam.oauthPastePlaceholder": "https://yoursite.com/wp-admin/admin.php?page=basalam-save-token&access_token=…",
-		"basalam.oauthPasteSave": "ذخیره توکن از آدرس",
+		"basalam.connection": "اتصال غرفه",
+		"basalam.connectionHint": "غرفه‌ی باسلام را به فروشگاه وصل کنید.",
+		"basalam.connectionHintWebina": "اتصال از طریق SSO وبینو (webina.dev). رمز کلاینت فقط روی WebinaCRM می‌ماند.",
+		"basalam.oauthWafHint": "اول «اتصال به باسلام» را بزنید (SSO از طریق وبینو). اگر CDN آدرس بازگشت را مسدود کرد، URL کامل را پایین بچسبانید.",
+		"basalam.oauthPasteTitle": "تکمیل با آدرس بازگشت",
+		"basalam.oauthPasteHint": "کل آدرس نوار آدرس (شامل access_token) را اینجا بچسبانید و ذخیره کنید.",
+		"basalam.oauthPastePlaceholder": "آدرس کامل صفحه بازگشت را بچسبانید",
+		"basalam.oauthPasteSave": "ذخیره اتصال",
+		"basalam.manualTokenTitle": "ورود دستی اطلاعات اتصال",
+		"basalam.manualTokenHint": "در صورت عدم دسترسی به SSO، access و refresh توکن را وارد کنید.",
+		"basalam.manualTokenSave": "ذخیره",
+		"basalam.refreshToken": "تمدید توکن",
+		"basalam.tokenRefreshed": "توکن دسترسی تمدید شد.",
+		"basalam.disconnect": "قطع اتصال",
+		"basalam.disconnected": "اتصال قطع شد.",
+		"basalam.setupWebhook": "راه‌اندازی دریافت خودکار سفارش",
+		"basalam.nav.home": "خانه",
 		"basalam.connected": "متصل",
 		"basalam.notConnected": "متصل نیست",
 		"basalam.connectOAuth": "اتصال به باسلام",
 		"basalam.oauthMissingUrl": "آدرس OAuth یافت نشد",
-		"basalam.operations": "عملیات",
+		"basalam.operations": "عملیات فروشگاه",
 		"basalam.operationsHint": "همگام‌سازی کامل محصولات و سفارش‌ها با موتور باسلام.",
 		"basalam.pullOrders": "دریافت سفارش‌ها",
-		"basalam.ordersPullQueued": "جاب دریافت سفارش در صف قرار گرفت.",
-		"basalam.webhook": "آدرس وب‌هوک سفارش",
+		"basalam.pullOrdersDays": "بازهٔ دریافت سفارشات قبلی",
+		"basalam.pullDays.7": "۷ روز",
+		"basalam.pullDays.30": "۳۰ روز",
+		"basalam.pullDays.90": "۹۰ روز",
+		"basalam.pullDays.180": "۱۸۰ روز",
+		"basalam.pullDays.365": "۳۶۵ روز",
+		"basalam.ordersPullQueued": "دریافت سفارش‌های {{days}} روز اخیر در صف قرار گرفت.",
+		"basalam.webhook": "آدرس دریافت سفارش (پیشرفته)",
 		"basalam.nav.products": "محصولات",
+		"basalam.nav.booth": "غرفه",
 		"basalam.nav.orders": "سفارش‌ها",
+		"basalam.archiveOne": "آرشیو",
+		"basalam.restoreOne": "بازگردانی",
+		"basalam.connectOne": "اتصال با شناسه",
+		"basalam.boothTitle": "غرفه باسلام",
+		"basalam.boothSubtitle": "پروفایل، ارسال، تخفیف و چت با خریدار.",
+		"basalam.boothProfile": "پروفایل غرفه",
+		"basalam.boothProfileHint": "عنوان و معرفی غرفه را به‌روز کنید.",
+		"basalam.saveBooth": "ذخیره",
+		"basalam.boothSaved": "پروفایل ذخیره شد.",
+		"basalam.shippingTitle": "پروفایل‌های ارسال",
+		"basalam.shippingHint": "پروفایل ارسال برای سفارش‌های باسلام بسازید.",
+		"basalam.saveShipping": "ذخیره روش‌های ارسال",
+		"basalam.shippingSaved": "پروفایل ارسال ذخیره شد.",
+		"basalam.shippingProfileTitle": "عنوان پروفایل",
+		"basalam.createShippingProfile": "افزودن",
+		"basalam.shippingProfileDeleted": "پروفایل حذف شد.",
+		"basalam.webhookManage": "وب‌هوک‌ها",
+		"basalam.rotateWebhook": "راه‌اندازی مجدد پیشرفته",
+		"basalam.webhookRotated": "وب‌هوک چرخانده شد.",
+		"basalam.webhookDeleted": "وب‌هوک حذف شد.",
+		"basalam.discountsTitle": "تخفیف محصولات",
+		"basalam.discountsHint": "محصول متصل را انتخاب کنید و درصد تخفیف بگذارید.",
+		"basalam.createDiscount": "ثبت تخفیف",
+		"basalam.discountCreated": "تخفیف ثبت شد.",
+		"basalam.invalidJson": "JSON نامعتبر",
+		"basalam.chatTitle": "چت با خریدار",
+		"basalam.chatHint": "گفتگو با خریداران باسلام از همین صفحه.",
+		"basalam.chatLoaded": "چت آماده است.",
+		"basalam.chatDisabled": "برای چت ابتدا غرفه را متصل کنید.",
+		"basalam.openAdminChat": "باز کردن صفحه کلاسیک ادمین باسلام",
 		"basalam.nav.categories": "دسته‌بندی",
 		"basalam.nav.settings": "تنظیمات",
 		"basalam.nav.finance": "مالی",
 		"basalam.nav.tickets": "تیکت‌ها",
-		"basalam.nav.logs": "لاگ‌ها",
+		"basalam.nav.logs": "وضعیت همگام‌سازی",
 		"basalam.productsTitle": "محصولات باسلام",
-		"basalam.productsSubtitle": "ایجاد، بروزرسانی و اتصال خودکار محصولات ووکامرس به باسلام.",
+		"basalam.productsSubtitle": "افزودن و بروزرسانی محصولات فروشگاه در غرفه باسلام.",
 		"basalam.productActions": "اقدامات گروهی",
 		"basalam.createAll": "افزودن همه",
 		"basalam.updateAll": "بروزرسانی همه",
@@ -8166,38 +8302,85 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.autoConnect": "اتصال خودکار",
 		"basalam.cancelJobs": "لغو جاب‌ها",
 		"basalam.jobQueued": "جاب در صف قرار گرفت.",
-		"basalam.recentJobs": "جاب‌های اخیر",
+		"basalam.recentJobs": "کارهای اخیر",
 		"basalam.ordersTitle": "سفارش‌های باسلام",
 		"basalam.ordersSubtitle": "دریافت مرسوله‌ها و اقدامات غرفه‌دار.",
 		"basalam.vendorActions": "اقدامات غرفه‌دار",
 		"basalam.wcOrderId": "شناسه سفارش ووکامرس",
 		"basalam.trackingCode": "کد رهگیری",
-		"basalam.confirmOrder": "تایید",
-		"basalam.cancelOrder": "لغو",
-		"basalam.shipOrder": "ارسال / رهگیری",
-		"basalam.orderActionOk": "اقدام سفارش ارسال شد.",
-		"basalam.categoriesTitle": "نگاشت دسته‌بندی",
-		"basalam.categoriesSubtitle": "نگاشت دسته‌های ووکامرس به درخت باسلام.",
+		"basalam.confirmOrder": "تایید سفارش",
+		"basalam.cancelOrder": "لغو سفارش",
+		"basalam.shipOrder": "ثبت ارسال",
+		"basalam.delayOrder": "درخواست تأخیر",
+		"basalam.delayDays": "روز",
+		"basalam.delayDesc": "دلیل تأخیر",
+		"basalam.cancelRequest": "درخواست لغو",
+		"basalam.cancelRequestDesc": "دلیل درخواست لغو",
+		"basalam.createSettlement": "درخواست تسویه",
+		"basalam.createSettlementHint": "مبلغ را به ریال وارد کنید و روش تسویه را انتخاب کنید.",
+		"basalam.settlementAmountRial": "مبلغ (ریال)",
+		"basalam.settlementMethod": "شناسه روش",
+		"basalam.selectBank": "انتخاب حساب بانکی",
+		"basalam.submitSettlement": "ثبت درخواست",
+		"basalam.settlementCreatedOk": "تسویه ایجاد شد.",
+		"basalam.detectCategory": "تشخیص دسته‌بندی",
+		"basalam.detectTitlePlaceholder": "عنوان محصول برای پیش‌بینی دسته باسلام",
+		"basalam.runDetect": "تشخیص",
+		"basalam.detectOk": "پیشنهاد آماده شد.",
+		"basalam.optionMaps": "نگاشت ویژگی‌ها",
+		"basalam.wooAttrName": "نام ویژگی ووکامرس",
+		"basalam.basalamAttrName": "نام ویژگی باسلام",
+		"basalam.saveOptionMap": "ذخیره نگاشت ویژگی",
+		"basalam.optionMapSaved": "نگاشت ویژگی ذخیره شد.",
+		"basalam.selectiveSync": "همگام‌سازی انتخابی فیلدهای محصول",
+		"basalam.syncAllFields": "همه فیلدها",
+		"basalam.syncCustomFields": "فیلدهای سفارشی",
+		"basalam.roundPrice": "گرد کردن قیمت",
+		"basalam.addAttrToDesc": "ویژگی‌ها → توضیحات",
+		"basalam.addShortDesc": "توضیح کوتاه → توضیحات",
+		"basalam.allWholesale": "همه محصولات عمده",
+		"basalam.capPrep": "سقف آماده‌سازی دسته",
+		"basalam.tasksAuto": "تسک در دقیقه خودکار",
+		"basalam.field.defaultStock": "موجودی پیش‌فرض",
+		"basalam.field.discountDays": "روزهای تخفیف",
+		"basalam.field.discountPercent": "درصد تخفیف",
+		"basalam.field.customerPrefix": "پیشوند نام مشتری",
+		"basalam.field.customerSuffix": "پسوند نام مشتری",
+		"basalam.field.videoMeta": "کلید متای ویدئو",
+		"basalam.field.videoSource": "منبع ویدئو",
+		"basalam.field.videoInherit": "حالت ارث‌بری ویدئو",
+		"basalam.field.orderStatusMode": "حالت وضعیت سفارش",
+		"basalam.field.shippingMethod": "شناسه روش ارسال سفارش",
+		"basalam.field.variableStockSource": "منبع موجودی محصول متغیر",
+		"basalam.field.productPriceField": "فیلد قیمت محصول",
+		"basalam.ticketsDisabledTitle": "تیکت‌های همسلام حذف شد",
+		"basalam.ticketsDisabledHint": "تیکت پشتیبانی دیگر از همسلام نمی‌رود. از کانال‌های پشتیبانی وبینو استفاده کنید.",
+		"basalam.ticketsSubtitle": "تیکت‌های پشتیبانی همسلام.",
+		"basalam.orderActionOk": "انجام شد.",
+		"basalam.categoriesTitle": "دسته‌بندی باسلام",
+		"basalam.categoriesSubtitle": "دسته‌های فروشگاه را به دسته‌های باسلام وصل کنید.",
 		"basalam.addMapping": "افزودن نگاشت",
 		"basalam.saveMapping": "ذخیره نگاشت",
 		"basalam.mappingSaved": "نگاشت ذخیره شد.",
 		"basalam.mappingDeleted": "نگاشت حذف شد.",
-		"basalam.mappings": "نگاشت‌ها",
+		"basalam.mappings": "نگاشت‌های ذخیره شده",
 		"basalam.delete": "حذف",
-		"basalam.settingsSubtitle": "کلیدهای همگام‌سازی محصول/سفارش (تنظیمات باسلام).",
-		"basalam.syncToggles": "کلیدهای همگام‌سازی",
-		"basalam.syncProducts": "همگام‌سازی خودکار محصول",
-		"basalam.syncOrders": "همگام‌سازی خودکار سفارش",
+		"basalam.settingsSubtitle": "آنچه از فروشگاه به باسلام می‌رود را تنظیم کنید.",
+		"basalam.variationAsProductHintTitle": "محصولات متغیر",
+		"basalam.variationAsProductHint": "هر متغیر ووکامرس به‌صورت یک محصول جدا در باسلام ثبت می‌شود. عنوان = نام والد + مقادیر ویژگی (مثال: قهوه عربیکا کنیا ۱ کیلوگرم). محصولات قبلی که با مدل یک محصول + variants وصل شده‌اند باید قطع اتصال و دوباره متصل شوند.",
+		"basalam.syncToggles": "همگام‌سازی",
+		"basalam.syncProducts": "همگام‌سازی محصولات",
+		"basalam.syncOrders": "همگام‌سازی سفارش‌ها",
 		"basalam.autoConfirm": "تایید خودکار سفارش",
 		"basalam.developerMode": "حالت توسعه‌دهنده",
 		"basalam.settingsSaved": "تنظیمات ذخیره شد.",
 		"basalam.rawSettings": "همه تنظیمات",
-		"basalam.financeTitle": "مالی",
-		"basalam.financeSubtitle": "موجودی و تسویه (accounting.basalam.com).",
+		"basalam.financeTitle": "مالی باسلام",
+		"basalam.financeSubtitle": "موجودی غرفه و درخواست تسویه.",
 		"basalam.financeWpAdminHint": "رابط کامل مالی در منوی WP-Admin باسلام نیز در دسترس است.",
 		"basalam.financeLoading": "در حال بارگذاری…",
 		"basalam.financeError": "دریافت اطلاعات مالی ناموفق بود.",
-		"basalam.boothBalance": "تراز غرفه",
+		"basalam.boothBalance": "موجودی غرفه باسلام",
 		"basalam.balanceAsOf": "تراز غرفه تا {{time}}",
 		"basalam.settledBankYtd": "تسویه بانکی سال جاری",
 		"basalam.settledWalletYtd": "تسویه کیف پول سال جاری",
@@ -8214,14 +8397,15 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.balance": "موجودی",
 		"basalam.settlements": "تسویه‌ها",
 		"basalam.ticketsTitle": "تیکت‌ها",
-		"basalam.ticketsSubtitle": "تیکت‌های پشتیبانی همسلام.",
 		"basalam.ticketsHint": "برای ایجاد/پاسخ کامل به تیکت از منوی WP-Admin باسلام استفاده کنید.",
-		"basalam.logsTitle": "لاگ و پوشش",
-		"basalam.logsSubtitle": "جاب‌ها، ماتریس پوشش و راهنمای لاگ.",
+		"basalam.logsTitle": "وضعیت همگام‌سازی",
+		"basalam.logsSubtitle": "وضعیت کارهای در حال انجام بین فروشگاه و باسلام.",
 		"basalam.coverage": "پوشش API",
-		"basalam.oauthConnected": "اتصال باسلام برقرار شد.",
-		"basalam.webhookConfigured": "وب‌هوک ثبت شده است.",
-		"basalam.webhookPending": "پس از OAuth وب‌هوک تنظیم می‌شود.",
+		"basalam.oauthConnected": "غرفه با موفقیت متصل شد.",
+		"basalam.oauthError": "اتصال باسلام ناموفق بود. دوباره تلاش کنید.",
+		"basalam.oauthVendorError": "شناسه غرفه از باسلام دریافت نشد. با حساب غرفه‌دار وارد شوید و دوباره وصل کنید.",
+		"basalam.webhookConfigured": "دریافت خودکار سفارش فعال است.",
+		"basalam.webhookPending": "دریافت خودکار هنوز کامل نشده.",
 		"basalam.productList": "لیست محصولات",
 		"basalam.filter.all": "همه",
 		"basalam.filter.connected": "متصل",
@@ -8232,13 +8416,12 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.col.status": "وضعیت",
 		"basalam.col.actions": "اقدامات",
 		"basalam.col.type": "نوع",
-		"basalam.col.error": "خطا",
+		"basalam.col.error": "توضیح",
 		"basalam.col.invoice": "فاکتور",
 		"basalam.col.customer": "مشتری",
 		"basalam.col.total": "مبلغ",
 		"basalam.createOne": "ایجاد",
 		"basalam.updateOne": "بروزرسانی",
-		"basalam.disconnect": "قطع اتصال",
 		"basalam.connectedOrders": "سفارش‌های متصل",
 		"basalam.noOrders": "هنوز سفارش متصلی نیست. دریافت سفارش را اجرا کنید.",
 		"basalam.syncFields": "فیلدهای همگام‌سازی",
@@ -8248,6 +8431,19 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.field.defaultPreparation": "زمان آماده‌سازی",
 		"basalam.field.tasksPerMinute": "وظیفه در دقیقه",
 		"basalam.field.priceChange": "تغییر قیمت",
+		"basalam.commission.title": "قیمت و کارمزد باسلام",
+		"basalam.commission.hint": "تعرفه مهر ۱۴۰۵ داخل پلاگین است؛ با «بارگذاری تعرفه» روی دسته‌های باسلام تطبیق می‌شود (قیمت = فروشگاه ÷ (۱ − کارمزد)). یا درصد ثابت دستی (−۳۵ تا ۳۵) بگذارید.",
+		"basalam.commission.status": "{{count}} نرخ همگام · {{unmatched}} بدون تطبیق · آخرین بارگذاری: {{at}}",
+		"basalam.commission.neverImported": "هنوز بارگذاری نشده",
+		"basalam.commission.enable": "کارمزد دسته‌بندی فعال",
+		"basalam.commission.seedTariff": "بارگذاری / به‌روزرسانی تعرفه مهر ۱۴۰۵",
+		"basalam.commission.uploadCsv": "آپلود CSV تعرفه",
+		"basalam.commission.applyUpdate": "اعمال کارمزد روی محصولات متصل",
+		"basalam.commission.importOk": "{{matched}} نرخ ذخیره شد ({{unmatched}} بدون تطبیق).",
+		"basalam.commission.seedOk": "{{matched}} نرخ از تعرفه مهر ۱۴۰۵ ذخیره شد ({{unmatched}} بدون تطبیق).",
+		"basalam.commission.applyQueued": "آپدیت قیمت با کارمزد در صف قرار گرفت.",
+		"basalam.commission.manualPercent": "درصد ثابت دستی (−۳۵ تا ۳۵)",
+		"basalam.commission.manualPercentHint": "markup افزایشی روی قیمت فروشگاه؛ با حالت کارمزد دسته‌بندی همزمان نیست.",
 		"basalam.field.productPrefix": "پیشوند عنوان",
 		"basalam.field.productSuffix": "پسوند عنوان",
 		"basalam.field.safeStock": "موجودی ایمن",
@@ -8259,7 +8455,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"zarinpal.operationsTitle": "عملیات زرین‌پال",
 		"zarinpal.coverageTitle": "پوشش زرین‌پال",
 		"zarinpal.settingsSubtitle": "اتصال پذیرنده و حالت آزمایشی",
-		"zarinpal.paymentsSubtitle": "عنوان تسویه‌حساب، پیام‌ها و پرداخت‌کننده کارمزد",
+		"zarinpal.paymentsSubtitle": "عنوان، آیکون، پیام‌ها و برچسب‌های چک‌اوت",
 		"zarinpal.operationsSubtitle": "همگام‌سازی پرداخت‌های تأییدنشده و جستجوی تراکنش",
 		"zarinpal.merchantId": "شناسه پذیرنده",
 		"zarinpal.accessToken": "توکن دسترسی (GraphQL)",
@@ -8278,10 +8474,21 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"zarinpal.fieldTitle": "عنوان در تسویه‌حساب",
 		"zarinpal.fieldDescription": "توضیحات",
 		"zarinpal.fieldInstructions": "دستورالعمل‌ها",
+		"zarinpal.orderButtonText": "متن دکمه پرداخت",
+		"zarinpal.feeLabel": "برچسب کارمزد",
+		"zarinpal.iconUrl": "آدرس آیکون درگاه",
+		"zarinpal.iconUrlPlaceholder": "خالی = لوگوی باندل‌شده",
+		"zarinpal.iconUrlHint": "در صورت خالی بودن، لوگوی رسمی باندل‌شده زرین‌پال استفاده می‌شود.",
+		"zarinpal.paymentDescription": "توضیح پرداخت API",
+		"zarinpal.paymentDescriptionHint": "جایگزین: {order_id}",
 		"zarinpal.successMessage": "پیام موفقیت",
 		"zarinpal.failedMessage": "پیام ناموفق",
+		"zarinpal.cancelledMessage": "متن خطای انصراف",
+		"zarinpal.invalidTokenMessage": "متن خطای توکن نامعتبر",
 		"zarinpal.successHint": "جایگزین: {transaction_id}",
 		"zarinpal.failedHint": "جایگزین: {fault}",
+		"zarinpal.cancelledHint": "مقدار {fault} وقتی مشتری در زرین‌پال انصراف می‌دهد.",
+		"zarinpal.invalidTokenHint": "مقدار {fault} وقتی Authority نامعتبر است.",
 		"zarinpal.feePayer": "پرداخت‌کننده کارمزد",
 		"zarinpal.feePayerMerchant": "فروشنده",
 		"zarinpal.feePayerCustomer": "خریدار",
@@ -8379,7 +8586,50 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"accounting.nav.checks": "چک‌ها",
 		"accounting.nav.warehouses": "انبار",
 		"accounting.nav.moadian": "صف مودیان",
+		"accounting.nav.tax": "کابین مالیات",
 		"accounting.nav.hesabfa": "سینک حسابفا",
+		"accounting.tax.from": "از تاریخ",
+		"accounting.tax.to": "تا تاریخ",
+		"accounting.tax.revenue": "درآمد",
+		"accounting.tax.profit": "سود",
+		"accounting.tax.loss": "زیان",
+		"accounting.tax.vatNet": "ارزش افزوده خالص",
+		"accounting.tax.incomeTax": "برآورد مالیات عملکرد",
+		"accounting.tax.tips": "نکات مالیاتی",
+		"accounting.tax.dismiss": "نادیده گرفتن",
+		"accounting.tax.disclaimer": "برآورد بر اساس پیکربندی و جداول نسخه‌دار است؛ تأیید نهایی با مشاور مالیاتی.",
+		"accounting.taxTip.setupIncomplete": "ویزارد مالیات هنوز کامل نشده است.",
+		"accounting.taxTip.moadianKeys": "شناسه حافظه یا کلید خصوصی مودیان ناقص است.",
+		"accounting.taxTip.thresholdNear": "فروش به {{pct}}٪ حد نصاب نزدیک شده است.",
+		"accounting.taxTip.moadianFailed": "{{count}} ارسال مودیان ناموفق است.",
+		"accounting.taxTip.missingSstid": "{{count}} قلم فاکتور بدون شناسه کالا/خدمت (SSTID).",
+		"accounting.taxTip.vatDeadline": "مهلت تقریبی اظهار VAT: حدود {{days}} روز.",
+		"accounting.taxTip.rateVersion": "نسخه نرخ مالیاتی به‌روز شد: {{label}}",
+		"accounting.taxWizard.title": "راه‌اندازی مالیات",
+		"accounting.taxWizard.subtitle": "نوع مودی، اینتاکد و اتصال مودیان را یک‌بار تنظیم کنید.",
+		"accounting.taxWizard.stepOf": "گام {{step}} از {{total}}",
+		"accounting.taxWizard.taxpayerType": "نوع مودی",
+		"accounting.taxWizard.individual": "حقیقی",
+		"accounting.taxWizard.corporate": "حقوقی",
+		"accounting.taxWizard.company": "نام شرکت / کسب‌وکار",
+		"accounting.taxWizard.economic": "شناسه اقتصادی",
+		"accounting.taxWizard.nationalId": "کد ملی / شناسه ملی",
+		"accounting.taxWizard.postal": "کد پستی",
+		"accounting.taxWizard.tracking": "کد پیگیری پرونده مالیاتی",
+		"accounting.taxWizard.intaSearch": "جستجوی اینتاکد",
+		"accounting.taxWizard.intaCode": "اینتاکد",
+		"accounting.taxWizard.profitRatio": "نسبت سود (%)",
+		"accounting.taxWizard.corporateRate": "نرخ مالیات شرکتی (%)",
+		"accounting.taxWizard.transport": "مسیر ارسال مودیان",
+		"accounting.taxWizard.transportDirect": "مستقیم (self-tsp)",
+		"accounting.taxWizard.transportTsp": "شرکت معتمد (TSP)",
+		"accounting.taxWizard.tspUrl": "آدرس پایه TSP",
+		"accounting.taxWizard.tspKey": "کلید API معتمد",
+		"accounting.taxWizard.summaryVat": "نرخ عمومی VAT",
+		"accounting.taxWizard.disclaimer": "نرخ‌ها از جداول نسخه‌دار ماژول می‌آیند؛ بخشنامه‌های جدید را از سایت سازمان چک کنید.",
+		"accounting.taxWizard.finish": "پایان و ورود به کابین",
+		"accounting.taxWizard.done": "پیکربندی مالیات ذخیره شد",
+		"accounting.taxWizard.reopen": "ویزارد پیکربندی",
 		"accounting.nav.payroll": "حقوق",
 		"accounting.nav.projects": "پروژه‌ها",
 		"accounting.nav.reports": "گزارش‌ها",
@@ -8546,7 +8796,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.shopSms.syncPattern": "ثبت/همگام پترن",
 		"settings.shopSms.bindPattern": "اتصال کد پترن موجود",
 		"settings.shopSms.patternSynced": "پترن همگام شد.",
-		"settings.shopSms.patternOnlyHint": "ارسال پیامک سفارش فقط از طریق پترن تأییدشده انجام می‌شود.",
+		"settings.shopSms.patternOnlyHint": "ارسال پیامک سفارش (مشتری و مدیر) فقط از طریق پترن تأییدشده و فقط وقتی سوییچ همان وضعیت روشن باشد.",
 		"settings.shopSms.eventColumn": "رویداد / وضعیت",
 		"settings.shopSms.patternColumn": "پترن",
 		"settings.shopSms.patternCode": "کد پترن",
@@ -8585,6 +8835,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.shopSms.events.courier": "تحویل پیک",
 		"settings.shopSms.events.post": "تحویل پست",
 		"settings.shopSms.events.tipax": "تحویل تیپاکس",
+		"settings.shopSms.events.chapar": "تحویل چاپار",
+		"settings.shopSms.events.other": "سایر (رهگیری)",
 		"settings.shopSms.events.on-hold": "در انتظار بررسی",
 		"settings.shopSms.events.completed": "تکمیل شده",
 		"settings.shopSms.events.cancelled": "لغو شده",
@@ -8613,6 +8865,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.shopSms.recoveryExpires": "انقضا (روز)",
 		"settings.shopSms.recoveryUsage": "حد مصرف",
 		"settings.shopSms.postBarcodeMergedHint": "با ثبت بارکد پستی هم از همین پترن «تحویل پست» استفاده می‌شود.",
+		"settings.shopSms.trackingVarsHint": "برای رهگیری از متغیرهای {tracking} و {tracking_url} در پترن استفاده کنید.",
+		"settings.shopSms.posPaymentVarsHint": "برای پیامک پرداخت صندوق، متغیرهای پترن را به {customer_name} (اسم)، {customer_phone} (شماره) و {payment_url} (لینک) وصل کنید. معادل‌ها: {name}، {phone}/{mobile}، {link}/{payment_link}. اختیاری: {pattern_code}.",
 		"settings.site.fieldSiteTitle": "عنوان سایت",
 		"settings.site.fieldTagline": "شعار",
 		"settings.site.fieldAdminEmail": "ایمیل مدیر",
@@ -8684,7 +8938,19 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.shop.shippingNewZone": "نام منطقه جدید",
 		"settings.shop.shippingAddZone": "افزودن منطقه",
 		"settings.shop.shippingMethodCount": "{{count}} روش",
+		"settings.shop.shippingLocationCount": "{{count}} موقعیت",
 		"settings.shop.shippingOptions": "گزینه‌های حمل",
+		"settings.shop.shippingEditZone": "ویرایش منطقه",
+		"settings.shop.shippingZoneName": "نام منطقه",
+		"settings.shop.shippingLocations": "محدوده جغرافیایی",
+		"settings.shop.shippingLocIran": "کل ایران (کشور)",
+		"settings.shop.shippingPostcode": "کدپستی / شهر (اختیاری)",
+		"settings.shop.shippingRestOfWorldHint": "منطقه «بقیه جهان» فقط روش‌های حمل را می‌پذیرد.",
+		"settings.shop.shippingMethods": "روش‌های حمل‌ونقل",
+		"settings.shop.shippingPickMethod": "انتخاب روش…",
+		"settings.shop.shippingAddMethod": "افزودن روش",
+		"settings.shop.shippingNoMethods": "هنوز روشی اضافه نشده.",
+		"settings.shop.shippingMethodEnabled": "فعال‌سازی روش",
 		"settings.shop.gatewayEnabled": "فعال‌سازی درگاه",
 		"settings.shop.emailEnabled": "فعال‌سازی ایمیل",
 		"settings.shop.emailGlobal": "تنظیمات فرستنده ایمیل",
@@ -8727,6 +8993,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"common.nextPage": "صفحهٔ بعد",
 		"common.emptyValue": "—",
 		"common.cancel": "انصراف",
+		"common.confirm": "تأیید",
 		"common.back": "بازگشت",
 		"common.unlimited": "نامحدود",
 		"settings.langEn": "English",
@@ -9567,6 +9834,25 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.total": "جمع",
 		"orders.newStatus": "وضعیت جدید",
 		"orders.applyStatus": "اعمال وضعیت",
+		"orders.statusPipeline": "مراحل سفارش",
+		"orders.statusStep.processing": "پردازش",
+		"orders.statusStep.packaged": "بسته‌بندی",
+		"orders.statusStep.ready": "آماده ارسال",
+		"orders.statusStep.ship": "ارسال",
+		"orders.statusStep.completed": "تکمیل",
+		"orders.statusConfirmTitle": "تغییر وضعیت سفارش",
+		"orders.statusConfirmBody": "وضعیت از «{{from}}» به «{{to}}» تغییر کند؟",
+		"orders.cancelOrder": "لغو سفارش",
+		"orders.cancelConfirmTitle": "تأیید لغو سفارش",
+		"orders.cancelConfirmInstallment": "این سفارش اقساطی است. با لغو، مبلغ به‌صورت خودکار توسط درگاه پرداخت به حساب مشتری برمی‌گردد و نیازی به اقدام دستی نیست.",
+		"orders.cancelConfirmCash": "این سفارش نقدی است. با لغو، استرداد وجه را باید به‌صورت دستی انجام دهید{{gateway}}.",
+		"orders.cancelConfirmCashGateway": " (درگاه: {{gateway}})",
+		"orders.printMore": "سایر چاپ‌ها",
+		"orders.otherStatuses": "سایر وضعیت‌ها",
+		"orders.shipDialog.title": "ارسال سفارش",
+		"orders.shipDialog.description": "کد رهگیری را وارد کنید و در صورت نیاز پیامک را برای مشتری بفرستید.",
+		"orders.shipDialog.open": "ثبت / ارسال رهگیری",
+		"orders.shipDialog.noTrackingYet": "هنوز کد رهگیری ثبت نشده است.",
 		"orders.wcStatus.pending": "در انتظار",
 		"orders.wcStatus.processing": "در حال پردازش",
 		"orders.wcStatus.on-hold": "معلق",
@@ -9677,10 +9963,18 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.printStoreLabel": "چاپ برچسب فروشگاه",
 		"orders.printNewLabels": "چاپ لیبل سفارش‌های جدید",
 		"orders.printNewLabelsEmpty": "سفارش پردازش‌شده یا در انتظار بدون لیبل چاپ‌نشده پیدا نشد.",
-		"orders.panelTracking": "رهگیری پست",
+		"orders.panelTracking": "رهگیری سفارش",
 		"orders.trackingCode": "کد رهگیری",
 		"orders.trackingProvider": "ارائه‌دهنده",
 		"orders.trackingLink": "پیگیری مرسوله",
+		"orders.selectTrackingProvider": "انتخاب ارائه‌دهنده",
+		"orders.trackingProviderWithPattern": "{{title}} — پترن: {{pattern}}",
+		"orders.trackingProviderPatternBound": "{{title}} — پترن متصل",
+		"orders.trackingNoActiveProviders": "هیچ ارائه‌دهنده‌ای با پترن پیامک متصل نیست. ابتدا در تنظیمات پیامک پترن پست/پیک/تیپاکس/چاپار/سایر را بایند کنید.",
+		"orders.sendTrackingSms": "ارسال پیامک رهگیری",
+		"orders.trackingSmsSent": "پیامک رهگیری ارسال شد",
+		"orders.trackingSmsNeedCodeProvider": "کد رهگیری و ارائه‌دهنده را مشخص کنید",
+		"orders.trackingSmsNoPattern": "برای این ارائه‌دهنده پترن پیامک متصل نیست",
 		"orders.deliverySlot": "زمان تحویل",
 		"orders.panelDigipay": "دیجی‌پی",
 		"orders.digipayTransaction": "شناسه تراکنش",
@@ -9690,7 +9984,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.digipayGateway": "درگاه",
 		"orders.digipayDelivered": "تحویل به دیجی‌پی",
 		"digipay.settingsTitle": "تنظیمات دیجی‌پی",
-		"digipay.settingsSubtitle": "تنظیمات اتصال، محیط اجرا و لاگ تراکنش‌های DigiPay UPG.",
+		"digipay.settingsSubtitle": "تنظیمات اتصال، محیط اجرا و لاگ تراکنش‌های دیجی‌پی.",
 		"digipay.transactionsTitle": "تراکنش‌های دیجی‌پی",
 		"digipay.testConnection": "تست اتصال",
 		"digipay.testSuccess": "اتصال با موفقیت برقرار شد",
@@ -9705,8 +9999,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"digipay.status.ok": "موفق",
 		"digipay.status.failed": "ناموفق",
 		"digipay.field.version": "نسخه دیجی‌پی",
-		"digipay.field.clientId": "شناسه کلاینت",
-		"digipay.field.clientSecret": "سکرت کلاینت",
+		"digipay.field.clientId": "شناسه کاربری درگاه",
+		"digipay.field.clientSecret": "رمز مخفی",
 		"digipay.field.username": "نام کاربری",
 		"digipay.field.password": "رمز عبور",
 		"digipay.field.sellerId": "شناسه فروشنده",
@@ -9751,6 +10045,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.historyAov": "میانگین سفارش",
 		"orders.stats.orders": "سفارش‌ها",
 		"orders.stats.revenue": "فروش",
+		"orders.stats.periodMonth": "بازه آماری: ماه جاری ({{label}})",
+		"orders.stats.periodCustom": "بازه آماری: {{after}} تا {{before}}",
 		"orders.stats.aov": "میانگین سفارش",
 		"orders.stats.processing": "در حال پردازش",
 		"orders.stats.completed": "تکمیل‌شده",
@@ -9784,6 +10080,17 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.contact.openUser": "مشاهده کاربر",
 		"orders.panelSmsHistory": "تاریخچه پیامک",
 		"orders.smsHistoryEmpty": "پیامکی برای این سفارش ثبت نشده.",
+		"orders.smsRole.customer": "مشتری",
+		"orders.smsRole.admin": "مدیر",
+		"orders.smsReason.event_off": "سوییچ وضعیت برای این نقش خاموش است.",
+		"orders.smsReason.disabled": "پنل پیامک فروشگاه غیرفعال است.",
+		"orders.smsReason.no_phone": "شماره مشتری ثبت نشده.",
+		"orders.smsReason.no_admin_phone": "شماره مدیر تنظیم نشده.",
+		"orders.smsReason.pattern_missing": "الگوی همگام‌سازی‌شده برای این وضعیت وجود ندارد.",
+		"orders.smsReason.template_missing": "قالب پیامک یافت نشد.",
+		"orders.smsReason.empty_template": "متن قالب خالی است.",
+		"orders.smsReason.insufficient_balance": "اعتبار پیامک کافی نیست.",
+		"orders.smsReason.send_failed": "ارسال ناموفق بود.",
 		"orders.smsStatus.delivered": "رسیده",
 		"orders.smsStatus.sent": "ارسال‌شده",
 		"orders.smsStatus.queued": "در صف",
@@ -9829,6 +10136,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.comparePrevious": "مقایسه با دوره قبل",
 		"reports.comparePeriod": "دوره قبل",
 		"reports.statusFilter": "وضعیت سفارش",
+		"reports.statusFilterHint": "خالی = همه فروش‌های موفق (بدون لغو، ناموفق، در انتظار پرداخت و استرداد).",
 		"reports.exportCsv": "خروجی CSV",
 		"reports.deltaNew": "جدید",
 		"reports.preset.today": "امروز",
@@ -9848,6 +10156,9 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.status.cancelled": "لغو شده",
 		"reports.status.refunded": "استرداد شده",
 		"reports.status.failed": "ناموفق",
+		"reports.status.webino-packaged": "بسته‌بندی‌شده",
+		"reports.status.webino-ready-to-ship": "آماده ارسال",
+		"reports.status.webino-shipping": "در حال ارسال",
 		"reports.kpi.revenue": "درآمد ناخالص",
 		"reports.kpi.netRevenue": "درآمد خالص",
 		"reports.kpi.orders": "تعداد سفارش",
@@ -9898,7 +10209,65 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.heatmap.legendMax": "بیشتر",
 		"reports.wfcpDisabledHint": "WFCP غیرفعال",
 		"reports.cogsApproxHint": "قیمت خرید از متای فعلی محصول است، نه snapshot زمان سفارش.",
+		"salePrices.title": "قیمت خط‌خورده",
+		"salePrices.banner": "تخفیف فقط روی محصولات این لیست اعمال می‌شود. محصولات بایگانی‌شده یا در انتظار تأیید در این لیست نیستند.",
+		"salePrices.selectHint": "محصولات را انتخاب کنید",
+		"salePrices.selectedCount": "{{count}} محصول انتخاب شده",
+		"salePrices.selectAllPage": "انتخاب همهٔ این صفحه",
+		"salePrices.needSelection": "حداقل یک محصول را انتخاب کنید",
+		"salePrices.empty": "محصولی یافت نشد",
+		"salePrices.apply": "اعمال تخفیف",
+		"salePrices.remove": "حذف تخفیف",
+		"salePrices.applyAllFiltered": "اعمال روی همهٔ فیلترشده",
+		"salePrices.removeAllFiltered": "حذف از همهٔ فیلترشده",
+		"salePrices.applyTitle": "اعمال تخفیف",
+		"salePrices.percent": "درصد تخفیف",
+		"salePrices.percentPlaceholder": "مثلا ۱۰ درصد",
+		"salePrices.durationLabel": "مدت اعتبار تخفیف",
+		"salePrices.duration.1d": "۱ روز",
+		"salePrices.duration.3d": "۳ روز",
+		"salePrices.duration.1w": "۱ هفته",
+		"salePrices.duration.1m": "۱ ماه",
+		"salePrices.duration.custom": "مدت دلخواه",
+		"salePrices.previewCta": "پیش‌نمایش قیمت‌های خط‌خورده",
+		"salePrices.confirmApply": "تأیید و اعمال تخفیف",
+		"salePrices.previewCount": "{{count}} محصول مشمول",
+		"salePrices.applyDone": "{{ok}} محصول به‌روز شد (رد شده: {{skipped}})",
+		"salePrices.removeDone": "تخفیف از {{ok}} محصول حذف شد",
+		"salePrices.removeConfirmTitle": "حذف تخفیف؟",
+		"salePrices.removeConfirmBody": "قیمت فروش و تاریخ‌های تخفیف از محصولات انتخاب‌شده پاک می‌شود.",
 		"coupons.title": "کدهای تخفیف",
+		"coupons.builder.title": "کوپن‌ساز",
+		"coupons.builder.publicNote": "همه مشتری‌ها کوپنت رو می‌بینن؛ مشتری توی هر سفارش فقط از یک کوپن می‌تونه استفاده کنه؛ وقتی شرایط برقرار باشه کوپن بدون نیاز به کد روی سبد اعمال می‌شه.",
+		"coupons.builder.create": "ساخت کوپن",
+		"coupons.builder.advanced": "حالت تخصصی",
+		"coupons.builder.classicList": "لیست کلاسیک",
+		"coupons.builder.wizardTitle": "ساخت سریع کوپن",
+		"coupons.builder.wizardHint": "برای هر کوپن فقط یک شرط انتخاب کن.",
+		"coupons.builder.conditionType": "شرط کوپن",
+		"coupons.builder.conditionValue": "مقدار شرط",
+		"coupons.builder.rewardType": "نوع پاداش",
+		"coupons.builder.rewardAmount": "مقدار پاداش",
+		"coupons.builder.cond.orderNth": "تعداد دفعات سفارش",
+		"coupons.builder.cond.minAmount": "حداقل مبلغ سفارش",
+		"coupons.builder.cond.minItems": "حداقل تعداد اقلام",
+		"coupons.builder.reward.fixed": "تخفیف ثابت",
+		"coupons.builder.reward.percent": "تخفیف درصدی",
+		"coupons.builder.reward.freeShip": "ارسال رایگان",
+		"coupons.builder.reward.shipPct": "درصد تخفیف ارسال",
+		"coupons.builder.publish": "انتشار کوپن",
+		"coupons.builder.suggested": "کوپن‌های پیشنهادی",
+		"coupons.builder.suggestedHint": "می‌تونی کوپن‌های پیشنهادی رو انتخاب و به کوپن‌هات اضافه کنی.",
+		"coupons.builder.owned": "کوپن‌های فروشگاه",
+		"coupons.builder.ownedEmpty": "هنوز کوپن پیشنهادی یا سازنده‌ای اضافه نکرده‌ای.",
+		"coupons.builder.less": "کمتر",
+		"coupons.builder.more": "بیشتر",
+		"coupons.builder.youHave": "این کوپن رو داری",
+		"coupons.builder.addSuggested": "افزودن به کوپن‌ها",
+		"coupons.builder.added": "کوپن اضافه شد",
+		"coupons.builder.alreadyOwned": "این کوپن از قبل وجود دارد",
+		"coupons.builder.customDesc": "کوپن ساخته‌شده از کوپن‌ساز",
+		"coupons.builder.upTo": "تا {{amount}} تومان",
 		"coupons.create": "کوپن جدید",
 		"coupons.amount": "مبلغ",
 		"coupons.submitCreate": "ایجاد",
@@ -10137,6 +10506,79 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.smsModirpayamakPanel": "باز کردن پنل پیامکی",
 		"marketing.sms.serviceUnavailable": "سرویس پیامک در دسترس نیست. می‌توانید صفحه را ببینید؛ ارسال و شارژ پس از برقراری اتصال فعال می‌شود.",
 		"marketing.sms.dashboardTitle": "پنل پیامکی",
+		"marketing.smsAds.heroTitle": "با هر پیامک شانس فروشت رو بیشتر کن",
+		"marketing.smsAds.heroDesc": "اینجا می‌تونی پیامک‌های هدفمند بفرستی تا مشتری‌های بیشتری باهات آشنا بشن.",
+		"marketing.smsAds.createCta": "ایجاد تبلیغ پیامکی",
+		"marketing.smsAds.bannerVolume": "۱٬۰۰۰+ پیامک در ماه",
+		"marketing.smsAds.bannerVolumeDesc": "هر ماه فروشگاه‌ها پیامک‌هاشون رو از قبل رزرو می‌کنن تا ارتباطشون با مشتری قطع نشه.",
+		"marketing.smsAds.bannerSegments": "ارسال به گروه‌های هدف",
+		"marketing.smsAds.bannerSegmentsDesc": "گروه هدف مناسب رو انتخاب کن؛ تبلیغ پیامکیت دقیق اجرا می‌شه.",
+		"marketing.smsAds.bannerCopy": "اختیار کامل روی متن",
+		"marketing.smsAds.bannerCopyDesc": "می‌تونی پیامک‌هات رو از متن‌های آماده انتخاب کنی یا خودت بنویسی.",
+		"marketing.smsAds.campaignsTitle": "تبلیغات اخیر",
+		"marketing.smsAds.noCampaigns": "هنوز تبلیغی نساختی.",
+		"marketing.smsAds.wizardTitle": "ایجاد تبلیغ پیامکی و نوتیفیکیشن",
+		"marketing.smsAds.detailTitle": "آمار تبلیغ پیامکی",
+		"marketing.smsAds.stepTarget": "گروه هدف",
+		"marketing.smsAds.stepSettings": "تنظیمات",
+		"marketing.smsAds.stepPay": "پرداخت",
+		"marketing.smsAds.whoQuestion": "تبلیغت برای چه گروهی ارسال بشه؟",
+		"marketing.smsAds.seg.system_suggest.title": "پیشنهاد سیستم",
+		"marketing.smsAds.seg.system_suggest.desc": "بهترین گروه‌ها مثل سبد رهاشده و خریداران دسته‌های پرفروش.",
+		"marketing.smsAds.seg.retarget.title": "هدف‌گیری مجدد مشتریان",
+		"marketing.smsAds.seg.retarget.desc": "با یادآوری به‌موقع، مشتری‌های قبلی رو برگردون.",
+		"marketing.smsAds.seg.acquire.title": "جذب مشتری جدید",
+		"marketing.smsAds.seg.acquire.desc": "مشترکین خبرنامه که هنوز خرید نکردن.",
+		"marketing.smsAds.seg.city_customers.title": "همشهری‌های مشتری",
+		"marketing.smsAds.seg.city_customers.desc": "مشتریانی که شهر صورتحساب‌شان با شهر فروشگاه یکی است.",
+		"marketing.smsAds.seg.all_city.title": "همه همشهری‌ها",
+		"marketing.smsAds.seg.all_city.desc": "همه مخاطبین همان شهر، حتی بدون خرید قبلی.",
+		"marketing.smsAds.seg.vip_buyers.title": "مشتریان وفادار",
+		"marketing.smsAds.seg.vip_buyers.desc": "خریدارانی با حداقل ۳ سفارش موفق.",
+		"marketing.smsAds.seg.followers.title": "دنبال‌کنندگان / خبرنامه",
+		"marketing.smsAds.seg.followers.desc": "مشترکین خبرنامه و دفترچه تلفن.",
+		"marketing.smsAds.segmentCount": "{{count}} مخاطب",
+		"marketing.smsAds.nameLabel": "نام تبلیغ‌ت رو بنویس",
+		"marketing.smsAds.nameHint": "نام تبلیغ فقط برای خودت قابل مشاهده است.",
+		"marketing.smsAds.channelLabel": "تبلیغت از چه طریقی ارسال بشه؟",
+		"marketing.smsAds.channelSms": "پیامک",
+		"marketing.smsAds.channelNotif": "نوتیفیکیشن",
+		"marketing.smsAds.dateLabel": "تاریخ اجرای تبلیغ رو تنظیم کن",
+		"marketing.smsAds.dateHint": "از فردا می‌تونی رزرو کنی.",
+		"marketing.smsAds.contentLabel": "چه محتوایی رو می‌خوای تبلیغ کنی؟",
+		"marketing.smsAds.content.product": "محصول",
+		"marketing.smsAds.content.category": "دسته‌بندی",
+		"marketing.smsAds.productId": "شناسه محصول",
+		"marketing.smsAds.categoryId": "شناسه دسته",
+		"marketing.smsAds.messageLabel": "متن پیامک",
+		"marketing.smsAds.messagePlaceholder": "متن تبلیغ… از {link} و {coupon} می‌تونی استفاده کنی.",
+		"marketing.smsAds.messageHint": "لینک محصول/دسته با UTM خودکار اضافه می‌شود.",
+		"marketing.smsAds.couponOptional": "کد تخفیف (اختیاری)",
+		"marketing.smsAds.recipients": "تعداد مخاطب",
+		"marketing.smsAds.unitPrice": "نرخ واحد",
+		"marketing.smsAds.volumeDiscount": "تخفیف پلکانی",
+		"marketing.smsAds.total": "مبلغ کل",
+		"marketing.smsAds.refreshQuote": "بروزرسانی برآورد هزینه",
+		"marketing.smsAds.prev": "مرحله قبل",
+		"marketing.smsAds.next": "مرحله بعد",
+		"marketing.smsAds.confirmPay": "تأیید و رزرو تبلیغ",
+		"marketing.smsAds.created": "تبلیغ رزرو شد",
+		"marketing.smsAds.notFound": "تبلیغ پیدا نشد",
+		"marketing.smsAds.backHome": "بازگشت به پنل پیامک",
+		"marketing.smsAds.attributedOrders": "سفارش‌های نسبت‌داده‌شده",
+		"marketing.smsAds.noOrders": "هنوز سفارشی با این کمپین ثبت نشده.",
+		"marketing.smsAds.kpi.sent": "ارسال‌شده",
+		"marketing.smsAds.kpi.failed": "ناموفق",
+		"marketing.smsAds.kpi.cost": "هزینه",
+		"marketing.smsAds.kpi.orders": "سفارش",
+		"marketing.smsAds.kpi.revenue": "درآمد",
+		"marketing.smsAds.kpi.roas": "ROAS",
+		"marketing.smsAds.kpi.conversion": "نرخ تبدیل",
+		"marketing.smsAds.status.scheduled": "زمان‌بندی‌شده",
+		"marketing.smsAds.status.sending": "در حال ارسال",
+		"marketing.smsAds.status.sent": "ارسال‌شده",
+		"marketing.smsAds.status.failed": "ناموفق",
+		"marketing.smsAds.status.cancelled": "لغو شده",
 		"marketing.botBroadcast": "پیام همگانی ربات",
 		"marketing.botCampaigns": "کمپین‌های ربات",
 		"marketing.sms.dashboardDesc": "موجودی، ارسال و گزارش از طریق پنل پیامکی.",
@@ -10336,6 +10778,13 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"analytics.period7": "۷ روز",
 		"analytics.period30": "۳۰ روز",
 		"analytics.period90": "۹۰ روز",
+		"analytics.periodPreset.thisMonth": "این ماه",
+		"analytics.periodPreset.lastMonth": "ماه قبل",
+		"analytics.periodPreset.last7": "۷ روز",
+		"analytics.periodPreset.last30": "۳۰ روز",
+		"analytics.periodPreset.custom": "سفارشی",
+		"analytics.dateFrom": "از تاریخ",
+		"analytics.dateTo": "تا تاریخ",
 		"analytics.chartTitle": "درآمد روزانه",
 		"analytics.emptyChart": "برای این بازه داده‌ای نیست.",
 		"analytics.settings.tracking": "ردیابی",
@@ -10937,6 +11386,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"marketplace.module.ai-content-module": "محتوای هوش مصنوعی",
 		"marketplace.module.ai-content-module-settings": "تنظیمات هوش مصنوعی",
 		"marketplace.module.wnc-core-module": "بازارچه",
+		"marketplace.module.security-module": "امنیت",
+		"marketplace.module.bots-hub": "ربات‌ها",
 		"wfcp.tab.digikala": "دیجیکالا",
 		"wfcp.tab.basalam": "باسلام",
 		"wfcp.tab.technolife": "تکنولایف",
@@ -10994,11 +11445,18 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"wnc.cred.order_status_enabled": "درگاه وضعیت سفارش",
 		"wnc.cred.orders_list_api_enabled": "API لیست سفارش‌های ترب",
 		"wnc.cred.product_page_webhook_enabled": "وب‌هوک تغییرات محصول",
+		"wnc.cred.action_tracking_enabled": "API ردیابی اکشن (خرید)",
+		"wnc.cred.expand_variations": "هر متغیر به‌عنوان محصول جدا (نام + ویژگی)",
 		"wnc.torobPreview": "پیش‌نمایش محصولات فید",
 		"wnc.torobQueue": "صف وب‌هوک محصول",
 		"wnc.torobQueuePending": "در انتظار",
 		"wnc.torobQueueLast": "آخرین اجرا",
 		"wnc.torobQueueNext": "اجرای بعدی",
+		"wnc.torobProductsV3Url": "Product API v3 (POST، Torob-Sync)",
+		"wnc.torobProductsLegacyUrl": "فید قدیمی محصول (POST wcpe)",
+		"wnc.torobActionsUrl": "API ردیابی اکشن (GET /torob/v1/actions)",
+		"wnc.torobSetTokenUrl": "ثبت توکن وب‌هوک (POST set-token)",
+		"wnc.torobOrdersListLegacyUrl": "لیست سفارش قدیمی (GET torob-api)",
 		"wnc.autoSync": "همگام‌سازی خودکار قیمت/موجودی",
 		"wnc.noCredentialsYet": "اطلاعات اتصال را وارد کنید.",
 		"wnc.cred.base_url": "آدرس پایه (base URL)",
@@ -11590,6 +12048,25 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.financial.allPayments": "همه درگاه‌ها",
 		"reports.financial.allUtm": "همه",
 		"reports.financial.directNone": "مستقیم / بدون UTM",
+		"reports.utm.direct": "مستقیم",
+		"reports.utm.instagram": "اینستاگرام",
+		"reports.utm.torob": "ترب",
+		"reports.utm.torobpay": "ترب‌پی",
+		"reports.utm.snapppay": "اسنپ‌پی",
+		"reports.utm.google": "گوگل",
+		"reports.utm.telegram": "تلگرام",
+		"reports.utm.facebook": "فیسبوک",
+		"reports.utm.basalam": "باسلام",
+		"reports.utm.digikala": "دیجیکالا",
+		"reports.utm.snappshop": "اسنپ‌شاپ",
+		"reports.utm.tapsishop": "تپسی‌شاپ",
+		"reports.utm.technolife": "تکنولایف",
+		"reports.utm.emalls": "ایمالز",
+		"reports.utm.zarehbin": "ذره‌بین",
+		"reports.utm.organic": "ارگانیک",
+		"reports.utm.referral": "ارجاعی",
+		"reports.utm.email": "ایمیل",
+		"reports.utm.sms": "پیامک",
 		"reports.financial.ordersFor": "سفارشات — {label}",
 		"reports.financial.clearFilters": "پاک کردن فیلترها",
 		"reports.table.aov": "میانگین سفارش",
@@ -11665,6 +12142,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.stockFilter.outofstock": "ناموجود",
 		"reports.stockFilter.lowstock": "موجودی کم",
 		"reports.stockFilter.missing_cost": "بدون قیمت خرید",
+		"reports.stockFilter.onbackorder": "پیش‌سفارش",
+		"reports.stock.categoryAll": "همه دسته‌ها",
 		"reports.stock.valueBy.purchase": "بر اساس خرید",
 		"reports.stock.valueBy.retail": "بر اساس نقدی",
 		"reports.stock.valueBy.current": "بر اساس قیمت فعلی",
@@ -11999,6 +12478,10 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"marketplace.badge.snappshop": "اسنپ‌شاپ",
 		"marketplace.badge.tapsishop": "تپسی‌شاپ",
 		"marketplace.badge.technolife": "تکنولایف",
+		"marketplace.badge.torob": "ترب",
+		"marketplace.badge.emalls": "ایمالز",
+		"marketplace.badge.zarehbin": "ذره‌بین",
+		"marketplace.badge.snapppay-search": "اسنپ‌پی سرچ",
 		"digikala.settingsTitle": "تنظیمات دیجیکالا",
 		"digikala.settingsSubtitle": "کد کلاینت، آدرس پایه، همگام‌سازی خودکار.",
 		"digikala.settingsSaved": "تنظیمات ذخیره شد.",
@@ -12015,6 +12498,28 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"marketing.sms.statuses.error": "خطا",
 		"marketing.sms.statuses.processing": "در حال پردازش",
 		"marketing.sms.statuses.rejected": "رد شده",
+		"marketing.sms.statuses.creating": "در حال ایجاد",
+		"marketing.sms.statuses.invalid_recipients": "گیرنده نامعتبر",
+		"marketing.sms.statuses.send_queue": "صف ارسال",
+		"marketing.sms.statuses.insufficient_credit": "اعتبار ناکافی",
+		"marketing.sms.statuses.finish": "پایان یافته",
+		"marketing.sms.statuses.finished": "پایان یافته",
+		"marketing.sms.statuses.skipped": "رد شده (بدون ارسال)",
+		"marketing.sms.senderLine": "خط ارسال",
+		"marketing.sms.recipientsCount": "تعداد گیرنده",
+		"marketing.sms.exitCount": "خروجی موفق",
+		"marketing.sms.stateId": "کد وضعیت",
+		"marketing.sms.event": "رویداد",
+		"marketing.sms.role": "نقش",
+		"marketing.sms.details": "جزئیات",
+		"marketing.sms.outboxDetail": "جزئیات ارسال",
+		"marketing.sms.valid": "تأیید مانیتورینگ",
+		"marketing.sms.part": "تعداد بخش",
+		"marketing.sms.seen": "خوانده‌شده",
+		"marketing.sms.unseen": "خوانده‌نشده",
+		"marketing.sms.toLine": "خط دریافت",
+		"marketing.sms.refresh": "بروزرسانی",
+		"marketing.sms.pageOf": "صفحه {{page}}",
 		"marketing.sms.goToWallet": "رفتن به کیف پول",
 		"marketing.sms.editDraft": "ویرایش",
 		"marketing.sms.phonebookDeleteUnavailable": "حذف دفترچه/مخاطب هنوز در API موجود نیست.",
@@ -12428,6 +12933,9 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"pos.customerSearch": "جستجو با موبایل یا نام…",
 		"pos.newPhone": "موبایل",
 		"pos.newName": "نام",
+		"pos.newFirstName": "نام",
+		"pos.newLastName": "نام خانوادگی",
+		"pos.customerHint": "مشتری موجود را انتخاب کنید، یا با موبایل و نام، مشتری جدید بسازید.",
 		"pos.channel": "کانال فروش",
 		"pos.channel.in_store": "حضوری",
 		"pos.channel.phone": "تلفنی",
@@ -12443,6 +12951,12 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"pos.tender.pos_terminal": "کارتخوان",
 		"pos.tender.online": "آنلاین",
 		"pos.tender.other": "سایر",
+		"pos.tender.payment_sms": "ارسال پیامک پرداخت",
+		"pos.paymentSms.hint": "لینک پرداخت فقط همین سفارش ساخته می‌شود و از پنل پیامک فروشگاه برای مشتری ارسال می‌گردد.",
+		"pos.paymentSms.checkout": "ثبت و ارسال پیامک پرداخت",
+		"pos.paymentSms.sent": "سفارش #{{id}} ثبت شد — پیامک پرداخت ارسال شد",
+		"pos.paymentSms.failed": "سفارش #{{id}} ثبت شد ولی پیامک ارسال نشد: {{error}}",
+		"pos.paymentSms.createdNoSms": "سفارش #{{id}} ثبت شد — لینک پرداخت آماده است (پیامک ارسال نشد)",
 		"pos.showExtras": "نمایش تخفیف / ارسال",
 		"pos.hideExtras": "مخفی کردن موارد اضافی",
 		"pos.discount": "تخفیف",
@@ -12522,10 +13036,973 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"accounting.backup": "پشتیبان ZIP",
 		"accounting.exportCsv": "خروجی CSV فاکتورها",
 		"accounting.calculator": "ماشین‌حساب نمونه ٪",
-		"accounting.moadianProxy": "پروکسی HTTP (هاست خارج)"
+		"accounting.moadianProxy": "پروکسی HTTP (هاست خارج)",
+		"security.overviewTitle": "امنیت",
+		"security.firewallTitle": "فایروال",
+		"security.liveTrafficTitle": "ترافیک زنده",
+		"security.rulesTitle": "قوانین فایروال",
+		"security.blockingTitle": "لیست مسدود و مجاز",
+		"security.scanTitle": "اسکن سایت",
+		"security.scanJobTitle": "کار اسکن",
+		"security.toolsTitle": "ابزارهای امنیت",
+		"security.toolTitle": "ابزار",
+		"security.reportsTitle": "گزارش‌ها",
+		"security.reportDetailTitle": "جزئیات گزارش",
+		"security.settingsTitle": "تنظیمات امنیت",
+		"security.navOverview": "نمای کلی",
+		"security.navFirewall": "فایروال",
+		"security.navScan": "اسکن سایت",
+		"security.navTools": "ابزارها",
+		"security.navReports": "گزارش‌ها",
+		"security.navSettings": "تنظیمات",
+		"security.wizardTitle": "تکمیل راه‌اندازی امنیت",
+		"security.wizardHint": "تنظیمات را بررسی کنید و ویزارد اولین اجرا را تکمیل کنید.",
+		"security.wizardCta": "باز کردن تنظیمات",
+		"security.wizardSettingsHint": "یک پروفایل اعمال کنید، گزینه‌های کلیدی را تنظیم کنید، سپس راه‌اندازی را تکمیل کنید.",
+		"security.wizardComplete": "علامت‌گذاری تکمیل راه‌اندازی",
+		"security.wizardCompleted": "راه‌اندازی تکمیل شد",
+		"security.kpi.score": "امتیاز امنیت",
+		"security.kpi.blocks24h": "مسدودسازی (۲۴ ساعت)",
+		"security.kpi.openFindings": "یافته‌های باز",
+		"security.kpi.wafMode": "حالت WAF",
+		"security.lastScanTitle": "آخرین اسکن",
+		"security.noScanYet": "هنوز اسکنی اجرا نشده است.",
+		"security.viewScan": "مشاهده اسکن",
+		"security.findingsBySeverity": "یافته‌های باز بر اساس شدت",
+		"security.findingsCount": "{{count}} یافته",
+		"security.feedFreshness": "تازگی فیدهای تهدید",
+		"security.manageFeeds": "مدیریت فیدها",
+		"security.noFeeds": "وضعیت فیدی ثبت نشده است.",
+		"security.feedSummary": "{{total}} فید · {{stale}} با خطا",
+		"security.feedStale": "کهنه",
+		"security.feedOk": "سالم",
+		"security.never": "هرگز",
+		"security.yes": "بله",
+		"security.no": "خیر",
+		"security.active": "فعال",
+		"security.inactive": "غیرفعال",
+		"security.wafMode.off": "خاموش",
+		"security.wafMode.learning": "یادگیری",
+		"security.wafMode.enforce": "اجرا",
+		"security.severity.critical": "بحرانی",
+		"security.severity.high": "بالا",
+		"security.severity.medium": "متوسط",
+		"security.severity.low": "پایین",
+		"security.severity.info": "اطلاع",
+		"security.firewall.enabled": "WAF فعال",
+		"security.firewall.bypass": "دور زدن اضطراری",
+		"security.firewall.bypassActive": "دور زدن فعال",
+		"security.firewall.bypassOff": "عادی",
+		"security.firewall.layers": "لایه‌های محافظت",
+		"security.firewall.noLayers": "وضعیت لایه در دسترس نیست.",
+		"security.filterAction": "اقدام",
+		"security.filterPath": "مسیر شامل",
+		"security.filterAll": "همه",
+		"security.noLiveEvents": "رویداد ترافیکی در بازه انتخاب‌شده نیست.",
+		"security.action.block": "مسدود",
+		"security.action.challenge": "چالش",
+		"security.action.log": "لاگ",
+		"security.action.allow": "مجاز",
+		"security.col.time": "زمان",
+		"security.col.action": "اقدام",
+		"security.col.method": "متد",
+		"security.col.path": "مسیر",
+		"security.col.rule": "قانون",
+		"security.col.country": "کشور",
+		"security.col.name": "نام",
+		"security.col.ruleId": "شناسه قانون",
+		"security.col.priority": "اولویت",
+		"security.col.enabled": "فعال",
+		"security.col.actions": "عملیات",
+		"security.col.type": "نوع",
+		"security.col.value": "مقدار",
+		"security.col.reason": "دلیل",
+		"security.col.note": "یادداشت",
+		"security.col.source": "منبع",
+		"security.col.minutes": "مدت (دقیقه)",
+		"security.col.profile": "پروفایل",
+		"security.col.status": "وضعیت",
+		"security.col.progress": "پیشرفت",
+		"security.col.findings": "یافته‌ها",
+		"security.col.started": "شروع",
+		"security.col.severity": "شدت",
+		"security.col.title": "عنوان",
+		"security.col.created": "ایجاد",
+		"security.noRules": "قانون سفارشی وجود ندارد.",
+		"security.noRulesHint": "یک قانون مبتنی بر مسیر بسازید یا پس از تحلیل ترافیک، قانون یادگیری را ارتقا دهید.",
+		"security.createRuleTitle": "ایجاد قانون فایروال",
+		"security.createRule": "ایجاد قانون",
+		"security.pathContains": "مسیر شامل",
+		"security.learningMode": "حالت یادگیری",
+		"security.ruleCreated": "قانون ایجاد شد",
+		"security.ruleUpdated": "قانون به‌روز شد",
+		"security.ruleDeleted": "قانون حذف شد",
+		"security.rulePromoted": "قانون یادگیری ارتقا یافت",
+		"security.promoteLearning": "ارتقا",
+		"security.testRuleTitle": "آزمایش قانون",
+		"security.testRuleJson": "JSON قانون",
+		"security.testRequestJson": "JSON درخواست",
+		"security.runTest": "اجرای آزمایش",
+		"security.ruleTestDone": "آزمایش قانون انجام شد",
+		"security.invalidJson": "JSON نامعتبر",
+		"security.delete": "حذف",
+		"security.quarantineEmpty": "فایلی در قرنطینه نیست.",
+		"security.quarantineRestore": "بازیابی",
+		"security.quarantineRestored": "فایل از قرنطینه بازیابی شد",
+		"security.healNoActions": "یافتهٔ قابل ترمیم خودکار نیست.",
+		"security.fileSize": "اندازه",
+		"security.tools.file-browser.title": "مرورگر فایل",
+		"security.tools.file-browser.desc": "مرور فقط‌خواندنی فایل‌های سایت زیر ABSPATH.",
+		"security.twoFaTitle": "احراز هویت دو مرحله‌ای (TOTP)",
+		"security.twoFaHint": "اپلیکیشن احراز هویت را برای حساب خود تنظیم کنید. WebAuthn در این نسخه موجود نیست.",
+		"security.twoFaSetup": "تولید رمز",
+		"security.twoFaEnable": "فعال‌سازی با کد",
+		"security.twoFaDisable": "غیرفعال‌سازی 2FA",
+		"security.twoFaCode": "کد احراز هویت",
+		"security.twoFaSetupReady": "رمز آماده است — در اپلیکیشن خود وارد کنید",
+		"security.twoFaEnabled": "2FA فعال شد",
+		"security.twoFaDisabled": "2FA غیرفعال شد",
+		"security.twoFaEnabledUsers": "{{count}} کاربر با 2FA",
+		"security.twoFaYouEnabled": "برای شما فعال است",
+		"security.healTitle": "اقدامات ترمیم",
+		"security.healPreview": "پیش‌نمایش ترمیم",
+		"security.healApply": "اعمال ترمیم",
+		"security.healRollback": "بازگشت آخرین اسنپ‌شات",
+		"security.healPreviewDone": "پیش‌نمایش آماده است",
+		"security.healApplied": "ترمیم اعمال شد",
+		"security.healRolledBack": "بازگشت انجام شد",
+		"security.healSelectFinding": "یافته‌ها را برای ترمیم انتخاب کنید",
+		"security.healNoSnapshot": "اسنپ‌شاتی برای بازگشت نیست",
+		"security.tabBlocks": "لیست مسدود",
+		"security.tabAllows": "لیست مجاز",
+		"security.blockType.ip": "آدرس IP",
+		"security.blockType.cidr": "محدوده CIDR",
+		"security.blockType.ua": "User-Agent",
+		"security.addBlock": "افزودن مسدود",
+		"security.addAllow": "افزودن مجاز",
+		"security.blockAdded": "مسدود اضافه شد",
+		"security.blockRemoved": "مسدود حذف شد",
+		"security.allowAdded": "مجاز اضافه شد",
+		"security.allowRemoved": "مجاز حذف شد",
+		"security.noBlocks": "موردی مسدود نشده است.",
+		"security.noAllows": "مورد مجازی وجود ندارد.",
+		"security.optional": "اختیاری",
+		"security.startScan": "شروع اسکن",
+		"security.scanProfile.quick": "اسکن سریع",
+		"security.scanProfile.standard": "اسکن استاندارد",
+		"security.scanProfile.deep": "اسکن عمیق",
+		"security.scheduleNoteTitle": "اسکن زمان‌بندی‌شده",
+		"security.scheduleNote": "اسکن می‌تواند از تنظیمات امنیت زمان‌بندی شود. اسکن دستی بلافاصله در پس‌زمینه شروع می‌شود.",
+		"security.scanJobs": "کارهای اسکن",
+		"security.noScans": "کار اسکنی وجود ندارد.",
+		"security.scanStarted": "اسکن در صف قرار گرفت",
+		"security.scanCancelled": "اسکن لغو شد",
+		"security.scanStatus.queued": "در صف",
+		"security.scanStatus.running": "در حال اجرا",
+		"security.scanStatus.done": "تمام",
+		"security.scanStatus.failed": "ناموفق",
+		"security.scanStatus.cancelled": "لغو شده",
+		"security.view": "مشاهده",
+		"security.cancel": "لغو",
+		"security.invalidScanId": "شناسه اسکن نامعتبر است.",
+		"security.scanNotFound": "اسکن یافت نشد.",
+		"security.findingsTitle": "یافته‌ها",
+		"security.noFindings": "یافته باز برای این اسکن نیست.",
+		"security.ackFinding": "تأیید",
+		"security.ignoreFinding": "نادیده",
+		"security.findingUpdated": "یافته به‌روز شد",
+		"security.toolDefaultDesc": "اجرای تشخیص و عملیات نگهداری.",
+		"security.unknownTool": "ابزار ناشناخته.",
+		"security.backToTools": "بازگشت به ابزارها",
+		"security.toolRunGet": "اجرای GET",
+		"security.toolRunPost": "اجرای POST",
+		"security.toolPostBody": "بدنه POST (JSON)",
+		"security.toolResult": "نتیجه",
+		"security.toolNoResult": "ابزار را اجرا کنید تا نتیجه نمایش داده شود.",
+		"security.toolRunDone": "ابزار اجرا شد",
+		"security.toolField.ip": "آدرس IP",
+		"security.toolField.path": "مسیر",
+		"security.tools.whois.title": "WHOIS / موقعیت IP",
+		"security.tools.whois.desc": "موقعیت جغرافیایی و رویدادهای اخیر IP.",
+		"security.tools.ip-lookup.title": "جستجوی IP",
+		"security.tools.ip-lookup.desc": "معادل WHOIS.",
+		"security.tools.diagnostics.title": "تشخیص",
+		"security.tools.diagnostics.desc": "PHP، وردپرس، لایه‌ها و تداخل‌ها.",
+		"security.tools.integrity-diff.title": "تفاوت یکپارچگی",
+		"security.tools.integrity-diff.desc": "مقایسه هش فایل با هسته رسمی.",
+		"security.tools.quarantine.title": "قرنطینه",
+		"security.tools.quarantine.desc": "فهرست یا بازیابی فایل‌های قرنطینه.",
+		"security.tools.snapshots.title": "اسنپ‌شات ترمیم",
+		"security.tools.snapshots.desc": "فهرست اسنپ‌شات‌های بازگشت.",
+		"security.tools.sessions.title": "نشست‌ها",
+		"security.tools.sessions.desc": "نشست‌های فعال Shield.",
+		"security.tools.password-audit.title": "ممیزی رمز",
+		"security.tools.password-audit.desc": "مدیران بدون 2FA.",
+		"security.tools.headers-tester.title": "آزمایش هدرها",
+		"security.tools.headers-tester.desc": "بررسی هدرهای امنیتی فرانت.",
+		"security.tools.tls-dns.title": "TLS و DNS",
+		"security.tools.tls-dns.desc": "راهنمای SSL و رکوردهای DNS.",
+		"security.tools.secrets-search.title": "جستجوی رازها",
+		"security.tools.secrets-search.desc": "اسکن مسیر برای رازهای افشا.",
+		"security.tools.canary.title": "طعمه‌ها",
+		"security.tools.canary.desc": "مدیریت توکن‌های فریب.",
+		"security.tools.honeypot.title": "هانی‌پات",
+		"security.tools.honeypot.desc": "آمار برخورد هانی‌پات.",
+		"security.tools.import-export.title": "ورود / خروج",
+		"security.tools.import-export.desc": "پشتیبان یا بازیابی JSON تنظیمات.",
+		"security.tools.waf-learning.title": "یادگیری WAF",
+		"security.tools.waf-learning.desc": "بررسی برخوردهای یادگیری.",
+		"security.tools.incident.title": "حوادث",
+		"security.tools.incident.desc": "خط زمانی جنایی.",
+		"security.tools.compat.title": "سازگاری",
+		"security.tools.compat.desc": "تشخیص افزونه‌های امنیتی متداخل.",
+		"security.tools.cli-recipes.title": "دستورات CLI",
+		"security.tools.cli-recipes.desc": "دستورات پیشنهادی WP-CLI.",
+		"security.tools.heal-wizard.title": "ویزارد ترمیم",
+		"security.tools.heal-wizard.desc": "پیش‌نمایش ترمیم خودکار امن.",
+		"security.generateReport": "تولید گزارش",
+		"security.reportType.executive": "خلاصه مدیریتی",
+		"security.reportType.firewall": "فعالیت فایروال",
+		"security.reportType.vulnerabilities": "آسیب‌پذیری‌ها",
+		"security.reportType.malware": "بدافزار",
+		"security.reportType.hardening": "چک‌لیست سخت‌سازی",
+		"security.generatedReports": "گزارش‌های تولیدشده",
+		"security.noReports": "گزارشی تولید نشده است.",
+		"security.reportGenerated": "گزارش تولید شد",
+		"security.invalidReportId": "شناسه گزارش نامعتبر است.",
+		"security.reportNotFound": "گزارش یافت نشد.",
+		"security.backToReports": "بازگشت به گزارش‌ها",
+		"security.reportPayload": "داده گزارش",
+		"security.settingsProfile": "پروفایل پیکربندی",
+		"security.profileLabel": "پروفایل",
+		"security.profile.beginner": "مبتدی",
+		"security.profile.recommended": "پیشنهادی",
+		"security.profile.store": "فروشگاه",
+		"security.profile.paranoid": "پارانوئید",
+		"security.applyProfile": "اعمال پروفایل",
+		"security.saveSettings": "ذخیره تنظیمات",
+		"security.settingsSaved": "تنظیمات ذخیره شد",
+		"security.profileApplied": "پروفایل اعمال شد",
+		"security.syncFeeds": "همگام‌سازی فیدها",
+		"security.feedsSynced": "همگام‌سازی فید شروع شد",
+		"security.feedsStatus": "{{count}} فید پیکربندی شده",
+		"security.section.general": "عمومی",
+		"security.section.privacy": "حریم خصوصی و نگهداری",
+		"security.section.waf": "فایروال وب",
+		"security.section.login": "محافظت ورود",
+		"security.section.headers": "هدرهای امنیتی",
+		"security.section.scan": "اسکنر",
+		"security.section.heal": "ترمیم و قرنطینه",
+		"security.section.feeds": "فیدهای تهدید",
+		"security.section.notify": "اعلان‌ها",
+		"security.general.enabled": "فعال‌سازی Webino Shield",
+		"security.general.learningMode": "حالت یادگیری (سراسری)",
+		"security.general.selfGuard": "محافظت از فایل‌های ماژول",
+		"security.privacy.anonymizeIp": "ناشناس‌سازی IP در خروجی UI",
+		"security.privacy.storeBody": "ذخیره بدنه درخواست در لاگ",
+		"security.privacy.retentionEvents": "نگهداری رویداد (روز)",
+		"security.waf.enabled": "فعال‌سازی WAF",
+		"security.waf.mode": "حالت WAF",
+		"security.waf.failOpen": "عبور در خطای داخلی",
+		"security.login.protect": "محافظت brute-force",
+		"security.login.disableXmlrpc": "غیرفعال XML-RPC",
+		"security.login.honeypot": "فیلد هانی‌پات ورود",
+		"security.login.twoFaOptional": "2FA اختیاری برای مدیران",
+		"security.headers.enabled": "ارسال هدرهای امنیتی",
+		"security.headers.hsts": "HSTS",
+		"security.headers.cspMode": "حالت CSP",
+		"security.scan.defaultProfile": "پروفایل پیش‌فرض اسکن",
+		"security.scan.includeDb": "شامل اسکن دیتابیس",
+		"security.scan.includeVuln": "شامل اسکن آسیب‌پذیری",
+		"security.heal.snapshotAlways": "همیشه اسنپ‌شات قبل از ترمیم",
+		"security.heal.allowDelete": "اجازه حذف دائمی",
+		"security.feeds.crmMirror": "استفاده از آینه WebinaCRM",
+		"security.feeds.directFallback": "Fallback اینترنت مستقیم",
+		"security.notify.email": "اعلان ایمیل",
+		"security.notify.site": "اعلان داشبورد",
+		"security.notify.sms": "اعلان SMS",
+		"security.incidentsTitle": "رویدادهای باز",
+		"security.viewIncidents": "مشاهده همه",
+		"security.incidentOpen": "رویداد باز",
+		"security.incidentsOpen": "رویداد باز",
+		"security.suggestedActions": "اقدامات پیشنهادی",
+		"security.healWizard": "جادوگر ترمیم",
+		"security.noActions": "هیچ اقدام فوری لازم نیست.",
+		"security.reportType.compliance_hint": "راهنمای انطباق",
+		"security.reportType.incident": "گزارش رویداد",
+		"security.reportType.feed_health": "سلامت فیدها",
+		"security.reportSummary": "خلاصه",
+		"security.reportStructured": "جزئیات گزارش",
+		"security.reportRawJson": "نمایش JSON خام",
+		"security.reportDownload": "دانلود JSON",
+		"security.auditTitle": "گزارش حسابرسی",
+		"security.auditEmpty": "هنوز رویداد حسابرسی وجود ندارد.",
+		"security.auditEmptyCta": "پیکربندی تنظیمات امنیتی",
+		"security.startFirstScan": "اولین اسکن را اجرا کنید",
+		"security.noFindingsHint": "این اسکن مشکلی پیدا نکرد. می‌توانید هر زمان اسکن دیگری اجرا کنید.",
+		"security.backToScan": "بازگشت به اسکن‌ها",
+		"security.healNotAvailable": "ترمیم خودکار در دسترس نیست",
+		"security.toolsSearch": "جستجوی ابزارها…",
+		"security.toolsNoMatch": "هیچ ابزاری با جستجوی شما مطابقت ندارد.",
+		"security.refresh": "بازخوانی",
+		"security.incidentNoItems": "هیچ رویدادی ثبت نشده است.",
+		"security.diag.layers": "لایه‌های فعال",
+		"security.diag.objectCache": "کش شیء",
+		"security.diag.cron": "کرون Shield",
+		"security.diag.conflicts": "تداخل افزونه‌ها",
+		"security.diag.noConflicts": "هیچ تداخل افزونه‌ای شناسایی نشد.",
+		"security.snapshotsEmpty": "هیچ اسنپ‌شاتی یافت نشد.",
+		"security.passAudit.checked": "رمزهای عبور رایج بررسی شده: {{count}}",
+		"security.passAudit.noIssues": "همه حساب‌های ادمین/ویرایشگر سالم هستند.",
+		"security.importExport.exportTitle": "صادرکردن تنظیمات",
+		"security.importExport.download": "دانلود JSON",
+		"security.importExport.importTitle": "وارد کردن تنظیمات JSON",
+		"security.importExport.import": "وارد کردن",
+		"security.importExport.importDone": "تنظیمات با موفقیت وارد شد.",
+		"security.col.login": "نام کاربری",
+		"security.col.issues": "مشکلات",
+		"security.col.user": "کاربر",
+		"security.ruleAction.block": "مسدود کردن",
+		"security.ruleAction.challenge": "چالش",
+		"security.ruleAction.log": "ثبت گزارش",
+		"security.ruleAction.allow": "اجازه دادن",
+		"security.wizard.prev": "→ قبلی",
+		"security.wizard.next": "بعدی ←",
+		"security.wizard.step": "مرحله {{step}} از {{total}}",
+		"security.wizard.step1.title": "IP مدیر خود را به لیست مجاز اضافه کنید",
+		"security.wizard.step1.hint": "پیش از فعال‌سازی حالت اجرایی، IP فعلی خود را به لیست مجاز اضافه کنید تا قفل نشوید.",
+		"security.wizard.step1.cta": "رفتن به بلوک‌کردن / لیست مجاز",
+		"security.wizard.step2.title": "یک پروفایل امنیتی انتخاب کنید",
+		"security.wizard.step2.hint": "پروفایل مناسب سایت خود را انتخاب و روی «اعمال پروفایل» کلیک کنید.",
+		"security.wizard.step2.profiles": "مبتدی → اصطکاک کم · پیشنهادی · فروشگاه · پارانوید → حداکثر",
+		"security.wizard.step3.title": "برنامه اسکن",
+		"security.wizard.step3.hint": "یک اسکن اولیه اجرا کنید تا خط پایه تعیین شود، سپس اسکن خودکار را از طریق WP-Cron پیکربندی کنید.",
+		"security.wizard.step3.cta": "اجرای اسکن",
+		"security.wizard.step4.title": "فعال‌سازی اعلان‌ها",
+		"security.wizard.step4.hint": "هشدارهای ایمیل یا داشبورد را برای رویدادهای امنیتی پیکربندی کنید.",
+		"security.wizard.step5.title": "بررسی هم‌زیستی",
+		"security.wizard.step5.conflicts": "افزونه‌های در تعارض شناسایی شدند:",
+		"security.wizard.step5.conflictHint": "قوانین WAF تکراری را در آن افزونه‌ها قبل از فعال‌سازی حالت اجرایی غیرفعال کنید.",
+		"security.wizard.step5.ok": "هیچ افزونه امنیتی در تعارض شناسایی نشد.",
+		"security.wizard.step6.title": "تکمیل راه‌اندازی",
+		"security.wizard.step6.hint": "تنظیمات خود را ذخیره کنید، سپس جادوگر را کامل کنید تا این بنر مخفی شود.",
+		"basalam.fieldAccess": "کلید دسترسی",
+		"basalam.fieldRefresh": "کلید تمدید",
+		"basalam.fieldVendorOptional": "شناسه غرفه (اختیاری)",
+		"basalam.advanced": "پیشرفته",
+		"basalam.syncProductsNow": "همگام‌سازی محصولات",
+		"basalam.productsSyncQueued": "همگام‌سازی محصولات شروع شد.",
+		"basalam.openPricing": "قیمت‌گذاری بازارگاه‌ها",
+		"basalam.boothNamed": "غرفه {{id}}",
+		"basalam.nav.connection": "اتصال",
+		"basalam.boothTitleField": "عنوان غرفه",
+		"basalam.boothSummaryField": "معرفی کوتاه",
+		"basalam.ordersAutoTitle": "دریافت خودکار سفارش‌ها",
+		"basalam.ordersAutoOn": "سفارش‌ها به‌صورت خودکار دریافت می‌شوند.",
+		"basalam.ordersAutoOff": "دریافت خودکار هنوز فعال نیست.",
+		"basalam.ordersAutoEnable": "فعال‌سازی",
+		"basalam.ordersAutoResetBtn": "راه‌اندازی مجدد",
+		"basalam.ordersAutoOk": "دریافت خودکار فعال شد.",
+		"basalam.ordersAutoReset": "دریافت خودکار دوباره راه‌اندازی شد.",
+		"basalam.selectProduct": "انتخاب محصول",
+		"basalam.discountPercent": "درصد تخفیف",
+		"basalam.chatShow": "باز کردن چت",
+		"basalam.chatHide": "بستن چت",
+		"basalam.chatNotify": "اطلاع از پیام جدید باسلام",
+		"basalam.wooCategory": "دسته فروشگاه",
+		"basalam.selectWooCategory": "انتخاب دسته فروشگاه",
+		"basalam.selectCategory": "انتخاب کنید",
+		"basalam.bslLevel1": "دسته اصلی باسلام",
+		"basalam.bslLevel2": "زیردسته",
+		"basalam.bslLevel3": "دسته نهایی",
+		"basalam.autoSuggest": "پیشنهاد خودکار",
+		"basalam.orderActions": "اقدامات باسلام",
+		"basalam.basalamInvoice": "شماره سفارش باسلام",
+		"basalam.cancelReasonLabel": "دلیل لغو",
+		"basalam.shipMethodLabel": "روش ارسال",
+		"basalam.cancelReason.buyerRequest": "درخواست خریدار",
+		"basalam.cancelReason.outOfStock": "ناموجودی",
+		"basalam.cancelReason.other": "سایر",
+		"basalam.shipMethod.post": "پست",
+		"basalam.shipMethod.tipax": "تیپاکس",
+		"basalam.shipMethod.courier": "پیک",
+		"basalam.syncStatus.pending": "در صف",
+		"basalam.syncStatus.done": "انجام‌شده",
+		"basalam.syncStatus.failed": "ناموفق",
+		"basalam.job.fetchOrders": "دریافت سفارش‌ها",
+		"basalam.job.createProduct": "افزودن محصول",
+		"basalam.job.updateProduct": "بروزرسانی محصول",
+		"basalam.job.updateAll": "بروزرسانی همه محصولات",
+		"basalam.job.autoConnect": "اتصال خودکار",
+		"basalam.job.discounts": "تخفیف‌ها",
+		"basalam.job.quickUpdate": "بروزرسانی سریع",
+		"basalam.jobStatus.pending": "در انتظار",
+		"basalam.jobStatus.processing": "در حال اجرا",
+		"basalam.jobStatus.completed": "انجام شد",
+		"basalam.jobStatus.failed": "ناموفق",
+		"basalam.col.time": "زمان",
+		"basalam.defaultProductValues": "مقادیر پیش‌فرض محصول",
+		"basalam.fillFromCatalog": "پر کردن از محصولات فروشگاه",
+		"basalam.defaultsFilled": "مقادیر از محصولات پیشنهاد شد.",
+		"basalam.balanceInReports": "موجودی قابل برداشت در باسلام",
+		"basalam.financeDetailsLink": "جزئیات مالی باسلام",
+		"basalam.settlementAmount": "مبلغ (ریال)",
+		"basalam.settleMethod.bank": "واریز به حساب بانکی",
+		"basalam.settleMethod.wallet": "کیف پول",
+		"basalam.bankAccount": "حساب بانکی",
+		"basalam.syncField.name": "نام",
+		"basalam.syncField.photos": "تصاویر",
+		"basalam.syncField.price": "قیمت",
+		"basalam.syncField.stock": "موجودی",
+		"basalam.syncField.weight": "وزن",
+		"basalam.syncField.description": "توضیحات",
+		"basalam.syncField.attr": "ویژگی‌ها",
+		"basalam.syncField.video": "ویدیو",
+		"basalam.syncField.variant_price": "قیمت تنوع",
+		"basalam.syncField.variant_stock": "موجودی تنوع",
+		"basalam.addFullDesc": "توضیحات کامل (نقد و بررسی)",
+		"basalam.job.createAllProducts": "افزودن همه محصولات",
+		"basalam.job.updateAllProducts": "بروزرسانی همه محصولات",
+		"basalam.job.bulkUpdateProducts": "بروزرسانی سریع محصولات",
+		"basalam.boothIdentity": "غرفه باسلام",
+		"basalam.boothUntitled": "غرفه بدون عنوان",
+		"basalam.boothIdLabel": "شناسه {{id}}",
+		"basalam.chatWithBuyer": "چت با خریدار",
+		"basalam.shippingProfiles": "پروفایل‌های ارسال",
+		"basalam.shippingCarriers": "روش‌های ارسال فعال",
+		"basalam.noShippingProfiles": "هنوز پروفایلی نساخته‌اید.",
+		"basalam.noCarriers": "حامل فعالی ثبت نشده.",
+		"gateway.section.connection": "اتصال درگاه",
+		"gateway.section.connectionHint": "فعال‌سازی و اطلاعات ورود به درگاه پرداخت.",
+		"gateway.section.checkout": "تسویه‌حساب",
+		"gateway.section.checkoutHint": "قوانین و رفتار درگاه در صفحهٔ پرداخت فروشگاه.",
+		"gateway.section.display": "نمایش فروشگاه",
+		"gateway.section.displayHint": "ویجت‌ها و المان‌های نمایشی روی صفحهٔ محصول و فروشگاه.",
+		"gateway.section.messages": "پیام‌ها",
+		"gateway.section.messagesHint": "متن‌هایی که پس از پرداخت موفق، ناموفق یا انصراف به مشتری نشان داده می‌شود.",
+		"gateway.section.advanced": "پیشرفته",
+		"gateway.section.advancedHint": "تنظیمات فنی و رفع‌اشکال اتصال.",
+		"gateway.meta.source": "منبع",
+		"gateway.meta.sourceOfficial": "افزونه رسمی",
+		"gateway.meta.sourceWebino": "وبینو",
+		"gateway.meta.serverIp": "آی‌پی سرور",
+		"gateway.meta.callback": "آدرس بازگشت",
+		"gateway.field.title": "عنوان درگاه",
+		"gateway.field.description": "توضیح کوتاه",
+		"gateway.field.orderButtonText": "متن دکمه پرداخت",
+		"gateway.field.iconUrl": "آدرس آیکون درگاه",
+		"gateway.field.iconUrlHint": "خالی = لوگوی باندل‌شده.",
+		"gateway.field.baseUrl": "آدرس پایهٔ API",
+		"gateway.field.clientId": "شناسه کاربری درگاه",
+		"gateway.field.clientSecret": "رمز مخفی",
+		"gateway.field.clientSecretKeep": "رمز مخفی (خالی = بدون تغییر)",
+		"gateway.field.username": "نام کاربری",
+		"gateway.field.password": "رمز عبور",
+		"gateway.field.passwordKeep": "رمز عبور (خالی = بدون تغییر)",
+		"gateway.field.successMessage": "پیام موفقیت",
+		"gateway.field.failedMessage": "پیام ناموفق",
+		"gateway.field.cancelledMessage": "پیام انصراف",
+		"gateway.field.messageVars": "می‌توانید از متغیرهایی مثل {order_id} استفاده کنید.",
+		"gateway.flag.requireMobile": "موبایل اجباری",
+		"gateway.flag.requireMobileHint": "بدون شماره موبایل معتبر، پرداخت با این درگاه شروع نمی‌شود.",
+		"gateway.flag.requirePostcode": "کدپستی اجباری",
+		"gateway.flag.requirePostcodeHint": "کدپستی برای ادامهٔ پرداخت الزامی می‌شود.",
+		"gateway.flag.defaultEligible": "درگاه پیش‌فرض در صورت واجدشرایط بودن",
+		"gateway.flag.defaultEligibleHint": "اگر سبد واجدشرایط باشد، این درگاه به‌عنوان گزینهٔ پیش‌فرض انتخاب می‌شود.",
+		"gateway.flag.directRedirect": "ریدایرکت مستقیم",
+		"gateway.flag.directRedirectHint": "پس از انتخاب درگاه، مشتری مستقیم به صفحهٔ پرداخت هدایت می‌شود.",
+		"snapppay.enabledHint": "نمایش اسنپ‌پی در روش‌های پرداخت ووکامرس.",
+		"snapppay.baseUrlHint": "معمولاً api.snapppay.ir — فقط در صورت اعلام رسمی تغییر دهید.",
+		"snapppay.flag.commission": "کمیسیون دسته",
+		"snapppay.flag.commissionHint": "محاسبهٔ کمیسیون بر اساس دسته‌بندی محصولات.",
+		"snapppay.flag.pdp": "ویجت صفحهٔ محصول",
+		"snapppay.flag.pdpHint": "نمایش وضعیت اقساط روی صفحهٔ محصول.",
+		"snapppay.flag.darkPdp": "حالت تیرهٔ ویجت",
+		"snapppay.flag.darkPdpHint": "ظاهر تیره برای ویجت صفحهٔ محصول.",
+		"snapppay.logsSubtitle": "رویدادها و پاسخ‌های اخیر اسنپ‌پی.",
+		"torobpay.enabled": "فعال‌سازی درگاه",
+		"torobpay.enabledHint": "نمایش ترب‌پی در روش‌های پرداخت ووکامرس.",
+		"torobpay.baseUrlHint": "معمولاً cpg.torobpay.com — فقط در صورت اعلام رسمی تغییر دهید.",
+		"torobpay.fetchCreds": "واکشی اعتبارنامه",
+		"torobpay.test": "تست اتصال",
+		"torobpay.nav.settings": "تنظیمات",
+		"torobpay.nav.display": "نمایش",
+		"torobpay.nav.orders": "سفارش‌ها",
+		"torobpay.nav.campaign": "کمپین",
+		"torobpay.nav.logs": "لاگ‌ها",
+		"torobpay.displaySubtitle": "ویجت، نشان و المان‌های نمایشی ترب‌پی در فروشگاه.",
+		"torobpay.ordersSubtitle": "سفارش‌های مرتبط با ترب‌پی و وضعیت پرداخت.",
+		"torobpay.logsSubtitle": "رویدادها و پاسخ‌های اخیر ترب‌پی.",
+		"torobpay.flag.disableRetry": "غیرفعال‌سازی تلاش مجدد",
+		"torobpay.flag.disableRetryHint": "اگر پرداخت ناموفق شد، دکمهٔ تلاش مجدد نشان داده نشود.",
+		"torobpay.flag.utmAuto": "ارسال خودکار UTM ترب",
+		"torobpay.flag.utmAutoHint": "پارامترهای UTM ترب به‌صورت خودکار به درخواست‌ها اضافه می‌شود.",
+		"torobpay.flag.utmExclusive": "فقط ترافیک UTM ترب",
+		"torobpay.flag.utmExclusiveHint": "درگاه فقط برای بازدیدکنندگانی که از لینک ترب آمده‌اند نمایش داده می‌شود.",
+		"torobpay.flag.widget": "ویجت صفحهٔ محصول",
+		"torobpay.flag.widgetHint": "نمایش وضعیت اقساط روی صفحهٔ محصول.",
+		"torobpay.flag.badge": "نشان ترب‌پی",
+		"torobpay.flag.badgeHint": "نمایش نشان کوچک ترب‌پی در فروشگاه.",
+		"torobpay.flag.marquee": "نوار متحرک",
+		"torobpay.flag.marqueeHint": "نمایش پیام متحرک ترب‌پی.",
+		"torobpay.flag.topbar": "نوار بالای سایت",
+		"torobpay.flag.topbarHint": "نمایش نوار اطلاع‌رسانی در بالای فروشگاه.",
+		"torobpay.flag.slider": "اسلایدر",
+		"torobpay.flag.sliderHint": "نمایش اسلایدر تبلیغاتی ترب‌پی.",
+		"torobpay.flag.smartDns": "DNS هوشمند",
+		"torobpay.flag.smartDnsHint": "در صورت اختلال، از مسیر جایگزین DNS استفاده می‌شود.",
+		"torobpay.field.dnsOverride": "آدرس جایگزین DNS",
+		"torobpay.field.dnsOverrideHint": "اختیاری؛ فقط اگر پشتیبانی ترب اعلام کرده باشد.",
+		"torobpay.probe": "بررسی وضعیت",
+		"torobpay.probed": "وضعیت بررسی شد",
+		"torobpay.refund": "استرداد",
+		"torobpay.refunded": "استرداد ثبت شد",
+		"torobpay.remoteStatus": "وضعیت از راه دور",
+		"digipay.nav.settings": "تنظیمات",
+		"digipay.nav.transactions": "تراکنش‌ها",
+		"digipay.officialNotice": "افزونه رسمی دیجی‌پی فعال است؛ برای جلوگیری از ثبت تکراری، درگاه وبینو ثبت نمی‌شود.",
+		"digipay.section.connectionHint": "محیط، OAuth و آدرس بازگشت دیجی‌پی.",
+		"digipay.section.merchant": "پذیرنده و تأمین‌کننده",
+		"digipay.section.merchantHint": "شناسه‌های فروشنده، تأمین‌کننده و دسته‌بندی در UPG.",
+		"digipay.section.checkoutHint": "عنوان چک‌اوت، دکمه، پیام‌ها و آیکون روش‌های دیجی‌پی.",
+		"digipay.field.titleIpg": "عنوان IPG",
+		"digipay.field.titleWallet": "عنوان کیف پول",
+		"digipay.field.titleCpg": "عنوان CPG",
+		"digipay.field.titleBpg": "عنوان BPG",
+		"digipay.field.descIpg": "توضیح IPG",
+		"digipay.field.descWallet": "توضیح کیف پول",
+		"digipay.field.descCpg": "توضیح CPG",
+		"digipay.field.descBpg": "توضیح BPG",
+		"digipay.transactionsSubtitle": "لاگ تراکنش‌های اخیر دیجی‌پی.",
+		"balePay.enabledHint": "نمایش بله‌پی در روش‌های پرداخت ووکامرس.",
+		"wallet.enabledHint": "اجازهٔ پرداخت از موجودی کیف پول مشتری.",
+		"wallet.sectionHint": "حداقل شارژ و عنوان نمایشی در تسویه‌حساب.",
+		"c2c.enabledHint": "نمایش کارت‌به‌کارت در روش‌های پرداخت ووکامرس.",
+		"c2c.cardsHint": "شماره کارت‌هایی که مشتری باید به آن‌ها واریز کند.",
+		"c2c.deadlineHint": "مهلت ارسال رسید پس از ثبت سفارش.",
+		"zarinpal.sandboxHint": "پرداخت‌های آزمایشی در محیط سندباکس زرین‌پال.",
+		"paymentsHub.zarinpalDesc": "پرداخت آنلاین زرین‌پال با پیگیری خودکار تراکنش‌ها.",
+		"paymentsHub.digipayDesc": "درگاه یکپارچه دیجی‌پی (IPG، اقساط، اعتبار و کیف پول).",
+		"paymentsHub.snapppayDesc": "خرید اقساطی اسنپ‌پی برای مشتریان واجدشرایط.",
+		"paymentsHub.torobpayDesc": "پرداخت اقساطی ترب‌پی با ویجت و کمپین فروشگاهی.",
+		"paymentsHub.balePayDesc": "پرداخت از طریق ربات بله.",
+		"paymentsHub.walletDesc": "پرداخت از موجودی کیف پول مشتری در فروشگاه.",
+		"paymentsHub.c2cDesc": "پرداخت کارت‌به‌کارت با ثبت رسید توسط مشتری.",
+		"common.copied": "کپی شد",
+		"common.copyFailed": "کپی انجام نشد",
+		"basalam.jobsCancelled": "جاب‌های در صف لغو شدند.",
+		"basalam.cancelJobsConfirm": "همهٔ جاب‌های در انتظار و در حال اجرا لغو شوند؟",
+		"basalam.jobError.cancelled": "لغو شد توسط کاربر",
+		"basalam.createAllQueued": "{{count}} محصول واجدشرایط به صف افزودن اضافه شد.",
+		"basalam.createAllNoneEligible": "هیچ محصول واجدشرایطی برای افزودن به باسلام نیست (تصویر، قیمت بالای ۱۰۰۰، موجودی، یا اتصال قبلی را بررسی کنید).",
+		"marketplace.module.shipping-module": "حمل‌ونقل",
+		"nav.module.shipping-module": "حمل‌ونقل",
+		"shipping.hubTitle": "حمل‌ونقل",
+		"shipping.hubHint": "هاب ارسال، بسته‌بندی، تاپین، ابزارها، شهرها، نقشه و قوانین حمل.",
+		"shipping.packagingTitle": "بسته‌بندی پستی",
+		"shipping.packagingCardHint": "جعبه‌های استاندارد پست ایران (سایز ۱ تا ۹)، قیمت هر جعبه و افزودن به هزینه ارسال مشتری.",
+		"shipping.packagingHint": "ابعاد جعبه‌ها ثابت است؛ فقط قیمت و فعال بودن هر سایز را تنظیم کنید. محصولات و تنوع‌ها باید طول/عرض/ارتفاع داشته باشند.",
+		"shipping.openPackaging": "تنظیمات بسته‌بندی",
+		"shipping.zonesTitle": "مناطق ارسال ووکامرس",
+		"shipping.zonesHint": "مناطق و روش‌های ارسال کلاسیک ووکامرس (از جمله فعال‌سازی روش بسته‌بندی).",
+		"shipping.openZones": "باز کردن مناطق ارسال",
+		"shipping.methodSetupTitle": "فعال‌سازی در چک‌اوت",
+		"shipping.methodSetupHint": "در مناطق ارسال، روش «بسته‌بندی پستی وبینو» (Webino packaging) را به زون موردنظر اضافه کنید. اگر سوییچ «افزودن به هزینه ارسال» روشن باشد، جمع قیمت جعبه‌های انتخاب‌شده به مشتری محاسبه می‌شود.",
+		"shipping.checkoutToggleTitle": "هزینه در چک‌اوت",
+		"shipping.checkoutToggleHint": "با خاموش کردن، پیشنهاد جعبه روی سفارش باقی می‌ماند ولی به مشتری شارژ نمی‌شود.",
+		"shipping.addPackagingToCheckout": "افزودن هزینه جعبه‌ها به ارسال مشتری",
+		"shipping.professionalFeeTitle": "بسته‌بندی حرفه‌ای (هزینه ثابت)",
+		"shipping.professionalFeeHint": "گزینهٔ اختیاری در سبد و چک‌اوت. به‌صورت پیش‌فرض با انتخاب آن هزینه جعبه پستی شارژ نمی‌شود (بدون شارژ مضاعف).",
+		"shipping.professionalFeeEnable": "فعال‌سازی بسته‌بندی حرفه‌ای",
+		"shipping.professionalFeeLabel": "عنوان",
+		"shipping.professionalFeeLabelPlaceholder": "بسته‌بندی حرفه‌ای",
+		"shipping.professionalFeeAmount": "مبلغ ثابت",
+		"shipping.professionalFeeDescription": "توضیح کوتاه برای مشتری",
+		"shipping.professionalFeeDescriptionPlaceholder": "بسته‌بندی شکیل و ایمن با لوازم محافظ",
+		"shipping.professionalFeeDefaultOn": "به‌صورت پیش‌فرض انتخاب‌شده باشد",
+		"shipping.professionalFeeReplacesCarton": "با انتخاب بسته‌بندی حرفه‌ای، هزینه جعبه پستی شارژ نشود (جلوگیری از شارژ مضاعف)",
+		"shipping.professionalFeeOrderSelected": "بسته‌بندی حرفه‌ای انتخاب شده",
+		"shipping.boxesTitle": "جعبه‌های استاندارد پست",
+		"shipping.boxesHint": "ابعاد به سانتی‌متر؛ قیمت به واحد پول فروشگاه.",
+		"shipping.boxSize": "سایز",
+		"shipping.boxDims": "ابعاد",
+		"shipping.boxPrice": "قیمت",
+		"shipping.boxTare": "وزن خالی (گرم)",
+		"shipping.boxEnabled": "فعال",
+		"shipping.sizeN": "سایز {{n}}",
+		"shipping.orderPackagingTitle": "بسته‌بندی سفارش",
+		"shipping.recalcPlan": "محاسبه مجدد",
+		"shipping.recalcOk": "پلن بسته‌بندی به‌روز شد.",
+		"shipping.noPackagingPlan": "هنوز پلنی ثبت نشده. محاسبه مجدد را بزنید.",
+		"shipping.boxCount": "{{count}} جعبه",
+		"shipping.oversized": "بزرگ‌تر از استاندارد",
+		"shipping.basalamWeightTitle": "سینک وزن با باسلام",
+		"shipping.basalamWeightHint": "وزن محصول/تنوع به‌عنوان weight و وزن خالی کوچک‌ترین جعبهٔ مناسب به‌عنوان بخشی از package_weight به باسلام فرستاده می‌شود. اگر ماژول حمل‌ونقل خاموش باشد، از «وزن بسته‌بندی» پیش‌فرض باسلام استفاده می‌شود.",
+		"basalam.packagingWeightHint": "با ماژول حمل‌ونقل فعال: package_weight = وزن کالا + وزن خالی جعبهٔ پستی. فیلد «وزن بسته‌بندی» فقط وقتی ماژول حمل‌ونقل در دسترس نباشد به‌عنوان fallback است.",
+		"marketplace.module.tapin-module": "تاپین",
+		"nav.module.tapin-module": "تاپین",
+		"tapin.settingsTitle": "ارسال تاپین",
+		"tapin.settingsSubtitle": "اتصال فروشگاه، روش‌های ارسال، تعرفه و ثبت مرسوله — ساده و یکجا.",
+		"tapin.hubCardTitle": "تاپین",
+		"tapin.hubCardHint": "پیشتاز، ویژه، تیپاکس و پیک؛ ثبت بارکد و برچسب از داشبورد.",
+		"tapin.openSettings": "تنظیمات تاپین",
+		"tapin.tabConnect": "اتصال",
+		"tapin.tabOrigin": "مبدأ",
+		"tapin.tabMethods": "روش‌ها",
+		"tapin.tabTariffs": "تعرفه",
+		"tapin.tabShip": "ثبت مرسوله",
+		"tapin.tabNotify": "اطلاع به مشتری",
+		"tapin.connectTitle": "اتصال فروشگاه",
+		"tapin.connectHint": "توکن وب‌سرویس را از پنل تاپین بگیرید و فروشگاه را انتخاب کنید.",
+		"tapin.enabled": "فعال بودن ارسال تاپین",
+		"tapin.token": "توکن اتصال",
+		"tapin.tokenPlaceholder": "توکن را اینجا وارد کنید",
+		"tapin.testConnection": "بررسی اتصال",
+		"tapin.syncLocations": "به‌روزرسانی استان و شهر",
+		"tapin.shop": "فروشگاه",
+		"tapin.pickShop": "انتخاب فروشگاه",
+		"tapin.connected": "اتصال برقرار شد.",
+		"tapin.connectFailed": "اتصال برقرار نشد.",
+		"tapin.needShop": "فروشگاه را انتخاب کنید تا آماده‌سازی کامل شود.",
+		"tapin.needLocations": "یک‌بار «به‌روزرسانی استان و شهر» را بزنید.",
+		"tapin.readyHint": "همه‌چیز برای محاسبه هزینه و ثبت مرسوله آماده است.",
+		"tapin.locationsCount": "{{count}} استان در فهرست",
+		"tapin.originTitle": "مبدأ ارسال",
+		"tapin.originHint": "استان و شهری که بسته‌ها از آنجا جمع‌آوری می‌شوند.",
+		"tapin.province": "استان",
+		"tapin.city": "شهر",
+		"tapin.pickProvince": "انتخاب استان",
+		"tapin.pickCity": "انتخاب شهر",
+		"tapin.methodsTitle": "روش‌های ارسال",
+		"tapin.methodsHint": "روش‌های فعال را روشن کنید و در مناطق ارسال ووکامرس اضافه‌شان کنید.",
+		"tapin.methodPishtaz": "پیشتاز",
+		"tapin.methodVip": "پست ویژه",
+		"tapin.methodTipax": "تیپاکس",
+		"tapin.methodCourier": "پیک موتوری",
+		"tapin.courierPrice": "هزینه پایه پیک",
+		"tapin.freeMin": "ارسال رایگان از مبلغ",
+		"tapin.extraPercent": "افزایش درصدی هزینه",
+		"tapin.zonesReminder": "بعد از ذخیره، هر روش را به منطقه ارسال فروشگاه اضافه کنید.",
+		"tapin.tariffsTitle": "تعرفه پشتیبان",
+		"tapin.tariffsHint": "اگر استعلام لحظه‌ای در دسترس نباشد، از این جدول استفاده می‌شود. وزن به گرم است.",
+		"tapin.addRow": "ردیف جدید",
+		"tapin.minWeight": "از وزن",
+		"tapin.maxWeight": "تا وزن",
+		"tapin.price": "هزینه",
+		"tapin.shipTitle": "ثبت مرسوله",
+		"tapin.shipHint": "می‌توانید فقط هزینه را حساب کنید، یا مرسوله را هم در تاپین ثبت کنید.",
+		"tapin.autoRegister": "ثبت خودکار هنگام تغییر وضعیت سفارش",
+		"tapin.autoRegisterWhen": "ثبت خودکار در وضعیت",
+		"tapin.statusProcessing": "در حال انجام",
+		"tapin.statusPackaged": "بسته‌بندی‌شده",
+		"tapin.statusCompleted": "تکمیل‌شده",
+		"tapin.registerType": "نوع ثبت",
+		"tapin.registerType0": "بدون بارکد",
+		"tapin.registerType1": "با بارکد — آماده پرینت",
+		"tapin.registerType2": "با بارکد — آماده ارسال",
+		"tapin.insurance": "بیمه مرسوله",
+		"tapin.notifyTitle": "اطلاع به مشتری",
+		"tapin.notifyHint": "پیامک و اعلان از تنظیمات فروشگاه شما ارسال می‌شود.",
+		"tapin.notifyBody": "وقتی بارکد ثبت شود، همان اعلان‌های «پست» در پنل پیامک فروشگاه فعال می‌شوند. متن و روشن/خاموش بودن را آنجا تنظیم کنید.",
+		"tapin.openSms": "تنظیمات پیامک فروشگاه",
+		"tapin.orderTitle": "ارسال تاپین",
+		"tapin.saveAddress": "ذخیره استان و شهر",
+		"tapin.barcode": "بارکد",
+		"tapin.noBarcode": "هنوز بارکدی ثبت نشده است.",
+		"tapin.registerShipment": "ثبت ارسال",
+		"tapin.printLabel": "برچسب",
+		"tapin.refreshStatus": "بروزرسانی وضعیت",
+		"shipping.toolsTitle": "ابزارهای حمل",
+		"shipping.toolsHint": "مخفی نرخ، وزن، ابزارهای Pro (عنوان رایگان، کشور، اولین سفارش)، وضعیت‌ها و تصویر روش.",
+		"shipping.toolsCardHint": "تنظیمات سراسری نرخ و وزن و وضعیت سفارش.",
+		"shipping.openTools": "باز کردن ابزارها",
+		"shipping.toolsRatesTitle": "نمایش نرخ‌ها",
+		"shipping.hideWhenFree": "مخفی کردن سایر روش‌ها وقتی ارسال رایگان هست",
+		"shipping.hideWhenCourier": "فقط نمایش پیک وقتی پیک موجود است",
+		"shipping.statusEnable": "فعال‌سازی وضعیت‌های سفارشی حمل",
+		"shipping.toolsWeightTitle": "وزن‌ها",
+		"shipping.defaultProductWeight": "وزن پیش‌فرض محصول (گرم)",
+		"shipping.defaultPackageWeight": "وزن بسته‌بندی اضافه (گرم)",
+		"shipping.postWeightLimit": "سقف وزن پست (کیلو)",
+		"shipping.methodImagesTitle": "تصویر روش‌های ارسال",
+		"shipping.methodImagesHint": "URL تصویر برای نمایش در چک‌اوت.",
+		"shipping.citiesTitle": "شهرها و محله‌ها",
+		"shipping.citiesHint": "استان‌ها و شهرها به‌صورت خودکار آماده‌اند؛ محله، قیمت انبوه و زون شهری را از اینجا مدیریت کنید.",
+		"shipping.citiesCardHint": "taxonomy شهرها، محله و قیمت به ازای متد زون.",
+		"shipping.openCities": "مدیریت شهرها",
+		"shipping.reinstallCities": "بروزرسانی / تکمیل شهرها",
+		"shipping.pickState": "انتخاب استان",
+		"shipping.citiesInstalled": "لیست استان‌ها و شهرها آماده است.",
+		"shipping.citiesNotInstalled": "در حال آماده‌سازی خودکار لیست شهرها…",
+		"shipping.citiesLoading": "در حال بارگذاری شهرها…",
+		"shipping.citiesSeeding": "لیست در حال تکمیل خودکار است؛ یک‌بار دیگر صفحه را باز کنید یا بروزرسانی را بزنید.",
+		"shipping.citiesSeedProgress": "{{done}} از {{total}} استان",
+		"shipping.bulkPrices": "قیمت انبوه شهری",
+		"shipping.tipaxOn": "تیپاکس فعال",
+		"shipping.createZonesFromCities": "ساخت زون از شهرها (۲۰ اول)",
+		"shipping.zonesCreated": "زون‌ها ساخته شد.",
+		"shipping.mapTitle": "نقشه ارسال",
+		"shipping.mapHint": "پین موقعیت در چک‌اوت و سفارش، فاصله تا فروشگاه.",
+		"shipping.mapCardHint": "OSM / نشان / Map.ir و پین اجباری.",
+		"shipping.openMap": "تنظیمات نقشه",
+		"shipping.mapEnabled": "فعال بودن نقشه در چک‌اوت",
+		"shipping.mapRequired": "اجباری بودن پین موقعیت",
+		"shipping.mapProvider": "ارائه‌دهنده",
+		"shipping.mapPlacement": "محل نمایش",
+		"shipping.mapAfterNotes": "بعد از یادداشت سفارش",
+		"shipping.mapBeforeDetails": "قبل از جزئیات مشتری",
+		"shipping.mapDistance": "محاسبه فاصله",
+		"shipping.mapDistNone": "بدون فاصله",
+		"shipping.mapDistDirect": "خط مستقیم",
+		"shipping.mapDistReal": "مسیریابی ORS",
+		"shipping.storeLat": "عرض جغرافیایی فروشگاه",
+		"shipping.storeLng": "طول جغرافیایی فروشگاه",
+		"shipping.orderMapTitle": "موقعیت روی نقشه",
+		"shipping.rulesTitle": "قوانین حمل",
+		"shipping.rulesHint": "قوانین چندشرطی و چنداکشنی روی نرخ‌های چک‌اوت.",
+		"shipping.rulesCardHint": "قوانین حرفه‌ای: مخفی‌کردن، رایگان، تغییر قیمت.",
+		"shipping.openRules": "مدیریت قوانین",
+		"shipping.addRule": "قانون جدید",
+		"shipping.ruleN": "قانون {{n}}",
+		"shipping.ruleTitle": "عنوان",
+		"shipping.rulePriority": "اولویت",
+		"shipping.condType": "نوع شرط",
+		"shipping.condValue": "مقدار شرط",
+		"shipping.actionType": "نوع اکشن",
+		"shipping.actionMethod": "شناسه روش",
+		"shipping.actionValue": "مقدار اکشن",
+		"tapin.gateway": "درگاه سرویس",
+		"tapin.showCredit": "نمایش اعتبار",
+		"tapin.credit": "اعتبار",
+		"tapin.methodTipaxApi": "تیپاکس تاپین",
+		"tapin.methodAlonomic": "الونومیک تاپین",
+		"tapin.courierPerKg": "هزینه هر کیلو پیک",
+		"tapin.extraFixed": "افزایش مبلغ ثابت",
+		"tapin.defaultBox": "جعبه پیش‌فرض",
+		"tapin.usePwsFormula": "فرمول تعرفه کامل (آفلاین PWS)",
+		"tapin.syncPackingBoxes": "همگام‌سازی جعبه‌های تاپین",
+		"tapin.payType": "نوع پرداخت ارسال",
+		"tapin.employeeCode": "کد کارمند",
+		"tapin.tipaxPickup": "نوع جمع‌آوری تیپاکس",
+		"tapin.tipaxDelivery": "نوع تحویل تیپاکس",
+		"tapin.boxSize": "سایز جعبه / پاکت",
+		"tapin.contentType": "نوع محتوا",
+		"tapin.orderWeight": "وزن (گرم)",
+		"tapin.saveParcelMeta": "ذخیره مشخصات بسته",
+		"tapin.status": "وضعیت تاپین",
+		"tapin.readyToShip": "آماده به ارسال",
+		"shipping.proUxTitle": "ابزارهای حرفه‌ای چک‌اوت",
+		"shipping.freeShippingTitle": "عنوان ارسال رایگان",
+		"shipping.hideCountry": "مخفی‌سازی فیلد کشور",
+		"shipping.swapStateCity": "جابجایی استان و شهر",
+		"shipping.disableDefaultMethod": "عدم انتخاب پیش‌فرض روش ارسال",
+		"shipping.freeFirstOrder": "ارسال رایگان اولین سفارش",
+		"shipping.honorFreeCoupon": "احترام به کوپن ارسال رایگان",
+		"shipping.citySearch": "جستجوی سریع شهر",
+		"shipping.citySearchPlaceholder": "حداقل ۲ حرف بنویسید…",
+		"shipping.districtsTitle": "محله‌ها",
+		"shipping.districtsHint": "محله را زیر شهر اضافه کنید؛ در چک‌اوت و حساب کاربری نمایش داده می‌شود.",
+		"shipping.districtName": "نام محله",
+		"shipping.addDistrict": "افزودن محله",
+		"shipping.noDistricts": "هنوز محله‌ای برای این شهر نیست.",
+		"shipping.conditions": "شرط‌ها (همه باید برقرار باشند)",
+		"shipping.actions": "اکشن‌ها",
+		"shipping.addCondition": "افزودن شرط",
+		"shipping.addAction": "افزودن اکشن",
+		"common.create": "ایجاد",
+		"tapin.opsTitle": "عملیات تاپین",
+		"tapin.opsHint": "لیست مرسوله، وضعیت/برچسب گروهی و گزارش وضعیت.",
+		"tapin.openOps": "باز کردن عملیات",
+		"tapin.financeTitle": "مالی تاپین",
+		"tapin.financeHint": "اعتبار، شارژ، تاریخچه و جزئیات فروشگاه.",
+		"tapin.openFinance": "باز کردن مالی",
+		"tapin.catalogTitle": "کاتالوگ تاپین",
+		"tapin.catalogHint": "محصولات، مشتریان، کارمندان و کارها.",
+		"tapin.openCatalog": "باز کردن کاتالوگ",
+		"tapin.editShipment": "ویرایش مرسوله",
+		"tapin.printLabelNative": "برچسب اختصاصی",
+		"tapin.printBarcode": "بارکد HTML",
+		"tapin.fetchDetail": "دریافت جزئیات",
+		"tapin.kiosk": "کیوسک",
+		"tapin.kioskNone": "بدون کیوسک",
+		"tapin.defaultKiosk": "کیوسک پیش‌فرض",
+		"tapin.tapinOrderId": "شناسه سفارش تاپین",
+		"tapin.tapinOrdersList": "مرسوله‌های تاپین",
+		"tapin.bulkOps": "عملیات گروهی (شناسه سفارش ووکامرس)",
+		"tapin.wcOrderIds": "شناسه سفارش‌های ووکامرس",
+		"tapin.bulkStatus": "کد وضعیت تاپین",
+		"tapin.applyBulkStatus": "اعمال وضعیت گروهی",
+		"tapin.bulkLabels": "برچسب HTML گروهی",
+		"tapin.fromDate": "از تاریخ",
+		"tapin.toDate": "تا تاریخ",
+		"tapin.labelsByDate": "برچسب بر اساس تاریخ",
+		"tapin.changeReport": "گزارش تغییر وضعیت",
+		"tapin.lastChange": "آخرین تغییر وضعیت",
+		"tapin.recipient": "گیرنده",
+		"tapin.topupAmount": "مبلغ شارژ (ریال)",
+		"tapin.startTopup": "شروع شارژ",
+		"tapin.creditHistory": "تاریخچه شارژ",
+		"tapin.createdAt": "تاریخ ایجاد",
+		"tapin.shopDetail": "جزئیات فروشگاه",
+		"tapin.products": "محصولات",
+		"tapin.customers": "مشتریان",
+		"tapin.employees": "کارمندان",
+		"tapin.tasks": "کارها",
+		"tapin.createProduct": "ایجاد محصول تاپین",
+		"tapin.productTitle": "عنوان محصول",
+		"tapin.pushWcProduct": "ارسال محصول ووکامرس به تاپین",
+		"tapin.wcProductId": "شناسه محصول ووکامرس",
+		"tapin.syncToTapin": "همگام‌سازی با تاپین",
+		"tapin.mobile": "موبایل",
+		"tapin.taskDetail": "جزئیات کار",
+		"tapin.clearLocal": "پاک‌سازی متای محلی تاپین",
+		"tapin.clearLocalConfirm": "متای محلی (بارکد/شناسه) پاک شود تا دوباره ثبت کنید؟ مرسوله در تاپین حذف نمی‌شود.",
+		"tapin.createShop": "ایجاد فروشگاه تاپین",
+		"tapin.shopName": "نام فروشگاه",
+		"tapin.firstName": "نام",
+		"tapin.lastName": "نام خانوادگی",
+		"tapin.productCategories": "دسته‌بندی محصولات",
+		"tapin.customerCategories": "دسته‌بندی مشتریان",
+		"tapin.statusReport": "گزارش وضعیت",
+		"tapin.tapinOrderIds": "شناسه/UUID سفارش‌های تاپین",
+		"tapin.fetchStatusReport": "دریافت گزارش وضعیت",
+		"nav.module.analytics-commerce": "فروش",
+		"nav.module.analytics-compare": "ترافیک تطبیقی",
+		"nav.module.analytics-seo": "سئو",
+		"nav.module.analytics-support": "پشتیبانی",
+		"nav.module.analytics-content": "محتوا",
+		"nav.module.analytics-month-summary": "خلاصه ماه",
+		"nav.module.analytics-module-commerce": "فروش",
+		"nav.module.analytics-module-compare": "ترافیک تطبیقی",
+		"nav.module.analytics-module-seo": "سئو",
+		"nav.module.analytics-module-support": "پشتیبانی",
+		"nav.module.analytics-module-content": "محتوا",
+		"nav.module.analytics-module-month-summary": "خلاصه ماه",
+		"analytics.sections.commerce": "فروش",
+		"analytics.sections.compare": "ترافیک تطبیقی",
+		"analytics.sections.seo": "سئو",
+		"analytics.sections.support": "پشتیبانی",
+		"analytics.sections.content": "محتوا",
+		"analytics.sections.monthSummary": "خلاصه ماه",
+		"analytics.kpi.orders": "تعداد سفارش",
+		"analytics.kpi.revenue": "مبلغ کل فروش",
+		"analytics.kpi.aov": "میانگین ارزش سفارش",
+		"analytics.kpi.conversion": "نرخ تبدیل بازدید به خرید",
+		"analytics.kpi.salesSite": "فروش از سایت",
+		"analytics.kpi.salesInstagram": "فروش از اینستاگرام",
+		"analytics.kpi.salesOther": "فروش از سایر",
+		"analytics.kpi.newCustomers": "مشتریان جدید",
+		"analytics.kpi.returningCustomers": "مشتریان تکراری",
+		"analytics.compare.metric": "شاخص",
+		"analytics.compare.thisMonth": "این ماه",
+		"analytics.compare.lastMonth": "ماه قبل",
+		"analytics.compare.change": "درصد تغییر",
+		"analytics.compare.visitors": "بازدیدکننده یکتا",
+		"analytics.compare.views": "صفحه دیده‌شده",
+		"analytics.compare.avgDuration": "میانگین زمان ماندگاری",
+		"analytics.compare.bounce": "نرخ پرش",
+		"analytics.compare.topSources": "منابع ورودی اصلی",
+		"analytics.compare.topPages": "صفحات پربازدید",
+		"analytics.compare.siteConversion": "نرخ تبدیل کلی سایت",
+		"analytics.compare.sessionNote": "پس از جمع‌آوری نشست‌ها نمایش داده می‌شود.",
+		"analytics.seo.keywords": "کلمات کلیدی کارشده",
+		"analytics.seo.optimizedPages": "صفحات بهینه‌سازی‌شده",
+		"analytics.seo.internalLinks": "لینک‌سازی داخلی",
+		"analytics.seo.externalLinks": "لینک‌سازی خارجی",
+		"analytics.seo.noindexShare": "سهم noindex (Rank Math)",
+		"analytics.seo.rankPlaceholder": "رتبه واقعی نیاز به اتصال Search Console دارد.",
+		"analytics.seo.indexPlaceholder": "وضعیت ایندکس واقعی نیاز به اتصال Search Console دارد.",
+		"analytics.seo.gscMissing": "Search Console متصل نیست",
+		"analytics.support.tickets": "تیکت‌های ایجادشده",
+		"analytics.support.replies": "پیام پاسخ‌داده‌شده",
+		"analytics.support.csat": "رضایت مشتریان",
+		"analytics.support.csatCount": "تعداد امتیاز",
+		"analytics.support.frequent": "مشکلات پرتکرار",
+		"analytics.support.rateLabel": "امتیاز رضایت (۱ تا ۵)",
+		"analytics.content.productsCreated": "محصولات درج‌شده",
+		"analytics.content.productsUpdated": "محصولات به‌روزرسانی‌شده",
+		"analytics.content.postsPublished": "محتوای بلاگ منتشرشده",
+		"analytics.content.aiProducts": "محصولات تکمیل‌شده با هوش مصنوعی",
+		"analytics.content.aiBlog": "بلاگ نوشته‌شده با هوش مصنوعی",
+		"analytics.content.aiPages": "صفحات تکمیل‌شده با هوش مصنوعی",
+		"analytics.pct": "درصد تغییر",
+		"analytics.col.metric": "شاخص",
+		"analytics.col.count": "تعداد",
+		"analytics.col.subject": "موضوع",
+		"analytics.monthSummary.score": "امتیاز ماه",
+		"analytics.monthSummary.status.growth": "رشد",
+		"analytics.monthSummary.status.stable": "پایدار",
+		"analytics.monthSummary.status.decline": "افت",
+		"analytics.monthSummary.achievement": "دستاورد برتر",
+		"analytics.monthSummary.challenge": "چالش اصلی",
+		"analytics.monthSummary.noAchievement": "بدون رشد قابل‌توجه",
+		"analytics.monthSummary.noChallenge": "چالش برجسته‌ای شناسایی نشد",
+		"analytics.monthSummary.kpi.revenue": "درآمد",
+		"analytics.monthSummary.kpi.orders": "تعداد سفارش",
+		"analytics.monthSummary.kpi.visitors": "بازدیدکننده یکتا",
+		"analytics.monthSummary.kpi.conversion": "نرخ تبدیل",
+		"migrate.title": "مهاجرت کامل به سیستم اختصاصی وبینو",
+		"migrate.description": "فروشگاه ووکامرس را به‌صورت دسته‌ای و قابل‌ادامه به مستاجر وبینو بفرستید. نمونه: parisma.ir به parisma.webinaagency.ir.",
+		"migrate.connection": "اتصال",
+		"migrate.schema": "طرح داده: {{schema}}",
+		"migrate.siteUrl": "آدرس سایت وبینو",
+		"migrate.token": "توکن API",
+		"migrate.tokenSaved": "ذخیره شده ({{hint}}). برای جایگزینی، توکن جدید وارد کنید.",
+		"migrate.clearToken": "حذف توکن ذخیره‌شده",
+		"migrate.batchSize": "اندازه دسته",
+		"migrate.delay": "فاصله بین دسته‌ها (میلی‌ثانیه)",
+		"migrate.timeout": "مهلت هر درخواست (ثانیه)",
+		"migrate.dryRun": "پیش‌نمایش (ساخت دسته بدون ارسال)",
+		"migrate.dryRunBadge": "پیش‌نمایش",
+		"migrate.entities": "موارد مهاجرت",
+		"migrate.mode": "دامنه",
+		"migrate.modeFull": "کامل (همه‌چیز)",
+		"migrate.modeSelective": "انتخابی",
+		"migrate.modeHint": "حالت کامل همه منابع را روشن می‌کند. حالت انتخابی فقط جعبه‌های علامت‌خورده را می‌فرستد. منبعی که وبینو هنوز وارد نمی‌کند با هشدار رد می‌شود و بقیه کار ادامه پیدا می‌کند.",
+		"migrate.unsupported": "منتظر واردکننده وبینو",
+		"migrate.entity.media": "تصاویر",
+		"migrate.entity.media_files": "سایر رسانه‌ها (ویدیو، PDF، SVG)",
+		"migrate.entity.categories": "دسته‌های محصول",
+		"migrate.entity.tags": "برچسب‌های محصول",
+		"migrate.entity.brands": "برندها",
+		"migrate.entity.customers": "مشتریان",
+		"migrate.entity.staff": "کارکنان (دعوت، بدون رمز)",
+		"migrate.entity.products": "محصولات و متغیرها",
+		"migrate.entity.coupons": "کوپن‌ها",
+		"migrate.entity.reviews": "دیدگاه‌ها و امتیاز محصول",
+		"migrate.entity.pages": "برگه‌ها",
+		"migrate.entity.posts": "نوشته‌ها",
+		"migrate.entity.elementor_templates": "قالب‌های المنتور",
+		"migrate.entity.orders": "سفارش‌ها",
+		"migrate.entity.menus": "فهرست‌ها",
+		"migrate.entity.redirects": "ریدایرکت‌ها",
+		"migrate.entity.settings": "تنظیمات فروشگاه",
+		"migrate.entity.stats": "آمار روزانه",
+		"migrate.entity.waiting_list": "لیست انتظار",
+		"migrate.entity.permalinks": "نقشه پیوندها",
+		"migrate.entity.review_queue": "صف بررسی (کیف پول، تیکت، مرجوعی)",
+		"migrate.endpoints": "مسیرهای API",
+		"migrate.save": "ذخیره تنظیمات",
+		"migrate.saved": "تنظیمات مهاجرت ذخیره شد.",
+		"migrate.test": "آزمایش اتصال",
+		"migrate.testOk": "اتصال برقرار شد.",
+		"migrate.progress": "پیشرفت",
+		"migrate.notStarted": "هنوز مهاجرتی شروع نشده است.",
+		"migrate.start": "شروع مهاجرت",
+		"migrate.resume": "ادامه",
+		"migrate.pause": "توقف",
+		"migrate.reset": "پاک کردن وضعیت",
+		"migrate.confirmStart": "مهاجرت از ابتدا شروع شود؟ پیشرفت فعلی این کار پاک می‌شود.",
+		"migrate.confirmReset": "وضعیت مهاجرت پاک شود؟",
+		"migrate.passwordNote": "هش رمز مشتریان منتقل نمی‌شود. ورود در وبینو با کد یکبارمصرف یا بازنشانی رمز است. بستن این صفحه کار در حال اجرا را قطع نمی‌کند؛ کرون وردپرس هر دقیقه یک دسته می‌فرستد.",
+		"migrate.status.idle": "آماده",
+		"migrate.status.running": "در حال اجرا",
+		"migrate.status.paused": "متوقف",
+		"migrate.status.failed": "ناموفق",
+		"migrate.status.completed": "کامل شد"
 	};
-})), fp = /* @__PURE__ */ k({ default: () => pp }), pp, mp = ee((() => {
-	pp = {
+})), yp = /* @__PURE__ */ A({ default: () => bp }), bp, xp = k((() => {
+	bp = {
 		"app.title": "Dashboard",
 		"chart.totalVisitors": "Total visitors",
 		"chart.descriptionLong": "Total for the last 3 months",
@@ -12602,7 +14079,34 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"nav.module.pages": "Site pages",
 		"nav.module.shop": "Store",
 		"nav.module.products": "Products",
+		"nav.module.product-catalog": "Product database",
 		"nav.module.product-new": "Add product",
+		"catalog.pageTitle": "Product database",
+		"catalog.pageDesc": "Search external product databases and add a draft product to your store.",
+		"catalog.settingsLink": "API keys",
+		"catalog.settingsTitle": "Product catalog settings",
+		"catalog.settingsDesc": "Free sources work without keys. Add keys for Google Books, BarcodeNest, GTINHub, and Buycott.",
+		"catalog.settingsSaved": "Settings saved",
+		"catalog.keyGoogleBooks": "Google Books API key",
+		"catalog.keyBarcodeNest": "BarcodeNest API key",
+		"catalog.keyGtinHub": "GTINHub API key",
+		"catalog.keyBuycott": "Buycott access token",
+		"catalog.cat.food": "Food & grocery",
+		"catalog.cat.beauty": "Beauty",
+		"catalog.cat.pet": "Pet food",
+		"catalog.cat.general": "General products",
+		"catalog.cat.books": "Books",
+		"catalog.cat.merchandise": "Electronics & general",
+		"catalog.searchLabel": "Search",
+		"catalog.searchPlaceholder": "Product name…",
+		"catalog.barcodeLabel": "Barcode",
+		"catalog.search": "Search",
+		"catalog.searching": "Searching…",
+		"catalog.empty": "No results",
+		"catalog.addDraft": "Add to site",
+		"catalog.imported": "Draft product created",
+		"catalog.openProduct": "Open",
+		"catalog.loadMore": "Load more",
 		"nav.module.brands": "Brands",
 		"nav.module.product-cats": "Product categories",
 		"nav.module.attributes": "Attributes",
@@ -12649,12 +14153,20 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"nav.module.tickets": "Tickets",
 		"nav.module.order-reports": "Reports",
 		"nav.module.marketing": "Marketing",
-		"nav.module.coupons": "Coupons",
+		"nav.module.coupons": "Coupon builder",
+		"nav.module.sale-prices": "Strikethrough prices",
 		"nav.module.users": "Users",
 		"nav.module.user-list": "Users",
 		"nav.module.user-new": "New user",
 		"nav.module.user-employees": "Employees",
 		"nav.module.comments": "Comments",
+		"nav.module.security-module": "Security",
+		"nav.module.security-overview": "Overview",
+		"nav.module.security-firewall": "Firewall",
+		"nav.module.security-scan": "Site scan",
+		"nav.module.security-tools": "Tools",
+		"nav.module.security-reports": "Reports",
+		"nav.module.security-settings": "Settings",
 		"nav.module.analytics": "Analytics",
 		"nav.module.analytics-overview": "Overview",
 		"nav.module.analytics-visitors": "Visitor analytics",
@@ -12826,6 +14338,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"home.traffic.onlineVisitors": "Online visitors",
 		"home.traffic.recentDays": "Recent days",
 		"home.panels.license": "License",
+		"home.panels.security": "Security",
+		"home.panels.securityHint": "WAF {{mode}} · {{findings}} open findings",
 		"home.panels.active": "Active",
 		"home.panels.inactive": "Inactive",
 		"home.panels.webhookOk": "Webhook OK",
@@ -13001,6 +14515,16 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"torobExtractor.autoSync": "Auto sync",
 		"torobExtractor.syncInterval": "Sync interval (hours)",
 		"torobpay.title": "TorobPay",
+		"torobpay.displayTitle": "TorobPay display",
+		"torobpay.ordersTitle": "TorobPay orders",
+		"torobpay.campaignTitle": "TorobPay campaign",
+		"torobpay.logsTitle": "TorobPay logs",
+		"torobpay.description": "TorobPay installment BNPL — Webina first-party",
+		"torobpay.officialNotice": "Official TorobPay plugin is active — dashboard uses its settings.",
+		"torobpay.saved": "Saved",
+		"torobpay.testOk": "Connection OK",
+		"torobpay.credsOk": "Credentials fetched",
+		"torobpay.campaignHint": "Campaign results from TorobPay merchant API.",
 		"torobpay.pageTitle": "TorobPay Gateway",
 		"torobpay.runtimeStatus": "Runtime status",
 		"torobpay.wcReady": "WooCommerce",
@@ -13016,6 +14540,14 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"torobpay.apiKey": "API key",
 		"torobpay.sandbox": "Sandbox",
 		"snapppay.title": "SnappPay",
+		"snapppay.logsTitle": "SnappPay logs",
+		"snapppay.description": "SnappPay installment gateway — Webina first-party",
+		"snapppay.officialNotice": "Official SnappPay plugin is active — dashboard reads/writes its settings.",
+		"snapppay.saved": "Saved",
+		"snapppay.testOk": "Connection OK",
+		"snapppay.test": "Test connection",
+		"snapppay.enabled": "Enable gateway",
+		"snapppay.noLogs": "No logs yet.",
 		"snapppay.pageTitle": "SnappPay Gateway",
 		"snapppay.runtimeStatus": "Runtime status",
 		"snapppay.wcReady": "WooCommerce",
@@ -13029,12 +14561,12 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"snapppay.fieldTitle": "Title",
 		"snapppay.fieldDescription": "Description",
 		"snapppay.merchantId": "Merchant ID",
-		"snapppay.clientId": "Client ID",
-		"snapppay.clientSecret": "Client secret",
+		"snapppay.clientId": "Gateway username / client ID",
+		"snapppay.clientSecret": "Secret",
 		"snapppay.sandbox": "Sandbox",
 		"basalam.title": "Basalam",
-		"basalam.subtitle": "Full Basalam integration with your online store and dashboard.",
-		"basalam.settingsTitle": "Connection settings",
+		"basalam.subtitle": "Connect your Basalam booth to the store and manage orders and products.",
+		"basalam.settingsTitle": "Sync settings",
 		"basalam.statusTitle": "Operational status",
 		"basalam.coverageTitle": "Endpoint coverage",
 		"basalam.reconcileNow": "Run reconcile",
@@ -13044,29 +14576,76 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.subscriptionsTitle": "Basalam Subscriptions",
 		"basalam.webhooksTitle": "Basalam Webhooks",
 		"basalam.operationsTitle": "Basalam Operations",
-		"basalam.connection": "Connection",
+		"basalam.connection": "Booth connection",
 		"basalam.connectionHint": "Connect your Basalam booth via OAuth.",
-		"basalam.oauthWafHint": "First click Connect (Basalam SSO). An English CDN 403 page means the token was NOT saved yet — copy the full address-bar URL from that error page and paste it below. A JWT in the URL alone does not mean the dashboard is connected.",
+		"basalam.connectionHintWebina": "Connect via Webina SSO (webina.dev). Client secret never leaves WebinaCRM.",
+		"basalam.oauthWafHint": "First click Connect (Basalam SSO via Webina). If a CDN blocks the return URL, paste the full address-bar URL below.",
 		"basalam.oauthPasteTitle": "Complete connection from return URL",
-		"basalam.oauthPasteHint": "Paste the full address-bar URL from the 403 page (including access_token) and save. It posts via admin-ajax so the JWT never hits the CDN as a GET.",
-		"basalam.oauthPastePlaceholder": "https://yoursite.com/wp-admin/admin.php?page=basalam-save-token&access_token=…",
+		"basalam.oauthPasteHint": "Paste the full address-bar URL (including access_token) and save.",
+		"basalam.oauthPastePlaceholder": "https://yoursite.com/wp-admin/admin.php?page=webino_basalam-save-token&access_token=…",
 		"basalam.oauthPasteSave": "Save token from URL",
+		"basalam.manualTokenTitle": "Manual tokens (test / recovery)",
+		"basalam.manualTokenHint": "Paste vendor access and refresh tokens when SSO is unavailable.",
+		"basalam.manualTokenSave": "Save tokens",
+		"basalam.refreshToken": "Refresh token",
+		"basalam.tokenRefreshed": "Access token refreshed.",
+		"basalam.disconnect": "Disconnect",
+		"basalam.disconnected": "Basalam disconnected.",
+		"basalam.setupWebhook": "Enable automatic order intake",
+		"basalam.nav.home": "Home",
 		"basalam.connected": "Connected",
 		"basalam.notConnected": "Not connected",
-		"basalam.connectOAuth": "Connect with Basalam",
+		"basalam.connectOAuth": "Connect to Basalam",
 		"basalam.oauthMissingUrl": "OAuth URL missing",
-		"basalam.operations": "Operations",
+		"basalam.operations": "Store operations",
 		"basalam.operationsHint": "Sync products and orders with the Basalam engine.",
-		"basalam.pullOrders": "Pull orders",
-		"basalam.ordersPullQueued": "Order pull job queued.",
+		"basalam.pullOrders": "Fetch orders",
+		"basalam.pullOrdersDays": "Past orders lookback",
+		"basalam.pullDays.7": "7 days",
+		"basalam.pullDays.30": "30 days",
+		"basalam.pullDays.90": "90 days",
+		"basalam.pullDays.180": "180 days",
+		"basalam.pullDays.365": "365 days",
+		"basalam.ordersPullQueued": "Order pull for the last {{days}} days was queued.",
 		"basalam.webhook": "Order webhook URL",
 		"basalam.nav.products": "Products",
+		"basalam.nav.booth": "Booth",
 		"basalam.nav.orders": "Orders",
+		"basalam.archiveOne": "Archive",
+		"basalam.restoreOne": "Restore",
+		"basalam.connectOne": "Connect ID",
+		"basalam.boothTitle": "Basalam booth",
+		"basalam.boothSubtitle": "Profile, shipping, discounts, and buyer chat.",
+		"basalam.boothProfile": "Booth profile",
+		"basalam.boothProfileHint": "Update title and summary on Basalam.",
+		"basalam.saveBooth": "Save profile",
+		"basalam.boothSaved": "Booth profile saved.",
+		"basalam.shippingTitle": "Shipping profiles",
+		"basalam.shippingHint": "Basalam Shipping Service (profiles, carriers) — replaces deprecated Core shipping-methods.",
+		"basalam.saveShipping": "Save shipping methods",
+		"basalam.shippingSaved": "Shipping profile saved.",
+		"basalam.shippingProfileTitle": "New profile title",
+		"basalam.createShippingProfile": "Create profile",
+		"basalam.shippingProfileDeleted": "Shipping profile deleted.",
+		"basalam.webhookManage": "Webhooks",
+		"basalam.rotateWebhook": "Rotate secret & re-register",
+		"basalam.webhookRotated": "Webhook rotated.",
+		"basalam.webhookDeleted": "Webhook deleted.",
+		"basalam.discountsTitle": "Vendor discounts",
+		"basalam.discountsHint": "List and create discounts via Basalam API (JSON body).",
+		"basalam.createDiscount": "Create discount",
+		"basalam.discountCreated": "Discount created.",
+		"basalam.invalidJson": "Invalid JSON",
+		"basalam.chatTitle": "Buyer chat",
+		"basalam.chatHint": "Loads Basalam chat widget when connected.",
+		"basalam.chatLoaded": "Chat widget script injected.",
+		"basalam.chatDisabled": "Connect Basalam first to enable chat.",
+		"basalam.openAdminChat": "Open classic admin Basalam page",
 		"basalam.nav.categories": "Categories",
 		"basalam.nav.settings": "Settings",
 		"basalam.nav.finance": "Finance",
 		"basalam.nav.tickets": "Tickets",
-		"basalam.nav.logs": "Logs",
+		"basalam.nav.logs": "Sync status",
 		"basalam.productsTitle": "Basalam products",
 		"basalam.productsSubtitle": "Create, update, and auto-connect WooCommerce products to Basalam.",
 		"basalam.productActions": "Bulk actions",
@@ -13085,6 +14664,54 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.confirmOrder": "Confirm",
 		"basalam.cancelOrder": "Cancel",
 		"basalam.shipOrder": "Ship / tracking",
+		"basalam.delayOrder": "Request delay",
+		"basalam.delayDays": "Days",
+		"basalam.delayDesc": "Delay reason",
+		"basalam.cancelRequest": "Cancel request",
+		"basalam.cancelRequestDesc": "Cancel-request reason",
+		"basalam.createSettlement": "Create settlement",
+		"basalam.createSettlementHint": "Amount is in rials. Method depends on Basalam accounting API.",
+		"basalam.settlementAmountRial": "Amount (rial)",
+		"basalam.settlementMethod": "Method id",
+		"basalam.selectBank": "Bank account (optional)",
+		"basalam.submitSettlement": "Submit settlement",
+		"basalam.settlementCreatedOk": "Settlement created.",
+		"basalam.detectCategory": "Category detection",
+		"basalam.detectTitlePlaceholder": "Product title for Basalam category predict",
+		"basalam.runDetect": "Detect",
+		"basalam.detectOk": "Category predicted.",
+		"basalam.optionMaps": "Attribute option maps",
+		"basalam.wooAttrName": "Woo attribute name",
+		"basalam.basalamAttrName": "Basalam attribute name",
+		"basalam.saveOptionMap": "Save option map",
+		"basalam.optionMapSaved": "Option map saved.",
+		"basalam.selectiveSync": "Selective product field sync",
+		"basalam.syncAllFields": "All fields",
+		"basalam.syncCustomFields": "Custom fields",
+		"basalam.roundPrice": "Round price",
+		"basalam.addAttrToDesc": "Attrs → description",
+		"basalam.addShortDesc": "Short desc → description",
+		"basalam.allWholesale": "All products wholesale",
+		"basalam.capPrep": "Cap prep to category max",
+		"basalam.tasksAuto": "Auto tasks/minute",
+		"basalam.field.defaultStock": "Default stock",
+		"basalam.field.discountDays": "Discount days",
+		"basalam.field.discountPercent": "Discount %",
+		"basalam.field.customerPrefix": "Customer name prefix",
+		"basalam.field.customerSuffix": "Customer name suffix",
+		"basalam.field.videoMeta": "Video meta key",
+		"basalam.field.videoSource": "Video source",
+		"basalam.field.videoInherit": "Video inherit mode",
+		"basalam.field.orderStatusMode": "Order status mode",
+		"basalam.field.shippingMethod": "Order shipping method id",
+		"basalam.field.variableStockSource": "Variable product stock source",
+		"basalam.field.productPriceField": "Product price field",
+		"basalam.ticketsDisabledTitle": "Hamsalam tickets removed",
+		"basalam.ticketsDisabledHint": "Support tickets no longer go through Hamsalam. Use Webina support channels.",
+		"basalam.ticketsSubtitle": "Hamsalam support tickets.",
+		"basalam.settingsSubtitle": "Choose what syncs from your store to Basalam.",
+		"basalam.variationAsProductHintTitle": "Variable products",
+		"basalam.variationAsProductHint": "Each WooCommerce variation is created as a separate Basalam product. The title is the parent name plus attribute values (example: قهوه عربیکا کنیا ۱ کیلوگرم). Products previously synced as one parent with nested variants must be disconnected and reconnected.",
 		"basalam.orderActionOk": "Order action sent.",
 		"basalam.categoriesTitle": "Category mapping",
 		"basalam.categoriesSubtitle": "Map WooCommerce categories to Basalam category tree.",
@@ -13092,9 +14719,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.saveMapping": "Save mapping",
 		"basalam.mappingSaved": "Mapping saved.",
 		"basalam.mappingDeleted": "Mapping deleted.",
-		"basalam.mappings": "Mappings",
+		"basalam.mappings": "Saved mappings",
 		"basalam.delete": "Delete",
-		"basalam.settingsSubtitle": "Product/order sync toggles (Basalam settings).",
 		"basalam.syncToggles": "Sync toggles",
 		"basalam.syncProducts": "Auto sync products",
 		"basalam.syncOrders": "Auto sync orders",
@@ -13107,7 +14733,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.financeWpAdminHint": "Full finance UI is also available under the Webino Basalam WP-Admin menu.",
 		"basalam.financeLoading": "Loading…",
 		"basalam.financeError": "Failed to load finance data.",
-		"basalam.boothBalance": "Booth balance",
+		"basalam.boothBalance": "Basalam booth balance",
 		"basalam.balanceAsOf": "Balance as of {{time}}",
 		"basalam.settledBankYtd": "Bank settlements (YTD)",
 		"basalam.settledWalletYtd": "Wallet settlements (YTD)",
@@ -13124,12 +14750,13 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.balance": "Balance",
 		"basalam.settlements": "Settlements",
 		"basalam.ticketsTitle": "Tickets",
-		"basalam.ticketsSubtitle": "Hamsalam support tickets.",
 		"basalam.ticketsHint": "Use WP-Admin Basalam → Tickets for full ticket compose/reply.",
-		"basalam.logsTitle": "Logs & coverage",
-		"basalam.logsSubtitle": "Jobs, coverage matrix, and log hints.",
+		"basalam.logsTitle": "Sync status",
+		"basalam.logsSubtitle": "Recent sync work between your store and Basalam.",
 		"basalam.coverage": "API coverage",
-		"basalam.oauthConnected": "Basalam connected successfully.",
+		"basalam.oauthConnected": "Booth connected successfully.",
+		"basalam.oauthError": "Basalam connection failed. Try again.",
+		"basalam.oauthVendorError": "Could not resolve a Basalam vendor id. Sign in with a vendor booth account and reconnect.",
 		"basalam.webhookConfigured": "Webhook is registered.",
 		"basalam.webhookPending": "Webhook is set up after OAuth.",
 		"basalam.productList": "Product list",
@@ -13148,7 +14775,6 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.col.total": "Total",
 		"basalam.createOne": "Create",
 		"basalam.updateOne": "Update",
-		"basalam.disconnect": "Disconnect",
 		"basalam.connectedOrders": "Connected orders",
 		"basalam.noOrders": "No connected orders yet. Run pull orders.",
 		"basalam.syncFields": "Sync fields",
@@ -13158,6 +14784,19 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"basalam.field.defaultPreparation": "Preparation time",
 		"basalam.field.tasksPerMinute": "Tasks per minute",
 		"basalam.field.priceChange": "Price change",
+		"basalam.commission.title": "Basalam price & commission",
+		"basalam.commission.hint": "Mehr 1405 tariff is bundled. Use “Load tariff” to match Basalam categories (sent price = store ÷ (1 − commission)), or set a fixed manual percent (−35…35).",
+		"basalam.commission.status": "{{count}} rates · {{unmatched}} unmatched · last load: {{at}}",
+		"basalam.commission.neverImported": "not loaded yet",
+		"basalam.commission.enable": "Category commission on",
+		"basalam.commission.seedTariff": "Load / refresh Mehr 1405 tariff",
+		"basalam.commission.uploadCsv": "Upload tariff CSV",
+		"basalam.commission.applyUpdate": "Apply commission to connected products",
+		"basalam.commission.importOk": "Saved {{matched}} rates ({{unmatched}} unmatched).",
+		"basalam.commission.seedOk": "Saved {{matched}} rates from Mehr 1405 tariff ({{unmatched}} unmatched).",
+		"basalam.commission.applyQueued": "Price update with commission was queued.",
+		"basalam.commission.manualPercent": "Fixed manual percent (−35…35)",
+		"basalam.commission.manualPercentHint": "Additive store markup; not used together with category commission mode.",
 		"basalam.field.productPrefix": "Title prefix",
 		"basalam.field.productSuffix": "Title suffix",
 		"basalam.field.safeStock": "Safe stock",
@@ -13169,7 +14808,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"zarinpal.operationsTitle": "Zarinpal Operations",
 		"zarinpal.coverageTitle": "Zarinpal Coverage",
 		"zarinpal.settingsSubtitle": "Connect merchant credentials and sandbox mode",
-		"zarinpal.paymentsSubtitle": "Checkout title, messages, and fee payer",
+		"zarinpal.paymentsSubtitle": "Checkout title, icon, messages, and fee labels",
 		"zarinpal.operationsSubtitle": "Reconcile unverified payments and look up transactions",
 		"zarinpal.merchantId": "Merchant ID",
 		"zarinpal.accessToken": "Access token (GraphQL)",
@@ -13188,10 +14827,21 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"zarinpal.fieldTitle": "Checkout title",
 		"zarinpal.fieldDescription": "Description",
 		"zarinpal.fieldInstructions": "Instructions",
+		"zarinpal.orderButtonText": "Checkout button text",
+		"zarinpal.feeLabel": "Fee label",
+		"zarinpal.iconUrl": "Gateway icon URL",
+		"zarinpal.iconUrlPlaceholder": "Leave empty for bundled logo",
+		"zarinpal.iconUrlHint": "Empty uses the official bundled Zarinpal logo.",
+		"zarinpal.paymentDescription": "API payment description",
+		"zarinpal.paymentDescriptionHint": "Placeholder: {order_id}",
 		"zarinpal.successMessage": "Success message",
 		"zarinpal.failedMessage": "Failed message",
+		"zarinpal.cancelledMessage": "Cancellation fault text",
+		"zarinpal.invalidTokenMessage": "Invalid token fault text",
 		"zarinpal.successHint": "Placeholder: {transaction_id}",
 		"zarinpal.failedHint": "Placeholder: {fault}",
+		"zarinpal.cancelledHint": "Fills {fault} when the customer cancels on Zarinpal.",
+		"zarinpal.invalidTokenHint": "Fills {fault} when the payment authority is invalid.",
 		"zarinpal.feePayer": "Fee payer",
 		"zarinpal.feePayerMerchant": "Merchant",
 		"zarinpal.feePayerCustomer": "Customer",
@@ -13289,7 +14939,50 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"accounting.nav.checks": "Checks",
 		"accounting.nav.warehouses": "Warehouses",
 		"accounting.nav.moadian": "Moadian queue",
+		"accounting.nav.tax": "Tax cockpit",
 		"accounting.nav.hesabfa": "Hesabfa sync",
+		"accounting.tax.from": "From",
+		"accounting.tax.to": "To",
+		"accounting.tax.revenue": "Revenue",
+		"accounting.tax.profit": "Profit",
+		"accounting.tax.loss": "Loss",
+		"accounting.tax.vatNet": "Net VAT",
+		"accounting.tax.incomeTax": "Income tax estimate",
+		"accounting.tax.tips": "Tax tips",
+		"accounting.tax.dismiss": "Dismiss",
+		"accounting.tax.disclaimer": "Estimates use configured rules and versioned tables; confirm with a licensed tax advisor.",
+		"accounting.taxTip.setupIncomplete": "Tax setup wizard is not finished.",
+		"accounting.taxTip.moadianKeys": "Fiscal ID or Moadian private key is missing.",
+		"accounting.taxTip.thresholdNear": "Sales are at {{pct}}% of the configured threshold.",
+		"accounting.taxTip.moadianFailed": "{{count}} Moadian send jobs failed.",
+		"accounting.taxTip.missingSstid": "{{count}} invoice lines missing SSTID.",
+		"accounting.taxTip.vatDeadline": "Approximate VAT filing window: ~{{days}} days.",
+		"accounting.taxTip.rateVersion": "Tax rate version updated: {{label}}",
+		"accounting.taxWizard.title": "Tax setup",
+		"accounting.taxWizard.subtitle": "Configure taxpayer type, intacode, and Moadian connection once.",
+		"accounting.taxWizard.stepOf": "Step {{step}} of {{total}}",
+		"accounting.taxWizard.taxpayerType": "Taxpayer type",
+		"accounting.taxWizard.individual": "Individual",
+		"accounting.taxWizard.corporate": "Corporate",
+		"accounting.taxWizard.company": "Company / business name",
+		"accounting.taxWizard.economic": "Economic code",
+		"accounting.taxWizard.nationalId": "National ID",
+		"accounting.taxWizard.postal": "Postal code",
+		"accounting.taxWizard.tracking": "Tax file tracking code",
+		"accounting.taxWizard.intaSearch": "Search intacode",
+		"accounting.taxWizard.intaCode": "Intacode",
+		"accounting.taxWizard.profitRatio": "Profit ratio (%)",
+		"accounting.taxWizard.corporateRate": "Corporate tax rate (%)",
+		"accounting.taxWizard.transport": "Moadian transport",
+		"accounting.taxWizard.transportDirect": "Direct (self-tsp)",
+		"accounting.taxWizard.transportTsp": "Trusted provider (TSP)",
+		"accounting.taxWizard.tspUrl": "TSP base URL",
+		"accounting.taxWizard.tspKey": "TSP API key",
+		"accounting.taxWizard.summaryVat": "General VAT rate",
+		"accounting.taxWizard.disclaimer": "Rates come from versioned module tables; check intamedia.ir for new circulars.",
+		"accounting.taxWizard.finish": "Finish and open cockpit",
+		"accounting.taxWizard.done": "Tax setup saved",
+		"accounting.taxWizard.reopen": "Setup wizard",
 		"accounting.nav.payroll": "Payroll",
 		"accounting.nav.projects": "Projects",
 		"accounting.nav.reports": "Reports",
@@ -13456,7 +15149,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.shopSms.syncPattern": "Sync / register pattern",
 		"settings.shopSms.bindPattern": "Bind existing pattern code",
 		"settings.shopSms.patternSynced": "Pattern synced.",
-		"settings.shopSms.patternOnlyHint": "Order SMS is sent only via an approved SMS pattern.",
+		"settings.shopSms.patternOnlyHint": "Order SMS (customer and admin) is sent only via an approved pattern, and only when that status switch is on.",
 		"settings.shopSms.eventColumn": "Event / status",
 		"settings.shopSms.patternColumn": "Pattern",
 		"settings.shopSms.patternCode": "Pattern code",
@@ -13495,6 +15188,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.shopSms.events.courier": "Courier delivery",
 		"settings.shopSms.events.post": "Post delivery",
 		"settings.shopSms.events.tipax": "Tipax delivery",
+		"settings.shopSms.events.chapar": "Chapar delivery",
+		"settings.shopSms.events.other": "Other (tracking)",
 		"settings.shopSms.events.on-hold": "On hold",
 		"settings.shopSms.events.completed": "Completed",
 		"settings.shopSms.events.cancelled": "Cancelled",
@@ -13523,6 +15218,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.shopSms.recoveryExpires": "Expires (days)",
 		"settings.shopSms.recoveryUsage": "Usage limit",
 		"settings.shopSms.postBarcodeMergedHint": "Saving a post barcode also uses this “Post delivery” pattern.",
+		"settings.shopSms.trackingVarsHint": "Use {tracking} and {tracking_url} in patterns for post/courier/tipax/chapar/other.",
+		"settings.shopSms.posPaymentVarsHint": "For POS payment SMS, map pattern variables to {customer_name} (اسم), {customer_phone} (شماره), {payment_url} (لینک). Aliases: {name}, {phone}/{mobile}, {link}/{payment_link}. Optional: {pattern_code}.",
 		"settings.site.fieldSiteTitle": "Site title",
 		"settings.site.fieldTagline": "Tagline",
 		"settings.site.fieldAdminEmail": "Admin email",
@@ -13594,7 +15291,19 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.shop.shippingNewZone": "New zone name",
 		"settings.shop.shippingAddZone": "Add zone",
 		"settings.shop.shippingMethodCount": "{{count}} methods",
+		"settings.shop.shippingLocationCount": "{{count}} locations",
 		"settings.shop.shippingOptions": "Shipping options",
+		"settings.shop.shippingEditZone": "Edit zone",
+		"settings.shop.shippingZoneName": "Zone name",
+		"settings.shop.shippingLocations": "Geographic coverage",
+		"settings.shop.shippingLocIran": "All of Iran (country)",
+		"settings.shop.shippingPostcode": "Postcode / city (optional)",
+		"settings.shop.shippingRestOfWorldHint": "Rest of the world only accepts shipping methods.",
+		"settings.shop.shippingMethods": "Shipping methods",
+		"settings.shop.shippingPickMethod": "Choose method…",
+		"settings.shop.shippingAddMethod": "Add method",
+		"settings.shop.shippingNoMethods": "No methods yet.",
+		"settings.shop.shippingMethodEnabled": "Enable method",
 		"settings.shop.gatewayEnabled": "Enable gateway",
 		"settings.shop.emailEnabled": "Enable email",
 		"settings.shop.emailGlobal": "Email sender options",
@@ -13637,6 +15346,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"common.nextPage": "Next page",
 		"common.emptyValue": "—",
 		"common.cancel": "Cancel",
+		"common.confirm": "Confirm",
 		"common.back": "Back",
 		"common.unlimited": "Unlimited",
 		"settings.langEn": "English",
@@ -14477,6 +16187,25 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.total": "Total",
 		"orders.newStatus": "New status",
 		"orders.applyStatus": "Apply status",
+		"orders.statusPipeline": "Order stages",
+		"orders.statusStep.processing": "Processing",
+		"orders.statusStep.packaged": "Packaged",
+		"orders.statusStep.ready": "Ready to ship",
+		"orders.statusStep.ship": "Ship",
+		"orders.statusStep.completed": "Completed",
+		"orders.statusConfirmTitle": "Change order status",
+		"orders.statusConfirmBody": "Change status from “{{from}}” to “{{to}}”?",
+		"orders.cancelOrder": "Cancel order",
+		"orders.cancelConfirmTitle": "Confirm cancel order",
+		"orders.cancelConfirmInstallment": "This is an installment order. After cancellation, the payment gateway will refund the customer automatically — no manual action is needed.",
+		"orders.cancelConfirmCash": "This is a cash order. After cancellation, you must refund the customer manually{{gateway}}.",
+		"orders.cancelConfirmCashGateway": " (gateway: {{gateway}})",
+		"orders.printMore": "More prints",
+		"orders.otherStatuses": "Other statuses",
+		"orders.shipDialog.title": "Ship order",
+		"orders.shipDialog.description": "Enter the tracking code and optionally send an SMS to the customer.",
+		"orders.shipDialog.open": "Add / send tracking",
+		"orders.shipDialog.noTrackingYet": "No tracking code yet.",
 		"orders.wcStatus.pending": "Pending",
 		"orders.wcStatus.processing": "Processing",
 		"orders.wcStatus.on-hold": "On hold",
@@ -14588,10 +16317,18 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.printStoreLabel": "Print store label",
 		"orders.printNewLabels": "Print new order labels",
 		"orders.printNewLabelsEmpty": "No processing or on-hold orders without a printed shipping label.",
-		"orders.panelTracking": "Post tracking",
+		"orders.panelTracking": "Order tracking",
 		"orders.trackingCode": "Tracking code",
 		"orders.trackingProvider": "Provider",
 		"orders.trackingLink": "Track shipment",
+		"orders.selectTrackingProvider": "Select provider",
+		"orders.trackingProviderWithPattern": "{{title}} — pattern: {{pattern}}",
+		"orders.trackingProviderPatternBound": "{{title}} — pattern bound",
+		"orders.trackingNoActiveProviders": "No providers with a bound SMS pattern. Bind post/courier/tipax/chapar/other patterns in SMS settings first.",
+		"orders.sendTrackingSms": "Send tracking SMS",
+		"orders.trackingSmsSent": "Tracking SMS sent",
+		"orders.trackingSmsNeedCodeProvider": "Enter a tracking code and select a provider",
+		"orders.trackingSmsNoPattern": "No SMS pattern is bound for this provider",
 		"orders.deliverySlot": "Delivery slot",
 		"orders.panelDigipay": "Digipay",
 		"orders.digipayTransaction": "Transaction ID",
@@ -14616,8 +16353,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"digipay.status.ok": "OK",
 		"digipay.status.failed": "Failed",
 		"digipay.field.version": "Digipay version",
-		"digipay.field.clientId": "Client ID",
-		"digipay.field.clientSecret": "Client secret",
+		"digipay.field.clientId": "Gateway username / client ID",
+		"digipay.field.clientSecret": "Secret",
 		"digipay.field.username": "Username",
 		"digipay.field.password": "Password",
 		"digipay.field.sellerId": "Seller ID",
@@ -14662,6 +16399,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.historyAov": "Average order value",
 		"orders.stats.orders": "Orders",
 		"orders.stats.revenue": "Revenue",
+		"orders.stats.periodMonth": "Stats period: this month ({{label}})",
+		"orders.stats.periodCustom": "Stats period: {{after}} to {{before}}",
 		"orders.stats.aov": "Avg. order",
 		"orders.stats.processing": "Processing",
 		"orders.stats.completed": "Completed",
@@ -14695,6 +16434,17 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"orders.contact.openUser": "Open user",
 		"orders.panelSmsHistory": "SMS history",
 		"orders.smsHistoryEmpty": "No SMS logs for this order.",
+		"orders.smsRole.customer": "Customer",
+		"orders.smsRole.admin": "Admin",
+		"orders.smsReason.event_off": "Event switch is off for this role.",
+		"orders.smsReason.disabled": "Shop SMS panel is disabled.",
+		"orders.smsReason.no_phone": "Customer phone is missing.",
+		"orders.smsReason.no_admin_phone": "Admin phone is not configured.",
+		"orders.smsReason.pattern_missing": "No synced pattern for this status.",
+		"orders.smsReason.template_missing": "SMS template is missing.",
+		"orders.smsReason.empty_template": "Template body is empty.",
+		"orders.smsReason.insufficient_balance": "Insufficient SMS credit.",
+		"orders.smsReason.send_failed": "Send failed.",
 		"orders.smsStatus.delivered": "Delivered",
 		"orders.smsStatus.sent": "Sent",
 		"orders.smsStatus.queued": "Queued",
@@ -14740,6 +16490,7 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.comparePrevious": "Compare to previous period",
 		"reports.comparePeriod": "Previous period",
 		"reports.statusFilter": "Order status",
+		"reports.statusFilterHint": "Empty = all successful sales (excludes cancelled, failed, pending payment, refunds).",
 		"reports.exportCsv": "Export CSV",
 		"reports.deltaNew": "New",
 		"reports.preset.today": "Today",
@@ -14759,6 +16510,9 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.status.cancelled": "Cancelled",
 		"reports.status.refunded": "Refunded",
 		"reports.status.failed": "Failed",
+		"reports.status.webino-packaged": "Packaged",
+		"reports.status.webino-ready-to-ship": "Ready to ship",
+		"reports.status.webino-shipping": "Shipping",
 		"reports.kpi.revenue": "Gross revenue",
 		"reports.kpi.netRevenue": "Net revenue",
 		"reports.kpi.orders": "Orders",
@@ -14809,7 +16563,65 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.heatmap.legendMax": "More orders",
 		"reports.wfcpDisabledHint": "WFCP inactive",
 		"reports.cogsApproxHint": "Purchase prices use current product meta, not historical snapshots.",
+		"salePrices.title": "Strikethrough prices",
+		"salePrices.banner": "Discounts apply only to products in this list. Archived or pending products are not included.",
+		"salePrices.selectHint": "Select products",
+		"salePrices.selectedCount": "{{count}} products selected",
+		"salePrices.selectAllPage": "Select all on this page",
+		"salePrices.needSelection": "Select at least one product",
+		"salePrices.empty": "No products found",
+		"salePrices.apply": "Apply discount",
+		"salePrices.remove": "Remove discount",
+		"salePrices.applyAllFiltered": "Apply to all filtered",
+		"salePrices.removeAllFiltered": "Remove from all filtered",
+		"salePrices.applyTitle": "Apply discount",
+		"salePrices.percent": "Discount percent",
+		"salePrices.percentPlaceholder": "e.g. 10",
+		"salePrices.durationLabel": "Discount duration",
+		"salePrices.duration.1d": "1 day",
+		"salePrices.duration.3d": "3 days",
+		"salePrices.duration.1w": "1 week",
+		"salePrices.duration.1m": "1 month",
+		"salePrices.duration.custom": "Custom",
+		"salePrices.previewCta": "Preview strikethrough prices",
+		"salePrices.confirmApply": "Confirm and apply",
+		"salePrices.previewCount": "{{count}} products eligible",
+		"salePrices.applyDone": "{{ok}} products updated (skipped: {{skipped}})",
+		"salePrices.removeDone": "Discount removed from {{ok}} products",
+		"salePrices.removeConfirmTitle": "Remove discount?",
+		"salePrices.removeConfirmBody": "Sale price and sale dates will be cleared on the selected products.",
 		"coupons.title": "Coupons",
+		"coupons.builder.title": "Coupon builder",
+		"coupons.builder.publicNote": "All customers can see your coupons; only one coupon per order; when conditions are met the coupon auto-applies without needing a code.",
+		"coupons.builder.create": "Create coupon",
+		"coupons.builder.advanced": "Advanced mode",
+		"coupons.builder.classicList": "Classic list",
+		"coupons.builder.wizardTitle": "Quick coupon",
+		"coupons.builder.wizardHint": "Each coupon can have only one condition.",
+		"coupons.builder.conditionType": "Condition",
+		"coupons.builder.conditionValue": "Condition value",
+		"coupons.builder.rewardType": "Reward type",
+		"coupons.builder.rewardAmount": "Reward amount",
+		"coupons.builder.cond.orderNth": "Order number",
+		"coupons.builder.cond.minAmount": "Minimum order amount",
+		"coupons.builder.cond.minItems": "Minimum item count",
+		"coupons.builder.reward.fixed": "Fixed discount",
+		"coupons.builder.reward.percent": "Percent discount",
+		"coupons.builder.reward.freeShip": "Free shipping",
+		"coupons.builder.reward.shipPct": "Shipping percent off",
+		"coupons.builder.publish": "Publish coupon",
+		"coupons.builder.suggested": "Suggested coupons",
+		"coupons.builder.suggestedHint": "Pick suggested coupons and add them to your list.",
+		"coupons.builder.owned": "Your store coupons",
+		"coupons.builder.ownedEmpty": "No builder coupons yet.",
+		"coupons.builder.less": "Less",
+		"coupons.builder.more": "More",
+		"coupons.builder.youHave": "You already have this",
+		"coupons.builder.addSuggested": "Add to coupons",
+		"coupons.builder.added": "Coupon added",
+		"coupons.builder.alreadyOwned": "Already added",
+		"coupons.builder.customDesc": "Created from coupon builder",
+		"coupons.builder.upTo": "Up to {{amount}}",
 		"coupons.create": "Create coupon",
 		"coupons.amount": "Amount",
 		"coupons.submitCreate": "Create",
@@ -15048,6 +16860,79 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"settings.smsModirpayamakPanel": "Open SMS panel",
 		"marketing.sms.serviceUnavailable": "SMS service is unavailable. You can browse this page; sending and top-up work once the connection is restored.",
 		"marketing.sms.dashboardTitle": "SMS panel",
+		"marketing.smsAds.heroTitle": "Grow sales with every SMS",
+		"marketing.smsAds.heroDesc": "Send targeted SMS so more customers discover your store.",
+		"marketing.smsAds.createCta": "Create SMS ad",
+		"marketing.smsAds.bannerVolume": "1,000+ SMS / month",
+		"marketing.smsAds.bannerVolumeDesc": "Shops reserve campaigns ahead so they stay in touch with customers.",
+		"marketing.smsAds.bannerSegments": "Targeted audiences",
+		"marketing.smsAds.bannerSegmentsDesc": "Pick the right segment; we run your SMS ad precisely.",
+		"marketing.smsAds.bannerCopy": "Full control of copy",
+		"marketing.smsAds.bannerCopyDesc": "Use templates or write your own message.",
+		"marketing.smsAds.campaignsTitle": "Recent ads",
+		"marketing.smsAds.noCampaigns": "No ads yet.",
+		"marketing.smsAds.wizardTitle": "Create SMS & notification ad",
+		"marketing.smsAds.detailTitle": "SMS ad analytics",
+		"marketing.smsAds.stepTarget": "Audience",
+		"marketing.smsAds.stepSettings": "Settings",
+		"marketing.smsAds.stepPay": "Payment",
+		"marketing.smsAds.whoQuestion": "Who should receive this ad?",
+		"marketing.smsAds.seg.system_suggest.title": "System suggestion",
+		"marketing.smsAds.seg.system_suggest.desc": "Best groups such as abandoned carts and buyers of top categories.",
+		"marketing.smsAds.seg.retarget.title": "Customer retargeting",
+		"marketing.smsAds.seg.retarget.desc": "Bring past buyers back with a timely reminder.",
+		"marketing.smsAds.seg.acquire.title": "Acquire new customers",
+		"marketing.smsAds.seg.acquire.desc": "Newsletter subscribers who have not purchased yet.",
+		"marketing.smsAds.seg.city_customers.title": "City customers",
+		"marketing.smsAds.seg.city_customers.desc": "Customers whose billing city matches your store city.",
+		"marketing.smsAds.seg.all_city.title": "Everyone in the city",
+		"marketing.smsAds.seg.all_city.desc": "All contacts in that city, including non-buyers.",
+		"marketing.smsAds.seg.vip_buyers.title": "Loyal customers",
+		"marketing.smsAds.seg.vip_buyers.desc": "Buyers with at least 3 successful orders.",
+		"marketing.smsAds.seg.followers.title": "Followers / newsletter",
+		"marketing.smsAds.seg.followers.desc": "Newsletter subscribers and phonebook contacts.",
+		"marketing.smsAds.segmentCount": "{{count}} recipients",
+		"marketing.smsAds.nameLabel": "Name your ad",
+		"marketing.smsAds.nameHint": "Visible only to you.",
+		"marketing.smsAds.channelLabel": "How should it be sent?",
+		"marketing.smsAds.channelSms": "SMS",
+		"marketing.smsAds.channelNotif": "Notification",
+		"marketing.smsAds.dateLabel": "Schedule the ad",
+		"marketing.smsAds.dateHint": "You can reserve starting tomorrow.",
+		"marketing.smsAds.contentLabel": "What should we promote?",
+		"marketing.smsAds.content.product": "Product",
+		"marketing.smsAds.content.category": "Category",
+		"marketing.smsAds.productId": "Product ID",
+		"marketing.smsAds.categoryId": "Category ID",
+		"marketing.smsAds.messageLabel": "Message",
+		"marketing.smsAds.messagePlaceholder": "Ad copy… you can use {link} and {coupon}.",
+		"marketing.smsAds.messageHint": "Product/category link with UTM is appended automatically.",
+		"marketing.smsAds.couponOptional": "Coupon code (optional)",
+		"marketing.smsAds.recipients": "Recipients",
+		"marketing.smsAds.unitPrice": "Unit price",
+		"marketing.smsAds.volumeDiscount": "Volume discount",
+		"marketing.smsAds.total": "Total",
+		"marketing.smsAds.refreshQuote": "Refresh quote",
+		"marketing.smsAds.prev": "Previous",
+		"marketing.smsAds.next": "Next",
+		"marketing.smsAds.confirmPay": "Confirm & schedule",
+		"marketing.smsAds.created": "Ad scheduled",
+		"marketing.smsAds.notFound": "Ad not found",
+		"marketing.smsAds.backHome": "Back to SMS panel",
+		"marketing.smsAds.attributedOrders": "Attributed orders",
+		"marketing.smsAds.noOrders": "No orders attributed to this campaign yet.",
+		"marketing.smsAds.kpi.sent": "Sent",
+		"marketing.smsAds.kpi.failed": "Failed",
+		"marketing.smsAds.kpi.cost": "Cost",
+		"marketing.smsAds.kpi.orders": "Orders",
+		"marketing.smsAds.kpi.revenue": "Revenue",
+		"marketing.smsAds.kpi.roas": "ROAS",
+		"marketing.smsAds.kpi.conversion": "Conversion",
+		"marketing.smsAds.status.scheduled": "Scheduled",
+		"marketing.smsAds.status.sending": "Sending",
+		"marketing.smsAds.status.sent": "Sent",
+		"marketing.smsAds.status.failed": "Failed",
+		"marketing.smsAds.status.cancelled": "Cancelled",
 		"marketing.botBroadcast": "Bot broadcast",
 		"marketing.botCampaigns": "Bot campaigns",
 		"marketing.sms.dashboardDesc": "Balance, send, and reports via the SMS panel.",
@@ -15247,6 +17132,13 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"analytics.period7": "7 days",
 		"analytics.period30": "30 days",
 		"analytics.period90": "90 days",
+		"analytics.periodPreset.thisMonth": "This month",
+		"analytics.periodPreset.lastMonth": "Last month",
+		"analytics.periodPreset.last7": "Last 7 days",
+		"analytics.periodPreset.last30": "Last 30 days",
+		"analytics.periodPreset.custom": "Custom",
+		"analytics.dateFrom": "From",
+		"analytics.dateTo": "To",
 		"analytics.chartTitle": "Daily revenue",
 		"analytics.emptyChart": "No data for this range.",
 		"analytics.settings.tracking": "Tracking",
@@ -15848,6 +17740,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"marketplace.module.ai-content-module": "AI Content",
 		"marketplace.module.ai-content-module-settings": "AI Content settings",
 		"marketplace.module.wnc-core-module": "Marketplace",
+		"marketplace.module.security-module": "Security",
+		"marketplace.module.bots-hub": "Bots",
 		"wfcp.tab.digikala": "Digikala",
 		"wfcp.tab.basalam": "Basalam",
 		"wfcp.tab.technolife": "Technolife",
@@ -15905,11 +17799,18 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"wnc.cred.order_status_enabled": "Order status gateway",
 		"wnc.cred.orders_list_api_enabled": "Torob orders list API",
 		"wnc.cred.product_page_webhook_enabled": "Product change webhooks",
+		"wnc.cred.action_tracking_enabled": "Action tracking API (purchases)",
+		"wnc.cred.expand_variations": "Each variation as a separate product (name + attributes)",
 		"wnc.torobPreview": "Feed product preview",
 		"wnc.torobQueue": "Product webhook queue",
 		"wnc.torobQueuePending": "Pending",
 		"wnc.torobQueueLast": "Last run",
 		"wnc.torobQueueNext": "Next run",
+		"wnc.torobProductsV3Url": "Product API v3 (POST, Torob-Sync)",
+		"wnc.torobProductsLegacyUrl": "Legacy product feed (POST wcpe)",
+		"wnc.torobActionsUrl": "Action tracking API (GET /torob/v1/actions)",
+		"wnc.torobSetTokenUrl": "Webhook set-token (POST)",
+		"wnc.torobOrdersListLegacyUrl": "Orders list legacy (GET torob-api)",
 		"wnc.autoSync": "Auto sync price/stock",
 		"wnc.noCredentialsYet": "Add credentials below (saved into WebinaConnector settings).",
 		"wnc.cred.base_url": "Base URL",
@@ -16501,6 +18402,25 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.financial.allPayments": "All gateways",
 		"reports.financial.allUtm": "All",
 		"reports.financial.directNone": "Direct / none",
+		"reports.utm.direct": "Direct",
+		"reports.utm.instagram": "Instagram",
+		"reports.utm.torob": "Torob",
+		"reports.utm.torobpay": "Torob Pay",
+		"reports.utm.snapppay": "Snapp Pay",
+		"reports.utm.google": "Google",
+		"reports.utm.telegram": "Telegram",
+		"reports.utm.facebook": "Facebook",
+		"reports.utm.basalam": "Basalam",
+		"reports.utm.digikala": "Digikala",
+		"reports.utm.snappshop": "SnappShop",
+		"reports.utm.tapsishop": "TapsiShop",
+		"reports.utm.technolife": "Technolife",
+		"reports.utm.emalls": "Emalls",
+		"reports.utm.zarehbin": "Zarehbin",
+		"reports.utm.organic": "Organic",
+		"reports.utm.referral": "Referral",
+		"reports.utm.email": "Email",
+		"reports.utm.sms": "SMS",
 		"reports.financial.ordersFor": "Orders — {label}",
 		"reports.financial.clearFilters": "Clear filters",
 		"reports.table.aov": "AOV",
@@ -16576,6 +18496,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"reports.stockFilter.outofstock": "Out of stock",
 		"reports.stockFilter.lowstock": "Low stock",
 		"reports.stockFilter.missing_cost": "Missing cost",
+		"reports.stockFilter.onbackorder": "On backorder",
+		"reports.stock.categoryAll": "All categories",
 		"reports.stock.valueBy.purchase": "Value by purchase",
 		"reports.stock.valueBy.retail": "Value by retail",
 		"reports.stock.valueBy.current": "Value by current price",
@@ -16910,6 +18832,10 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"marketplace.badge.snappshop": "SnappShop",
 		"marketplace.badge.tapsishop": "TapsiShop",
 		"marketplace.badge.technolife": "Technolife",
+		"marketplace.badge.torob": "Torob",
+		"marketplace.badge.emalls": "Emalls",
+		"marketplace.badge.zarehbin": "Zarehbin",
+		"marketplace.badge.snapppay-search": "SnappPay Search",
 		"digikala.settingsTitle": "Digikala settings",
 		"digikala.settingsSubtitle": "Client code, base URL, auto-sync.",
 		"digikala.settingsSaved": "Settings saved.",
@@ -16926,6 +18852,28 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"marketing.sms.statuses.error": "Error",
 		"marketing.sms.statuses.processing": "Processing",
 		"marketing.sms.statuses.rejected": "Rejected",
+		"marketing.sms.statuses.creating": "Creating",
+		"marketing.sms.statuses.invalid_recipients": "Invalid recipients",
+		"marketing.sms.statuses.send_queue": "Send queue",
+		"marketing.sms.statuses.insufficient_credit": "Insufficient credit",
+		"marketing.sms.statuses.finish": "Finished",
+		"marketing.sms.statuses.finished": "Finished",
+		"marketing.sms.statuses.skipped": "Skipped",
+		"marketing.sms.senderLine": "Sender line",
+		"marketing.sms.recipientsCount": "Recipients",
+		"marketing.sms.exitCount": "Delivered count",
+		"marketing.sms.stateId": "State code",
+		"marketing.sms.event": "Event",
+		"marketing.sms.role": "Role",
+		"marketing.sms.details": "Details",
+		"marketing.sms.outboxDetail": "Send details",
+		"marketing.sms.valid": "Monitoring",
+		"marketing.sms.part": "Parts",
+		"marketing.sms.seen": "Seen",
+		"marketing.sms.unseen": "Unseen",
+		"marketing.sms.toLine": "Inbox line",
+		"marketing.sms.refresh": "Refresh",
+		"marketing.sms.pageOf": "Page {{page}}",
 		"marketing.sms.goToWallet": "Go to wallet",
 		"marketing.sms.editDraft": "Edit",
 		"marketing.sms.phonebookDeleteUnavailable": "Delete phonebook/contact is not available in the API yet.",
@@ -17221,6 +19169,8 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"wallet.enabled": "Enable at checkout",
 		"wallet.checkoutTitle": "Gateway title",
 		"wallet.minTopup": "Minimum top-up",
+		"wallet.loginPrompt": "Login prompt",
+		"wallet.balanceLabel": "Balance label",
 		"wallet.minTopupHint": "Minimum top-up amount: {{amount}}",
 		"wallet.accountTitle": "Wallet",
 		"wallet.accountSubtitle": "Balance, top-up, withdrawal, and ledger.",
@@ -17339,6 +19289,9 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"pos.customerSearch": "Search by phone or name…",
 		"pos.newPhone": "Mobile",
 		"pos.newName": "Name",
+		"pos.newFirstName": "First name",
+		"pos.newLastName": "Last name",
+		"pos.customerHint": "Pick an existing customer, or enter mobile + name to create one.",
 		"pos.channel": "Sales channel",
 		"pos.channel.in_store": "In store",
 		"pos.channel.phone": "Phone",
@@ -17354,6 +19307,12 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"pos.tender.pos_terminal": "Card terminal",
 		"pos.tender.online": "Online",
 		"pos.tender.other": "Other",
+		"pos.tender.payment_sms": "Send payment SMS",
+		"pos.paymentSms.hint": "Creates a pay-only link and texts it to the customer via the store SMS panel.",
+		"pos.paymentSms.checkout": "Create & send payment SMS",
+		"pos.paymentSms.sent": "Order #{{id}} created — payment SMS sent",
+		"pos.paymentSms.failed": "Order #{{id}} created but SMS was not sent: {{error}}",
+		"pos.paymentSms.createdNoSms": "Order #{{id}} created — payment link ready (SMS not sent)",
 		"pos.showExtras": "Show discount / shipping",
 		"pos.hideExtras": "Hide extras",
 		"pos.discount": "Discount",
@@ -17433,30 +19392,989 @@ var lp = /* @__PURE__ */ k({ default: () => up }), up, dp = ee((() => {
 		"accounting.backup": "Backup ZIP",
 		"accounting.exportCsv": "Export invoices CSV",
 		"accounting.calculator": "Sample % calculator",
-		"accounting.moadianProxy": "HTTP proxy (foreign hosts)"
+		"accounting.moadianProxy": "HTTP proxy (foreign hosts)",
+		"security.overviewTitle": "Security",
+		"security.firewallTitle": "Firewall",
+		"security.liveTrafficTitle": "Live traffic",
+		"security.rulesTitle": "Firewall rules",
+		"security.blockingTitle": "Block & allow lists",
+		"security.scanTitle": "Site scan",
+		"security.scanJobTitle": "Scan job",
+		"security.toolsTitle": "Security tools",
+		"security.toolTitle": "Tool",
+		"security.reportsTitle": "Reports",
+		"security.reportDetailTitle": "Report detail",
+		"security.settingsTitle": "Security settings",
+		"security.navOverview": "Overview",
+		"security.navFirewall": "Firewall",
+		"security.navScan": "Site scan",
+		"security.navTools": "Tools",
+		"security.navReports": "Reports",
+		"security.navSettings": "Settings",
+		"security.wizardTitle": "Complete security setup",
+		"security.wizardHint": "Review settings and finish the first-run wizard to enable full protection.",
+		"security.wizardCta": "Open settings",
+		"security.wizardSettingsHint": "Apply a profile, adjust key options, then mark setup complete.",
+		"security.wizardComplete": "Mark setup complete",
+		"security.wizardCompleted": "Setup marked complete",
+		"security.kpi.score": "Security score",
+		"security.kpi.blocks24h": "Blocks (24h)",
+		"security.kpi.openFindings": "Open findings",
+		"security.kpi.wafMode": "WAF mode",
+		"security.lastScanTitle": "Last scan",
+		"security.noScanYet": "No scans have been run yet.",
+		"security.viewScan": "View scan",
+		"security.findingsBySeverity": "Open findings by severity",
+		"security.findingsCount": "{{count}} findings",
+		"security.feedFreshness": "Threat feed freshness",
+		"security.manageFeeds": "Manage feeds",
+		"security.noFeeds": "No feed status recorded yet.",
+		"security.feedSummary": "{{total}} feeds tracked · {{stale}} with errors",
+		"security.feedStale": "Stale",
+		"security.feedOk": "OK",
+		"security.never": "Never",
+		"security.yes": "Yes",
+		"security.no": "No",
+		"security.active": "Active",
+		"security.inactive": "Inactive",
+		"security.wafMode.off": "Off",
+		"security.wafMode.learning": "Learning",
+		"security.wafMode.enforce": "Enforce",
+		"security.severity.critical": "Critical",
+		"security.severity.high": "High",
+		"security.severity.medium": "Medium",
+		"security.severity.low": "Low",
+		"security.severity.info": "Info",
+		"security.firewall.enabled": "WAF enabled",
+		"security.firewall.bypass": "Emergency bypass",
+		"security.firewall.bypassActive": "Bypass active",
+		"security.firewall.bypassOff": "Normal",
+		"security.firewall.layers": "Protection layers",
+		"security.firewall.noLayers": "No layer status available.",
+		"security.filterAction": "Action",
+		"security.filterPath": "Path contains",
+		"security.filterAll": "All",
+		"security.noLiveEvents": "No traffic events in the selected window.",
+		"security.action.block": "Block",
+		"security.action.challenge": "Challenge",
+		"security.action.log": "Log",
+		"security.action.allow": "Allow",
+		"security.col.time": "Time",
+		"security.col.action": "Action",
+		"security.col.method": "Method",
+		"security.col.path": "Path",
+		"security.col.rule": "Rule",
+		"security.col.country": "Country",
+		"security.col.name": "Name",
+		"security.col.ruleId": "Rule ID",
+		"security.col.priority": "Priority",
+		"security.col.enabled": "Enabled",
+		"security.col.actions": "Actions",
+		"security.col.type": "Type",
+		"security.col.value": "Value",
+		"security.col.reason": "Reason",
+		"security.col.note": "Note",
+		"security.col.source": "Source",
+		"security.col.minutes": "Duration (minutes)",
+		"security.col.profile": "Profile",
+		"security.col.status": "Status",
+		"security.col.progress": "Progress",
+		"security.col.findings": "Findings",
+		"security.col.started": "Started",
+		"security.col.severity": "Severity",
+		"security.col.title": "Title",
+		"security.col.created": "Created",
+		"security.noRules": "No custom rules yet.",
+		"security.noRulesHint": "Create a path-based rule below, or promote a learning-mode rule after traffic analysis.",
+		"security.createRuleTitle": "Create firewall rule",
+		"security.createRule": "Create rule",
+		"security.pathContains": "Path contains",
+		"security.learningMode": "Learning mode",
+		"security.ruleCreated": "Rule created",
+		"security.ruleUpdated": "Rule updated",
+		"security.ruleDeleted": "Rule deleted",
+		"security.rulePromoted": "Learning rule promoted",
+		"security.promoteLearning": "Promote",
+		"security.testRuleTitle": "Test rule",
+		"security.testRuleJson": "Rule JSON",
+		"security.testRequestJson": "Request JSON",
+		"security.runTest": "Run test",
+		"security.ruleTestDone": "Rule test completed",
+		"security.invalidJson": "Invalid JSON",
+		"security.delete": "Delete",
+		"security.quarantineEmpty": "No quarantined files.",
+		"security.quarantineRestore": "Restore",
+		"security.quarantineRestored": "File restored from quarantine",
+		"security.healNoActions": "No auto-healable findings.",
+		"security.fileSize": "Size",
+		"security.tools.file-browser.title": "File browser",
+		"security.tools.file-browser.desc": "Read-only browse of site files under ABSPATH.",
+		"security.twoFaTitle": "Two-factor authentication (TOTP)",
+		"security.twoFaHint": "Set up an authenticator app for your account. WebAuthn is not available in this release.",
+		"security.twoFaSetup": "Generate secret",
+		"security.twoFaEnable": "Enable with code",
+		"security.twoFaDisable": "Disable 2FA",
+		"security.twoFaCode": "Authenticator code",
+		"security.twoFaSetupReady": "Secret ready — scan or copy into your authenticator",
+		"security.twoFaEnabled": "2FA enabled",
+		"security.twoFaDisabled": "2FA disabled",
+		"security.twoFaEnabledUsers": "{{count}} users with 2FA",
+		"security.twoFaYouEnabled": "enabled for you",
+		"security.healTitle": "Heal actions",
+		"security.healPreview": "Preview heal",
+		"security.healApply": "Apply heal",
+		"security.healRollback": "Rollback last snapshot",
+		"security.healPreviewDone": "Heal preview ready",
+		"security.healApplied": "Heal applied",
+		"security.healRolledBack": "Rollback completed",
+		"security.healSelectFinding": "Select findings to heal",
+		"security.healNoSnapshot": "No snapshot to roll back",
+		"security.tabBlocks": "Block list",
+		"security.tabAllows": "Allow list",
+		"security.blockType.ip": "IP address",
+		"security.blockType.cidr": "CIDR range",
+		"security.blockType.ua": "User agent",
+		"security.addBlock": "Add block",
+		"security.addAllow": "Add allow",
+		"security.blockAdded": "Block added",
+		"security.blockRemoved": "Block removed",
+		"security.allowAdded": "Allow entry added",
+		"security.allowRemoved": "Allow entry removed",
+		"security.noBlocks": "No blocked entries.",
+		"security.noAllows": "No allow entries.",
+		"security.optional": "Optional",
+		"security.startScan": "Start scan",
+		"security.scanProfile.quick": "Quick scan",
+		"security.scanProfile.standard": "Standard scan",
+		"security.scanProfile.deep": "Deep scan",
+		"security.scheduleNoteTitle": "Scheduled scans",
+		"security.scheduleNote": "Scans can run on a schedule from Security settings. Manual scans start immediately in the background.",
+		"security.scanJobs": "Scan jobs",
+		"security.noScans": "No scan jobs yet.",
+		"security.scanStarted": "Scan queued",
+		"security.scanCancelled": "Scan cancelled",
+		"security.scanStatus.queued": "Queued",
+		"security.scanStatus.running": "Running",
+		"security.scanStatus.done": "Done",
+		"security.scanStatus.failed": "Failed",
+		"security.scanStatus.cancelled": "Cancelled",
+		"security.view": "View",
+		"security.cancel": "Cancel",
+		"security.invalidScanId": "Invalid scan ID.",
+		"security.scanNotFound": "Scan not found.",
+		"security.findingsTitle": "Findings",
+		"security.noFindings": "No open findings for this scan.",
+		"security.ackFinding": "Acknowledge",
+		"security.ignoreFinding": "Ignore",
+		"security.findingUpdated": "Finding updated",
+		"security.toolDefaultDesc": "Run diagnostics and maintenance actions.",
+		"security.unknownTool": "Unknown tool.",
+		"security.backToTools": "Back to tools",
+		"security.toolRunGet": "Run (GET)",
+		"security.toolRunPost": "Run (POST)",
+		"security.toolPostBody": "POST body (JSON)",
+		"security.toolResult": "Result",
+		"security.toolNoResult": "Run the tool to see results.",
+		"security.toolRunDone": "Tool finished",
+		"security.toolField.ip": "IP address",
+		"security.toolField.path": "Path",
+		"security.tools.whois.title": "WHOIS / geo lookup",
+		"security.tools.whois.desc": "Lookup IP geography and recent events.",
+		"security.tools.ip-lookup.title": "IP lookup",
+		"security.tools.ip-lookup.desc": "Alias for WHOIS lookup.",
+		"security.tools.diagnostics.title": "Diagnostics",
+		"security.tools.diagnostics.desc": "PHP, WordPress, layers, and conflicts.",
+		"security.tools.integrity-diff.title": "Integrity diff",
+		"security.tools.integrity-diff.desc": "Compare a file hash with official core.",
+		"security.tools.quarantine.title": "Quarantine",
+		"security.tools.quarantine.desc": "List or restore quarantined files.",
+		"security.tools.snapshots.title": "Heal snapshots",
+		"security.tools.snapshots.desc": "List rollback snapshots.",
+		"security.tools.sessions.title": "Sessions",
+		"security.tools.sessions.desc": "Active Shield sessions.",
+		"security.tools.password-audit.title": "Password audit",
+		"security.tools.password-audit.desc": "Admins without 2FA.",
+		"security.tools.headers-tester.title": "Headers tester",
+		"security.tools.headers-tester.desc": "Check front-end security headers.",
+		"security.tools.tls-dns.title": "TLS & DNS hints",
+		"security.tools.tls-dns.desc": "SSL and DNS record hints.",
+		"security.tools.secrets-search.title": "Secrets search",
+		"security.tools.secrets-search.desc": "Scan a path for exposed secrets.",
+		"security.tools.canary.title": "Canaries",
+		"security.tools.canary.desc": "Manage deception tokens.",
+		"security.tools.honeypot.title": "Honeypot",
+		"security.tools.honeypot.desc": "Honeypot hit statistics.",
+		"security.tools.import-export.title": "Import / export",
+		"security.tools.import-export.desc": "Backup or restore settings JSON.",
+		"security.tools.waf-learning.title": "WAF learning",
+		"security.tools.waf-learning.desc": "Review learning hits.",
+		"security.tools.incident.title": "Incidents",
+		"security.tools.incident.desc": "Forensic incident timeline.",
+		"security.tools.compat.title": "Compatibility",
+		"security.tools.compat.desc": "Detect conflicting security plugins.",
+		"security.tools.cli-recipes.title": "CLI recipes",
+		"security.tools.cli-recipes.desc": "Suggested WP-CLI commands.",
+		"security.tools.heal-wizard.title": "Heal wizard",
+		"security.tools.heal-wizard.desc": "Preview safe auto-heal actions.",
+		"security.generateReport": "Generate report",
+		"security.reportType.executive": "Executive summary",
+		"security.reportType.firewall": "Firewall activity",
+		"security.reportType.vulnerabilities": "Vulnerabilities",
+		"security.reportType.malware": "Malware",
+		"security.reportType.hardening": "Hardening checklist",
+		"security.generatedReports": "Generated reports",
+		"security.noReports": "No reports generated yet.",
+		"security.reportGenerated": "Report generated",
+		"security.invalidReportId": "Invalid report ID.",
+		"security.reportNotFound": "Report not found.",
+		"security.backToReports": "Back to reports",
+		"security.reportPayload": "Report data",
+		"security.settingsProfile": "Configuration profile",
+		"security.profileLabel": "Profile",
+		"security.profile.beginner": "Beginner",
+		"security.profile.recommended": "Recommended",
+		"security.profile.store": "Store",
+		"security.profile.paranoid": "Paranoid",
+		"security.applyProfile": "Apply profile",
+		"security.saveSettings": "Save settings",
+		"security.settingsSaved": "Settings saved",
+		"security.profileApplied": "Profile applied",
+		"security.syncFeeds": "Sync feeds now",
+		"security.feedsSynced": "Feed sync started",
+		"security.feedsStatus": "{{count}} feeds configured",
+		"security.section.general": "General",
+		"security.section.privacy": "Privacy & retention",
+		"security.section.waf": "Web application firewall",
+		"security.section.login": "Login protection",
+		"security.section.headers": "Security headers",
+		"security.section.scan": "Scanner",
+		"security.section.heal": "Heal & quarantine",
+		"security.section.feeds": "Threat feeds",
+		"security.section.notify": "Notifications",
+		"security.general.enabled": "Enable Webino Shield",
+		"security.general.learningMode": "Learning mode (global)",
+		"security.general.selfGuard": "Self-guard module files",
+		"security.privacy.anonymizeIp": "Anonymize IP in UI exports",
+		"security.privacy.storeBody": "Store request bodies in logs",
+		"security.privacy.retentionEvents": "Event retention (days)",
+		"security.waf.enabled": "Enable WAF",
+		"security.waf.mode": "WAF mode",
+		"security.waf.failOpen": "Fail open on internal errors",
+		"security.login.protect": "Brute-force protection",
+		"security.login.disableXmlrpc": "Disable XML-RPC",
+		"security.login.honeypot": "Login honeypot field",
+		"security.login.twoFaOptional": "Optional 2FA for admins",
+		"security.headers.enabled": "Send security headers",
+		"security.headers.hsts": "HTTP Strict Transport Security",
+		"security.headers.cspMode": "Content-Security-Policy mode",
+		"security.scan.defaultProfile": "Default scan profile",
+		"security.scan.includeDb": "Include database scan",
+		"security.scan.includeVuln": "Include vulnerability scan",
+		"security.heal.snapshotAlways": "Always snapshot before heal",
+		"security.heal.allowDelete": "Allow permanent delete actions",
+		"security.feeds.crmMirror": "Use WebinaCRM intel mirror",
+		"security.feeds.directFallback": "Direct internet fallback",
+		"security.notify.email": "Email notifications",
+		"security.notify.site": "Dashboard notifications",
+		"security.notify.sms": "SMS notifications",
+		"security.incidentsTitle": "Open Incidents",
+		"security.viewIncidents": "View all",
+		"security.incidentOpen": "open incident",
+		"security.incidentsOpen": "open incidents",
+		"security.suggestedActions": "Suggested Actions",
+		"security.healWizard": "Heal Wizard",
+		"security.noActions": "No immediate actions required.",
+		"security.reportType.compliance_hint": "Compliance hints",
+		"security.reportType.incident": "Incident report",
+		"security.reportType.feed_health": "Feed health",
+		"security.reportSummary": "Summary",
+		"security.reportStructured": "Report details",
+		"security.reportRawJson": "Show raw JSON",
+		"security.reportDownload": "Download JSON",
+		"security.auditTitle": "Audit log",
+		"security.auditEmpty": "No audit events yet.",
+		"security.auditEmptyCta": "Configure security settings",
+		"security.startFirstScan": "Run your first scan",
+		"security.noFindingsHint": "This scan found no issues. You can run another scan at any time.",
+		"security.backToScan": "Back to scans",
+		"security.healNotAvailable": "Auto-heal not available",
+		"security.toolsSearch": "Search tools…",
+		"security.toolsNoMatch": "No tools match your search.",
+		"security.refresh": "Refresh",
+		"security.incidentNoItems": "No incidents recorded.",
+		"security.diag.layers": "Active layers",
+		"security.diag.objectCache": "Object cache",
+		"security.diag.cron": "Shield cron",
+		"security.diag.conflicts": "Plugin conflicts",
+		"security.diag.noConflicts": "No plugin conflicts detected.",
+		"security.snapshotsEmpty": "No snapshots found.",
+		"security.passAudit.checked": "Common passwords checked: {{count}}",
+		"security.passAudit.noIssues": "All admin/editor accounts look good.",
+		"security.importExport.exportTitle": "Export settings",
+		"security.importExport.download": "Download JSON",
+		"security.importExport.importTitle": "Import settings JSON",
+		"security.importExport.import": "Import",
+		"security.importExport.importDone": "Settings imported successfully.",
+		"security.col.login": "Login",
+		"security.col.issues": "Issues",
+		"security.col.user": "User",
+		"security.ruleAction.block": "Block",
+		"security.ruleAction.challenge": "Challenge",
+		"security.ruleAction.log": "Log",
+		"security.ruleAction.allow": "Allow",
+		"security.wizard.prev": "← Back",
+		"security.wizard.next": "Next →",
+		"security.wizard.step": "Step {{step}} of {{total}}",
+		"security.wizard.step1.title": "Allowlist your admin IP",
+		"security.wizard.step1.hint": "Before enabling enforce mode, add your current IP to the allowlist to avoid locking yourself out.",
+		"security.wizard.step1.cta": "Go to blocking / allowlist",
+		"security.wizard.step2.title": "Choose a security profile",
+		"security.wizard.step2.hint": "Select the profile that best fits your site and click \"Apply profile\" below.",
+		"security.wizard.step2.profiles": "Beginner → low friction · Recommended → balanced · Store → e-commerce hardened · Paranoid → maximum",
+		"security.wizard.step3.title": "Scan schedule",
+		"security.wizard.step3.hint": "Run a first scan now to establish a baseline, then configure automatic scans via WP-Cron.",
+		"security.wizard.step3.cta": "Run a scan now",
+		"security.wizard.step4.title": "Enable notifications",
+		"security.wizard.step4.hint": "Configure email or dashboard alerts for security events. Settings are in the Notifications section below.",
+		"security.wizard.step5.title": "Coexistence check",
+		"security.wizard.step5.conflicts": "Conflicting plugins detected:",
+		"security.wizard.step5.conflictHint": "Disable duplicate WAF rules in those plugins before enabling enforce mode.",
+		"security.wizard.step5.ok": "No conflicting security plugins detected. You're good to go.",
+		"security.wizard.step6.title": "Complete setup",
+		"security.wizard.step6.hint": "Save your settings, then mark the wizard as complete to hide this banner.",
+		"basalam.advanced": "Advanced",
+		"basalam.syncProductsNow": "Sync products",
+		"basalam.nav.connection": "Connection",
+		"basalam.ordersAutoTitle": "Automatic order intake",
+		"basalam.ordersAutoOn": "Orders are received automatically.",
+		"basalam.ordersAutoOff": "Automatic intake is not enabled yet.",
+		"basalam.ordersAutoEnable": "Enable",
+		"basalam.ordersAutoResetBtn": "Reset",
+		"basalam.chatShow": "Open chat",
+		"basalam.chatHide": "Close chat",
+		"basalam.chatNotify": "Notify me about new Basalam messages",
+		"basalam.autoSuggest": "Auto suggest",
+		"basalam.orderActions": "Basalam actions",
+		"basalam.balanceInReports": "Withdrawable balance on Basalam",
+		"basalam.financeDetailsLink": "Basalam finance details",
+		"basalam.settleMethod.bank": "Bank transfer",
+		"basalam.settleMethod.wallet": "Wallet",
+		"basalam.fillFromCatalog": "Fill from store products",
+		"basalam.defaultsFilled": "Defaults suggested from products.",
+		"basalam.cancelReason.buyerRequest": "Buyer request",
+		"basalam.cancelReason.outOfStock": "Out of stock",
+		"basalam.cancelReason.other": "Other",
+		"basalam.shipMethod.post": "Post",
+		"basalam.shipMethod.tipax": "Tipax",
+		"basalam.shipMethod.courier": "Courier",
+		"basalam.job.fetchOrders": "Fetch orders",
+		"basalam.job.createProduct": "Create product",
+		"basalam.job.updateProduct": "Update product",
+		"basalam.job.updateAll": "Update all products",
+		"basalam.job.autoConnect": "Auto connect",
+		"basalam.job.discounts": "Discounts",
+		"basalam.job.quickUpdate": "Quick update",
+		"basalam.jobStatus.pending": "Pending",
+		"basalam.jobStatus.processing": "Processing",
+		"basalam.jobStatus.completed": "Done",
+		"basalam.jobStatus.failed": "Failed",
+		"basalam.syncStatus.pending": "Queued",
+		"basalam.syncStatus.done": "Done",
+		"basalam.syncStatus.failed": "Failed",
+		"basalam.fieldAccess": "Access key",
+		"basalam.fieldRefresh": "Refresh key",
+		"basalam.fieldVendorOptional": "Booth id (optional)",
+		"basalam.openPricing": "Marketplace pricing",
+		"basalam.boothNamed": "Booth {{id}}",
+		"basalam.selectProduct": "Select product",
+		"basalam.discountPercent": "Discount %",
+		"basalam.selectWooCategory": "Select store category",
+		"basalam.selectCategory": "Select",
+		"basalam.bslLevel1": "Basalam main category",
+		"basalam.bslLevel2": "Subcategory",
+		"basalam.bslLevel3": "Leaf category",
+		"basalam.basalamInvoice": "Basalam order no.",
+		"basalam.cancelReasonLabel": "Cancel reason",
+		"basalam.shipMethodLabel": "Shipping method",
+		"basalam.col.time": "Time",
+		"basalam.defaultProductValues": "Default product values",
+		"basalam.settlementAmount": "Amount (IRR)",
+		"basalam.bankAccount": "Bank account",
+		"basalam.syncField.name": "Name",
+		"basalam.syncField.photos": "Photos",
+		"basalam.syncField.price": "Price",
+		"basalam.syncField.stock": "Stock",
+		"basalam.syncField.weight": "Weight",
+		"basalam.syncField.description": "Description",
+		"basalam.syncField.attr": "Attributes",
+		"basalam.syncField.video": "Video",
+		"basalam.syncField.variant_price": "Variant price",
+		"basalam.syncField.variant_stock": "Variant stock",
+		"basalam.addFullDesc": "Full description (reviews)",
+		"basalam.job.createAllProducts": "Create all products",
+		"basalam.job.updateAllProducts": "Update all products",
+		"basalam.job.bulkUpdateProducts": "Quick update products",
+		"basalam.boothIdentity": "Basalam booth",
+		"basalam.boothUntitled": "Untitled booth",
+		"basalam.boothIdLabel": "ID {{id}}",
+		"basalam.chatWithBuyer": "Chat with buyer",
+		"basalam.shippingProfiles": "Shipping profiles",
+		"basalam.shippingCarriers": "Active carriers",
+		"basalam.noShippingProfiles": "No profiles yet.",
+		"basalam.noCarriers": "No carriers listed.",
+		"gateway.section.connection": "Connection",
+		"gateway.section.connectionHint": "Enable the gateway and enter API credentials.",
+		"gateway.section.checkout": "Checkout",
+		"gateway.section.checkoutHint": "Checkout rules and redirect behaviour.",
+		"gateway.section.display": "Store display",
+		"gateway.section.displayHint": "Widgets and storefront display elements.",
+		"gateway.section.messages": "Messages",
+		"gateway.section.messagesHint": "Customer messages after success, failure, or cancellation.",
+		"gateway.section.advanced": "Advanced",
+		"gateway.section.advancedHint": "Technical and troubleshooting options.",
+		"gateway.meta.source": "Source",
+		"gateway.meta.sourceOfficial": "Official plugin",
+		"gateway.meta.sourceWebino": "Webina",
+		"gateway.meta.serverIp": "Server IP",
+		"gateway.meta.callback": "Return URL",
+		"gateway.field.title": "Gateway title",
+		"gateway.field.description": "Short description",
+		"gateway.field.orderButtonText": "Checkout button text",
+		"gateway.field.iconUrl": "Gateway icon URL",
+		"gateway.field.iconUrlHint": "Leave empty to use the bundled logo.",
+		"gateway.field.baseUrl": "API base URL",
+		"gateway.field.clientId": "Gateway username / client ID",
+		"gateway.field.clientSecret": "Secret",
+		"gateway.field.clientSecretKeep": "Secret (leave blank to keep)",
+		"gateway.field.username": "Username",
+		"gateway.field.password": "Password",
+		"gateway.field.passwordKeep": "Password (leave blank to keep)",
+		"gateway.field.successMessage": "Success message",
+		"gateway.field.failedMessage": "Failure message",
+		"gateway.field.cancelledMessage": "Cancellation message",
+		"gateway.field.messageVars": "You can use placeholders like {order_id}.",
+		"gateway.flag.requireMobile": "Require mobile number",
+		"gateway.flag.requireMobileHint": "Payment cannot start without a valid mobile number.",
+		"gateway.flag.requirePostcode": "Require postcode",
+		"gateway.flag.requirePostcodeHint": "Postcode becomes required before paying.",
+		"gateway.flag.defaultEligible": "Default when eligible",
+		"gateway.flag.defaultEligibleHint": "Select this gateway by default when the cart is eligible.",
+		"gateway.flag.directRedirect": "Direct redirect",
+		"gateway.flag.directRedirectHint": "Send the customer straight to the payment page after selecting this gateway.",
+		"snapppay.enabledHint": "Show SnappPay among WooCommerce payment methods.",
+		"snapppay.baseUrlHint": "Usually api.snapppay.ir — change only if SnappPay instructs you to.",
+		"snapppay.flag.commission": "Category commission",
+		"snapppay.flag.commissionHint": "Compute commission from product categories.",
+		"snapppay.flag.pdp": "Product page widget",
+		"snapppay.flag.pdpHint": "Show installment eligibility on the product page.",
+		"snapppay.flag.darkPdp": "Dark widget theme",
+		"snapppay.flag.darkPdpHint": "Dark appearance for the product-page widget.",
+		"snapppay.logsSubtitle": "Recent SnappPay events and responses.",
+		"torobpay.enabled": "Enable gateway",
+		"torobpay.enabledHint": "Show TorobPay among WooCommerce payment methods.",
+		"torobpay.baseUrlHint": "Usually cpg.torobpay.com — change only if TorobPay instructs you to.",
+		"torobpay.fetchCreds": "Fetch credentials",
+		"torobpay.test": "Test connection",
+		"torobpay.nav.settings": "Settings",
+		"torobpay.nav.display": "Display",
+		"torobpay.nav.orders": "Orders",
+		"torobpay.nav.campaign": "Campaign",
+		"torobpay.nav.logs": "Logs",
+		"torobpay.displaySubtitle": "TorobPay widgets and storefront elements.",
+		"torobpay.ordersSubtitle": "TorobPay-related orders and payment status.",
+		"torobpay.logsSubtitle": "Recent TorobPay events and responses.",
+		"torobpay.flag.disableRetry": "Disable payment retry",
+		"torobpay.flag.disableRetryHint": "Hide the retry button after a failed payment.",
+		"torobpay.flag.utmAuto": "Auto-send Torob UTM",
+		"torobpay.flag.utmAutoHint": "Attach Torob UTM parameters to requests automatically.",
+		"torobpay.flag.utmExclusive": "Torob UTM traffic only",
+		"torobpay.flag.utmExclusiveHint": "Show the gateway only for visitors coming from Torob links.",
+		"torobpay.flag.widget": "Product page widget",
+		"torobpay.flag.widgetHint": "Show installment status on the product page.",
+		"torobpay.flag.badge": "TorobPay badge",
+		"torobpay.flag.badgeHint": "Show a small TorobPay badge in the store.",
+		"torobpay.flag.marquee": "Marquee",
+		"torobpay.flag.marqueeHint": "Show a scrolling TorobPay message.",
+		"torobpay.flag.topbar": "Top bar",
+		"torobpay.flag.topbarHint": "Show a notice bar at the top of the store.",
+		"torobpay.flag.slider": "Slider",
+		"torobpay.flag.sliderHint": "Show the TorobPay promo slider.",
+		"torobpay.flag.smartDns": "Smart DNS",
+		"torobpay.flag.smartDnsHint": "Use an alternate DNS path when connectivity fails.",
+		"torobpay.field.dnsOverride": "DNS override host",
+		"torobpay.field.dnsOverrideHint": "Optional; only if Torob support provides one.",
+		"torobpay.probe": "Check status",
+		"torobpay.probed": "Status checked",
+		"torobpay.refund": "Refund",
+		"torobpay.refunded": "Refund recorded",
+		"torobpay.remoteStatus": "Remote status",
+		"digipay.nav.settings": "Settings",
+		"digipay.nav.transactions": "Transactions",
+		"digipay.officialNotice": "Official DigiPay plugin is active — Webina will not register a duplicate gateway.",
+		"digipay.section.connectionHint": "Environment, OAuth credentials, and return URL.",
+		"digipay.section.merchant": "Merchant & supplier",
+		"digipay.section.merchantHint": "Seller, supplier, and category IDs for DigiPay UPG.",
+		"digipay.section.checkoutHint": "Checkout titles, button text, messages, and icon for DigiPay methods.",
+		"digipay.field.titleIpg": "IPG title",
+		"digipay.field.titleWallet": "Wallet title",
+		"digipay.field.titleCpg": "CPG title",
+		"digipay.field.titleBpg": "BPG title",
+		"digipay.field.descIpg": "IPG description",
+		"digipay.field.descWallet": "Wallet description",
+		"digipay.field.descCpg": "CPG description",
+		"digipay.field.descBpg": "BPG description",
+		"digipay.transactionsSubtitle": "Recent DigiPay transaction logs.",
+		"balePay.enabledHint": "Show Bale Pay among WooCommerce payment methods.",
+		"wallet.enabledHint": "Allow customers to pay from their wallet balance.",
+		"wallet.sectionHint": "Minimum top-up and checkout title.",
+		"c2c.enabledHint": "Show card-to-card among WooCommerce payment methods.",
+		"c2c.cardsHint": "Card numbers customers should transfer to.",
+		"c2c.deadlineHint": "Deadline for uploading the transfer receipt after ordering.",
+		"zarinpal.sandboxHint": "Use Zarinpal sandbox for test payments.",
+		"paymentsHub.zarinpalDesc": "Online payments via Zarinpal with automatic reconciliation.",
+		"paymentsHub.digipayDesc": "DigiPay UPG (IPG, installments, credit, and wallet).",
+		"paymentsHub.snapppayDesc": "SnappPay installments for eligible customers.",
+		"paymentsHub.torobpayDesc": "TorobPay installments with store widgets and campaigns.",
+		"paymentsHub.balePayDesc": "Payments through the Bale bot.",
+		"paymentsHub.walletDesc": "Pay from the customer’s store wallet balance.",
+		"paymentsHub.c2cDesc": "Card-to-card payments with customer receipt upload.",
+		"common.copied": "Copied",
+		"common.copyFailed": "Copy failed",
+		"basalam.jobsCancelled": "Queued jobs were cancelled.",
+		"basalam.cancelJobsConfirm": "Cancel all pending and processing jobs?",
+		"basalam.jobError.cancelled": "Cancelled by user",
+		"basalam.createAllQueued": "{{count}} eligible products were queued for create.",
+		"basalam.createAllNoneEligible": "No eligible products to create on Basalam (check image, price > 1000, stock, or existing link).",
+		"marketplace.module.shipping-module": "Transport",
+		"nav.module.shipping-module": "Transport",
+		"shipping.hubTitle": "Transport",
+		"shipping.hubHint": "Shipping hub: packaging, Tapin, tools, cities, map, and rules.",
+		"shipping.packagingTitle": "Postal packaging",
+		"shipping.packagingCardHint": "Iran Post standard cartons (sizes 1–9), per-box prices, and optional checkout charge.",
+		"shipping.packagingHint": "Box dimensions are fixed; set price and enable/disable each size. Products and variations need length/width/height.",
+		"shipping.openPackaging": "Packaging settings",
+		"shipping.zonesTitle": "WooCommerce shipping zones",
+		"shipping.zonesHint": "Classic Woo zones and methods (including enabling the packaging method).",
+		"shipping.openZones": "Open shipping zones",
+		"shipping.methodSetupTitle": "Checkout setup",
+		"shipping.methodSetupHint": "In shipping zones, add the “Webino packaging (Iran Post boxes)” method. When “add packaging to checkout” is on, the sum of selected box prices is charged to the customer.",
+		"shipping.checkoutToggleTitle": "Checkout cost",
+		"shipping.checkoutToggleHint": "When off, the packing plan is still stored on the order but not charged to the customer.",
+		"shipping.addPackagingToCheckout": "Add box costs to customer shipping",
+		"shipping.professionalFeeTitle": "Professional packaging (fixed fee)",
+		"shipping.professionalFeeHint": "Optional cart/checkout add-on. By default it replaces carton box charges when selected (no double charge).",
+		"shipping.professionalFeeEnable": "Enable professional packaging",
+		"shipping.professionalFeeLabel": "Label",
+		"shipping.professionalFeeLabelPlaceholder": "Professional packaging",
+		"shipping.professionalFeeAmount": "Fixed amount",
+		"shipping.professionalFeeDescription": "Short customer description",
+		"shipping.professionalFeeDescriptionPlaceholder": "Secure, polished packaging with protective materials",
+		"shipping.professionalFeeDefaultOn": "Selected by default",
+		"shipping.professionalFeeReplacesCarton": "When professional packaging is selected, skip carton box shipping charges (prevents double charge)",
+		"shipping.professionalFeeOrderSelected": "Professional packaging selected",
+		"shipping.boxesTitle": "Standard post cartons",
+		"shipping.boxesHint": "Dimensions in cm; prices in store currency.",
+		"shipping.boxSize": "Size",
+		"shipping.boxDims": "Dimensions",
+		"shipping.boxPrice": "Price",
+		"shipping.boxTare": "Empty box (g)",
+		"shipping.boxEnabled": "Enabled",
+		"shipping.sizeN": "Size {{n}}",
+		"shipping.orderPackagingTitle": "Order packaging",
+		"shipping.recalcPlan": "Recalculate",
+		"shipping.recalcOk": "Packaging plan updated.",
+		"shipping.noPackagingPlan": "No plan saved yet. Run recalculate.",
+		"shipping.boxCount": "{{count}} boxes",
+		"shipping.oversized": "Oversized",
+		"shipping.basalamWeightTitle": "Basalam weight sync",
+		"shipping.basalamWeightHint": "Product/variation weight is sent as Basalam weight; empty-carton tare of the smallest fitting box is added into package_weight. If Transport is off, Basalam’s default package weight is used as fallback.",
+		"basalam.packagingWeightHint": "With Transport active: package_weight = product weight + postal box tare. The “package weight” default is only a fallback when Transport is unavailable.",
+		"marketplace.module.tapin-module": "Tapin",
+		"nav.module.tapin-module": "Tapin",
+		"tapin.settingsTitle": "Tapin shipping",
+		"tapin.settingsSubtitle": "Connect your shop, shipping methods, rates, and parcel registration — in one place.",
+		"tapin.hubCardTitle": "Tapin",
+		"tapin.hubCardHint": "Express post, VIP, Tipax, and courier — with barcode and labels from the dashboard.",
+		"tapin.openSettings": "Tapin settings",
+		"tapin.tabConnect": "Connect",
+		"tapin.tabOrigin": "Origin",
+		"tapin.tabMethods": "Methods",
+		"tapin.tabTariffs": "Rates",
+		"tapin.tabShip": "Register",
+		"tapin.tabNotify": "Notify",
+		"tapin.connectTitle": "Shop connection",
+		"tapin.connectHint": "Paste your Tapin webservice token and pick the shop.",
+		"tapin.enabled": "Enable Tapin shipping",
+		"tapin.token": "Connection token",
+		"tapin.tokenPlaceholder": "Paste token here",
+		"tapin.testConnection": "Test connection",
+		"tapin.syncLocations": "Refresh provinces & cities",
+		"tapin.shop": "Shop",
+		"tapin.pickShop": "Choose a shop",
+		"tapin.connected": "Connected.",
+		"tapin.connectFailed": "Could not connect.",
+		"tapin.needShop": "Choose a shop to finish setup.",
+		"tapin.needLocations": "Run “Refresh provinces & cities” once.",
+		"tapin.readyHint": "Ready to quote rates and register parcels.",
+		"tapin.locationsCount": "{{count}} provinces listed",
+		"tapin.originTitle": "Ship-from location",
+		"tapin.originHint": "Province and city where parcels are collected.",
+		"tapin.province": "Province",
+		"tapin.city": "City",
+		"tapin.pickProvince": "Choose province",
+		"tapin.pickCity": "Choose city",
+		"tapin.methodsTitle": "Shipping methods",
+		"tapin.methodsHint": "Toggle methods, then add them to your WooCommerce shipping zones.",
+		"tapin.methodPishtaz": "Express post",
+		"tapin.methodVip": "VIP post",
+		"tapin.methodTipax": "Tipax",
+		"tapin.methodCourier": "Courier",
+		"tapin.courierPrice": "Courier base price",
+		"tapin.freeMin": "Free shipping from",
+		"tapin.extraPercent": "Extra percent on rates",
+		"tapin.zonesReminder": "After saving, add each method to a shipping zone.",
+		"tapin.tariffsTitle": "Fallback rates",
+		"tapin.tariffsHint": "Used when live quote is unavailable. Weights are in grams.",
+		"tapin.addRow": "Add row",
+		"tapin.minWeight": "From weight",
+		"tapin.maxWeight": "To weight",
+		"tapin.price": "Price",
+		"tapin.shipTitle": "Parcel registration",
+		"tapin.shipHint": "You can quote rates only, or also register parcels in Tapin.",
+		"tapin.autoRegister": "Auto-register when order status changes",
+		"tapin.autoRegisterWhen": "Register when status is",
+		"tapin.statusProcessing": "Processing",
+		"tapin.statusPackaged": "Packaged",
+		"tapin.statusCompleted": "Completed",
+		"tapin.registerType": "Registration type",
+		"tapin.registerType0": "Without barcode",
+		"tapin.registerType1": "With barcode — ready to print",
+		"tapin.registerType2": "With barcode — ready to ship",
+		"tapin.insurance": "Insure parcel",
+		"tapin.notifyTitle": "Customer updates",
+		"tapin.notifyHint": "SMS and alerts use your shop notification settings.",
+		"tapin.notifyBody": "When a barcode is saved, the shop SMS “post” events fire. Configure wording and toggles there.",
+		"tapin.openSms": "Shop SMS settings",
+		"tapin.orderTitle": "Tapin shipping",
+		"tapin.saveAddress": "Save province & city",
+		"tapin.barcode": "Barcode",
+		"tapin.noBarcode": "No barcode yet.",
+		"tapin.registerShipment": "Register shipment",
+		"tapin.printLabel": "Label",
+		"tapin.refreshStatus": "Refresh status",
+		"shipping.toolsTitle": "Shipping tools",
+		"shipping.toolsHint": "Hide rates, weights, Pro UX (free title, country, first order), statuses, method images.",
+		"shipping.toolsCardHint": "Global rate, weight, and status options.",
+		"shipping.openTools": "Open tools",
+		"shipping.toolsRatesTitle": "Rate visibility",
+		"shipping.hideWhenFree": "Hide other methods when free shipping is available",
+		"shipping.hideWhenCourier": "Show only courier when courier is available",
+		"shipping.statusEnable": "Enable custom shipping order statuses",
+		"shipping.toolsWeightTitle": "Weights",
+		"shipping.defaultProductWeight": "Default product weight (g)",
+		"shipping.defaultPackageWeight": "Extra package weight (g)",
+		"shipping.postWeightLimit": "Post weight limit (kg)",
+		"shipping.methodImagesTitle": "Shipping method images",
+		"shipping.methodImagesHint": "Image URL shown next to method labels at checkout.",
+		"shipping.citiesTitle": "Cities & districts",
+		"shipping.citiesHint": "Provinces and cities are prepared automatically; manage districts, bulk prices, and city-bound zones here.",
+		"shipping.citiesCardHint": "City taxonomy, districts, per-zone method prices.",
+		"shipping.openCities": "Manage cities",
+		"shipping.reinstallCities": "Refresh / complete cities",
+		"shipping.pickState": "Select province",
+		"shipping.citiesInstalled": "Province and city list is ready.",
+		"shipping.citiesNotInstalled": "Preparing city list automatically…",
+		"shipping.citiesLoading": "Loading cities…",
+		"shipping.citiesSeeding": "List is seeding automatically — reopen this page or tap refresh.",
+		"shipping.citiesSeedProgress": "{{done}} of {{total}} provinces",
+		"shipping.bulkPrices": "Bulk city prices",
+		"shipping.tipaxOn": "Tipax on",
+		"shipping.createZonesFromCities": "Create zones from cities (first 20)",
+		"shipping.zonesCreated": "Zones created.",
+		"shipping.mapTitle": "Shipping map",
+		"shipping.mapHint": "Checkout/order map pin and distance to store.",
+		"shipping.mapCardHint": "OSM / Neshan / Map.ir and required pin.",
+		"shipping.openMap": "Map settings",
+		"shipping.mapEnabled": "Enable checkout map",
+		"shipping.mapRequired": "Require location pin",
+		"shipping.mapProvider": "Provider",
+		"shipping.mapPlacement": "Placement",
+		"shipping.mapAfterNotes": "After order notes",
+		"shipping.mapBeforeDetails": "Before customer details",
+		"shipping.mapDistance": "Distance mode",
+		"shipping.mapDistNone": "None",
+		"shipping.mapDistDirect": "Straight line",
+		"shipping.mapDistReal": "ORS routing",
+		"shipping.storeLat": "Store latitude",
+		"shipping.storeLng": "Store longitude",
+		"shipping.orderMapTitle": "Map location",
+		"shipping.rulesTitle": "Shipping rules",
+		"shipping.rulesHint": "Multi-condition / multi-action rules on checkout rates.",
+		"shipping.rulesCardHint": "Pro-style rules: hide, free, set cost.",
+		"shipping.openRules": "Manage rules",
+		"shipping.addRule": "Add rule",
+		"shipping.ruleN": "Rule {{n}}",
+		"shipping.ruleTitle": "Title",
+		"shipping.rulePriority": "Priority",
+		"shipping.condType": "Condition type",
+		"shipping.condValue": "Condition value",
+		"shipping.actionType": "Action type",
+		"shipping.actionMethod": "Method ID",
+		"shipping.actionValue": "Action value",
+		"tapin.gateway": "Service gateway",
+		"tapin.showCredit": "Show credit",
+		"tapin.credit": "Credit",
+		"tapin.methodTipaxApi": "Tapin Tipax",
+		"tapin.methodAlonomic": "Tapin Alonomic",
+		"tapin.courierPerKg": "Courier per kg",
+		"tapin.extraFixed": "Fixed rate extra",
+		"tapin.defaultBox": "Default box",
+		"tapin.usePwsFormula": "Full offline PWS tariff formula",
+		"tapin.syncPackingBoxes": "Sync Tapin packing boxes",
+		"tapin.payType": "Shipping pay type",
+		"tapin.employeeCode": "Employee code",
+		"tapin.tipaxPickup": "Tipax pickup type",
+		"tapin.tipaxDelivery": "Tipax delivery type",
+		"tapin.boxSize": "Box / pocket size",
+		"tapin.contentType": "Content type",
+		"tapin.orderWeight": "Weight (g)",
+		"tapin.saveParcelMeta": "Save parcel details",
+		"tapin.status": "Tapin status",
+		"tapin.readyToShip": "Ready to ship",
+		"shipping.proUxTitle": "Checkout Pro UX",
+		"shipping.freeShippingTitle": "Free shipping title",
+		"shipping.hideCountry": "Hide country field",
+		"shipping.swapStateCity": "Swap province/city fields",
+		"shipping.disableDefaultMethod": "Disable default shipping method selection",
+		"shipping.freeFirstOrder": "Free shipping on first order",
+		"shipping.honorFreeCoupon": "Honor free shipping coupons",
+		"shipping.citySearch": "Quick city search",
+		"shipping.citySearchPlaceholder": "Type at least 2 characters…",
+		"shipping.districtsTitle": "Districts",
+		"shipping.districtsHint": "Add districts under a city; they appear at checkout and My Account.",
+		"shipping.districtName": "District name",
+		"shipping.addDistrict": "Add district",
+		"shipping.noDistricts": "No districts for this city yet.",
+		"shipping.conditions": "Conditions (all must match)",
+		"shipping.actions": "Actions",
+		"shipping.addCondition": "Add condition",
+		"shipping.addAction": "Add action",
+		"common.create": "Create",
+		"tapin.opsTitle": "Tapin operations",
+		"tapin.opsHint": "Order list, bulk status/labels, and status reports.",
+		"tapin.openOps": "Open operations",
+		"tapin.financeTitle": "Tapin finance",
+		"tapin.financeHint": "Wallet credit, top-up, history, and shop detail.",
+		"tapin.openFinance": "Open finance",
+		"tapin.catalogTitle": "Tapin catalog",
+		"tapin.catalogHint": "Products, customers, employees, and background tasks.",
+		"tapin.openCatalog": "Open catalog",
+		"tapin.editShipment": "Edit shipment",
+		"tapin.printLabelNative": "Native label",
+		"tapin.printBarcode": "Barcode HTML",
+		"tapin.fetchDetail": "Fetch detail",
+		"tapin.kiosk": "Kiosk",
+		"tapin.kioskNone": "No kiosk",
+		"tapin.defaultKiosk": "Default kiosk ID",
+		"tapin.tapinOrderId": "Tapin order ID",
+		"tapin.tapinOrdersList": "Tapin parcels",
+		"tapin.bulkOps": "Bulk operations (Woo order IDs)",
+		"tapin.wcOrderIds": "WooCommerce order IDs",
+		"tapin.bulkStatus": "Tapin status code",
+		"tapin.applyBulkStatus": "Apply bulk status",
+		"tapin.bulkLabels": "Bulk HTML labels",
+		"tapin.fromDate": "From date",
+		"tapin.toDate": "To date",
+		"tapin.labelsByDate": "Labels by date",
+		"tapin.changeReport": "Change-status report",
+		"tapin.lastChange": "Last change status",
+		"tapin.recipient": "Recipient",
+		"tapin.topupAmount": "Top-up amount (IRR)",
+		"tapin.startTopup": "Start top-up",
+		"tapin.creditHistory": "Top-up history",
+		"tapin.createdAt": "Created at",
+		"tapin.shopDetail": "Shop detail",
+		"tapin.products": "Products",
+		"tapin.customers": "Customers",
+		"tapin.employees": "Employees",
+		"tapin.tasks": "Tasks",
+		"tapin.createProduct": "Create Tapin product",
+		"tapin.productTitle": "Product title",
+		"tapin.pushWcProduct": "Push Woo product to Tapin",
+		"tapin.wcProductId": "WooCommerce product ID",
+		"tapin.syncToTapin": "Sync to Tapin",
+		"tapin.mobile": "Mobile",
+		"tapin.taskDetail": "Task detail",
+		"tapin.clearLocal": "Clear local Tapin meta",
+		"tapin.clearLocalConfirm": "Clear local Tapin barcode/order id so you can register again? The Tapin parcel is not deleted.",
+		"tapin.createShop": "Create Tapin shop",
+		"tapin.shopName": "Shop name",
+		"tapin.firstName": "First name",
+		"tapin.lastName": "Last name",
+		"tapin.productCategories": "Product categories",
+		"tapin.customerCategories": "Customer categories",
+		"tapin.statusReport": "Status report (get-status/report)",
+		"tapin.tapinOrderIds": "Tapin order UUIDs",
+		"tapin.fetchStatusReport": "Fetch status report",
+		"nav.module.analytics-commerce": "Commerce",
+		"nav.module.analytics-compare": "Traffic compare",
+		"nav.module.analytics-seo": "SEO",
+		"nav.module.analytics-support": "Support",
+		"nav.module.analytics-content": "Content",
+		"nav.module.analytics-month-summary": "Monthly summary",
+		"nav.module.analytics-module-commerce": "Commerce",
+		"nav.module.analytics-module-compare": "Traffic compare",
+		"nav.module.analytics-module-seo": "SEO",
+		"nav.module.analytics-module-support": "Support",
+		"nav.module.analytics-module-content": "Content",
+		"nav.module.analytics-module-month-summary": "Monthly summary",
+		"analytics.sections.commerce": "Commerce",
+		"analytics.sections.compare": "Traffic compare",
+		"analytics.sections.seo": "SEO",
+		"analytics.sections.support": "Support",
+		"analytics.sections.content": "Content",
+		"analytics.sections.monthSummary": "Monthly summary",
+		"analytics.kpi.orders": "Orders",
+		"analytics.kpi.revenue": "Total sales",
+		"analytics.kpi.aov": "Average order value",
+		"analytics.kpi.conversion": "Visit-to-purchase rate",
+		"analytics.kpi.salesSite": "Sales from site",
+		"analytics.kpi.salesInstagram": "Sales from Instagram",
+		"analytics.kpi.salesOther": "Sales from other",
+		"analytics.kpi.newCustomers": "New customers",
+		"analytics.kpi.returningCustomers": "Returning customers",
+		"analytics.compare.metric": "Metric",
+		"analytics.compare.thisMonth": "This month",
+		"analytics.compare.lastMonth": "Last month",
+		"analytics.compare.change": "Change %",
+		"analytics.compare.visitors": "Unique visitors",
+		"analytics.compare.views": "Page views",
+		"analytics.compare.avgDuration": "Avg. time on site",
+		"analytics.compare.bounce": "Bounce rate",
+		"analytics.compare.topSources": "Top inbound sources",
+		"analytics.compare.topPages": "Top pages",
+		"analytics.compare.siteConversion": "Overall conversion rate",
+		"analytics.compare.sessionNote": "Shown after session data starts collecting.",
+		"analytics.seo.keywords": "Keywords in use",
+		"analytics.seo.optimizedPages": "Optimized pages",
+		"analytics.seo.internalLinks": "Internal links",
+		"analytics.seo.externalLinks": "External links",
+		"analytics.seo.noindexShare": "noindex share (Rank Math)",
+		"analytics.seo.rankPlaceholder": "Live rankings require Search Console.",
+		"analytics.seo.indexPlaceholder": "Live index status requires Search Console.",
+		"analytics.seo.gscMissing": "Search Console is not connected",
+		"analytics.support.tickets": "Tickets created",
+		"analytics.support.replies": "Staff replies",
+		"analytics.support.csat": "Customer satisfaction",
+		"analytics.support.csatCount": "Ratings",
+		"analytics.support.frequent": "Frequent problems",
+		"analytics.support.rateLabel": "Satisfaction rating (1–5)",
+		"analytics.content.productsCreated": "Products created",
+		"analytics.content.productsUpdated": "Products updated",
+		"analytics.content.postsPublished": "Blog posts published",
+		"analytics.content.aiProducts": "AI-completed products",
+		"analytics.content.aiBlog": "AI blog writes",
+		"analytics.content.aiPages": "AI page fills",
+		"analytics.pct": "Change %",
+		"analytics.col.metric": "Metric",
+		"analytics.col.count": "Count",
+		"analytics.col.subject": "Subject",
+		"analytics.monthSummary.score": "Month score",
+		"analytics.monthSummary.status.growth": "Growth",
+		"analytics.monthSummary.status.stable": "Stable",
+		"analytics.monthSummary.status.decline": "Decline",
+		"analytics.monthSummary.achievement": "Top achievement",
+		"analytics.monthSummary.challenge": "Top challenge",
+		"analytics.monthSummary.noAchievement": "No meaningful growth",
+		"analytics.monthSummary.noChallenge": "No standout challenge identified",
+		"analytics.monthSummary.kpi.revenue": "Revenue",
+		"analytics.monthSummary.kpi.orders": "Orders",
+		"analytics.monthSummary.kpi.visitors": "Unique visitors",
+		"analytics.monthSummary.kpi.conversion": "Conversion rate",
+		"migrate.title": "Migrate to Webino",
+		"migrate.description": "Send this WooCommerce store to a Webino tenant in resumable batches. Example: parisma.ir → parisma.webinaagency.ir.",
+		"migrate.connection": "Connection",
+		"migrate.schema": "Payload schema: {{schema}}",
+		"migrate.siteUrl": "Webino site URL",
+		"migrate.token": "API token",
+		"migrate.tokenSaved": "Saved ({{hint}}). Enter a new token to replace it.",
+		"migrate.clearToken": "Remove the saved token",
+		"migrate.batchSize": "Batch size",
+		"migrate.delay": "Delay between batches (ms)",
+		"migrate.timeout": "Request timeout (seconds)",
+		"migrate.dryRun": "Dry run (build batches, do not send)",
+		"migrate.dryRunBadge": "dry run",
+		"migrate.entities": "What to migrate",
+		"migrate.mode": "Scope",
+		"migrate.modeFull": "Full (everything)",
+		"migrate.modeSelective": "Selective",
+		"migrate.modeHint": "Full turns every resource on. Selective sends only the boxes you check. Resources Webino does not import yet are skipped with a warning so the rest of the job continues.",
+		"migrate.unsupported": "waiting for a Webino importer",
+		"migrate.entity.media": "Images",
+		"migrate.entity.media_files": "Other media (video, PDF, SVG)",
+		"migrate.entity.categories": "Product categories",
+		"migrate.entity.tags": "Product tags",
+		"migrate.entity.brands": "Brands",
+		"migrate.entity.customers": "Customers",
+		"migrate.entity.staff": "Staff (invite, no passwords)",
+		"migrate.entity.products": "Products and variations",
+		"migrate.entity.coupons": "Coupons",
+		"migrate.entity.reviews": "Reviews",
+		"migrate.entity.pages": "Pages",
+		"migrate.entity.posts": "Posts",
+		"migrate.entity.elementor_templates": "Elementor templates",
+		"migrate.entity.orders": "Orders",
+		"migrate.entity.menus": "Menus",
+		"migrate.entity.redirects": "Redirects",
+		"migrate.entity.settings": "Store settings",
+		"migrate.entity.stats": "Daily analytics",
+		"migrate.entity.waiting_list": "Waiting list",
+		"migrate.entity.permalinks": "Permalink map",
+		"migrate.entity.review_queue": "Review queue (wallet, tickets, returns)",
+		"migrate.endpoints": "API paths",
+		"migrate.save": "Save settings",
+		"migrate.saved": "Migration settings saved.",
+		"migrate.test": "Test connection",
+		"migrate.testOk": "Connection succeeded.",
+		"migrate.progress": "Progress",
+		"migrate.notStarted": "No migration has been started.",
+		"migrate.start": "Start migration",
+		"migrate.resume": "Resume",
+		"migrate.pause": "Pause",
+		"migrate.reset": "Clear status",
+		"migrate.confirmStart": "Start from the beginning? The current progress for this job will be cleared.",
+		"migrate.confirmReset": "Clear the migration status?",
+		"migrate.passwordNote": "Customer password hashes are not exported. People sign in on Webino with a one-time code or a password reset. Closing this page does not stop a running job; WordPress cron keeps sending one batch per minute.",
+		"migrate.status.idle": "Ready",
+		"migrate.status.running": "Running",
+		"migrate.status.paused": "Paused",
+		"migrate.status.failed": "Failed",
+		"migrate.status.completed": "Completed"
 	};
-})), hp = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", gp = /* @__PURE__ */ new Set();
-async function _p(e) {
-	return e === "fa" ? (await Promise.resolve().then(() => (dp(), lp))).default : (await Promise.resolve().then(() => (mp(), fp))).default;
+})), Sp = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", Cp = /* @__PURE__ */ new Set();
+async function wp(e) {
+	return e === "fa" ? (await Promise.resolve().then(() => (vp(), gp))).default : (await Promise.resolve().then(() => (xp(), yp))).default;
 }
-function vp(e) {
+async function Tp(e) {
+	if (Cp.has(e)) return;
+	let t = await wp(e);
+	D.addResourceBundle(e, "translation", t, !0, !0), Cp.add(e);
+}
+function Ep(e) {
 	return e === "fa" ? "rtl" : "ltr";
 }
-var yp = {
+var Dp = {
 	type: "postProcessor",
 	name: "faDigits",
 	process(e, t, n) {
-		return n.lng !== "fa" && !n.lng?.startsWith("fa") ? e : Kf(e);
+		return n.lng !== "fa" && !n.lng?.startsWith("fa") ? e : $f(e);
 	}
 };
 (async () => {
-	let e = hp === "fa" ? "en" : "fa", [t, n] = await Promise.all([_p(hp), _p(e)]);
-	gp.add(hp), gp.add(e), await D.use(yp).use(h).init({
-		resources: {
-			[hp]: { translation: t },
-			[e]: { translation: n }
-		},
-		lng: hp,
+	let e = await wp(Sp);
+	Cp.add(Sp), await D.use(Dp).use(h).init({
+		resources: { [Sp]: { translation: e } },
+		lng: Sp,
 		fallbackLng: "en",
 		keySeparator: !1,
 		nsSeparator: !1,
@@ -17466,35 +20384,37 @@ var yp = {
 			bindI18n: "languageChanged loaded added",
 			useSuspense: !1
 		}
-	}), document.documentElement.lang = hp, document.documentElement.dir = vp(hp);
+	}), document.documentElement.lang = Sp, document.documentElement.dir = Ep(Sp), Tp(Sp === "fa" ? "en" : "fa").catch((e) => {
+		console.warn("[Webino Dashboard] Secondary locale preload failed", e);
+	});
 })();
 //#endregion
 //#region src/components/ui/dialog.tsx
-function bp({ ...e }) {
+function Op({ ...e }) {
 	return /* @__PURE__ */ x(Dr, {
 		"data-slot": "dialog",
 		...e
 	});
 }
-function xp({ ...e }) {
+function kp({ ...e }) {
 	return /* @__PURE__ */ x(kr, {
 		"data-slot": "dialog-portal",
 		...e
 	});
 }
-function Sp({ className: e, ...t }) {
+function Ap({ className: e, ...t }) {
 	return /* @__PURE__ */ x(Ar, {
 		"data-slot": "dialog-overlay",
 		className: W("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", e),
 		...t
 	});
 }
-function Cp({ className: e, children: t, showCloseButton: n = !0, ...r }) {
+function jp({ className: e, children: t, showCloseButton: n = !0, ...r }) {
 	return /* @__PURE__ */ x(kn, {
 		allowBodyScroll: !0,
-		children: /* @__PURE__ */ S(xp, {
+		children: /* @__PURE__ */ S(kp, {
 			"data-slot": "dialog-portal",
-			children: [/* @__PURE__ */ x(Sp, {}), /* @__PURE__ */ S(jr, {
+			children: [/* @__PURE__ */ x(Ap, {}), /* @__PURE__ */ S(jr, {
 				"data-slot": "dialog-content",
 				className: W("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg", e),
 				...r,
@@ -17510,14 +20430,14 @@ function Cp({ className: e, children: t, showCloseButton: n = !0, ...r }) {
 		})
 	});
 }
-function wp({ className: e, ...t }) {
+function Mp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "dialog-header",
 		className: W("flex flex-col gap-2 text-center sm:text-start", e),
 		...t
 	});
 }
-function Tp({ className: e, showCloseButton: t = !1, children: n, ...r }) {
+function Np({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 	return /* @__PURE__ */ S("div", {
 		"data-slot": "dialog-footer",
 		className: W("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", e),
@@ -17531,7 +20451,7 @@ function Tp({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 		})]
 	});
 }
-function Ep({ className: e, ...t }) {
+function Pp({ className: e, ...t }) {
 	return /* @__PURE__ */ x(Mr, {
 		"data-slot": "dialog-title",
 		className: W("text-lg leading-none font-semibold", e),
@@ -17540,7 +20460,7 @@ function Ep({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/skeleton.tsx
-function Dp({ className: e, ...t }) {
+function Fp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "skeleton",
 		className: W("animate-pulse rounded-md bg-accent", e),
@@ -17549,10 +20469,10 @@ function Dp({ className: e, ...t }) {
 }
 //#endregion
 //#region src/lib/categoryTree.ts
-function Op(e) {
+function Ip(e) {
 	return e.trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^\p{L}\p{N}-]+/gu, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
 }
-function kp(e) {
+function Lp(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) {
 		let e = n.parent || 0, r = t.get(e) ?? [];
@@ -17570,20 +20490,20 @@ function kp(e) {
 }
 //#endregion
 //#region src/components/magazine/MediaPickerDialog.tsx
-function Ap(e, t, n) {
+function Rp(e, t, n) {
 	let r = new URLSearchParams({
 		page: "1",
 		per_page: "60"
 	});
 	return e > 0 && r.set("folder", String(e)), t > 0 && r.set("category", String(t)), n.trim() && r.set("search", n.trim()), `content/media?${r.toString()}`;
 }
-function jp(e) {
+function zp(e) {
 	return {
 		...e,
 		url: ""
 	};
 }
-function Mp({ open: e, onOpenChange: n, onSelect: r }) {
+function Bp({ open: e, onOpenChange: n, onSelect: r }) {
 	let { t: i } = g(), [a, o] = m(0), [s, c] = m(0), [l, d] = m(""), [p, h] = m("");
 	u(() => {
 		if (!e) return;
@@ -17602,16 +20522,16 @@ function Mp({ open: e, onOpenChange: n, onSelect: r }) {
 			s,
 			p
 		],
-		queryFn: () => $(Ap(a, s, p)),
+		queryFn: () => $(Rp(a, s, p)),
 		enabled: e
-	}), y = f(() => kp((_.data?.folders ?? []).map(jp)), [_.data?.folders]), b = f(() => kp((_.data?.categories ?? []).map(jp)), [_.data?.categories]), C = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
-	return /* @__PURE__ */ x(bp, {
+	}), y = f(() => Lp((_.data?.folders ?? []).map(zp)), [_.data?.folders]), b = f(() => Lp((_.data?.categories ?? []).map(zp)), [_.data?.categories]), C = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
+	return /* @__PURE__ */ x(Op, {
 		open: e,
 		onOpenChange: n,
-		children: /* @__PURE__ */ S(Cp, {
+		children: /* @__PURE__ */ S(jp, {
 			className: "max-h-[85vh] overflow-hidden sm:max-w-3xl",
 			children: [
-				/* @__PURE__ */ x(wp, { children: /* @__PURE__ */ x(Ep, { children: i("posts.selectFeaturedImage") }) }),
+				/* @__PURE__ */ x(Mp, { children: /* @__PURE__ */ x(Pp, { children: i("posts.selectFeaturedImage") }) }),
 				/* @__PURE__ */ S("div", {
 					className: "grid gap-3 sm:grid-cols-3",
 					children: [
@@ -17667,7 +20587,7 @@ function Mp({ open: e, onOpenChange: n, onSelect: r }) {
 					className: "max-h-[50vh] overflow-y-auto",
 					children: v.isLoading ? /* @__PURE__ */ x("div", {
 						className: "grid grid-cols-3 gap-3 sm:grid-cols-4",
-						children: Array.from({ length: 8 }).map((e, t) => /* @__PURE__ */ x(Dp, { className: "aspect-square rounded-md" }, t))
+						children: Array.from({ length: 8 }).map((e, t) => /* @__PURE__ */ x(Fp, { className: "aspect-square rounded-md" }, t))
 					}) : C.length === 0 ? /* @__PURE__ */ x("p", {
 						className: "py-8 text-center text-sm text-muted-foreground",
 						children: i("media.empty")
@@ -17693,7 +20613,7 @@ function Mp({ open: e, onOpenChange: n, onSelect: r }) {
 						}, e.id))
 					})
 				}),
-				/* @__PURE__ */ x(Tp, { children: /* @__PURE__ */ x(G, {
+				/* @__PURE__ */ x(Np, { children: /* @__PURE__ */ x(G, {
 					type: "button",
 					variant: "outline",
 					onClick: () => n(!1),
@@ -17705,7 +20625,7 @@ function Mp({ open: e, onOpenChange: n, onSelect: r }) {
 }
 //#endregion
 //#region src/components/ui/lazy-image.tsx
-function Np({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i, ...a }) {
+function Vp({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i, ...a }) {
 	return /* @__PURE__ */ x("img", {
 		className: W(e),
 		loading: n ?? (t ? "eager" : "lazy"),
@@ -17717,7 +20637,7 @@ function Np({ className: e, eager: t, loading: n, decoding: r, fetchPriority: i,
 }
 //#endregion
 //#region src/components/magazine/PostFeaturedImagePanel.tsx
-function Pp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
+function Hp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
 	let { t: i } = g(), [a, o] = m(!1);
 	return /* @__PURE__ */ S(b, { children: [/* @__PURE__ */ S(K, {
 		className: "gap-4 py-4 shadow-sm",
@@ -17731,7 +20651,7 @@ function Pp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
 			className: "space-y-3 px-4",
 			children: [e > 0 && t ? /* @__PURE__ */ x("div", {
 				className: "overflow-hidden rounded-md border border-border",
-				children: /* @__PURE__ */ x(Np, {
+				children: /* @__PURE__ */ x(Vp, {
 					src: t,
 					alt: i("a11y.thumbnail"),
 					className: "aspect-video w-full object-cover",
@@ -17757,7 +20677,7 @@ function Pp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
 				}) : null]
 			})]
 		})]
-	}), /* @__PURE__ */ x(Mp, {
+	}), /* @__PURE__ */ x(Bp, {
 		open: a,
 		onOpenChange: o,
 		onSelect: (e) => n(e)
@@ -17765,29 +20685,29 @@ function Pp({ imageId: e, imageUrl: t, onChange: n, onRemove: r }) {
 }
 //#endregion
 //#region src/components/ui/alert-dialog.tsx
-function Fp({ ...e }) {
+function Up({ ...e }) {
 	return /* @__PURE__ */ x(ci, {
 		"data-slot": "alert-dialog",
 		...e
 	});
 }
-function Ip({ ...e }) {
+function Wp({ ...e }) {
 	return /* @__PURE__ */ x(li, {
 		"data-slot": "alert-dialog-portal",
 		...e
 	});
 }
-function Lp({ className: e, ...t }) {
+function Gp({ className: e, ...t }) {
 	return /* @__PURE__ */ x(ui, {
 		"data-slot": "alert-dialog-overlay",
 		className: W("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", e),
 		...t
 	});
 }
-function Rp({ className: e, size: t = "default", ...n }) {
+function Kp({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ x(kn, {
 		allowBodyScroll: !0,
-		children: /* @__PURE__ */ S(Ip, { children: [/* @__PURE__ */ x(Lp, {}), /* @__PURE__ */ x(di, {
+		children: /* @__PURE__ */ S(Wp, { children: [/* @__PURE__ */ x(Gp, {}), /* @__PURE__ */ x(di, {
 			"data-slot": "alert-dialog-content",
 			"data-size": t,
 			className: W("group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[size=default]:sm:max-w-lg", e),
@@ -17795,35 +20715,35 @@ function Rp({ className: e, size: t = "default", ...n }) {
 		})] })
 	});
 }
-function zp({ className: e, ...t }) {
+function qp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "alert-dialog-header",
 		className: W("grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-6 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-start sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]", e),
 		...t
 	});
 }
-function Bp({ className: e, ...t }) {
+function Jp({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "alert-dialog-footer",
 		className: W("flex flex-col-reverse gap-2 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end", e),
 		...t
 	});
 }
-function Vp({ className: e, ...t }) {
+function Yp({ className: e, ...t }) {
 	return /* @__PURE__ */ x(mi, {
 		"data-slot": "alert-dialog-title",
 		className: W("text-lg font-semibold sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2", e),
 		...t
 	});
 }
-function Hp({ className: e, ...t }) {
+function Xp({ className: e, ...t }) {
 	return /* @__PURE__ */ x(hi, {
 		"data-slot": "alert-dialog-description",
 		className: W("text-sm text-muted-foreground", e),
 		...t
 	});
 }
-function Up({ className: e, variant: t = "default", size: n = "default", ...r }) {
+function Zp({ className: e, variant: t = "default", size: n = "default", ...r }) {
 	return /* @__PURE__ */ x(G, {
 		variant: t,
 		size: n,
@@ -17835,7 +20755,7 @@ function Up({ className: e, variant: t = "default", size: n = "default", ...r })
 		})
 	});
 }
-function Wp({ className: e, variant: t = "outline", size: n = "default", ...r }) {
+function Qp({ className: e, variant: t = "outline", size: n = "default", ...r }) {
 	return /* @__PURE__ */ x(G, {
 		variant: t,
 		size: n,
@@ -17849,7 +20769,7 @@ function Wp({ className: e, variant: t = "outline", size: n = "default", ...r })
 }
 //#endregion
 //#region src/components/ui/textarea.tsx
-function Gp({ className: e, ...t }) {
+function $p({ className: e, ...t }) {
 	return /* @__PURE__ */ x("textarea", {
 		"data-slot": "textarea",
 		className: W("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
@@ -17858,7 +20778,7 @@ function Gp({ className: e, ...t }) {
 }
 //#endregion
 //#region src/hooks/useQueryErrorToast.ts
-function Kp(e) {
+function em(e) {
 	let { t } = g(), n = p(!1);
 	u(() => {
 		e.isError && e.error ? n.current || (n.current = !0, _.error(_f(t, e.error))) : n.current = !1;
@@ -17871,7 +20791,7 @@ function Kp(e) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/pages/CoffeeOriginEditorPage.tsx
-function qp() {
+function tm() {
 	return {
 		name: "",
 		slug: "",
@@ -17881,13 +20801,13 @@ function qp() {
 		thumbnail_url: ""
 	};
 }
-function Jp() {
-	let { t: r } = g(), i = n(), a = T(), o = !!w("/shop/coffee-origins/new"), { originId: s } = E(), c = !o && s ? parseInt(s, 10) : void 0, [l, d] = m(qp), [f, p] = m(!0), [h, v] = m(!1), y = t({
+function nm() {
+	let { t: r } = g(), i = n(), a = T(), o = !!w("/shop/coffee-origins/new"), { originId: s } = E(), c = !o && s ? parseInt(s, 10) : void 0, [l, d] = m(tm), [f, p] = m(!0), [h, v] = m(!1), y = t({
 		queryKey: ["coffee-origins", c],
 		queryFn: () => $(`shop/coffee-origins/${c}`),
 		enabled: !o && !!c
 	});
-	Kp(y), u(() => {
+	em(y), u(() => {
 		y.data && (d({
 			name: y.data.name,
 			slug: y.data.slug,
@@ -17901,7 +20821,7 @@ function Jp() {
 		mutationFn: async () => {
 			let e = {
 				name: l.name.trim(),
-				slug: l.slug.trim() || Op(l.name),
+				slug: l.slug.trim() || Ip(l.name),
 				description: l.description,
 				iso_code: l.iso_code.trim(),
 				thumbnail_id: l.thumbnail_id > 0 ? l.thumbnail_id : 0
@@ -17942,7 +20862,7 @@ function Jp() {
 		thumbnail_url: l.thumbnail_url,
 		url: ""
 	};
-	return /* @__PURE__ */ S(cp, {
+	return /* @__PURE__ */ S(hp, {
 		title: r(o ? "coffeeProfile.originNewTitle" : "coffeeProfile.originEditTitle"),
 		children: [
 			/* @__PURE__ */ S("div", {
@@ -17976,7 +20896,7 @@ function Jp() {
 					className: "space-y-6 pt-6",
 					children: !o && y.isLoading ? /* @__PURE__ */ S("div", {
 						className: "space-y-4",
-						children: [/* @__PURE__ */ x(Dp, { className: "h-10 w-full max-w-md" }), /* @__PURE__ */ x(Dp, { className: "h-10 w-full max-w-md" })]
+						children: [/* @__PURE__ */ x(Fp, { className: "h-10 w-full max-w-md" }), /* @__PURE__ */ x(Fp, { className: "h-10 w-full max-w-md" })]
 					}) : /* @__PURE__ */ S(b, { children: [
 						/* @__PURE__ */ S("div", {
 							className: "grid gap-4 md:grid-cols-2",
@@ -17996,7 +20916,7 @@ function Jp() {
 										onBlur: () => {
 											f && l.name.trim() && d((e) => ({
 												...e,
-												slug: Op(e.name)
+												slug: Ip(e.name)
 											}));
 										}
 									})]
@@ -18043,7 +20963,7 @@ function Jp() {
 								}),
 								/* @__PURE__ */ S("div", {
 									className: "flex items-end gap-3 pb-1",
-									children: [/* @__PURE__ */ x(Yf, { origin: O }), /* @__PURE__ */ x("span", {
+									children: [/* @__PURE__ */ x(np, { origin: O }), /* @__PURE__ */ x("span", {
 										className: "text-muted-foreground text-sm",
 										children: r("coffeeProfile.flagPreview")
 									})]
@@ -18055,7 +20975,7 @@ function Jp() {
 							children: [/* @__PURE__ */ x(Z, {
 								htmlFor: "origin-desc",
 								children: r("coffeeProfile.fieldDescription")
-							}), /* @__PURE__ */ x(Gp, {
+							}), /* @__PURE__ */ x($p, {
 								id: "origin-desc",
 								value: l.description,
 								onChange: (e) => d({
@@ -18074,7 +20994,7 @@ function Jp() {
 								className: "text-muted-foreground mb-3 text-xs",
 								children: r("coffeeProfile.fieldFlagImageHint")
 							}),
-							/* @__PURE__ */ x(Pp, {
+							/* @__PURE__ */ x(Hp, {
 								imageId: l.thumbnail_id,
 								imageUrl: l.thumbnail_url,
 								onChange: (e) => d({
@@ -18092,10 +21012,10 @@ function Jp() {
 					] })
 				})
 			}),
-			/* @__PURE__ */ x(Fp, {
+			/* @__PURE__ */ x(Up, {
 				open: h,
 				onOpenChange: v,
-				children: /* @__PURE__ */ S(Rp, { children: [/* @__PURE__ */ S(zp, { children: [/* @__PURE__ */ x(Vp, { children: r("coffeeProfile.originDeleteTitle") }), /* @__PURE__ */ x(Hp, { children: r("coffeeProfile.originDeleteConfirm", { name: l.name }) })] }), /* @__PURE__ */ S(Bp, { children: [/* @__PURE__ */ x(Wp, { children: r("common.cancel") }), /* @__PURE__ */ x(Up, {
+				children: /* @__PURE__ */ S(Kp, { children: [/* @__PURE__ */ S(qp, { children: [/* @__PURE__ */ x(Yp, { children: r("coffeeProfile.originDeleteTitle") }), /* @__PURE__ */ x(Xp, { children: r("coffeeProfile.originDeleteConfirm", { name: l.name }) })] }), /* @__PURE__ */ S(Jp, { children: [/* @__PURE__ */ x(Qp, { children: r("common.cancel") }), /* @__PURE__ */ x(Zp, {
 					disabled: D.isPending,
 					onClick: () => void D.mutateAsync(),
 					children: r("common.delete")
@@ -18106,19 +21026,19 @@ function Jp() {
 }
 //#endregion
 //#region src/components/TableListSkeleton.tsx
-function Yp({ rows: e = 6, columns: t = 4 }) {
+function rm({ rows: e = 6, columns: t = 4 }) {
 	return /* @__PURE__ */ x("div", {
 		className: "p-4 space-y-3",
 		"aria-hidden": !0,
 		children: Array.from({ length: e }).map((e, n) => /* @__PURE__ */ x("div", {
 			className: "flex gap-2",
-			children: Array.from({ length: t }).map((e, t) => /* @__PURE__ */ x(Dp, { className: "h-8 flex-1" }, t))
+			children: Array.from({ length: t }).map((e, t) => /* @__PURE__ */ x(Fp, { className: "h-8 flex-1" }, t))
 		}, n))
 	});
 }
 //#endregion
 //#region src/components/ui/table.tsx
-function Xp({ className: e, ...t }) {
+function im({ className: e, ...t }) {
 	return /* @__PURE__ */ x("div", {
 		"data-slot": "table-container",
 		className: "relative w-full overflow-x-auto",
@@ -18129,35 +21049,35 @@ function Xp({ className: e, ...t }) {
 		})
 	});
 }
-function Zp({ className: e, ...t }) {
+function am({ className: e, ...t }) {
 	return /* @__PURE__ */ x("thead", {
 		"data-slot": "table-header",
 		className: W("[&_tr]:border-b", e),
 		...t
 	});
 }
-function Qp({ className: e, ...t }) {
+function om({ className: e, ...t }) {
 	return /* @__PURE__ */ x("tbody", {
 		"data-slot": "table-body",
 		className: W("[&_tr:last-child]:border-0", e),
 		...t
 	});
 }
-function $p({ className: e, ...t }) {
+function sm({ className: e, ...t }) {
 	return /* @__PURE__ */ x("tr", {
 		"data-slot": "table-row",
 		className: W("border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted", e),
 		...t
 	});
 }
-function em({ className: e, ...t }) {
+function cm({ className: e, ...t }) {
 	return /* @__PURE__ */ x("th", {
 		"data-slot": "table-head",
 		className: W("h-10 px-2 text-start align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]", e),
 		...t
 	});
 }
-function tm({ className: e, ...t }) {
+function lm({ className: e, ...t }) {
 	return /* @__PURE__ */ x("td", {
 		"data-slot": "table-cell",
 		className: W("p-2 text-start align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]", e),
@@ -18166,7 +21086,7 @@ function tm({ className: e, ...t }) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/pages/CoffeeOriginsPage.tsx
-function nm() {
+function um() {
 	let { t: r, i18n: i } = g(), a = n(), [o, s] = m(""), [c, l] = m(""), [d, f] = m(null), [p, h] = m(null);
 	u(() => {
 		let e = window.setTimeout(() => l(o), 300);
@@ -18181,7 +21101,7 @@ function nm() {
 			return $(`shop/coffee-origins${t ? `?${t}` : ""}`);
 		}
 	});
-	Kp(v);
+	em(v);
 	let y = e({
 		mutationFn: (e) => (f(e), $(`shop/coffee-origins/${e}`, { method: "DELETE" })),
 		onSuccess: () => {
@@ -18192,7 +21112,7 @@ function nm() {
 			f(null), h(null);
 		}
 	}), b = v.data?.items ?? [], w = v.data?.found ?? 0, T = b.find((e) => e.id === p);
-	return /* @__PURE__ */ S(cp, {
+	return /* @__PURE__ */ S(hp, {
 		title: r("coffeeProfile.originsTitle"),
 		description: r("coffeeProfile.originsHint"),
 		children: [
@@ -18224,7 +21144,7 @@ function nm() {
 						})]
 					}), w > 0 ? /* @__PURE__ */ x("p", {
 						className: "text-muted-foreground mt-3 text-sm",
-						children: r("coffeeProfile.originFound", { count: qf(w, i.language) })
+						children: r("coffeeProfile.originFound", { count: ep(w, i.language) })
 					}) : null]
 				})
 			}),
@@ -18232,28 +21152,28 @@ function nm() {
 				className: "shadow-sm",
 				children: /* @__PURE__ */ x(Y, {
 					className: "overflow-x-auto p-0",
-					children: v.isLoading ? /* @__PURE__ */ x(Yp, {
+					children: v.isLoading ? /* @__PURE__ */ x(rm, {
 						rows: 8,
 						columns: 5
-					}) : /* @__PURE__ */ S(Xp, { children: [/* @__PURE__ */ x(Zp, { children: /* @__PURE__ */ S($p, { children: [
-						/* @__PURE__ */ x(em, {
+					}) : /* @__PURE__ */ S(im, { children: [/* @__PURE__ */ x(am, { children: /* @__PURE__ */ S(sm, { children: [
+						/* @__PURE__ */ x(cm, {
 							className: "w-14",
 							children: r("coffeeProfile.colFlag")
 						}),
-						/* @__PURE__ */ x(em, { children: r("coffeeProfile.colName") }),
-						/* @__PURE__ */ x(em, { children: r("coffeeProfile.colIso") }),
-						/* @__PURE__ */ x(em, { children: r("coffeeProfile.colCount") }),
-						/* @__PURE__ */ x(em, {
+						/* @__PURE__ */ x(cm, { children: r("coffeeProfile.colName") }),
+						/* @__PURE__ */ x(cm, { children: r("coffeeProfile.colIso") }),
+						/* @__PURE__ */ x(cm, { children: r("coffeeProfile.colCount") }),
+						/* @__PURE__ */ x(cm, {
 							className: "w-28",
 							children: r("coffeeProfile.colActions")
 						})
-					] }) }), /* @__PURE__ */ x(Qp, { children: b.length === 0 ? /* @__PURE__ */ x($p, { children: /* @__PURE__ */ x(tm, {
+					] }) }), /* @__PURE__ */ x(om, { children: b.length === 0 ? /* @__PURE__ */ x(sm, { children: /* @__PURE__ */ x(lm, {
 						colSpan: 5,
 						className: "text-muted-foreground py-8 text-center text-sm",
 						children: r("coffeeProfile.originEmpty")
-					}) }) : b.map((e) => /* @__PURE__ */ S($p, { children: [
-						/* @__PURE__ */ x(tm, { children: /* @__PURE__ */ x(Yf, { origin: e }) }),
-						/* @__PURE__ */ x(tm, {
+					}) }) : b.map((e) => /* @__PURE__ */ S(sm, { children: [
+						/* @__PURE__ */ x(lm, { children: /* @__PURE__ */ x(np, { origin: e }) }),
+						/* @__PURE__ */ x(lm, {
 							className: "font-medium",
 							children: /* @__PURE__ */ x(C, {
 								to: `/shop/coffee-origins/${e.id}`,
@@ -18261,12 +21181,12 @@ function nm() {
 								children: e.name
 							})
 						}),
-						/* @__PURE__ */ x(tm, {
+						/* @__PURE__ */ x(lm, {
 							className: "font-mono text-xs",
 							children: e.iso_code || "—"
 						}),
-						/* @__PURE__ */ x(tm, { children: qf(e.count, i.language) }),
-						/* @__PURE__ */ x(tm, { children: /* @__PURE__ */ S("div", {
+						/* @__PURE__ */ x(lm, { children: ep(e.count, i.language) }),
+						/* @__PURE__ */ x(lm, { children: /* @__PURE__ */ S("div", {
 							className: "flex gap-1",
 							children: [/* @__PURE__ */ x(G, {
 								asChild: !0,
@@ -18290,10 +21210,10 @@ function nm() {
 					] }, e.id)) })] })
 				})
 			}),
-			/* @__PURE__ */ x(Fp, {
+			/* @__PURE__ */ x(Up, {
 				open: p != null,
 				onOpenChange: (e) => !e && h(null),
-				children: /* @__PURE__ */ S(Rp, { children: [/* @__PURE__ */ S(zp, { children: [/* @__PURE__ */ x(Vp, { children: r("coffeeProfile.originDeleteTitle") }), /* @__PURE__ */ x(Hp, { children: r("coffeeProfile.originDeleteConfirm", { name: T?.name ?? "" }) })] }), /* @__PURE__ */ S(Bp, { children: [/* @__PURE__ */ x(Wp, { children: r("common.cancel") }), /* @__PURE__ */ x(Up, {
+				children: /* @__PURE__ */ S(Kp, { children: [/* @__PURE__ */ S(qp, { children: [/* @__PURE__ */ x(Yp, { children: r("coffeeProfile.originDeleteTitle") }), /* @__PURE__ */ x(Xp, { children: r("coffeeProfile.originDeleteConfirm", { name: T?.name ?? "" }) })] }), /* @__PURE__ */ S(Jp, { children: [/* @__PURE__ */ x(Qp, { children: r("common.cancel") }), /* @__PURE__ */ x(Zp, {
 					disabled: y.isPending || !p,
 					onClick: () => p && void y.mutateAsync(p),
 					children: r("common.delete")
@@ -18304,7 +21224,7 @@ function nm() {
 }
 //#endregion
 //#region src/components/ui/badge.tsx
-var rm = P("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
+var dm = F("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
 	variants: { variant: {
 		default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
 		secondary: "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
@@ -18315,17 +21235,17 @@ var rm = P("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflo
 	} },
 	defaultVariants: { variant: "default" }
 });
-function im({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
+function fm({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
 	return /* @__PURE__ */ x(n ? xl : "span", {
 		"data-slot": "badge",
 		"data-variant": t,
-		className: W(rm({ variant: t }), e),
+		className: W(dm({ variant: t }), e),
 		...r
 	});
 }
 //#endregion
 //#region src/components/coupons/ProductMultiSelect.tsx
-function am({ id: e, label: n, value: r, onChange: i }) {
+function pm({ id: e, label: n, value: r, onChange: i }) {
 	let { t: a } = g(), [o, s] = m(""), [c, l] = m(""), [d, f] = m({});
 	u(() => {
 		let e = window.setTimeout(() => l(o), 300);
@@ -18387,7 +21307,7 @@ function am({ id: e, label: n, value: r, onChange: i }) {
 			}) : null,
 			r.length > 0 ? /* @__PURE__ */ x("div", {
 				className: "flex flex-wrap gap-1",
-				children: r.map((e) => /* @__PURE__ */ S(im, {
+				children: r.map((e) => /* @__PURE__ */ S(fm, {
 					variant: "secondary",
 					className: "gap-1 pe-1",
 					children: [d[e] ? `${d[e]} (#${e})` : `#${e}`, /* @__PURE__ */ S(G, {
@@ -18408,7 +21328,7 @@ function am({ id: e, label: n, value: r, onChange: i }) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/pages/CoffeePricingPage.tsx
-function om() {
+function mm() {
 	return {
 		roast_yield: .85,
 		weight_attribute: "",
@@ -18431,21 +21351,21 @@ function om() {
 		}
 	};
 }
-function sm(e) {
+function hm(e) {
 	return e.taxonomy ? e.taxonomy : e.slug ? `pa_${e.slug}` : "";
 }
-function cm(e, t) {
+function gm(e, t) {
 	let n = `${e} ${t}`.trim(), r = n.match(/(\d+(?:[.,]\d+)?)\s*(kg|کیلو)/iu);
 	if (r) return Math.round(Number(String(r[1]).replace(",", ".")) * 1e3);
 	let i = n.match(/(\d+)/u);
 	return i ? Number(i[1]) : 0;
 }
-function lm(e, t) {
+function _m(e, t) {
 	return e.map((e) => {
 		let n = e.slug || "", r = e.name || n, i = t.find((e) => {
 			let t = e.term.toLowerCase(), i = e.label.toLowerCase();
 			return t === n.toLowerCase() || t === r.toLowerCase() || i === r.toLowerCase() || i === n.toLowerCase();
-		}), a = i && i.grams > 0 ? i.grams : cm(r, n);
+		}), a = i && i.grams > 0 ? i.grams : gm(r, n);
 		return {
 			term: n || r,
 			label: r,
@@ -18453,23 +21373,23 @@ function lm(e, t) {
 		};
 	});
 }
-function um() {
+function vm() {
 	let { t: r, i18n: i } = g(), a = n(), [o, s] = m(null), c = p(""), l = t({
 		queryKey: ["coffee-pricing"],
 		queryFn: () => $("shop/coffee-pricing"),
 		refetchInterval: (e) => e.state.data?.recalc?.status === "running" ? 2e3 : !1
 	});
-	Kp(l);
+	em(l);
 	let d = t({
 		queryKey: ["shop-attributes"],
 		queryFn: () => $("shop/attributes"),
 		staleTime: 6e4
 	});
-	Kp(d);
+	em(d);
 	let h = d.data?.items ?? [], v = f(() => {
 		let e = (o?.weight_attribute ?? "").trim().toLowerCase();
 		return e ? h.find((t) => {
-			let n = sm(t).toLowerCase(), r = (t.slug || "").toLowerCase();
+			let n = hm(t).toLowerCase(), r = (t.slug || "").toLowerCase();
 			return n === e || r === e || `pa_${r}` === e;
 		}) ?? null : null;
 	}, [h, o?.weight_attribute]), y = t({
@@ -18478,20 +21398,20 @@ function um() {
 		queryFn: () => $(`shop/global-attributes/${v.id}/terms`),
 		staleTime: 3e4
 	});
-	Kp(y), u(() => {
+	em(y), u(() => {
 		l.data?.settings && (c.current = "", s({
-			...om(),
+			...mm(),
 			...l.data.settings,
 			weight_packs: Array.isArray(l.data.settings.weight_packs) ? l.data.settings.weight_packs : [],
-			beans: l.data.beans?.length ? l.data.beans.map(dm) : l.data.settings.beans,
-			base_mixes: l.data.base_mixes?.length ? l.data.base_mixes.map(fm) : l.data.settings.base_mixes
+			beans: l.data.beans?.length ? l.data.beans.map(ym) : l.data.settings.beans,
+			base_mixes: l.data.base_mixes?.length ? l.data.base_mixes.map(bm) : l.data.settings.base_mixes
 		}));
 	}, [l.data]), u(() => {
 		if (!v?.id || !y.data?.items) return;
 		let e = `${v.id}:${y.data.items.map((e) => e.slug).join(",")}`;
 		c.current !== e && (c.current = e, s((e) => {
 			if (!e) return e;
-			let t = lm(y.data.items, e.weight_packs);
+			let t = _m(y.data.items, e.weight_packs);
 			return t.length === e.weight_packs.length && t.every((t, n) => t.term === e.weight_packs[n]?.term && t.label === e.weight_packs[n]?.label && t.grams === e.weight_packs[n]?.grams) ? e : {
 				...e,
 				weight_packs: t
@@ -18509,11 +21429,11 @@ function um() {
 		}),
 		onSuccess: (e, t) => {
 			_.success(t.recalc ? r("coffeeProfile.pricingQueued") : r("common.saved")), a.setQueryData(["coffee-pricing"], e), e.settings && (c.current = "", s({
-				...om(),
+				...mm(),
 				...e.settings,
 				weight_packs: Array.isArray(e.settings.weight_packs) ? e.settings.weight_packs : [],
-				beans: e.beans?.length ? e.beans.map(dm) : e.settings.beans,
-				base_mixes: e.base_mixes?.length ? e.base_mixes.map(fm) : e.settings.base_mixes
+				beans: e.beans?.length ? e.beans.map(ym) : e.settings.beans,
+				base_mixes: e.base_mixes?.length ? e.base_mixes.map(bm) : e.settings.base_mixes
 			}));
 		},
 		onError: (e) => vf(r, e)
@@ -18540,7 +21460,7 @@ function um() {
 		for (let t of l.data?.beans ?? []) typeof t.after_roast == "number" && typeof t.retail_preview == "number" && e.set(Math.round(t.after_roast * 100), t.retail_preview);
 		return e;
 	}, [l.data]);
-	if (!o) return /* @__PURE__ */ x(cp, {
+	if (!o) return /* @__PURE__ */ x(hp, {
 		title: r("coffeeProfile.pricingTitle"),
 		description: r("coffeeProfile.pricingHint"),
 		children: /* @__PURE__ */ x("p", {
@@ -18558,7 +21478,7 @@ function um() {
 			} : n)
 		});
 	}
-	function ee(e, t) {
+	function k(e, t) {
 		s((n) => {
 			if (!n) return n;
 			let r = n.weight_packs.map((n, r) => r === e ? {
@@ -18571,21 +21491,21 @@ function um() {
 			};
 		});
 	}
-	function k(e) {
+	function A(e) {
 		let t = h.find((t) => String(t.id) === e);
 		t && (c.current = "", s((e) => e && {
 			...e,
-			weight_attribute: sm(t),
+			weight_attribute: hm(t),
 			weight_packs: []
 		}));
 	}
-	function A(e) {
-		return qf(Math.round(e), i.language);
-	}
 	function j(e) {
+		return ep(Math.round(e), i.language);
+	}
+	function M(e) {
 		return T.get(Math.round(e * 100)) ?? e;
 	}
-	return /* @__PURE__ */ S(cp, {
+	return /* @__PURE__ */ S(hp, {
 		title: r("coffeeProfile.pricingTitle"),
 		description: r("coffeeProfile.pricingHint"),
 		children: [
@@ -18644,21 +21564,21 @@ function um() {
 					})] }),
 					/* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: r("coffeeProfile.pricingBeans") }) }), /* @__PURE__ */ x(Y, {
 						className: "overflow-x-auto",
-						children: /* @__PURE__ */ S(Xp, { children: [/* @__PURE__ */ x(Zp, { children: /* @__PURE__ */ S($p, { children: [
-							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColName") }),
-							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColKind") }),
-							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColGreen") }),
-							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColAfter") }),
-							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColRetail") }),
-							/* @__PURE__ */ x(em, { children: r("coffeeProfile.pricingColProduct") })
-						] }) }), /* @__PURE__ */ x(Qp, { children: o.beans.map((e) => {
+						children: /* @__PURE__ */ S(im, { children: [/* @__PURE__ */ x(am, { children: /* @__PURE__ */ S(sm, { children: [
+							/* @__PURE__ */ x(cm, { children: r("coffeeProfile.pricingColName") }),
+							/* @__PURE__ */ x(cm, { children: r("coffeeProfile.pricingColKind") }),
+							/* @__PURE__ */ x(cm, { children: r("coffeeProfile.pricingColGreen") }),
+							/* @__PURE__ */ x(cm, { children: r("coffeeProfile.pricingColAfter") }),
+							/* @__PURE__ */ x(cm, { children: r("coffeeProfile.pricingColRetail") }),
+							/* @__PURE__ */ x(cm, { children: r("coffeeProfile.pricingColProduct") })
+						] }) }), /* @__PURE__ */ x(om, { children: o.beans.map((e) => {
 							let t = w.get(e.id) ?? 0;
-							return /* @__PURE__ */ S($p, { children: [
-								/* @__PURE__ */ x(tm, {
+							return /* @__PURE__ */ S(sm, { children: [
+								/* @__PURE__ */ x(lm, {
 									className: "font-medium",
 									children: e.name
 								}),
-								/* @__PURE__ */ x(tm, { children: /* @__PURE__ */ S($d, {
+								/* @__PURE__ */ x(lm, { children: /* @__PURE__ */ S($d, {
 									value: e.kind,
 									onValueChange: (t) => O(e.id, { kind: t }),
 									children: [/* @__PURE__ */ x(tf, {
@@ -18672,17 +21592,17 @@ function um() {
 										children: r("coffeeProfile.pricingArabica")
 									})] })]
 								}) }),
-								/* @__PURE__ */ x(tm, { children: /* @__PURE__ */ x(X, {
+								/* @__PURE__ */ x(lm, { children: /* @__PURE__ */ x(X, {
 									type: "number",
 									className: "w-28",
 									value: e.green_price,
 									onChange: (t) => O(e.id, { green_price: Number(t.target.value) || 0 })
 								}) }),
-								/* @__PURE__ */ x(tm, { children: A(t) }),
-								/* @__PURE__ */ x(tm, { children: A(j(t)) }),
-								/* @__PURE__ */ x(tm, {
+								/* @__PURE__ */ x(lm, { children: j(t) }),
+								/* @__PURE__ */ x(lm, { children: j(M(t)) }),
+								/* @__PURE__ */ x(lm, {
 									className: "min-w-[220px]",
-									children: /* @__PURE__ */ x(am, {
+									children: /* @__PURE__ */ x(pm, {
 										id: `bean-prod-${e.id}`,
 										label: "",
 										value: e.product_id ? [e.product_id] : [],
@@ -18703,11 +21623,11 @@ function um() {
 								/* @__PURE__ */ x(Z, { children: r("coffeeProfile.pricingWeightAttribute") }),
 								/* @__PURE__ */ S($d, {
 									value: v ? String(v.id) : void 0,
-									onValueChange: k,
+									onValueChange: A,
 									disabled: d.isPending,
 									children: [/* @__PURE__ */ x(tf, { children: /* @__PURE__ */ x(ef, { placeholder: r("coffeeProfile.pricingWeightAttributePick") }) }), /* @__PURE__ */ x(nf, { children: h.map((e) => /* @__PURE__ */ x(Q, {
 										value: String(e.id),
-										children: e.label || e.slug || sm(e)
+										children: e.label || e.slug || hm(e)
 									}, e.id)) })]
 								}),
 								/* @__PURE__ */ x("p", {
@@ -18744,7 +21664,7 @@ function um() {
 										className: "w-28",
 										min: 1,
 										value: e.grams || "",
-										onChange: (e) => ee(t, Number(e.target.value) || 0)
+										onChange: (e) => k(t, Number(e.target.value) || 0)
 									})]
 								})]
 							}, `${e.term}-${t}`))
@@ -18758,7 +21678,7 @@ function um() {
 		]
 	});
 }
-function dm(e) {
+function ym(e) {
 	return {
 		id: e.id,
 		name: e.name,
@@ -18767,7 +21687,7 @@ function dm(e) {
 		product_id: e.product_id
 	};
 }
-function fm(e) {
+function bm(e) {
 	return {
 		id: e.id,
 		name: e.name,
@@ -18777,7 +21697,7 @@ function fm(e) {
 }
 //#endregion
 //#region src/components/ui/tabs.tsx
-function pm({ className: e, orientation: t = "horizontal", dir: n, ...r }) {
+function xm({ className: e, orientation: t = "horizontal", dir: n, ...r }) {
 	let i = Qd();
 	return /* @__PURE__ */ x(tu, {
 		"data-slot": "tabs",
@@ -18788,31 +21708,31 @@ function pm({ className: e, orientation: t = "horizontal", dir: n, ...r }) {
 		...r
 	});
 }
-var mm = P("group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none", {
+var Sm = F("group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none", {
 	variants: { variant: {
 		default: "bg-muted",
 		line: "gap-1 bg-transparent"
 	} },
 	defaultVariants: { variant: "default" }
 });
-function hm({ className: e, variant: t = "default", dir: n, ...r }) {
+function Cm({ className: e, variant: t = "default", dir: n, ...r }) {
 	let i = Qd();
 	return /* @__PURE__ */ x(nu, {
 		"data-slot": "tabs-list",
 		"data-variant": t,
 		dir: n ?? i,
-		className: W(mm({ variant: t }), e),
+		className: W(Sm({ variant: t }), e),
 		...r
 	});
 }
-function gm({ className: e, ...t }) {
+function wm({ className: e, ...t }) {
 	return /* @__PURE__ */ x(ru, {
 		"data-slot": "tabs-trigger",
 		className: W("relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm group-data-[variant=line]/tabs-list:data-[state=active]:shadow-none dark:text-muted-foreground dark:hover:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:border-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent", "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground", "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:inset-inline-end-0 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100", e),
 		...t
 	});
 }
-function _m({ className: e, ...t }) {
+function Tm({ className: e, ...t }) {
 	return /* @__PURE__ */ x(iu, {
 		"data-slot": "tabs-content",
 		className: W("flex-1 outline-none", e),
@@ -18821,12 +21741,12 @@ function _m({ className: e, ...t }) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeBlendSettingsPanel.tsx
-function vm() {
+function Em() {
 	let { t: n } = g(), [r, i] = m(null), a = t({
 		queryKey: ["coffee-blend-settings"],
 		queryFn: () => $("shop/coffee-blend/settings")
 	});
-	Kp(a), u(() => {
+	em(a), u(() => {
 		a.data?.settings && i(a.data.settings);
 	}, [a.data]);
 	let o = e({
@@ -18938,7 +21858,7 @@ function vm() {
 					}) : null,
 					r.source === "products" ? /* @__PURE__ */ x("div", {
 						className: "md:col-span-2",
-						children: /* @__PURE__ */ x(am, {
+						children: /* @__PURE__ */ x(pm, {
 							id: "blend-products",
 							label: n("coffeeProfile.blendProductIds"),
 							value: r.product_ids,
@@ -19048,7 +21968,7 @@ function vm() {
 			})] }),
 			/* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: n("coffeeProfile.blendSectionSimple") }) }), /* @__PURE__ */ S(Y, {
 				className: "grid gap-4 md:grid-cols-2",
-				children: [/* @__PURE__ */ x(am, {
+				children: [/* @__PURE__ */ x(pm, {
 					id: "blend-robusta",
 					label: n("coffeeProfile.blendRobustaProduct"),
 					value: r.robusta_product_id ? [r.robusta_product_id] : [],
@@ -19056,7 +21976,7 @@ function vm() {
 						...r,
 						robusta_product_id: e[e.length - 1] ?? 0
 					})
-				}), /* @__PURE__ */ x(am, {
+				}), /* @__PURE__ */ x(pm, {
 					id: "blend-arabica",
 					label: n("coffeeProfile.blendArabicaProduct"),
 					value: r.arabica_product_id ? [r.arabica_product_id] : [],
@@ -19066,12 +21986,12 @@ function vm() {
 					})
 				})]
 			})] }),
-			/* @__PURE__ */ x(ym, {
+			/* @__PURE__ */ x(Dm, {
 				title: n("coffeeProfile.blendRoasts"),
 				items: r.roasts,
 				onChange: (e) => s("roasts", e)
 			}),
-			/* @__PURE__ */ x(ym, {
+			/* @__PURE__ */ x(Dm, {
 				title: n("coffeeProfile.blendDevices"),
 				items: r.grind_devices,
 				onChange: (e) => s("grind_devices", e)
@@ -19185,7 +22105,7 @@ function vm() {
 		});
 	}
 }
-function ym({ title: e, items: t, onChange: n }) {
+function Dm({ title: e, items: t, onChange: n }) {
 	let { t: r } = g();
 	return /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ S(q, {
 		className: "flex flex-row items-center justify-between",
@@ -19233,11 +22153,11 @@ function ym({ title: e, items: t, onChange: n }) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/components/CoffeeProfilePreview.tsx
-function bm(e, t, n) {
+function Om(e, t, n) {
 	let r = n - t;
 	return r <= 0 ? 0 : Math.max(0, Math.min(100, (e - t) / r * 100));
 }
-function xm({ settings: e, profile: t }) {
+function km({ settings: e, profile: t }) {
 	let { t: n } = g(), r = e.colors, i = {
 		background: r.card_bg,
 		color: r.card_text,
@@ -19292,7 +22212,7 @@ function xm({ settings: e, profile: t }) {
 						})
 					] })]
 				}),
-				/* @__PURE__ */ x(Sm, {
+				/* @__PURE__ */ x(Am, {
 					track: r.track,
 					fill: r.blend_fill,
 					height: e.bar_height,
@@ -19371,7 +22291,7 @@ function xm({ settings: e, profile: t }) {
 						e.caffeine_unit
 					]
 				}),
-				/* @__PURE__ */ x(Sm, {
+				/* @__PURE__ */ x(Am, {
 					track: r.track,
 					fill: r.caffeine_fill,
 					height: e.bar_height,
@@ -19395,7 +22315,7 @@ function xm({ settings: e, profile: t }) {
 					r.body_fill
 				]
 			].map(([n, i, a]) => {
-				let c = t[n], l = bm(c, e.scale_min, e.scale_max);
+				let c = t[n], l = Om(c, e.scale_min, e.scale_max);
 				return /* @__PURE__ */ S("div", { children: [/* @__PURE__ */ S("div", {
 					style: {
 						display: "flex",
@@ -19414,7 +22334,7 @@ function xm({ settings: e, profile: t }) {
 						position: "relative",
 						marginTop: 6
 					},
-					children: [/* @__PURE__ */ x(Sm, {
+					children: [/* @__PURE__ */ x(Am, {
 						track: r.track,
 						fill: a,
 						height: e.bar_height,
@@ -19435,7 +22355,7 @@ function xm({ settings: e, profile: t }) {
 		]
 	});
 }
-function Sm({ track: e, fill: t, height: n, width: r }) {
+function Am({ track: e, fill: t, height: n, width: r }) {
 	return /* @__PURE__ */ x("div", {
 		style: {
 			height: n,
@@ -19453,7 +22373,7 @@ function Sm({ track: e, fill: t, height: n, width: r }) {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/pages/CoffeeProfileSettingsPage.tsx
-function Cm(e) {
+function jm(e) {
 	let t = {};
 	return e.acidity_levels.forEach((n, r) => {
 		t[n.id] = Math.min(e.scale_max, e.scale_min + 2 + r);
@@ -19479,12 +22399,12 @@ function Cm(e) {
 		pack_weight_g: 1e3
 	};
 }
-function wm() {
+function Mm() {
 	let { t: n } = g(), [r, i] = m(null), a = t({
 		queryKey: ["coffee-profile-settings"],
 		queryFn: () => $("shop/coffee-profile/settings")
 	});
-	Kp(a), u(() => {
+	em(a), u(() => {
 		a.data?.settings && i(a.data.settings);
 	}, [a.data]);
 	let o = e({
@@ -19497,8 +22417,8 @@ function wm() {
 			_.success(n("common.saved")), e.settings && i(e.settings);
 		},
 		onError: (e) => vf(n, e)
-	}), s = f(() => r ? Cm(r) : null, [r]);
-	if (!r) return /* @__PURE__ */ x(cp, {
+	}), s = f(() => r ? jm(r) : null, [r]);
+	if (!r) return /* @__PURE__ */ x(hp, {
 		title: n("coffeeProfile.settingsTitle"),
 		children: /* @__PURE__ */ x("p", {
 			className: "text-muted-foreground text-sm",
@@ -19622,21 +22542,21 @@ function wm() {
 			}, `${t.id}-${n}`))
 		})] });
 	}
-	return /* @__PURE__ */ x(cp, {
+	return /* @__PURE__ */ x(hp, {
 		title: n("coffeeProfile.settingsTitle"),
 		description: n("coffeeProfile.settingsHint"),
-		children: /* @__PURE__ */ S(pm, {
+		children: /* @__PURE__ */ S(xm, {
 			defaultValue: "profile",
 			className: "gap-4",
 			children: [
-				/* @__PURE__ */ S(hm, { children: [/* @__PURE__ */ x(gm, {
+				/* @__PURE__ */ S(Cm, { children: [/* @__PURE__ */ x(wm, {
 					value: "profile",
 					children: n("coffeeProfile.tabProfile")
-				}), /* @__PURE__ */ x(gm, {
+				}), /* @__PURE__ */ x(wm, {
 					value: "blend",
 					children: n("coffeeProfile.tabBlend")
 				})] }),
-				/* @__PURE__ */ S(_m, {
+				/* @__PURE__ */ S(Tm, {
 					value: "profile",
 					children: [/* @__PURE__ */ x("div", {
 						className: "mb-4 flex justify-end",
@@ -19870,16 +22790,16 @@ function wm() {
 							]
 						}), /* @__PURE__ */ x("div", {
 							className: "xl:sticky xl:top-4 h-fit",
-							children: /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: n("coffeeProfile.livePreview") }) }), /* @__PURE__ */ x(Y, { children: s ? /* @__PURE__ */ x(xm, {
+							children: /* @__PURE__ */ S(K, { children: [/* @__PURE__ */ x(q, { children: /* @__PURE__ */ x(J, { children: n("coffeeProfile.livePreview") }) }), /* @__PURE__ */ x(Y, { children: s ? /* @__PURE__ */ x(km, {
 								settings: r,
 								profile: s
 							}) : null })] })
 						})]
 					})]
 				}),
-				/* @__PURE__ */ x(_m, {
+				/* @__PURE__ */ x(Tm, {
 					value: "blend",
-					children: /* @__PURE__ */ x(vm, {})
+					children: /* @__PURE__ */ x(Em, {})
 				})
 			]
 		})
@@ -19887,18 +22807,18 @@ function wm() {
 }
 //#endregion
 //#region ../Modules/coffee-profile-module/client/module-entry.tsx
-var Tm = {
-	"shop/coffee-origins": nm,
-	"shop/coffee-origins/new": Jp,
-	"shop/coffee-origins/:originId": Jp,
-	"shop/coffee-pricing": um,
-	"settings/shop/coffee-profile": wm
-}, Em = {
-	CoffeeProfileProductPanel: Qf,
-	CoffeeWeightPricingPanel: sp
-}, Dm = {
-	routes: Tm,
-	components: Em
+var Nm = {
+	"shop/coffee-origins": um,
+	"shop/coffee-origins/new": nm,
+	"shop/coffee-origins/:originId": nm,
+	"shop/coffee-pricing": vm,
+	"settings/shop/coffee-profile": Mm
+}, Pm = {
+	CoffeeProfileProductPanel: ap,
+	CoffeeWeightPricingPanel: mp
+}, Fm = {
+	routes: Nm,
+	components: Pm
 };
 //#endregion
-export { Em as components, Dm as default, Tm as routes };
+export { Pm as components, Fm as default, Nm as routes };

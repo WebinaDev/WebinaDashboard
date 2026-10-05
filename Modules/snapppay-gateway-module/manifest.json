@@ -1,0 +1,40 @@
+{
+  "slug": "snapppay-gateway-module",
+  "name": "SnappPay Gateway",
+  "version": "2.0.2",
+  "is_builtin": true,
+  "parent_slug": "payment-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "SnappPay",
+    "sections": [
+      {
+        "id": "gateway",
+        "route": "/settings/shop/snapppay",
+        "title": "SnappPay"
+      },
+      {
+        "id": "logs",
+        "route": "/settings/shop/snapppay/logs",
+        "title": "Logs"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/snapppay",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "snapppay.title"
+      },
+      {
+        "path": "settings/shop/snapppay/logs",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "snapppay.logsTitle"
+      }
+    ]
+  }
+}

@@ -1,0 +1,877 @@
+/**
+ * Public Styles
+ *
+ * @package    WFCP
+ * @subpackage WFCP/public/css
+ */
+
+/* Import Persian Font */
+@font-face {
+	font-family: 'YekanBakh';
+	src: url('../../assets/fonts/yekan-bakh/woff2/YekanBakh-Regular.woff2') format('woff2'),
+		 url('../../assets/fonts/yekan-bakh/woff/YekanBakh-Regular.woff') format('woff'),
+		 url('../../assets/fonts/yekan-bakh/TTF/YekanBakh-Regular.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'YekanBakh';
+	src: url('../../assets/fonts/yekan-bakh/woff2/YekanBakh-Bold.woff2') format('woff2'),
+		 url('../../assets/fonts/yekan-bakh/woff/YekanBakh-Bold.woff') format('woff'),
+		 url('../../assets/fonts/yekan-bakh/TTF/YekanBakh-Bold.ttf') format('truetype');
+	font-weight: bold;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* Pricing Box Container – CSS variables (overridden by inline style from settings) */
+.wfcp-pricing-box {
+	--wfcp-box-bg: #ffffff;
+	--wfcp-box-border: #e0e0e0;
+	--wfcp-box-radius: 8px;
+	--wfcp-btn-bg: #2271b1;
+	--wfcp-btn-text: #ffffff;
+	--wfcp-price-color: #2271b1;
+	font-family: 'YekanBakh', 'Tahoma', 'Arial', sans-serif;
+	background: var(--wfcp-box-bg);
+	border: 1px solid var(--wfcp-box-border);
+	border-radius: var(--wfcp-box-radius);
+	padding: 20px;
+	margin: 20px 0;
+	direction: rtl;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.wfcp-pricing-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 15px 0;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.wfcp-pricing-row:last-child {
+	border-bottom: none;
+}
+
+.wfcp-pricing-row.cash,
+.wfcp-pricing-row.installment,
+.wfcp-pricing-row.credit,
+.wfcp-pricing-row.wholesale {
+	background: var(--wfcp-box-bg);
+	padding: 15px;
+	border: 1px solid var(--wfcp-box-border);
+	border-radius: calc(var(--wfcp-box-radius) * 0.5);
+	margin-bottom: 10px;
+	transition: all 0.3s ease;
+}
+
+.wfcp-pricing-row.cash:hover,
+.wfcp-pricing-row.installment:hover,
+.wfcp-pricing-row.credit:hover,
+.wfcp-pricing-row.wholesale:hover {
+	border-color: var(--wfcp-price-color);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wfcp-method-hint {
+	margin: 0 0 12px;
+	padding: 0;
+	font-size: 13px;
+	color: #64748b;
+	line-height: 1.5;
+}
+
+.wfcp-pricing-row[data-purchase-type] {
+	cursor: pointer;
+}
+
+.wfcp-pricing-row.active {
+	border-color: var(--wfcp-price-color) !important;
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--wfcp-price-color) 25%, transparent);
+	background: #f8fafc;
+}
+
+.wfcp-pricing-row.active .wfcp-pricing-title {
+	color: var(--wfcp-price-color);
+}
+
+/* Spacing between installment plans list and quantity/button area */
+.wfcp-pricing-row.installment .wfcp-pricing-info {
+	min-width: 0;
+}
+
+.wfcp-pricing-info {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	flex: 1;
+}
+
+.wfcp-pricing-icon {
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #f0f0f0;
+	border-radius: 50%;
+	font-size: 20px;
+}
+
+.wfcp-pricing-row.installment .wfcp-pricing-icon {
+	background: #e3f2fd;
+	color: #1976d2;
+}
+
+.wfcp-pricing-row.cash .wfcp-pricing-icon {
+	background: #e8f5e9;
+	color: #2e7d32;
+}
+
+.wfcp-pricing-row.credit .wfcp-pricing-icon {
+	background: #fff3e0;
+	color: #f57c00;
+}
+
+.wfcp-pricing-details {
+	flex: 1;
+}
+
+.wfcp-pricing-title {
+	font-size: 16px;
+	font-weight: bold;
+	color: #333;
+	margin: 0 0 5px 0;
+}
+
+.wfcp-pricing-amount {
+	font-size: 18px;
+	font-weight: bold;
+	color: var(--wfcp-price-color);
+	margin: 0;
+}
+
+.wfcp-pricing-row.cash .wfcp-pricing-amount {
+	color: var(--wfcp-price-color);
+	font-size: 20px;
+}
+
+.wfcp-pricing-action {
+	margin-right: auto;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: nowrap;
+	flex-shrink: 0;
+}
+
+/* Quantity selector: horizontal [−] [1] [+], aligned with button height */
+.wfcp-quantity-wrap {
+	display: inline-flex;
+	align-items: stretch;
+	border: 1px solid var(--wfcp-box-border);
+	border-radius: var(--wfcp-box-radius);
+	overflow: hidden;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+	background: var(--wfcp-box-bg);
+}
+.wfcp-quantity-wrap .wfcp-qty-minus,
+.wfcp-quantity-wrap .wfcp-qty-plus {
+	width: 40px;
+	min-width: 40px;
+	height: 42px;
+	padding: 0;
+	border: none;
+	background: #f5f5f5;
+	color: #374151;
+	font-size: 20px;
+	line-height: 1;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.2s ease;
+}
+.wfcp-quantity-wrap .wfcp-qty-minus:hover,
+.wfcp-quantity-wrap .wfcp-qty-plus:hover {
+	background: #e5e7eb;
+}
+.wfcp-quantity-wrap .wfcp-qty-input {
+	width: 50px;
+	min-width: 50px;
+	height: 42px;
+	padding: 0 8px;
+	border: none;
+	border-left: 1px solid var(--wfcp-box-border);
+	border-right: 1px solid var(--wfcp-box-border);
+	text-align: center;
+	font-size: 15px;
+	font-family: 'YekanBakh', 'Tahoma', sans-serif;
+	color: #374151;
+	-moz-appearance: textfield;
+}
+.wfcp-quantity-wrap .wfcp-qty-input::-webkit-outer-spin-button,
+.wfcp-quantity-wrap .wfcp-qty-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+/* Payment gateways list (logo + title + description) */
+.wfcp-gateways-list {
+	list-style: none;
+	margin: 10px 0 0 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px 20px;
+}
+.wfcp-gateway-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.wfcp-gateway-icon {
+	display: inline-block;
+}
+.wfcp-gateway-icon img {
+	max-height: 28px;
+	width: auto;
+	vertical-align: middle;
+}
+.wfcp-gateway-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.wfcp-gateway-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #374151;
+}
+.wfcp-gateway-desc {
+	font-size: 12px;
+	color: #6b7280;
+	line-height: 1.3;
+}
+
+/* Custom description below title/price in each row */
+.wfcp-pricing-description {
+	font-size: 12px;
+	color: #6b7280;
+	line-height: 1.5;
+	margin-top: 8px;
+}
+
+/* Gateways: logos only, very small, next to button (in .wfcp-pricing-action) */
+.wfcp-gateways-list--logos-only {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	flex-shrink: 0;
+}
+.wfcp-gateways-list--logos-only .wfcp-gateway-item {
+	display: flex;
+	align-items: center;
+}
+.wfcp-gateways-list--logos-only .wfcp-gateway-icon img {
+	max-height: 18px;
+	width: auto;
+	vertical-align: middle;
+}
+
+.wfcp-btn-add {
+	padding: 10px 20px;
+	height: 42px;
+	box-sizing: border-box;
+	background: var(--wfcp-btn-bg);
+	color: var(--wfcp-btn-text);
+	border: none;
+	border-radius: var(--wfcp-box-radius);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+	font-family: 'YekanBakh', 'Tahoma', sans-serif;
+	font-size: 14px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.wfcp-btn-add:hover {
+	background: #135e96;
+	color: var(--wfcp-btn-text);
+}
+
+.wfcp-btn-add:disabled {
+	background: #ccc;
+	cursor: not-allowed;
+}
+
+.wfcp-pricing-row.cash .wfcp-pricing-title {
+	font-size: 18px;
+}
+
+/* Installment Plans */
+.wfcp-installment-plans-list {
+	margin-top: 10px;
+}
+
+.wfcp-installment-plan-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 0;
+	border-bottom: 1px solid #f0f0f0;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.wfcp-installment-plan-item:hover {
+	background-color: #f9f9f9;
+	padding-right: 5px;
+	padding-left: 5px;
+	margin-right: -5px;
+	margin-left: -5px;
+	border-radius: 4px;
+}
+
+.wfcp-installment-plan-item.active {
+	background-color: #e3f2fd;
+	padding-right: 5px;
+	padding-left: 5px;
+	margin-right: -5px;
+	margin-left: -5px;
+	border-radius: 4px;
+}
+
+.wfcp-installment-plan-item:last-child {
+	border-bottom: none;
+}
+
+.wfcp-installment-plan-months {
+	font-size: 14px;
+	color: #666;
+}
+
+.wfcp-installment-plan-price {
+	font-size: 16px;
+	font-weight: bold;
+	color: var(--wfcp-price-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.wfcp-pricing-row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 15px;
+	}
+
+	.wfcp-pricing-info {
+		width: 100%;
+	}
+
+	.wfcp-pricing-action {
+		width: 100%;
+		flex-wrap: wrap;
+	}
+
+	.wfcp-btn-add {
+		width: 100%;
+		text-align: center;
+	}
+}
+
+/* ============================================
+   MODERN ATTRACTIVE REDESIGN (Technolife inspired)
+   ============================================ */
+.wfcp-pricing-box {
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	padding: 18px;
+	background: #fff;
+}
+
+.wfcp-pricing-row {
+	border: 1px solid #f1f5f9;
+	border-radius: 10px;
+	padding: 14px 16px;
+	margin-bottom: 12px;
+	background: linear-gradient(145deg, #ffffff, #fafafa);
+	transition: transform .2s ease, box-shadow .2s ease, border-color .2s;
+}
+
+.wfcp-pricing-row:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+	border-color: var(--wfcp-price-color);
+}
+
+.wfcp-pricing-icon {
+	width: 42px; height: 42px;
+	font-size: 22px;
+	border-radius: 50%;
+}
+
+.wfcp-pricing-title {
+	font-size: 17px;
+	font-weight: 700;
+	color: #1f2937;
+}
+
+.wfcp-pricing-amount {
+	font-size: 20px;
+	font-weight: 800;
+}
+
+/* Gateway Badges — logo only, name on hover (title) */
+.wfcp-gateways-badges {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin-top: 8px;
+}
+.wfcp-gateway-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 4px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+	cursor: default;
+	flex-shrink: 0;
+}
+.wfcp-badge-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 0;
+}
+.wfcp-badge-icon img,
+.wfcp-badge-icon svg {
+	max-height: 20px;
+	max-width: 24px;
+	width: auto;
+	height: auto;
+	vertical-align: middle;
+	object-fit: contain;
+}
+.wfcp-badge-fallback {
+	font-size: 12px;
+	font-weight: 700;
+	color: #334155;
+	line-height: 1;
+}
+
+/* Toman SVG */
+.wfcp-toman-svg {
+	display: inline-block;
+	width: 13px;
+	height: 12px;
+	vertical-align: -1px;
+	margin-right: 2px;
+}
+.wfcp-toman-svg path {
+	fill: currentColor;
+}
+
+/* Variation note */
+.wfcp-variation-note {
+	font-size: 12px;
+	color: #64748b;
+	margin-bottom: 8px;
+	padding: 4px 8px;
+	background: #fefce8;
+	border-radius: 6px;
+	display: inline-block;
+}
+
+/* Configurable labels / alerts pills */
+.wfcp-label-pill {
+	display: inline-block;
+	font-size: 11px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	margin-top: 6px;
+	background: #ecfdf5;
+	color: #166534;
+	border: 1px solid #a7f3d0;
+}
+.wfcp-label-pill.alert {
+	background: #fef2f2;
+	color: #991b1b;
+	border-color: #fecaca;
+}
+
+/* Cart type switcher */
+.wfcp-cart-type-switcher {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	padding: 14px 16px;
+	margin: 15px 0;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.wfcp-switch-label { font-weight: 700; color: #1f2937; }
+.wfcp-cart-type-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; min-width: 140px; }
+.wfcp-btn-apply-type,
+.wfcp-cart-type-switcher .wfcp-btn {
+	background: var(--wfcp-btn-bg, #2271b1);
+	color: var(--wfcp-btn-text, #ffffff);
+	padding: 8px 16px;
+	border-radius: 8px;
+	border: none;
+	cursor: pointer;
+	font-weight: 700;
+	transition: opacity .15s ease, transform .15s ease;
+}
+.wfcp-btn-apply-type:hover,
+.wfcp-cart-type-switcher .wfcp-btn:hover {
+	opacity: .92;
+}
+.wfcp-switch-note { font-size: 12px; color: #64748b; }
+
+/* Guide alerts (product / cart / checkout) */
+.wfcp-guide-alert {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin: 0 0 18px;
+	padding: 14px 16px;
+	border-radius: 12px;
+	border: 1px solid var(--wfcp-alert-border, #FDBA74);
+	background: #ffffff;
+	color: #374151;
+	position: relative;
+	overflow: hidden;
+	font-family: 'YekanBakh', Tahoma, sans-serif;
+	line-height: 1.7;
+}
+.wfcp-guide-alert--product {
+	margin-top: 20px;
+}
+.wfcp-guide-alert--checkout {
+	align-items: center;
+}
+.wfcp-guide-alert__icon {
+	flex: 0 0 auto;
+	font-size: 20px;
+	line-height: 1.4;
+}
+.wfcp-guide-alert__body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.wfcp-guide-alert__text {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 500;
+}
+.wfcp-guide-alert__link {
+	display: inline-flex;
+	align-items: center;
+	margin-top: 10px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	background: var(--wfcp-alert-accent, #EA580C);
+	color: #fff !important;
+	text-decoration: none !important;
+	font-size: 13px;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+.wfcp-guide-alert--checkout .wfcp-guide-alert__link {
+	margin-top: 0;
+	margin-inline-start: auto;
+}
+.wfcp-guide-alert__link:hover {
+	opacity: .9;
+}
+
+/* Purchase type badges in cart / checkout item meta */
+.wfcp-type-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.4;
+	font-family: 'YekanBakh', Tahoma, sans-serif;
+}
+.wfcp-type-badge--cash {
+	background: var(--wfcp-badge-cash-bg, #ECFDF5);
+	color: var(--wfcp-badge-cash-text, #047857);
+}
+.wfcp-type-badge--credit {
+	background: var(--wfcp-badge-credit-bg, #EFF6FF);
+	color: var(--wfcp-badge-credit-text, #1D4ED8);
+}
+.wfcp-type-badge--installment {
+	background: var(--wfcp-badge-installment-bg, #FFFBEB);
+	color: var(--wfcp-badge-installment-text, #B45309);
+}
+.wfcp-type-badge--wholesale {
+	background: #F5F3FF;
+	color: #6D28D9;
+}
+
+/* More modern buttons */
+.wfcp-btn-add {
+	font-weight: 700;
+	letter-spacing: .3px;
+}
+
+/* Selectable gateway logos */
+button.wfcp-gateway-badge {
+	appearance: none;
+	-webkit-appearance: none;
+	font: inherit;
+	cursor: pointer;
+	color: inherit;
+}
+.wfcp-gateways-badges--pick .wfcp-gateway-badge.is-selected {
+	border-color: var(--wfcp-btn-bg);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--wfcp-btn-bg) 28%, transparent);
+}
+.wfcp-theme-classic .wfcp-badge-name {
+	display: none;
+}
+
+/* Timeline installment theme (optional; classic stays unchanged) */
+.wfcp-theme-timeline .wfcp-pricing-row.cash,
+.wfcp-theme-timeline .wfcp-pricing-row.credit,
+.wfcp-theme-timeline .wfcp-pricing-row.wholesale {
+	display: none;
+}
+.wfcp-theme-timeline .wfcp-pricing-row.installment {
+	align-items: stretch;
+	cursor: default;
+}
+.wfcp-theme-timeline .wfcp-pricing-row.installment .wfcp-pricing-icon,
+.wfcp-theme-timeline .wfcp-pricing-row.installment .wfcp-pricing-title,
+.wfcp-theme-timeline .wfcp-pricing-row.installment > .wfcp-pricing-info > .wfcp-pricing-details > .wfcp-label-pill {
+	display: none;
+}
+.wfcp-theme-timeline .wfcp-installment-plans-list.is-single {
+	display: none;
+}
+.wfcp-theme-timeline .wfcp-timeline-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px 16px;
+	margin: 4px 0 8px;
+}
+.wfcp-theme-timeline .wfcp-timeline-headline {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 800;
+	color: #111827;
+	line-height: 1.5;
+}
+.wfcp-theme-timeline .wfcp-timeline-monthly {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 800;
+	color: var(--wfcp-price-color);
+	white-space: nowrap;
+}
+.wfcp-theme-timeline .wfcp-timeline-track {
+	--wfcp-timeline-count: 4;
+	--wfcp-timeline-stroke: 2px;
+	--wfcp-timeline-dot: var(--wfcp-timeline-dot-color, #c45c26);
+	--wfcp-timeline-line: var(--wfcp-timeline-line-color, #d6b089);
+	position: relative;
+	display: grid;
+	gap: 0;
+	padding: 0.2rem 0 0.35rem;
+	margin: 0 0 12px;
+}
+.wfcp-theme-timeline .wfcp-timeline-line {
+	position: absolute;
+	inset-inline: 0.75rem;
+	top: calc(0.2rem + 8px);
+	height: var(--wfcp-timeline-stroke);
+	background: var(--wfcp-timeline-line);
+	transform: translateY(-50%);
+	border-radius: 99px;
+}
+.wfcp-theme-timeline .wfcp-timeline-dates {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	grid-template-columns: repeat(var(--wfcp-timeline-count, 4), minmax(0, 1fr));
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	gap: 0;
+}
+.wfcp-theme-timeline .wfcp-timeline-dates li {
+	display: grid;
+	grid-template-rows: 16px auto;
+	justify-items: center;
+	text-align: center;
+	gap: 0.45rem;
+	padding: 0;
+	background: none;
+	border: 0;
+	border-radius: 0;
+}
+.wfcp-theme-timeline .wfcp-timeline-dot {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--wfcp-timeline-dot);
+	border: 2px solid #fff;
+	box-shadow: 0 0 0 2px var(--wfcp-timeline-dot);
+	flex: 0 0 auto;
+}
+.wfcp-theme-timeline .wfcp-timeline-date {
+	font-size: 12px;
+	line-height: 1.3;
+	max-width: 100%;
+}
+.wfcp-theme-timeline .wfcp-timeline-dates li.is-today .wfcp-timeline-date {
+	font-weight: 800;
+	color: var(--wfcp-timeline-today, #111827);
+}
+.wfcp-theme-timeline .wfcp-timeline-dates li.is-today .wfcp-timeline-dot {
+	opacity: 1;
+}
+.wfcp-theme-timeline .wfcp-timeline-dates li.is-future {
+	opacity: 0.42;
+}
+.wfcp-theme-timeline .wfcp-timeline-dates li.is-future .wfcp-timeline-date {
+	font-weight: 500;
+	color: var(--wfcp-timeline-future, #6b7280);
+}
+.wfcp-theme-timeline .wfcp-gateways-badges--pick {
+	gap: 10px;
+	margin: 10px 0 12px;
+}
+.wfcp-theme-timeline .wfcp-gateways-badges--pick .wfcp-gateway-badge {
+	width: auto;
+	height: auto;
+	min-width: 72px;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 10px;
+	border-radius: 12px;
+}
+.wfcp-theme-timeline .wfcp-badge-icon img,
+.wfcp-theme-timeline .wfcp-badge-icon svg {
+	max-height: 28px;
+	max-width: 48px;
+}
+.wfcp-theme-timeline .wfcp-badge-name {
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.2;
+	max-width: 84px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.wfcp-gateways-badges--logos-only .wfcp-badge-name {
+	display: none !important;
+}
+.wfcp-theme-timeline .wfcp-gateways-badges--logos-only .wfcp-gateway-badge {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	flex-direction: row;
+	padding: 5px;
+	border-radius: 8px;
+}
+.wfcp-gateways-badges--logos-only .wfcp-gateway-badge {
+	position: relative;
+}
+.wfcp-gateways-badges--logos-only .wfcp-gateway-badge::after {
+	content: attr(data-name);
+	position: absolute;
+	bottom: calc(100% + 6px);
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 4px 8px;
+	border-radius: 6px;
+	background: #111827;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.3;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	visibility: hidden;
+	z-index: 20;
+}
+.wfcp-gateways-badges--logos-only .wfcp-gateway-badge:hover::after,
+.wfcp-gateways-badges--logos-only .wfcp-gateway-badge:focus-visible::after {
+	opacity: 1;
+	visibility: visible;
+}
+.wfcp-theme-timeline .wfcp-timeline-atc {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	margin-top: 4px;
+	padding: 10px 14px;
+	border: 0;
+	border-radius: var(--wfcp-box-radius);
+	background: var(--wfcp-btn-bg);
+	color: var(--wfcp-btn-text);
+	font-size: 14px;
+	font-weight: 800;
+	cursor: pointer;
+}
+@media (max-width: 640px) {
+	.wfcp-theme-timeline .wfcp-timeline-head {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 4px;
+	}
+	.wfcp-theme-timeline .wfcp-timeline-monthly {
+		white-space: normal;
+	}
+	.wfcp-theme-timeline .wfcp-timeline-date {
+		font-size: 11px;
+	}
+}
+
+/* Responsive tweaks */
+@media (max-width: 640px) {
+	.wfcp-pricing-action { flex-direction: column; align-items: stretch; }
+	.wfcp-guide-alert { padding: 12px; }
+	.wfcp-cart-type-switcher { align-items: stretch; }
+}
+
+/* ishop buy column: keep the box above the theme's decorative overlay */
+.product-main-content__buy-content .wfcp-pricing-box {
+	position: relative;
+	z-index: 2;
+	width: 100%;
+	margin: 0 0 12px;
+}
+

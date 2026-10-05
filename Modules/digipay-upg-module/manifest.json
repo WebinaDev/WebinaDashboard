@@ -1,0 +1,40 @@
+{
+  "slug": "digipay-upg-module",
+  "name": "DigiPay UPG",
+  "version": "1.0.2",
+  "is_builtin": true,
+  "parent_slug": "payment-module",
+  "requires_woocommerce": true,
+  "bootstrap": "bootstrap.php",
+  "settings": {
+    "area": "shop",
+    "title": "DigiPay UPG",
+    "sections": [
+      {
+        "id": "connection",
+        "route": "/settings/shop/digipay",
+        "title": "DigiPay"
+      },
+      {
+        "id": "transactions",
+        "route": "/settings/shop/digipay/transactions",
+        "title": "Transactions"
+      }
+    ]
+  },
+  "client": {
+    "entry": "client/dist/module.js",
+    "routes": [
+      {
+        "path": "settings/shop/digipay",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "digipay.settingsTitle"
+      },
+      {
+        "path": "settings/shop/digipay/transactions",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "digipay.transactionsTitle"
+      }
+    ]
+  }
+}
