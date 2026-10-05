@@ -66,16 +66,22 @@ final class Webino_Dashboard_Order_Aggregates {
 				if ( ! $order instanceof WC_Order ) {
 					continue;
 				}
-				$amt = (float) $order->get_total();
+				if ( class_exists( 'Webino_Dashboard_Order_Reports', false )
+					&& ! Webino_Dashboard_Order_Reports::order_counts_in_sale_metrics( $order ) ) {
+					continue;
+				}
+				$gross    = (float) $order->get_total();
+				$refunded = (float) $order->get_total_refunded();
+				$amt      = max( 0.0, $gross - $refunded );
+				if ( $amt <= 0.00001 ) {
+					continue;
+				}
 				$revenue += $amt;
 				++$order_count;
 
-				if ( $collect_refunds ) {
-					$refunded = (float) $order->get_total_refunded();
-					if ( $refunded > 0 ) {
-						$refunds += $refunded;
-						++$refund_count;
-					}
+				if ( $collect_refunds && $refunded > 0 ) {
+					$refunds += $refunded;
+					++$refund_count;
 				}
 
 				if ( $collect_daily ) {
