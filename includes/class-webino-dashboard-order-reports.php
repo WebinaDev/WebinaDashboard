@@ -21,17 +21,18 @@ class Webino_Dashboard_Order_Reports {
 	const ORDER_FETCH_LIMIT = 10000;
 
 	/**
-	 * Statuses excluded from sales / revenue KPIs.
+	 * Statuses never counted as sales (unpaid, cancelled, fully refunded, failed, drafts, returns).
+	 *
+	 * Partially refunded orders keep a paid status (or partially-refunded) and stay in sales with net totals.
 	 *
 	 * @return string[]
 	 */
-	public static function sales_exclude_statuses() {
+	public static function sales_never_count_statuses() {
 		return array(
 			'pending',
 			'on-hold',
 			'cancelled',
 			'refunded',
-			'partially-refunded',
 			'failed',
 			'checkout-draft',
 			'trash',
@@ -45,22 +46,123 @@ class Webino_Dashboard_Order_Reports {
 	}
 
 	/**
-	 * Sales statuses: all WC statuses except unpaid / cancelled / refunded / drafts / returned / vendor-pending.
-	 * Includes custom transport statuses and Basalam sold statuses (preparation, shipping, completed).
+	 * @return string[]
+	 */
+	public static function sales_exclude_statuses() {
+		return self::sales_never_count_statuses();
+	}
+
+	/**
+	 * Net order total after refunds (remaining paid amount).
+	 *
+	 * @param WC_Order $order Order.
+	 * @return float
+	 */
+	public static function order_net_total( $order ) {
+		if ( ! is_a( $order, 'WC_Order' ) ) {
+			return 0.0;
+		}
+		return max( 0.0, (float) $order->get_total() - (float) $order->get_total_refunded() );
+	}
+
+	/**
+	 * Whether an order should contribute to sales KPIs, bestsellers, and sales order lists.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool
+	 */
+	public static function order_counts_in_sale_metrics( $order ) {
+		if ( ! is_a( $order, 'WC_Order' ) ) {
+			return false;
+		}
+		$status = self::normalize_status_slug( $order->get_status() );
+		if ( ! $status || in_array( $status, self::sales_never_count_statuses(), true ) ) {
+			return false;
+		}
+		if ( ! in_array( $status, self::sales_statuses(), true ) ) {
+			return false;
+		}
+		return self::order_net_total( $order ) > 0.00001;
+	}
+
+	/**
+	 * Refunded qty/total keyed by original line item id.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return array<int,array{qty:float,total:float}>
+	 */
+	public static function refunded_amounts_by_line_item( $order ) {
+		$out = array();
+		if ( ! is_a( $order, 'WC_Order' ) || ! is_callable( array( $order, 'get_refunds' ) ) ) {
+			return $out;
+		}
+		foreach ( $order->get_refunds() as $refund ) {
+			if ( ! is_a( $refund, 'WC_Abstract_Order' ) ) {
+				continue;
+			}
+			foreach ( $refund->get_items( 'line_item' ) as $r_item ) {
+				if ( ! is_a( $r_item, 'WC_Order_Item_Product' ) ) {
+					continue;
+				}
+				$orig_id = (int) $r_item->get_meta( '_refunded_item_id', true );
+				if ( $orig_id <= 0 ) {
+					continue;
+				}
+				if ( ! isset( $out[ $orig_id ] ) ) {
+					$out[ $orig_id ] = array(
+						'qty'   => 0.0,
+						'total' => 0.0,
+					);
+				}
+				$out[ $orig_id ]['qty']   += abs( (float) $r_item->get_quantity() );
+				$out[ $orig_id ]['total'] += abs( (float) $r_item->get_total() );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Sales statuses: WC paid statuses + explicit fulfillment allowlist, minus never-count slugs (no all-status union).
 	 *
 	 * @return string[]
 	 */
 	public static function sales_statuses() {
-		$exclude = self::sales_exclude_statuses();
-		$out     = array();
-		if ( function_exists( 'wc_get_order_statuses' ) ) {
-			foreach ( array_keys( wc_get_order_statuses() ) as $st ) {
+		$never = self::sales_never_count_statuses();
+		$out   = array();
+
+		// Paid WooCommerce statuses (processing/completed/partially-refunded, plus filters).
+		if ( function_exists( 'wc_get_is_paid_statuses' ) ) {
+			foreach ( wc_get_is_paid_statuses() as $st ) {
 				$slug = self::normalize_status_slug( $st );
-				if ( $slug && ! in_array( $slug, $exclude, true ) ) {
+				if ( $slug && ! in_array( $slug, $never, true ) ) {
 					$out[] = $slug;
 				}
 			}
 		}
+
+		/**
+		 * Explicit fulfillment / sales allowlist (do NOT union every WC status).
+		 * Custom unpaid statuses must opt in via this filter or wc_order_is_paid_statuses.
+		 *
+		 * @param string[] $allowlist Status slugs without wc- prefix.
+		 */
+		$allowlist = apply_filters(
+			'webino_dashboard_sales_status_allowlist',
+			array(
+				'processing',
+				'completed',
+				'partially-refunded',
+			)
+		);
+		if ( is_array( $allowlist ) ) {
+			foreach ( $allowlist as $st ) {
+				$slug = self::normalize_status_slug( $st );
+				if ( $slug && ! in_array( $slug, $never, true ) ) {
+					$out[] = $slug;
+				}
+			}
+		}
+
 		if ( $out ) {
 			return array_values( array_unique( $out ) );
 		}
@@ -709,9 +811,21 @@ class Webino_Dashboard_Order_Reports {
 				continue;
 			}
 
-			$total    = (float) $o->get_total();
+			if ( ! self::order_counts_in_sale_metrics( $o ) ) {
+				continue;
+			}
+
+			$gross    = (float) $o->get_total();
 			$refunded = (float) $o->get_total_refunded();
+			$total    = max( 0.0, $gross - $refunded );
 			$status   = $o->get_status();
+			$refund_by_line = self::refunded_amounts_by_line_item( $o );
+			$line_refund_sum = 0.0;
+			foreach ( $refund_by_line as $adj ) {
+				$line_refund_sum += (float) ( $adj['total'] ?? 0 );
+			}
+			$unattributed_refund = max( 0.0, $refunded - $line_refund_sum );
+			$line_net_factor     = ( $unattributed_refund > 0 && $gross > 0 ) ? max( 0.0, ( $gross - $unattributed_refund ) / $gross ) : 1.0;
 
 			++$summary['order_count'];
 			$summary['revenue']        += $total;
@@ -819,7 +933,7 @@ class Webino_Dashboard_Order_Reports {
 					$series_buckets[ $key ]['coupons']  += (float) $o->get_discount_total();
 					$series_buckets[ $key ]['tax']      += (float) $o->get_total_tax();
 					$series_buckets[ $key ]['shipping'] += (float) $o->get_shipping_total();
-					$series_buckets[ $key ]['net']      += max( 0, $total - $refunded );
+					$series_buckets[ $key ]['net']      += $total;
 					++$series_buckets[ $key ]['orders'];
 				}
 			}
@@ -828,8 +942,19 @@ class Webino_Dashboard_Order_Reports {
 				if ( ! is_a( $item, 'WC_Order_Item_Product' ) ) {
 					continue;
 				}
+				$item_id     = (int) $item->get_id();
 				$qty         = (int) $item->get_quantity();
 				$line_rev    = (float) $item->get_total();
+				if ( isset( $refund_by_line[ $item_id ] ) ) {
+					$qty      = max( 0, $qty - (int) round( (float) $refund_by_line[ $item_id ]['qty'] ) );
+					$line_rev = max( 0.0, $line_rev - (float) $refund_by_line[ $item_id ]['total'] );
+				} elseif ( $refunded > 0 && $gross > 0 ) {
+					$qty      = max( 0, (int) round( $qty * $line_net_factor ) );
+					$line_rev = max( 0.0, $line_rev * $line_net_factor );
+				}
+				if ( $qty <= 0 && $line_rev <= 0.00001 ) {
+					continue;
+				}
 				$pid         = (int) $item->get_product_id();
 				$vid         = (int) $item->get_variation_id();
 				$unit_cost   = self::get_item_unit_purchase_cost( $item, $cost_cache );
@@ -967,6 +1092,8 @@ class Webino_Dashboard_Order_Reports {
 				'status'         => $status,
 				'status_label'   => $st_label,
 				'total'          => $total,
+				'gross_total'    => $gross,
+				'refunded'       => $refunded,
 				'payment_method' => $pay_method,
 				'payment_title'  => $pay_title,
 				'utm_source'     => $utm_source,
@@ -1082,7 +1209,7 @@ class Webino_Dashboard_Order_Reports {
 			$summary['refund_count'] = (int) ( $agg['refund_count'] ?? $summary['refund_count'] );
 		}
 
-		$summary['net_revenue']       = max( 0, $summary['revenue'] - $summary['refunds'] );
+		$summary['net_revenue']       = max( 0.0, (float) $summary['revenue'] );
 		$summary['avg_order_value']   = $summary['order_count'] > 0 ? $summary['revenue'] / $summary['order_count'] : 0.0;
 		$summary['gross_profit']      = $summary['line_revenue'] - $summary['cogs'];
 		$summary['gross_margin_pct']  = self::margin_pct( $summary['gross_profit'], $summary['line_revenue'] );
@@ -1529,7 +1656,7 @@ class Webino_Dashboard_Order_Reports {
 		$args = array(
 			'limit'        => 1,
 			'return'       => 'ids',
-			'status'       => array_keys( wc_get_order_statuses() ),
+			'status'       => self::sales_statuses(),
 			'date_created' => '<=' . wp_date( 'Y-m-d H:i:s', max( 0, $from_ts - 1 ) ),
 		);
 		if ( $customer_id > 0 ) {
@@ -1731,7 +1858,7 @@ class Webino_Dashboard_Order_Reports {
 					'interval' => $interval,
 					'status'   => $statuses,
 					'uid'      => get_current_user_id(),
-					'v'        => 4,
+					'v'        => 5,
 				)
 			)
 		);

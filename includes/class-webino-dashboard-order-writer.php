@@ -43,7 +43,61 @@ final class Webino_Dashboard_Order_Writer {
 	 * @return array<int,string>
 	 */
 	public static function tenders() {
-		return array( 'cash', 'card_to_card', 'pos_terminal', 'online', 'other' );
+		return array( 'cash', 'card_to_card', 'pos_terminal', 'online', 'other', 'payment_sms' );
+	}
+
+	/**
+	 * WooCommerce gateway IDs that must not appear as customer pay-link options.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function excluded_pay_gateway_ids() {
+		return array(
+			'webino_cash',
+			'webino_card_to_card',
+			'webino_pos_terminal',
+			'webino_online',
+			'webino_other',
+			'webino_wallet',
+			'webino_payment_sms',
+		);
+	}
+
+	/**
+	 * Whether a gateway id is allowed on POS pay-link / SMS payment pages.
+	 *
+	 * @param string $gateway_id Gateway id.
+	 * @return bool
+	 */
+	public static function is_allowed_pay_gateway( $gateway_id ) {
+		$id = sanitize_key( (string) $gateway_id );
+		if ( '' === $id ) {
+			return false;
+		}
+		return ! in_array( $id, self::excluded_pay_gateway_ids(), true );
+	}
+
+	/**
+	 * Enabled WooCommerce gateways suitable for POS pay-only links.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function enabled_pay_gateway_ids() {
+		if ( ! function_exists( 'WC' ) || ! WC()->payment_gateways() ) {
+			return array();
+		}
+		$out = array();
+		foreach ( WC()->payment_gateways()->payment_gateways() as $id => $gateway ) {
+			$id = sanitize_key( (string) $id );
+			if ( ! self::is_allowed_pay_gateway( $id ) ) {
+				continue;
+			}
+			if ( ! is_object( $gateway ) || 'yes' !== (string) ( $gateway->enabled ?? '' ) ) {
+				continue;
+			}
+			$out[] = $id;
+		}
+		return array_values( array_unique( $out ) );
 	}
 
 	/**
@@ -77,7 +131,35 @@ final class Webino_Dashboard_Order_Writer {
 			return $customer_id;
 		}
 
+		if ( ! empty( $data['payment_tender'] ) && 'payment_sms' === sanitize_key( (string) $data['payment_tender'] ) ) {
+			$data['pay_link'] = true;
+			$data['set_paid'] = false;
+			if ( empty( $data['payment_gateways'] ) || ! is_array( $data['payment_gateways'] ) ) {
+				$data['payment_gateways'] = self::enabled_pay_gateway_ids();
+			}
+		}
+
 		$pay_link = ! empty( $data['pay_link'] );
+		if ( $pay_link ) {
+			$cust = isset( $data['customer'] ) && is_array( $data['customer'] ) ? $data['customer'] : array();
+			$bill = isset( $data['billing'] ) && is_array( $data['billing'] ) ? $data['billing'] : array();
+			$phone = preg_replace(
+				'/\D+/',
+				'',
+				(string) ( $cust['phone'] ?? $bill['phone'] ?? '' )
+			);
+			if ( $customer_id > 0 && '' === $phone ) {
+				$phone = preg_replace( '/\D+/', '', (string) get_user_meta( (int) $customer_id, 'billing_phone', true ) );
+			}
+			if ( '' === $phone ) {
+				return new WP_Error(
+					'phone_required',
+					__( 'Mobile number is required to send a payment SMS.', 'webino-dashboard' ),
+					array( 'status' => 400 )
+				);
+			}
+		}
+
 		$order = wc_create_order(
 			array(
 				'customer_id' => (int) $customer_id,
@@ -94,7 +176,13 @@ final class Webino_Dashboard_Order_Writer {
 			return $result;
 		}
 
-		$pay_link = ! empty( $data['pay_link'] );
+		$pay_link = ! empty( $data['pay_link'] ) || ( ! empty( $data['payment_tender'] ) && 'payment_sms' === sanitize_key( (string) $data['payment_tender'] ) );
+		if ( $pay_link && ! $order->get_billing_phone() && (int) $customer_id > 0 ) {
+			$meta_phone = (string) ( get_user_meta( (int) $customer_id, 'billing_phone', true ) ?: get_user_meta( (int) $customer_id, 'phone', true ) );
+			if ( '' !== $meta_phone ) {
+				$order->set_billing_phone( $meta_phone );
+			}
+		}
 		if ( $pay_link ) {
 			$status = 'pending';
 		} else {
@@ -105,19 +193,70 @@ final class Webino_Dashboard_Order_Writer {
 		}
 		$order->set_status( $status );
 		$order->save();
+		self::maybe_payment_complete( $order );
+		// Reload in case payment_complete mutated the order.
+		$reloaded = wc_get_order( $order->get_id() );
+		if ( $reloaded ) {
+			$order = $reloaded;
+		}
 
 		$detail = Webino_Dashboard_Orders::map_detail( $order );
 		if ( $pay_link && class_exists( 'Webino_Dashboard_Pay_Order', false ) ) {
 			$detail['payment_url'] = Webino_Dashboard_Pay_Order::public_url( $order );
-			if ( class_exists( 'Webino_Dashboard_Sms_Order_Hooks', false ) ) {
-				Webino_Dashboard_Sms_Order_Hooks::notify_snapshot(
-					'pos-payment-link',
-					Webino_Dashboard_Sms_Order_Hooks::build_snapshot( $order )
-				);
+			$send_sms = ! isset( $data['send_payment_sms'] ) || ! empty( $data['send_payment_sms'] );
+			if ( $send_sms ) {
+				$sms_result = self::send_payment_link_sms( $order );
+				if ( is_array( $sms_result ) ) {
+					$detail['payment_sms_sent']  = ! empty( $sms_result['sent'] );
+					$detail['payment_sms_error'] = isset( $sms_result['error'] ) ? (string) $sms_result['error'] : '';
+				} else {
+					$detail['payment_sms_sent'] = (bool) $sms_result;
+				}
 			}
 		}
 
 		return $detail;
+	}
+
+	/**
+	 * Send pay-only link SMS. Returns sent flag + error when panel/provider missing.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return array{sent:bool,error?:string}|bool
+	 */
+	public static function send_payment_link_sms( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return array(
+				'sent'  => false,
+				'error' => __( 'Invalid order for payment SMS.', 'webino-dashboard' ),
+			);
+		}
+
+		// Honest gate: sms-panel module (Webino_Dashboard_Sms_Settings) is not in this tree.
+		if ( ! class_exists( 'Webino_Dashboard_Sms_Settings', false )
+			|| ( class_exists( 'Webino_Dashboard_Module_Registry', false ) && ! Webino_Dashboard_Module_Registry::sms_ready() )
+		) {
+			return array(
+				'sent'  => false,
+				'error' => __( 'SMS panel is not installed or active. Payment link was created but SMS was not sent.', 'webino-dashboard' ),
+			);
+		}
+
+		if ( class_exists( 'Webino_Dashboard_Sms_Pos_Payment', false ) ) {
+			$result = Webino_Dashboard_Sms_Pos_Payment::notify( $order );
+			if ( is_array( $result ) ) {
+				return $result;
+			}
+			return array(
+				'sent'  => (bool) $result,
+				'error' => $result ? '' : __( 'SMS provider did not acknowledge the send.', 'webino-dashboard' ),
+			);
+		}
+
+		return array(
+			'sent'  => false,
+			'error' => __( 'SMS send path is unavailable.', 'webino-dashboard' ),
+		);
 	}
 
 	/**
@@ -153,6 +292,11 @@ final class Webino_Dashboard_Order_Writer {
 			$order->set_status( sanitize_key( (string) $data['status'] ) );
 		}
 		$order->save();
+		self::maybe_payment_complete( $order );
+		$reloaded = wc_get_order( $order->get_id() );
+		if ( $reloaded ) {
+			$order = $reloaded;
+		}
 
 		return Webino_Dashboard_Orders::map_detail( $order );
 	}
@@ -230,12 +374,14 @@ final class Webino_Dashboard_Order_Writer {
 		if ( $phone ) {
 			$found = self::find_user_by_phone( $phone );
 			if ( $found ) {
+				self::maybe_update_customer_names( $found, $first, $last );
 				return $found;
 			}
 		}
 		if ( $email ) {
 			$u = get_user_by( 'email', $email );
 			if ( $u ) {
+				self::maybe_update_customer_names( (int) $u->ID, $first, $last );
 				return (int) $u->ID;
 			}
 		}
@@ -290,24 +436,153 @@ final class Webino_Dashboard_Order_Writer {
 	 * @param string $phone Digits.
 	 * @return int
 	 */
+
+	/**
+	 * Finalize POS "set_paid": call WC payment_complete without double stock reduction.
+	 *
+	 * Status should already be a paid/fulfillment status (e.g. processing). We keep that
+	 * status via filter so payment_complete does not flip processing↔completed unexpectedly.
+	 * wc_reduce_stock_levels is idempotent via _order_stock_reduced meta.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return void
+	 */
+	private static function maybe_payment_complete( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+		if ( '1' !== (string) $order->get_meta( '_webino_pos_set_paid', true ) ) {
+			return;
+		}
+		$order->delete_meta_data( '_webino_pos_set_paid' );
+		$keep = self::normalize_status_for_paid( $order->get_status() );
+		$filter = static function ( $status ) use ( $keep ) {
+			return $keep ? $keep : $status;
+		};
+		add_filter( 'woocommerce_payment_complete_order_status', $filter, 100 );
+		// Empty txn id is fine for cash/POS tenders.
+		$order->payment_complete( '' );
+		remove_filter( 'woocommerce_payment_complete_order_status', $filter, 100 );
+		if ( '1' === (string) $order->get_meta( '_webino_pos_set_paid', true ) ) {
+			$order->delete_meta_data( '_webino_pos_set_paid' );
+		}
+		$order->save();
+	}
+
+	/**
+	 * @param string $status Status.
+	 * @return string
+	 */
+	private static function normalize_status_for_paid( $status ) {
+		$status = sanitize_key( (string) $status );
+		if ( 0 === strpos( $status, 'wc-' ) ) {
+			$status = substr( $status, 3 );
+		}
+		return $status;
+	}
+
+	/**
+	 * Iranian phone digit variants for exact meta match (10/11-digit national forms).
+	 *
+	 * @param string $phone Raw phone.
+	 * @return string[] Empty when not a full Iranian mobile form.
+	 */
+	public static function phone_exact_variants_public( $phone ) {
+		return self::phone_exact_variants( $phone );
+	}
+
+	private static function phone_exact_variants( $phone ) {
+		$digits = preg_replace( '/\D+/', '', (string) $phone );
+		$digits = is_string( $digits ) ? $digits : '';
+		if ( '' === $digits ) {
+			return array();
+		}
+		$national = '';
+		if ( 0 === strpos( $digits, '98' ) && strlen( $digits ) >= 12 ) {
+			$national = substr( $digits, 2, 10 );
+		} elseif ( 0 === strpos( $digits, '0' ) && 11 === strlen( $digits ) ) {
+			$national = substr( $digits, 1 );
+		} elseif ( 10 === strlen( $digits ) && '9' === $digits[0] ) {
+			$national = $digits;
+		} else {
+			return array();
+		}
+		if ( 10 !== strlen( $national ) || '9' !== $national[0] ) {
+			return array();
+		}
+		return array_values(
+			array_unique(
+				array(
+					$national,
+					'0' . $national,
+					'98' . $national,
+					'+98' . $national,
+				)
+			)
+		);
+	}
+
 	private static function find_user_by_phone( $phone ) {
-		$phone = preg_replace( '/\D+/', '', (string) $phone );
-		if ( '' === $phone ) {
+		$variants = self::phone_exact_variants( $phone );
+		if ( ! $variants ) {
 			return 0;
+		}
+		$meta_query = array( 'relation' => 'OR' );
+		foreach ( $variants as $v ) {
+			$meta_query[] = array(
+				'key'     => 'billing_phone',
+				'value'   => $v,
+				'compare' => '=',
+			);
+			$meta_query[] = array(
+				'key'     => 'phone',
+				'value'   => $v,
+				'compare' => '=',
+			);
 		}
 		$q = new WP_User_Query(
 			array(
 				'number'     => 1,
-				'meta_query' => array(
-					'relation' => 'OR',
-					array( 'key' => 'billing_phone', 'value' => $phone, 'compare' => 'LIKE' ),
-					array( 'key' => 'phone', 'value' => $phone, 'compare' => 'LIKE' ),
-				),
+				'meta_query' => $meta_query,
 				'fields'     => 'ID',
 			)
 		);
 		$ids = $q->get_results();
 		return $ids ? (int) $ids[0] : 0;
+	}
+
+	/**
+	 * Fill empty first/last name on an existing customer when POS provides them.
+	 *
+	 * @param int    $user_id User ID.
+	 * @param string $first   First name.
+	 * @param string $last    Last name.
+	 * @return void
+	 */
+	private static function maybe_update_customer_names( $user_id, $first, $last ) {
+		$user_id = (int) $user_id;
+		if ( $user_id <= 0 || ( '' === $first && '' === $last ) ) {
+			return;
+		}
+		$existing_first = (string) get_user_meta( $user_id, 'first_name', true );
+		$existing_last  = (string) get_user_meta( $user_id, 'last_name', true );
+		$update         = array( 'ID' => $user_id );
+		if ( '' === $existing_first && '' !== $first ) {
+			$update['first_name'] = $first;
+		}
+		if ( '' === $existing_last && '' !== $last ) {
+			$update['last_name'] = $last;
+		}
+		if ( count( $update ) > 1 ) {
+			$display = trim(
+				( isset( $update['first_name'] ) ? $update['first_name'] : $existing_first ) . ' ' .
+				( isset( $update['last_name'] ) ? $update['last_name'] : $existing_last )
+			);
+			if ( '' !== $display ) {
+				$update['display_name'] = $display;
+			}
+			wp_update_user( $update );
+		}
 	}
 
 	/**
@@ -525,20 +800,26 @@ final class Webino_Dashboard_Order_Writer {
 	 * @return void
 	 */
 	private static function apply_meta( $order, array $data, $is_new ) {
-		$pay_link = ! empty( $data['pay_link'] );
+		$pay_link = ! empty( $data['pay_link'] ) || ( ! empty( $data['payment_tender'] ) && 'payment_sms' === sanitize_key( (string) $data['payment_tender'] ) );
 		if ( $is_new || ! empty( $data['pos'] ) || $pay_link ) {
 			$order->update_meta_data( self::META_POS, '1' );
 		}
 		if ( $pay_link ) {
 			$order->update_meta_data( self::META_PAY_LINK, '1' );
+			$order->update_meta_data( self::META_TENDER, 'payment_sms' );
+			$ids = array();
 			if ( ! empty( $data['payment_gateways'] ) && is_array( $data['payment_gateways'] ) ) {
-				$ids = array();
 				foreach ( $data['payment_gateways'] as $gw_id ) {
 					$gw_id = sanitize_key( (string) $gw_id );
-					if ( '' !== $gw_id && 0 !== strpos( $gw_id, 'webino_' ) ) {
+					if ( self::is_allowed_pay_gateway( $gw_id ) ) {
 						$ids[] = $gw_id;
 					}
 				}
+			}
+			if ( ! $ids ) {
+				$ids = self::enabled_pay_gateway_ids();
+			}
+			if ( $ids ) {
 				$order->update_meta_data( self::META_PAY_GW, wp_json_encode( array_values( array_unique( $ids ) ) ) );
 			}
 			if ( ! empty( $data['allowed_purchase_types'] ) && is_array( $data['allowed_purchase_types'] ) ) {
@@ -564,12 +845,14 @@ final class Webino_Dashboard_Order_Writer {
 				$order->update_meta_data( self::META_CHANNEL, $ch );
 			}
 		}
-		if ( ! empty( $data['payment_tender'] ) && empty( $data['pay_link'] ) ) {
+		if ( ! empty( $data['payment_tender'] ) && ! $pay_link ) {
 			$t = sanitize_key( (string) $data['payment_tender'] );
-			if ( in_array( $t, self::tenders(), true ) ) {
+			if ( in_array( $t, self::tenders(), true ) && 'payment_sms' !== $t ) {
 				$order->update_meta_data( self::META_TENDER, $t );
 				$order->set_payment_method( 'webino_' . $t );
 				$order->set_payment_method_title( self::tender_label( $t ) );
+			} elseif ( self::apply_wc_gateway_payment( $order, $t ) ) {
+				$order->update_meta_data( self::META_TENDER, 'online' );
 			}
 		}
 		if ( isset( $data['amount_paid'] ) ) {
@@ -590,9 +873,39 @@ final class Webino_Dashboard_Order_Writer {
 				$order->update_meta_data( '_billing_economic_code', sanitize_text_field( (string) $data['buyer_tax']['economic_code'] ) );
 			}
 		}
-		if ( ! empty( $data['set_paid'] ) && empty( $data['pay_link'] ) ) {
-			$order->set_date_paid( time() );
+		if ( ! empty( $data['set_paid'] ) && ! $pay_link ) {
+			// Mark intent; create()/update() call payment_complete() after status is applied
+			// so WooCommerce hooks fire without relying on set_date_paid alone.
+			$order->update_meta_data( '_webino_pos_set_paid', '1' );
 		}
+	}
+
+	/**
+	 * Attach a real WooCommerce gateway as the order payment method.
+	 *
+	 * @param WC_Order $order      Order.
+	 * @param string   $gateway_id Gateway id.
+	 * @return bool
+	 */
+	private static function apply_wc_gateway_payment( $order, $gateway_id ) {
+		$gateway_id = sanitize_key( (string) $gateway_id );
+		if ( ! self::is_allowed_pay_gateway( $gateway_id ) ) {
+			return false;
+		}
+		if ( ! function_exists( 'WC' ) || ! WC()->payment_gateways() ) {
+			return false;
+		}
+		$gateways = WC()->payment_gateways()->payment_gateways();
+		if ( empty( $gateways[ $gateway_id ] ) || ! is_object( $gateways[ $gateway_id ] ) ) {
+			return false;
+		}
+		$gw = $gateways[ $gateway_id ];
+		$order->set_payment_method( $gw );
+		$title = method_exists( $gw, 'get_title' ) ? (string) $gw->get_title() : $gateway_id;
+		if ( '' !== $title ) {
+			$order->set_payment_method_title( $title );
+		}
+		return true;
 	}
 
 	/**
@@ -661,6 +974,7 @@ final class Webino_Dashboard_Order_Writer {
 			'pos_terminal'  => __( 'Card terminal', 'webino-dashboard' ),
 			'online'        => __( 'Online', 'webino-dashboard' ),
 			'other'         => __( 'Other', 'webino-dashboard' ),
+			'payment_sms'   => __( 'Payment SMS', 'webino-dashboard' ),
 		);
 		return $labels[ $tender ] ?? $tender;
 	}

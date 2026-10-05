@@ -190,7 +190,7 @@ final class Webino_Dashboard_Pay_Order {
 			}
 		}
 
-		if ( isset( $_POST['payment_method'] ) && $order->needs_payment() ) {
+		if ( isset( $_POST['payment_method'] ) && $order->needs_payment() && check_admin_referer( 'webino_pay_order_' . $order_id ) ) {
 			self::process_payment( $order );
 			return;
 		}
@@ -224,6 +224,12 @@ final class Webino_Dashboard_Pay_Order {
 	 * @return void
 	 */
 	private static function process_payment( $order ) {
+		// Defense-in-depth CSRF (maybe_render already checked admin referer).
+		$nonce = isset( $_REQUEST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( (string) $_REQUEST['_wpnonce'] ) ) : '';
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'webino_pay_order_' . $order->get_id() ) ) {
+			wc_add_notice( __( 'Security check failed. Please try again.', 'webino-dashboard' ), 'error' );
+			return;
+		}
 		$method = isset( $_POST['payment_method'] ) ? sanitize_key( wp_unslash( (string) $_POST['payment_method'] ) ) : '';
 		if ( '' === $method ) {
 			wc_add_notice( __( 'Please choose a payment method.', 'webino-dashboard' ), 'error' );

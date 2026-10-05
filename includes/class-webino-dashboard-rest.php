@@ -3382,12 +3382,36 @@ class Webino_Dashboard_REST {
 			'order'   => 'DESC',
 			'fields'  => array( 'ID', 'user_email', 'display_name' ),
 		);
-		if ( $phone && strlen( $phone ) >= 4 ) {
-			$args['meta_query'] = array(
-				'relation' => 'OR',
-				array( 'key' => 'billing_phone', 'value' => $phone, 'compare' => 'LIKE' ),
-				array( 'key' => 'phone', 'value' => $phone, 'compare' => 'LIKE' ),
-			);
+		// Exact match only on full Iranian 10/11-digit forms (no partial LIKE).
+		$phone_variants = array();
+		if ( class_exists( 'Webino_Dashboard_Order_Writer', false ) && method_exists( 'Webino_Dashboard_Order_Writer', 'phone_exact_variants_public' ) ) {
+			$phone_variants = Webino_Dashboard_Order_Writer::phone_exact_variants_public( (string) $phone );
+		} elseif ( $phone ) {
+			// Inline mirror of Order_Writer::phone_exact_variants (private).
+			$digits = (string) $phone;
+			$national = '';
+			if ( 0 === strpos( $digits, '98' ) && strlen( $digits ) >= 12 ) {
+				$national = substr( $digits, 2, 10 );
+			} elseif ( 0 === strpos( $digits, '0' ) && 11 === strlen( $digits ) ) {
+				$national = substr( $digits, 1 );
+			} elseif ( 10 === strlen( $digits ) && '9' === $digits[0] ) {
+				$national = $digits;
+			}
+			if ( 10 === strlen( $national ) && '9' === $national[0] ) {
+				$phone_variants = array_values(
+					array_unique(
+						array( $national, '0' . $national, '98' . $national, '+98' . $national )
+					)
+				);
+			}
+		}
+		if ( $phone_variants ) {
+			$meta_query = array( 'relation' => 'OR' );
+			foreach ( $phone_variants as $v ) {
+				$meta_query[] = array( 'key' => 'billing_phone', 'value' => $v, 'compare' => '=' );
+				$meta_query[] = array( 'key' => 'phone', 'value' => $v, 'compare' => '=' );
+			}
+			$args['meta_query'] = $meta_query;
 		} else {
 			$args['search']         = '*' . esc_attr( $q ) . '*';
 			$args['search_columns'] = array( 'user_login', 'user_email', 'display_name' );

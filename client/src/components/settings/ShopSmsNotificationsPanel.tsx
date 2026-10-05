@@ -319,6 +319,11 @@ export function ShopSmsNotificationsPanel() {
               <span className="text-muted-foreground text-xs">{t('settings.shopSms.patternStatus.none')}</span>
             )}
           </div>
+          {selectedEvent === 'pos-payment-link' ? (
+            <p className="text-muted-foreground text-xs" dir="auto">
+              {t('settings.shopSms.posPaymentVarsHint')}
+            </p>
+          ) : null}
           <Button asChild>
             <Link to="/marketing/sms/patterns">{t('settings.shopSms.openPatternsMatrix')}</Link>
           </Button>

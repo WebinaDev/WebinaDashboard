@@ -85,7 +85,16 @@ final class Accounting_Hesabfa_Webhook {
 		);
 		$query_pass = (string) $request->get_param( 'password' );
 		if ( '' !== $query_pass ) {
-			$provided = $query_pass;
+			// Deprecated: query-string passwords can leak via logs/Referer. Prefer header/body.
+			if ( function_exists( 'wc_get_logger' ) ) {
+				wc_get_logger()->warning(
+					'Hesabfa hook password via query string is deprecated; use x-hesabfa-password header or JSON body.',
+					array( 'source' => 'webino-hesabfa' )
+				);
+			}
+			if ( '' === $provided ) {
+				$provided = $query_pass;
+			}
 		}
 
 		if ( '' === $pass || ! hash_equals( $pass, $provided ) ) {

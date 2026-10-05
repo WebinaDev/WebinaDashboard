@@ -514,6 +514,9 @@ final class Accounting_Config {
 	 * @return int
 	 */
 	public static function amount_to_rial( $amount, $currency = null ) {
+		if ( class_exists( 'Webino_Dashboard_Currency', false ) ) {
+			return Webino_Dashboard_Currency::to_rial_int( $amount, $currency );
+		}
 		$currency = strtoupper( (string) ( $currency ?: ( function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'IRT' ) ) );
 		$amount   = (float) $amount;
 		switch ( $currency ) {

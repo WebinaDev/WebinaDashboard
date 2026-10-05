@@ -98,8 +98,9 @@ class SimpleProductHandler implements ProductDataHandlerInterface
                 : null;
         }
 
-        if (class_exists('Webino_Shipping_Weight', false)) {
-            $grams = Webino_Shipping_Weight::to_grams($raw);
+        // Must use global FQCN: bare name resolves under this namespace and fatals.
+        if (class_exists(\Webino_Shipping_Weight::class, false)) {
+            $grams = \Webino_Shipping_Weight::to_grams($raw);
             return $grams > 0 ? $grams : (int) ($this->settings[SettingsConfig::DEFAULT_WEIGHT] ?? 0);
         }
 
@@ -113,8 +114,9 @@ class SimpleProductHandler implements ProductDataHandlerInterface
     {
         $weight = $this->getWeight($product) ?? 0;
 
-        if (class_exists('Webino_Shipping_Weight', false) && is_a($product, 'WC_Product')) {
-            $estimate = Webino_Shipping_Weight::estimate_unit_package($product);
+        // Soft-fail when shipping-module is inactive; never fatal on storefront/JobsRunner.
+        if (class_exists(\Webino_Shipping_Weight::class, false) && is_a($product, 'WC_Product')) {
+            $estimate = \Webino_Shipping_Weight::estimate_unit_package($product);
             $tare = isset($estimate['tare_g']) ? (int) $estimate['tare_g'] : 0;
             return (int) ($weight + max(0, $tare));
         }

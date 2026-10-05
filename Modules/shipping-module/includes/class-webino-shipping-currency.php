@@ -2,7 +2,8 @@
 /**
  * Iranian currency helpers for shipping rates and Tapin payloads.
  *
- * Supports IRR, IRT (toman), IRHR (rial/10), IRHT (toman/10).
+ * Canonical factors (shared with payments via Webino_Dashboard_Currency):
+ * IRR×1, IRT×10, IRHR×1000 (هزار ریال), IRHT×10000 (هزار تومان).
  *
  * @package WebinoDashboard
  */
@@ -20,7 +21,10 @@ class Webino_Shipping_Currency {
 	 * @return float
 	 */
 	public static function to_rial_factor( $currency = null ) {
-		$code = strtoupper( (string) ( $currency ?: get_woocommerce_currency() ) );
+		if ( class_exists( 'Webino_Dashboard_Currency', false ) ) {
+			return Webino_Dashboard_Currency::to_rial_factor( $currency );
+		}
+		$code = strtoupper( (string) ( $currency ?: ( function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'IRR' ) ) );
 		$map  = array(
 			'IRR'  => 1.0,
 			'IRT'  => 10.0,
@@ -49,6 +53,9 @@ class Webino_Shipping_Currency {
 	 * @return float
 	 */
 	public static function to_rial( $amount, $currency = null ) {
+		if ( class_exists( 'Webino_Dashboard_Currency', false ) ) {
+			return Webino_Dashboard_Currency::to_rial( $amount, $currency );
+		}
 		return (float) $amount * self::to_rial_factor( $currency );
 	}
 
@@ -60,6 +67,9 @@ class Webino_Shipping_Currency {
 	 * @return float
 	 */
 	public static function from_rial( $rial, $currency = null ) {
+		if ( class_exists( 'Webino_Dashboard_Currency', false ) ) {
+			return Webino_Dashboard_Currency::from_rial( $rial, $currency );
+		}
 		return (float) $rial * self::from_rial_factor( $currency );
 	}
 

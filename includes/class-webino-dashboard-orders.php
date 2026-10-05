@@ -572,13 +572,22 @@ class Webino_Dashboard_Orders {
 				'status'      => $paid_statuses,
 			)
 		);
-		$total       = 0.0;
+		$total = 0.0;
+		$count = 0;
 		foreach ( $orders as $order ) {
-			if ( $order ) {
+			if ( ! $order ) {
+				continue;
+			}
+			if ( class_exists( 'Webino_Dashboard_Order_Reports', false ) ) {
+				if ( ! Webino_Dashboard_Order_Reports::order_counts_in_sale_metrics( $order ) ) {
+					continue;
+				}
+				$total += Webino_Dashboard_Order_Reports::order_net_total( $order );
+			} else {
 				$total += (float) $order->get_total();
 			}
+			++$count;
 		}
-		$count = count( $orders );
 		return array(
 			'order_count'     => $count,
 			'total_spent'     => $total,
@@ -1389,14 +1398,21 @@ class Webino_Dashboard_Orders {
 			$ids = array();
 		}
 		if ( $partner_only ) {
-			$count = count( $ids );
+			$count = 0;
 			$walk  = array_slice( $ids, 0, 2000 );
 			foreach ( $walk as $oid ) {
 				$o = wc_get_order( $oid );
 				if ( ! $o ) {
 					continue;
 				}
-				$revenue += (float) $o->get_total();
+				if ( class_exists( 'Webino_Dashboard_Order_Reports', false )
+					&& ! Webino_Dashboard_Order_Reports::order_counts_in_sale_metrics( $o ) ) {
+					continue;
+				}
+				++$count;
+				$revenue += class_exists( 'Webino_Dashboard_Order_Reports', false )
+					? Webino_Dashboard_Order_Reports::order_net_total( $o )
+					: (float) $o->get_total();
 				$st       = $o->get_status();
 				if ( 'processing' === $st ) {
 					++$processing;

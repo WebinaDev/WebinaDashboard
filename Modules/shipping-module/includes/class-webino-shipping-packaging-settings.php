@@ -62,9 +62,16 @@ class Webino_Shipping_Packaging_Settings {
 			);
 		}
 		return array(
-			'add_packaging_cost_to_checkout' => true,
-			'fill_factor'                     => 0.85,
-			'boxes'                           => $boxes,
+			'add_packaging_cost_to_checkout'   => true,
+			'fill_factor'                       => 0.85,
+			'boxes'                             => $boxes,
+			'professional_fee_enabled'          => false,
+			'professional_fee_label'            => 'بسته‌بندی حرفه‌ای',
+			'professional_fee_description'      => 'بسته‌بندی شکیل و ایمن با لوازم محافظ، روی هزینه ارسال اضافه می‌شود.',
+			'professional_fee_amount'           => 95000,
+			'professional_fee_default_selected' => false,
+			// Safer default: when professional fee is selected, do not also charge carton packaging.
+			'professional_fee_replaces_carton'  => true,
 		);
 	}
 
@@ -79,6 +86,27 @@ class Webino_Shipping_Packaging_Settings {
 		}
 		if ( array_key_exists( 'add_packaging_cost_to_checkout', $raw ) ) {
 			$out['add_packaging_cost_to_checkout'] = (bool) $raw['add_packaging_cost_to_checkout'];
+		}
+		if ( array_key_exists( 'professional_fee_enabled', $raw ) ) {
+			$out['professional_fee_enabled'] = (bool) $raw['professional_fee_enabled'];
+		}
+		if ( array_key_exists( 'professional_fee_default_selected', $raw ) ) {
+			$out['professional_fee_default_selected'] = (bool) $raw['professional_fee_default_selected'];
+		}
+		if ( array_key_exists( 'professional_fee_replaces_carton', $raw ) ) {
+			$out['professional_fee_replaces_carton'] = (bool) $raw['professional_fee_replaces_carton'];
+		}
+		if ( isset( $raw['professional_fee_label'] ) ) {
+			$label = sanitize_text_field( (string) $raw['professional_fee_label'] );
+			if ( '' !== $label ) {
+				$out['professional_fee_label'] = $label;
+			}
+		}
+		if ( isset( $raw['professional_fee_description'] ) ) {
+			$out['professional_fee_description'] = sanitize_textarea_field( (string) $raw['professional_fee_description'] );
+		}
+		if ( isset( $raw['professional_fee_amount'] ) ) {
+			$out['professional_fee_amount'] = max( 0, (float) $raw['professional_fee_amount'] );
 		}
 		if ( isset( $raw['fill_factor'] ) ) {
 			$ff = (float) $raw['fill_factor'];
@@ -121,6 +149,27 @@ class Webino_Shipping_Packaging_Settings {
 		}
 		if ( array_key_exists( 'add_packaging_cost_to_checkout', $input ) ) {
 			$current['add_packaging_cost_to_checkout'] = (bool) $input['add_packaging_cost_to_checkout'];
+		}
+		if ( array_key_exists( 'professional_fee_enabled', $input ) ) {
+			$current['professional_fee_enabled'] = (bool) $input['professional_fee_enabled'];
+		}
+		if ( array_key_exists( 'professional_fee_default_selected', $input ) ) {
+			$current['professional_fee_default_selected'] = (bool) $input['professional_fee_default_selected'];
+		}
+		if ( array_key_exists( 'professional_fee_replaces_carton', $input ) ) {
+			$current['professional_fee_replaces_carton'] = (bool) $input['professional_fee_replaces_carton'];
+		}
+		if ( isset( $input['professional_fee_label'] ) ) {
+			$label = sanitize_text_field( (string) $input['professional_fee_label'] );
+			if ( '' !== $label ) {
+				$current['professional_fee_label'] = $label;
+			}
+		}
+		if ( isset( $input['professional_fee_description'] ) ) {
+			$current['professional_fee_description'] = sanitize_textarea_field( (string) $input['professional_fee_description'] );
+		}
+		if ( isset( $input['professional_fee_amount'] ) ) {
+			$current['professional_fee_amount'] = max( 0, (float) $input['professional_fee_amount'] );
 		}
 		if ( isset( $input['fill_factor'] ) ) {
 			$ff = (float) $input['fill_factor'];

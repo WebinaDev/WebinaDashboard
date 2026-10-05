@@ -318,9 +318,11 @@ final class Webino_Dashboard_Bots_Order_Notify {
 		return array(
 			array( 'key' => 'order_id', 'label' => __( 'Order ID', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'order_number', 'label' => __( 'Order number', 'webino-dashboard' ), 'scope' => 'order' ),
-			array( 'key' => 'customer_name', 'label' => __( 'Customer name', 'webino-dashboard' ), 'scope' => 'order' ),
-			array( 'key' => 'customer_phone', 'label' => __( 'Customer phone', 'webino-dashboard' ), 'scope' => 'order' ),
-			array( 'key' => 'mobile', 'label' => __( 'Customer mobile', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'customer_name', 'label' => __( 'Customer name (اسم)', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'name', 'label' => __( 'Customer name (اسم)', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'customer_phone', 'label' => __( 'Customer phone (شماره)', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'mobile', 'label' => __( 'Customer mobile (شماره)', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'phone', 'label' => __( 'Customer phone (شماره)', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'customer_email', 'label' => __( 'Customer email', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'total', 'label' => __( 'Order total', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'price', 'label' => __( 'Order price', 'webino-dashboard' ), 'scope' => 'order' ),
@@ -330,7 +332,11 @@ final class Webino_Dashboard_Bots_Order_Notify {
 			array( 'key' => 'barcode', 'label' => __( 'Post barcode', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'items', 'label' => __( 'Order items', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'payment_method', 'label' => __( 'Payment method', 'webino-dashboard' ), 'scope' => 'order' ),
-			array( 'key' => 'payment_url', 'label' => __( 'Payment URL', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'payment_url', 'label' => __( 'Payment link (لینک)', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'payment_link', 'label' => __( 'Payment link (لینک)', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'link', 'label' => __( 'Payment link (لینک)', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'pattern_code', 'label' => __( 'Pattern code', 'webino-dashboard' ), 'scope' => 'order' ),
+			array( 'key' => 'pattern', 'label' => __( 'Pattern code', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'shipping_method', 'label' => __( 'Shipping method', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'order_date', 'label' => __( 'Order date', 'webino-dashboard' ), 'scope' => 'order' ),
 			array( 'key' => 'site_name', 'label' => __( 'Site name', 'webino-dashboard' ), 'scope' => 'all' ),
@@ -886,12 +892,23 @@ final class Webino_Dashboard_Bots_Order_Notify {
 			'customer_name'     => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
 			'customer_phone'    => (string) $order->get_billing_phone(),
 			'mobile'            => (string) $order->get_billing_phone(),
+			'phone'             => (string) $order->get_billing_phone(),
+			'name'              => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
 			'customer_email'    => (string) $order->get_billing_email(),
 			'customer_user_id'  => (int) $order->get_user_id(),
 			'total'             => $order->get_formatted_order_total(),
 			'price'             => $order->get_formatted_order_total(),
 			'status'            => $status,
 			'status_label'      => wp_strip_all_tags( (string) $label ),
+			'payment_url'       => class_exists( 'Webino_Dashboard_Pay_Order', false )
+				? Webino_Dashboard_Pay_Order::public_url( $order )
+				: $order->get_checkout_payment_url( true ),
+			'payment_link'      => class_exists( 'Webino_Dashboard_Pay_Order', false )
+				? Webino_Dashboard_Pay_Order::public_url( $order )
+				: $order->get_checkout_payment_url( true ),
+			'link'              => class_exists( 'Webino_Dashboard_Pay_Order', false )
+				? Webino_Dashboard_Pay_Order::public_url( $order )
+				: $order->get_checkout_payment_url( true ),
 			'site_name'         => get_bloginfo( 'name' ),
 			'site_url'          => home_url(),
 		);

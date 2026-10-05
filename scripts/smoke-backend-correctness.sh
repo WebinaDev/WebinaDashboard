@@ -39,6 +39,27 @@ grep -q 'Webino_Dashboard_Order_Aggregates::sum_orders_in_range' "$CRUD" \
   || { echo "FAIL: reports_sales must use order aggregates" >&2; exit 1; }
 echo "OK: paginated order aggregates"
 
+ORDER_REPORTS="$INC/class-webino-dashboard-order-reports.php"
+grep -q 'function sales_never_count_statuses' "$ORDER_REPORTS" \
+  || { echo "FAIL: sales_never_count_statuses missing" >&2; exit 1; }
+grep -q 'function order_counts_in_sale_metrics' "$ORDER_REPORTS" \
+  || { echo "FAIL: order_counts_in_sale_metrics missing" >&2; exit 1; }
+grep -q 'function order_net_total' "$ORDER_REPORTS" \
+  || { echo "FAIL: order_net_total missing" >&2; exit 1; }
+grep -q 'wc_get_is_paid_statuses' "$ORDER_REPORTS" \
+  || { echo "FAIL: sales_statuses must use wc_get_is_paid_statuses" >&2; exit 1; }
+if grep -A20 'function sales_never_count_statuses' "$ORDER_REPORTS" | grep -q "'partially-refunded'"; then
+  echo "FAIL: partially-refunded must not be in never-count list" >&2
+  exit 1
+fi
+if command -v php >/dev/null 2>&1; then
+  php "$ROOT/scripts/test-order-reports-sales-statuses.php" \
+    || { echo "FAIL: order-reports sales status test" >&2; exit 1; }
+  echo "OK: sales status / net revenue helpers (php test)"
+else
+  echo "OK: sales status / net revenue helpers (static grep; php test skipped — no php binary)"
+fi
+
 grep -q "'number'     => 1000" "$CRUD" \
   || { echo "FAIL: get_terms number cap missing" >&2; exit 1; }
 echo "OK: terms list capped"

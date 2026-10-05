@@ -44,6 +44,7 @@ Catalog is built from `wc_get_order_statuses()` on the site (any custom status i
 | `post-barcode` | `webino_dashboard_order_post_barcode_saved` |
 | `stock-low` | `woocommerce_low_stock` or `webino_dashboard_product_stock_low` |
 | `stock-out` | `woocommerce_no_stock` or `webino_dashboard_product_stock_out` |
+| `pos-payment-link` | POS cashier chooses «ارسال پیامک پرداخت» (`Webino_Dashboard_Sms_Pos_Payment`) |
 
 Realtime path: Woo hook → shutdown queue → non-blocking `crm_post_async` → CRM `orders/notify` → Edge pattern send.
 
@@ -65,12 +66,26 @@ PHP bootstrap: [`Modules/sms-panel-module/bootstrap.php`](../../Modules/sms-pane
 
 ## Shortcodes
 
-`{order_id}`, `{order_number}`, `{customer_name}`, `{customer_phone}`, `{customer_email}`, `{total}`, `{status}`, `{status_label}`, `{tracking}`, `{barcode}`, `{items}`, `{items_qty}`, `{payment_method}`, `{shipping_method}`, `{transaction_id}`, `{billing_address}`, `{shipping_address}`, `{order_date}`, `{site_name}`, `{site_url}`, `{code}`, `{product_name}`, `{product_url}`, `{qty}`, `{stock_quantity}`, `{low_stock_amount}`.
+`{order_id}`, `{order_number}`, `{customer_name}`, `{name}`, `{customer_phone}`, `{mobile}`, `{phone}`, `{customer_email}`, `{total}`, `{status}`, `{status_label}`, `{tracking}`, `{barcode}`, `{items}`, `{items_qty}`, `{payment_method}`, `{payment_url}`, `{payment_link}`, `{link}`, `{pattern_code}`, `{pattern}`, `{shipping_method}`, `{transaction_id}`, `{billing_address}`, `{shipping_address}`, `{order_date}`, `{site_name}`, `{site_url}`, `{code}`, `{product_name}`, `{product_url}`, `{qty}`, `{stock_quantity}`, `{low_stock_amount}`.
+
+### POS payment link (`pos-payment-link`)
+
+Event used when the cashier chooses **ارسال پیامک پرداخت**. Bind an approved IPPanel pattern to this event (customer scope), then map pattern variables to:
+
+| Variable | Aliases | Meaning |
+|----------|---------|---------|
+| `{customer_name}` | `{name}` | Customer name (اسم) |
+| `{customer_phone}` | `{mobile}`, `{phone}` | Customer mobile (شماره) |
+| `{payment_url}` | `{payment_link}`, `{link}` | Pay-only URL `/pay-order/{id}/{key}/` (لینک) |
+| `{pattern_code}` | `{pattern}` | Bound IPPanel pattern code for this event |
+| `{order_number}` | `{order_id}` | Order number / id |
+
+Snapshot fill lives in `Webino_Dashboard_Sms_Pos_Payment` (core). Sends go through sms-panel `notify_snapshot( 'pos-payment-link', … )` when the module is active.
 
 **Order SMS is pattern-only** for both customer and admin: if the IPPanel pattern is not synced for that event/role, the send is skipped (`pattern_missing`).
 Dashboard event switches (`settings.events[event].customer|admin`) are the sole enable gate. Local Dashboard cache fail-opens to CRM when unavailable.
 
-Event catalog comes from `wc_get_order_statuses()` on the customer site (plus extras: `pending_on_create`, `post-barcode`, `stock-low`, `stock-out`). Custom WC statuses are included automatically.
+Event catalog comes from `wc_get_order_statuses()` on the customer site (plus extras: `pending_on_create`, `post-barcode`, `stock-low`, `stock-out`, `pos-payment-link`). Custom WC statuses are included automatically.
 
 ## Marketing panel
 

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,7 +23,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
-import { formatNumber } from '@/lib/formatNumber'
+
+const EXCLUDED_GATEWAY_IDS = new Set([
+  'webino_cash',
+  'webino_card_to_card',
+  'webino_pos_terminal',
+  'webino_online',
+  'webino_other',
+  'webino_wallet',
+  'webino_payment_sms',
+])
 
 type PosProduct = {
   id: number
@@ -59,8 +69,16 @@ type PaymentGateway = {
 
 export default function PosPayLinkPage() {
   const { t, i18n } = useTranslation()
-  const { currency } = useStoreCurrency()
-  const fmt = (n: number) => formatNumber(n, i18n.language)
+  const { currency, currencySymbol } = useStoreCurrency()
+  const money = (amount: number, className?: string) => (
+    <MoneyDisplay
+      amount={amount}
+      currency={currency}
+      currencySymbol={currencySymbol}
+      locale={i18n.language}
+      className={className}
+    />
+  )
 
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<PosProduct[]>([])
@@ -129,7 +147,7 @@ export default function PosPayLinkPage() {
   const enabledGateways = useMemo(
     () =>
       (gatewaysQ.data?.gateways ?? []).filter(
-        (g) => g.enabled && !g.id.startsWith('webino_'),
+        (g) => g.enabled && !EXCLUDED_GATEWAY_IDS.has(g.id),
       ),
     [gatewaysQ.data],
   )
@@ -197,6 +215,8 @@ export default function PosPayLinkPage() {
         status: 'pending',
         set_paid: false,
         create_customer: true,
+        send_payment_sms: true,
+        payment_tender: 'payment_sms',
         purchase_type: purchaseType,
         allowed_purchase_types: allowBothTypes ? ['retail', 'credit'] : [purchaseType],
         payment_gateways: selectedGateways,
@@ -331,7 +351,7 @@ export default function PosPayLinkPage() {
                       className="hover:bg-muted w-full rounded px-2 py-1 text-start"
                       onClick={() => addProduct(p)}
                     >
-                      {p.name} — {fmt(p.price)} {currency}
+                      {p.name} — {money(p.price)}
                     </button>
                   </li>
                 ))}
@@ -382,7 +402,7 @@ export default function PosPayLinkPage() {
                     </Button>
                   </div>
                   <span className="text-muted-foreground whitespace-nowrap">
-                    {fmt(line.price * line.quantity)} {currency}
+                    {money(line.price * line.quantity)}
                   </span>
                 </li>
               ))}
@@ -412,7 +432,7 @@ export default function PosPayLinkPage() {
               <SelectContent>
                 {shippingOptions.map((opt) => (
                   <SelectItem key={opt.key} value={opt.key}>
-                    {opt.title} ({fmt(opt.cost)} {currency})
+                    {opt.title} ({money(opt.cost)})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -477,9 +497,7 @@ export default function PosPayLinkPage() {
         <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
           <div>
             <p className="text-muted-foreground text-sm">{t('pos.total')}</p>
-            <p className="text-2xl font-semibold">
-              {fmt(total)} {currency}
-            </p>
+            <p className="text-2xl font-semibold">{money(total)}</p>
           </div>
           <Button
             type="button"

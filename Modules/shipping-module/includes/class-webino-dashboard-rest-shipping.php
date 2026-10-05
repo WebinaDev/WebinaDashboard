@@ -313,7 +313,17 @@ class Webino_Dashboard_REST_Shipping {
 		if ( ! $order ) {
 			return new WP_Error( 'not_found', __( 'Order not found.', 'webino-dashboard' ), array( 'status' => 404 ) );
 		}
-		return rest_ensure_response( array( 'plan' => Webino_Shipping_Packer::get_order_plan( $order ) ) );
+		$prof_selected = 'yes' === (string) $order->get_meta( Webino_Shipping_Professional_Packaging::ORDER_META );
+		return rest_ensure_response(
+			array(
+				'plan'                 => Webino_Shipping_Packer::get_order_plan( $order ),
+				'professional_fee'     => array(
+					'selected' => $prof_selected,
+					'label'    => (string) $order->get_meta( Webino_Shipping_Professional_Packaging::ORDER_META . '_label' ),
+					'amount'   => (float) $order->get_meta( Webino_Shipping_Professional_Packaging::ORDER_META . '_amount' ),
+				),
+			)
+		);
 	}
 
 	/**

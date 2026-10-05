@@ -5209,7 +5209,7 @@ function Ic({ className: e, ...t }) {
 		...t
 	});
 }
-function X({ className: e, ...t }) {
+function Lc({ className: e, ...t }) {
 	return /* @__PURE__ */ y("div", {
 		"data-slot": "card-content",
 		className: G("px-6 text-start", e),
@@ -5218,7 +5218,7 @@ function X({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/input.tsx
-function Z({ className: e, type: t, ...n }) {
+function X({ className: e, type: t, ...n }) {
 	return /* @__PURE__ */ y("input", {
 		type: t,
 		"data-slot": "input",
@@ -5228,7 +5228,7 @@ function Z({ className: e, type: t, ...n }) {
 }
 //#endregion
 //#region src/components/ui/label.tsx
-function Q({ className: e, ...t }) {
+function Z({ className: e, ...t }) {
 	return /* @__PURE__ */ y(fa, {
 		"data-slot": "label",
 		className: G("flex items-center gap-2 text-start text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", e),
@@ -5236,8 +5236,39 @@ function Q({ className: e, ...t }) {
 	});
 }
 //#endregion
+//#region src/lib/queryClient.ts
+var Rc = null;
+function zc() {
+	return Rc;
+}
+//#endregion
+//#region src/lib/authLost.ts
+var Bc = ["auth", "session"], Vc = new Set([
+	"rest_cookie_invalid_nonce",
+	"rest_not_logged_in",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function Hc(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !0;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (Vc.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
+}
+function Uc(e) {
+	let t = e ?? zc();
+	t && t.setQueryData(Bc, { logged_in: !1 });
+}
+function Wc(e) {
+	Hc(e) && Uc();
+}
+//#endregion
 //#region src/lib/safeUrl.ts
-function Lc(e) {
+function Gc(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -5249,38 +5280,38 @@ function Lc(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function Rc() {
+function Kc() {
 	return window.webinoDashboard;
 }
-var zc = 3e4;
-function Bc(e) {
+var qc = 3e4;
+function Jc(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function Vc(e) {
-	let t = Rc();
+function Yc(e) {
+	let t = Kc();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (Bc(e) || Lc(e)) return e;
-	throw new Qc("Request blocked: URL not allowed", {
+	if (Jc(e) || Gc(e)) return e;
+	throw new ol("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function Hc(e, t) {
+function Xc(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function Uc(e) {
+function Zc(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
-	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : null;
+	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function Wc(e, t) {
+function Qc(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -5296,13 +5327,13 @@ function Wc(e, t) {
 		code: "invalid_json"
 	};
 }
-function Gc(e, t) {
+function $c(e, t) {
 	let n = e.toLowerCase();
 	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
 }
-async function Kc(e, t, n = {}) {
-	let r = Uc(e), i = Rc();
-	if (!r || !i.ajaxUrl) throw new Qc("AJAX fallback unavailable", {
+async function el(e, t, n = {}) {
+	let r = Zc(e), i = Kc();
+	if (!r || !i.ajaxUrl) throw new ol("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
 	});
@@ -5315,7 +5346,7 @@ async function Kc(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = Hc({}, t);
+	let { signal: l, clear: u } = Xc({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -5327,21 +5358,24 @@ async function Kc(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new Qc(Gc(t, e.status), {
+			throw new ol($c(t, e.status), {
 				code: "invalid_json",
 				status: e.status
 			});
 		}
-		if (!n.success) throw new Qc(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
-			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
-			status: e.status
-		});
+		if (!n.success) {
+			let t = new ol(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
+				status: e.status
+			});
+			throw Wc(t), t;
+		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof Qc ? e : e instanceof DOMException && e.name === "AbortError" ? new Qc("Request timed out", {
+		throw e instanceof ol ? (Wc(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ol("Request timed out", {
 			code: "timeout",
 			status: 0
-		}) : e instanceof TypeError ? new Qc("Network unavailable", {
+		}) : e instanceof TypeError ? new ol("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -5349,11 +5383,11 @@ async function Kc(e, t, n = {}) {
 		u();
 	}
 }
-async function $(e, t = {}, n = zc) {
-	if (Uc(e) && Rc().ajaxUrl) return Kc(e, n, t);
-	let r = Vc(e), i = Rc(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+async function Q(e, t = {}, n = qc) {
+	if (Zc(e) && Kc().ajaxUrl) return el(e, n, t);
+	let r = Yc(e), i = Kc(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
 	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
-	let { signal: s, clear: c } = Hc(t, n);
+	let { signal: s, clear: c } = Xc(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -5364,25 +5398,25 @@ async function $(e, t = {}, n = zc) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = Wc(n, e.status);
-			throw new Qc(t.message, {
+			let t = Qc(n, e.status);
+			throw new ol(t.message, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		if (!e.ok) {
-			let t = i;
-			throw new Qc(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			let t = i, n = new ol(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
+			throw Wc(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof Qc ? e : e instanceof DOMException && e.name === "AbortError" ? new Qc("Request timed out", {
+		throw e instanceof ol ? (Wc(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ol("Request timed out", {
 			code: "timeout",
 			status: 0
-		}) : e instanceof TypeError ? new Qc("Network unavailable", {
+		}) : e instanceof TypeError ? new ol("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -5392,41 +5426,41 @@ async function $(e, t = {}, n = zc) {
 }
 //#endregion
 //#region src/lib/marketplace-api.ts
-function qc(e) {
+function tl(e) {
 	return `marketplace.installStep.${e}`;
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/typeof.js
-function Jc(e) {
+function nl(e) {
 	"@babel/helpers - typeof";
-	return Jc = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
+	return nl = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
 		return typeof e;
 	} : function(e) {
 		return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
-	}, Jc(e);
+	}, nl(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPrimitive.js
-function Yc(e, t) {
-	if (Jc(e) != "object" || !e) return e;
+function rl(e, t) {
+	if (nl(e) != "object" || !e) return e;
 	var n = e[Symbol.toPrimitive];
 	if (n !== void 0) {
 		var r = n.call(e, t || "default");
-		if (Jc(r) != "object") return r;
+		if (nl(r) != "object") return r;
 		throw TypeError("@@toPrimitive must return a primitive value.");
 	}
 	return (t === "string" ? String : Number)(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPropertyKey.js
-function Xc(e) {
-	var t = Yc(e, "string");
-	return Jc(t) == "symbol" ? t : t + "";
+function il(e) {
+	var t = rl(e, "string");
+	return nl(t) == "symbol" ? t : t + "";
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/defineProperty.js
-function Zc(e, t, n) {
-	return (t = Xc(t)) in e ? Object.defineProperty(e, t, {
+function al(e, t, n) {
+	return (t = il(t)) in e ? Object.defineProperty(e, t, {
 		value: n,
 		enumerable: !0,
 		configurable: !0,
@@ -5435,11 +5469,11 @@ function Zc(e, t, n) {
 }
 //#endregion
 //#region src/lib/apiError.ts
-var Qc = class extends Error {
+var ol = class extends Error {
 	constructor(e, t) {
-		super(e), Zc(this, "code", void 0), Zc(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
+		super(e), al(this, "code", void 0), al(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
 	}
-}, $c = {
+}, sl = {
 	invalid: "errors.api.invalid",
 	ai_disabled: "aiContent.errDisabled",
 	ai_entity_off: "aiContent.errEntityOff",
@@ -5469,22 +5503,22 @@ var Qc = class extends Error {
 	install_job_start_failed: "marketplace.installJobStartFailed",
 	build_dev_only: "buildPipeline.devOnly"
 };
-function el(e) {
+function cl(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 28") || t.includes("timed out") || t.includes("did not respond in time") || t.includes("زمان") && t.includes("پاسخ");
 }
-function tl(e) {
+function ll(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 52") || t.includes("empty reply") || t.includes("closed the connection without a response") || t.includes("پاسخ") && t.includes("خالی");
 }
-function nl(e, t) {
-	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(qc(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
+function ul(e, t) {
+	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(tl(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
 }
-function rl(e, t) {
+function dl(e, t) {
 	let n = t;
-	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return nl(e, n);
-	if (t instanceof Qc && t.code) {
-		let n = $c[t.code];
+	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return ul(e, n);
+	if (t instanceof ol && t.code) {
+		let n = sl[t.code];
 		if (n === "marketplace.installFailedGeneric") {
 			let n = t.message?.trim();
 			return n ? e("marketplace.installFailed", { message: n }) : e("marketplace.installFailedGeneric");
@@ -5492,24 +5526,24 @@ function rl(e, t) {
 		if (n) return e(n);
 	}
 	if (t && typeof t == "object" && "code" in t) {
-		let n = $c[String(t.code)];
+		let n = sl[String(t.code)];
 		if (n) return e(n);
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return el(n) ? e("errors.api.timeout") : tl(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return cl(n) ? e("errors.api.timeout") : ll(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
-function il(e, t) {
-	h.error(rl(e, t));
+function fl(e, t) {
+	h.error(dl(e, t));
 }
 //#endregion
 //#region src/hooks/useQueryErrorToast.ts
-function al(e) {
+function pl(e) {
 	let { t } = m(), n = f(!1);
 	l(() => {
-		e.isError && e.error ? n.current || (n.current = !0, h.error(rl(t, e.error))) : n.current = !1;
+		e.isError && e.error ? n.current || (n.current = !0, h.error(dl(t, e.error))) : n.current = !1;
 	}, [
 		e.isError,
 		e.error,
@@ -5519,9 +5553,9 @@ function al(e) {
 }
 //#endregion
 //#region ../Modules/shipping-module/client/components/OrderMapPanel.tsx
-var ol = null;
-function sl() {
-	return typeof window > "u" ? Promise.reject(/* @__PURE__ */ Error("no window")) : window.L ? Promise.resolve(window.L) : ol || (ol = new Promise((e, t) => {
+var ml = null;
+function hl() {
+	return typeof window > "u" ? Promise.reject(/* @__PURE__ */ Error("no window")) : window.L ? Promise.resolve(window.L) : ml || (ml = new Promise((e, t) => {
 		let n = "webino-leaflet-css";
 		if (!document.getElementById(n)) {
 			let e = document.createElement("link");
@@ -5548,9 +5582,9 @@ function sl() {
 				e(window.L);
 			} else t(/* @__PURE__ */ Error("Leaflet missing"));
 		}, i.onerror = () => t(/* @__PURE__ */ Error("Leaflet failed to load")), document.head.appendChild(i);
-	}), ol);
+	}), ml);
 }
-function cl(e) {
+function gl(e) {
 	let t = e?.provider || "osm";
 	return t === "neshan" && e?.neshan_api_key ? {
 		url: "https://static.neshan.org/raster/{z}/{x}/{y}.png",
@@ -5563,22 +5597,22 @@ function cl(e) {
 		attribution: "© OSM"
 	};
 }
-function ll({ orderId: r }) {
+function _l({ orderId: r }) {
 	let { t: i } = m(), a = n(), o = f(null), s = f(null), c = f(null), [u, d] = p(0), [g, _] = p(0), [v, x] = p(!1), S = t({
 		queryKey: ["shipping-order-map", r],
-		queryFn: () => $(`shipping/orders/${r}/map`),
+		queryFn: () => Q(`shipping/orders/${r}/map`),
 		enabled: r > 0
 	});
-	al(S), l(() => {
+	pl(S), l(() => {
 		if (S.data) {
 			let e = S.data.settings?.store_location;
 			d(S.data.lat || e?.lat || 35.6892), _(S.data.lng || e?.lng || 51.389);
 		}
 	}, [S.data]), l(() => {
 		let e = !1;
-		return sl().then((t) => {
+		return hl().then((t) => {
 			if (e || !o.current || s.current) return;
-			let n = cl(S.data?.settings), r = t.map(o.current).setView([u || 35.6892, g || 51.389], 13);
+			let n = gl(S.data?.settings), r = t.map(o.current).setView([u || 35.6892, g || 51.389], 13);
 			t.tileLayer(n.url, {
 				maxZoom: 19,
 				attribution: n.attribution
@@ -5602,7 +5636,7 @@ function ll({ orderId: r }) {
 		v
 	]);
 	let C = e({
-		mutationFn: () => $(`shipping/orders/${r}/map`, {
+		mutationFn: () => Q(`shipping/orders/${r}/map`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -5613,7 +5647,7 @@ function ll({ orderId: r }) {
 		onSuccess: () => {
 			h.success(i("common.saved")), a.invalidateQueries({ queryKey: ["shipping-order-map", r] });
 		},
-		onError: (e) => il(i, e)
+		onError: (e) => fl(i, e)
 	});
 	return /* @__PURE__ */ b(q, {
 		className: "shadow-sm",
@@ -5623,7 +5657,7 @@ function ll({ orderId: r }) {
 				className: "text-base",
 				children: i("shipping.orderMapTitle")
 			})
-		}), /* @__PURE__ */ b(X, {
+		}), /* @__PURE__ */ b(Lc, {
 			className: "space-y-3",
 			children: [
 				/* @__PURE__ */ y("div", {
@@ -5635,7 +5669,7 @@ function ll({ orderId: r }) {
 					className: "grid gap-2 sm:grid-cols-2",
 					children: [/* @__PURE__ */ b("div", {
 						className: "space-y-1",
-						children: [/* @__PURE__ */ y(Q, { children: "Lat" }), /* @__PURE__ */ y(Z, {
+						children: [/* @__PURE__ */ y(Z, { children: "Lat" }), /* @__PURE__ */ y(X, {
 							type: "number",
 							step: "any",
 							dir: "ltr",
@@ -5644,7 +5678,7 @@ function ll({ orderId: r }) {
 						})]
 					}), /* @__PURE__ */ b("div", {
 						className: "space-y-1",
-						children: [/* @__PURE__ */ y(Q, { children: "Lng" }), /* @__PURE__ */ y(Z, {
+						children: [/* @__PURE__ */ y(Z, { children: "Lng" }), /* @__PURE__ */ y(X, {
 							type: "number",
 							step: "any",
 							dir: "ltr",
@@ -5666,7 +5700,7 @@ function ll({ orderId: r }) {
 }
 //#endregion
 //#region src/components/currency/IrtIcon.tsx
-function ul({ className: e }) {
+function vl({ className: e }) {
 	return /* @__PURE__ */ b("svg", {
 		width: "13",
 		height: "12",
@@ -5701,20 +5735,20 @@ function ul({ className: e }) {
 }
 //#endregion
 //#region src/lib/currency.ts
-var dl = /تومان|toman|irt/i;
-function fl(e) {
+var yl = /تومان|toman|irt/i;
+function bl(e) {
 	return e.replace(/&nbsp;/gi, " ").replace(/&#160;/g, " ").replace(/&#x0*a0;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, "\"").replace(/&#(\d+);/g, (e, t) => {
 		let n = Number(t);
 		return Number.isFinite(n) ? String.fromCharCode(n) : e;
 	}).replace(/\u00a0/g, " ");
 }
-function pl(e, t) {
+function xl(e, t) {
 	let n = (e ?? "").trim(), r = (t ?? "").trim();
 	if (!n && !r) return !1;
 	let i = n.toUpperCase();
-	return !!(i === "IRT" || i === "TOMAN" || dl.test(n) || dl.test(r));
+	return !!(i === "IRT" || i === "TOMAN" || yl.test(n) || yl.test(r));
 }
-var ml = {
+var Sl = {
 	"۰": "0",
 	"۱": "1",
 	"۲": "2",
@@ -5736,44 +5770,45 @@ var ml = {
 	"٨": "8",
 	"٩": "9"
 };
-function hl(e) {
+function Cl(e) {
 	return e.toLowerCase().startsWith("fa");
 }
-function gl(e) {
+function wl(e) {
 	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
 }
-function _l(e) {
-	return e.replace(/[۰-۹٠-٩]/g, (e) => ml[e] ?? e);
+function Tl(e) {
+	return e.replace(/[۰-۹٠-٩]/g, (e) => Sl[e] ?? e);
 }
-function vl(e, t) {
-	return hl(t) ? gl(e) : e;
+function El(e, t) {
+	return Cl(t) ? wl(e) : e;
 }
 //#endregion
 //#region src/lib/formatNumber.ts
-function yl(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = hl(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return hl(t) ? gl(i) : i;
+function Dl(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = Cl(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return Cl(t) ? wl(i) : i;
 }
 //#endregion
 //#region src/components/currency/MoneyDisplay.tsx
-var bl = /تومان|toman|irt/gi;
-function xl(e) {
+var Ol = /تومان|toman|irt/gi;
+function kl(e) {
 	if (typeof e == "number") return Number.isFinite(e) ? e : 0;
-	let t = _l(fl(e)).replace(bl, "").replace(/[^\d.-]/g, ""), n = parseFloat(t);
+	let t = Tl(bl(e)).replace(Ol, "").replace(/[^\d.-]/g, ""), n = parseFloat(t);
 	return Number.isFinite(n) ? n : NaN;
 }
-function Sl({ amount: e, currency: t, currencySymbol: n, locale: r, className: i, amountClassName: a, prefix: o }) {
-	let s = xl(e), c = Number.isFinite(s) ? yl(s, r) : vl(_l(fl(String(e))).replace(bl, "").trim(), r), l = pl(t, n) || !t?.trim() && !n?.trim();
+function Al({ amount: e, currency: t, currencySymbol: n, locale: r, className: i, amountClassName: a, prefix: o }) {
+	let s = kl(e), c = Number.isFinite(s) ? Dl(s, r) : El(Tl(bl(String(e))).replace(Ol, "").trim(), r), l = xl(t, n) || !t?.trim() && !n?.trim();
 	return /* @__PURE__ */ b("span", {
 		className: G("inline-flex items-baseline gap-1", i),
 		dir: "ltr",
 		children: [
 			o,
+			l ? /* @__PURE__ */ y(vl, {}) : null,
 			/* @__PURE__ */ y("span", {
 				className: a,
 				children: c
 			}),
-			l ? /* @__PURE__ */ y(ul, {}) : t ? /* @__PURE__ */ y("span", {
+			!l && t ? /* @__PURE__ */ y("span", {
 				className: "text-muted-foreground text-[0.85em]",
 				children: t
 			}) : null
@@ -5782,24 +5817,28 @@ function Sl({ amount: e, currency: t, currencySymbol: n, locale: r, className: i
 }
 //#endregion
 //#region ../Modules/shipping-module/client/components/OrderPackagingPanel.tsx
-function Cl({ orderId: r, currency: i = "IRT", locale: a = "fa-IR" }) {
+function jl({ orderId: r, currency: i = "IRT", locale: a = "fa-IR" }) {
 	let { t: o } = m(), s = n(), c = t({
 		queryKey: ["shipping-order-packaging", r],
-		queryFn: () => $(`shipping/orders/${r}/packaging`),
+		queryFn: () => Q(`shipping/orders/${r}/packaging`),
 		enabled: r > 0
 	});
-	al(c);
+	pl(c);
 	let l = e({
-		mutationFn: () => $(`shipping/orders/${r}/packaging`, {
+		mutationFn: () => Q(`shipping/orders/${r}/packaging`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: "{}"
 		}),
 		onSuccess: (e) => {
-			s.setQueryData(["shipping-order-packaging", r], e), h.success(o("shipping.recalcOk"));
+			s.setQueryData(["shipping-order-packaging", r], (t) => ({
+				...t,
+				...e,
+				professional_fee: t?.professional_fee ?? e.professional_fee
+			})), h.success(o("shipping.recalcOk"));
 		},
-		onError: (e) => il(o, e)
-	}), u = c.data?.plan;
+		onError: (e) => fl(o, e)
+	}), u = c.data?.plan, d = c.data?.professional_fee;
 	return /* @__PURE__ */ b(q, {
 		className: "shadow-sm",
 		children: [/* @__PURE__ */ b(J, {
@@ -5815,9 +5854,9 @@ function Cl({ orderId: r, currency: i = "IRT", locale: a = "fa-IR" }) {
 				onClick: () => void l.mutateAsync(),
 				children: o("shipping.recalcPlan")
 			})]
-		}), /* @__PURE__ */ y(X, {
+		}), /* @__PURE__ */ b(Lc, {
 			className: "space-y-2 text-sm",
-			children: c.isPending ? /* @__PURE__ */ y("p", {
+			children: [c.isPending ? /* @__PURE__ */ y("p", {
 				className: "text-muted-foreground",
 				children: o("common.loading")
 			}) : !u || !u.boxes?.length ? /* @__PURE__ */ y("p", {
@@ -5844,7 +5883,7 @@ function Cl({ orderId: r, currency: i = "IRT", locale: a = "fa-IR" }) {
 							className: "text-amber-700 ms-2 text-xs dark:text-amber-300",
 							children: o("shipping.oversized")
 						}) : null
-					] }), /* @__PURE__ */ y(Sl, {
+					] }), /* @__PURE__ */ y(Al, {
 						amount: e.price,
 						currency: i,
 						locale: a
@@ -5852,18 +5891,25 @@ function Cl({ orderId: r, currency: i = "IRT", locale: a = "fa-IR" }) {
 				}, `${e.size}-${t}`))
 			}), /* @__PURE__ */ b("div", {
 				className: "flex items-center justify-between border-t border-border pt-2 font-medium",
-				children: [/* @__PURE__ */ b("span", { children: [o("shipping.boxCount", { count: u.box_count }), u.oversized ? ` · ${o("shipping.oversized")}` : ""] }), /* @__PURE__ */ y(Sl, {
+				children: [/* @__PURE__ */ b("span", { children: [o("shipping.boxCount", { count: u.box_count }), u.oversized ? ` · ${o("shipping.oversized")}` : ""] }), /* @__PURE__ */ y(Al, {
 					amount: u.total_packaging_cost,
 					currency: i,
 					locale: a
 				})]
-			})] })
+			})] }), d?.selected ? /* @__PURE__ */ b("div", {
+				className: "flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2",
+				children: [/* @__PURE__ */ y("span", { children: d.label || o("shipping.professionalFeeOrderSelected") }), /* @__PURE__ */ y(Al, {
+					amount: d.amount || 0,
+					currency: i,
+					locale: a
+				})]
+			}) : null]
 		})]
 	});
 }
 //#endregion
 //#region src/components/PageShell.tsx
-function wl({ title: e, description: t, eyebrow: n, children: r }) {
+function Ml({ title: e, description: t, eyebrow: n, children: r }) {
 	return /* @__PURE__ */ b("div", {
 		className: "space-y-5",
 		children: [/* @__PURE__ */ b("header", {
@@ -5887,10 +5933,10 @@ function wl({ title: e, description: t, eyebrow: n, children: r }) {
 }
 //#endregion
 //#region node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
-var Tl = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), El = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), Dl = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), Ol = (e) => {
-	let t = Dl(e);
+var Nl = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), Pl = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), Fl = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), Il = (e) => {
+	let t = Fl(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, kl = {
+}, Ll = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -5900,95 +5946,95 @@ var Tl = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, Al = (e) => {
+}, Rl = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, jl = a({}), Ml = () => c(jl), Nl = s(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: s, ...c }, l) => {
-	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = Ml() ?? {}, h = r ?? f ? Number(n ?? d) * 24 / Number(t ?? u) : n ?? d;
+}, zl = a({}), Bl = () => c(zl), Vl = s(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: s, ...c }, l) => {
+	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = Bl() ?? {}, h = r ?? f ? Number(n ?? d) * 24 / Number(t ?? u) : n ?? d;
 	return o("svg", {
 		ref: l,
-		...kl,
-		width: t ?? u ?? kl.width,
-		height: t ?? u ?? kl.height,
+		...Ll,
+		width: t ?? u ?? Ll.width,
+		height: t ?? u ?? Ll.height,
 		stroke: e ?? p,
 		strokeWidth: h,
-		className: Tl("lucide", m, i),
-		...!a && !Al(c) && { "aria-hidden": "true" },
+		className: Nl("lucide", m, i),
+		...!a && !Rl(c) && { "aria-hidden": "true" },
 		...c
 	}, [...s.map(([e, t]) => o(e, t)), ...Array.isArray(a) ? a : [a]]);
-}), Pl = (e, t) => {
-	let n = s(({ className: n, ...r }, i) => o(Nl, {
+}), Hl = (e, t) => {
+	let n = s(({ className: n, ...r }, i) => o(Vl, {
 		ref: i,
 		iconNode: t,
-		className: Tl(`lucide-${El(Ol(e))}`, `lucide-${e}`, n),
+		className: Nl(`lucide-${Pl(Il(e))}`, `lucide-${e}`, n),
 		...r
 	}));
-	return n.displayName = Ol(e), n;
-}, Fl = Pl("check", [["path", {
+	return n.displayName = Il(e), n;
+}, Ul = Hl("check", [["path", {
 	d: "M20 6 9 17l-5-5",
 	key: "1gmf2c"
-}]]), Il = Pl("chevron-down", [["path", {
+}]]), Wl = Hl("chevron-down", [["path", {
 	d: "m6 9 6 6 6-6",
 	key: "qrunsl"
-}]]), Ll = Pl("chevron-up", [["path", {
+}]]), Gl = Hl("chevron-up", [["path", {
 	d: "m18 15-6-6-6 6",
 	key: "153udz"
 }]]);
 //#endregion
 //#region src/hooks/use-text-direction.ts
-function Rl() {
+function Kl() {
 	let { i18n: e } = m();
 	return e.dir() === "rtl" ? "rtl" : "ltr";
 }
 //#endregion
 //#region src/components/ui/select.tsx
-function zl({ ...e }) {
+function ql({ ...e }) {
 	return /* @__PURE__ */ y(Po, {
 		"data-slot": "select",
 		...e
 	});
 }
-function Bl({ ...e }) {
+function Jl({ ...e }) {
 	return /* @__PURE__ */ y(Io, {
 		"data-slot": "select-value",
 		...e
 	});
 }
-function Vl({ className: e, size: t = "default", children: n, ...r }) {
+function Yl({ className: e, size: t = "default", children: n, ...r }) {
 	return /* @__PURE__ */ b(Fo, {
 		"data-slot": "select-trigger",
 		"data-size": t,
-		dir: Rl(),
+		dir: Kl(),
 		className: G("flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap text-start shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", e),
 		...r,
 		children: [n, /* @__PURE__ */ y(Lo, {
 			asChild: !0,
-			children: /* @__PURE__ */ y(Il, { className: "size-4 opacity-50" })
+			children: /* @__PURE__ */ y(Wl, { className: "size-4 opacity-50" })
 		})]
 	});
 }
-function Hl({ className: e, children: t, position: n = "popper", align: r = "start", ...i }) {
+function Xl({ className: e, children: t, position: n = "popper", align: r = "start", ...i }) {
 	return /* @__PURE__ */ y(pn, {
 		allowBodyScroll: !0,
 		children: /* @__PURE__ */ y(Ro, { children: /* @__PURE__ */ b(zo, {
 			"data-slot": "select-content",
-			dir: Rl(),
+			dir: Kl(),
 			className: G("relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-start text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", n === "popper" && "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1", e),
 			position: n,
 			align: r,
 			...i,
 			children: [
-				/* @__PURE__ */ y(Wl, {}),
+				/* @__PURE__ */ y(Ql, {}),
 				/* @__PURE__ */ y(Bo, {
 					className: G("p-1", n === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"),
 					children: t
 				}),
-				/* @__PURE__ */ y(Gl, {})
+				/* @__PURE__ */ y($l, {})
 			]
 		}) })
 	});
 }
-function Ul({ className: e, children: t, ...n }) {
+function Zl({ className: e, children: t, ...n }) {
 	return /* @__PURE__ */ b(Vo, {
 		"data-slot": "select-item",
 		className: G("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pe-8 ps-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2", e),
@@ -5996,34 +6042,34 @@ function Ul({ className: e, children: t, ...n }) {
 		children: [/* @__PURE__ */ y("span", {
 			"data-slot": "select-item-indicator",
 			className: "absolute end-2 flex size-3.5 items-center justify-center",
-			children: /* @__PURE__ */ y(Uo, { children: /* @__PURE__ */ y(Fl, { className: "size-4" }) })
+			children: /* @__PURE__ */ y(Uo, { children: /* @__PURE__ */ y(Ul, { className: "size-4" }) })
 		}), /* @__PURE__ */ y(Ho, { children: t })]
 	});
 }
-function Wl({ className: e, ...t }) {
+function Ql({ className: e, ...t }) {
 	return /* @__PURE__ */ y(Wo, {
 		"data-slot": "select-scroll-up-button",
 		className: G("flex cursor-default items-center justify-center py-1", e),
 		...t,
-		children: /* @__PURE__ */ y(Ll, { className: "size-4" })
+		children: /* @__PURE__ */ y(Gl, { className: "size-4" })
 	});
 }
-function Gl({ className: e, ...t }) {
+function $l({ className: e, ...t }) {
 	return /* @__PURE__ */ y(Go, {
 		"data-slot": "select-scroll-down-button",
 		className: G("flex cursor-default items-center justify-center py-1", e),
 		...t,
-		children: /* @__PURE__ */ y(Il, { className: "size-4" })
+		children: /* @__PURE__ */ y(Wl, { className: "size-4" })
 	});
 }
 //#endregion
 //#region ../Modules/shipping-module/client/pages/CitiesSettingsPage.tsx
-function Kl() {
+function eu() {
 	let { t: r } = m(), i = n(), [a, o] = p(0), [s, c] = p(0), [u, f] = p(""), [g, _] = p(""), [x, S] = p({}), [C, w] = p(null), [T, E] = p(!1), D = t({
 		queryKey: ["shipping-cities-tree"],
-		queryFn: () => $("shipping/cities/tree", {}, 6e4)
+		queryFn: () => Q("shipping/cities/tree", {}, 6e4)
 	});
-	al(D);
+	pl(D);
 	let O = async () => {
 		if (!T) {
 			E(!0);
@@ -6031,7 +6077,7 @@ function Kl() {
 				let e = D.data?.next_key ?? null, t = 0;
 				for (; t < 40;) {
 					++t;
-					let n = await $("shipping/cities/seed-batch", {
+					let n = await Q("shipping/cities/seed-batch", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify(e ? { state_key: e } : {})
@@ -6051,7 +6097,7 @@ function Kl() {
 				}
 				await i.invalidateQueries({ queryKey: ["shipping-cities-tree"] });
 			} catch (e) {
-				il(r, e);
+				fl(r, e);
 			} finally {
 				E(!1);
 			}
@@ -6066,17 +6112,17 @@ function Kl() {
 	]);
 	let k = t({
 		queryKey: ["shipping-cities-bulk", a],
-		queryFn: () => $(`shipping/cities/bulk/${a}`),
+		queryFn: () => Q(`shipping/cities/bulk/${a}`),
 		enabled: a > 0
 	});
-	al(k);
+	pl(k);
 	let A = t({
 		queryKey: [
 			"shipping-cities-search",
 			g,
 			a
 		],
-		queryFn: () => $(`shipping/cities/search?q=${encodeURIComponent(g)}&state=${a || 0}`),
+		queryFn: () => Q(`shipping/cities/search?q=${encodeURIComponent(g)}&state=${a || 0}`),
 		enabled: g.trim().length >= 2
 	});
 	l(() => {
@@ -6102,9 +6148,9 @@ function Kl() {
 			ok: !0,
 			message: r("shipping.citiesInstalled")
 		}),
-		onError: (e) => il(r, e)
+		onError: (e) => fl(r, e)
 	}), P = e({
-		mutationFn: () => $(`shipping/cities/bulk/${a}`, {
+		mutationFn: () => Q(`shipping/cities/bulk/${a}`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ prices: x })
@@ -6112,20 +6158,20 @@ function Kl() {
 		onSuccess: () => {
 			h.success(r("common.saved")), i.invalidateQueries({ queryKey: ["shipping-cities-bulk", a] });
 		},
-		onError: (e) => il(r, e)
+		onError: (e) => fl(r, e)
 	}), ee = e({
 		mutationFn: () => {
 			let e = j.map((e) => e.id);
-			return $("shipping/cities/create-zones", {
+			return Q("shipping/cities/create-zones", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ city_ids: e.slice(0, 20) })
 			});
 		},
 		onSuccess: () => h.success(r("shipping.zonesCreated")),
-		onError: (e) => il(r, e)
+		onError: (e) => fl(r, e)
 	}), F = e({
-		mutationFn: () => $("shipping/cities/district", {
+		mutationFn: () => Q("shipping/cities/district", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -6136,13 +6182,13 @@ function Kl() {
 		onSuccess: (e) => {
 			e.ok ? (h.success(e.message), f(""), i.invalidateQueries({ queryKey: ["shipping-cities-bulk", a] })) : h.error(e.message);
 		},
-		onError: (e) => il(r, e)
+		onError: (e) => fl(r, e)
 	}), te = e({
-		mutationFn: (e) => $(`shipping/cities/district/${e}`, { method: "DELETE" }),
+		mutationFn: (e) => Q(`shipping/cities/district/${e}`, { method: "DELETE" }),
 		onSuccess: (e) => {
 			e.ok ? (h.success(e.message), i.invalidateQueries({ queryKey: ["shipping-cities-bulk", a] })) : h.error(e.message);
 		},
-		onError: (e) => il(r, e)
+		onError: (e) => fl(r, e)
 	}), I = D.data?.states ?? [], ne = k.data?.columns ?? [], re = k.data?.rows ?? [], L = C && C.total > 0 ? r("shipping.citiesSeedProgress", {
 		done: C.done,
 		total: C.total
@@ -6150,7 +6196,7 @@ function Kl() {
 		done: D.data.states_done ?? 0,
 		total: D.data.states_total
 	}) : null;
-	return /* @__PURE__ */ b(wl, {
+	return /* @__PURE__ */ b(Ml, {
 		title: r("shipping.citiesTitle"),
 		description: r("shipping.citiesHint"),
 		children: [
@@ -6183,14 +6229,14 @@ function Kl() {
 						className: "text-base",
 						children: r("shipping.pickState")
 					}), /* @__PURE__ */ y(Ic, { children: T || D.isFetching ? L || r("shipping.citiesLoading") : D.data?.installed ? r("shipping.citiesInstalled") : r("shipping.citiesSeeding") })]
-				}), /* @__PURE__ */ b(X, {
+				}), /* @__PURE__ */ b(Lc, {
 					className: "grid gap-4 sm:grid-cols-2",
 					children: [/* @__PURE__ */ b("div", {
 						className: "space-y-1.5",
-						children: [/* @__PURE__ */ y(Q, { children: r("tapin.province") }), /* @__PURE__ */ b(zl, {
+						children: [/* @__PURE__ */ y(Z, { children: r("tapin.province") }), /* @__PURE__ */ b(ql, {
 							value: a ? String(a) : void 0,
 							onValueChange: (e) => o(parseInt(e, 10) || 0),
-							children: [/* @__PURE__ */ y(Vl, { children: /* @__PURE__ */ y(Bl, { placeholder: r("tapin.pickProvince") }) }), /* @__PURE__ */ y(Hl, { children: I.map((e) => /* @__PURE__ */ y(Ul, {
+							children: [/* @__PURE__ */ y(Yl, { children: /* @__PURE__ */ y(Jl, { placeholder: r("tapin.pickProvince") }) }), /* @__PURE__ */ y(Xl, { children: I.map((e) => /* @__PURE__ */ y(Zl, {
 								value: String(e.id),
 								children: e.name
 							}, e.id)) })]
@@ -6198,8 +6244,8 @@ function Kl() {
 					}), /* @__PURE__ */ b("div", {
 						className: "space-y-1.5",
 						children: [
-							/* @__PURE__ */ y(Q, { children: r("shipping.citySearch") }),
-							/* @__PURE__ */ y(Z, {
+							/* @__PURE__ */ y(Z, { children: r("shipping.citySearch") }),
+							/* @__PURE__ */ y(X, {
 								value: g,
 								onChange: (e) => _(e.target.value),
 								placeholder: r("shipping.citySearchPlaceholder")
@@ -6238,16 +6284,16 @@ function Kl() {
 						className: "text-base",
 						children: r("shipping.districtsTitle")
 					}), /* @__PURE__ */ y(Ic, { children: r("shipping.districtsHint") })]
-				}), /* @__PURE__ */ b(X, {
+				}), /* @__PURE__ */ b(Lc, {
 					className: "space-y-3",
 					children: [/* @__PURE__ */ b("div", {
 						className: "grid gap-3 sm:grid-cols-2",
 						children: [/* @__PURE__ */ b("div", {
 							className: "space-y-1.5",
-							children: [/* @__PURE__ */ y(Q, { children: r("tapin.city") }), /* @__PURE__ */ b(zl, {
+							children: [/* @__PURE__ */ y(Z, { children: r("tapin.city") }), /* @__PURE__ */ b(ql, {
 								value: s ? String(s) : void 0,
 								onValueChange: (e) => c(parseInt(e, 10) || 0),
-								children: [/* @__PURE__ */ y(Vl, { children: /* @__PURE__ */ y(Bl, { placeholder: r("tapin.pickCity") }) }), /* @__PURE__ */ y(Hl, { children: j.map((e) => /* @__PURE__ */ y(Ul, {
+								children: [/* @__PURE__ */ y(Yl, { children: /* @__PURE__ */ y(Jl, { placeholder: r("tapin.pickCity") }) }), /* @__PURE__ */ y(Xl, { children: j.map((e) => /* @__PURE__ */ y(Zl, {
 									value: String(e.id),
 									children: e.name
 								}, e.id)) })]
@@ -6256,7 +6302,7 @@ function Kl() {
 							className: "flex items-end gap-2",
 							children: [/* @__PURE__ */ b("div", {
 								className: "flex-1 space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: r("shipping.districtName") }), /* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(Z, { children: r("shipping.districtName") }), /* @__PURE__ */ y(X, {
 									value: u,
 									onChange: (e) => f(e.target.value),
 									disabled: !s
@@ -6295,7 +6341,7 @@ function Kl() {
 						className: "text-base",
 						children: r("shipping.bulkPrices")
 					})
-				}), /* @__PURE__ */ y(X, {
+				}), /* @__PURE__ */ y(Lc, {
 					className: "overflow-x-auto",
 					children: k.isPending ? /* @__PURE__ */ y("p", {
 						className: "text-muted-foreground text-sm",
@@ -6318,7 +6364,7 @@ function Kl() {
 								children: e.name
 							}), ne.map((t) => /* @__PURE__ */ b("td", {
 								className: "p-2 align-top",
-								children: [/* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(X, {
 									className: "mb-1 h-8",
 									dir: "ltr",
 									value: x[String(e.id)]?.[t.key] ?? "",
@@ -6353,7 +6399,7 @@ function Kl() {
 }
 //#endregion
 //#region src/components/ui/switch.tsx
-function ql({ className: e, size: t = "default", ...n }) {
+function $({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ y(us, {
 		"data-slot": "switch",
 		"data-size": t,
@@ -6368,24 +6414,24 @@ function ql({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region ../Modules/shipping-module/client/pages/MapSettingsPage.tsx
-function Jl() {
+function tu() {
 	let { t: n } = m(), [r, i] = p(null), a = t({
 		queryKey: ["shipping-map"],
-		queryFn: () => $("shipping/map/settings")
+		queryFn: () => Q("shipping/map/settings")
 	});
-	al(a), l(() => {
+	pl(a), l(() => {
 		a.data?.settings && i(a.data.settings);
 	}, [a.data]);
 	let o = e({
-		mutationFn: (e) => $("shipping/map/settings", {
+		mutationFn: (e) => Q("shipping/map/settings", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ settings: e })
 		}),
 		onSuccess: () => h.success(n("common.saved")),
-		onError: (e) => il(n, e)
+		onError: (e) => fl(n, e)
 	});
-	return r ? /* @__PURE__ */ b(wl, {
+	return r ? /* @__PURE__ */ b(Ml, {
 		title: n("shipping.mapTitle"),
 		description: n("shipping.mapHint"),
 		children: [/* @__PURE__ */ y("div", {
@@ -6403,12 +6449,12 @@ function Jl() {
 					className: "text-base",
 					children: n("shipping.mapTitle")
 				})
-			}), /* @__PURE__ */ b(X, {
+			}), /* @__PURE__ */ b(Lc, {
 				className: "space-y-4",
 				children: [
 					/* @__PURE__ */ b("label", {
 						className: "flex items-center justify-between gap-3 text-sm",
-						children: [/* @__PURE__ */ y("span", { children: n("shipping.mapEnabled") }), /* @__PURE__ */ y(ql, {
+						children: [/* @__PURE__ */ y("span", { children: n("shipping.mapEnabled") }), /* @__PURE__ */ y($, {
 							checked: r.enabled,
 							onCheckedChange: (e) => i({
 								...r,
@@ -6418,7 +6464,7 @@ function Jl() {
 					}),
 					/* @__PURE__ */ b("label", {
 						className: "flex items-center justify-between gap-3 text-sm",
-						children: [/* @__PURE__ */ y("span", { children: n("shipping.mapRequired") }), /* @__PURE__ */ y(ql, {
+						children: [/* @__PURE__ */ y("span", { children: n("shipping.mapRequired") }), /* @__PURE__ */ y($, {
 							checked: r.required_location,
 							onCheckedChange: (e) => i({
 								...r,
@@ -6431,22 +6477,22 @@ function Jl() {
 						children: [
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.mapProvider") }), /* @__PURE__ */ b(zl, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.mapProvider") }), /* @__PURE__ */ b(ql, {
 									value: r.provider,
 									onValueChange: (e) => i({
 										...r,
 										provider: e
 									}),
-									children: [/* @__PURE__ */ y(Vl, { children: /* @__PURE__ */ y(Bl, {}) }), /* @__PURE__ */ b(Hl, { children: [
-										/* @__PURE__ */ y(Ul, {
+									children: [/* @__PURE__ */ y(Yl, { children: /* @__PURE__ */ y(Jl, {}) }), /* @__PURE__ */ b(Xl, { children: [
+										/* @__PURE__ */ y(Zl, {
 											value: "osm",
 											children: "OpenStreetMap"
 										}),
-										/* @__PURE__ */ y(Ul, {
+										/* @__PURE__ */ y(Zl, {
 											value: "neshan",
 											children: "Neshan"
 										}),
-										/* @__PURE__ */ y(Ul, {
+										/* @__PURE__ */ y(Zl, {
 											value: "mapp",
 											children: "Map.ir"
 										})
@@ -6455,16 +6501,16 @@ function Jl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.mapPlacement") }), /* @__PURE__ */ b(zl, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.mapPlacement") }), /* @__PURE__ */ b(ql, {
 									value: r.checkout_placement,
 									onValueChange: (e) => i({
 										...r,
 										checkout_placement: e
 									}),
-									children: [/* @__PURE__ */ y(Vl, { children: /* @__PURE__ */ y(Bl, {}) }), /* @__PURE__ */ b(Hl, { children: [/* @__PURE__ */ y(Ul, {
+									children: [/* @__PURE__ */ y(Yl, { children: /* @__PURE__ */ y(Jl, {}) }), /* @__PURE__ */ b(Xl, { children: [/* @__PURE__ */ y(Zl, {
 										value: "after_order_notes",
 										children: n("shipping.mapAfterNotes")
-									}), /* @__PURE__ */ y(Ul, {
+									}), /* @__PURE__ */ y(Zl, {
 										value: "before_customer_details",
 										children: n("shipping.mapBeforeDetails")
 									})] })]
@@ -6472,22 +6518,22 @@ function Jl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.mapDistance") }), /* @__PURE__ */ b(zl, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.mapDistance") }), /* @__PURE__ */ b(ql, {
 									value: r.distance_mode,
 									onValueChange: (e) => i({
 										...r,
 										distance_mode: e
 									}),
-									children: [/* @__PURE__ */ y(Vl, { children: /* @__PURE__ */ y(Bl, {}) }), /* @__PURE__ */ b(Hl, { children: [
-										/* @__PURE__ */ y(Ul, {
+									children: [/* @__PURE__ */ y(Yl, { children: /* @__PURE__ */ y(Jl, {}) }), /* @__PURE__ */ b(Xl, { children: [
+										/* @__PURE__ */ y(Zl, {
 											value: "none",
 											children: n("shipping.mapDistNone")
 										}),
-										/* @__PURE__ */ y(Ul, {
+										/* @__PURE__ */ y(Zl, {
 											value: "direct",
 											children: n("shipping.mapDistDirect")
 										}),
-										/* @__PURE__ */ y(Ul, {
+										/* @__PURE__ */ y(Zl, {
 											value: "real",
 											children: n("shipping.mapDistReal")
 										})
@@ -6496,7 +6542,7 @@ function Jl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: "Neshan API" }), /* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(Z, { children: "Neshan API" }), /* @__PURE__ */ y(X, {
 									dir: "ltr",
 									value: r.neshan_api_key,
 									onChange: (e) => i({
@@ -6507,7 +6553,7 @@ function Jl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: "Map.ir API" }), /* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(Z, { children: "Map.ir API" }), /* @__PURE__ */ y(X, {
 									dir: "ltr",
 									value: r.mapp_api_key,
 									onChange: (e) => i({
@@ -6518,7 +6564,7 @@ function Jl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: "ORS Token" }), /* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(Z, { children: "ORS Token" }), /* @__PURE__ */ y(X, {
 									dir: "ltr",
 									value: r.ors_token,
 									onChange: (e) => i({
@@ -6529,7 +6575,7 @@ function Jl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.storeLat") }), /* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.storeLat") }), /* @__PURE__ */ y(X, {
 									type: "number",
 									dir: "ltr",
 									value: r.store_location.lat,
@@ -6544,7 +6590,7 @@ function Jl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.storeLng") }), /* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.storeLng") }), /* @__PURE__ */ y(X, {
 									type: "number",
 									dir: "ltr",
 									value: r.store_location.lng,
@@ -6562,7 +6608,7 @@ function Jl() {
 				]
 			})]
 		})]
-	}) : /* @__PURE__ */ y(wl, {
+	}) : /* @__PURE__ */ y(Ml, {
 		title: n("shipping.mapTitle"),
 		children: /* @__PURE__ */ y("p", {
 			className: "text-muted-foreground text-sm",
@@ -6572,19 +6618,19 @@ function Jl() {
 }
 //#endregion
 //#region ../Modules/shipping-module/client/pages/PackagingSettingsPage.tsx
-function Yl(e) {
+function nu(e) {
 	return Object.values(e.boxes).sort((e, t) => e.size - t.size);
 }
-function Xl() {
+function ru() {
 	let { t: n } = m(), [r, i] = p(null), a = t({
 		queryKey: ["shipping-packaging-settings"],
-		queryFn: () => $("shipping/packaging/settings")
+		queryFn: () => Q("shipping/packaging/settings")
 	});
-	al(a), l(() => {
+	pl(a), l(() => {
 		a.data?.settings && i(a.data.settings);
 	}, [a.data]);
 	let o = e({
-		mutationFn: (e) => $("shipping/packaging/settings", {
+		mutationFn: (e) => Q("shipping/packaging/settings", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ settings: e })
@@ -6592,9 +6638,9 @@ function Xl() {
 		onSuccess: (e) => {
 			h.success(n("common.saved")), e.settings && i(e.settings);
 		},
-		onError: (e) => il(n, e)
-	}), s = d(() => r ? Yl(r) : [], [r]);
-	return r ? /* @__PURE__ */ b(wl, {
+		onError: (e) => fl(n, e)
+	}), s = d(() => r ? nu(r) : [], [r]);
+	return r ? /* @__PURE__ */ b(Ml, {
 		title: n("shipping.packagingTitle"),
 		description: n("shipping.packagingHint"),
 		children: [
@@ -6615,9 +6661,9 @@ function Xl() {
 						className: "text-base",
 						children: n("shipping.checkoutToggleTitle")
 					}), /* @__PURE__ */ y(Ic, { children: n("shipping.checkoutToggleHint") })]
-				}), /* @__PURE__ */ y(X, { children: /* @__PURE__ */ b("label", {
+				}), /* @__PURE__ */ y(Lc, { children: /* @__PURE__ */ b("label", {
 					className: "flex items-center gap-3 text-sm",
-					children: [/* @__PURE__ */ y(ql, {
+					children: [/* @__PURE__ */ y($, {
 						checked: r.add_packaging_cost_to_checkout,
 						onCheckedChange: (e) => i((t) => t && {
 							...t,
@@ -6627,6 +6673,103 @@ function Xl() {
 				}) })]
 			}),
 			/* @__PURE__ */ b(q, {
+				className: "mb-4 shadow-sm",
+				children: [/* @__PURE__ */ b(J, {
+					className: "pb-2",
+					children: [/* @__PURE__ */ y(Y, {
+						className: "text-base",
+						children: n("shipping.professionalFeeTitle")
+					}), /* @__PURE__ */ y(Ic, { children: n("shipping.professionalFeeHint") })]
+				}), /* @__PURE__ */ b(Lc, {
+					className: "space-y-4",
+					children: [
+						/* @__PURE__ */ b("label", {
+							className: "flex items-center gap-3 text-sm",
+							children: [/* @__PURE__ */ y($, {
+								checked: !!r.professional_fee_enabled,
+								onCheckedChange: (e) => i((t) => t && {
+									...t,
+									professional_fee_enabled: e
+								})
+							}), /* @__PURE__ */ y("span", { children: n("shipping.professionalFeeEnable") })]
+						}),
+						/* @__PURE__ */ b("div", {
+							className: "grid gap-3 sm:grid-cols-2",
+							children: [/* @__PURE__ */ b("div", {
+								className: "space-y-1.5",
+								children: [/* @__PURE__ */ y(Z, {
+									htmlFor: "prof-fee-label",
+									children: n("shipping.professionalFeeLabel")
+								}), /* @__PURE__ */ y(X, {
+									id: "prof-fee-label",
+									value: r.professional_fee_label ?? "",
+									onChange: (e) => i((t) => t && {
+										...t,
+										professional_fee_label: e.target.value
+									}),
+									placeholder: n("shipping.professionalFeeLabelPlaceholder")
+								})]
+							}), /* @__PURE__ */ b("div", {
+								className: "space-y-1.5",
+								children: [/* @__PURE__ */ y(Z, {
+									htmlFor: "prof-fee-amount",
+									children: n("shipping.professionalFeeAmount")
+								}), /* @__PURE__ */ y(X, {
+									id: "prof-fee-amount",
+									type: "number",
+									min: 0,
+									step: "1",
+									dir: "ltr",
+									value: Number.isFinite(r.professional_fee_amount) ? String(r.professional_fee_amount) : "0",
+									onChange: (e) => {
+										let t = Math.max(0, parseFloat(e.target.value) || 0);
+										i((e) => e && {
+											...e,
+											professional_fee_amount: t
+										});
+									}
+								})]
+							})]
+						}),
+						/* @__PURE__ */ b("div", {
+							className: "space-y-1.5",
+							children: [/* @__PURE__ */ y(Z, {
+								htmlFor: "prof-fee-desc",
+								children: n("shipping.professionalFeeDescription")
+							}), /* @__PURE__ */ y(X, {
+								id: "prof-fee-desc",
+								value: r.professional_fee_description ?? "",
+								onChange: (e) => i((t) => t && {
+									...t,
+									professional_fee_description: e.target.value
+								}),
+								placeholder: n("shipping.professionalFeeDescriptionPlaceholder")
+							})]
+						}),
+						/* @__PURE__ */ b("label", {
+							className: "flex items-center gap-3 text-sm",
+							children: [/* @__PURE__ */ y($, {
+								checked: !!r.professional_fee_default_selected,
+								onCheckedChange: (e) => i((t) => t && {
+									...t,
+									professional_fee_default_selected: e
+								})
+							}), /* @__PURE__ */ y("span", { children: n("shipping.professionalFeeDefaultOn") })]
+						}),
+						/* @__PURE__ */ b("label", {
+							className: "flex items-center gap-3 text-sm",
+							children: [/* @__PURE__ */ y($, {
+								checked: r.professional_fee_replaces_carton !== !1,
+								onCheckedChange: (e) => i((t) => t && {
+									...t,
+									professional_fee_replaces_carton: e
+								})
+							}), /* @__PURE__ */ y("span", { children: n("shipping.professionalFeeReplacesCarton") })]
+						})
+					]
+				})]
+			}),
+			/* @__PURE__ */ b(q, {
 				className: "shadow-sm",
 				children: [/* @__PURE__ */ b(J, {
 					className: "pb-2",
@@ -6634,7 +6777,7 @@ function Xl() {
 						className: "text-base",
 						children: n("shipping.boxesTitle")
 					}), /* @__PURE__ */ y(Ic, { children: n("shipping.boxesHint") })]
-				}), /* @__PURE__ */ b(X, {
+				}), /* @__PURE__ */ b(Lc, {
 					className: "space-y-3",
 					children: [/* @__PURE__ */ b("div", {
 						className: "hidden grid-cols-[4rem_1fr_7rem_7rem_5rem] gap-3 text-muted-foreground text-xs sm:grid",
@@ -6666,10 +6809,10 @@ function Xl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1",
-								children: [/* @__PURE__ */ y(Q, {
+								children: [/* @__PURE__ */ y(Z, {
 									className: "sm:sr-only",
 									children: n("shipping.boxPrice")
-								}), /* @__PURE__ */ y(Z, {
+								}), /* @__PURE__ */ y(X, {
 									type: "number",
 									min: 0,
 									step: "1",
@@ -6696,10 +6839,10 @@ function Xl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "space-y-1",
-								children: [/* @__PURE__ */ y(Q, {
+								children: [/* @__PURE__ */ y(Z, {
 									className: "sm:sr-only",
 									children: n("shipping.boxTare")
-								}), /* @__PURE__ */ y(Z, {
+								}), /* @__PURE__ */ y(X, {
 									type: "number",
 									min: 0,
 									step: "1",
@@ -6726,7 +6869,7 @@ function Xl() {
 							}),
 							/* @__PURE__ */ b("div", {
 								className: "flex items-center gap-2",
-								children: [/* @__PURE__ */ y(ql, {
+								children: [/* @__PURE__ */ y($, {
 									checked: e.enabled,
 									onCheckedChange: (t) => {
 										i((n) => {
@@ -6754,7 +6897,7 @@ function Xl() {
 				})]
 			})
 		]
-	}) : /* @__PURE__ */ y(wl, {
+	}) : /* @__PURE__ */ y(Ml, {
 		title: n("shipping.packagingTitle"),
 		children: /* @__PURE__ */ y("p", {
 			className: "text-muted-foreground text-sm",
@@ -6764,7 +6907,7 @@ function Xl() {
 }
 //#endregion
 //#region ../Modules/shipping-module/client/pages/RulesSettingsPage.tsx
-var Zl = [
+var iu = [
 	"state",
 	"city",
 	"district",
@@ -6778,14 +6921,14 @@ var Zl = [
 	"cart_total_min",
 	"cart_total_max",
 	"item_count_min"
-], Ql = [
+], au = [
 	"hide_method",
 	"force_method",
 	"set_cost",
 	"free",
 	"set_title"
 ];
-function $l() {
+function ou() {
 	return {
 		id: `r_${Date.now()}`,
 		enabled: !0,
@@ -6802,31 +6945,31 @@ function $l() {
 		}]
 	};
 }
-function eu(e, t, n) {
+function su(e, t, n) {
 	let r = e.slice();
 	return r[t] = {
 		...e[t],
 		...n
 	}, r;
 }
-function tu() {
+function cu() {
 	let { t: n } = m(), [r, i] = p([]), a = t({
 		queryKey: ["shipping-rules"],
-		queryFn: () => $("shipping/rules")
+		queryFn: () => Q("shipping/rules")
 	});
-	al(a), l(() => {
+	pl(a), l(() => {
 		a.data?.rules && i(a.data.rules);
 	}, [a.data]);
 	let o = e({
-		mutationFn: (e) => $("shipping/rules", {
+		mutationFn: (e) => Q("shipping/rules", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ rules: e })
 		}),
 		onSuccess: () => h.success(n("common.saved")),
-		onError: (e) => il(n, e)
+		onError: (e) => fl(n, e)
 	});
-	return /* @__PURE__ */ b(wl, {
+	return /* @__PURE__ */ b(Ml, {
 		title: n("shipping.rulesTitle"),
 		description: n("shipping.rulesHint"),
 		children: [/* @__PURE__ */ b("div", {
@@ -6834,7 +6977,7 @@ function tu() {
 			children: [/* @__PURE__ */ y(K, {
 				type: "button",
 				variant: "secondary",
-				onClick: () => i((e) => [...e, $l()]),
+				onClick: () => i((e) => [...e, ou()]),
 				children: n("shipping.addRule")
 			}), /* @__PURE__ */ y(K, {
 				type: "button",
@@ -6853,9 +6996,9 @@ function tu() {
 						children: e.title || n("shipping.ruleN", { n: t + 1 })
 					}), /* @__PURE__ */ b("div", {
 						className: "flex items-center gap-2",
-						children: [/* @__PURE__ */ y(ql, {
+						children: [/* @__PURE__ */ y($, {
 							checked: e.enabled,
-							onCheckedChange: (e) => i(eu(r, t, { enabled: e }))
+							onCheckedChange: (e) => i(su(r, t, { enabled: e }))
 						}), /* @__PURE__ */ y(K, {
 							type: "button",
 							size: "sm",
@@ -6864,24 +7007,24 @@ function tu() {
 							children: n("common.delete")
 						})]
 					})]
-				}), /* @__PURE__ */ b(X, {
+				}), /* @__PURE__ */ b(Lc, {
 					className: "space-y-4",
 					children: [
 						/* @__PURE__ */ b("div", {
 							className: "grid gap-3 sm:grid-cols-2",
 							children: [/* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.ruleTitle") }), /* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.ruleTitle") }), /* @__PURE__ */ y(X, {
 									value: e.title,
-									onChange: (e) => i(eu(r, t, { title: e.target.value }))
+									onChange: (e) => i(su(r, t, { title: e.target.value }))
 								})]
 							}), /* @__PURE__ */ b("div", {
 								className: "space-y-1.5",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.rulePriority") }), /* @__PURE__ */ y(Z, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.rulePriority") }), /* @__PURE__ */ y(X, {
 									type: "number",
 									dir: "ltr",
 									value: e.priority,
-									onChange: (e) => i(eu(r, t, { priority: parseInt(e.target.value, 10) || 0 }))
+									onChange: (e) => i(su(r, t, { priority: parseInt(e.target.value, 10) || 0 }))
 								})]
 							})]
 						}),
@@ -6889,11 +7032,11 @@ function tu() {
 							className: "space-y-2",
 							children: [/* @__PURE__ */ b("div", {
 								className: "flex items-center justify-between gap-2",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.conditions") }), /* @__PURE__ */ y(K, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.conditions") }), /* @__PURE__ */ y(K, {
 									type: "button",
 									size: "sm",
 									variant: "outline",
-									onClick: () => i(eu(r, t, { conditions: [...e.conditions, {
+									onClick: () => i(su(r, t, { conditions: [...e.conditions, {
 										type: "cart_total_min",
 										value: 0
 									}] })),
@@ -6905,21 +7048,21 @@ function tu() {
 							}]).map((a, o) => /* @__PURE__ */ b("div", {
 								className: "grid gap-2 sm:grid-cols-[1fr_1fr_auto]",
 								children: [
-									/* @__PURE__ */ b(zl, {
+									/* @__PURE__ */ b(ql, {
 										value: a.type || "cart_total_min",
 										onValueChange: (n) => {
 											let s = e.conditions.slice();
 											s[o] = {
 												...a,
 												type: n
-											}, i(eu(r, t, { conditions: s }));
+											}, i(su(r, t, { conditions: s }));
 										},
-										children: [/* @__PURE__ */ y(Vl, { children: /* @__PURE__ */ y(Bl, {}) }), /* @__PURE__ */ y(Hl, { children: Zl.map((e) => /* @__PURE__ */ y(Ul, {
+										children: [/* @__PURE__ */ y(Yl, { children: /* @__PURE__ */ y(Jl, {}) }), /* @__PURE__ */ y(Xl, { children: iu.map((e) => /* @__PURE__ */ y(Zl, {
 											value: e,
 											children: e
 										}, e)) })]
 									}),
-									/* @__PURE__ */ y(Z, {
+									/* @__PURE__ */ y(X, {
 										dir: "ltr",
 										value: String(a.value ?? ""),
 										onChange: (n) => {
@@ -6927,7 +7070,7 @@ function tu() {
 											s[o] = {
 												...a,
 												value: n.target.value
-											}, i(eu(r, t, { conditions: s }));
+											}, i(su(r, t, { conditions: s }));
 										}
 									}),
 									/* @__PURE__ */ y(K, {
@@ -6935,7 +7078,7 @@ function tu() {
 										size: "sm",
 										variant: "ghost",
 										disabled: e.conditions.length <= 1,
-										onClick: () => i(eu(r, t, { conditions: e.conditions.filter((e, t) => t !== o) })),
+										onClick: () => i(su(r, t, { conditions: e.conditions.filter((e, t) => t !== o) })),
 										children: n("common.delete")
 									})
 								]
@@ -6945,11 +7088,11 @@ function tu() {
 							className: "space-y-2",
 							children: [/* @__PURE__ */ b("div", {
 								className: "flex items-center justify-between gap-2",
-								children: [/* @__PURE__ */ y(Q, { children: n("shipping.actions") }), /* @__PURE__ */ y(K, {
+								children: [/* @__PURE__ */ y(Z, { children: n("shipping.actions") }), /* @__PURE__ */ y(K, {
 									type: "button",
 									size: "sm",
 									variant: "outline",
-									onClick: () => i(eu(r, t, { actions: [...e.actions, {
+									onClick: () => i(su(r, t, { actions: [...e.actions, {
 										type: "free",
 										method_id: "",
 										value: 0
@@ -6963,21 +7106,21 @@ function tu() {
 							}]).map((a, o) => /* @__PURE__ */ b("div", {
 								className: "grid gap-2 sm:grid-cols-4",
 								children: [
-									/* @__PURE__ */ b(zl, {
+									/* @__PURE__ */ b(ql, {
 										value: a.type || "free",
 										onValueChange: (n) => {
 											let s = e.actions.slice();
 											s[o] = {
 												...a,
 												type: n
-											}, i(eu(r, t, { actions: s }));
+											}, i(su(r, t, { actions: s }));
 										},
-										children: [/* @__PURE__ */ y(Vl, { children: /* @__PURE__ */ y(Bl, {}) }), /* @__PURE__ */ y(Hl, { children: Ql.map((e) => /* @__PURE__ */ y(Ul, {
+										children: [/* @__PURE__ */ y(Yl, { children: /* @__PURE__ */ y(Jl, {}) }), /* @__PURE__ */ y(Xl, { children: au.map((e) => /* @__PURE__ */ y(Zl, {
 											value: e,
 											children: e
 										}, e)) })]
 									}),
-									/* @__PURE__ */ y(Z, {
+									/* @__PURE__ */ y(X, {
 										dir: "ltr",
 										placeholder: "webino_tapin_pishtaz",
 										value: a.method_id || "",
@@ -6986,10 +7129,10 @@ function tu() {
 											s[o] = {
 												...a,
 												method_id: n.target.value
-											}, i(eu(r, t, { actions: s }));
+											}, i(su(r, t, { actions: s }));
 										}
 									}),
-									/* @__PURE__ */ y(Z, {
+									/* @__PURE__ */ y(X, {
 										dir: "ltr",
 										value: String(a.value ?? ""),
 										onChange: (n) => {
@@ -6997,7 +7140,7 @@ function tu() {
 											s[o] = {
 												...a,
 												value: n.target.value
-											}, i(eu(r, t, { actions: s }));
+											}, i(su(r, t, { actions: s }));
 										}
 									}),
 									/* @__PURE__ */ y(K, {
@@ -7005,7 +7148,7 @@ function tu() {
 										size: "sm",
 										variant: "ghost",
 										disabled: e.actions.length <= 1,
-										onClick: () => i(eu(r, t, { actions: e.actions.filter((e, t) => t !== o) })),
+										onClick: () => i(su(r, t, { actions: e.actions.filter((e, t) => t !== o) })),
 										children: n("common.delete")
 									})
 								]
@@ -7019,7 +7162,7 @@ function tu() {
 }
 //#endregion
 //#region ../Modules/shipping-module/client/pages/ToolsSettingsPage.tsx
-var nu = () => ({
+var lu = () => ({
 	hide_when_free: !1,
 	hide_when_courier: !1,
 	default_product_weight_g: 500,
@@ -7034,27 +7177,27 @@ var nu = () => ({
 	honor_free_shipping_coupon: !0,
 	method_images: {}
 });
-function ru() {
+function uu() {
 	let { t: n } = m(), [r, i] = p(null), a = t({
 		queryKey: ["shipping-tools"],
-		queryFn: () => $("shipping/tools/settings")
+		queryFn: () => Q("shipping/tools/settings")
 	});
-	al(a), l(() => {
+	pl(a), l(() => {
 		a.data?.settings && i({
-			...nu(),
+			...lu(),
 			...a.data.settings
 		});
 	}, [a.data]);
 	let o = e({
-		mutationFn: (e) => $("shipping/tools/settings", {
+		mutationFn: (e) => Q("shipping/tools/settings", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ settings: e })
 		}),
 		onSuccess: () => h.success(n("common.saved")),
-		onError: (e) => il(n, e)
+		onError: (e) => fl(n, e)
 	});
-	return r ? /* @__PURE__ */ b(wl, {
+	return r ? /* @__PURE__ */ b(Ml, {
 		title: n("shipping.toolsTitle"),
 		description: n("shipping.toolsHint"),
 		children: [
@@ -7075,12 +7218,12 @@ function ru() {
 						className: "text-base",
 						children: n("shipping.toolsRatesTitle")
 					})
-				}), /* @__PURE__ */ b(X, {
+				}), /* @__PURE__ */ b(Lc, {
 					className: "space-y-3",
 					children: [
 						/* @__PURE__ */ b("label", {
 							className: "flex items-center justify-between gap-3 text-sm",
-							children: [/* @__PURE__ */ y("span", { children: n("shipping.hideWhenFree") }), /* @__PURE__ */ y(ql, {
+							children: [/* @__PURE__ */ y("span", { children: n("shipping.hideWhenFree") }), /* @__PURE__ */ y($, {
 								checked: r.hide_when_free,
 								onCheckedChange: (e) => i({
 									...r,
@@ -7090,7 +7233,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("label", {
 							className: "flex items-center justify-between gap-3 text-sm",
-							children: [/* @__PURE__ */ y("span", { children: n("shipping.hideWhenCourier") }), /* @__PURE__ */ y(ql, {
+							children: [/* @__PURE__ */ y("span", { children: n("shipping.hideWhenCourier") }), /* @__PURE__ */ y($, {
 								checked: r.hide_when_courier,
 								onCheckedChange: (e) => i({
 									...r,
@@ -7100,7 +7243,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("label", {
 							className: "flex items-center justify-between gap-3 text-sm",
-							children: [/* @__PURE__ */ y("span", { children: n("shipping.statusEnable") }), /* @__PURE__ */ y(ql, {
+							children: [/* @__PURE__ */ y("span", { children: n("shipping.statusEnable") }), /* @__PURE__ */ y($, {
 								checked: r.status_enable,
 								onCheckedChange: (e) => i({
 									...r,
@@ -7119,12 +7262,12 @@ function ru() {
 						className: "text-base",
 						children: n("shipping.toolsWeightTitle")
 					})
-				}), /* @__PURE__ */ b(X, {
+				}), /* @__PURE__ */ b(Lc, {
 					className: "grid gap-3 sm:grid-cols-3",
 					children: [
 						/* @__PURE__ */ b("div", {
 							className: "space-y-1.5",
-							children: [/* @__PURE__ */ y(Q, { children: n("shipping.defaultProductWeight") }), /* @__PURE__ */ y(Z, {
+							children: [/* @__PURE__ */ y(Z, { children: n("shipping.defaultProductWeight") }), /* @__PURE__ */ y(X, {
 								type: "number",
 								dir: "ltr",
 								value: r.default_product_weight_g,
@@ -7136,7 +7279,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("div", {
 							className: "space-y-1.5",
-							children: [/* @__PURE__ */ y(Q, { children: n("shipping.defaultPackageWeight") }), /* @__PURE__ */ y(Z, {
+							children: [/* @__PURE__ */ y(Z, { children: n("shipping.defaultPackageWeight") }), /* @__PURE__ */ y(X, {
 								type: "number",
 								dir: "ltr",
 								value: r.default_package_weight_g,
@@ -7148,7 +7291,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("div", {
 							className: "space-y-1.5",
-							children: [/* @__PURE__ */ y(Q, { children: n("shipping.postWeightLimit") }), /* @__PURE__ */ y(Z, {
+							children: [/* @__PURE__ */ y(Z, { children: n("shipping.postWeightLimit") }), /* @__PURE__ */ y(X, {
 								type: "number",
 								dir: "ltr",
 								value: r.post_weight_limit_kg,
@@ -7169,12 +7312,12 @@ function ru() {
 						className: "text-base",
 						children: n("shipping.proUxTitle")
 					})
-				}), /* @__PURE__ */ b(X, {
+				}), /* @__PURE__ */ b(Lc, {
 					className: "space-y-3",
 					children: [
 						/* @__PURE__ */ b("div", {
 							className: "space-y-1.5",
-							children: [/* @__PURE__ */ y(Q, { children: n("shipping.freeShippingTitle") }), /* @__PURE__ */ y(Z, {
+							children: [/* @__PURE__ */ y(Z, { children: n("shipping.freeShippingTitle") }), /* @__PURE__ */ y(X, {
 								value: r.free_shipping_title,
 								onChange: (e) => i({
 									...r,
@@ -7184,7 +7327,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("label", {
 							className: "flex items-center justify-between gap-3 text-sm",
-							children: [/* @__PURE__ */ y("span", { children: n("shipping.hideCountry") }), /* @__PURE__ */ y(ql, {
+							children: [/* @__PURE__ */ y("span", { children: n("shipping.hideCountry") }), /* @__PURE__ */ y($, {
 								checked: r.hide_country,
 								onCheckedChange: (e) => i({
 									...r,
@@ -7194,7 +7337,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("label", {
 							className: "flex items-center justify-between gap-3 text-sm",
-							children: [/* @__PURE__ */ y("span", { children: n("shipping.swapStateCity") }), /* @__PURE__ */ y(ql, {
+							children: [/* @__PURE__ */ y("span", { children: n("shipping.swapStateCity") }), /* @__PURE__ */ y($, {
 								checked: r.swap_state_city,
 								onCheckedChange: (e) => i({
 									...r,
@@ -7204,7 +7347,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("label", {
 							className: "flex items-center justify-between gap-3 text-sm",
-							children: [/* @__PURE__ */ y("span", { children: n("shipping.disableDefaultMethod") }), /* @__PURE__ */ y(ql, {
+							children: [/* @__PURE__ */ y("span", { children: n("shipping.disableDefaultMethod") }), /* @__PURE__ */ y($, {
 								checked: r.disable_default_method,
 								onCheckedChange: (e) => i({
 									...r,
@@ -7214,7 +7357,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("label", {
 							className: "flex items-center justify-between gap-3 text-sm",
-							children: [/* @__PURE__ */ y("span", { children: n("shipping.freeFirstOrder") }), /* @__PURE__ */ y(ql, {
+							children: [/* @__PURE__ */ y("span", { children: n("shipping.freeFirstOrder") }), /* @__PURE__ */ y($, {
 								checked: r.free_first_order,
 								onCheckedChange: (e) => i({
 									...r,
@@ -7224,7 +7367,7 @@ function ru() {
 						}),
 						/* @__PURE__ */ b("label", {
 							className: "flex items-center justify-between gap-3 text-sm",
-							children: [/* @__PURE__ */ y("span", { children: n("shipping.honorFreeCoupon") }), /* @__PURE__ */ y(ql, {
+							children: [/* @__PURE__ */ y("span", { children: n("shipping.honorFreeCoupon") }), /* @__PURE__ */ y($, {
 								checked: r.honor_free_shipping_coupon,
 								onCheckedChange: (e) => i({
 									...r,
@@ -7243,7 +7386,7 @@ function ru() {
 						className: "text-base",
 						children: n("shipping.methodImagesTitle")
 					}), /* @__PURE__ */ y(Ic, { children: n("shipping.methodImagesHint") })]
-				}), /* @__PURE__ */ y(X, {
+				}), /* @__PURE__ */ y(Lc, {
 					className: "space-y-3",
 					children: [
 						"webino_tapin_pishtaz",
@@ -7255,10 +7398,10 @@ function ru() {
 						"webino_flat_city"
 					].map((e) => /* @__PURE__ */ b("div", {
 						className: "space-y-1.5",
-						children: [/* @__PURE__ */ y(Q, {
+						children: [/* @__PURE__ */ y(Z, {
 							dir: "ltr",
 							children: e
-						}), /* @__PURE__ */ y(Z, {
+						}), /* @__PURE__ */ y(X, {
 							dir: "ltr",
 							value: r.method_images[e] || "",
 							onChange: (t) => i({
@@ -7273,7 +7416,7 @@ function ru() {
 				})]
 			})
 		]
-	}) : /* @__PURE__ */ y(wl, {
+	}) : /* @__PURE__ */ y(Ml, {
 		title: n("shipping.toolsTitle"),
 		children: /* @__PURE__ */ y("p", {
 			className: "text-muted-foreground text-sm",
@@ -7283,7 +7426,7 @@ function ru() {
 }
 //#endregion
 //#region ../Modules/shipping-module/client/pages/TransportHubPage.tsx
-var iu = [
+var du = [
 	{
 		to: "/settings/shop/transport/packaging",
 		title: "shipping.packagingTitle",
@@ -7346,16 +7489,16 @@ var iu = [
 		secondary: !0
 	}
 ];
-function au() {
+function fu() {
 	let { t: e } = m();
-	return /* @__PURE__ */ b(wl, {
+	return /* @__PURE__ */ b(Ml, {
 		title: e("shipping.hubTitle"),
 		children: [/* @__PURE__ */ y("p", {
 			className: "text-muted-foreground mb-4 text-sm",
 			children: e("shipping.hubHint")
 		}), /* @__PURE__ */ y("div", {
 			className: "grid gap-4 md:grid-cols-2",
-			children: iu.map((t) => /* @__PURE__ */ b(q, {
+			children: du.map((t) => /* @__PURE__ */ b(q, {
 				className: "shadow-sm",
 				children: [/* @__PURE__ */ b(J, {
 					className: "pb-2",
@@ -7363,7 +7506,7 @@ function au() {
 						className: "text-base",
 						children: e(t.title)
 					}), /* @__PURE__ */ y(Ic, { children: e(t.hint) })]
-				}), /* @__PURE__ */ y(X, { children: /* @__PURE__ */ y(K, {
+				}), /* @__PURE__ */ y(Lc, { children: /* @__PURE__ */ y(K, {
 					asChild: !0,
 					variant: "secondary" in t && t.secondary ? "secondary" : "default",
 					children: /* @__PURE__ */ y(x, {
@@ -7377,19 +7520,19 @@ function au() {
 }
 //#endregion
 //#region ../Modules/shipping-module/client/module-entry.tsx
-var ou = {
-	"settings/shop/transport": au,
-	"settings/shop/transport/packaging": Xl,
-	"settings/shop/transport/tools": ru,
-	"settings/shop/transport/cities": Kl,
-	"settings/shop/transport/map": Jl,
-	"settings/shop/transport/rules": tu
-}, su = {
-	OrderPackagingPanel: Cl,
-	OrderMapPanel: ll
-}, cu = {
-	routes: ou,
-	components: su
+var pu = {
+	"settings/shop/transport": fu,
+	"settings/shop/transport/packaging": ru,
+	"settings/shop/transport/tools": uu,
+	"settings/shop/transport/cities": eu,
+	"settings/shop/transport/map": tu,
+	"settings/shop/transport/rules": cu
+}, mu = {
+	OrderPackagingPanel: jl,
+	OrderMapPanel: _l
+}, hu = {
+	routes: pu,
+	components: mu
 };
 //#endregion
-export { su as components, cu as default, ou as routes };
+export { mu as components, hu as default, pu as routes };

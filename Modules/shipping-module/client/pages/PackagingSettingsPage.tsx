@@ -83,6 +83,91 @@ export default function PackagingSettingsPage() {
         </CardContent>
       </Card>
 
+      <Card className="mb-4 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{t('shipping.professionalFeeTitle')}</CardTitle>
+          <CardDescription>{t('shipping.professionalFeeHint')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <label className="flex items-center gap-3 text-sm">
+            <Switch
+              checked={!!draft.professional_fee_enabled}
+              onCheckedChange={(v) =>
+                setDraft((d) => (d ? { ...d, professional_fee_enabled: v } : d))
+              }
+            />
+            <span>{t('shipping.professionalFeeEnable')}</span>
+          </label>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="prof-fee-label">{t('shipping.professionalFeeLabel')}</Label>
+              <Input
+                id="prof-fee-label"
+                value={draft.professional_fee_label ?? ''}
+                onChange={(e) =>
+                  setDraft((d) => (d ? { ...d, professional_fee_label: e.target.value } : d))
+                }
+                placeholder={t('shipping.professionalFeeLabelPlaceholder')}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="prof-fee-amount">{t('shipping.professionalFeeAmount')}</Label>
+              <Input
+                id="prof-fee-amount"
+                type="number"
+                min={0}
+                step="1"
+                dir="ltr"
+                value={
+                  Number.isFinite(draft.professional_fee_amount)
+                    ? String(draft.professional_fee_amount)
+                    : '0'
+                }
+                onChange={(e) => {
+                  const professional_fee_amount = Math.max(0, parseFloat(e.target.value) || 0)
+                  setDraft((d) => (d ? { ...d, professional_fee_amount } : d))
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="prof-fee-desc">{t('shipping.professionalFeeDescription')}</Label>
+            <Input
+              id="prof-fee-desc"
+              value={draft.professional_fee_description ?? ''}
+              onChange={(e) =>
+                setDraft((d) =>
+                  d ? { ...d, professional_fee_description: e.target.value } : d,
+                )
+              }
+              placeholder={t('shipping.professionalFeeDescriptionPlaceholder')}
+            />
+          </div>
+
+          <label className="flex items-center gap-3 text-sm">
+            <Switch
+              checked={!!draft.professional_fee_default_selected}
+              onCheckedChange={(v) =>
+                setDraft((d) => (d ? { ...d, professional_fee_default_selected: v } : d))
+              }
+            />
+            <span>{t('shipping.professionalFeeDefaultOn')}</span>
+          </label>
+
+          <label className="flex items-center gap-3 text-sm">
+            <Switch
+              checked={draft.professional_fee_replaces_carton !== false}
+              onCheckedChange={(v) =>
+                setDraft((d) => (d ? { ...d, professional_fee_replaces_carton: v } : d))
+              }
+            />
+            <span>{t('shipping.professionalFeeReplacesCarton')}</span>
+          </label>
+        </CardContent>
+      </Card>
+
       <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('shipping.boxesTitle')}</CardTitle>

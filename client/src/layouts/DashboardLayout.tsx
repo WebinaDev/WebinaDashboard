@@ -334,7 +334,7 @@ export function DashboardLayout() {
             </div>
           </div>
         </header>
-        <div className="@container/main wd-app-atmosphere flex min-w-0 flex-1 flex-col gap-3 p-3 pt-0 sm:gap-4 sm:p-4 sm:pt-0">
+        <div className="@container/main wd-app-atmosphere flex min-w-0 flex-1 flex-col gap-3 p-3 pt-3 sm:gap-4 sm:p-4 sm:pt-4">
           <LicenseSoftBanner />
           {bq.isError ? (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-sm" role="alert">

@@ -16,6 +16,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 		$dir,
 		array(
 			'class-webino-shipping-packaging-settings.php',
+			'class-webino-shipping-professional-packaging.php',
 			'class-webino-shipping-tools.php',
 			'class-webino-shipping-currency.php',
 			'class-webino-shipping-weight.php',
@@ -37,6 +38,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 }
 
 Webino_Shipping_Packaging_Settings::init();
+Webino_Shipping_Professional_Packaging::init();
 Webino_Shipping_Tools::init();
 Webino_Shipping_Order_Statuses::init();
 Webino_Shipping_Cities::init();
