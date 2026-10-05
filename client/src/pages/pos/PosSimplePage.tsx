@@ -1,10 +1,11 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Minus, Plus, Search, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,8 +19,8 @@ import {
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
-import { formatNumber } from '@/lib/formatNumber'
 import { openOrderPrint } from '@/lib/orderPrint'
+import { cn } from '@/lib/utils'
 
 type PosProduct = {
   id: number
@@ -59,14 +60,33 @@ type CustomerHit = {
   last_name: string
 }
 
+type PaymentGateway = {
+  id: string
+  title: string
+  enabled: boolean
+}
+
 const CHANNELS = ['in_store', 'phone', 'bale', 'eitaa', 'rubika', 'telegram', 'instagram', 'other'] as const
-const TENDERS = ['cash', 'card_to_card', 'pos_terminal', 'online', 'other'] as const
+const OFFLINE_TENDERS = ['cash', 'card_to_card', 'pos_terminal'] as const
+const PAYMENT_SMS = 'payment_sms'
+const EXCLUDED_GATEWAY_IDS = new Set([
+  'webino_cash',
+  'webino_card_to_card',
+  'webino_pos_terminal',
+  'webino_online',
+  'webino_other',
+  'webino_wallet',
+  'webino_payment_sms',
+])
+
+function isPosGateway(g: PaymentGateway): boolean {
+  return g.enabled && !EXCLUDED_GATEWAY_IDS.has(g.id)
+}
 
 export default function PosSimplePage() {
   const { t, i18n } = useTranslation()
   const nav = useNavigate()
-  const { currency } = useStoreCurrency()
-  const fmt = (n: number) => formatNumber(n, i18n.language)
+  const { currency, currencySymbol } = useStoreCurrency()
   const scanRef = useRef<HTMLInputElement>(null)
 
   const [query, setQuery] = useState('')
@@ -84,7 +104,20 @@ export default function PosSimplePage() {
   const [custHits, setCustHits] = useState<CustomerHit[]>([])
   const [customer, setCustomer] = useState<CustomerHit | null>(null)
   const [newPhone, setNewPhone] = useState('')
-  const [newName, setNewName] = useState('')
+  const [newFirstName, setNewFirstName] = useState('')
+  const [newLastName, setNewLastName] = useState('')
+
+  const gatewaysQ = useQuery({
+    queryKey: ['shop', 'payment-gateways'],
+    queryFn: () => apiFetch<{ gateways: PaymentGateway[] }>('shop/payment-gateways'),
+  })
+
+  const enabledGateways = useMemo(
+    () => (gatewaysQ.data?.gateways ?? []).filter(isPosGateway),
+    [gatewaysQ.data],
+  )
+
+  const isPaymentSms = tender === PAYMENT_SMS
 
   const subtotal = useMemo(() => cart.reduce((s, l) => s + l.price * l.quantity, 0), [cart])
   const disc = Number(discount) || 0
@@ -93,32 +126,46 @@ export default function PosSimplePage() {
   const paid = amountPaid === '' ? total : Number(amountPaid) || 0
   const change = paid - total
 
-  const runSearch = useCallback(async (q: string) => {
-    const trimmed = q.trim()
-    if (trimmed.length < 1) {
-      setHits([])
-      return
-    }
-    setSearching(true)
-    try {
-      const res = await apiFetch<{ items: PosProduct[] }>(
-        `shop/products/pos-search?q=${encodeURIComponent(trimmed)}&limit=20`,
-      )
-      setHits(res.items ?? [])
-      if ((res.items?.length ?? 0) === 1 && trimmed.length >= 4) {
-        const only = res.items![0]
-        if (only.type !== 'variable' || !only.variations?.length) {
-          addProduct(only)
-          setQuery('')
-          setHits([])
-        }
+  const customerPhone = customer?.phone || newPhone
+  const money = (amount: number, className?: string) => (
+    <MoneyDisplay
+      amount={amount}
+      currency={currency}
+      currencySymbol={currencySymbol}
+      locale={i18n.language}
+      className={className}
+    />
+  )
+
+  const runSearch = useCallback(
+    async (q: string) => {
+      const trimmed = q.trim()
+      if (trimmed.length < 1) {
+        setHits([])
+        return
       }
-    } catch (e) {
-      toastApiError(t, e as Error)
-    } finally {
-      setSearching(false)
-    }
-  }, [t])
+      setSearching(true)
+      try {
+        const res = await apiFetch<{ items: PosProduct[] }>(
+          `shop/products/pos-search?q=${encodeURIComponent(trimmed)}&limit=20`,
+        )
+        setHits(res.items ?? [])
+        if ((res.items?.length ?? 0) === 1 && trimmed.length >= 4) {
+          const only = res.items![0]
+          if (only.type !== 'variable' || !only.variations?.length) {
+            addProduct(only)
+            setQuery('')
+            setHits([])
+          }
+        }
+      } catch (e) {
+        toastApiError(t, e as Error)
+      } finally {
+        setSearching(false)
+      }
+    },
+    [t],
+  )
 
   useEffect(() => {
     const id = window.setTimeout(() => void runSearch(query), 220)
@@ -144,7 +191,10 @@ export default function PosSimplePage() {
     return () => window.clearTimeout(id)
   }, [custQ])
 
-  function addProduct(p: PosProduct, variation?: PosProduct['variations'] extends (infer V)[] | undefined ? V : never) {
+  function addProduct(
+    p: PosProduct,
+    variation?: PosProduct['variations'] extends (infer V)[] | undefined ? V : never,
+  ) {
     const vid = variation?.id
     const key = vid ? `v-${vid}` : `p-${p.id}`
     const name = variation?.name ?? p.name
@@ -175,26 +225,40 @@ export default function PosSimplePage() {
 
   function setQty(key: string, qty: number) {
     setCart((prev) =>
-      prev
-        .map((l) => (l.key === key ? { ...l, quantity: qty } : l))
-        .filter((l) => l.quantity > 0),
+      prev.map((l) => (l.key === key ? { ...l, quantity: qty } : l)).filter((l) => l.quantity > 0),
     )
+  }
+
+  function resetAfterSale() {
+    setCart([])
+    setDiscount('')
+    setShipping('')
+    setAmountPaid('')
+    setCustomer(null)
+    setNewPhone('')
+    setNewFirstName('')
+    setNewLastName('')
+    setCustQ('')
+    setTender('cash')
   }
 
   const submit = useMutation({
     mutationFn: async () => {
       if (!cart.length) throw new Error(t('pos.emptyCart'))
-      const [first = '', ...rest] = newName.trim().split(/\s+/)
+      if (isPaymentSms && !customerPhone.trim()) {
+        throw new Error(t('pos.payLink.phoneRequired'))
+      }
+
+      const firstName = customer?.first_name || newFirstName.trim()
+      const lastName = customer?.last_name || newLastName.trim()
+      const phone = customerPhone.trim()
+
       const body: Record<string, unknown> = {
         pos: true,
         sales_channel: channel,
-        payment_tender: tender,
-        amount_paid: paid,
-        set_paid: true,
-        status: 'processing',
         order_discount: disc > 0 ? disc : undefined,
         shipping_total: ship > 0 ? ship : undefined,
-        create_customer: !customer && !!newPhone,
+        create_customer: !customer && !!phone,
         line_items: cart.map((l) => ({
           product_id: l.product_id,
           variation_id: l.variation_id,
@@ -202,38 +266,56 @@ export default function PosSimplePage() {
           price: l.price,
         })),
       }
+
       if (customer) {
         body.customer_id = customer.id
         body.customer = {
-          phone: customer.phone,
+          phone: customer.phone || phone,
           email: customer.email,
-          first_name: customer.first_name,
-          last_name: customer.last_name,
+          first_name: firstName,
+          last_name: lastName,
         }
-      } else if (newPhone || newName) {
+      } else if (phone || firstName || lastName) {
         body.customer = {
-          phone: newPhone,
-          first_name: first,
-          last_name: rest.join(' '),
-          create: true,
+          phone,
+          first_name: firstName,
+          last_name: lastName,
+          create: !!phone,
         }
       }
-      return apiFetch<{ id: number }>('shop/orders', {
+
+      if (isPaymentSms) {
+        body.pay_link = true
+        body.payment_tender = PAYMENT_SMS
+        body.send_payment_sms = true
+        body.set_paid = false
+        body.status = 'pending'
+        body.payment_gateways = enabledGateways.map((g) => g.id)
+      } else {
+        body.payment_tender = tender
+        body.amount_paid = paid
+        body.set_paid = true
+        body.status = 'processing'
+      }
+
+      return apiFetch<{ id: number; payment_url?: string; payment_sms_sent?: boolean }>('shop/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
     },
     onSuccess: (order) => {
-      toast.success(t('pos.orderCreated', { id: order.id }))
-      setCart([])
-      setDiscount('')
-      setShipping('')
-      setAmountPaid('')
-      setCustomer(null)
-      setNewPhone('')
-      setNewName('')
-      openOrderPrint(order.id, 'receipt')
+      if (isPaymentSms) {
+        toast.success(t('pos.paymentSms.sent', { id: order.id }))
+        if (order.payment_url) {
+          void navigator.clipboard.writeText(order.payment_url).catch(() => undefined)
+          toast.message(t('pos.payLink.linkCopied'))
+        }
+      } else {
+        toast.success(t('pos.orderCreated', { id: order.id }))
+        openOrderPrint(order.id, 'receipt')
+      }
+      resetAfterSale()
       scanRef.current?.focus()
     },
     onError: (e: Error) => toastApiError(t, e),
@@ -283,8 +365,15 @@ export default function PosSimplePage() {
                     <div className="text-sm font-medium">{p.name}</div>
                     <div className="flex flex-wrap gap-1">
                       {p.variations.map((v) => (
-                        <Button key={v.id} type="button" size="sm" variant="secondary" onClick={() => addProduct(p, v)}>
-                          {v.name.replace(p.name, '').trim() || v.sku || `#${v.id}`} · {fmt(v.price)}
+                        <Button
+                          key={v.id}
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => addProduct(p, v)}
+                        >
+                          {v.name.replace(p.name, '').trim() || v.sku || `#${v.id}`} ·{' '}
+                          {money(v.price)}
                         </Button>
                       ))}
                     </div>
@@ -303,7 +392,7 @@ export default function PosSimplePage() {
                       {p.name}
                       {p.sku ? <span className="text-muted-foreground ms-2 text-xs">{p.sku}</span> : null}
                     </span>
-                    <span className="tabular-nums">{fmt(p.price)} {currency}</span>
+                    {money(p.price)}
                   </button>
                 )}
               </li>
@@ -320,19 +409,41 @@ export default function PosSimplePage() {
                 <li key={l.key} className="flex items-center gap-2 px-3 py-2">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{l.name}</div>
-                    <div className="text-muted-foreground text-xs tabular-nums">
-                      {fmt(l.price)} × {l.quantity} = {fmt(l.price * l.quantity)}
+                    <div className="text-muted-foreground flex flex-wrap items-center gap-1 text-xs tabular-nums">
+                      {money(l.price)}
+                      <span>×</span>
+                      <span>{l.quantity}</span>
+                      <span>=</span>
+                      {money(l.price * l.quantity)}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => setQty(l.key, l.quantity - 1)}>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="size-8"
+                      onClick={() => setQty(l.key, l.quantity - 1)}
+                    >
                       <Minus className="size-3.5" />
                     </Button>
-                    <span className="w-8 text-center tabular-nums text-sm">{l.quantity}</span>
-                    <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => setQty(l.key, l.quantity + 1)}>
+                    <span className="w-8 text-center text-sm tabular-nums">{l.quantity}</span>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="size-8"
+                      onClick={() => setQty(l.key, l.quantity + 1)}
+                    >
                       <Plus className="size-3.5" />
                     </Button>
-                    <Button type="button" size="icon" variant="ghost" className="size-8" onClick={() => setQty(l.key, 0)}>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="size-8"
+                      onClick={() => setQty(l.key, 0)}
+                    >
                       <Trash2 className="size-3.5" />
                     </Button>
                   </div>
@@ -349,10 +460,18 @@ export default function PosSimplePage() {
           {customer ? (
             <div className="bg-muted flex items-center justify-between rounded-md px-3 py-2 text-sm">
               <span className="truncate">
-                {customer.name || customer.phone}
+                {customer.name ||
+                  [customer.first_name, customer.last_name].filter(Boolean).join(' ') ||
+                  customer.phone}
                 {customer.phone ? ` · ${customer.phone}` : ''}
               </span>
-              <Button type="button" size="icon" variant="ghost" className="size-7" onClick={() => setCustomer(null)}>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                onClick={() => setCustomer(null)}
+              >
                 <X className="size-3.5" />
               </Button>
             </div>
@@ -374,56 +493,110 @@ export default function PosSimplePage() {
                           setCustomer(c)
                           setCustQ('')
                           setCustHits([])
+                          setNewPhone('')
+                          setNewFirstName('')
+                          setNewLastName('')
                         }}
                       >
-                        {c.name || c.phone} {c.phone ? `· ${c.phone}` : ''}
+                        {c.name || [c.first_name, c.last_name].filter(Boolean).join(' ') || c.phone}{' '}
+                        {c.phone ? `· ${c.phone}` : ''}
                       </button>
                     </li>
                   ))}
                 </ul>
               ) : null}
-              <div className="grid grid-cols-2 gap-2">
-                <Input placeholder={t('pos.newPhone')} value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
-                <Input placeholder={t('pos.newName')} value={newName} onChange={(e) => setNewName(e.target.value)} />
+              <div className="space-y-2">
+                <Input
+                  placeholder={t('pos.newPhone')}
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  dir="ltr"
+                  inputMode="tel"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder={t('pos.newFirstName')}
+                    value={newFirstName}
+                    onChange={(e) => setNewFirstName(e.target.value)}
+                  />
+                  <Input
+                    placeholder={t('pos.newLastName')}
+                    value={newLastName}
+                    onChange={(e) => setNewLastName(e.target.value)}
+                  />
+                </div>
+                <p className="text-muted-foreground text-xs">{t('pos.customerHint')}</p>
               </div>
             </>
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label>{t('pos.channel')}</Label>
-            <Select value={channel} onValueChange={setChannel}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CHANNELS.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {t(`pos.channel.${c}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label>{t('pos.tender')}</Label>
-            <Select value={tender} onValueChange={setTender}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TENDERS.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {t(`pos.tender.${c}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-1">
+          <Label>{t('pos.channel')}</Label>
+          <Select value={channel} onValueChange={setChannel}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CHANNELS.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {t(`pos.channel.${c}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <button type="button" className="text-muted-foreground text-start text-xs underline" onClick={() => setShowExtras((v) => !v)}>
+        <div className="space-y-2">
+          <Label>{t('pos.tender')}</Label>
+          <div className="max-h-52 space-y-1 overflow-y-auto rounded-md border p-1">
+            {OFFLINE_TENDERS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={cn(
+                  'hover:bg-muted w-full rounded-md px-3 py-2 text-start text-sm',
+                  tender === key && 'bg-muted font-medium',
+                )}
+                onClick={() => setTender(key)}
+              >
+                {t(`pos.tender.${key}`)}
+              </button>
+            ))}
+            {enabledGateways.map((gw) => (
+              <button
+                key={gw.id}
+                type="button"
+                className={cn(
+                  'hover:bg-muted w-full rounded-md px-3 py-2 text-start text-sm',
+                  tender === gw.id && 'bg-muted font-medium',
+                )}
+                onClick={() => setTender(gw.id)}
+              >
+                {gw.title || gw.id}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={cn(
+                'hover:bg-muted w-full rounded-md px-3 py-2 text-start text-sm',
+                isPaymentSms && 'bg-primary/10 text-primary font-medium',
+              )}
+              onClick={() => setTender(PAYMENT_SMS)}
+            >
+              {t('pos.tender.payment_sms')}
+            </button>
+          </div>
+          {isPaymentSms ? (
+            <p className="text-muted-foreground text-xs">{t('pos.paymentSms.hint')}</p>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          className="text-muted-foreground text-start text-xs underline"
+          onClick={() => setShowExtras((v) => !v)}
+        >
           {showExtras ? t('pos.hideExtras') : t('pos.showExtras')}
         </button>
         {showExtras ? (
@@ -439,43 +612,46 @@ export default function PosSimplePage() {
           </div>
         ) : null}
 
-        <div className="space-y-1">
-          <Label>{t('pos.amountPaid')}</Label>
-          <Input
-            inputMode="decimal"
-            placeholder={fmt(total)}
-            value={amountPaid}
-            onChange={(e) => setAmountPaid(e.target.value)}
-          />
-        </div>
+        {!isPaymentSms ? (
+          <div className="space-y-1">
+            <Label>{t('pos.amountPaid')}</Label>
+            <Input
+              inputMode="decimal"
+              placeholder={String(total)}
+              value={amountPaid}
+              onChange={(e) => setAmountPaid(e.target.value)}
+            />
+          </div>
+        ) : null}
 
         <div className="bg-muted/50 space-y-1 rounded-md p-3 text-sm">
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-2">
             <span>{t('pos.subtotal')}</span>
-            <span className="tabular-nums">{fmt(subtotal)}</span>
+            {money(subtotal)}
           </div>
           {disc > 0 ? (
-            <div className="flex justify-between text-destructive">
+            <div className="text-destructive flex justify-between gap-2">
               <span>{t('pos.discount')}</span>
-              <span className="tabular-nums">−{fmt(disc)}</span>
+              <span className="inline-flex items-baseline gap-1">
+                −
+                {money(disc)}
+              </span>
             </div>
           ) : null}
           {ship > 0 ? (
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-2">
               <span>{t('pos.shipping')}</span>
-              <span className="tabular-nums">{fmt(ship)}</span>
+              {money(ship)}
             </div>
           ) : null}
-          <div className="flex justify-between border-t pt-1 text-base font-semibold">
+          <div className="flex justify-between gap-2 border-t pt-1 text-base font-semibold">
             <span>{t('pos.total')}</span>
-            <span className="tabular-nums">
-              {fmt(total)} {currency}
-            </span>
+            {money(total)}
           </div>
-          {change !== 0 ? (
-            <div className="flex justify-between text-xs">
+          {!isPaymentSms && change !== 0 ? (
+            <div className="flex justify-between gap-2 text-xs">
               <span>{change >= 0 ? t('pos.change') : t('pos.remaining')}</span>
-              <span className="tabular-nums">{fmt(Math.abs(change))}</span>
+              {money(Math.abs(change))}
             </div>
           ) : null}
         </div>
@@ -486,7 +662,11 @@ export default function PosSimplePage() {
           disabled={!cart.length || submit.isPending}
           onClick={() => void submit.mutateAsync()}
         >
-          {submit.isPending ? t('common.saving') : t('pos.checkout')}
+          {submit.isPending
+            ? t('common.saving')
+            : isPaymentSms
+              ? t('pos.paymentSms.checkout')
+              : t('pos.checkout')}
         </Button>
       </aside>
     </div>
