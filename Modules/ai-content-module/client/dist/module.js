@@ -2502,8 +2502,39 @@ function K({ className: e, type: t, ...n }) {
 	});
 }
 //#endregion
+//#region src/lib/queryClient.ts
+var Un = null;
+function Wn() {
+	return Un;
+}
+//#endregion
+//#region src/lib/authLost.ts
+var Gn = ["auth", "session"], Kn = new Set([
+	"rest_cookie_invalid_nonce",
+	"rest_not_logged_in",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function qn(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !0;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (Kn.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
+}
+function Jn(e) {
+	let t = e ?? Wn();
+	t && t.setQueryData(Gn, { logged_in: !1 });
+}
+function Yn(e) {
+	qn(e) && Jn();
+}
+//#endregion
 //#region src/lib/safeUrl.ts
-function Un(e) {
+function Xn(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -2515,38 +2546,38 @@ function Un(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function Wn() {
+function Zn() {
 	return window.webinoDashboard;
 }
-var Gn = 3e4;
-function Kn(e) {
+var Qn = 3e4;
+function $n(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function qn(e) {
-	let t = Wn();
+function er(e) {
+	let t = Zn();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (Kn(e) || Un(e)) return e;
+	if ($n(e) || Xn(e)) return e;
 	throw new J("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function Jn(e, t) {
+function tr(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function Yn(e) {
+function nr(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
-	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : null;
+	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function Xn(e, t) {
+function rr(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -2562,12 +2593,12 @@ function Xn(e, t) {
 		code: "invalid_json"
 	};
 }
-function Zn(e, t) {
+function ir(e, t) {
 	let n = e.toLowerCase();
 	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
 }
-async function Qn(e, t, n = {}) {
-	let r = Yn(e), i = Wn();
+async function ar(e, t, n = {}) {
+	let r = nr(e), i = Zn();
 	if (!r || !i.ajaxUrl) throw new J("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
@@ -2581,7 +2612,7 @@ async function Qn(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = Jn({}, t);
+	let { signal: l, clear: u } = tr({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -2593,18 +2624,21 @@ async function Qn(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new J(Zn(t, e.status), {
+			throw new J(ir(t, e.status), {
 				code: "invalid_json",
 				status: e.status
 			});
 		}
-		if (!n.success) throw new J(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
-			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
-			status: e.status
-		});
+		if (!n.success) {
+			let t = new J(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
+				status: e.status
+			});
+			throw Yn(t), t;
+		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof J ? e : e instanceof DOMException && e.name === "AbortError" ? new J("Request timed out", {
+		throw e instanceof J ? (Yn(e), e) : e instanceof DOMException && e.name === "AbortError" ? new J("Request timed out", {
 			code: "timeout",
 			status: 0
 		}) : e instanceof TypeError ? new J("Network unavailable", {
@@ -2615,11 +2649,11 @@ async function Qn(e, t, n = {}) {
 		u();
 	}
 }
-async function q(e, t = {}, n = Gn) {
-	if (Yn(e) && Wn().ajaxUrl) return Qn(e, n, t);
-	let r = qn(e), i = Wn(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
-	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce);
-	let { signal: s, clear: c } = Jn(t, n);
+async function q(e, t = {}, n = Qn) {
+	if (nr(e) && Zn().ajaxUrl) return ar(e, n, t);
+	let r = er(e), i = Zn(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
+	let { signal: s, clear: c } = tr(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -2630,22 +2664,22 @@ async function q(e, t = {}, n = Gn) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = Xn(n, e.status);
+			let t = rr(n, e.status);
 			throw new J(t.message, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		if (!e.ok) {
-			let t = i;
-			throw new J(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			let t = i, n = new J(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
+			throw Yn(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof J ? e : e instanceof DOMException && e.name === "AbortError" ? new J("Request timed out", {
+		throw e instanceof J ? (Yn(e), e) : e instanceof DOMException && e.name === "AbortError" ? new J("Request timed out", {
 			code: "timeout",
 			status: 0
 		}) : e instanceof TypeError ? new J("Network unavailable", {
@@ -2658,41 +2692,41 @@ async function q(e, t = {}, n = Gn) {
 }
 //#endregion
 //#region src/lib/marketplace-api.ts
-function $n(e) {
+function or(e) {
 	return `marketplace.installStep.${e}`;
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/typeof.js
-function er(e) {
+function sr(e) {
 	"@babel/helpers - typeof";
-	return er = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
+	return sr = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
 		return typeof e;
 	} : function(e) {
 		return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
-	}, er(e);
+	}, sr(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPrimitive.js
-function tr(e, t) {
-	if (er(e) != "object" || !e) return e;
+function cr(e, t) {
+	if (sr(e) != "object" || !e) return e;
 	var n = e[Symbol.toPrimitive];
 	if (n !== void 0) {
 		var r = n.call(e, t || "default");
-		if (er(r) != "object") return r;
+		if (sr(r) != "object") return r;
 		throw TypeError("@@toPrimitive must return a primitive value.");
 	}
 	return (t === "string" ? String : Number)(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPropertyKey.js
-function nr(e) {
-	var t = tr(e, "string");
-	return er(t) == "symbol" ? t : t + "";
+function lr(e) {
+	var t = cr(e, "string");
+	return sr(t) == "symbol" ? t : t + "";
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/defineProperty.js
-function rr(e, t, n) {
-	return (t = nr(t)) in e ? Object.defineProperty(e, t, {
+function ur(e, t, n) {
+	return (t = lr(t)) in e ? Object.defineProperty(e, t, {
 		value: n,
 		enumerable: !0,
 		configurable: !0,
@@ -2703,9 +2737,9 @@ function rr(e, t, n) {
 //#region src/lib/apiError.ts
 var J = class extends Error {
 	constructor(e, t) {
-		super(e), rr(this, "code", void 0), rr(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
+		super(e), ur(this, "code", void 0), ur(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
 	}
-}, ir = {
+}, dr = {
 	invalid: "errors.api.invalid",
 	ai_disabled: "aiContent.errDisabled",
 	ai_entity_off: "aiContent.errEntityOff",
@@ -2735,22 +2769,22 @@ var J = class extends Error {
 	install_job_start_failed: "marketplace.installJobStartFailed",
 	build_dev_only: "buildPipeline.devOnly"
 };
-function ar(e) {
+function fr(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 28") || t.includes("timed out") || t.includes("did not respond in time") || t.includes("زمان") && t.includes("پاسخ");
 }
-function or(e) {
+function pr(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 52") || t.includes("empty reply") || t.includes("closed the connection without a response") || t.includes("پاسخ") && t.includes("خالی");
 }
-function sr(e, t) {
-	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e($n(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
+function mr(e, t) {
+	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(or(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
 }
-function cr(e, t) {
+function hr(e, t) {
 	let n = t;
-	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return sr(e, n);
+	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return mr(e, n);
 	if (t instanceof J && t.code) {
-		let n = ir[t.code];
+		let n = dr[t.code];
 		if (n === "marketplace.installFailedGeneric") {
 			let n = t.message?.trim();
 			return n ? e("marketplace.installFailed", { message: n }) : e("marketplace.installFailedGeneric");
@@ -2758,24 +2792,24 @@ function cr(e, t) {
 		if (n) return e(n);
 	}
 	if (t && typeof t == "object" && "code" in t) {
-		let n = ir[String(t.code)];
+		let n = dr[String(t.code)];
 		if (n) return e(n);
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return ar(n) ? e("errors.api.timeout") : or(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return fr(n) ? e("errors.api.timeout") : pr(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
 function Y(e, t) {
-	p.error(cr(e, t));
+	p.error(hr(e, t));
 }
 //#endregion
 //#region src/hooks/useQueryErrorToast.ts
 function X(e) {
 	let { t } = l(), n = s(!1);
 	a(() => {
-		e.isError && e.error ? n.current || (n.current = !0, p.error(cr(t, e.error))) : n.current = !1;
+		e.isError && e.error ? n.current || (n.current = !0, p.error(hr(t, e.error))) : n.current = !1;
 	}, [
 		e.isError,
 		e.error,
@@ -2785,7 +2819,7 @@ function X(e) {
 }
 //#endregion
 //#region src/lib/categoryTree.ts
-function lr(e) {
+function gr(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) {
 		let e = n.parent || 0, r = t.get(e) ?? [];
@@ -2803,20 +2837,20 @@ function lr(e) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/lib/ai-content-api.ts
-function ur() {
+function _r() {
 	return q("ai-content/overview");
 }
-function dr() {
+function vr() {
 	return q("ai-content/settings");
 }
-function fr(e) {
+function yr(e) {
 	return q("ai-content/settings", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function pr(e) {
+function br(e) {
 	let t = !!e && Object.keys(e).length > 0;
 	return q("ai-content/cost-estimate", {
 		method: t ? "POST" : "GET",
@@ -2824,118 +2858,118 @@ function pr(e) {
 		body: t ? JSON.stringify(e) : void 0
 	});
 }
-function mr(e = !1) {
+function xr(e = !1) {
 	let t = new URLSearchParams();
 	return e && t.set("refresh", "1"), q(`ai-content/gapgpt/models${t.toString() ? `?${t.toString()}` : ""}`);
 }
-function hr(e) {
+function Sr(e) {
 	let t = new URLSearchParams();
 	e?.status && t.set("status", e.status), e?.limit && t.set("limit", String(e.limit));
 	let n = t.toString();
 	return q(`ai-content/jobs${n ? `?${n}` : ""}`);
 }
-function gr(e) {
+function Cr(e) {
 	return q(`ai-content/jobs/${e}/retry`, { method: "POST" });
 }
-function _r(e = 1) {
+function wr(e = 1) {
 	return q("ai-content/jobs/run-due", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ limit: e })
 	}, 3e4);
 }
-function vr(e) {
+function Tr(e) {
 	return q(`ai-content/jobs/${e}/cancel`, { method: "POST" });
 }
-function yr() {
+function Er() {
 	return q("ai-content/jobs/cancel-pending", { method: "POST" });
 }
-function br() {
+function Dr() {
 	return q("ai-content/queue");
 }
-function xr(e) {
+function Or(e) {
 	return q("ai-content/queue", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ paused: e })
 	});
 }
-function Sr(e) {
+function kr(e) {
 	return q("ai-content/generate", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function Cr() {
+function Ar() {
 	return q("ai-content/design-memory");
 }
-function wr(e) {
+function jr(e) {
 	return q("ai-content/design-memory", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function Tr() {
+function Mr() {
 	return q("ai-content/design-memory/extract", { method: "POST" });
 }
-function Er() {
+function Nr() {
 	return q("ai-content/design-memory/reset", { method: "POST" });
 }
-function Dr(e = 1, t = "") {
+function Pr(e = 1, t = "") {
 	let n = new URLSearchParams({
 		page: String(e),
 		per_page: "50"
 	});
 	return t && n.set("search", t), q(`ai-content/pages?${n.toString()}`);
 }
-function Or(e = 50) {
+function Fr(e = 50) {
 	return q(`ai-content/products/incomplete?limit=${e}`);
 }
-function kr(e) {
+function Ir(e) {
 	return q("ai-content/products/fill-batch", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e ? { ids: e } : {})
 	});
 }
-function Ar(e, t) {
+function Lr(e, t) {
 	let n = new URLSearchParams();
 	e && n.set("from", e), t && n.set("to", t);
 	let r = n.toString();
 	return q(`ai-content/calendar${r ? `?${r}` : ""}`);
 }
-function jr(e) {
+function Rr(e) {
 	return q("ai-content/calendar", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function Mr(e) {
+function zr(e) {
 	return q("ai-content/calendar/bulk", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(e)
 	});
 }
-function Nr(e) {
+function Br(e) {
 	return q(`ai-content/calendar/${e}`, { method: "DELETE" });
 }
-function Pr() {
+function Vr() {
 	return q("ai-content/calendar/run-due", { method: "POST" });
 }
-function Fr() {
+function Hr() {
 	return q("ai-content/attribute-templates");
 }
-function Ir(e) {
+function Ur(e) {
 	return q(`ai-content/attribute-templates/${e}/suggest`, { method: "POST" });
 }
-function Lr(e) {
+function Wr(e) {
 	return q(`ai-content/attribute-templates/${e}/draft`);
 }
-function Rr(e, t) {
+function Gr(e, t) {
 	return q("ai-content/attribute-templates", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -2945,7 +2979,7 @@ function Rr(e, t) {
 		})
 	});
 }
-function zr(e, t) {
+function Kr(e, t) {
 	return q("ai-content/attribute-templates", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -2955,27 +2989,27 @@ function zr(e, t) {
 		})
 	});
 }
-function Br(e) {
+function qr(e) {
 	return q(`ai-content/attribute-templates/${e}`, { method: "DELETE" });
 }
-function Vr(e) {
+function Jr(e) {
 	return q("ai-content/suggest-categories", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ kind: e })
 	});
 }
-function Hr(e) {
+function Yr(e) {
 	return q(`ai-content/suggest-categories/${e}`);
 }
-function Ur(e) {
+function Xr(e) {
 	return q(`ai-content/suggest-categories/${e}/apply`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({})
 	});
 }
-function Wr(e, t) {
+function Zr(e, t) {
 	return q("ai-content/terms/fill-batch", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -2985,62 +3019,62 @@ function Wr(e, t) {
 		})
 	});
 }
-function Gr(e, t = "pending", n = 100) {
+function Qr(e, t = "pending", n = 100) {
 	return q(`ai-content/proposals/${e}?status=${encodeURIComponent(t)}&limit=${n}`);
 }
-function Kr(e, t) {
+function $r(e, t) {
 	return q(`ai-content/proposals/${e}/enqueue`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(t ? { ids: t } : {})
 	});
 }
-function qr(e, t) {
+function ei(e, t) {
 	return q(`ai-content/proposals/${e}/apply`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(t ?? {})
 	});
 }
-function Jr(e = 500) {
+function ti(e = 500) {
 	return q("ai-content/proposals/catalog/apply-all", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ limit: e })
 	});
 }
-function Yr(e) {
+function ni(e) {
 	return q(`ai-content/proposals/${e}/skip`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: "{}"
 	});
 }
-function Xr(e, t) {
+function ri(e, t) {
 	return q(`ai-content/proposals/${e}/product/${t}/requeue`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: "{}"
 	});
 }
-function Zr(e = "all") {
+function ii(e = "all") {
 	return q(`ai-content/blog-topics?status=${encodeURIComponent(e)}`);
 }
-function Qr(e = 8) {
+function ai(e = 8) {
 	return q("ai-content/blog-topics/suggest", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ count: e })
 	});
 }
-function $r(e, t) {
+function oi(e, t) {
 	return q(`ai-content/blog-topics/${encodeURIComponent(e)}/approve`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(t ?? {})
 	});
 }
-function ei(e, t) {
+function si(e, t) {
 	return q("ai-content/blog-topics/approve", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -3050,14 +3084,14 @@ function ei(e, t) {
 		})
 	});
 }
-function ti(e) {
+function ci(e) {
 	return q(`ai-content/blog-topics/${encodeURIComponent(e)}/skip`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: "{}"
 	});
 }
-function ni(e, t) {
+function li(e, t) {
 	return q(`ai-content/blog-image/${e}`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -3066,7 +3100,7 @@ function ni(e, t) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiAttributesPage.tsx
-function ri() {
+function ui() {
 	let { t: e } = l(), t = f(), [n, r] = c(0), [i, _] = c(""), [v, y] = c(null), [b, x] = c([]), S = s(0), C = d({
 		queryKey: ["product-categories", "ai-attr"],
 		queryFn: () => q("shop/product-categories?sort=name_asc&per_page=500")
@@ -3074,7 +3108,7 @@ function ri() {
 	X(C);
 	let w = d({
 		queryKey: ["ai-content", "attr-templates"],
-		queryFn: Fr
+		queryFn: Hr
 	});
 	X(w);
 	let T = d({
@@ -3083,7 +3117,7 @@ function ri() {
 			"attr-draft",
 			n
 		],
-		queryFn: () => Lr(n),
+		queryFn: () => Wr(n),
 		enabled: n > 0
 	});
 	X(T);
@@ -3096,7 +3130,7 @@ function ri() {
 			description: "",
 			count: 0,
 			url: ""
-		})), t = lr(e), n = i.trim().toLowerCase();
+		})), t = gr(e), n = i.trim().toLowerCase();
 		if (!n) return t;
 		let r = new Set(E.filter((e) => e.name.toLowerCase().includes(n)).map((e) => e.id)), a = new Map(e.map((e) => [e.id, e])), o = /* @__PURE__ */ new Set();
 		for (let e of r) {
@@ -3148,25 +3182,25 @@ function ri() {
 		w.data
 	]);
 	let ee = u({
-		mutationFn: () => Ir(n),
+		mutationFn: () => Ur(n),
 		onSuccess: () => {
 			p.success(e("aiContent.jobQueued")), setTimeout(() => void T.refetch(), 3e3);
 		},
 		onError: (t) => Y(e, t)
 	}), te = u({
-		mutationFn: () => zr(n, b),
+		mutationFn: () => Kr(n, b),
 		onSuccess: () => {
 			p.success(e("common.saved")), t.invalidateQueries({ queryKey: ["ai-content"] });
 		},
 		onError: (t) => Y(e, t)
 	}), A = T.data?.draft?.attributes ?? [], j = v ?? A, ne = u({
-		mutationFn: () => Rr(n, { attributes: j }),
+		mutationFn: () => Gr(n, { attributes: j }),
 		onSuccess: () => {
 			p.success(e("common.saved")), y(null), t.invalidateQueries({ queryKey: ["ai-content"] });
 		},
 		onError: (t) => Y(e, t)
 	}), re = u({
-		mutationFn: (e) => Br(e),
+		mutationFn: (e) => qr(e),
 		onSuccess: () => {
 			p.success(e("common.deleted")), t.invalidateQueries({ queryKey: ["ai-content"] });
 		},
@@ -3369,10 +3403,10 @@ function Z({ className: e, ...t }) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiBlogPage.tsx
-function ii() {
+function di() {
 	let { t: e } = l(), t = f(), [n, r] = c(8), [i, s] = c({}), [m, _] = c({}), [v, y] = c("all"), b = d({
 		queryKey: ["ai-content", "blog-topics"],
-		queryFn: () => Zr("all"),
+		queryFn: () => ii("all"),
 		refetchInterval: (e) => (e.state.data?.items ?? []).some((e) => e.status === "queued" || e.status === "pending") ? 4e3 : !1
 	});
 	X(b), a(() => {
@@ -3391,13 +3425,13 @@ function ii() {
 		let e = b.data?.items ?? [];
 		return v === "all" ? e.filter((e) => e.status !== "skipped") : e.filter((e) => e.status === v);
 	}, [b.data?.items, v]), S = o(() => x.filter((e) => e.status === "pending").map((e) => e.id), [x]), C = o(() => S.filter((e) => m[e]), [S, m]), w = () => void t.invalidateQueries({ queryKey: ["ai-content"] }), T = u({
-		mutationFn: () => Qr(n),
+		mutationFn: () => ai(n),
 		onSuccess: () => {
 			p.success(e("aiContent.jobQueued")), w();
 		},
 		onError: (t) => Y(e, t)
 	}), E = u({
-		mutationFn: (e) => $r(e.id, {
+		mutationFn: (e) => oi(e.id, {
 			topic: i[e.id]?.topic ?? e.topic,
 			focus_keyword: i[e.id]?.focus_keyword ?? e.focus_keyword,
 			category_id: e.category_id,
@@ -3411,20 +3445,20 @@ function ii() {
 		mutationFn: () => {
 			let e = {};
 			for (let t of C) e[t] = i[t] ?? {};
-			return ei(C, e);
+			return si(C, e);
 		},
 		onSuccess: (t) => {
 			p.success(e("aiContent.blogTopicsApproved", { count: t.approved })), _({}), w();
 		},
 		onError: (t) => Y(e, t)
 	}), O = u({
-		mutationFn: (e) => ti(e),
+		mutationFn: (e) => ci(e),
 		onSuccess: () => {
 			p.success(e("aiContent.blogTopicSkipped")), w();
 		},
 		onError: (t) => Y(e, t)
 	}), k = u({
-		mutationFn: (e) => ni(e.post_id, {
+		mutationFn: (e) => li(e.post_id, {
 			topic: i[e.id]?.topic ?? e.topic,
 			focus_keyword: i[e.id]?.focus_keyword ?? e.focus_keyword
 		}),
@@ -3592,7 +3626,7 @@ function ii() {
 }
 //#endregion
 //#region src/components/ui/textarea.tsx
-var ai = /* @__PURE__ */ D((/* @__PURE__ */ T(((e, t) => {
+var fi = /* @__PURE__ */ D((/* @__PURE__ */ T(((e, t) => {
 	(function(n, r) {
 		typeof e == "object" && t !== void 0 ? t.exports = r() : typeof define == "function" && define.amd ? define(r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs = r();
 	})(e, (function() {
@@ -3887,7 +3921,7 @@ var ai = /* @__PURE__ */ D((/* @__PURE__ */ T(((e, t) => {
 		}, w.en = b[y], w.Ls = b, w.p = {}, w;
 	}));
 })))());
-function oi({ className: e, ...t }) {
+function pi({ className: e, ...t }) {
 	return /* @__PURE__ */ h("textarea", {
 		"data-slot": "textarea",
 		className: B("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
@@ -3896,14 +3930,14 @@ function oi({ className: e, ...t }) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiCalendarPage.tsx
-function si() {
-	let { t: e } = l(), t = f(), [n, r] = c(""), [i, a] = c(""), [o, s] = c(() => (0, ai.default)().format("YYYY-MM-DD")), [m, _] = c("blog"), [v, y] = c(""), b = d({
+function mi() {
+	let { t: e } = l(), t = f(), [n, r] = c(""), [i, a] = c(""), [o, s] = c(() => (0, fi.default)().format("YYYY-MM-DD")), [m, _] = c("blog"), [v, y] = c(""), b = d({
 		queryKey: ["ai-content", "calendar"],
-		queryFn: () => Ar()
+		queryFn: () => Lr()
 	});
 	X(b);
 	let x = () => void t.invalidateQueries({ queryKey: ["ai-content"] }), S = u({
-		mutationFn: () => jr({
+		mutationFn: () => Rr({
 			slot_date: o,
 			content_type: m,
 			topic: n,
@@ -3914,7 +3948,7 @@ function si() {
 		},
 		onError: (t) => Y(e, t)
 	}), C = u({
-		mutationFn: () => Mr({
+		mutationFn: () => zr({
 			topics: v,
 			start_date: o,
 			content_type: m,
@@ -3925,13 +3959,13 @@ function si() {
 		},
 		onError: (t) => Y(e, t)
 	}), w = u({
-		mutationFn: (e) => Nr(e),
+		mutationFn: (e) => Br(e),
 		onSuccess: () => {
 			p.success(e("common.deleted")), x();
 		},
 		onError: (t) => Y(e, t)
 	}), T = u({
-		mutationFn: Pr,
+		mutationFn: Vr,
 		onSuccess: () => {
 			p.success(e("aiContent.dueQueued")), x();
 		},
@@ -4003,7 +4037,7 @@ function si() {
 						className: "text-sm text-muted-foreground",
 						children: e("aiContent.bulkHint")
 					}),
-					/* @__PURE__ */ h(oi, {
+					/* @__PURE__ */ h(pi, {
 						rows: 6,
 						value: v,
 						onChange: (e) => y(e.target.value)
@@ -4051,7 +4085,7 @@ function si() {
 }
 //#endregion
 //#region src/components/ui/skeleton.tsx
-function ci({ className: e, ...t }) {
+function hi({ className: e, ...t }) {
 	return /* @__PURE__ */ h("div", {
 		"data-slot": "skeleton",
 		className: B("animate-pulse rounded-md bg-accent", e),
@@ -4060,7 +4094,7 @@ function ci({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/badge.tsx
-var li = A("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
+var gi = A("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3", {
 	variants: { variant: {
 		default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
 		secondary: "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
@@ -4071,17 +4105,17 @@ var li = A("inline-flex w-fit shrink-0 items-center justify-center gap-1 overflo
 	} },
 	defaultVariants: { variant: "default" }
 });
-function ui({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
+function _i({ className: e, variant: t = "default", asChild: n = !1, ...r }) {
 	return /* @__PURE__ */ h(n ? He : "span", {
 		"data-slot": "badge",
 		"data-variant": t,
-		className: B(li({ variant: t }), e),
+		className: B(gi({ variant: t }), e),
 		...r
 	});
 }
 //#endregion
 //#region src/lib/aiJobProgress.ts
-var di = [
+var vi = [
 	"queued",
 	"layout",
 	"visual",
@@ -4090,15 +4124,15 @@ var di = [
 	"writing",
 	"done"
 ];
-function fi(e) {
+function yi(e) {
 	if (!e) return "queued";
 	if (e.status === "done") return "done";
 	if (e.status === "failed") return "failed";
 	if (e.status === "cancelled") return "cancelled";
 	let t = String(e.result_summary || "").toLowerCase();
-	return di.includes(t) ? t : e.status === "running" ? "provider" : "queued";
+	return vi.includes(t) ? t : e.status === "running" ? "provider" : "queued";
 }
-function pi(e) {
+function bi(e) {
 	return {
 		queued: 8,
 		layout: 22,
@@ -4113,7 +4147,7 @@ function pi(e) {
 }
 //#endregion
 //#region src/components/currency/IrtIcon.tsx
-function mi({ className: e }) {
+function xi({ className: e }) {
 	return /* @__PURE__ */ g("svg", {
 		width: "13",
 		height: "12",
@@ -4148,44 +4182,80 @@ function mi({ className: e }) {
 }
 //#endregion
 //#region src/lib/currency.ts
-var hi = /تومان|toman|irt/i;
-function gi(e) {
+var Si = /تومان|toman|irt/i;
+function Ci(e) {
 	return e.replace(/&nbsp;/gi, " ").replace(/&#160;/g, " ").replace(/&#x0*a0;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, "\"").replace(/&#(\d+);/g, (e, t) => {
 		let n = Number(t);
 		return Number.isFinite(n) ? String.fromCharCode(n) : e;
 	}).replace(/\u00a0/g, " ");
 }
-function _i(e, t) {
+function wi(e, t) {
 	let n = (e ?? "").trim(), r = (t ?? "").trim();
 	if (!n && !r) return !1;
 	let i = n.toUpperCase();
-	return !!(i === "IRT" || i === "TOMAN" || hi.test(n) || hi.test(r));
+	return !!(i === "IRT" || i === "TOMAN" || Si.test(n) || Si.test(r));
 }
-function vi(e) {
+var Ti = {
+	"۰": "0",
+	"۱": "1",
+	"۲": "2",
+	"۳": "3",
+	"۴": "4",
+	"۵": "5",
+	"۶": "6",
+	"۷": "7",
+	"۸": "8",
+	"۹": "9",
+	"٠": "0",
+	"١": "1",
+	"٢": "2",
+	"٣": "3",
+	"٤": "4",
+	"٥": "5",
+	"٦": "6",
+	"٧": "7",
+	"٨": "8",
+	"٩": "9"
+};
+function Ei(e) {
 	return e.toLowerCase().startsWith("fa");
 }
-function yi(e) {
+function Di(e) {
 	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
+}
+function Oi(e) {
+	return e.replace(/[۰-۹٠-٩]/g, (e) => Ti[e] ?? e);
+}
+function ki(e, t) {
+	return Ei(t) ? Di(e) : e;
 }
 //#endregion
 //#region src/lib/formatNumber.ts
-function bi(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = vi(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return vi(t) ? yi(i) : i;
+function Ai(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = Ei(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return Ei(t) ? Di(i) : i;
 }
 //#endregion
 //#region src/components/currency/MoneyDisplay.tsx
-function xi({ amount: e, currency: t, currencySymbol: n, locale: r, className: i, amountClassName: a, prefix: o }) {
-	let s = typeof e == "string" ? gi(e).replace(/[^\d.-]/g, "") : "", c = typeof e == "number" ? e : parseFloat(s), l = typeof e == "string" && Number.isNaN(c) ? gi(e) : bi(Number.isFinite(c) ? c : 0, r), u = _i(t, n) || !t?.trim() && !n?.trim();
+var ji = /تومان|toman|irt/gi;
+function Mi(e) {
+	if (typeof e == "number") return Number.isFinite(e) ? e : 0;
+	let t = Oi(Ci(e)).replace(ji, "").replace(/[^\d.-]/g, ""), n = parseFloat(t);
+	return Number.isFinite(n) ? n : NaN;
+}
+function Ni({ amount: e, currency: t, currencySymbol: n, locale: r, className: i, amountClassName: a, prefix: o }) {
+	let s = Mi(e), c = Number.isFinite(s) ? Ai(s, r) : ki(Oi(Ci(String(e))).replace(ji, "").trim(), r), l = wi(t, n) || !t?.trim() && !n?.trim();
 	return /* @__PURE__ */ g("span", {
 		className: B("inline-flex items-baseline gap-1", i),
+		dir: "ltr",
 		children: [
 			o,
+			l ? /* @__PURE__ */ h(xi, {}) : null,
 			/* @__PURE__ */ h("span", {
 				className: a,
-				children: l
+				children: c
 			}),
-			u ? /* @__PURE__ */ h(mi, {}) : t ? /* @__PURE__ */ h("span", {
+			!l && t ? /* @__PURE__ */ h("span", {
 				className: "text-muted-foreground text-[0.85em]",
 				children: t
 			}) : null
@@ -4195,7 +4265,7 @@ function xi({ amount: e, currency: t, currencySymbol: n, locale: r, className: i
 //#endregion
 //#region ../Modules/ai-content-module/client/components/AiToman.tsx
 function Q({ amount: e, locale: t, className: n }) {
-	return /* @__PURE__ */ h(xi, {
+	return /* @__PURE__ */ h(Ni, {
 		amount: Number.isFinite(e) ? e : 0,
 		currency: "IRT",
 		locale: t,
@@ -4204,16 +4274,16 @@ function Q({ amount: e, locale: t, className: n }) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/components/AiJobCard.tsx
-function Si(e) {
+function Pi(e) {
 	return e.target_type === "calendar" ? "/ai-content/calendar" : e.target_id < 1 ? null : e.target_type === "product" ? `/shop/products/${e.target_id}` : e.target_type === "post" ? `/magazine/posts/${e.target_id}` : e.target_type === "product_cat" || e.target_type === "product_brand" ? "/ai-content/taxonomies" : null;
 }
-function Ci(e) {
+function Fi(e) {
 	return e.status === "pending" || e.status === "running";
 }
-function wi(e) {
+function Ii(e) {
 	return e === "done" ? "default" : e === "failed" || e === "cancelled" ? "destructive" : e === "running" ? "secondary" : "outline";
 }
-function Ti(e, t) {
+function Li(e, t) {
 	if (!e) return "";
 	let n = e.includes("T") ? e : `${e.replace(" ", "T")}Z`, r = new Date(n);
 	return Number.isNaN(r.getTime()) ? e : new Intl.DateTimeFormat(t.startsWith("fa") ? "fa-IR" : "en-GB", {
@@ -4221,7 +4291,7 @@ function Ti(e, t) {
 		timeStyle: "short"
 	}).format(r);
 }
-function Ei(e, t) {
+function Ri(e, t) {
 	let n = e.trim();
 	return /cURL error 28|timed out|timeout/i.test(n) ? {
 		title: t("aiContent.jobError.timeout"),
@@ -4246,12 +4316,12 @@ function Ei(e, t) {
 		detail: ""
 	};
 }
-function Di({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i }) {
-	let { t: a, i18n: o } = l(), s = Si(e), c = (e.target_title || "").trim() || a("aiContent.jobUntitled"), u = s ? /* @__PURE__ */ h(_, {
+function zi({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i }) {
+	let { t: a, i18n: o } = l(), s = Pi(e), c = (e.target_title || "").trim() || a("aiContent.jobUntitled"), u = s ? /* @__PURE__ */ h(_, {
 		className: "hover:underline underline-offset-2",
 		to: s,
 		children: c
-	}) : /* @__PURE__ */ h("span", { children: c }), d = e.error_message ? Ei(e.error_message, a) : null, f = !!(t || n);
+	}) : /* @__PURE__ */ h("span", { children: c }), d = e.error_message ? Ri(e.error_message, a) : null, f = !!(t || n);
 	return /* @__PURE__ */ g("div", {
 		className: "flex flex-wrap items-start justify-between gap-3 border-b py-3 last:border-0",
 		children: [/* @__PURE__ */ g("div", {
@@ -4264,23 +4334,23 @@ function Di({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i
 				/* @__PURE__ */ g("div", {
 					className: "flex flex-wrap gap-1.5",
 					children: [
-						/* @__PURE__ */ h(ui, {
+						/* @__PURE__ */ h(_i, {
 							variant: "outline",
 							children: a("aiContent.jobId", { id: e.id })
 						}),
-						/* @__PURE__ */ h(ui, {
+						/* @__PURE__ */ h(_i, {
 							variant: "secondary",
 							children: a(`aiContent.jobType.${e.job_type}`, { defaultValue: e.job_type })
 						}),
-						/* @__PURE__ */ h(ui, {
-							variant: wi(e.status),
+						/* @__PURE__ */ h(_i, {
+							variant: Ii(e.status),
 							children: a(`aiContent.jobStatus.${e.status}`, { defaultValue: e.status })
 						}),
-						e.provider ? /* @__PURE__ */ h(ui, {
+						e.provider ? /* @__PURE__ */ h(_i, {
 							variant: "outline",
 							children: e.provider
 						}) : null,
-						e.model ? /* @__PURE__ */ h(ui, {
+						e.model ? /* @__PURE__ */ h(_i, {
 							variant: "outline",
 							children: e.model
 						}) : null
@@ -4289,23 +4359,23 @@ function Di({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i
 				/* @__PURE__ */ g("div", {
 					className: "flex flex-wrap gap-1.5",
 					children: [
-						e.target_type ? /* @__PURE__ */ g(ui, {
+						e.target_type ? /* @__PURE__ */ g(_i, {
 							variant: "outline",
 							children: [a(`aiContent.targetType.${e.target_type}`, { defaultValue: e.target_type }), e.target_id > 0 ? ` #${e.target_id}` : ""]
 						}) : null,
-						e.attempts > 0 ? /* @__PURE__ */ h(ui, {
+						e.attempts > 0 ? /* @__PURE__ */ h(_i, {
 							variant: "outline",
 							children: a("aiContent.jobsAttempts", { count: e.attempts })
 						}) : null,
-						e.tokens_in > 0 ? /* @__PURE__ */ h(ui, {
+						e.tokens_in > 0 ? /* @__PURE__ */ h(_i, {
 							variant: "outline",
 							children: a("aiContent.jobTokensIn", { count: e.tokens_in })
 						}) : null,
-						e.tokens_out > 0 ? /* @__PURE__ */ h(ui, {
+						e.tokens_out > 0 ? /* @__PURE__ */ h(_i, {
 							variant: "outline",
 							children: a("aiContent.jobTokensOut", { count: e.tokens_out })
 						}) : null,
-						Number(e.cost_toman) > 0 ? /* @__PURE__ */ g(ui, {
+						Number(e.cost_toman) > 0 ? /* @__PURE__ */ g(_i, {
 							variant: "outline",
 							className: "gap-1",
 							children: [/* @__PURE__ */ h(Q, {
@@ -4313,9 +4383,9 @@ function Di({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i
 								locale: o.language
 							}), e.cost_estimated ? ` · ${a("aiContent.costApprox")}` : ""]
 						}) : null,
-						e.created_at ? /* @__PURE__ */ h(ui, {
+						e.created_at ? /* @__PURE__ */ h(_i, {
 							variant: "outline",
-							children: Ti(e.created_at, o.language)
+							children: Li(e.created_at, o.language)
 						}) : null
 					]
 				}),
@@ -4328,17 +4398,17 @@ function Di({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i
 						className: "text-destructive/80 break-words",
 						children: d.detail
 					}) : null]
-				}) : Ci(e) ? /* @__PURE__ */ g("div", {
+				}) : Fi(e) ? /* @__PURE__ */ g("div", {
 					className: "space-y-1",
 					children: [/* @__PURE__ */ h("div", {
 						className: "bg-muted h-1.5 overflow-hidden rounded-full",
 						children: /* @__PURE__ */ h("div", {
 							className: "bg-primary h-full transition-[width] duration-500",
-							style: { width: `${pi(fi(e))}%` }
+							style: { width: `${bi(yi(e))}%` }
 						})
 					}), /* @__PURE__ */ h("div", {
 						className: "text-muted-foreground text-xs",
-						children: a(`aiContent.phase.${fi(e)}`, { defaultValue: fi(e) })
+						children: a(`aiContent.phase.${yi(e)}`, { defaultValue: yi(e) })
 					})]
 				}) : e.result_summary && ![
 					"queued",
@@ -4356,7 +4426,7 @@ function Di({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i
 			]
 		}), f ? /* @__PURE__ */ g("div", {
 			className: "flex shrink-0 gap-2",
-			children: [Ci(e) && n ? /* @__PURE__ */ h(V, {
+			children: [Fi(e) && n ? /* @__PURE__ */ h(V, {
 				size: "sm",
 				variant: "outline",
 				disabled: i,
@@ -4374,7 +4444,7 @@ function Di({ job: e, onRetry: t, onCancel: n, retryPending: r, cancelPending: i
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiJobsPage.tsx
-var Oi = [
+var Bi = [
 	"",
 	"pending",
 	"running",
@@ -4382,27 +4452,27 @@ var Oi = [
 	"cancelled",
 	"done"
 ];
-function ki() {
-	let { t: e, i18n: t } = l(), n = f(), [r, i] = v(), a = r.get("status") ?? "", o = Oi.includes(a) ? a : "", s = d({
+function Vi() {
+	let { t: e, i18n: t } = l(), n = f(), [r, i] = v(), a = r.get("status") ?? "", o = Bi.includes(a) ? a : "", s = d({
 		queryKey: [
 			"ai-content",
 			"jobs",
 			o
 		],
-		queryFn: () => hr({
+		queryFn: () => Sr({
 			status: o || void 0,
 			limit: 80
 		}),
-		refetchInterval: (e) => (e.state.data?.items ?? []).some(Ci) ? 2e3 : !1
+		refetchInterval: (e) => (e.state.data?.items ?? []).some(Fi) ? 2e3 : !1
 	});
 	X(s);
 	let c = d({
 		queryKey: ["ai-content", "queue"],
-		queryFn: br
+		queryFn: Dr
 	});
 	X(c);
 	let m = !!c.data?.paused, _ = u({
-		mutationFn: (e) => gr(e),
+		mutationFn: (e) => Cr(e),
 		onSuccess: () => {
 			p.success(e("aiContent.jobRetried")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
@@ -4411,13 +4481,13 @@ function ki() {
 		mutationFn: async () => {
 			let e = 0;
 			for (let t = 0; t < 200; t++) {
-				let t = (await hr({ limit: 80 })).items ?? [];
+				let t = (await Sr({ limit: 80 })).items ?? [];
 				if (t.some((e) => e.status === "running")) {
 					await new Promise((e) => setTimeout(e, 2e3));
 					continue;
 				}
 				if (!t.some((e) => e.status === "pending")) break;
-				let n = await _r(1);
+				let n = await wr(1);
 				if (n.paused) return {
 					processed: [],
 					count: e,
@@ -4440,19 +4510,19 @@ function ki() {
 		},
 		onError: (t) => Y(e, t)
 	}), b = u({
-		mutationFn: (e) => xr(e),
+		mutationFn: (e) => Or(e),
 		onSuccess: (t) => {
 			n.setQueryData(["ai-content", "queue"], { paused: t.paused }), p.success(t.paused ? e("aiContent.queuePaused") : e("aiContent.queueResumed")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
 		onError: (t) => Y(e, t)
 	}), x = u({
-		mutationFn: (e) => vr(e),
+		mutationFn: (e) => Tr(e),
 		onSuccess: () => {
 			p.success(e("aiContent.jobCancelled")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
 		onError: (t) => Y(e, t)
 	}), S = u({
-		mutationFn: () => yr(),
+		mutationFn: () => Er(),
 		onSuccess: (t) => {
 			p.success(e("aiContent.jobsCancelledCount", { count: t.count })), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
@@ -4466,7 +4536,7 @@ function ki() {
 		children: [
 			/* @__PURE__ */ h("div", {
 				className: "flex flex-wrap items-center gap-2",
-				children: Oi.map((t) => /* @__PURE__ */ h(V, {
+				children: Bi.map((t) => /* @__PURE__ */ h(V, {
 					size: "sm",
 					variant: o === t ? "default" : "outline",
 					onClick: () => C(t),
@@ -4521,8 +4591,8 @@ function ki() {
 			/* @__PURE__ */ g(H, { children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.jobsPageTitle") }) }), /* @__PURE__ */ g(G, {
 				className: "space-y-2",
 				children: [
-					s.isPending ? /* @__PURE__ */ h(ci, { className: "h-24 w-full rounded-xl" }) : null,
-					(s.data?.items ?? []).map((e) => /* @__PURE__ */ h(Di, {
+					s.isPending ? /* @__PURE__ */ h(hi, { className: "h-24 w-full rounded-xl" }) : null,
+					(s.data?.items ?? []).map((e) => /* @__PURE__ */ h(zi, {
 						job: e,
 						retryPending: _.isPending,
 						cancelPending: x.isPending,
@@ -4540,16 +4610,16 @@ function ki() {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiOverviewPage.tsx
-var Ai = {
+var Hi = {
 	pending: "/ai-content/jobs?status=pending",
 	failed: "/ai-content/jobs?status=failed",
 	done: "/ai-content/jobs?status=done",
 	calendar: "/ai-content/calendar"
 };
-function ji() {
+function Ui() {
 	let { t: e, i18n: t } = l(), n = f(), r = d({
 		queryKey: ["ai-content", "overview"],
-		queryFn: ur,
+		queryFn: _r,
 		refetchInterval: (e) => (e.state.data?.jobs_pending ?? 0) > 0 ? 3e3 : !1
 	});
 	X(r);
@@ -4559,12 +4629,12 @@ function ji() {
 			"jobs",
 			"recent"
 		],
-		queryFn: () => hr({ limit: 8 }),
+		queryFn: () => Sr({ limit: 8 }),
 		refetchInterval: (e) => (e.state.data?.items ?? []).some((e) => e.status === "pending" || e.status === "running") ? 3e3 : !1
 	});
 	X(i);
 	let a = u({
-		mutationFn: (e) => gr(e),
+		mutationFn: (e) => Cr(e),
 		onSuccess: () => {
 			p.success(e("aiContent.jobRetried")), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
@@ -4641,7 +4711,7 @@ function ji() {
 					})
 				]
 			}),
-			r.isPending ? /* @__PURE__ */ h(ci, { className: "h-32 w-full rounded-xl" }) : /* @__PURE__ */ g("div", {
+			r.isPending ? /* @__PURE__ */ h(hi, { className: "h-32 w-full rounded-xl" }) : /* @__PURE__ */ g("div", {
 				className: "grid gap-3 sm:grid-cols-2 lg:grid-cols-5",
 				children: [[
 					["pending", o?.jobs_pending ?? 0],
@@ -4649,7 +4719,7 @@ function ji() {
 					["done", o?.jobs_done ?? 0],
 					["calendar", o?.calendar_upcoming ?? 0]
 				].map(([t, n]) => /* @__PURE__ */ h(_, {
-					to: Ai[String(t)] ?? "/ai-content/jobs",
+					to: Hi[String(t)] ?? "/ai-content/jobs",
 					className: "block",
 					children: /* @__PURE__ */ g(H, {
 						className: "h-full transition-colors hover:bg-muted/40",
@@ -4715,7 +4785,7 @@ function ji() {
 				})]
 			}), /* @__PURE__ */ g(G, {
 				className: "space-y-2",
-				children: [(i.data?.items ?? []).map((e) => /* @__PURE__ */ h(Di, {
+				children: [(i.data?.items ?? []).map((e) => /* @__PURE__ */ h(zi, {
 					job: e,
 					retryPending: a.isPending,
 					onRetry: (e) => void a.mutateAsync(e)
@@ -4729,18 +4799,18 @@ function ji() {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiPagesPage.tsx
-function Mi() {
+function Wi() {
 	let { t: e } = l(), t = f(), [n, r] = c(""), [i, a] = c({}), o = d({
 		queryKey: [
 			"ai-content",
 			"pages",
 			n
 		],
-		queryFn: () => Dr(1, n)
+		queryFn: () => Pr(1, n)
 	});
 	X(o);
 	let s = u({
-		mutationFn: (e) => Sr({
+		mutationFn: (e) => kr({
 			type: "page",
 			id: e.id,
 			page_prompt: i[e.id] ?? o.data?.items.find((t) => t.id === e.id)?.page_prompt ?? "",
@@ -4808,7 +4878,7 @@ function Mi() {
 								children: e("aiContent.generate")
 							})]
 						})]
-					}), /* @__PURE__ */ h(oi, {
+					}), /* @__PURE__ */ h(pi, {
 						rows: 2,
 						value: i[t.id] ?? t.page_prompt,
 						onChange: (e) => a((n) => ({
@@ -4827,25 +4897,25 @@ function Mi() {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiProductsPage.tsx
-function Ni() {
+function Gi() {
 	let { t: e, i18n: t } = l(), n = f(), r = d({
 		queryKey: ["ai-content", "incomplete"],
-		queryFn: () => Or(80)
+		queryFn: () => Fr(80)
 	});
 	X(r);
 	let i = d({
 		queryKey: ["ai-content", "cost-estimate"],
-		queryFn: () => pr()
+		queryFn: () => br()
 	});
 	X(i);
 	let a = u({
-		mutationFn: () => kr(),
+		mutationFn: () => Ir(),
 		onSuccess: (t) => {
 			p.success(e("aiContent.batchQueued", { count: t.count })), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
 		onError: (t) => Y(e, t)
 	}), o = u({
-		mutationFn: (e) => Sr({
+		mutationFn: (e) => kr({
 			type: "product",
 			id: e,
 			sync: !1
@@ -4928,13 +4998,13 @@ function $({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/components/AiCostCard.tsx
-var Pi = [
+var Ki = [
 	"gpt-5.6-luna",
 	"gpt-5.6-terra",
 	"gpt-5.6-sol"
 ];
-function Fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i }) {
-	let { t: a, i18n: o } = l(), s = o.language, c = e?.models ?? [], u = (t.gapgpt_model || e?.current.model || "").toLowerCase(), d = c.filter((e) => Pi.includes(e.id) || e.id === u || e.selected), f = c.filter((e) => !d.some((t) => t.id === e.id)), p = e?.entities.product, m = e?.entities.product_brand, _ = e?.entities.product_cat, v = e?.entities.blog;
+function qi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i }) {
+	let { t: a, i18n: o } = l(), s = o.language, c = e?.models ?? [], u = (t.gapgpt_model || e?.current.model || "").toLowerCase(), d = c.filter((e) => Ki.includes(e.id) || e.id === u || e.selected), f = c.filter((e) => !d.some((t) => t.id === e.id)), p = e?.entities.product, m = e?.entities.product_brand, _ = e?.entities.product_cat, v = e?.entities.blog;
 	return /* @__PURE__ */ g("div", {
 		className: "space-y-4",
 		children: [
@@ -4949,28 +5019,28 @@ function Fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 			p ? /* @__PURE__ */ g("div", {
 				className: "grid gap-2 sm:grid-cols-2 lg:grid-cols-4",
 				children: [
-					/* @__PURE__ */ h(Ii, {
+					/* @__PURE__ */ h(Ji, {
 						locale: s,
 						label: a("aiContent.settingsProduct"),
 						mid: p.cost_toman.mid,
 						hi: p.cost_toman.hi,
 						source: p.source
 					}),
-					/* @__PURE__ */ h(Ii, {
+					/* @__PURE__ */ h(Ji, {
 						locale: s,
 						label: a("aiContent.settingsBrand"),
 						mid: m?.cost_toman.mid ?? 0,
 						hi: m?.cost_toman.hi ?? 0,
 						source: m?.source ?? ""
 					}),
-					/* @__PURE__ */ h(Ii, {
+					/* @__PURE__ */ h(Ji, {
 						locale: s,
 						label: a("aiContent.settingsProductCat"),
 						mid: _?.cost_toman.mid ?? 0,
 						hi: _?.cost_toman.hi ?? 0,
 						source: _?.source ?? ""
 					}),
-					/* @__PURE__ */ h(Ii, {
+					/* @__PURE__ */ h(Ji, {
 						locale: s,
 						label: a("aiContent.settingsBlog"),
 						mid: v?.cost_toman.mid ?? 0,
@@ -5015,7 +5085,7 @@ function Fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 								children: a("aiContent.settingsBlog")
 							})
 						] })
-					}), /* @__PURE__ */ h("tbody", { children: d.map((e) => /* @__PURE__ */ h(Li, {
+					}), /* @__PURE__ */ h("tbody", { children: d.map((e) => /* @__PURE__ */ h(Yi, {
 						model: e,
 						selected: e.id === u,
 						locale: s,
@@ -5032,7 +5102,7 @@ function Fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 					className: "mt-3 overflow-x-auto",
 					children: /* @__PURE__ */ h("table", {
 						className: "w-full min-w-[720px] text-sm",
-						children: /* @__PURE__ */ h("tbody", { children: f.slice(0, 20).map((e) => /* @__PURE__ */ h(Li, {
+						children: /* @__PURE__ */ h("tbody", { children: f.slice(0, 20).map((e) => /* @__PURE__ */ h(Yi, {
 							model: e,
 							selected: e.id === u,
 							locale: s,
@@ -5117,7 +5187,7 @@ function Fi({ estimate: e, draft: t, onPickModel: n, onUsdToToman: r, onRate: i 
 		]
 	});
 }
-function Ii({ label: e, mid: t, hi: n, locale: r, source: i }) {
+function Ji({ label: e, mid: t, hi: n, locale: r, source: i }) {
 	let { t: a } = l();
 	return /* @__PURE__ */ g("div", {
 		className: "rounded-lg border p-3",
@@ -5148,7 +5218,7 @@ function Ii({ label: e, mid: t, hi: n, locale: r, source: i }) {
 		]
 	});
 }
-function Li({ model: e, selected: t, locale: n, onPick: r }) {
+function Yi({ model: e, selected: t, locale: n, onPick: r }) {
 	return /* @__PURE__ */ g("tr", {
 		className: `cursor-pointer border-t hover:bg-muted/50 ${t ? "bg-primary/10" : ""}`,
 		onClick: () => r(e.id),
@@ -5204,7 +5274,7 @@ function Li({ model: e, selected: t, locale: n, onPick: r }) {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiSettingsPage.tsx
-var Ri = [
+var Xi = [
 	{
 		id: "product",
 		doKey: "do_product",
@@ -5296,7 +5366,7 @@ var Ri = [
 			"seo"
 		]
 	}
-], zi = [
+], Zi = [
 	"professional",
 	"friendly",
 	"expert",
@@ -5306,7 +5376,7 @@ var Ri = [
 	"luxury",
 	"casual",
 	"enthusiastic"
-], Bi = {
+], Qi = {
 	short_description: ["paragraphs", "words"],
 	description: ["words", "paragraphs"],
 	ai_review_summary: ["words", "paragraphs"],
@@ -5315,15 +5385,15 @@ var Ri = [
 	excerpt: ["paragraphs", "words"],
 	content: ["words", "paragraphs"]
 };
-function Vi() {
+function $i() {
 	let { t: e } = l(), t = f(), [n, r] = c(null), i = d({
 		queryKey: ["ai-content", "settings"],
-		queryFn: dr
+		queryFn: vr
 	});
 	X(i);
 	let s = !!i.data?.has_gapgpt_key, _ = d({
 		queryKey: ["ai-content", "gapgpt-models"],
-		queryFn: () => mr(!1),
+		queryFn: () => xr(!1),
 		enabled: s
 	});
 	X(_), a(() => {
@@ -5336,7 +5406,7 @@ function Vi() {
 		});
 	}, [i.data]);
 	let v = u({
-		mutationFn: () => fr(n ?? {}),
+		mutationFn: () => yr(n ?? {}),
 		onSuccess: async (n) => {
 			p.success(e("common.saved")), r({
 				...n,
@@ -5348,7 +5418,7 @@ function Vi() {
 		},
 		onError: (t) => Y(e, t)
 	}), y = u({
-		mutationFn: () => mr(!0),
+		mutationFn: () => xr(!0),
 		onSuccess: (n) => {
 			t.setQueryData(["ai-content", "gapgpt-models"], n), p.success(e("aiContent.gapgptRefreshModels"));
 		},
@@ -5368,7 +5438,7 @@ function Vi() {
 			n?.do_coffee,
 			n?.language
 		],
-		queryFn: () => pr({
+		queryFn: () => br({
 			gapgpt_model: n?.gapgpt_model,
 			default_provider: n?.default_provider,
 			usd_to_toman: n?.usd_to_toman,
@@ -5383,23 +5453,23 @@ function Vi() {
 	X(x);
 	let S = d({
 		queryKey: ["ai-content", "design-memory"],
-		queryFn: Cr
+		queryFn: Ar
 	});
 	X(S);
 	let C = u({
-		mutationFn: Tr,
+		mutationFn: Mr,
 		onSuccess: (n) => {
 			t.setQueryData(["ai-content", "design-memory"], n), p.success(e("aiContent.designExtracted"));
 		},
 		onError: (t) => Y(e, t)
 	}), w = u({
-		mutationFn: Er,
+		mutationFn: Nr,
 		onSuccess: (n) => {
 			t.setQueryData(["ai-content", "design-memory"], n), p.success(e("aiContent.designReset"));
 		},
 		onError: (t) => Y(e, t)
 	}), T = u({
-		mutationFn: () => wr({
+		mutationFn: () => jr({
 			locked: !1,
 			force: !0
 		}),
@@ -5407,7 +5477,7 @@ function Vi() {
 			t.setQueryData(["ai-content", "design-memory"], n), p.success(e("common.saved"));
 		},
 		onError: (t) => Y(e, t)
-	}), E = o(() => Ri.filter((e) => e.id !== "coffee" || !!n?.coffee_module), [n?.coffee_module]), D = o(() => [
+	}), E = o(() => Xi.filter((e) => e.id !== "coffee" || !!n?.coffee_module), [n?.coffee_module]), D = o(() => [
 		{
 			id: "providers",
 			label: e("aiContent.settingsProviders")
@@ -5623,7 +5693,7 @@ function Vi() {
 			}),
 			/* @__PURE__ */ g(H, {
 				id: "ai-sec-cost",
-				children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsCost") }) }), /* @__PURE__ */ h(G, { children: /* @__PURE__ */ h(Fi, {
+				children: [/* @__PURE__ */ h(U, { children: /* @__PURE__ */ h(W, { children: e("aiContent.settingsCost") }) }), /* @__PURE__ */ h(G, { children: /* @__PURE__ */ h(qi, {
 					estimate: x.data,
 					draft: n,
 					onPickModel: (e) => {
@@ -5659,7 +5729,7 @@ function Vi() {
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ h(Z, { children: e("aiContent.siteTopic") }), /* @__PURE__ */ h(oi, {
+							children: [/* @__PURE__ */ h(Z, { children: e("aiContent.siteTopic") }), /* @__PURE__ */ h(pi, {
 								rows: 2,
 								value: n.site_topic ?? "",
 								onChange: (e) => O("site_topic", e.target.value)
@@ -5667,7 +5737,7 @@ function Vi() {
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ h(Z, { children: e("aiContent.siteDescription") }), /* @__PURE__ */ h(oi, {
+							children: [/* @__PURE__ */ h(Z, { children: e("aiContent.siteDescription") }), /* @__PURE__ */ h(pi, {
 								rows: 4,
 								value: n.site_description ?? "",
 								onChange: (e) => O("site_description", e.target.value),
@@ -6184,7 +6254,7 @@ function Vi() {
 						}),
 						/* @__PURE__ */ g("div", {
 							className: "space-y-1 md:col-span-2",
-							children: [/* @__PURE__ */ h(Z, { children: e("aiContent.promptBlogImage") }), /* @__PURE__ */ h(oi, {
+							children: [/* @__PURE__ */ h(Z, { children: e("aiContent.promptBlogImage") }), /* @__PURE__ */ h(pi, {
 								rows: 3,
 								value: n.prompt_blog_image ?? "",
 								onChange: (e) => O("prompt_blog_image", e.target.value)
@@ -6202,8 +6272,8 @@ function Vi() {
 						children: e("aiContent.settingsTonesHint")
 					}), /* @__PURE__ */ h("div", {
 						className: "grid gap-2 sm:grid-cols-2",
-						children: zi.map((t) => {
-							let r = n.tones ?? {}, i = !!r[t], a = zi.filter((e) => !!r[e]).length;
+						children: Zi.map((t) => {
+							let r = n.tones ?? {}, i = !!r[t], a = Zi.filter((e) => !!r[e]).length;
 							return /* @__PURE__ */ g("div", {
 								className: "flex items-center justify-between gap-3 rounded-md border px-3 py-2",
 								children: [/* @__PURE__ */ h(Z, {
@@ -6243,7 +6313,7 @@ function Vi() {
 					children: [/* @__PURE__ */ h("summary", {
 						className: "cursor-pointer text-sm font-medium",
 						children: e("aiContent.entityPrompt")
-					}), /* @__PURE__ */ h(oi, {
+					}), /* @__PURE__ */ h(pi, {
 						className: "mt-3",
 						rows: 10,
 						value: n.prompt_system ?? "",
@@ -6289,7 +6359,7 @@ function Vi() {
 											children: e("aiContent.resetPrompt")
 										})
 									}),
-									/* @__PURE__ */ h(oi, {
+									/* @__PURE__ */ h(pi, {
 										rows: 4,
 										disabled: !r,
 										value: i,
@@ -6302,7 +6372,7 @@ function Vi() {
 								children: [/* @__PURE__ */ h("summary", {
 									className: "cursor-pointer text-sm font-medium",
 									children: e("aiContent.pageSystemPrompt")
-								}), /* @__PURE__ */ h(oi, {
+								}), /* @__PURE__ */ h(pi, {
 									className: "mt-3",
 									rows: 8,
 									disabled: !r,
@@ -6392,7 +6462,7 @@ function Vi() {
 										enabled: !0,
 										length: 0,
 										unit: "words"
-									}, o = Bi[i];
+									}, o = Qi[i];
 									return /* @__PURE__ */ g("div", {
 										className: "grid grid-cols-[auto_1fr_auto] items-center gap-3 border-t px-3 py-2",
 										children: [
@@ -6556,7 +6626,7 @@ function Vi() {
 					}),
 					/* @__PURE__ */ g("div", {
 						className: "space-y-1 md:col-span-2",
-						children: [/* @__PURE__ */ h(Z, { children: e("aiContent.promptCatalog") }), /* @__PURE__ */ h(oi, {
+						children: [/* @__PURE__ */ h(Z, { children: e("aiContent.promptCatalog") }), /* @__PURE__ */ h(pi, {
 							rows: 4,
 							value: n.prompt_catalog ?? "",
 							onChange: (e) => O("prompt_catalog", e.target.value)
@@ -6618,7 +6688,7 @@ function Vi() {
 					}),
 					/* @__PURE__ */ g("div", {
 						className: "space-y-1 md:col-span-2",
-						children: [/* @__PURE__ */ h(Z, { children: e("aiContent.promptTitle") }), /* @__PURE__ */ h(oi, {
+						children: [/* @__PURE__ */ h(Z, { children: e("aiContent.promptTitle") }), /* @__PURE__ */ h(pi, {
 							rows: 4,
 							value: n.prompt_title ?? "",
 							onChange: (e) => O("prompt_title", e.target.value)
@@ -6639,37 +6709,37 @@ function Vi() {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiTaxonomiesPage.tsx
-function Hi() {
+function ea() {
 	let { t: e, i18n: t } = l(), n = f(), [r, i] = c("blog"), a = d({
 		queryKey: [
 			"ai-content",
 			"suggest",
 			r
 		],
-		queryFn: () => Hr(r)
+		queryFn: () => Yr(r)
 	});
 	X(a);
 	let o = d({
 		queryKey: ["ai-content", "cost-estimate"],
-		queryFn: () => pr()
+		queryFn: () => br()
 	});
 	X(o);
 	let s = u({
-		mutationFn: () => Vr(r),
+		mutationFn: () => Jr(r),
 		onSuccess: () => {
 			p.success(e("aiContent.jobQueued")), setTimeout(() => void n.invalidateQueries({ queryKey: ["ai-content", "suggest"] }), 2500);
 		},
 		onError: (t) => Y(e, t)
 	}), m = u({
-		mutationFn: () => Ur(r),
+		mutationFn: () => Xr(r),
 		onSuccess: (t) => p.success(e("aiContent.catsApplied", { count: t.count })),
 		onError: (t) => Y(e, t)
 	}), _ = u({
-		mutationFn: () => Wr("product_cat"),
+		mutationFn: () => Zr("product_cat"),
 		onSuccess: (t) => p.success(e("aiContent.batchQueued", { count: t.count })),
 		onError: (t) => Y(e, t)
 	}), v = u({
-		mutationFn: () => Wr("product_brand"),
+		mutationFn: () => Zr("product_brand"),
 		onSuccess: (t) => p.success(e("aiContent.batchQueued", { count: t.count })),
 		onError: (t) => Y(e, t)
 	}), y = d({
@@ -6678,18 +6748,18 @@ function Hi() {
 			"proposals",
 			"catalog"
 		],
-		queryFn: () => Gr("catalog", "pending", 200),
+		queryFn: () => Qr("catalog", "pending", 200),
 		refetchInterval: 4e3
 	});
 	X(y);
 	let b = u({
-		mutationFn: () => Kr("catalog"),
+		mutationFn: () => $r("catalog"),
 		onSuccess: (t) => {
 			p.success(e("aiContent.batchQueued", { count: t.count })), n.invalidateQueries({ queryKey: ["ai-content"] });
 		},
 		onError: (t) => Y(e, t)
 	}), x = u({
-		mutationFn: (e) => qr(e),
+		mutationFn: (e) => ei(e),
 		onSuccess: () => {
 			p.success(e("aiContent.proposalApplied")), n.invalidateQueries({ queryKey: [
 				"ai-content",
@@ -6699,7 +6769,7 @@ function Hi() {
 		},
 		onError: (t) => Y(e, t)
 	}), S = u({
-		mutationFn: () => Jr(500),
+		mutationFn: () => ti(500),
 		onSuccess: (t) => {
 			p.success(e("aiContent.catalogAppliedAll", {
 				applied: t.applied,
@@ -6712,7 +6782,7 @@ function Hi() {
 		},
 		onError: (t) => Y(e, t)
 	}), C = u({
-		mutationFn: (e) => Yr(e),
+		mutationFn: (e) => ni(e),
 		onSuccess: () => void n.invalidateQueries({ queryKey: [
 			"ai-content",
 			"proposals",
@@ -6720,7 +6790,7 @@ function Hi() {
 		] }),
 		onError: (t) => Y(e, t)
 	}), w = u({
-		mutationFn: () => Wr("category"),
+		mutationFn: () => Zr("category"),
 		onSuccess: (t) => p.success(e("aiContent.batchQueued", { count: t.count })),
 		onError: (t) => Y(e, t)
 	}), T = a.data?.suggestions?.categories ?? [];
@@ -6913,14 +6983,14 @@ function Hi() {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/pages/AiTitlesPage.tsx
-function Ui() {
+function ta() {
 	let { t: e } = l(), t = f(), [n, r] = c({}), i = d({
 		queryKey: [
 			"ai-content",
 			"proposals",
 			"title"
 		],
-		queryFn: () => Gr("title", "pending", 500),
+		queryFn: () => Qr("title", "pending", 500),
 		refetchInterval: 4e3
 	});
 	X(i), a(() => {
@@ -6939,13 +7009,13 @@ function Ui() {
 		});
 	}, [i.data?.items]);
 	let o = u({
-		mutationFn: () => Kr("title"),
+		mutationFn: () => $r("title"),
 		onSuccess: (n) => {
 			p.success(e("aiContent.batchQueued", { count: n.count })), t.invalidateQueries({ queryKey: ["ai-content"] });
 		},
 		onError: (t) => Y(e, t)
 	}), s = u({
-		mutationFn: (e) => qr(e, { name: n[e] ?? "" }),
+		mutationFn: (e) => ei(e, { name: n[e] ?? "" }),
 		onSuccess: () => {
 			p.success(e("aiContent.proposalApplied")), t.invalidateQueries({ queryKey: [
 				"ai-content",
@@ -6955,7 +7025,7 @@ function Ui() {
 		},
 		onError: (t) => Y(e, t)
 	}), m = u({
-		mutationFn: (e) => Yr(e),
+		mutationFn: (e) => ni(e),
 		onSuccess: () => void t.invalidateQueries({ queryKey: [
 			"ai-content",
 			"proposals",
@@ -6963,7 +7033,7 @@ function Ui() {
 		] }),
 		onError: (t) => Y(e, t)
 	}), v = u({
-		mutationFn: (e) => Xr("title", e),
+		mutationFn: (e) => ri("title", e),
 		onSuccess: () => {
 			p.success(e("aiContent.jobQueued")), t.invalidateQueries({ queryKey: ["ai-content"] });
 		},
@@ -7043,17 +7113,17 @@ function Ui() {
 }
 //#endregion
 //#region ../Modules/ai-content-module/client/module-entry.tsx
-var Wi = {
-	"ai-content": ji,
-	"ai-content/jobs": ki,
-	"ai-content/calendar": si,
-	"ai-content/blog": ii,
-	"ai-content/products": Ni,
-	"ai-content/titles": Ui,
-	"ai-content/pages": Mi,
-	"ai-content/taxonomies": Hi,
-	"ai-content/attributes": ri,
-	"ai-content/settings": Vi
-}, Gi = { routes: Wi };
+var na = {
+	"ai-content": Ui,
+	"ai-content/jobs": Vi,
+	"ai-content/calendar": mi,
+	"ai-content/blog": di,
+	"ai-content/products": Gi,
+	"ai-content/titles": ta,
+	"ai-content/pages": Wi,
+	"ai-content/taxonomies": ea,
+	"ai-content/attributes": ui,
+	"ai-content/settings": $i
+}, ra = { routes: na };
 //#endregion
-export { Gi as default, Wi as routes };
+export { ra as default, na as routes };
