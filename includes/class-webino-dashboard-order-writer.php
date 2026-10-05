@@ -193,13 +193,25 @@ final class Webino_Dashboard_Order_Writer {
 		}
 		$order->set_status( $status );
 		$order->save();
+		self::maybe_payment_complete( $order );
+		// Reload in case payment_complete mutated the order.
+		$reloaded = wc_get_order( $order->get_id() );
+		if ( $reloaded ) {
+			$order = $reloaded;
+		}
 
 		$detail = Webino_Dashboard_Orders::map_detail( $order );
 		if ( $pay_link && class_exists( 'Webino_Dashboard_Pay_Order', false ) ) {
 			$detail['payment_url'] = Webino_Dashboard_Pay_Order::public_url( $order );
 			$send_sms = ! isset( $data['send_payment_sms'] ) || ! empty( $data['send_payment_sms'] );
 			if ( $send_sms ) {
-				$detail['payment_sms_sent'] = self::send_payment_link_sms( $order );
+				$sms_result = self::send_payment_link_sms( $order );
+				if ( is_array( $sms_result ) ) {
+					$detail['payment_sms_sent']  = ! empty( $sms_result['sent'] );
+					$detail['payment_sms_error'] = isset( $sms_result['error'] ) ? (string) $sms_result['error'] : '';
+				} else {
+					$detail['payment_sms_sent'] = (bool) $sms_result;
+				}
 			}
 		}
 
@@ -207,44 +219,44 @@ final class Webino_Dashboard_Order_Writer {
 	}
 
 	/**
-	 * Send pay-only link SMS via the site SMS panel (pattern hooks), with plain fallback.
-	 *
-	 * Snapshot always includes customer name (اسم), phone (شماره), payment link (لینک),
-	 * and bound pattern code for the `pos-payment-link` template.
+	 * Send pay-only link SMS. Returns sent flag + error when panel/provider missing.
 	 *
 	 * @param WC_Order $order Order.
-	 * @return bool True when a send path was invoked.
+	 * @return array{sent:bool,error?:string}|bool
 	 */
 	public static function send_payment_link_sms( $order ) {
 		if ( ! $order instanceof WC_Order ) {
-			return false;
-		}
-		if ( class_exists( 'Webino_Dashboard_Sms_Pos_Payment', false ) ) {
-			return Webino_Dashboard_Sms_Pos_Payment::notify( $order );
+			return array(
+				'sent'  => false,
+				'error' => __( 'Invalid order for payment SMS.', 'webino-dashboard' ),
+			);
 		}
 
-		$phone = preg_replace( '/\D+/', '', (string) $order->get_billing_phone() );
-		if ( '' === $phone ) {
-			return false;
+		// Honest gate: sms-panel module (Webino_Dashboard_Sms_Settings) is not in this tree.
+		if ( ! class_exists( 'Webino_Dashboard_Sms_Settings', false )
+			|| ( class_exists( 'Webino_Dashboard_Module_Registry', false ) && ! Webino_Dashboard_Module_Registry::sms_ready() )
+		) {
+			return array(
+				'sent'  => false,
+				'error' => __( 'SMS panel is not installed or active. Payment link was created but SMS was not sent.', 'webino-dashboard' ),
+			);
 		}
-		$url = class_exists( 'Webino_Dashboard_Pay_Order', false )
-			? Webino_Dashboard_Pay_Order::public_url( $order )
-			: $order->get_checkout_payment_url();
-		$message = sprintf(
-			/* translators: 1: order number, 2: payment URL */
-			__( 'پرداخت سفارش #%1$s: %2$s', 'webino-dashboard' ),
-			(string) $order->get_order_number(),
-			(string) $url
+
+		if ( class_exists( 'Webino_Dashboard_Sms_Pos_Payment', false ) ) {
+			$result = Webino_Dashboard_Sms_Pos_Payment::notify( $order );
+			if ( is_array( $result ) ) {
+				return $result;
+			}
+			return array(
+				'sent'  => (bool) $result,
+				'error' => $result ? '' : __( 'SMS provider did not acknowledge the send.', 'webino-dashboard' ),
+			);
+		}
+
+		return array(
+			'sent'  => false,
+			'error' => __( 'SMS send path is unavailable.', 'webino-dashboard' ),
 		);
-		/**
-		 * Existing SMS panel / provider hook used across the dashboard.
-		 *
-		 * @param string               $phone   Digits.
-		 * @param string               $message Body.
-		 * @param array<string,mixed>|null $context Optional context.
-		 */
-		do_action( 'webino_sms_send', $phone, $message, array( 'order_id' => $order->get_id(), 'event' => 'pos-payment-link' ) );
-		return true;
 	}
 
 	/**
@@ -280,6 +292,11 @@ final class Webino_Dashboard_Order_Writer {
 			$order->set_status( sanitize_key( (string) $data['status'] ) );
 		}
 		$order->save();
+		self::maybe_payment_complete( $order );
+		$reloaded = wc_get_order( $order->get_id() );
+		if ( $reloaded ) {
+			$order = $reloaded;
+		}
 
 		return Webino_Dashboard_Orders::map_detail( $order );
 	}
@@ -419,19 +436,114 @@ final class Webino_Dashboard_Order_Writer {
 	 * @param string $phone Digits.
 	 * @return int
 	 */
+
+	/**
+	 * Finalize POS "set_paid": call WC payment_complete without double stock reduction.
+	 *
+	 * Status should already be a paid/fulfillment status (e.g. processing). We keep that
+	 * status via filter so payment_complete does not flip processing↔completed unexpectedly.
+	 * wc_reduce_stock_levels is idempotent via _order_stock_reduced meta.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return void
+	 */
+	private static function maybe_payment_complete( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+		if ( '1' !== (string) $order->get_meta( '_webino_pos_set_paid', true ) ) {
+			return;
+		}
+		$order->delete_meta_data( '_webino_pos_set_paid' );
+		$keep = self::normalize_status_for_paid( $order->get_status() );
+		$filter = static function ( $status ) use ( $keep ) {
+			return $keep ? $keep : $status;
+		};
+		add_filter( 'woocommerce_payment_complete_order_status', $filter, 100 );
+		// Empty txn id is fine for cash/POS tenders.
+		$order->payment_complete( '' );
+		remove_filter( 'woocommerce_payment_complete_order_status', $filter, 100 );
+		if ( '1' === (string) $order->get_meta( '_webino_pos_set_paid', true ) ) {
+			$order->delete_meta_data( '_webino_pos_set_paid' );
+		}
+		$order->save();
+	}
+
+	/**
+	 * @param string $status Status.
+	 * @return string
+	 */
+	private static function normalize_status_for_paid( $status ) {
+		$status = sanitize_key( (string) $status );
+		if ( 0 === strpos( $status, 'wc-' ) ) {
+			$status = substr( $status, 3 );
+		}
+		return $status;
+	}
+
+	/**
+	 * Iranian phone digit variants for exact meta match (10/11-digit national forms).
+	 *
+	 * @param string $phone Raw phone.
+	 * @return string[] Empty when not a full Iranian mobile form.
+	 */
+	public static function phone_exact_variants_public( $phone ) {
+		return self::phone_exact_variants( $phone );
+	}
+
+	private static function phone_exact_variants( $phone ) {
+		$digits = preg_replace( '/\D+/', '', (string) $phone );
+		$digits = is_string( $digits ) ? $digits : '';
+		if ( '' === $digits ) {
+			return array();
+		}
+		$national = '';
+		if ( 0 === strpos( $digits, '98' ) && strlen( $digits ) >= 12 ) {
+			$national = substr( $digits, 2, 10 );
+		} elseif ( 0 === strpos( $digits, '0' ) && 11 === strlen( $digits ) ) {
+			$national = substr( $digits, 1 );
+		} elseif ( 10 === strlen( $digits ) && '9' === $digits[0] ) {
+			$national = $digits;
+		} else {
+			return array();
+		}
+		if ( 10 !== strlen( $national ) || '9' !== $national[0] ) {
+			return array();
+		}
+		return array_values(
+			array_unique(
+				array(
+					$national,
+					'0' . $national,
+					'98' . $national,
+					'+98' . $national,
+				)
+			)
+		);
+	}
+
 	private static function find_user_by_phone( $phone ) {
-		$phone = preg_replace( '/\D+/', '', (string) $phone );
-		if ( '' === $phone ) {
+		$variants = self::phone_exact_variants( $phone );
+		if ( ! $variants ) {
 			return 0;
+		}
+		$meta_query = array( 'relation' => 'OR' );
+		foreach ( $variants as $v ) {
+			$meta_query[] = array(
+				'key'     => 'billing_phone',
+				'value'   => $v,
+				'compare' => '=',
+			);
+			$meta_query[] = array(
+				'key'     => 'phone',
+				'value'   => $v,
+				'compare' => '=',
+			);
 		}
 		$q = new WP_User_Query(
 			array(
 				'number'     => 1,
-				'meta_query' => array(
-					'relation' => 'OR',
-					array( 'key' => 'billing_phone', 'value' => $phone, 'compare' => 'LIKE' ),
-					array( 'key' => 'phone', 'value' => $phone, 'compare' => 'LIKE' ),
-				),
+				'meta_query' => $meta_query,
 				'fields'     => 'ID',
 			)
 		);
@@ -762,7 +874,9 @@ final class Webino_Dashboard_Order_Writer {
 			}
 		}
 		if ( ! empty( $data['set_paid'] ) && ! $pay_link ) {
-			$order->set_date_paid( time() );
+			// Mark intent; create()/update() call payment_complete() after status is applied
+			// so WooCommerce hooks fire without relying on set_date_paid alone.
+			$order->update_meta_data( '_webino_pos_set_paid', '1' );
 		}
 	}
 

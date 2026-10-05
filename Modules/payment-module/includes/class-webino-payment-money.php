@@ -17,13 +17,17 @@ final class Webino_Payment_Money {
 	/**
 	 * Convert an amount in store currency to integer Iranian Rial.
 	 *
+	 * Uses the shared Webino_Dashboard_Currency factors when available
+	 * (IRR×1, IRT×10, IRHR×1000, IRHT×10000 — Persian WooCommerce / gateway practice).
+	 * Falls back to the same map when the core helper is not loaded yet.
+	 *
 	 * @param float       $amount   Amount.
 	 * @param string|null $currency ISO currency (defaults to WC currency).
 	 * @return int
 	 */
 	public static function to_rial( $amount, $currency = null ) {
 		$amount   = (float) $amount;
-		$currency = strtoupper( (string) ( $currency ?: ( function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'IRT' ) ) );
+		$currency = (string) ( $currency ?: ( function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'IRT' ) );
 
 		/**
 		 * Filter amount before Iranian rial conversion.
@@ -33,13 +37,22 @@ final class Webino_Payment_Money {
 		 */
 		$amount = (float) apply_filters( 'woocommerce_order_amount_total_iranian_gateways_before_check_currency', $amount, $currency );
 
-		if ( in_array( $currency, array( 'IRR', 'IRHR', 'ریال' ), true ) ) {
-			$rial = (int) round( $amount );
-		} elseif ( in_array( $currency, array( 'IRT', 'IRHT', 'TOMAN', 'تومان' ), true ) ) {
-			$rial = (int) round( $amount * 10 );
+		if ( class_exists( 'Webino_Dashboard_Currency', false ) ) {
+			$rial = Webino_Dashboard_Currency::to_rial_int( $amount, $currency );
+		} elseif ( class_exists( 'Webino_Shipping_Currency', false ) ) {
+			$rial = (int) round( Webino_Shipping_Currency::to_rial( $amount, $currency ) );
 		} else {
-			// Assume toman-like store currencies unless filtered.
-			$rial = (int) round( $amount * 10 );
+			// Inline fallback — keep in sync with Webino_Dashboard_Currency::rial_factors().
+			$code = strtoupper( $currency );
+			$map  = array(
+				'IRR'   => 1.0,
+				'IRT'   => 10.0,
+				'TOMAN' => 10.0,
+				'IRHR'  => 1000.0,
+				'IRHT'  => 10000.0,
+			);
+			$factor = isset( $map[ $code ] ) ? (float) $map[ $code ] : 10.0; // assume toman-like.
+			$rial  = (int) round( $amount * $factor );
 		}
 
 		/**

@@ -105,6 +105,7 @@ $notices  = function_exists( 'wc_print_notices' ) ? wc_print_notices( true ) : '
 		<div class="card">
 			<h2 style="margin-top:0;font-size:1.1rem;"><?php esc_html_e( 'Payment method', 'webino-dashboard' ); ?></h2>
 			<form method="post">
+				<?php wp_nonce_field( 'webino_pay_order_' . $order->get_id() ); ?>
 				<?php foreach ( $gateways as $gateway ) : ?>
 					<label class="gateway">
 						<input type="radio" name="payment_method" value="<?php echo esc_attr( $gateway->id ); ?>" required />

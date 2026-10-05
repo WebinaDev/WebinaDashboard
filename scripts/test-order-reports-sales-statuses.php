@@ -34,6 +34,7 @@ if ( ! function_exists( 'wc_get_order_statuses' ) ) {
 			'wc-failed'              => 'Failed',
 			'wc-partially-refunded'  => 'Partially refunded',
 			'wc-packaged'            => 'Packaged',
+			'wc-awaiting-review'     => 'Awaiting review', // unpaid custom — must NOT auto-join sales
 		);
 	}
 }
@@ -64,6 +65,10 @@ foreach ( array( 'processing', 'completed', 'partially-refunded', 'packaged' ) a
 		fwrite( STDERR, "FAIL: sales_statuses must include {$good}\n" );
 		exit( 1 );
 	}
+}
+if ( in_array( 'awaiting-review', $sales, true ) ) {
+	fwrite( STDERR, "FAIL: sales_statuses must not union unpaid custom statuses like awaiting-review\n" );
+	exit( 1 );
 }
 
 // Net total helper.

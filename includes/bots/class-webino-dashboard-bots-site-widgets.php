@@ -447,7 +447,18 @@ final class Webino_Dashboard_Bots_Site_Widgets {
 		if ( ! empty( $data['ttl'] ) && time() > (int) $data['ttl'] ) {
 			wp_die( esc_html__( 'لینک منقضی شده است.', 'webino-dashboard' ), '', array( 'response' => 410 ) );
 		}
-		wp_redirect( esc_url_raw( (string) $data['url'] ) );
+		$url = esc_url_raw( (string) $data['url'] );
+		// Same-host / allowlist only — avoid open redirect if the token store is poisoned.
+		$safe = wp_validate_redirect( $url, false );
+		if ( ! $safe ) {
+			$home_host   = wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+			$target_host = wp_parse_url( $url, PHP_URL_HOST );
+			if ( ! $home_host || ! $target_host || strtolower( (string) $target_host ) !== strtolower( (string) $home_host ) ) {
+				wp_die( esc_html__( 'لینک نامعتبر است.', 'webino-dashboard' ), '', array( 'response' => 400 ) );
+			}
+			$safe = $url;
+		}
+		wp_safe_redirect( $safe );
 		exit;
 	}
 
@@ -459,11 +470,20 @@ final class Webino_Dashboard_Bots_Site_Widgets {
 	 * @return string Token URL.
 	 */
 	public static function create_file_token( $file_url, $ttl = 60 ) {
+		$url = esc_url_raw( (string) $file_url );
+		$safe = wp_validate_redirect( $url, false );
+		if ( ! $safe ) {
+			$home_host   = wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+			$target_host = wp_parse_url( $url, PHP_URL_HOST );
+			if ( ! $home_host || ! $target_host || strtolower( (string) $target_host ) !== strtolower( (string) $home_host ) ) {
+				return '';
+			}
+		}
 		$token = wp_generate_password( 20, false, false );
 		set_transient(
 			'webino_bot_file_' . $token,
 			array(
-				'url' => esc_url_raw( $file_url ),
+				'url' => $url,
 				'ttl' => time() + max( 10, (int) $ttl ),
 			),
 			max( 10, (int) $ttl )

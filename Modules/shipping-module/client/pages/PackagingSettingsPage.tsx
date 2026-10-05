@@ -155,6 +155,16 @@ export default function PackagingSettingsPage() {
             />
             <span>{t('shipping.professionalFeeDefaultOn')}</span>
           </label>
+
+          <label className="flex items-center gap-3 text-sm">
+            <Switch
+              checked={draft.professional_fee_replaces_carton !== false}
+              onCheckedChange={(v) =>
+                setDraft((d) => (d ? { ...d, professional_fee_replaces_carton: v } : d))
+              }
+            />
+            <span>{t('shipping.professionalFeeReplacesCarton')}</span>
+          </label>
         </CardContent>
       </Card>
 

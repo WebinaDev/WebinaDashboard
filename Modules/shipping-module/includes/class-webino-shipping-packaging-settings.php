@@ -70,6 +70,8 @@ class Webino_Shipping_Packaging_Settings {
 			'professional_fee_description'      => 'بسته‌بندی شکیل و ایمن با لوازم محافظ، روی هزینه ارسال اضافه می‌شود.',
 			'professional_fee_amount'           => 95000,
 			'professional_fee_default_selected' => false,
+			// Safer default: when professional fee is selected, do not also charge carton packaging.
+			'professional_fee_replaces_carton'  => true,
 		);
 	}
 
@@ -90,6 +92,9 @@ class Webino_Shipping_Packaging_Settings {
 		}
 		if ( array_key_exists( 'professional_fee_default_selected', $raw ) ) {
 			$out['professional_fee_default_selected'] = (bool) $raw['professional_fee_default_selected'];
+		}
+		if ( array_key_exists( 'professional_fee_replaces_carton', $raw ) ) {
+			$out['professional_fee_replaces_carton'] = (bool) $raw['professional_fee_replaces_carton'];
 		}
 		if ( isset( $raw['professional_fee_label'] ) ) {
 			$label = sanitize_text_field( (string) $raw['professional_fee_label'] );
@@ -150,6 +155,9 @@ class Webino_Shipping_Packaging_Settings {
 		}
 		if ( array_key_exists( 'professional_fee_default_selected', $input ) ) {
 			$current['professional_fee_default_selected'] = (bool) $input['professional_fee_default_selected'];
+		}
+		if ( array_key_exists( 'professional_fee_replaces_carton', $input ) ) {
+			$current['professional_fee_replaces_carton'] = (bool) $input['professional_fee_replaces_carton'];
 		}
 		if ( isset( $input['professional_fee_label'] ) ) {
 			$label = sanitize_text_field( (string) $input['professional_fee_label'] );

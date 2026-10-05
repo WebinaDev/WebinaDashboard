@@ -17,6 +17,7 @@ export type PackagingSettings = {
   professional_fee_description: string
   professional_fee_amount: number
   professional_fee_default_selected: boolean
+  professional_fee_replaces_carton: boolean
 }
 
 export type PackagingPlanBox = {

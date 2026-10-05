@@ -77,6 +77,10 @@ class WC_Shipping_Webino_Packaging extends WC_Shipping_Method {
 		$cost = 0.0;
 		if ( ! empty( $plan['add_to_checkout'] ) ) {
 			$cost = isset( $plan['total_packaging_cost'] ) ? (float) $plan['total_packaging_cost'] : 0.0;
+			// Mutual exclusion: professional packaging fee replaces carton shipping add-on.
+			if ( $cost > 0 && $this->should_skip_carton_for_professional_fee() ) {
+				$cost = 0.0;
+			}
 		}
 
 		$label = $this->title;
@@ -99,5 +103,25 @@ class WC_Shipping_Webino_Packaging extends WC_Shipping_Method {
 				),
 			)
 		);
+	}
+
+	/**
+	 * When professional_fee_replaces_carton is on and the fee is selected, skip carton charge.
+	 *
+	 * @return bool
+	 */
+	private function should_skip_carton_for_professional_fee() {
+		if ( ! class_exists( 'Webino_Shipping_Packaging_Settings', false ) ) {
+			return false;
+		}
+		$s = Webino_Shipping_Packaging_Settings::get();
+		if ( empty( $s['professional_fee_replaces_carton'] ) ) {
+			return false;
+		}
+		if ( ! class_exists( 'Webino_Shipping_Professional_Packaging', false ) ) {
+			return false;
+		}
+		return Webino_Shipping_Professional_Packaging::is_available()
+			&& Webino_Shipping_Professional_Packaging::is_selected();
 	}
 }

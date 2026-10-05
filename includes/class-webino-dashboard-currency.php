@@ -15,6 +15,85 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Webino_Dashboard_Currency {
 
 	/**
+	 * Canonical Iranian currency → IRR (rial) multipliers.
+	 *
+	 * Aligned with Persian WooCommerce / common Iranian gateway practice:
+	 * - IRR  = ریال          → ×1
+	 * - IRT  = تومان         → ×10   (1 toman = 10 rials)
+	 * - IRHR = هزار ریال     → ×1000
+	 * - IRHT = هزار تومان    → ×10000
+	 *
+	 * Shared truth for payment gateways, shipping/Tapin, and accounting.
+	 *
+	 * @return array<string,float>
+	 */
+	public static function rial_factors() {
+		return array(
+			'IRR'   => 1.0,
+			'IRT'   => 10.0,
+			'TOMAN' => 10.0,
+			'IRHR'  => 1000.0,
+			'IRHT'  => 10000.0,
+			'ریال'  => 1.0,
+			'تومان' => 10.0,
+		);
+	}
+
+	/**
+	 * Factor converting one store-currency unit into Iranian rial (IRR).
+	 *
+	 * @param string|null $currency Currency code.
+	 * @return float
+	 */
+	public static function to_rial_factor( $currency = null ) {
+		$code = strtoupper( (string) ( $currency ?: ( function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'IRT' ) ) );
+		$map  = self::rial_factors();
+		if ( isset( $map[ $code ] ) ) {
+			return (float) $map[ $code ];
+		}
+		// Preserve original UTF-8 labels (ریال / تومان) that strtoupper does not change meaningfully.
+		$raw = (string) ( $currency ?: '' );
+		if ( isset( $map[ $raw ] ) ) {
+			return (float) $map[ $raw ];
+		}
+		return 1.0;
+	}
+
+	/**
+	 * Convert an amount in store currency to Iranian rial (float).
+	 *
+	 * @param float       $amount   Amount.
+	 * @param string|null $currency Currency code.
+	 * @return float
+	 */
+	public static function to_rial( $amount, $currency = null ) {
+		return (float) $amount * self::to_rial_factor( $currency );
+	}
+
+	/**
+	 * Convert an amount in store currency to integer Iranian rial.
+	 *
+	 * @param float       $amount   Amount.
+	 * @param string|null $currency Currency code.
+	 * @return int
+	 */
+	public static function to_rial_int( $amount, $currency = null ) {
+		return (int) round( self::to_rial( $amount, $currency ) );
+	}
+
+	/**
+	 * Convert IRR (rial) amount back to store currency.
+	 *
+	 * @param float       $rial     Amount in rial.
+	 * @param string|null $currency Currency code.
+	 * @return float
+	 */
+	public static function from_rial( $rial, $currency = null ) {
+		$f = self::to_rial_factor( $currency );
+		return $f > 0 ? ( (float) $rial / $f ) : (float) $rial;
+	}
+
+	/**
 	 * @param string|null $code_or_label Currency code or label.
 	 * @param string|null $symbol Optional currency symbol.
 	 * @return bool

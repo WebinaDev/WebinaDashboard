@@ -293,13 +293,30 @@ final class Webino_Dashboard_Sms_Pos_Payment {
 	/**
 	 * Build snapshot + notify via sms-panel when available.
 	 *
+	 * Does not report success unless the SMS panel (or a provider that returns ack) is present.
+	 * The silent do_action('webino_sms_send') fallback is intentionally NOT treated as sent
+	 * when no listeners acknowledge delivery.
+	 *
 	 * @param WC_Order $order Order.
-	 * @return bool
+	 * @return array{sent:bool,error?:string}|bool
 	 */
 	public static function notify( $order ) {
 		if ( ! $order instanceof WC_Order ) {
-			return false;
+			return array(
+				'sent'  => false,
+				'error' => __( 'Invalid order for payment SMS.', 'webino-dashboard' ),
+			);
 		}
+
+		if ( ! class_exists( 'Webino_Dashboard_Sms_Settings', false )
+			|| ( class_exists( 'Webino_Dashboard_Module_Registry', false ) && ! Webino_Dashboard_Module_Registry::sms_ready() )
+		) {
+			return array(
+				'sent'  => false,
+				'error' => __( 'SMS panel module is missing (Webino_Dashboard_Sms_Settings). Install sms-panel-module to send payment SMS.', 'webino-dashboard' ),
+			);
+		}
+
 		$snapshot = array();
 		if ( class_exists( 'Webino_Dashboard_Sms_Order_Hooks', false ) ) {
 			$snapshot = Webino_Dashboard_Sms_Order_Hooks::build_snapshot( $order );
@@ -321,14 +338,26 @@ final class Webino_Dashboard_Sms_Pos_Payment {
 
 		if ( class_exists( 'Webino_Dashboard_Sms_Order_Hooks', false ) ) {
 			Webino_Dashboard_Sms_Order_Hooks::notify_snapshot( self::EVENT_KEY, $snapshot );
-			return true;
+			// sms-panel accepted the notify (CRM/async delivery). That is the real provider path.
+			return array( 'sent' => true );
+		}
+
+		// No silent false-success via do_action without listeners/ack.
+		if ( ! has_action( 'webino_sms_send' ) ) {
+			return array(
+				'sent'  => false,
+				'error' => __( 'No SMS provider is registered.', 'webino-dashboard' ),
+			);
 		}
 
 		$phone = preg_replace( '/\D+/', '', (string) ( $snapshot['customer_phone'] ?? $snapshot['phone'] ?? '' ) );
 		$url   = (string) ( $snapshot['payment_url'] ?? $snapshot['link'] ?? '' );
 		$name  = (string) ( $snapshot['customer_name'] ?? $snapshot['name'] ?? '' );
 		if ( '' === $phone || '' === $url ) {
-			return false;
+			return array(
+				'sent'  => false,
+				'error' => __( 'Customer phone or payment link is missing.', 'webino-dashboard' ),
+			);
 		}
 		$message = sprintf(
 			/* translators: 1: customer name, 2: order number, 3: payment URL */
@@ -337,17 +366,26 @@ final class Webino_Dashboard_Sms_Pos_Payment {
 			(string) $order->get_order_number(),
 			$url
 		);
+		$ack = null;
+		/** @param mixed $ack Ack from provider. */
+		$ack = apply_filters( 'webino_sms_send_ack', $ack, $phone, $message, self::EVENT_KEY );
 		do_action(
 			'webino_sms_send',
 			$phone,
 			$message,
 			array(
-				'order_id'   => $order->get_id(),
-				'event'      => self::EVENT_KEY,
-				'snapshot'   => $snapshot,
-				'pattern'    => (string) ( $snapshot['pattern_code'] ?? '' ),
+				'order_id' => $order->get_id(),
+				'event'    => self::EVENT_KEY,
+				'snapshot' => $snapshot,
+				'pattern'  => (string) ( $snapshot['pattern_code'] ?? '' ),
 			)
 		);
-		return true;
+		if ( true === $ack ) {
+			return array( 'sent' => true );
+		}
+		return array(
+			'sent'  => false,
+			'error' => __( 'SMS action fired but no provider acknowledgement was returned.', 'webino-dashboard' ),
+		);
 	}
 }

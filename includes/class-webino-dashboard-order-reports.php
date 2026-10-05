@@ -122,7 +122,7 @@ class Webino_Dashboard_Order_Reports {
 	}
 
 	/**
-	 * Sales statuses: paid WooCommerce statuses plus custom paid/fulfillment statuses, minus never-count slugs.
+	 * Sales statuses: WC paid statuses + explicit fulfillment allowlist, minus never-count slugs (no all-status union).
 	 *
 	 * @return string[]
 	 */
@@ -130,6 +130,7 @@ class Webino_Dashboard_Order_Reports {
 		$never = self::sales_never_count_statuses();
 		$out   = array();
 
+		// Paid WooCommerce statuses (processing/completed/partially-refunded, plus filters).
 		if ( function_exists( 'wc_get_is_paid_statuses' ) ) {
 			foreach ( wc_get_is_paid_statuses() as $st ) {
 				$slug = self::normalize_status_slug( $st );
@@ -139,8 +140,22 @@ class Webino_Dashboard_Order_Reports {
 			}
 		}
 
-		if ( function_exists( 'wc_get_order_statuses' ) ) {
-			foreach ( array_keys( wc_get_order_statuses() ) as $st ) {
+		/**
+		 * Explicit fulfillment / sales allowlist (do NOT union every WC status).
+		 * Custom unpaid statuses must opt in via this filter or wc_order_is_paid_statuses.
+		 *
+		 * @param string[] $allowlist Status slugs without wc- prefix.
+		 */
+		$allowlist = apply_filters(
+			'webino_dashboard_sales_status_allowlist',
+			array(
+				'processing',
+				'completed',
+				'partially-refunded',
+			)
+		);
+		if ( is_array( $allowlist ) ) {
+			foreach ( $allowlist as $st ) {
 				$slug = self::normalize_status_slug( $st );
 				if ( $slug && ! in_array( $slug, $never, true ) ) {
 					$out[] = $slug;

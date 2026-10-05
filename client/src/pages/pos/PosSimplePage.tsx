@@ -298,7 +298,7 @@ export default function PosSimplePage() {
         body.status = 'processing'
       }
 
-      return apiFetch<{ id: number; payment_url?: string; payment_sms_sent?: boolean }>('shop/orders', {
+      return apiFetch<{ id: number; payment_url?: string; payment_sms_sent?: boolean; payment_sms_error?: string }>('shop/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -306,7 +306,12 @@ export default function PosSimplePage() {
     },
     onSuccess: (order) => {
       if (isPaymentSms) {
-        toast.success(t('pos.paymentSms.sent', { id: order.id }))
+        if (order.payment_sms_sent) {
+          toast.success(t('pos.paymentSms.sent', { id: order.id }))
+        } else {
+          const err = order.payment_sms_error || t('pos.paymentSms.createdNoSms', { id: order.id })
+          toast.error(t('pos.paymentSms.failed', { id: order.id, error: err }))
+        }
         if (order.payment_url) {
           void navigator.clipboard.writeText(order.payment_url).catch(() => undefined)
           toast.message(t('pos.payLink.linkCopied'))
