@@ -1114,3 +1114,12 @@ msgstr "تومان"
 #, php-format
 msgid "With this product only %s left to unlock it"
 msgstr "با افزودن این محصول فقط %s تا فعال شدن کوپن مانده"
+
+msgid "Previous coupons"
+msgstr "کوپن‌های قبلی"
+
+msgid "Next coupons"
+msgstr "کوپن‌های بعدی"
+
+msgid "carousel"
+msgstr "اسلایدر"

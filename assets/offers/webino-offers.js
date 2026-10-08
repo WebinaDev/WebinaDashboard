@@ -497,6 +497,100 @@
     }
   }
 
+  /* --------------------------------------------------------------- slider */
+
+  function isRtlEl(el) {
+    return (el.closest('[dir]') || document.documentElement).getAttribute('dir') === 'rtl' || getComputedStyle(el).direction === 'rtl'
+  }
+
+  // Distance scrolled from the start edge (works for RTL negative scrollLeft too).
+  function scrollFromStart(vp) {
+    return Math.abs(vp.scrollLeft)
+  }
+
+  function updateSlider(chooser) {
+    var vp = chooser.querySelector('.webino-cc__viewport')
+    var nav = chooser.querySelector('.webino-cc__nav')
+    if (!vp) return
+    var max = vp.scrollWidth - vp.clientWidth
+    var overflow = max > 4
+    chooser.classList.toggle('has-overflow', overflow)
+    if (nav) nav.hidden = !overflow
+    var pos = scrollFromStart(vp)
+    var prev = chooser.querySelector('.webino-cc__arrow--prev')
+    var next = chooser.querySelector('.webino-cc__arrow--next')
+    if (prev) prev.disabled = !overflow || pos <= 2
+    if (next) next.disabled = !overflow || pos >= max - 2
+  }
+
+  function slideBy(chooser, dir) {
+    var vp = chooser.querySelector('.webino-cc__viewport')
+    if (!vp) return
+    var card = vp.querySelector('.webino-cc__card')
+    var gap = parseFloat(getComputedStyle(vp.querySelector('.webino-cc__list')).columnGap) || 12
+    var step = card ? card.getBoundingClientRect().width + gap : vp.clientWidth * 0.8
+    var perView = Math.max(1, Math.floor((vp.clientWidth + gap) / step))
+    var delta = step * perView * dir * (isRtlEl(vp) ? -1 : 1)
+    vp.scrollBy({ left: delta, behavior: 'smooth' })
+  }
+
+  function revealApplied(chooser) {
+    var vp = chooser.querySelector('.webino-cc__viewport')
+    var card = vp && vp.querySelector('.webino-cc__card.is-applied')
+    if (!card) return
+    var v = vp.getBoundingClientRect()
+    var c = card.getBoundingClientRect()
+    if (c.left >= v.left - 1 && c.right <= v.right + 1) return
+    var prevSnap = vp.style.scrollSnapType
+    vp.style.scrollSnapType = 'none'
+    vp.scrollLeft += isRtlEl(vp) ? c.right - v.right : c.left - v.left
+    vp.style.scrollSnapType = prevSnap
+  }
+
+  function enhanceChooser(chooser) {
+    if (!chooser || chooser.hasAttribute('data-webino-slider')) return
+    var vp = chooser.querySelector('.webino-cc__viewport')
+    if (!vp) return
+    chooser.setAttribute('data-webino-slider', '1')
+    var raf = null
+    var onScroll = function () {
+      if (raf) return
+      raf = requestAnimationFrame(function () {
+        raf = null
+        updateSlider(chooser)
+      })
+    }
+    vp.addEventListener('scroll', onScroll, { passive: true })
+    // Vertical mouse wheel → horizontal while the slider can still move that way (page scrolls at the ends).
+    vp.addEventListener(
+      'wheel',
+      function (e) {
+        if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !chooser.classList.contains('has-overflow')) return
+        var max = vp.scrollWidth - vp.clientWidth
+        var pos = scrollFromStart(vp)
+        var forward = e.deltaY > 0
+        if ((forward && pos >= max - 1) || (!forward && pos <= 1)) return
+        e.preventDefault()
+        var unit = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? vp.clientWidth : 1
+        vp.scrollLeft += e.deltaY * unit * (isRtlEl(vp) ? -1 : 1)
+      },
+      { passive: false },
+    )
+    Array.prototype.forEach.call(chooser.querySelectorAll('[data-webino-cc-dir]'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.preventDefault()
+        slideBy(chooser, parseInt(b.getAttribute('data-webino-cc-dir'), 10) || 1)
+      })
+    })
+    if (window.ResizeObserver) new ResizeObserver(onScroll).observe(vp)
+    revealApplied(chooser)
+    updateSlider(chooser)
+  }
+
+  function enhanceAll() {
+    Array.prototype.forEach.call(document.querySelectorAll('.webino-coupon-chooser:not([data-webino-slider])'), enhanceChooser)
+  }
+
   /* ------------------------------------------------------ block cart chooser */
 
   function blockStore() {
@@ -517,8 +611,13 @@
     return tpl.content.firstElementChild
   }
 
+  function blockRoot() {
+    return document.querySelector('.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout')
+  }
+
   function renderBlockChooser(state) {
-    if (!hasBlockCart()) return
+    var root = blockRoot()
+    if (!root) return
     var old = document.querySelector('.webino-coupon-chooser--block')
     if (!settings.cart_chooser || !state || state.empty || !state.eligible || !state.eligible.length || !state.chooser_html) {
       if (old && old.parentNode && !(state && state.eligible && state.eligible.length && !state.chooser_html)) old.parentNode.removeChild(old)
@@ -530,20 +629,21 @@
       return
     }
     node.classList.add('webino-coupon-chooser--block')
-    if (old && old.parentNode) {
-      old.parentNode.replaceChild(node, old)
-      return
-    }
-    var anchor =
-      document.querySelector('.wp-block-woocommerce-cart-order-summary-coupon-form-block') ||
-      document.querySelector('.wp-block-woocommerce-checkout-order-summary-coupon-form-block') ||
-      document.querySelector('.wc-block-components-totals-coupon')
-    var sidebar =
-      document.querySelector('.wc-block-cart__sidebar') ||
-      document.querySelector('.wc-block-checkout__sidebar') ||
-      document.querySelector('.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout')
-    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(node, anchor.nextSibling)
-    else if (sidebar) sidebar.insertBefore(node, sidebar.firstChild)
+    // Full row above the cart/checkout block, aligned like the block itself.
+    ;['alignwide', 'alignfull'].forEach(function (c) {
+      if (root.classList.contains(c)) node.classList.add(c)
+    })
+    if (old && old.parentNode) old.parentNode.replaceChild(node, old)
+    else if (root.parentNode) root.parentNode.insertBefore(node, root)
+    enhanceChooser(node)
+  }
+
+  // Classic cart: the chooser sits above the cart form (outside the parts WooCommerce refreshes) → refresh it here.
+  function renderClassicChooser(state) {
+    if (!cfg.isCart || blockRoot() || !state || !('chooser_html' in state)) return
+    var old = document.querySelector('.webino-coupon-chooser:not(.webino-coupon-chooser--block)')
+    if (!old || old.classList.contains('is-busy')) return
+    replaceChooser(old, state.chooser_html)
   }
 
   /* ------------------------------------------------------------- selection */
@@ -583,8 +683,11 @@
     if (!chooser || !chooser.parentNode || !html) return chooser
     var node = htmlToNode(html)
     if (!node) return chooser
-    if (chooser.classList.contains('webino-coupon-chooser--block')) node.classList.add('webino-coupon-chooser--block')
+    ;['webino-coupon-chooser--block', 'alignwide', 'alignfull'].forEach(function (c) {
+      if (chooser.classList.contains(c)) node.classList.add(c)
+    })
     chooser.parentNode.replaceChild(node, chooser)
+    enhanceChooser(node)
     return node
   }
 
@@ -666,7 +769,11 @@
           var msg = res.data && res.data.message
           if (res.data) {
             current = replaceChooser(current, res.data.chooser_html)
-            applyState(res.data)
+            var st = {}
+            Object.keys(res.data).forEach(function (k) {
+              if (k !== 'chooser_html') st[k] = res.data[k]
+            })
+            applyState(st)
           }
           chooserMessage(current, msg, 'success')
           afterChange()
@@ -696,6 +803,7 @@
     }
     renderWidget(state)
     renderBlockChooser(state)
+    renderClassicChooser(state)
     var offers = state.offers
     if (offers && offers.offers) {
       showPopup(offers.gift, offers)
@@ -714,7 +822,8 @@
       queued = true
       return
     }
-    var q = '_=' + Date.now() + (hasBlockCart() ? '&chooser=1' : '')
+    var wantChooser = hasBlockCart() || (cfg.isCart && document.querySelector('.webino-coupon-chooser'))
+    var q = '_=' + Date.now() + (wantChooser ? '&chooser=1' : '')
     inflight = fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + q, {
       credentials: 'same-origin',
       headers: { Accept: 'application/json' },
@@ -780,9 +889,11 @@
       'updated_checkout applied_coupon removed_coupon wc_cart_emptied updated_shipping_method'
     if (window.jQuery) {
       window.jQuery(document.body).on(events, function () {
+        enhanceAll()
         schedule()
       })
     }
+    enhanceAll()
     ;['wc-blocks_added_to_cart', 'wc-blocks_removed_from_cart'].forEach(function (ev) {
       document.body.addEventListener(ev, function () {
         schedule()

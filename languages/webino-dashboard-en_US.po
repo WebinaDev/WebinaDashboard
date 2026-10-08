@@ -1084,3 +1084,12 @@ msgstr "Toman"
 #, php-format
 msgid "With this product only %s left to unlock it"
 msgstr "With this product only %s left to unlock it"
+
+msgid "Previous coupons"
+msgstr "Previous coupons"
+
+msgid "Next coupons"
+msgstr "Next coupons"
+
+msgid "carousel"
+msgstr "carousel"

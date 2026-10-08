@@ -127,8 +127,9 @@ final class Webino_Dashboard_Coupon_Storefront {
 		add_filter( 'woocommerce_coupon_get_discount_amount', array( __CLASS__, 'apply_discount_cap' ), 20, 5 );
 
 		// Storefront UI.
-		add_action( 'woocommerce_before_cart_totals', array( __CLASS__, 'render_cart_chooser' ), 5 );
-		add_action( 'woocommerce_checkout_order_review', array( __CLASS__, 'render_cart_chooser' ), 15 );
+		// Full-width slider above the cart table / checkout form (after WooCommerce notices).
+		add_action( 'woocommerce_before_cart', array( __CLASS__, 'render_cart_chooser' ), 20 );
+		add_action( 'woocommerce_before_checkout_form', array( __CLASS__, 'render_cart_chooser' ), 12 );
 		add_filter( 'woocommerce_update_order_review_fragments', array( __CLASS__, 'order_review_fragments' ) );
 		add_action( 'wc_ajax_' . self::AJAX_STATE, array( __CLASS__, 'ajax_state' ) );
 		add_action( 'wc_ajax_' . self::AJAX_SELECT, array( __CLASS__, 'ajax_select' ) );
@@ -2004,7 +2005,12 @@ final class Webino_Dashboard_Coupon_Storefront {
 					<span class="webino-cc__title" id="<?php echo esc_attr( $uid ); ?>"><?php echo esc_html__( 'Coupons you can use', 'webino-dashboard' ); ?> <span class="webino-cc__count"><?php echo esc_html( $count ); ?></span></span>
 					<span class="webino-cc__hint"><?php echo esc_html__( 'One coupon per order — pick the one you like.', 'webino-dashboard' ); ?></span>
 				</span>
+				<span class="webino-cc__nav" hidden>
+					<button type="button" class="webino-cc__arrow webino-cc__arrow--prev" data-webino-cc-dir="-1" aria-controls="<?php echo esc_attr( $uid ); ?>-track" aria-label="<?php echo esc_attr__( 'Previous coupons', 'webino-dashboard' ); ?>"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></button>
+					<button type="button" class="webino-cc__arrow webino-cc__arrow--next" data-webino-cc-dir="1" aria-controls="<?php echo esc_attr( $uid ); ?>-track" aria-label="<?php echo esc_attr__( 'Next coupons', 'webino-dashboard' ); ?>"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></button>
+				</span>
 			</header>
+			<div class="webino-cc__viewport" id="<?php echo esc_attr( $uid ); ?>-track" tabindex="0" role="region" aria-roledescription="<?php echo esc_attr__( 'carousel', 'webino-dashboard' ); ?>" aria-labelledby="<?php echo esc_attr( $uid ); ?>">
 			<ul class="webino-cc__list" role="list">
 				<?php
 				foreach ( $rows as $row ) :
@@ -2050,6 +2056,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 					</li>
 				<?php endforeach; ?>
 			</ul>
+			</div>
 			<p class="webino-cc__msg webino-coupon-chooser__msg" role="status" aria-live="polite"></p>
 		</section>
 		<?php

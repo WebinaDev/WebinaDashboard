@@ -496,13 +496,14 @@
   --cc-border: #e2e8f0;
   --cc-bg: #ffffff;
   --cc-page: #f8fafc;
-  container-type: inline-size;
+  --cc-card-w: 320px;
   display: block;
+  min-width: 0;
   clear: both;
   width: 100%;
   max-width: 100%;
-  margin: 0 0 1.25rem;
-  padding: 0.9rem;
+  margin: 0 0 1.5rem;
+  padding: 0.9rem 0.9rem 0.6rem;
   border: 1px solid var(--cc-border);
   border-radius: 1rem;
   background: var(--cc-page);
@@ -550,6 +551,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1 1 auto;
 }
 .webino-cc .webino-cc__title {
   display: flex;
@@ -580,10 +582,34 @@
   color: var(--cc-muted);
   line-height: 1.5;
 }
+/* Horizontal scroll-snap slider. */
+.webino-cc .webino-cc__viewport {
+  container-type: inline-size;
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0.15rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -0.15rem;
+  padding: 0.15rem 0.15rem 0.55rem;
+  outline: none;
+  border-radius: 0.9rem;
+}
+.webino-cc .webino-cc__viewport::-webkit-scrollbar {
+  display: none;
+}
+.webino-cc .webino-cc__viewport:focus-visible {
+  box-shadow: 0 0 0 2px var(--cc-accent);
+}
 .webino-cc .webino-cc__list {
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.75rem;
   margin: 0 !important;
   padding: 0 !important;
   list-style: none !important;
@@ -604,6 +630,10 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   overflow: visible;
+  flex: 0 0 var(--cc-card-w);
+  width: var(--cc-card-w);
+  max-width: none;
+  scroll-snap-align: start;
 }
 .webino-cc .webino-cc__card::before,
 .webino-cc .webino-cc__card::after {
@@ -624,6 +654,7 @@
 .webino-cc .webino-cc__main {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: 0.2rem;
   min-width: 0;
   padding: 0.8rem 0.9rem 0.7rem;
@@ -888,57 +919,65 @@
   color: #b91c1c;
 }
 
-/* Wide containers: classic ticket row (main | dashed divider | saving + action). */
-@container (min-width: 400px) {
+/* Phones: card ≈ 84% of the slider so the next card peeks. */
+@container (max-width: 520px) {
   .webino-cc .webino-cc__card {
-    flex-direction: row;
-    align-items: stretch;
+    flex-basis: 84cqi;
+    width: 84cqi;
   }
-  .webino-cc .webino-cc__main {
-    flex: 1 1 auto;
-    justify-content: center;
-    padding: 0.85rem 1rem;
+}
+
+/* Slider arrows (desktop / fine pointer only; swipe on touch). */
+.webino-cc .webino-cc__nav {
+  display: none;
+  flex: none;
+  align-self: center;
+  gap: 0.4rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .webino-cc.has-overflow .webino-cc__nav {
+    display: inline-flex;
   }
-  .webino-cc .webino-cc__side {
-    flex: none;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 10.5rem;
-    padding: 0.85rem 1rem;
-    border-top: 0;
-    border-inline-start: 1.5px dashed var(--cc-border);
-    text-align: center;
-  }
-  .webino-cc .webino-cc__card.is-applied .webino-cc__side {
-    border-inline-start-color: rgba(5, 150, 105, 0.35);
-  }
-  .webino-cc .webino-cc__side::before,
-  .webino-cc .webino-cc__side::after,
-  [dir="rtl"].webino-cc .webino-cc__side::before,
-  [dir="rtl"].webino-cc .webino-cc__side::after {
-    top: auto;
-    inset-inline-start: -0.55rem;
-    inset-inline-end: auto;
-  }
-  .webino-cc .webino-cc__side::before,
-  [dir="rtl"].webino-cc .webino-cc__side::before {
-    top: -0.55rem;
-    clip-path: inset(50% 0 0 0);
-  }
-  .webino-cc .webino-cc__side::after,
-  [dir="rtl"].webino-cc .webino-cc__side::after {
-    bottom: -0.55rem;
-    clip-path: inset(0 0 50% 0);
-  }
-  .webino-cc .webino-cc__save {
-    align-items: center;
-  }
-  .webino-cc .webino-cc__btn {
-    width: 100%;
-    margin: 0 !important;
-  }
+}
+.webino-cc .webino-cc__arrow {
+  all: unset;
+  box-sizing: border-box !important;
+  display: inline-grid !important;
+  place-items: center;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: var(--cc-text) !important;
+  border: 1px solid var(--cc-border) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+}
+.webino-cc .webino-cc__arrow:hover {
+  border-color: var(--cc-accent) !important;
+  color: var(--cc-accent) !important;
+}
+.webino-cc .webino-cc__arrow:focus-visible {
+  outline: 2px solid var(--cc-accent) !important;
+  outline-offset: 2px !important;
+}
+.webino-cc .webino-cc__arrow[disabled] {
+  opacity: 0.35;
+  cursor: default;
+  border-color: var(--cc-border) !important;
+  color: var(--cc-muted) !important;
+}
+.webino-cc .webino-cc__arrow svg {
+  display: block;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+[dir="rtl"].webino-cc .webino-cc__arrow svg {
+  transform: scaleX(-1);
 }
 
 /* Block cart/checkout sidebar spacing. */
