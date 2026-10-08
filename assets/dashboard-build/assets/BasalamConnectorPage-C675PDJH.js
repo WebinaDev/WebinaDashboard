@@ -1,0 +1,1 @@
+import{i as e}from"./index-Cp3w29x5.js";import{jsx as t}from"react/jsx-runtime";function n(){return t(e,{slug:`basalam-module`,routePath:`basalam`})}export{n as default};

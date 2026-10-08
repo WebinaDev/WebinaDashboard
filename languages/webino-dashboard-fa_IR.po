@@ -846,3 +846,213 @@ msgstr "manifest.json در بسته ماژول موجود نیست."
 msgid "no transport error captured"
 msgstr "خطای انتقال ثبت نشده است."
 
+
+#, php-format
+msgid "Only one coupon can be used per order. \"%1$s\" replaced \"%2$s\"."
+msgstr "در هر سفارش فقط یک کد تخفیف قابل استفاده است. «%1$s» جایگزین «%2$s» شد."
+
+#, php-format
+msgid "Coupon \"%1$s\" was removed from your cart: %2$s"
+msgstr "کد تخفیف «%1$s» از سبد خرید حذف شد: %2$s"
+
+#, php-format
+msgid "Coupon \"%s\" no longer applies to your cart and was removed."
+msgstr "کد تخفیف «%s» دیگر شامل سبد خرید شما نمی‌شود و حذف شد."
+
+#, php-format
+msgid "Better coupon unlocked: \"%s\" is now applied to your cart."
+msgstr "کوپن بهتری باز شد: «%s» روی سبد خرید شما اعمال شد."
+
+#, php-format
+msgid "Coupon \"%s\" was applied to your cart automatically."
+msgstr "کوپن «%s» به‌صورت خودکار روی سبد خرید شما اعمال شد."
+
+msgid "This coupon is not active."
+msgstr "این کد تخفیف فعال نیست."
+
+#, php-format
+msgid "This coupon needs at least %s items in the cart."
+msgstr "برای این کد تخفیف باید حداقل %s کالا در سبد خرید باشد."
+
+msgid "This coupon is only valid on your first order."
+msgstr "این کد تخفیف فقط برای اولین سفارش شما معتبر است."
+
+#, php-format
+msgid "This coupon is only valid on your order number %s."
+msgstr "این کد تخفیف فقط برای سفارش %sام شما معتبر است."
+
+#, php-format
+msgid "%1$s%% off (up to %2$s)"
+msgstr "%1$s٪ تخفیف (تا سقف %2$s)"
+
+#, php-format
+msgid "%s%% off"
+msgstr "%s٪ تخفیف"
+
+#, php-format
+msgid "%s off each eligible item"
+msgstr "%s تخفیف روی هر کالای مشمول"
+
+#, php-format
+msgid "%s off"
+msgstr "%s تخفیف"
+
+msgid "Free shipping"
+msgstr "ارسال رایگان"
+
+#, php-format
+msgid "%s%% off shipping"
+msgstr "%s٪ تخفیف هزینه ارسال"
+
+msgid "Discount"
+msgstr "تخفیف"
+
+#, php-format
+msgid "With %s items in your cart"
+msgstr "با خرید %s کالا"
+
+#, php-format
+msgid "On orders of %s or more"
+msgstr "برای خرید از %s به بالا"
+
+msgid "On your first order"
+msgstr "برای اولین سفارش"
+
+#, php-format
+msgid "On your order number %s"
+msgstr "برای سفارش %sام"
+
+#, php-format
+msgid "Spend %s more to unlock it"
+msgstr "%s دیگر خرید کنید تا فعال شود"
+
+#, php-format
+msgid "Your next coupon: %1$s — spend %2$s more"
+msgstr "کوپن بعدی شما: %1$s — %2$s دیگر خرید کنید"
+
+#, php-format
+msgid "Add %s more items to unlock it"
+msgstr "%s کالای دیگر اضافه کنید تا فعال شود"
+
+#, php-format
+msgid "Your next coupon: %1$s — add %2$s more items"
+msgstr "کوپن بعدی شما: %1$s — %2$s کالای دیگر اضافه کنید"
+
+msgid "Your session has expired. Please refresh the page and try again."
+msgstr "نشست شما منقضی شده است. لطفاً صفحه را تازه کنید و دوباره تلاش کنید."
+
+msgid "Cart is not available."
+msgstr "سبد خرید در دسترس نیست."
+
+msgid "Coupon removed."
+msgstr "کد تخفیف حذف شد."
+
+msgid "This coupon is not available."
+msgstr "این کد تخفیف در دسترس نیست."
+
+msgid "This coupon is already applied."
+msgstr "این کد تخفیف از قبل اعمال شده است."
+
+msgid "This coupon cannot be used with your cart."
+msgstr "این کد تخفیف برای سبد خرید شما قابل استفاده نیست."
+
+#, php-format
+msgid "\"%s\" replaced your previous coupon."
+msgstr "«%s» جایگزین کد تخفیف قبلی شما شد."
+
+#, php-format
+msgid "\"%s\" was applied."
+msgstr "«%s» اعمال شد."
+
+msgid "Available coupons"
+msgstr "کدهای تخفیف قابل استفاده"
+
+msgid "Coupons you can use"
+msgstr "کوپن‌هایی که می‌توانید استفاده کنید"
+
+msgid "Only one coupon can be used per order. Pick the one you prefer."
+msgstr "در هر سفارش فقط یک کوپن قابل استفاده است؛ هر کدام را که می‌خواهید انتخاب کنید."
+
+#, php-format
+msgid "You save %s"
+msgstr "%s صرفه‌جویی"
+
+msgid "Applied ✓ Remove"
+msgstr "اعمال شده ✓ حذف"
+
+msgid "Use this instead"
+msgstr "استفاده از این"
+
+msgid "Apply"
+msgstr "اعمال"
+
+msgid "Template not found."
+msgstr "قالب پیدا نشد."
+
+msgid "Copy code"
+msgstr "کپی کد"
+
+msgid "Copied"
+msgstr "کپی شد"
+
+msgid "You have a gift for this purchase"
+msgstr "برای خریدت هدیه داری"
+
+msgid "Just reach the target amount in your cart"
+msgstr "فقط کافیه سبدت به مبلغ هدف برسه"
+
+msgid "Best sellers"
+msgstr "پرفروش‌ترین‌ها"
+
+msgid "Close"
+msgstr "بستن"
+
+msgid "until the coupon unlocks"
+msgstr "تا فعال شدن کوپن"
+
+msgid "Your next coupon"
+msgstr "کوپن بعدی شما"
+
+msgid "Hide"
+msgstr "کوچک کردن"
+
+msgid "Show next coupon progress"
+msgstr "نمایش پیشرفت کوپن بعدی"
+
+msgid "of"
+msgstr "از"
+
+msgid "Something went wrong. Please try again."
+msgstr "مشکلی پیش آمد. لطفاً دوباره تلاش کنید."
+
+msgid "Coupon code is required."
+msgstr "وارد کردن کد تخفیف الزامی است."
+
+msgid "Another coupon already uses this code."
+msgstr "کوپن دیگری با همین کد وجود دارد."
+
+msgid "Invalid discount type."
+msgstr "نوع تخفیف نامعتبر است."
+
+msgid "Coupon amount must be a number."
+msgstr "مقدار تخفیف باید عدد باشد."
+
+msgid "Coupon amount cannot be negative."
+msgstr "مقدار تخفیف نمی‌تواند منفی باشد."
+
+#, php-format
+msgid "A percentage discount cannot be more than 100%."
+msgstr "تخفیف درصدی نمی‌تواند بیشتر از ۱۰۰٪ باشد."
+
+#, php-format
+msgid "Invalid number for %s."
+msgstr "عدد واردشده برای %s نامعتبر است."
+
+msgid "Amounts and limits cannot be negative."
+msgstr "مبالغ و محدودیت‌ها نمی‌توانند منفی باشند."
+
+msgid "Minimum spend cannot be greater than maximum spend."
+msgstr "حداقل خرید نمی‌تواند بیشتر از حداکثر خرید باشد."
+
+msgid "The condition value must be at least 1."
+msgstr "مقدار شرط باید حداقل ۱ باشد."

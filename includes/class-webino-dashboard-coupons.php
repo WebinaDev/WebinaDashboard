@@ -300,6 +300,157 @@ class Webino_Dashboard_Coupons {
 	}
 
 	/**
+	 * @param mixed $value Raw amount (Persian digits / thousands separators allowed).
+	 * @return string Decimal string or '' (= no limit).
+	 */
+	public static function decimal_or_empty( $value ) {
+		$n = class_exists( 'Webino_Dashboard_Coupon_Storefront', false )
+			? Webino_Dashboard_Coupon_Storefront::normalize_decimal( $value )
+			: wc_format_decimal( (string) $value );
+		if ( '' === $n || (float) $n <= 0 ) {
+			return '';
+		}
+		return $n;
+	}
+
+	/**
+	 * @param mixed $value Raw usage limit.
+	 * @return int|null Null = unlimited (WooCommerce would turn negatives into positive limits).
+	 */
+	public static function limit_or_null( $value ) {
+		if ( null === $value || '' === $value || false === $value ) {
+			return null;
+		}
+		$n = class_exists( 'Webino_Dashboard_Coupon_Storefront', false )
+			? Webino_Dashboard_Coupon_Storefront::normalize_decimal( $value )
+			: (string) $value;
+		if ( '' === $n || (int) $n <= 0 ) {
+			return null;
+		}
+		return (int) $n;
+	}
+
+	/**
+	 * Expiry input → UTC timestamp. Date-only values mean "valid through the end of that day" in the store timezone.
+	 *
+	 * @param mixed $raw Raw value.
+	 * @return int 0 = clear, -1 = invalid (leave unchanged), >0 timestamp.
+	 */
+	public static function parse_expiry( $raw ) {
+		if ( null === $raw || '' === $raw || false === $raw ) {
+			return 0;
+		}
+		if ( is_numeric( $raw ) ) {
+			$ts = (int) $raw;
+			return $ts > 0 ? $ts : 0;
+		}
+		$raw = trim( (string) $raw );
+		$raw = strtr( $raw, array( '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9' ) );
+		try {
+			$tz = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+			if ( preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $raw, $m ) ) {
+				if ( ! checkdate( (int) $m[2], (int) $m[3], (int) $m[1] ) ) {
+					return -1;
+				}
+				$dt = new DateTimeImmutable( $raw . ' 23:59:59', $tz );
+				return $dt->getTimestamp();
+			}
+			$dt = new DateTimeImmutable( $raw, $tz );
+			return $dt->getTimestamp();
+		} catch ( Exception $e ) {
+			return -1;
+		}
+	}
+
+	/**
+	 * Validate dashboard coupon input before saving (prevents coupons that break carts at low/high amounts).
+	 *
+	 * @param WP_REST_Request $request  Request.
+	 * @param WC_Coupon|null  $existing Coupon being edited.
+	 * @return true|WP_Error
+	 */
+	public static function validate_request( $request, $existing = null ) {
+		$bad = static function ( $code, $message ) {
+			return new WP_Error( $code, $message, array( 'status' => 400 ) );
+		};
+		$num = static function ( $value ) {
+			return class_exists( 'Webino_Dashboard_Coupon_Storefront', false )
+				? Webino_Dashboard_Coupon_Storefront::normalize_decimal( $value )
+				: wc_format_decimal( (string) $value );
+		};
+		$is_new = ! ( $existing instanceof WC_Coupon ) || ! $existing->get_id();
+
+		$code = $request->get_param( 'code' );
+		if ( $is_new || ( null !== $code && '' !== (string) $code ) ) {
+			$code = function_exists( 'wc_format_coupon_code' ) ? wc_format_coupon_code( sanitize_text_field( (string) $code ) ) : trim( (string) $code );
+			if ( $is_new && '' === $code ) {
+				return $bad( 'coupon_code_required', __( 'Coupon code is required.', 'webino-dashboard' ) );
+			}
+			if ( '' !== $code && function_exists( 'wc_get_coupon_id_by_code' ) ) {
+				$other = (int) wc_get_coupon_id_by_code( $code, $is_new ? 0 : (int) $existing->get_id() );
+				if ( $other > 0 ) {
+					return $bad( 'coupon_code_exists', __( 'Another coupon already uses this code.', 'webino-dashboard' ) );
+				}
+			}
+		}
+
+		$type = $request->get_param( 'type' );
+		$type = null !== $type && '' !== (string) $type ? sanitize_key( (string) $type ) : ( $is_new ? 'fixed_cart' : $existing->get_discount_type() );
+		if ( function_exists( 'wc_get_coupon_types' ) && ! array_key_exists( $type, wc_get_coupon_types() ) ) {
+			return $bad( 'coupon_type_invalid', __( 'Invalid discount type.', 'webino-dashboard' ) );
+		}
+
+		$amount_raw = $request->get_param( 'amount' );
+		if ( null !== $amount_raw || null !== $request->get_param( 'type' ) ) {
+			$amount = null !== $amount_raw ? $num( $amount_raw ) : ( $is_new ? '0' : (string) $existing->get_amount() );
+			if ( null !== $amount_raw && '' !== trim( (string) $amount_raw ) && '' === $amount ) {
+				return $bad( 'coupon_amount_invalid', __( 'Coupon amount must be a number.', 'webino-dashboard' ) );
+			}
+			if ( '' !== $amount && (float) $amount < 0 ) {
+				return $bad( 'coupon_amount_negative', __( 'Coupon amount cannot be negative.', 'webino-dashboard' ) );
+			}
+			if ( 'percent' === $type && (float) $amount > 100 ) {
+				return $bad( 'coupon_percent_range', __( 'A percentage discount cannot be more than 100%.', 'webino-dashboard' ) );
+			}
+		}
+
+		foreach ( array( 'minimum_amount', 'maximum_amount', 'max_discount', 'condition_value', 'shipping_percent' ) as $field ) {
+			$raw = $request->get_param( $field );
+			if ( null === $raw || '' === trim( (string) $raw ) ) {
+				continue;
+			}
+			$n = $num( $raw );
+			if ( '' === $n ) {
+				return $bad( 'coupon_number_invalid', sprintf( /* translators: %s: field */ __( 'Invalid number for %s.', 'webino-dashboard' ), $field ) );
+			}
+			if ( (float) $n < 0 ) {
+				return $bad( 'coupon_number_negative', __( 'Amounts and limits cannot be negative.', 'webino-dashboard' ) );
+			}
+		}
+
+		$min = $request->get_param( 'minimum_amount' );
+		$max = $request->get_param( 'maximum_amount' );
+		$min = null !== $min ? (float) $num( $min ) : ( $is_new ? 0.0 : (float) $existing->get_minimum_amount() );
+		$max = null !== $max ? (float) $num( $max ) : ( $is_new ? 0.0 : (float) $existing->get_maximum_amount() );
+		$ctype = (string) $request->get_param( 'condition_type' );
+		$cval  = $request->get_param( 'condition_value' );
+		if ( 'min_amount' === $ctype && null !== $cval && '' !== trim( (string) $cval ) ) {
+			$min = (float) $num( $cval ); // Synced to minimum spend on save.
+		}
+		if ( $min > 0 && $max > 0 && $min > $max ) {
+			return $bad( 'coupon_spend_range', __( 'Minimum spend cannot be greater than maximum spend.', 'webino-dashboard' ) );
+		}
+		if ( in_array( $ctype, array( 'min_items', 'order_nth' ), true ) && null !== $cval && '' !== trim( (string) $cval ) && (float) $num( $cval ) < 1 ) {
+			return $bad( 'coupon_condition_invalid', __( 'The condition value must be at least 1.', 'webino-dashboard' ) );
+		}
+		$pct = $request->get_param( 'shipping_percent' );
+		if ( null !== $pct && '' !== trim( (string) $pct ) && (float) $num( $pct ) > 100 ) {
+			return $bad( 'coupon_percent_range', __( 'A percentage discount cannot be more than 100%.', 'webino-dashboard' ) );
+		}
+		return true;
+	}
+
+	/**
 	 * @param array<int> $ids Integer IDs.
 	 * @return array<int>
 	 */
@@ -319,19 +470,24 @@ class Webino_Dashboard_Coupons {
 		if ( null !== $request->get_param( 'description' ) ) {
 			$c->set_description( sanitize_textarea_field( (string) $request->get_param( 'description' ) ) );
 		}
-		if ( null !== $request->get_param( 'minimum_amount' ) ) {
-			$c->set_minimum_amount( wc_format_decimal( (string) $request->get_param( 'minimum_amount' ) ) );
+		// WooCommerce validates min against the *current* max (and vice versa) inside each setter, so clear
+		// the max first when both change — otherwise valid edits (e.g. 900k–2M over an old 800k max) throw.
+		$has_min = null !== $request->get_param( 'minimum_amount' );
+		$has_max = null !== $request->get_param( 'maximum_amount' );
+		if ( $has_min && $has_max ) {
+			$c->set_maximum_amount( '' );
 		}
-		if ( null !== $request->get_param( 'maximum_amount' ) ) {
-			$c->set_maximum_amount( wc_format_decimal( (string) $request->get_param( 'maximum_amount' ) ) );
+		if ( $has_min ) {
+			$c->set_minimum_amount( self::decimal_or_empty( $request->get_param( 'minimum_amount' ) ) );
+		}
+		if ( $has_max ) {
+			$c->set_maximum_amount( self::decimal_or_empty( $request->get_param( 'maximum_amount' ) ) );
 		}
 		if ( null !== $request->get_param( 'usage_limit' ) ) {
-			$ul = $request->get_param( 'usage_limit' );
-			$c->set_usage_limit( null === $ul || '' === $ul ? null : (int) $ul );
+			$c->set_usage_limit( self::limit_or_null( $request->get_param( 'usage_limit' ) ) );
 		}
 		if ( null !== $request->get_param( 'usage_limit_per_user' ) ) {
-			$ul = $request->get_param( 'usage_limit_per_user' );
-			$c->set_usage_limit_per_user( null === $ul || '' === $ul ? null : (int) $ul );
+			$c->set_usage_limit_per_user( self::limit_or_null( $request->get_param( 'usage_limit_per_user' ) ) );
 		}
 		if ( null !== $request->get_param( 'individual_use' ) ) {
 			$c->set_individual_use( (bool) $request->get_param( 'individual_use' ) );
@@ -343,16 +499,11 @@ class Webino_Dashboard_Coupons {
 			$c->set_exclude_sale_items( (bool) $request->get_param( 'exclude_sale_items' ) );
 		}
 		if ( null !== $request->get_param( 'date_expires' ) ) {
-			$raw = $request->get_param( 'date_expires' );
-			if ( null === $raw || '' === $raw ) {
+			$ts = self::parse_expiry( $request->get_param( 'date_expires' ) );
+			if ( 0 === $ts ) {
 				$c->set_date_expires( null );
-			} elseif ( is_numeric( $raw ) ) {
-				$c->set_date_expires( new WC_DateTime( '@' . (int) $raw ) );
-			} else {
-				$ts = strtotime( (string) $raw );
-				if ( $ts ) {
-					$c->set_date_expires( new WC_DateTime( '@' . $ts ) );
-				}
+			} elseif ( $ts > 0 ) {
+				$c->set_date_expires( $ts );
 			}
 		}
 		if ( null !== $request->get_param( 'product_ids' ) && is_array( $request->get_param( 'product_ids' ) ) ) {

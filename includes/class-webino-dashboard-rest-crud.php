@@ -1170,6 +1170,27 @@ class Webino_Dashboard_REST_Crud {
 
 		register_rest_route(
 			self::NS,
+			'/marketing/coupons/storefront-settings',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( 'Webino_Dashboard_Coupon_Storefront', 'rest_get_settings' ),
+					'permission_callback' => static function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+					},
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( 'Webino_Dashboard_Coupon_Storefront', 'rest_save_settings' ),
+					'permission_callback' => static function () {
+						return Webino_Dashboard_Rest_Base::can( 'manage_woocommerce' ) || Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/marketing/offers/eligible',
 			array(
 				'methods'             => 'GET',
@@ -7118,15 +7139,27 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! class_exists( 'WC_Coupon' ) ) {
 			return new WP_Error( 'no_wc', __( 'Store module is not available.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
+		$valid = Webino_Dashboard_Coupons::validate_request( $request, null );
+		if ( is_wp_error( $valid ) ) {
+			return $valid;
+		}
 		$c = new WC_Coupon();
-		$c->set_code( sanitize_text_field( (string) $request->get_param( 'code' ) ) );
-		$c->set_discount_type( sanitize_key( (string) $request->get_param( 'type' ) ) ?: 'fixed_cart' );
-		$c->set_amount( (string) $request->get_param( 'amount' ) );
-		Webino_Dashboard_Coupons::apply_rest_fields( $c, $request );
-		$c->save();
+		try {
+			$c->set_code( sanitize_text_field( (string) $request->get_param( 'code' ) ) );
+			$c->set_discount_type( sanitize_key( (string) $request->get_param( 'type' ) ) ?: 'fixed_cart' );
+			$amount = Webino_Dashboard_Coupons::decimal_or_empty( $request->get_param( 'amount' ) );
+			$c->set_amount( '' === $amount ? '0' : $amount );
+			Webino_Dashboard_Coupons::apply_rest_fields( $c, $request );
+			$c->save();
+		} catch ( WC_Data_Exception $e ) {
+			return new WP_Error( 'coupon_invalid', $e->getMessage(), array( 'status' => 400 ) );
+		}
 		$post_ok = Webino_Dashboard_Coupons::apply_post_fields( $c->get_id(), $request );
 		if ( is_wp_error( $post_ok ) ) {
 			return $post_ok;
+		}
+		if ( class_exists( 'Webino_Dashboard_Offer_Engine', false ) ) {
+			Webino_Dashboard_Offer_Engine::maybe_autofill_description( $c->get_id() );
 		}
 		return new WP_REST_Response( Webino_Dashboard_Coupons::map_detail( new WC_Coupon( $c->get_id() ) ), 201 );
 	}
@@ -7143,17 +7176,27 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! $c->get_id() ) {
 			return new WP_Error( 'not_found', 'Not found', array( 'status' => 404 ) );
 		}
-		if ( $request->get_param( 'amount' ) !== null ) {
-			$c->set_amount( (string) $request->get_param( 'amount' ) );
+		$valid = Webino_Dashboard_Coupons::validate_request( $request, $c );
+		if ( is_wp_error( $valid ) ) {
+			return $valid;
 		}
-		if ( $request->get_param( 'code' ) ) {
-			$c->set_code( sanitize_text_field( (string) $request->get_param( 'code' ) ) );
+		try {
+			// Type before amount: WooCommerce rejects amount > 100 while the *old* type is still "percent".
+			if ( null !== $request->get_param( 'type' ) ) {
+				$c->set_discount_type( sanitize_key( (string) $request->get_param( 'type' ) ) ?: 'fixed_cart' );
+			}
+			if ( $request->get_param( 'amount' ) !== null ) {
+				$amount = Webino_Dashboard_Coupons::decimal_or_empty( $request->get_param( 'amount' ) );
+				$c->set_amount( '' === $amount ? '0' : $amount );
+			}
+			if ( $request->get_param( 'code' ) ) {
+				$c->set_code( sanitize_text_field( (string) $request->get_param( 'code' ) ) );
+			}
+			Webino_Dashboard_Coupons::apply_rest_fields( $c, $request );
+			$c->save();
+		} catch ( WC_Data_Exception $e ) {
+			return new WP_Error( 'coupon_invalid', $e->getMessage(), array( 'status' => 400 ) );
 		}
-		if ( null !== $request->get_param( 'type' ) ) {
-			$c->set_discount_type( sanitize_key( (string) $request->get_param( 'type' ) ) ?: 'fixed_cart' );
-		}
-		Webino_Dashboard_Coupons::apply_rest_fields( $c, $request );
-		$c->save();
 		$post_ok = Webino_Dashboard_Coupons::apply_post_fields( $c->get_id(), $request );
 		if ( is_wp_error( $post_ok ) ) {
 			return $post_ok;

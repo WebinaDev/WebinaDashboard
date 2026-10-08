@@ -815,3 +815,213 @@ msgstr ""
 msgid "no transport error captured"
 msgstr ""
 
+
+#, php-format
+msgid "Only one coupon can be used per order. \"%1$s\" replaced \"%2$s\"."
+msgstr ""
+
+#, php-format
+msgid "Coupon \"%1$s\" was removed from your cart: %2$s"
+msgstr ""
+
+#, php-format
+msgid "Coupon \"%s\" no longer applies to your cart and was removed."
+msgstr ""
+
+#, php-format
+msgid "Better coupon unlocked: \"%s\" is now applied to your cart."
+msgstr ""
+
+#, php-format
+msgid "Coupon \"%s\" was applied to your cart automatically."
+msgstr ""
+
+msgid "This coupon is not active."
+msgstr ""
+
+#, php-format
+msgid "This coupon needs at least %s items in the cart."
+msgstr ""
+
+msgid "This coupon is only valid on your first order."
+msgstr ""
+
+#, php-format
+msgid "This coupon is only valid on your order number %s."
+msgstr ""
+
+#, php-format
+msgid "%1$s%% off (up to %2$s)"
+msgstr ""
+
+#, php-format
+msgid "%s%% off"
+msgstr ""
+
+#, php-format
+msgid "%s off each eligible item"
+msgstr ""
+
+#, php-format
+msgid "%s off"
+msgstr ""
+
+msgid "Free shipping"
+msgstr ""
+
+#, php-format
+msgid "%s%% off shipping"
+msgstr ""
+
+msgid "Discount"
+msgstr ""
+
+#, php-format
+msgid "With %s items in your cart"
+msgstr ""
+
+#, php-format
+msgid "On orders of %s or more"
+msgstr ""
+
+msgid "On your first order"
+msgstr ""
+
+#, php-format
+msgid "On your order number %s"
+msgstr ""
+
+#, php-format
+msgid "Spend %s more to unlock it"
+msgstr ""
+
+#, php-format
+msgid "Your next coupon: %1$s — spend %2$s more"
+msgstr ""
+
+#, php-format
+msgid "Add %s more items to unlock it"
+msgstr ""
+
+#, php-format
+msgid "Your next coupon: %1$s — add %2$s more items"
+msgstr ""
+
+msgid "Your session has expired. Please refresh the page and try again."
+msgstr ""
+
+msgid "Cart is not available."
+msgstr ""
+
+msgid "Coupon removed."
+msgstr ""
+
+msgid "This coupon is not available."
+msgstr ""
+
+msgid "This coupon is already applied."
+msgstr ""
+
+msgid "This coupon cannot be used with your cart."
+msgstr ""
+
+#, php-format
+msgid "\"%s\" replaced your previous coupon."
+msgstr ""
+
+#, php-format
+msgid "\"%s\" was applied."
+msgstr ""
+
+msgid "Available coupons"
+msgstr ""
+
+msgid "Coupons you can use"
+msgstr ""
+
+msgid "Only one coupon can be used per order. Pick the one you prefer."
+msgstr ""
+
+#, php-format
+msgid "You save %s"
+msgstr ""
+
+msgid "Applied ✓ Remove"
+msgstr ""
+
+msgid "Use this instead"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "Template not found."
+msgstr ""
+
+msgid "Copy code"
+msgstr ""
+
+msgid "Copied"
+msgstr ""
+
+msgid "You have a gift for this purchase"
+msgstr ""
+
+msgid "Just reach the target amount in your cart"
+msgstr ""
+
+msgid "Best sellers"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "until the coupon unlocks"
+msgstr ""
+
+msgid "Your next coupon"
+msgstr ""
+
+msgid "Hide"
+msgstr ""
+
+msgid "Show next coupon progress"
+msgstr ""
+
+msgid "of"
+msgstr ""
+
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+msgid "Coupon code is required."
+msgstr ""
+
+msgid "Another coupon already uses this code."
+msgstr ""
+
+msgid "Invalid discount type."
+msgstr ""
+
+msgid "Coupon amount must be a number."
+msgstr ""
+
+msgid "Coupon amount cannot be negative."
+msgstr ""
+
+#, php-format
+msgid "A percentage discount cannot be more than 100%."
+msgstr ""
+
+#, php-format
+msgid "Invalid number for %s."
+msgstr ""
+
+msgid "Amounts and limits cannot be negative."
+msgstr ""
+
+msgid "Minimum spend cannot be greater than maximum spend."
+msgstr ""
+
+msgid "The condition value must be at least 1."
+msgstr ""

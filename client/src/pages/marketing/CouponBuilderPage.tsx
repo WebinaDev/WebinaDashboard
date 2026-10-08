@@ -9,6 +9,7 @@ import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
+import { toAsciiDigits } from '@/lib/digits'
 import { toastApiError } from '@/lib/apiError'
 import { cn } from '@/lib/utils'
 
@@ -47,6 +49,28 @@ type OfferCoupon = {
   max_discount?: string
   shipping_percent?: number | null
   template_id?: string
+}
+
+type StorefrontSettings = {
+  single_coupon: boolean
+  cart_chooser: boolean
+  progress_widget: boolean
+  auto_apply: boolean
+}
+
+const STOREFRONT_KEYS: Array<keyof StorefrontSettings> = [
+  'single_coupon',
+  'cart_chooser',
+  'progress_widget',
+  'auto_apply',
+]
+
+/** Persian/Arabic digits and thousands separators → plain ASCII number string. */
+function cleanNumber(value: string): string {
+  return toAsciiDigits(value)
+    .replace(/[٬,\s]/g, '')
+    .replace(/٫/g, '.')
+    .trim()
 }
 
 function TicketIcon({ icon, className }: { icon: string; className?: string }) {
@@ -122,6 +146,28 @@ export default function CouponBuilderPage() {
   const [rewardType, setRewardType] = useState<'fixed_cart' | 'percent' | 'free_shipping' | 'ship_pct'>('fixed_cart')
   const [rewardAmount, setRewardAmount] = useState('50000')
 
+  const storefrontQ = useQuery({
+    queryKey: ['coupons', 'storefront-settings'],
+    queryFn: () => apiFetch<StorefrontSettings>('marketing/coupons/storefront-settings'),
+  })
+  useQueryErrorToast(storefrontQ)
+
+  const saveStorefront = useMutation({
+    mutationFn: (patch: Partial<StorefrontSettings>) =>
+      apiFetch<StorefrontSettings>('marketing/coupons/storefront-settings', {
+        method: 'POST',
+        body: JSON.stringify(patch),
+      }),
+    onSuccess: (res) => {
+      qc.setQueryData(['coupons', 'storefront-settings'], res)
+      toast.success(t('common.saved'))
+    },
+    onError: (e: Error) => {
+      void qc.invalidateQueries({ queryKey: ['coupons', 'storefront-settings'] })
+      toastApiError(t, e)
+    },
+  })
+
   const templatesQ = useQuery({
     queryKey: ['coupons', 'templates'],
     queryFn: () =>
@@ -159,27 +205,43 @@ export default function CouponBuilderPage() {
 
   const createWizard = useMutation({
     mutationFn: async () => {
+      const cond = cleanNumber(condValue)
+      const reward = cleanNumber(rewardAmount)
+      const condNum = Number(cond)
+      const rewardNum = Number(reward)
+      if (!cond || !Number.isFinite(condNum) || condNum < 1) {
+        throw new Error(t('coupons.builder.errCondition'))
+      }
+      if (rewardType !== 'free_shipping') {
+        if (!reward || !Number.isFinite(rewardNum) || rewardNum <= 0) {
+          throw new Error(t('coupons.builder.errReward'))
+        }
+        if ((rewardType === 'percent' || rewardType === 'ship_pct') && rewardNum > 100) {
+          throw new Error(t('coupons.builder.errPercent'))
+        }
+      }
       const codeRes = await apiFetch<{ code: string }>('marketing/coupons/generate-code')
       const body: Record<string, unknown> = {
         code: codeRes.code,
         type: rewardType === 'ship_pct' || rewardType === 'free_shipping' ? 'fixed_cart' : rewardType,
-        amount: rewardType === 'free_shipping' || rewardType === 'ship_pct' ? '0' : rewardAmount,
+        amount: rewardType === 'free_shipping' || rewardType === 'ship_pct' ? '0' : reward,
         free_shipping: rewardType === 'free_shipping',
         individual_use: true,
         status: 'publish',
         is_offer: true,
         condition_type: condType,
-        condition_value: condValue,
+        condition_value: cond,
         auto_apply: true,
         offer_visible: true,
         offer_public: true,
-        description: t('coupons.builder.customDesc'),
+        // Empty description: the server writes a readable one from the reward and condition.
+        description: '',
       }
       if (rewardType === 'ship_pct') {
-        body.shipping_percent = Number(rewardAmount) || 50
+        body.shipping_percent = rewardNum
       }
       if (condType === 'min_amount') {
-        body.minimum_amount = condValue
+        body.minimum_amount = cond
       }
       return apiFetch('marketing/coupons', { method: 'POST', body: JSON.stringify(body) })
     },
@@ -234,11 +296,20 @@ export default function CouponBuilderPage() {
             </div>
             <div className="space-y-2">
               <Label>{t('coupons.builder.conditionValue')}</Label>
-              <Input value={condValue} onChange={(e) => setCondValue(e.target.value)} />
+              <Input inputMode="decimal" value={condValue} onChange={(e) => setCondValue(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>{t('coupons.builder.rewardType')}</Label>
-              <Select value={rewardType} onValueChange={(v) => setRewardType(v as typeof rewardType)}>
+              <Select
+                value={rewardType}
+                onValueChange={(v) => {
+                  const next = v as typeof rewardType
+                  const wasPct = rewardType === 'percent' || rewardType === 'ship_pct'
+                  const isPct = next === 'percent' || next === 'ship_pct'
+                  if (wasPct !== isPct) setRewardAmount(isPct ? '10' : '50000')
+                  setRewardType(next)
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -253,7 +324,7 @@ export default function CouponBuilderPage() {
             {rewardType !== 'free_shipping' ? (
               <div className="space-y-2">
                 <Label>{t('coupons.builder.rewardAmount')}</Label>
-                <Input value={rewardAmount} onChange={(e) => setRewardAmount(e.target.value)} />
+                <Input inputMode="decimal" value={rewardAmount} onChange={(e) => setRewardAmount(e.target.value)} />
               </div>
             ) : null}
           </div>
@@ -262,6 +333,37 @@ export default function CouponBuilderPage() {
           </Button>
         </div>
       ) : null}
+
+      <section className="border-border/70 mb-8 space-y-3 rounded-2xl border p-4">
+        <div>
+          <h2 className="text-base font-semibold">{t('coupons.storefront.title')}</h2>
+          <p className="text-muted-foreground text-sm">{t('coupons.storefront.hint')}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {STOREFRONT_KEYS.map((key) => {
+            const checked = storefrontQ.data ? Boolean(storefrontQ.data[key]) : true
+            return (
+              <label key={key} className="flex items-start justify-between gap-3 rounded-xl border border-border/60 p-3">
+                <span className="min-w-0 space-y-0.5">
+                  <span className="block text-sm font-medium">{t(`coupons.storefront.${key}`)}</span>
+                  <span className="text-muted-foreground block text-xs leading-relaxed">
+                    {t(`coupons.storefront.${key}Hint`)}
+                  </span>
+                </span>
+                <Switch
+                  checked={checked}
+                  disabled={!storefrontQ.data || saveStorefront.isPending}
+                  onCheckedChange={(v) => {
+                    if (!storefrontQ.data) return
+                    qc.setQueryData(['coupons', 'storefront-settings'], { ...storefrontQ.data, [key]: v })
+                    saveStorefront.mutate({ [key]: v })
+                  }}
+                />
+              </label>
+            )
+          })}
+        </div>
+      </section>
 
       <section className="mb-10">
         <div className="mb-3 flex items-start justify-between gap-3">

@@ -36,7 +36,7 @@ final class Webino_Dashboard_Offer_Engine {
 			return;
 		}
 		$done = true;
-		add_action( 'woocommerce_after_calculate_totals', array( __CLASS__, 'maybe_auto_apply' ), 20 );
+		// Auto-apply now lives in Webino_Dashboard_Coupon_Storefront (respects customer choice + single coupon).
 		add_filter( 'woocommerce_package_rates', array( __CLASS__, 'filter_shipping_rates' ), 100, 2 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_storefront' ), 30 );
 	}
@@ -197,6 +197,8 @@ final class Webino_Dashboard_Offer_Engine {
 	 */
 	public static function apply_offer_fields( $coupon_id, $request ) {
 		$coupon_id = (int) $coupon_id;
+		$old_ctype = (string) get_post_meta( $coupon_id, self::META_CONDITION_TYPE, true );
+		$old_cval  = (string) get_post_meta( $coupon_id, self::META_CONDITION_VALUE, true );
 		if ( null !== $request->get_param( 'is_offer' ) || null !== $request->get_param( 'condition_type' ) ) {
 			update_post_meta( $coupon_id, self::META_IS_OFFER, 1 );
 		}
@@ -207,7 +209,7 @@ final class Webino_Dashboard_Offer_Engine {
 			}
 		}
 		if ( null !== $request->get_param( 'condition_value' ) ) {
-			update_post_meta( $coupon_id, self::META_CONDITION_VALUE, wc_format_decimal( (string) $request->get_param( 'condition_value' ) ) );
+			update_post_meta( $coupon_id, self::META_CONDITION_VALUE, self::clean_decimal( $request->get_param( 'condition_value' ) ) );
 		}
 		foreach ( array(
 			'auto_apply'    => self::META_AUTO_APPLY,
@@ -219,7 +221,12 @@ final class Webino_Dashboard_Offer_Engine {
 			}
 		}
 		if ( null !== $request->get_param( 'max_discount' ) ) {
-			update_post_meta( $coupon_id, self::META_MAX_DISCOUNT, wc_format_decimal( (string) $request->get_param( 'max_discount' ) ) );
+			$cap = self::clean_decimal( $request->get_param( 'max_discount' ) );
+			if ( '' === $cap || (float) $cap <= 0 ) {
+				delete_post_meta( $coupon_id, self::META_MAX_DISCOUNT );
+			} else {
+				update_post_meta( $coupon_id, self::META_MAX_DISCOUNT, $cap );
+			}
 		}
 		if ( null !== $request->get_param( 'template_id' ) ) {
 			update_post_meta( $coupon_id, self::META_TEMPLATE_ID, sanitize_key( (string) $request->get_param( 'template_id' ) ) );
@@ -232,17 +239,43 @@ final class Webino_Dashboard_Offer_Engine {
 			if ( null === $p || '' === $p ) {
 				delete_post_meta( $coupon_id, self::META_SHIPPING_PCT );
 			} else {
-				update_post_meta( $coupon_id, self::META_SHIPPING_PCT, max( 0, min( 100, (float) $p ) ) );
+				$p = self::clean_decimal( $p );
+				if ( '' === $p || (float) $p <= 0 ) {
+					delete_post_meta( $coupon_id, self::META_SHIPPING_PCT );
+				} else {
+					update_post_meta( $coupon_id, self::META_SHIPPING_PCT, max( 0, min( 100, (float) $p ) ) );
+				}
 			}
 		}
 
 		$ctype = (string) get_post_meta( $coupon_id, self::META_CONDITION_TYPE, true );
-		$cval  = (string) get_post_meta( $coupon_id, self::META_CONDITION_VALUE, true );
+		if ( 'min_amount' === $ctype && null === $request->get_param( 'condition_value' ) && null !== $request->get_param( 'minimum_amount' ) ) {
+			// Edited from the classic coupon editor: the "minimum spend" field is the unlock amount.
+			$min_param = self::clean_decimal( $request->get_param( 'minimum_amount' ) );
+			if ( '' !== $min_param && (float) $min_param > 0 ) {
+				update_post_meta( $coupon_id, self::META_CONDITION_VALUE, $min_param );
+			}
+		}
+		$cval = (string) get_post_meta( $coupon_id, self::META_CONDITION_VALUE, true );
 		if ( 'min_amount' === $ctype && '' !== $cval && class_exists( 'WC_Coupon' ) ) {
 			$c = new WC_Coupon( $coupon_id );
 			if ( $c->get_id() ) {
-				$c->set_minimum_amount( $cval );
-				$c->set_individual_use( true );
+				try {
+					if ( (float) $c->get_maximum_amount() > 0 && (float) $c->get_maximum_amount() < (float) $cval ) {
+						$c->set_maximum_amount( '' ); // A max spend below the unlock amount would make the offer unusable.
+					}
+					$c->set_minimum_amount( $cval );
+					$c->set_individual_use( true );
+					$c->save();
+				} catch ( WC_Data_Exception $e ) {
+					unset( $e );
+				}
+			}
+		} elseif ( 'min_amount' === $old_ctype && 'min_amount' !== $ctype && '' !== $old_cval && class_exists( 'WC_Coupon' ) ) {
+			// Condition switched away from "min amount": drop the min spend that was synced from it.
+			$c = new WC_Coupon( $coupon_id );
+			if ( $c->get_id() && abs( (float) $c->get_minimum_amount() - (float) $old_cval ) < 0.0001 ) {
+				$c->set_minimum_amount( '' );
 				$c->save();
 			}
 		}
@@ -253,6 +286,40 @@ final class Webino_Dashboard_Offer_Engine {
 				$c->save();
 			}
 		}
+	}
+
+	/**
+	 * @param mixed $value Raw number (Persian digits / separators allowed).
+	 * @return string
+	 */
+	private static function clean_decimal( $value ) {
+		if ( class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) ) {
+			return Webino_Dashboard_Coupon_Storefront::normalize_decimal( $value );
+		}
+		return wc_format_decimal( (string) $value );
+	}
+
+	/**
+	 * Give builder offers a customer-facing "title — condition" description when none was provided.
+	 *
+	 * @param int $coupon_id Coupon id.
+	 * @return void
+	 */
+	public static function maybe_autofill_description( $coupon_id ) {
+		if ( ! class_exists( 'WC_Coupon' ) || ! class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) ) {
+			return;
+		}
+		$c = new WC_Coupon( (int) $coupon_id );
+		if ( ! $c->get_id() || ! get_post_meta( $c->get_id(), self::META_IS_OFFER, true ) ) {
+			return;
+		}
+		if ( '' !== trim( (string) $c->get_description() ) ) {
+			return;
+		}
+		$d    = Webino_Dashboard_Coupon_Storefront::describe( $c );
+		$text = $d['benefit'] . ( '' !== $d['condition'] ? ' — ' . $d['condition'] : '' );
+		$c->set_description( $text );
+		$c->save();
 	}
 
 	/**
@@ -308,10 +375,8 @@ final class Webino_Dashboard_Offer_Engine {
 		update_post_meta( $id, self::META_PUBLIC, 1 );
 		update_post_meta( $id, self::META_TEMPLATE_ID, $template_id );
 		if ( ! empty( $tpl['max_discount'] ) ) {
+			// A discount *cap* (enforced by Webino_Dashboard_Coupon_Storefront), not WooCommerce "maximum spend".
 			update_post_meta( $id, self::META_MAX_DISCOUNT, (string) $tpl['max_discount'] );
-			$c2 = new WC_Coupon( $id );
-			$c2->set_maximum_amount( (string) $tpl['max_discount'] );
-			$c2->save();
 		}
 		if ( null !== $tpl['shipping_percent'] ) {
 			update_post_meta( $id, self::META_SHIPPING_PCT, (float) $tpl['shipping_percent'] );
@@ -381,6 +446,9 @@ final class Webino_Dashboard_Offer_Engine {
 	 * @return int Next order index (1-based).
 	 */
 	public static function next_order_index() {
+		if ( class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) ) {
+			return Webino_Dashboard_Coupon_Storefront::next_order_index( get_current_user_id(), '' );
+		}
 		$user_id = get_current_user_id();
 		if ( ! $user_id || ! function_exists( 'wc_get_customer_order_count' ) ) {
 			return 1;
@@ -403,7 +471,8 @@ final class Webino_Dashboard_Offer_Engine {
 		$cart_total = 0.0;
 		$cart_qty   = 0;
 		if ( function_exists( 'WC' ) && WC()->cart ) {
-			$cart_total = (float) WC()->cart->get_subtotal();
+			// Same basis WooCommerce uses for min/max spend checks.
+			$cart_total = (float) WC()->cart->get_displayed_subtotal();
 			$cart_qty   = (int) WC()->cart->get_cart_contents_count();
 		}
 
@@ -413,7 +482,8 @@ final class Webino_Dashboard_Offer_Engine {
 		$eligible = false;
 
 		if ( 'min_amount' === $ctype ) {
-			$target = max( 0.01, $cval );
+			$min_spend = (float) $c->get_minimum_amount();
+			$target    = max( 0.01, $min_spend > 0 ? $min_spend : $cval );
 			$ratio  = min( 1, $cart_total / $target );
 			$progress = array(
 				'kind'      => 'amount',
@@ -437,6 +507,7 @@ final class Webino_Dashboard_Offer_Engine {
 		} elseif ( 'order_nth' === $ctype ) {
 			$nth  = max( 1, (int) $cval );
 			$next = self::next_order_index();
+			$nth  = max( 1, $nth );
 			$progress = array(
 				'kind'      => 'order_nth',
 				'current'   => $next,
@@ -466,6 +537,9 @@ final class Webino_Dashboard_Offer_Engine {
 	 * @return float
 	 */
 	public static function estimate_saving( $c ) {
+		if ( class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) && function_exists( 'WC' ) && WC()->cart ) {
+			return Webino_Dashboard_Coupon_Storefront::estimate_saving( $c, WC()->cart );
+		}
 		$fields = self::get_offer_fields( $c->get_id() );
 		$cart   = function_exists( 'WC' ) && WC()->cart ? (float) WC()->cart->get_subtotal() : 0;
 		if ( ! empty( $fields['shipping_percent'] ) ) {
@@ -484,7 +558,7 @@ final class Webino_Dashboard_Offer_Engine {
 			}
 			return $save;
 		}
-		return $amt;
+		return 'fixed_cart' === $type ? min( $amt, $cart ) : $amt;
 	}
 
 	/**
@@ -493,6 +567,7 @@ final class Webino_Dashboard_Offer_Engine {
 	 * @return array<string,mixed>
 	 */
 	public static function eligible_payload() {
+		self::ensure_cart_loaded();
 		$offers   = array();
 		$near     = null;
 		$gift     = null;
@@ -504,7 +579,14 @@ final class Webino_Dashboard_Offer_Engine {
 			if ( empty( $fields['offer_visible'] ) && empty( $fields['offer_public'] ) ) {
 				continue;
 			}
+			if ( 'publish' !== get_post_status( $c->get_id() ) ) {
+				continue;
+			}
 			$ev = self::evaluate_coupon( $c );
+			if ( $ev['eligible'] && class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) && function_exists( 'WC' ) && WC()->cart ) {
+				// Condition met is not enough: expiry, usage limits, product rules… must pass too.
+				$ev['eligible'] = Webino_Dashboard_Coupon_Storefront::coupon_valid_for_cart( $c, WC()->cart );
+			}
 			$row = array(
 				'id'               => $c->get_id(),
 				'code'             => $c->get_code(),
@@ -566,6 +648,12 @@ final class Webino_Dashboard_Offer_Engine {
 		if ( ! function_exists( 'WC' ) || ! WC()->cart || ( is_admin() && ! defined( 'DOING_AJAX' ) ) ) {
 			return;
 		}
+		if ( class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) ) {
+			if ( Webino_Dashboard_Coupon_Storefront::enabled( 'auto_apply' ) ) {
+				Webino_Dashboard_Coupon_Storefront::maybe_auto_apply( WC()->cart );
+			}
+			return;
+		}
 		if ( did_action( 'woocommerce_applied_coupon' ) > 2 ) {
 			// Avoid loops.
 		}
@@ -611,6 +699,9 @@ final class Webino_Dashboard_Offer_Engine {
 		$pct = 0.0;
 		foreach ( WC()->cart->get_applied_coupons() as $code ) {
 			$c = new WC_Coupon( $code );
+			if ( ! $c->get_id() ) {
+				continue;
+			}
 			$f = self::get_offer_fields( $c->get_id() );
 			if ( ! empty( $f['shipping_percent'] ) ) {
 				$pct = max( $pct, (float) $f['shipping_percent'] );
@@ -624,6 +715,9 @@ final class Webino_Dashboard_Offer_Engine {
 				continue;
 			}
 			$cost = (float) $rate->get_cost();
+			if ( $cost <= 0 ) {
+				continue;
+			}
 			$new  = max( 0, $cost * ( 1 - ( $pct / 100 ) ) );
 			$rate->set_cost( $new );
 			$taxes = $rate->get_taxes();
@@ -643,10 +737,26 @@ final class Webino_Dashboard_Offer_Engine {
 	 * @return void
 	 */
 	public static function enqueue_storefront() {
-		if ( is_admin() || ! function_exists( 'is_woocommerce' ) ) {
+		if ( is_admin() || ! function_exists( 'is_woocommerce' ) || ! function_exists( 'WC' ) ) {
 			return;
 		}
-		if ( ! ( is_woocommerce() || is_cart() || is_checkout() || is_front_page() || is_shop() || is_product() ) ) {
+		// Never inject storefront widgets into the /dashboard SPA.
+		if ( get_query_var( 'webino_dashboard' ) ) {
+			return;
+		}
+		if ( function_exists( 'is_wc_endpoint_url' ) && ( is_wc_endpoint_url( 'order-received' ) || is_wc_endpoint_url( 'order-pay' ) ) ) {
+			return;
+		}
+		$store_pages = is_woocommerce() || is_cart() || is_checkout() || is_front_page() || is_shop() || is_product();
+		$settings    = class_exists( 'Webino_Dashboard_Coupon_Storefront', false )
+			? Webino_Dashboard_Coupon_Storefront::settings()
+			: array(
+				'single_coupon'   => false,
+				'cart_chooser'    => false,
+				'progress_widget' => false,
+				'auto_apply'      => true,
+			);
+		if ( ! $store_pages && empty( $settings['progress_widget'] ) ) {
 			return;
 		}
 		$base = defined( 'WEBINO_DASHBOARD_URL' ) ? WEBINO_DASHBOARD_URL : plugins_url( '', WEBINO_DASHBOARD_FILE );
@@ -664,22 +774,42 @@ final class Webino_Dashboard_Offer_Engine {
 			$ver,
 			true
 		);
-		$rest = esc_url_raw( rest_url( 'webino-dashboard/v1/marketing/offers/eligible' ) );
+		$ajax = class_exists( 'WC_AJAX' ) ? WC_AJAX::get_endpoint( '%%endpoint%%' ) : add_query_arg( 'wc-ajax', '%%endpoint%%', home_url( '/' ) );
 		wp_localize_script(
 			'webino-offers',
 			'webinoOffers',
 			array(
-				'restUrl'   => $rest,
-				'nonce'     => wp_create_nonce( 'wp_rest' ),
-				'isRtl'     => is_rtl(),
-				'i18n'      => array(
-					'copy'       => 'کپی کد',
-					'copied'     => 'کپی شد',
-					'giftTitle'  => 'برای خریدت هدیه داری',
-					'giftHint'   => 'فقط کافیه سبدت به مبلغ هدف برسه',
-					'cta'        => 'پرفروش‌ترین‌ها',
-					'close'      => 'بستن',
-					'remaining'  => 'تا فعال شدن کوپن',
+				'restUrl'      => esc_url_raw( rest_url( 'webino-dashboard/v1/marketing/offers/eligible' ) ),
+				'ajaxUrl'      => $ajax,
+				'stateAction'  => 'webino_coupons_state',
+				'selectAction' => 'webino_coupon_select',
+				'isRtl'        => is_rtl(),
+				'isCart'       => is_cart(),
+				'isCheckout'   => is_checkout(),
+				'storePage'    => $store_pages,
+				'popup'        => $store_pages,
+				'chips'        => is_product(),
+				'settings'     => $settings,
+				'i18n'         => array(
+					'copy'        => __( 'Copy code', 'webino-dashboard' ),
+					'copied'      => __( 'Copied', 'webino-dashboard' ),
+					'giftTitle'   => __( 'You have a gift for this purchase', 'webino-dashboard' ),
+					'giftHint'    => __( 'Just reach the target amount in your cart', 'webino-dashboard' ),
+					'cta'         => __( 'Best sellers', 'webino-dashboard' ),
+					'close'       => __( 'Close', 'webino-dashboard' ),
+					'remaining'   => __( 'until the coupon unlocks', 'webino-dashboard' ),
+					'nextCoupon'  => __( 'Your next coupon', 'webino-dashboard' ),
+					'hide'        => __( 'Hide', 'webino-dashboard' ),
+					'show'        => __( 'Show next coupon progress', 'webino-dashboard' ),
+					'of'          => __( 'of', 'webino-dashboard' ),
+					'chooserTitle'=> __( 'Coupons you can use', 'webino-dashboard' ),
+					'chooserHint' => __( 'Only one coupon can be used per order. Pick the one you prefer.', 'webino-dashboard' ),
+					'apply'       => __( 'Apply', 'webino-dashboard' ),
+					'useInstead'  => __( 'Use this instead', 'webino-dashboard' ),
+					'appliedRm'   => __( 'Applied ✓ Remove', 'webino-dashboard' ),
+					/* translators: %s: saving amount */
+					'youSave'     => __( 'You save %s', 'webino-dashboard' ),
+					'error'       => __( 'Something went wrong. Please try again.', 'webino-dashboard' ),
 				),
 			)
 		);
@@ -726,6 +856,29 @@ final class Webino_Dashboard_Offer_Engine {
 	 * @return WP_REST_Response
 	 */
 	public static function rest_eligible() {
-		return new WP_REST_Response( self::eligible_payload() );
+		$response = new WP_REST_Response( self::eligible_payload() );
+		$response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
+		return $response;
+	}
+
+	/**
+	 * WooCommerce does not load the session cart for wp-json requests; load it so progress uses the real cart.
+	 *
+	 * @return void
+	 */
+	private static function ensure_cart_loaded() {
+		if ( ! function_exists( 'WC' ) || ! WC() ) {
+			return;
+		}
+		if ( null === WC()->cart && function_exists( 'wc_load_cart' ) && did_action( 'woocommerce_init' ) ) {
+			try {
+				wc_load_cart();
+				if ( WC()->cart ) {
+					WC()->cart->get_cart();
+				}
+			} catch ( Throwable $e ) {
+				return;
+			}
+		}
 	}
 }

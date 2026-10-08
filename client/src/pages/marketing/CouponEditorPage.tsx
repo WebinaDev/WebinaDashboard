@@ -13,12 +13,14 @@ import { CouponUsagePanel } from '@/components/coupons/CouponUsagePanel'
 import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
+import { toAsciiDigits } from '@/lib/digits'
 
 type Coupon = {
   id: number
@@ -51,6 +53,21 @@ type Coupon = {
   status?: string
   date?: string
   visibility?: CouponVisibility
+  is_offer?: boolean
+  condition_type?: string
+  condition_value?: string
+  auto_apply?: boolean
+  offer_visible?: boolean
+  offer_public?: boolean
+  max_discount?: string
+}
+
+/** Normalize Persian/Arabic digits and thousands separators typed into money fields. */
+function cleanNumber(value: string): string {
+  return toAsciiDigits(value)
+    .replace(/[٬,\s]/g, '')
+    .replace(/٫/g, '.')
+    .trim()
 }
 
 function toDateTimeLocal(value?: string) {
@@ -102,17 +119,20 @@ function buildCouponPayload(input: {
   password: string
   publishImmediately: boolean
   publishDate: string
+  showInStore: boolean
+  autoApply: boolean
+  maxDiscount: string
 }) {
-  const usageRaw = input.usageLimit.trim()
-  const usagePerUserRaw = input.usageLimitPerUser.trim()
+  const usageRaw = cleanNumber(input.usageLimit)
+  const usagePerUserRaw = cleanNumber(input.usageLimitPerUser)
 
   const body: Record<string, unknown> = {
     code: input.code,
-    amount: input.amount,
+    amount: cleanNumber(input.amount),
     type: input.type,
     description: input.description,
-    minimum_amount: input.minAmount.trim(),
-    maximum_amount: input.maxAmount.trim(),
+    minimum_amount: cleanNumber(input.minAmount),
+    maximum_amount: cleanNumber(input.maxAmount),
     individual_use: input.individualUse,
     free_shipping: input.freeShipping,
     exclude_sale_items: input.excludeSale,
@@ -135,6 +155,10 @@ function buildCouponPayload(input: {
     date_expires: input.expires.trim() === '' ? '' : input.expires.trim(),
     usage_limit: usageRaw === '' ? null : parseInt(usageRaw, 10),
     usage_limit_per_user: usagePerUserRaw === '' ? null : parseInt(usagePerUserRaw, 10),
+    offer_visible: input.showInStore,
+    offer_public: input.showInStore,
+    auto_apply: input.autoApply,
+    max_discount: input.type === 'percent' ? cleanNumber(input.maxDiscount) : '',
   }
 
   if (input.visibility === 'password' && input.password.trim()) {
@@ -187,6 +211,9 @@ export default function CouponEditorPage() {
   const [password, setPassword] = useState('')
   const [publishImmediately, setPublishImmediately] = useState(true)
   const [publishDate, setPublishDate] = useState(() => dayjs().format('YYYY-MM-DDTHH:mm'))
+  const [showInStore, setShowInStore] = useState(false)
+  const [autoApply, setAutoApply] = useState(false)
+  const [maxDiscount, setMaxDiscount] = useState('')
 
   const couponQ = useQuery({
     queryKey: ['coupon', id],
@@ -233,6 +260,9 @@ export default function CouponEditorPage() {
     setPublishDate(dateLocal)
     const isFuture = c.date ? dayjs(c.date).isAfter(dayjs()) : false
     setPublishImmediately(!isFuture && c.status !== 'future')
+    setShowInStore(Boolean(c.offer_visible || c.offer_public))
+    setAutoApply(Boolean(c.auto_apply))
+    setMaxDiscount(c.max_discount ? String(c.max_discount) : '')
   }, [couponQ.data])
 
   const generateCode = useMutation({
@@ -275,6 +305,9 @@ export default function CouponEditorPage() {
         password,
         publishImmediately,
         publishDate,
+        showInStore,
+        autoApply,
+        maxDiscount,
       })
 
       if (id) {
@@ -376,6 +409,58 @@ export default function CouponEditorPage() {
                   excludeSale={excludeSale}
                   onExcludeSaleChange={setExcludeSale}
                 />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">{t('coupons.sectionStorefront')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {loading ? <Skeleton className="h-20 w-full" /> : (
+                <>
+                  <label className="flex items-start gap-2 text-sm">
+                    <Checkbox
+                      className="mt-0.5"
+                      checked={showInStore}
+                      onCheckedChange={(v) => {
+                        const on = v === true
+                        setShowInStore(on)
+                        if (!on) setAutoApply(false)
+                      }}
+                    />
+                    <span>
+                      {t('coupons.showInStore')}
+                      <span className="text-muted-foreground block text-xs">{t('coupons.showInStoreHint')}</span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-sm">
+                    <Checkbox
+                      className="mt-0.5"
+                      checked={autoApply}
+                      disabled={!showInStore}
+                      onCheckedChange={(v) => setAutoApply(v === true)}
+                    />
+                    <span>
+                      {t('coupons.autoApply')}
+                      <span className="text-muted-foreground block text-xs">{t('coupons.autoApplyHint')}</span>
+                    </span>
+                  </label>
+                  {type === 'percent' ? (
+                    <div className="max-w-xs space-y-2">
+                      <Label htmlFor="coupon-max-discount">{t('coupons.maxDiscount')}</Label>
+                      <Input
+                        id="coupon-max-discount"
+                        inputMode="decimal"
+                        value={maxDiscount}
+                        onChange={(e) => setMaxDiscount(e.target.value)}
+                      />
+                      <p className="text-muted-foreground text-xs">{t('coupons.maxDiscountHint')}</p>
+                    </div>
+                  ) : null}
+                  <p className="text-muted-foreground text-xs">{t('coupons.singleCouponNote')}</p>
+                </>
               )}
             </CardContent>
           </Card>
