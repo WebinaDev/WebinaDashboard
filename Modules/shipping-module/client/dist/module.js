@@ -5329,7 +5329,22 @@ function Qc(e, t) {
 }
 function $c(e, t) {
 	let n = e.toLowerCase();
-	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
+	return t === 504 || t === 524 || n.includes("gateway timeout") || n.includes("gateway time-out") || n.includes("timed out") || n.includes("timeout") ? {
+		message: `Gateway timeout (HTTP ${t || 0})`,
+		code: "gateway_timeout"
+	} : t === 502 || t === 503 || t === 520 || t === 521 || t === 522 ? {
+		message: `Server temporarily unavailable (HTTP ${t})`,
+		code: "server_unavailable"
+	} : e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? {
+		message: "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry",
+		code: "rest_cdn_blocked"
+	} : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? {
+		message: `Invalid AJAX response (HTML, HTTP ${t || 0})`,
+		code: "invalid_json"
+	} : {
+		message: `Invalid AJAX response (HTTP ${t || 0})`,
+		code: "invalid_json"
+	};
 }
 async function el(e, t, n = {}) {
 	let r = Zc(e), i = Kc();
@@ -5358,8 +5373,9 @@ async function el(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new ol($c(t, e.status), {
-				code: "invalid_json",
+			let n = $c(t, e.status);
+			throw new ol(n.message, {
+				code: n.code,
 				status: e.status
 			});
 		}
@@ -5373,7 +5389,7 @@ async function el(e, t, n = {}) {
 		return n.data;
 	} catch (e) {
 		throw e instanceof ol ? (Wc(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ol("Request timed out", {
-			code: "timeout",
+			code: "request_timeout",
 			status: 0
 		}) : e instanceof TypeError ? new ol("Network unavailable", {
 			code: "network_offline",
@@ -5414,7 +5430,7 @@ async function Q(e, t = {}, n = qc) {
 		return i;
 	} catch (e) {
 		throw e instanceof ol ? (Wc(e), e) : e instanceof DOMException && e.name === "AbortError" ? new ol("Request timed out", {
-			code: "timeout",
+			code: "request_timeout",
 			status: 0
 		}) : e instanceof TypeError ? new ol("Network unavailable", {
 			code: "network_offline",
@@ -5486,6 +5502,11 @@ var ol = class extends Error {
 	forbidden_role: "errors.api.forbiddenRole",
 	invalid_nonce: "errors.api.invalidNonce",
 	timeout: "errors.api.timeout",
+	request_timeout: "errors.api.requestTimeout",
+	gateway_timeout: "errors.api.gatewayTimeout",
+	server_unavailable: "errors.api.serverUnavailable",
+	ajax_unhandled: "errors.api.invalidResponse",
+	empty_response: "errors.api.invalidResponse",
 	empty_reply: "errors.api.emptyReply",
 	transport: "errors.api.transport",
 	network_offline: "errors.api.networkOffline",
@@ -5531,7 +5552,7 @@ function dl(e, t) {
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return cl(n) ? e("errors.api.timeout") : ll(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return cl(n) ? e("errors.api.requestTimeout") : ll(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
@@ -5746,7 +5767,7 @@ function xl(e, t) {
 	let n = (e ?? "").trim(), r = (t ?? "").trim();
 	if (!n && !r) return !1;
 	let i = n.toUpperCase();
-	return !!(i === "IRT" || i === "TOMAN" || yl.test(n) || yl.test(r));
+	return !!(i === "IRT" || i === "TOMAN" || i === "IRHT" || yl.test(n) || yl.test(r));
 }
 var Sl = {
 	"۰": "0",
@@ -6746,10 +6767,28 @@ function ru() {
 								placeholder: n("shipping.professionalFeeDescriptionPlaceholder")
 							})]
 						}),
+						/* @__PURE__ */ b("div", {
+							className: "space-y-1.5",
+							children: [/* @__PURE__ */ b("label", {
+								className: "flex items-center gap-3 text-sm",
+								children: [/* @__PURE__ */ y($, {
+									id: "prof-fee-mandatory",
+									checked: !!r.professional_fee_mandatory,
+									onCheckedChange: (e) => i((t) => t && {
+										...t,
+										professional_fee_mandatory: e
+									})
+								}), /* @__PURE__ */ y("span", { children: n("shipping.professionalFeeMandatory") })]
+							}), /* @__PURE__ */ y("p", {
+								className: "text-muted-foreground text-xs ps-12",
+								children: n("shipping.professionalFeeMandatoryHelp")
+							})]
+						}),
 						/* @__PURE__ */ b("label", {
-							className: "flex items-center gap-3 text-sm",
+							className: r.professional_fee_mandatory ? "flex items-center gap-3 text-sm opacity-60" : "flex items-center gap-3 text-sm",
 							children: [/* @__PURE__ */ y($, {
-								checked: !!r.professional_fee_default_selected,
+								checked: !!r.professional_fee_mandatory || !!r.professional_fee_default_selected,
+								disabled: !!r.professional_fee_mandatory,
 								onCheckedChange: (e) => i((t) => t && {
 									...t,
 									professional_fee_default_selected: e

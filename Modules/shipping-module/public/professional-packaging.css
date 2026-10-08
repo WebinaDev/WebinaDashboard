@@ -150,6 +150,47 @@
   transform: translateX(-20px);
 }
 
+/* Mandatory mode — included, not removable */
+.webino-prof-pack--mandatory .webino-prof-pack__card {
+  cursor: default;
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+}
+
+.webino-prof-pack--mandatory .webino-prof-pack__card:hover {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.webino-prof-pack__badge--mandatory {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.webino-prof-pack__note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.webino-prof-pack__included {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.webino-prof-pack__check {
+  font-size: 13px;
+  line-height: 1;
+}
+
 @media (max-width: 480px) {
   .webino-prof-pack__card {
     gap: 10px;

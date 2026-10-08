@@ -9,6 +9,11 @@
   var cfg = window.webinoProfessionalPackaging;
   var pending = null;
 
+  // Mandatory mode: fee is always applied server-side; there is no toggle to sync.
+  if (cfg.mandatory) {
+    return;
+  }
+
   function refreshTotals() {
     if ($('form.checkout').length) {
       $(document.body).trigger('update_checkout');
@@ -39,6 +44,10 @@
   }
 
   $(document).on('change', '.webino-prof-pack__input', function () {
+    if ($(this).closest('.webino-prof-pack--mandatory').length) {
+      this.checked = true;
+      return;
+    }
     var checked = !!this.checked;
     $('.webino-prof-pack__input').prop('checked', checked);
     sync(checked);

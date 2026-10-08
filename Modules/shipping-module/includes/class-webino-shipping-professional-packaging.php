@@ -1,6 +1,16 @@
 <?php
 /**
- * Optional fixed professional packaging fee (cart / checkout add-on).
+ * Fixed professional packaging fee (cart / checkout add-on).
+ *
+ * Two modes (setting `professional_fee_mandatory`):
+ *  - Optional (default): customer opts in/out on cart / checkout.
+ *  - Mandatory: fee is always applied to every eligible cart (cart, classic
+ *    checkout, update_order_review AJAX, mini-cart totals, Store API / block
+ *    checkout, bot checkouts that read cart fees). Any posted opt-out is ignored.
+ *
+ * Dashboard POS / manual orders (Webino_Dashboard_Order_Writer) and wp-admin
+ * "Add order" build WC_Order objects directly without a WC_Cart, so this fee
+ * is never applied there (in-person sales; staff add fees explicitly).
  *
  * @package WebinoDashboard
  */
@@ -36,6 +46,11 @@ class Webino_Shipping_Professional_Packaging {
 		add_action( 'wp_ajax_nopriv_webino_professional_packaging_toggle', array( __CLASS__, 'ajax_toggle' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ), 35 );
 		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'attach_to_order' ), 25, 2 );
+		// Block checkout (Store API) does not fire woocommerce_checkout_create_order.
+		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( __CLASS__, 'attach_to_order_store_api' ), 25, 2 );
+		// Shipping rates are cached per package hash; include the selection so the
+		// carton (professional_fee_replaces_carton) rate is recalculated on change.
+		add_filter( 'woocommerce_cart_shipping_packages', array( __CLASS__, 'tag_shipping_packages' ), 25 );
 		add_action( 'woocommerce_admin_order_data_after_shipping_address', array( __CLASS__, 'admin_order_note' ), 15 );
 	}
 
@@ -66,11 +81,58 @@ class Webino_Shipping_Professional_Packaging {
 	}
 
 	/**
+	 * Mandatory mode: fee is always applied and the customer cannot remove it.
+	 *
+	 * @return bool
+	 */
+	public static function is_mandatory() {
+		if ( ! self::is_available() ) {
+			return false;
+		}
+		$s = self::settings();
+		return ! empty( $s['professional_fee_mandatory'] );
+	}
+
+	/**
+	 * Whether a cart qualifies for the fee in mandatory mode (contains at least
+	 * one physical / shippable item). Optional mode keeps the original behavior.
+	 *
+	 * @param WC_Cart|null $cart Cart.
+	 * @return bool
+	 */
+	public static function is_cart_eligible( $cart ) {
+		$eligible = true;
+		if ( is_object( $cart ) && is_a( $cart, 'WC_Cart' ) ) {
+			$eligible = false;
+			// Per-product check (not WC_Cart::needs_shipping(), which is false when
+			// store-wide shipping is disabled): any physical item qualifies.
+			foreach ( $cart->get_cart() as $item ) {
+				$product = isset( $item['data'] ) ? $item['data'] : null;
+				if ( is_object( $product ) && method_exists( $product, 'needs_shipping' ) && $product->needs_shipping() ) {
+					$eligible = true;
+					break;
+				}
+			}
+		}
+		/**
+		 * Filter whether the mandatory professional packaging fee applies to this cart.
+		 *
+		 * @param bool         $eligible Eligible.
+		 * @param WC_Cart|null $cart     Cart.
+		 */
+		return (bool) apply_filters( 'webino_professional_packaging_cart_eligible', $eligible, $cart );
+	}
+
+	/**
 	 * @return bool
 	 */
 	public static function is_selected() {
 		if ( ! self::is_available() ) {
 			return false;
+		}
+		// Mandatory: always selected, independent of session / POST.
+		if ( self::is_mandatory() ) {
+			return true;
 		}
 		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
 			return false;
@@ -88,6 +150,10 @@ class Webino_Shipping_Professional_Packaging {
 	 * @return void
 	 */
 	public static function set_selected( $selected ) {
+		if ( self::is_mandatory() ) {
+			// Ignore any opt-out while mandatory.
+			$selected = true;
+		}
 		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
 			return;
 		}
@@ -108,6 +174,9 @@ class Webino_Shipping_Professional_Packaging {
 		if ( ! is_a( $cart, 'WC_Cart' ) ) {
 			return;
 		}
+		if ( self::is_mandatory() && ! self::is_cart_eligible( $cart ) ) {
+			return;
+		}
 		$s      = self::settings();
 		$label  = (string) $s['professional_fee_label'];
 		$amount = (float) $s['professional_fee_amount'];
@@ -125,6 +194,10 @@ class Webino_Shipping_Professional_Packaging {
 	 */
 	public static function capture_checkout_choice( $post_data ) {
 		if ( ! self::is_available() ) {
+			return;
+		}
+		if ( self::is_mandatory() ) {
+			self::set_selected( true );
 			return;
 		}
 		$data = array();
@@ -147,14 +220,19 @@ class Webino_Shipping_Professional_Packaging {
 			wp_send_json_error( array( 'message' => 'disabled' ), 400 );
 		}
 		$selected = isset( $_POST['selected'] ) && in_array( (string) wp_unslash( $_POST['selected'] ), array( '1', 'yes', 'true' ), true );
+		$mandatory = self::is_mandatory();
+		if ( $mandatory ) {
+			$selected = true;
+		}
 		self::set_selected( $selected );
 		if ( function_exists( 'WC' ) && WC()->cart ) {
 			WC()->cart->calculate_totals();
 		}
 		wp_send_json_success(
 			array(
-				'selected' => $selected,
-				'amount'   => (float) self::settings()['professional_fee_amount'],
+				'selected'  => $selected,
+				'mandatory' => $mandatory,
+				'amount'    => (float) self::settings()['professional_fee_amount'],
 			)
 		);
 	}
@@ -170,12 +248,48 @@ class Webino_Shipping_Professional_Packaging {
 			return;
 		}
 		$selected = self::is_selected();
+		if ( $selected && self::is_mandatory() && function_exists( 'WC' ) && WC()->cart && ! self::is_cart_eligible( WC()->cart ) ) {
+			$selected = false;
+		}
 		$order->update_meta_data( self::ORDER_META, $selected ? 'yes' : 'no' );
 		if ( $selected ) {
 			$s = self::settings();
 			$order->update_meta_data( self::ORDER_META . '_label', (string) $s['professional_fee_label'] );
 			$order->update_meta_data( self::ORDER_META . '_amount', (float) $s['professional_fee_amount'] );
+			$order->update_meta_data( self::ORDER_META . '_mandatory', self::is_mandatory() ? 'yes' : 'no' );
 		}
+	}
+
+	/**
+	 * Block checkout (Store API) order hook.
+	 *
+	 * @param WC_Order $order   Order.
+	 * @param mixed    $request WP_REST_Request.
+	 * @return void
+	 */
+	public static function attach_to_order_store_api( $order, $request = null ) {
+		unset( $request );
+		self::attach_to_order( $order );
+	}
+
+	/**
+	 * Add the professional packaging selection to shipping packages so WooCommerce's
+	 * per-package rate cache is invalidated when the selection / mode changes.
+	 *
+	 * @param array<int, array<string, mixed>> $packages Packages.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function tag_shipping_packages( $packages ) {
+		if ( ! is_array( $packages ) || ! self::is_available() ) {
+			return $packages;
+		}
+		$flag = ( self::is_mandatory() ? 'm' : 'o' ) . ( self::is_selected() ? '1' : '0' );
+		foreach ( $packages as $k => $pkg ) {
+			if ( is_array( $pkg ) ) {
+				$packages[ $k ]['webino_prof_pack'] = $flag;
+			}
+		}
+		return $packages;
 	}
 
 	/**
@@ -199,6 +313,9 @@ class Webino_Shipping_Professional_Packaging {
 			. esc_html( $label ) . '</strong>';
 		if ( $amount > 0 && function_exists( 'wc_price' ) ) {
 			echo ' — ' . wp_kses_post( wc_price( $amount ) );
+		}
+		if ( 'yes' === (string) $order->get_meta( self::ORDER_META . '_mandatory' ) ) {
+			echo ' <em>(' . esc_html__( 'الزامی', 'webino-dashboard' ) . ')</em>';
 		}
 		echo '</p>';
 	}
@@ -245,6 +362,10 @@ class Webino_Shipping_Professional_Packaging {
 		if ( self::$rendered || ! self::is_available() ) {
 			return;
 		}
+		$mandatory = self::is_mandatory();
+		if ( $mandatory && function_exists( 'WC' ) && WC()->cart && ! self::is_cart_eligible( WC()->cart ) ) {
+			return;
+		}
 		self::$rendered = true;
 		$s        = self::settings();
 		$label    = (string) $s['professional_fee_label'];
@@ -254,9 +375,15 @@ class Webino_Shipping_Professional_Packaging {
 		$price    = function_exists( 'wc_price' ) ? wc_price( $amount ) : (string) $amount;
 		$id       = 'webino_professional_packaging_' . sanitize_key( $context );
 
-		echo '<tr class="webino-professional-packaging"><th colspan="2">';
-		echo '<div class="webino-prof-pack" data-context="' . esc_attr( $context ) . '">';
-		echo '<label class="webino-prof-pack__card" for="' . esc_attr( $id ) . '">';
+		$classes  = 'webino-prof-pack' . ( $mandatory ? ' webino-prof-pack--mandatory' : '' );
+
+		echo '<tr class="webino-professional-packaging' . ( $mandatory ? ' webino-professional-packaging--mandatory' : '' ) . '"><th colspan="2">';
+		echo '<div class="' . esc_attr( $classes ) . '" data-context="' . esc_attr( $context ) . '" data-mandatory="' . ( $mandatory ? '1' : '0' ) . '">';
+		if ( $mandatory ) {
+			echo '<div class="webino-prof-pack__card">';
+		} else {
+			echo '<label class="webino-prof-pack__card" for="' . esc_attr( $id ) . '">';
+		}
 		echo '<span class="webino-prof-pack__icon" aria-hidden="true">';
 		echo '<svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">';
 		echo '<rect x="6" y="14" width="36" height="26" rx="4" stroke="currentColor" stroke-width="2.2"/>';
@@ -267,19 +394,38 @@ class Webino_Shipping_Professional_Packaging {
 		echo '<span class="webino-prof-pack__body">';
 		echo '<span class="webino-prof-pack__title-row">';
 		echo '<span class="webino-prof-pack__title">' . esc_html( $label ) . '</span>';
-		echo '<span class="webino-prof-pack__badge">' . esc_html__( 'اختیاری', 'webino-dashboard' ) . '</span>';
+		if ( $mandatory ) {
+			echo '<span class="webino-prof-pack__badge webino-prof-pack__badge--mandatory">' . esc_html__( 'الزامی', 'webino-dashboard' ) . '</span>';
+		} else {
+			echo '<span class="webino-prof-pack__badge">' . esc_html__( 'اختیاری', 'webino-dashboard' ) . '</span>';
+		}
 		echo '</span>';
 		if ( '' !== $desc ) {
 			echo '<span class="webino-prof-pack__desc">' . esc_html( $desc ) . '</span>';
 		}
 		echo '<span class="webino-prof-pack__price">' . wp_kses_post( $price ) . '</span>';
+		if ( $mandatory ) {
+			echo '<span class="webino-prof-pack__note">'
+				. esc_html__( 'این هزینه برای همهٔ سفارش‌ها اعمال می‌شود و قابل حذف نیست.', 'webino-dashboard' )
+				. '</span>';
+		}
 		echo '</span>';
-		echo '<span class="webino-prof-pack__control">';
-		echo '<input type="checkbox" class="webino-prof-pack__input" name="webino_professional_packaging" id="'
-			. esc_attr( $id ) . '" value="1"' . checked( $selected, true, false ) . ' />';
-		echo '<span class="webino-prof-pack__switch" aria-hidden="true"></span>';
-		echo '</span>';
-		echo '</label>';
+		if ( $mandatory ) {
+			// Display-only: no checkbox, nothing the customer can toggle. Server ignores opt-outs anyway.
+			echo '<span class="webino-prof-pack__included">';
+			echo '<span class="webino-prof-pack__check" aria-hidden="true">&#10003;</span>';
+			echo '<span>' . esc_html__( 'شامل سفارش', 'webino-dashboard' ) . '</span>';
+			echo '</span>';
+			echo '<input type="hidden" name="webino_professional_packaging" value="1" />';
+			echo '</div>';
+		} else {
+			echo '<span class="webino-prof-pack__control">';
+			echo '<input type="checkbox" class="webino-prof-pack__input" name="webino_professional_packaging" id="'
+				. esc_attr( $id ) . '" value="1"' . checked( $selected, true, false ) . ' />';
+			echo '<span class="webino-prof-pack__switch" aria-hidden="true"></span>';
+			echo '</span>';
+			echo '</label>';
+		}
 		echo '</div>';
 		echo '</th></tr>';
 	}
@@ -339,7 +485,8 @@ class Webino_Shipping_Professional_Packaging {
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'webino_professional_packaging' ),
-				'action'  => 'webino_professional_packaging_toggle',
+				'action'    => 'webino_professional_packaging_toggle',
+				'mandatory' => self::is_mandatory(),
 			)
 		);
 	}
@@ -350,7 +497,7 @@ class Webino_Shipping_Professional_Packaging {
 	 * @return string
 	 */
 	private static function fallback_css() {
-		return '.webino-prof-pack{margin:0}.webino-prof-pack__card{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid rgba(15,23,42,.12);border-radius:14px;background:linear-gradient(135deg,#f8fafc 0%,#eef6ff 55%,#f5f3ff 100%);cursor:pointer;transition:box-shadow .2s,border-color .2s}.webino-prof-pack__card:hover{border-color:#3b82f6;box-shadow:0 8px 24px rgba(59,130,246,.12)}.webino-prof-pack__icon{color:#2563eb;flex:0 0 auto}.webino-prof-pack__body{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px}.webino-prof-pack__title-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.webino-prof-pack__title{font-weight:700;font-size:15px;color:#0f172a}.webino-prof-pack__badge{font-size:11px;padding:2px 8px;border-radius:999px;background:#dbeafe;color:#1d4ed8}.webino-prof-pack__desc{font-size:12.5px;line-height:1.5;color:#64748b}.webino-prof-pack__price{font-weight:700;font-size:14px;color:#1d4ed8}.webino-prof-pack__control{position:relative;flex:0 0 auto}.webino-prof-pack__input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2}.webino-prof-pack__switch{display:inline-block;width:46px;height:26px;border-radius:999px;background:#cbd5e1;position:relative;transition:background .2s}.webino-prof-pack__switch:after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}.webino-prof-pack__input:checked+.webino-prof-pack__switch{background:#2563eb}.webino-prof-pack__input:checked+.webino-prof-pack__switch:after{transform:translateX(20px)}[dir=rtl] .webino-prof-pack__input:checked+.webino-prof-pack__switch:after{transform:translateX(-20px)}.webino-professional-packaging th{padding-top:12px!important;padding-bottom:12px!important}';
+		return '.webino-prof-pack{margin:0}.webino-prof-pack__card{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid rgba(15,23,42,.12);border-radius:14px;background:linear-gradient(135deg,#f8fafc 0%,#eef6ff 55%,#f5f3ff 100%);cursor:pointer;transition:box-shadow .2s,border-color .2s}.webino-prof-pack__card:hover{border-color:#3b82f6;box-shadow:0 8px 24px rgba(59,130,246,.12)}.webino-prof-pack__icon{color:#2563eb;flex:0 0 auto}.webino-prof-pack__body{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px}.webino-prof-pack__title-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.webino-prof-pack__title{font-weight:700;font-size:15px;color:#0f172a}.webino-prof-pack__badge{font-size:11px;padding:2px 8px;border-radius:999px;background:#dbeafe;color:#1d4ed8}.webino-prof-pack__desc{font-size:12.5px;line-height:1.5;color:#64748b}.webino-prof-pack__price{font-weight:700;font-size:14px;color:#1d4ed8}.webino-prof-pack__control{position:relative;flex:0 0 auto}.webino-prof-pack__input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2}.webino-prof-pack__switch{display:inline-block;width:46px;height:26px;border-radius:999px;background:#cbd5e1;position:relative;transition:background .2s}.webino-prof-pack__switch:after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}.webino-prof-pack__input:checked+.webino-prof-pack__switch{background:#2563eb}.webino-prof-pack__input:checked+.webino-prof-pack__switch:after{transform:translateX(20px)}[dir=rtl] .webino-prof-pack__input:checked+.webino-prof-pack__switch:after{transform:translateX(-20px)}.webino-professional-packaging th{padding-top:12px!important;padding-bottom:12px!important}.webino-prof-pack--mandatory .webino-prof-pack__card{cursor:default;border-color:#2563eb}.webino-prof-pack__badge--mandatory{background:#1d4ed8;color:#fff}.webino-prof-pack__note{font-size:12px;color:#475569}.webino-prof-pack__included{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700}';
 	}
 
 	/**
@@ -363,6 +510,7 @@ class Webino_Shipping_Professional_Packaging {
 (function($){
   if(!$||!window.webinoProfessionalPackaging)return;
   var cfg=window.webinoProfessionalPackaging;
+  if(cfg.mandatory)return;
   function sync(checked){
     $.post(cfg.ajaxUrl,{action:cfg.action,nonce:cfg.nonce,selected:checked?'1':'0'}).always(function(){
       if($('form.checkout').length){$(document.body).trigger('update_checkout');}
@@ -370,6 +518,7 @@ class Webino_Shipping_Professional_Packaging {
     });
   }
   $(document).on('change','.webino-prof-pack__input',function(){
+    if($(this).closest('.webino-prof-pack--mandatory').length){this.checked=true;return;}
     sync(!!this.checked);
   });
 })(window.jQuery);

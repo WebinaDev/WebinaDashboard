@@ -146,9 +146,32 @@ export default function PackagingSettingsPage() {
             />
           </div>
 
-          <label className="flex items-center gap-3 text-sm">
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-3 text-sm">
+              <Switch
+                id="prof-fee-mandatory"
+                checked={!!draft.professional_fee_mandatory}
+                onCheckedChange={(v) =>
+                  setDraft((d) => (d ? { ...d, professional_fee_mandatory: v } : d))
+                }
+              />
+              <span>{t('shipping.professionalFeeMandatory')}</span>
+            </label>
+            <p className="text-muted-foreground text-xs ps-12">
+              {t('shipping.professionalFeeMandatoryHelp')}
+            </p>
+          </div>
+
+          <label
+            className={
+              draft.professional_fee_mandatory
+                ? 'flex items-center gap-3 text-sm opacity-60'
+                : 'flex items-center gap-3 text-sm'
+            }
+          >
             <Switch
-              checked={!!draft.professional_fee_default_selected}
+              checked={!!draft.professional_fee_mandatory || !!draft.professional_fee_default_selected}
+              disabled={!!draft.professional_fee_mandatory}
               onCheckedChange={(v) =>
                 setDraft((d) => (d ? { ...d, professional_fee_default_selected: v } : d))
               }
