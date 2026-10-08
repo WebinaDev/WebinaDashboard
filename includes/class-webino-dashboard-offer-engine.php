@@ -827,6 +827,15 @@ final class Webino_Dashboard_Offer_Engine {
 				'emptyState'   => $empty_state,
 				'product'      => $product,
 				'faDigits'     => $fa_digits,
+				'money'        => array(
+					'toman'       => class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) && Webino_Dashboard_Coupon_Storefront::use_toman_glyph(),
+					'label'       => _x( 'Toman', 'currency name for screen readers', 'webino-dashboard' ),
+					'thousand'    => function_exists( 'wc_get_price_thousand_separator' ) ? wc_get_price_thousand_separator() : ',',
+					'decimal'     => function_exists( 'wc_get_price_decimal_separator' ) ? wc_get_price_decimal_separator() : '.',
+					'decimals'    => function_exists( 'wc_get_price_decimals' ) ? wc_get_price_decimals() : 0,
+					'symbol'      => html_entity_decode( (string) get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8' ),
+					'symbolFirst' => ! $fa_digits && in_array( (string) get_option( 'woocommerce_currency_pos' ), array( 'left', 'left_space' ), true ),
+				),
 				'i18n'         => array(
 					'copy'         => __( 'Copy code', 'webino-dashboard' ),
 					'copied'       => __( 'Copied', 'webino-dashboard' ),
@@ -843,6 +852,8 @@ final class Webino_Dashboard_Offer_Engine {
 					/* translators: %s: amount */
 					'withProduct'  => __( 'With this product: %s', 'webino-dashboard' ),
 					'unlocksNow'   => __( 'Adding this product unlocks it!', 'webino-dashboard' ),
+					/* translators: %s: remaining amount */
+					'withProductLeft' => __( 'With this product only %s left to unlock it', 'webino-dashboard' ),
 					'applying'     => __( 'Applying…', 'webino-dashboard' ),
 					'error'        => __( 'Something went wrong. Please try again.', 'webino-dashboard' ),
 				),

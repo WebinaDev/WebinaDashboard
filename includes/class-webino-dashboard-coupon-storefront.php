@@ -325,7 +325,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 			return;
 		}
 		if ( ! wc_has_notice( $message, $type ) ) {
-			wc_add_notice( esc_html( $message ), $type );
+			wc_add_notice( self::text_html( $message ), $type );
 		}
 	}
 
@@ -390,7 +390,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 		}
 		// Use the store's own formatter (other plugins may convert Rial/Toman or swap the symbol for a glyph),
 		// then make sure the number and the currency name are separated by a non-breaking space.
-		$html = (string) wc_price( $amount );
+		$html = (string) wc_price( $amount, self::price_args() );
 		$html = preg_replace( '#<span[^>]*class="[^"]*screen-reader-text[^"]*"[^>]*>(.*?)</span>#u', ' $1 ', $html );
 		$text = html_entity_decode( wp_strip_all_tags( (string) $html ), ENT_QUOTES, 'UTF-8' );
 		$text = str_replace( array( "\u{00A0}", "\u{202F}", "\u{200F}", "\u{200E}" ), ' ', $text );
@@ -409,10 +409,62 @@ final class Webino_Dashboard_Coupon_Storefront {
 	 * @return string
 	 */
 	public static function price_html( $amount ) {
-		if ( ! function_exists( 'wc_price' ) ) {
-			return esc_html( self::price_text( $amount ) );
+		if ( ! function_exists( 'wc_price' ) || self::use_toman_glyph() ) {
+			return '<span class="webino-cc-price">' . self::text_html( self::price_text( $amount ) ) . '</span>';
 		}
-		return '<span class="webino-cc-price">' . self::digits_html( (string) wc_price( (float) $amount ) ) . '</span>';
+		return '<span class="webino-cc-price">' . self::digits_html( (string) wc_price( (float) $amount, self::price_args() ) ) . '</span>';
+	}
+
+	/**
+	 * Toman stores show the site's Toman icon (same glyph as the wfcp price module) instead of the word.
+	 *
+	 * @return bool
+	 */
+	public static function use_toman_glyph() {
+		static $cached = null;
+		if ( null === $cached ) {
+			$code   = function_exists( 'get_woocommerce_currency' ) ? strtoupper( (string) get_woocommerce_currency() ) : '';
+			$cached = (bool) apply_filters( 'webino_coupon_storefront_toman_glyph', in_array( $code, array( 'IRT', 'TOMAN', 'IRHT' ), true ) );
+		}
+		return $cached;
+	}
+
+	/**
+	 * Escape a customer-facing text and turn every "<number> تومان" into number + Toman icon
+	 * (inline-flex in the text direction → RTL shows the number first, the icon after it; screen readers hear "تومان").
+	 *
+	 * @param string $text Plain text.
+	 * @return string Safe HTML.
+	 */
+	public static function text_html( $text ) {
+		$html = esc_html( (string) $text );
+		if ( ! self::use_toman_glyph() ) {
+			return $html;
+		}
+		$label = esc_html( _x( 'Toman', 'currency name for screen readers', 'webino-dashboard' ) );
+		$d     = '0-9\x{06F0}-\x{06F9}\x{0660}-\x{0669}';
+		$out   = preg_replace(
+			'/([' . $d . '](?:[' . $d . ',.\x{066B}\x{066C}]*[' . $d . '])?)(?:\x{00A0}|&nbsp;|\s)*(?:تومان|Toman|IRT)/u',
+			'<span class="webino-money"><span class="webino-money__n">$1</span><span class="webino-toman" aria-hidden="true"></span><span class="webino-sr">' . $label . '</span></span>',
+			$html
+		);
+		return is_string( $out ) ? $out : $html;
+	}
+
+	/**
+	 * wc_price() args for our own amounts. Persian reads "۵۰۰,۰۰۰ تومان" (number, then currency): a store set to
+	 * "currency left" would otherwise put تومان before the number in every RTL sentence. Separators and decimals
+	 * stay the store's, so amounts match the rest of the shop.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function price_args() {
+		$args = array();
+		if ( self::use_persian_digits() ) {
+			/* %1$s = currency symbol, %2$s = amount */
+			$args['price_format'] = '%2$s&nbsp;%1$s';
+		}
+		return (array) apply_filters( 'webino_coupon_storefront_price_args', $args );
 	}
 
 	/**
@@ -1973,16 +2025,16 @@ final class Webino_Dashboard_Coupon_Storefront {
 									<?php endif; ?>
 								</span>
 							<?php endif; ?>
-							<span class="webino-cc__benefit" id="<?php echo esc_attr( $title_id ); ?>"><?php echo esc_html( $row['title'] ); ?></span>
+							<span class="webino-cc__benefit" id="<?php echo esc_attr( $title_id ); ?>"><?php echo self::text_html( $row['title'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in text_html(). ?></span>
 							<?php if ( ! empty( $row['detail'] ) ) : ?>
-								<span class="webino-cc__detail"><?php echo esc_html( $row['detail'] ); ?></span>
+								<span class="webino-cc__detail"><?php echo self::text_html( $row['detail'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in text_html(). ?></span>
 							<?php endif; ?>
 						</div>
 						<div class="webino-cc__side">
 							<?php if ( ! empty( $row['saving_html'] ) ) : ?>
 								<span class="webino-cc__save">
 									<span class="webino-cc__save-label"><?php echo esc_html__( 'You save', 'webino-dashboard' ); ?></span>
-									<span class="webino-cc__save-amount"><?php echo wp_kses_post( $row['saving_html'] ); ?></span>
+									<span class="webino-cc__save-amount"><?php echo $row['saving_html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built by price_html(). ?></span>
 								</span>
 							<?php endif; ?>
 							<?php if ( $is_applied ) : ?>

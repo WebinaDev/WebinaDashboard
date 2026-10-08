@@ -1105,3 +1105,12 @@ msgstr "با افزودن این محصول، این کوپن فعال می‌ش
 
 msgid "Applying…"
 msgstr "در حال اعمال…"
+
+msgctxt "currency name for screen readers"
+msgid "Toman"
+msgstr "تومان"
+
+#. translators: %s: remaining amount
+#, php-format
+msgid "With this product only %s left to unlock it"
+msgstr "با افزودن این محصول فقط %s تا فعال شدن کوپن مانده"

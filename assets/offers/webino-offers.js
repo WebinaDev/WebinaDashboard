@@ -56,6 +56,41 @@
     })
   }
 
+  var money = cfg.money || {}
+  var DIG = '0-9\u06F0-\u06F9\u0660-\u0669'
+  var MONEY_RE = new RegExp('([' + DIG + '](?:[' + DIG + ',.\u066B\u066C]*[' + DIG + '])?)(?:\u00A0|&nbsp;|\\s)*(?:تومان|Toman|IRT)', 'g')
+
+  function tomanMarkup(num) {
+    return (
+      '<span class="webino-money"><span class="webino-money__n">' + num + '</span>' +
+      '<span class="webino-toman" aria-hidden="true"></span><span class="webino-sr">' + esc(money.label || 'تومان') + '</span></span>'
+    )
+  }
+
+  // Escaped text with every "<number> تومان" shown as number + the site's Toman icon.
+  function textHtml(text) {
+    var html = esc(text)
+    if (!money.toman) return html
+    return html.replace(MONEY_RE, function (m, num) {
+      return tomanMarkup(num)
+    })
+  }
+
+  function setText(el, text) {
+    if (el) el.innerHTML = textHtml(text)
+  }
+
+  function moneyHtml(amount) {
+    var dec = Math.max(0, parseInt(money.decimals, 10) || 0)
+    var parts = (Math.round((Number(amount) || 0) * Math.pow(10, dec)) / Math.pow(10, dec)).toFixed(dec).split('.')
+    var num = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, money.thousand == null ? ',' : money.thousand)
+    if (parts[1]) num += (money.decimal || '.') + parts[1]
+    num = digits(num)
+    if (money.toman) return tomanMarkup(esc(num))
+    var sym = esc(money.symbol || '')
+    return money.symbolFirst ? sym + esc(num) : esc(num) + '\u00A0' + sym
+  }
+
   // Server-rendered price markup (wc_price) – keep only inline tags we know.
   function safeHtml(html, fallback) {
     if (!html) return esc(fallback || '')
@@ -244,7 +279,7 @@
     var el = document.createElement('div')
     el.className = 'webino-coupon-toast webino-coupon-toast--' + (type || 'notice')
     el.setAttribute('role', type === 'error' ? 'alert' : 'status')
-    el.textContent = text
+    el.innerHTML = textHtml(text)
     // Stack above the floating progress widget so the two never overlap.
     var widget = document.getElementById('webino-coupon-progress')
     if (widget && widget.getBoundingClientRect) {
@@ -280,7 +315,7 @@
     var target = Number(n.target) || 0
     if (target <= 0) return null
     var projected = (Number(n.current) || 0) + Number(p.price)
-    return { ratio: Math.max(0, Math.min(1, projected / target)), unlocks: projected >= target }
+    return { ratio: Math.max(0, Math.min(1, projected / target)), unlocks: projected >= target, left: Math.max(0, target - projected) }
   }
 
   function buildWidget() {
@@ -324,10 +359,10 @@
       setCollapsed(el, false)
     })
     var stored = ssGet(COLLAPSE_KEY)
-    var small = window.matchMedia && window.matchMedia('(max-width: 640px)').matches
-    // Cart / checkout: start as the compact pill so it never covers the totals or the checkout button.
-    var compactPage = !!(cfg.isCart || cfg.isCheckout)
-    setCollapsed(el, compactPage ? true : stored === null ? small : stored === '1')
+    // Phones, cart and checkout always start as the compact pill (never over add-to-cart, totals or the
+    // checkout button); the card opens only when tapped. Desktop remembers the visitor's last choice.
+    var compactPage = !!(cfg.isCart || cfg.isCheckout) || isSmall()
+    setCollapsed(el, compactPage ? true : stored === '1')
     return el
   }
 
@@ -355,9 +390,9 @@
     el.setAttribute('aria-label', i18n.nextCoupon || 'Your next coupon')
     var eyebrow = n.first || state.empty ? i18n.firstCoupon || i18n.nextCoupon : i18n.nextCoupon
     $('.webino-cprog__eyebrow', el).textContent = eyebrow || ''
-    $('.webino-cprog__pill-label', el).textContent = n.title || eyebrow || ''
-    $('.webino-cprog__title', el).textContent = n.title || ''
-    $('.webino-cprog__cta', el).textContent = n.cta || ''
+    setText($('.webino-cprog__pill-label', el), n.title || eyebrow || '')
+    setText($('.webino-cprog__title', el), n.title || '')
+    setText($('.webino-cprog__cta', el), n.cta || '')
     var min = $('.webino-cprog__min', el)
     min.setAttribute('aria-label', i18n.hide || 'Hide')
     min.setAttribute('title', i18n.hide || 'Hide')
@@ -390,7 +425,9 @@
       ghost.hidden = false
       hint.hidden = false
       hint.classList.toggle('is-unlock', proj.unlocks)
-      hint.textContent = proj.unlocks ? i18n.unlocksNow || '' : sprintf1(i18n.withProduct, pctText(Math.floor(proj.ratio * 100)))
+      if (proj.unlocks) hint.textContent = i18n.unlocksNow || ''
+      else if (i18n.withProductLeft) hint.innerHTML = esc(i18n.withProductLeft).replace('%s', moneyHtml(proj.left))
+      else hint.textContent = sprintf1(i18n.withProduct, pctText(Math.floor(proj.ratio * 100)))
     } else {
       ghost.style.width = '0'
       ghost.hidden = true
@@ -401,7 +438,52 @@
       setTimeout(function () {
         el.classList.remove('is-entering')
       }, 30)
+      setTimeout(placeWidget, 60)
+      setTimeout(placeWidget, 1500)
     }
+  }
+
+  function isSmall() {
+    return !!(window.matchMedia && window.matchMedia('(max-width: 782px)').matches)
+  }
+
+  // Keep the widget above fixed/sticky bars at the bottom of the screen (sticky add-to-cart, bottom nav, cookie bars).
+  function bottomBarHeight() {
+    var vh = window.innerHeight || document.documentElement.clientHeight
+    var vw = window.innerWidth || document.documentElement.clientWidth
+    var max = 0
+    var seen = []
+    ;[0.08, 0.3, 0.5, 0.7, 0.92].forEach(function (fx) {
+      var stack = document.elementsFromPoint ? document.elementsFromPoint(Math.round(vw * fx), vh - 3) : []
+      for (var i = 0; i < stack.length; i++) {
+        var n = stack[i]
+        while (n && n !== document.body && n !== document.documentElement) {
+          if (seen.indexOf(n) >= 0) break
+          seen.push(n)
+          if (n.id === 'webino-offers-root' || n.id === 'webino-coupon-progress') break
+          var pos = getComputedStyle(n).position
+          if (pos === 'fixed' || pos === 'sticky') {
+            var r = n.getBoundingClientRect()
+            if (r.height > 0 && r.height < vh * 0.4 && r.bottom >= vh - 4) max = Math.max(max, vh - r.top)
+            break
+          }
+          n = n.parentElement
+        }
+      }
+    })
+    return Math.round(max)
+  }
+
+  var placeTimer = null
+  function placeWidget() {
+    var el = document.getElementById('webino-coupon-progress')
+    if (!el) return
+    var h = bottomBarHeight()
+    el.style.bottom = h > 0 ? 'calc(' + (h + 10) + 'px + env(safe-area-inset-bottom, 0px))' : ''
+  }
+  function schedulePlace() {
+    if (placeTimer) clearTimeout(placeTimer)
+    placeTimer = setTimeout(placeWidget, 120)
   }
 
   function setCollapsed(el, collapsed) {
@@ -491,7 +573,7 @@
   function chooserMessage(chooser, text, type) {
     var el = chooser && chooser.querySelector('.webino-cc__msg')
     if (el) {
-      el.textContent = text || ''
+      el.innerHTML = textHtml(text || '')
       el.className = 'webino-cc__msg webino-coupon-chooser__msg' + (type === 'error' ? ' is-error' : text ? ' is-success' : '')
     }
     if (text) toast(text, type)
@@ -707,6 +789,8 @@
       })
     })
     document.addEventListener('click', onChooserClick)
+    window.addEventListener('resize', schedulePlace)
+    window.addEventListener('scroll', schedulePlace, { passive: true })
 
     if (!watchBlockStore() && hasBlockCart()) {
       setTimeout(watchBlockStore, 1500)

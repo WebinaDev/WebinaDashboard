@@ -1075,3 +1075,12 @@ msgstr "Adding this product unlocks it!"
 
 msgid "Applying…"
 msgstr "Applying…"
+
+msgctxt "currency name for screen readers"
+msgid "Toman"
+msgstr "Toman"
+
+#. translators: %s: remaining amount
+#, php-format
+msgid "With this product only %s left to unlock it"
+msgstr "With this product only %s left to unlock it"

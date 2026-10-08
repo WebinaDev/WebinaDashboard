@@ -1074,3 +1074,12 @@ msgstr ""
 
 msgid "Applying…"
 msgstr ""
+
+msgctxt "currency name for screen readers"
+msgid "Toman"
+msgstr ""
+
+#. translators: %s: remaining amount
+#, php-format
+msgid "With this product only %s left to unlock it"
+msgstr ""
