@@ -134,6 +134,15 @@ final class Webino_Dashboard_Coupon_Storefront {
 		add_action( 'wc_ajax_' . self::AJAX_SELECT, array( __CLASS__, 'ajax_select' ) );
 
 		add_action( 'init', array( __CLASS__, 'maybe_upgrade_data' ), 30 );
+
+		// Cached empty-cart tier must follow coupon edits.
+		add_action( 'save_post_shop_coupon', array( __CLASS__, 'bump_revision' ), 20, 1 );
+		add_action( 'trashed_post', array( __CLASS__, 'bump_revision' ), 20, 1 );
+		add_action( 'untrashed_post', array( __CLASS__, 'bump_revision' ), 20, 1 );
+		add_action( 'deleted_post', array( __CLASS__, 'bump_revision' ), 20, 1 );
+		add_action( 'added_post_meta', array( __CLASS__, 'bump_revision_meta' ), 20, 3 );
+		add_action( 'updated_post_meta', array( __CLASS__, 'bump_revision_meta' ), 20, 3 );
+		add_action( 'deleted_post_meta', array( __CLASS__, 'bump_revision_meta' ), 20, 3 );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -377,11 +386,89 @@ final class Webino_Dashboard_Coupon_Storefront {
 	public static function price_text( $amount ) {
 		$amount = (float) $amount;
 		if ( ! function_exists( 'wc_price' ) ) {
-			return (string) $amount;
+			return self::digits( (string) $amount );
 		}
-		$html = wc_price( $amount );
-		$text = html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' );
-		return trim( preg_replace( '/\s+/u', ' ', $text ) );
+		// Use the store's own formatter (other plugins may convert Rial/Toman or swap the symbol for a glyph),
+		// then make sure the number and the currency name are separated by a non-breaking space.
+		$html = (string) wc_price( $amount );
+		$html = preg_replace( '#<span[^>]*class="[^"]*screen-reader-text[^"]*"[^>]*>(.*?)</span>#u', ' $1 ', $html );
+		$text = html_entity_decode( wp_strip_all_tags( (string) $html ), ENT_QUOTES, 'UTF-8' );
+		$text = str_replace( array( "\u{00A0}", "\u{202F}", "\u{200F}", "\u{200E}" ), ' ', $text );
+		$text = trim( (string) preg_replace( '/[ \t\r\n]+/', ' ', $text ) );
+		$d    = '0-9\x{06F0}-\x{06F9}\x{0660}-\x{0669}';
+		$text = (string) preg_replace( '/([' . $d . '])(?=[^ ' . $d . ',.\x{066B}\x{066C}\-+])/u', '$1 ', $text );
+		$text = (string) preg_replace( '/([^ ' . $d . ',.\x{066B}\x{066C}\-+])(?=[' . $d . '])/u', '$1 ', $text );
+		$text = trim( (string) preg_replace( '/ +/', ' ', $text ) );
+		return str_replace( ' ', "\u{00A0}", self::digits( $text ) );
+	}
+
+	/**
+	 * Store-formatted price HTML (wc_price) with digits matching the storefront language.
+	 *
+	 * @param float $amount Amount.
+	 * @return string
+	 */
+	public static function price_html( $amount ) {
+		if ( ! function_exists( 'wc_price' ) ) {
+			return esc_html( self::price_text( $amount ) );
+		}
+		return '<span class="webino-cc-price">' . self::digits_html( (string) wc_price( (float) $amount ) ) . '</span>';
+	}
+
+	/**
+	 * Show Persian digits on Persian storefronts (filterable).
+	 *
+	 * @return bool
+	 */
+	public static function use_persian_digits() {
+		static $cached = null;
+		if ( null === $cached ) {
+			$locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+			$cached = (bool) apply_filters( 'webino_coupon_storefront_persian_digits', 0 === strpos( (string) $locale, 'fa' ) );
+		}
+		return $cached;
+	}
+
+	/**
+	 * @param string $text Text.
+	 * @return string
+	 */
+	public static function digits( $text ) {
+		$text = (string) $text;
+		if ( ! self::use_persian_digits() ) {
+			return $text;
+		}
+		return strtr(
+			$text,
+			array(
+				'0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴', '5' => '۵', '6' => '۶', '7' => '۷', '8' => '۸', '9' => '۹',
+				'٠' => '۰', '١' => '۱', '٢' => '۲', '٣' => '۳', '٤' => '۴', '٥' => '۵', '٦' => '۶', '٧' => '۷', '٨' => '۸', '٩' => '۹',
+				'%' => '٪',
+			)
+		);
+	}
+
+	/**
+	 * Convert digits in HTML text nodes only (attributes untouched).
+	 *
+	 * @param string $html HTML.
+	 * @return string
+	 */
+	public static function digits_html( $html ) {
+		$html = (string) $html;
+		if ( ! self::use_persian_digits() ) {
+			return $html;
+		}
+		$out = preg_replace_callback(
+			'/>([^<]+)</u',
+			static function ( $m ) {
+				// Decode entities first (wc_price encodes the currency symbol as &#x...; — its hex digits must not change).
+				$text = html_entity_decode( $m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+				return '>' . htmlspecialchars( self::digits( $text ), ENT_NOQUOTES, 'UTF-8' ) . '<';
+			},
+			'>' . $html . '<'
+		);
+		return is_string( $out ) ? substr( $out, 1, -1 ) : $html;
 	}
 
 	/**
@@ -1121,7 +1208,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 	 * Customer-facing title / benefit / condition texts.
 	 *
 	 * @param WC_Coupon $coupon Coupon.
-	 * @return array{title:string,benefit:string,condition:string}
+	 * @return array{title:string,benefit:string,detail:string,condition:string}
 	 */
 	public static function describe( $coupon ) {
 		$id      = $coupon->get_id();
@@ -1131,22 +1218,23 @@ final class Webino_Dashboard_Coupon_Storefront {
 		$shippct = get_post_meta( $id, '_webino_offer_shipping_percent', true );
 		$shippct = '' !== (string) $shippct ? (float) $shippct : 0.0;
 
-		$parts = array();
+		$parts   = array();
+		$details = array();
 		if ( $amount > 0 ) {
 			if ( 'percent' === $type ) {
-				$pct = wc_format_localized_decimal( wc_format_decimal( min( 100, $amount ), 2, true ) );
-				$parts[] = $cap > 0
-					? sprintf(
-						/* translators: 1: percent, 2: max discount */
-						__( '%1$s%% off (up to %2$s)', 'webino-dashboard' ),
-						$pct,
+				$pct     = wc_format_localized_decimal( wc_format_decimal( min( 100, $amount ), 2, true ) );
+				$parts[] = sprintf(
+					/* translators: %s: percent */
+					__( '%s%% off', 'webino-dashboard' ),
+					$pct
+				);
+				if ( $cap > 0 ) {
+					$details[] = sprintf(
+						/* translators: %s: max discount amount */
+						__( 'Up to %s', 'webino-dashboard' ),
 						self::price_text( $cap )
-					)
-					: sprintf(
-						/* translators: %s: percent */
-						__( '%s%% off', 'webino-dashboard' ),
-						$pct
 					);
+				}
 			} elseif ( 'fixed_product' === $type ) {
 				$parts[] = sprintf(
 					/* translators: %s: amount */
@@ -1172,7 +1260,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 					wc_format_localized_decimal( wc_format_decimal( $shippct, 2, true ) )
 				);
 		}
-		$benefit = $parts ? implode( ' + ', $parts ) : __( 'Discount', 'webino-dashboard' );
+		$headline = $parts ? implode( ' + ', $parts ) : __( 'Discount', 'webino-dashboard' );
 
 		$condition = '';
 		$min       = (float) self::normalize_decimal( $coupon->get_minimum_amount() );
@@ -1193,24 +1281,28 @@ final class Webino_Dashboard_Coupon_Storefront {
 				self::price_text( $min )
 			);
 		}
-
-		$title = $benefit;
-		if ( get_post_meta( $id, '_webino_offer_builder', true ) ) {
-			$desc = trim( (string) $coupon->get_description() );
-			if ( '' !== $desc ) {
-				$split = explode( ' — ', $desc, 2 );
-				$head  = trim( $split[0] );
-				$len   = function_exists( 'mb_strlen' ) ? mb_strlen( $head ) : (int) ( strlen( $head ) / 2 );
-				if ( '' !== $head && $len <= 80 ) {
-					$title = $head;
-				}
-			}
+		if ( '' !== $condition ) {
+			$details[] = $condition;
 		}
 
+		$headline = self::digits( wp_strip_all_tags( $headline ) );
+		$details  = array_map(
+			static function ( $d ) {
+				return self::digits( wp_strip_all_tags( (string) $d ) );
+			},
+			$details
+		);
+		$benefit = $headline;
+		if ( 'percent' === $type && $cap > 0 && isset( $details[0] ) ) {
+			$benefit = $headline . ' (' . $details[0] . ')';
+		}
+
+		// One generated headline for every coupon (the builder description only repeated the benefit in other words).
 		return array(
-			'title'     => wp_strip_all_tags( $title ),
-			'benefit'   => wp_strip_all_tags( $benefit ),
-			'condition' => wp_strip_all_tags( $condition ),
+			'title'     => $headline,
+			'benefit'   => $benefit,
+			'detail'    => implode( ' · ', $details ),
+			'condition' => self::digits( wp_strip_all_tags( $condition ) ),
 		);
 	}
 
@@ -1348,6 +1440,8 @@ final class Webino_Dashboard_Coupon_Storefront {
 		}
 		$cart = WC()->cart;
 		if ( $cart->is_empty() ) {
+			// Empty cart: still show the first reachable coupon (0% progress) so shoppers see what to aim for.
+			$state['next'] = self::first_tier();
 			return $state;
 		}
 
@@ -1358,6 +1452,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 		$state['empty']       = false;
 		$state['amount']      = $amount;
 		$state['amount_text'] = self::price_text( $amount );
+		$state['amount_html'] = self::price_html( $amount );
 		$state['items']       = $items;
 		$state['applied']     = array_values( $applied );
 
@@ -1373,6 +1468,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 				'code'      => $coupon->get_code(),
 				'title'     => $label['title'],
 				'benefit'   => $label['benefit'],
+				'detail'    => $label['detail'],
 				'condition' => $label['condition'],
 				'applied'   => in_array( $code, $applied, true ),
 			);
@@ -1380,6 +1476,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 				$saving             = self::estimate_saving( $coupon, $cart );
 				$row['saving']      = $saving;
 				$row['saving_text'] = $saving > 0 ? self::price_text( $saving ) : '';
+				$row['saving_html'] = $saving > 0 ? self::price_html( $saving ) : '';
 				$eligible[]         = $row;
 				$best_current       = max( $best_current, $saving );
 				continue;
@@ -1458,6 +1555,9 @@ final class Webino_Dashboard_Coupon_Storefront {
 				'target_text'    => self::price_text( $min ),
 				'current_text'   => self::price_text( $amount ),
 				'remaining_text' => self::price_text( $remaining ),
+				'target_html'    => self::price_html( $min ),
+				'current_html'   => self::price_html( $amount ),
+				'remaining_html' => self::price_html( $remaining ),
 				'potential'      => self::estimate_saving_at( $coupon, $min, $cart ),
 			);
 		}
@@ -1468,9 +1568,9 @@ final class Webino_Dashboard_Coupon_Storefront {
 			'current'        => $items,
 			'remaining'      => $remaining,
 			'ratio'          => round( min( 1, max( 0, $items / $need_items ) ), 4 ),
-			'target_text'    => number_format_i18n( $need_items ),
-			'current_text'   => number_format_i18n( $items ),
-			'remaining_text' => number_format_i18n( $remaining ),
+			'target_text'    => self::digits( number_format_i18n( $need_items ) ),
+			'current_text'   => self::digits( number_format_i18n( $items ) ),
+			'remaining_text' => self::digits( number_format_i18n( $remaining ) ),
 			'potential'      => self::estimate_saving_at( $coupon, $amount, $cart ),
 		);
 	}
@@ -1507,12 +1607,31 @@ final class Webino_Dashboard_Coupon_Storefront {
 		if ( ! $pick ) {
 			return null;
 		}
+		$pick = self::with_next_texts( $pick );
+		unset( $pick['code'] );
+		return $pick;
+	}
+
+	/**
+	 * Add the customer-facing call-to-action texts to a "next coupon" row.
+	 *
+	 * @param array<string, mixed> $pick Row.
+	 * @return array<string, mixed>
+	 */
+	private static function with_next_texts( array $pick ) {
+		$fresh = isset( $pick['current'] ) && 0.0 === (float) $pick['current'];
 		if ( 'amount' === $pick['kind'] ) {
-			$pick['cta'] = sprintf(
-				/* translators: %s: remaining amount */
-				__( 'Spend %s more to unlock it', 'webino-dashboard' ),
-				$pick['remaining_text']
-			);
+			$pick['cta'] = $fresh
+				? sprintf(
+					/* translators: %s: minimum order amount */
+					__( 'Unlocks on orders of %s', 'webino-dashboard' ),
+					$pick['target_text']
+				)
+				: sprintf(
+					/* translators: %s: remaining amount */
+					__( 'Spend %s more to unlock it', 'webino-dashboard' ),
+					$pick['remaining_text']
+				);
 			$pick['message'] = sprintf(
 				/* translators: 1: coupon title, 2: remaining amount */
 				__( 'Your next coupon: %1$s — spend %2$s more', 'webino-dashboard' ),
@@ -1532,8 +1651,115 @@ final class Webino_Dashboard_Coupon_Storefront {
 				$pick['remaining_text']
 			);
 		}
-		unset( $pick['code'] );
+		$pick['cta']     = self::digits( $pick['cta'] );
+		$pick['message'] = self::digits( $pick['message'] );
 		return $pick;
+	}
+
+	/**
+	 * Lowest public coupon tier for an empty cart (same for every visitor → cache-friendly).
+	 * Skips coupons that depend on who the customer is (email/products/Nth order) or can no longer be used.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public static function first_tier() {
+		if ( ! self::enabled( 'progress_widget' ) || ! class_exists( 'WC_Coupon' ) ) {
+			return null;
+		}
+		$key    = 'webino_cprog_first_' . md5( implode( '|', array( get_locale(), function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '', (string) get_option( 'woocommerce_currency_pos' ), (string) get_option( self::OPTION . '_rev', '0' ), defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '' ) ) );
+		$cached = get_transient( $key );
+		if ( is_array( $cached ) ) {
+			return isset( $cached['tier'] ) ? $cached['tier'] : null;
+		}
+		$best = null;
+		$now  = time();
+		foreach ( self::candidate_coupons() as $coupon ) {
+			$id    = $coupon->get_id();
+			$ctype = (string) get_post_meta( $id, '_webino_offer_condition_type', true );
+			$cval  = self::normalize_decimal( get_post_meta( $id, '_webino_offer_condition_value', true ) );
+			if ( 'order_nth' === $ctype && (int) $cval > 1 ) {
+				continue;
+			}
+			if ( $coupon->get_email_restrictions() || $coupon->get_product_ids() || $coupon->get_product_categories() ) {
+				continue;
+			}
+			$exp = $coupon->get_date_expires();
+			if ( $exp && $exp->getTimestamp() < $now ) {
+				continue;
+			}
+			if ( $coupon->get_usage_limit() > 0 && $coupon->get_usage_count() >= $coupon->get_usage_limit() ) {
+				continue;
+			}
+			$min = (float) self::normalize_decimal( $coupon->get_minimum_amount() );
+			$max = (float) self::normalize_decimal( $coupon->get_maximum_amount() );
+			if ( $min <= 0 || ( $max > 0 && $max < $min ) ) {
+				continue; // No threshold (applies right away) or misconfigured.
+			}
+			if ( null !== $best && $min >= (float) $best['target'] ) {
+				continue;
+			}
+			$label = self::describe( $coupon );
+			$type  = $coupon->get_discount_type();
+			$amt   = (float) self::normalize_decimal( $coupon->get_amount() );
+			$pot   = 'percent' === $type ? $min * min( 100, max( 0, $amt ) ) / 100 : max( 0, $amt );
+			$cap   = self::get_max_discount( $coupon );
+			if ( 'percent' === $type && $cap > 0 ) {
+				$pot = min( $pot, $cap );
+			}
+			$best = array(
+				'id'             => $id,
+				'title'          => $label['title'],
+				'benefit'        => $label['benefit'],
+				'detail'         => $label['detail'],
+				'condition'      => $label['condition'],
+				'applied'        => false,
+				'kind'           => 'amount',
+				'target'         => $min,
+				'current'        => 0,
+				'remaining'      => $min,
+				'ratio'          => 0,
+				'target_text'    => self::price_text( $min ),
+				'current_text'   => self::price_text( 0 ),
+				'remaining_text' => self::price_text( $min ),
+				'target_html'    => self::price_html( $min ),
+				'current_html'   => self::price_html( 0 ),
+				'remaining_html' => self::price_html( $min ),
+				'potential'      => $pot,
+				'first'          => true,
+			);
+		}
+		if ( $best ) {
+			$best = self::with_next_texts( $best );
+		}
+		set_transient( $key, array( 'tier' => $best ), 10 * MINUTE_IN_SECONDS );
+		return $best;
+	}
+
+	/**
+	 * Coupon data changed → drop cached storefront tiers.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return void
+	 */
+	public static function bump_revision( $post_id = 0 ) {
+		if ( $post_id && 'shop_coupon' !== get_post_type( (int) $post_id ) ) {
+			return;
+		}
+		update_option( self::OPTION . '_rev', (string) ( (int) get_option( self::OPTION . '_rev', 0 ) + 1 ), true );
+		self::flush_request_cache();
+	}
+
+	/**
+	 * @param int    $meta_id  Meta ID.
+	 * @param int    $post_id  Post ID.
+	 * @param string $meta_key Meta key.
+	 * @return void
+	 */
+	public static function bump_revision_meta( $meta_id, $post_id = 0, $meta_key = '' ) {
+		unset( $meta_id );
+		if ( is_string( $meta_key ) && ( 0 === strpos( $meta_key, '_webino_offer' ) || in_array( $meta_key, array( 'minimum_amount', 'maximum_amount', 'coupon_amount', 'discount_type', 'free_shipping', 'date_expires', 'usage_limit' ), true ) ) ) {
+			self::bump_revision( (int) $post_id );
+		}
 	}
 
 	/* ---------------------------------------------------------------------
@@ -1564,6 +1790,10 @@ final class Webino_Dashboard_Coupon_Storefront {
 		$state = self::get_state();
 		if ( class_exists( 'Webino_Dashboard_Offer_Engine', false ) ) {
 			$state['offers'] = Webino_Dashboard_Offer_Engine::eligible_payload();
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only flag.
+		if ( ! empty( $_REQUEST['chooser'] ) ) {
+			$state['chooser_html'] = self::chooser_html( $state );
 		}
 		wp_send_json_success( $state );
 	}
@@ -1603,7 +1833,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 			self::notices_restore( $snapshot );
 			$state = self::get_state();
 			$state['message'] = __( 'Coupon removed.', 'webino-dashboard' );
-			wp_send_json_success( $state );
+			self::send_select_state( $state );
 		}
 
 		$allowed = null;
@@ -1620,7 +1850,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 		if ( in_array( $code, array_map( array( __CLASS__, 'fmt_code' ), $cart->get_applied_coupons() ), true ) ) {
 			$state            = self::get_state();
 			$state['message'] = __( 'This coupon is already applied.', 'webino-dashboard' );
-			wp_send_json_success( $state );
+			self::send_select_state( $state );
 		}
 
 		$error = '';
@@ -1651,7 +1881,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 				__( '"%s" was applied.', 'webino-dashboard' ),
 				$label['title']
 			);
-		wp_send_json_success( $state );
+		self::send_select_state( $state );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -1659,53 +1889,117 @@ final class Webino_Dashboard_Coupon_Storefront {
 	 * ------------------------------------------------------------------- */
 
 	/**
+	 * @param array<string, mixed> $state State.
+	 * @return void
+	 */
+	private static function send_select_state( array $state ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in ajax_select().
+		if ( ! empty( $_POST['chooser'] ) ) {
+			$state['chooser_html'] = self::chooser_html( $state );
+		}
+		wp_send_json_success( $state );
+	}
+
+	/**
+	 * Coupon chooser markup (classic cart / checkout are server-rendered; block cart / checkout reuse it via AJAX).
+	 *
+	 * @param array<string, mixed>|null $state Precomputed state (AJAX) or null to compute it here.
 	 * @return string
 	 */
-	public static function chooser_html() {
+	public static function chooser_html( $state = null ) {
+		$placeholder = '<div class="webino-coupon-chooser webino-cc" hidden></div>';
 		if ( ! self::enabled( 'cart_chooser' ) || ! function_exists( 'WC' ) || ! WC()->cart || ! wc_coupons_enabled() ) {
-			return '<div class="webino-coupon-chooser" hidden></div>';
+			return $placeholder;
 		}
-		$state = self::get_state();
-		// Messages are shown by WooCommerce notices on classic pages; keep them for the widget only.
-		if ( ! empty( $state['messages'] ) && WC()->session ) {
-			WC()->session->set( self::SESSION_FLASH, $state['messages'] );
+		if ( ! is_array( $state ) ) {
+			$state = self::get_state();
+			// Messages are shown by WooCommerce notices on classic pages; keep them for the widget toast only.
+			if ( ! empty( $state['messages'] ) && WC()->session ) {
+				WC()->session->set( self::SESSION_FLASH, $state['messages'] );
+			}
 		}
 		if ( empty( $state['eligible'] ) ) {
-			return '<div class="webino-coupon-chooser" hidden></div>';
+			return $placeholder;
 		}
-		$nonce = wp_create_nonce( self::NONCE );
+		$rows       = $state['eligible'];
+		$has_applied = false;
+		$applied_saving = 0.0;
+		$best_id    = 0;
+		$best_saving = 0.0;
+		foreach ( $rows as $row ) {
+			$saving = isset( $row['saving'] ) ? (float) $row['saving'] : 0.0;
+			if ( ! empty( $row['applied'] ) ) {
+				$has_applied    = true;
+				$applied_saving = $saving;
+			}
+			if ( $saving > $best_saving ) {
+				$best_saving = $saving;
+				$best_id     = (int) $row['id'];
+			}
+		}
+		// Recommend only when it beats what is applied now (and there is a real choice).
+		if ( count( $rows ) < 2 || $best_saving <= $applied_saving ) {
+			$best_id = 0;
+		}
+		$count = self::digits( number_format_i18n( count( $rows ) ) );
+		$uid   = 'webino-cc-' . wp_rand( 1000, 999999 );
 		ob_start();
 		?>
-		<div class="webino-coupon-chooser" data-nonce="<?php echo esc_attr( $nonce ); ?>" role="region" aria-label="<?php echo esc_attr__( 'Available coupons', 'webino-dashboard' ); ?>">
-			<p class="webino-coupon-chooser__title"><?php echo esc_html__( 'Coupons you can use', 'webino-dashboard' ); ?></p>
-			<p class="webino-coupon-chooser__hint"><?php echo esc_html__( 'Only one coupon can be used per order. Pick the one you prefer.', 'webino-dashboard' ); ?></p>
-			<ul class="webino-coupon-chooser__list">
-				<?php foreach ( $state['eligible'] as $row ) : ?>
-					<li class="webino-coupon-chooser__item<?php echo $row['applied'] ? ' is-applied' : ''; ?>">
-						<div class="webino-coupon-chooser__text">
-							<strong class="webino-coupon-chooser__name"><?php echo esc_html( $row['title'] ); ?></strong>
-							<?php if ( $row['title'] !== $row['benefit'] ) : ?>
-								<span class="webino-coupon-chooser__benefit"><?php echo esc_html( $row['benefit'] ); ?></span>
-							<?php endif; ?>
-							<?php if ( '' !== $row['saving_text'] ) : ?>
-								<span class="webino-coupon-chooser__saving">
-									<?php
-									/* translators: %s: saving amount */
-									echo esc_html( sprintf( __( 'You save %s', 'webino-dashboard' ), $row['saving_text'] ) );
-									?>
+		<section class="webino-coupon-chooser webino-cc" data-nonce="<?php echo esc_attr( wp_create_nonce( self::NONCE ) ); ?>" dir="<?php echo is_rtl() ? 'rtl' : 'ltr'; ?>" aria-labelledby="<?php echo esc_attr( $uid ); ?>">
+			<header class="webino-cc__head">
+				<span class="webino-cc__head-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 0 2-2V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v1a2 2 0 0 0 0 4v1a2 2 0 0 0 0 4v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-1a2 2 0 0 0-2-2"/><path d="M9.5 14.5l5-5"/><circle cx="9.75" cy="9.75" r=".9" fill="currentColor"/><circle cx="14.25" cy="14.25" r=".9" fill="currentColor"/></svg></span>
+				<span class="webino-cc__head-text">
+					<span class="webino-cc__title" id="<?php echo esc_attr( $uid ); ?>"><?php echo esc_html__( 'Coupons you can use', 'webino-dashboard' ); ?> <span class="webino-cc__count"><?php echo esc_html( $count ); ?></span></span>
+					<span class="webino-cc__hint"><?php echo esc_html__( 'One coupon per order — pick the one you like.', 'webino-dashboard' ); ?></span>
+				</span>
+			</header>
+			<ul class="webino-cc__list" role="list">
+				<?php
+				foreach ( $rows as $row ) :
+					$is_applied = ! empty( $row['applied'] );
+					$is_best    = (int) $row['id'] === $best_id;
+					$classes    = 'webino-cc__card' . ( $is_applied ? ' is-applied' : '' ) . ( $is_best ? ' is-best' : '' );
+					$title_id   = $uid . '-' . (int) $row['id'];
+					?>
+					<li class="<?php echo esc_attr( $classes ); ?>" aria-labelledby="<?php echo esc_attr( $title_id ); ?>">
+						<div class="webino-cc__main">
+							<?php if ( $is_applied || $is_best ) : ?>
+								<span class="webino-cc__badges">
+									<?php if ( $is_applied ) : ?>
+										<span class="webino-cc__badge webino-cc__badge--applied"><span aria-hidden="true">✓</span> <?php echo esc_html__( 'Applied', 'webino-dashboard' ); ?></span>
+									<?php endif; ?>
+									<?php if ( $is_best ) : ?>
+										<span class="webino-cc__badge webino-cc__badge--best"><?php echo esc_html__( 'Best saving', 'webino-dashboard' ); ?></span>
+									<?php endif; ?>
 								</span>
 							<?php endif; ?>
+							<span class="webino-cc__benefit" id="<?php echo esc_attr( $title_id ); ?>"><?php echo esc_html( $row['title'] ); ?></span>
+							<?php if ( ! empty( $row['detail'] ) ) : ?>
+								<span class="webino-cc__detail"><?php echo esc_html( $row['detail'] ); ?></span>
+							<?php endif; ?>
 						</div>
-						<?php if ( $row['applied'] ) : ?>
-							<button type="button" class="button webino-coupon-chooser__btn is-applied" data-webino-coupon-remove="1"><?php echo esc_html__( 'Applied ✓ Remove', 'webino-dashboard' ); ?></button>
-						<?php else : ?>
-							<button type="button" class="button webino-coupon-chooser__btn" data-webino-coupon-id="<?php echo esc_attr( (string) $row['id'] ); ?>"><?php echo esc_html( $state['applied'] ? __( 'Use this instead', 'webino-dashboard' ) : __( 'Apply', 'webino-dashboard' ) ); ?></button>
-						<?php endif; ?>
+						<div class="webino-cc__side">
+							<?php if ( ! empty( $row['saving_html'] ) ) : ?>
+								<span class="webino-cc__save">
+									<span class="webino-cc__save-label"><?php echo esc_html__( 'You save', 'webino-dashboard' ); ?></span>
+									<span class="webino-cc__save-amount"><?php echo wp_kses_post( $row['saving_html'] ); ?></span>
+								</span>
+							<?php endif; ?>
+							<?php if ( $is_applied ) : ?>
+								<button type="button" class="webino-cc__btn webino-cc__btn--remove" data-webino-coupon-remove="1" data-webino-coupon-code="<?php echo esc_attr( $row['code'] ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coupon title */ __( 'Remove coupon: %s', 'webino-dashboard' ), $row['title'] ) ); ?>">
+									<span class="webino-cc__spinner" aria-hidden="true"></span><span class="webino-cc__btn-label"><?php echo esc_html__( 'Remove', 'webino-dashboard' ); ?></span>
+								</button>
+							<?php else : ?>
+								<button type="button" class="webino-cc__btn webino-cc__btn--apply" data-webino-coupon-id="<?php echo esc_attr( (string) $row['id'] ); ?>" data-webino-coupon-code="<?php echo esc_attr( $row['code'] ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coupon title */ __( 'Apply coupon: %s', 'webino-dashboard' ), $row['title'] ) ); ?>">
+									<span class="webino-cc__spinner" aria-hidden="true"></span><span class="webino-cc__btn-label"><?php echo esc_html( $has_applied ? __( 'Use this instead', 'webino-dashboard' ) : __( 'Apply', 'webino-dashboard' ) ); ?></span>
+								</button>
+							<?php endif; ?>
+						</div>
 					</li>
 				<?php endforeach; ?>
 			</ul>
-			<p class="webino-coupon-chooser__msg" aria-live="polite"></p>
-		</div>
+			<p class="webino-cc__msg webino-coupon-chooser__msg" role="status" aria-live="polite"></p>
+		</section>
 		<?php
 		return (string) ob_get_clean();
 	}

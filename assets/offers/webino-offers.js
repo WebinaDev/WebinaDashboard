@@ -31,16 +31,46 @@
     return base.replace('%%endpoint%%', encodeURIComponent(action))
   }
 
-  function fmtNum(n) {
-    try {
-      return new Intl.NumberFormat(cfg.isRtl ? 'fa-IR' : undefined).format(Math.round(Number(n) || 0))
-    } catch (e) {
-      return String(Math.round(Number(n) || 0))
-    }
+  var FA = '۰۱۲۳۴۵۶۷۸۹'
+
+  function digits(str) {
+    str = String(str == null ? '' : str)
+    if (!cfg.faDigits) return str
+    return str.replace(/[0-9]/g, function (d) {
+      return FA.charAt(+d)
+    })
+  }
+
+  function pctText(pct) {
+    pct = Math.round(Number(pct) || 0)
+    return cfg.faDigits ? digits(pct) + '٪' : pct + '%'
   }
 
   function sprintf1(tpl, val) {
     return String(tpl || '%s').replace('%s', val)
+  }
+
+  function esc(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    })
+  }
+
+  // Server-rendered price markup (wc_price) – keep only inline tags we know.
+  function safeHtml(html, fallback) {
+    if (!html) return esc(fallback || '')
+    var tpl = document.createElement('template')
+    tpl.innerHTML = String(html)
+    var bad = tpl.content.querySelectorAll('script,style,iframe,object,embed,img,svg,a,form,input,button,link,meta')
+    Array.prototype.forEach.call(bad, function (n) {
+      n.parentNode.removeChild(n)
+    })
+    Array.prototype.forEach.call(tpl.content.querySelectorAll('*'), function (n) {
+      Array.prototype.slice.call(n.attributes).forEach(function (a) {
+        if (a.name !== 'class' && a.name !== 'aria-hidden' && a.name !== 'dir') n.removeAttribute(a.name)
+      })
+    })
+    return tpl.innerHTML
   }
 
   function ssGet(k) {
@@ -234,13 +264,75 @@
 
   /* --------------------------------------------------------- progress widget */
 
+  var GIFT_SVG =
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/>' +
+    '<path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>'
+
   function removeWidget() {
     var el = document.getElementById('webino-coupon-progress')
     if (el && el.parentNode) el.parentNode.removeChild(el)
   }
 
+  function productProjection(n) {
+    var p = cfg.product
+    if (!cfg.isProduct || !p || !(Number(p.price) > 0) || n.kind !== 'amount') return null
+    var target = Number(n.target) || 0
+    if (target <= 0) return null
+    var projected = (Number(n.current) || 0) + Number(p.price)
+    return { ratio: Math.max(0, Math.min(1, projected / target)), unlocks: projected >= target }
+  }
+
+  function buildWidget() {
+    var el = document.createElement('section')
+    el.id = 'webino-coupon-progress'
+    el.className = 'webino-cprog'
+    el.innerHTML =
+      '<button type="button" class="webino-cprog__pill" aria-expanded="false">' +
+      '<span class="webino-cprog__pill-icon">' + GIFT_SVG + '</span>' +
+      '<span class="webino-cprog__pill-body"><span class="webino-cprog__pill-label"></span>' +
+      '<span class="webino-cprog__pill-bar" aria-hidden="true"><span class="webino-cprog__pill-fill"></span></span></span>' +
+      '<span class="webino-cprog__pill-pct"></span></button>' +
+      '<div class="webino-cprog__card">' +
+      '<div class="webino-cprog__head">' +
+      '<span class="webino-cprog__icon">' + GIFT_SVG + '</span>' +
+      '<span class="webino-cprog__heading"><span class="webino-cprog__eyebrow"></span><span class="webino-cprog__title"></span></span>' +
+      '<span class="webino-cprog__actions">' +
+      '<button type="button" class="webino-cprog__iconbtn webino-cprog__min"><span aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"/></svg></span></button>' +
+      '<button type="button" class="webino-cprog__iconbtn webino-cprog__close"><span aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>' +
+      '</span></div>' +
+      '<p class="webino-cprog__cta"></p>' +
+      '<div class="webino-cprog__track" role="progressbar" aria-valuemin="0">' +
+      '<span class="webino-cprog__ghost"></span><span class="webino-cprog__fill"><span class="webino-cprog__shine"></span></span></div>' +
+      '<div class="webino-cprog__range"><span class="webino-cprog__cur"></span><span class="webino-cprog__pct"></span><span class="webino-cprog__target"></span></div>' +
+      '<p class="webino-cprog__hint" hidden></p>' +
+      '</div>'
+    $('.webino-cprog__close', el).addEventListener('click', function () {
+      if (lastState && lastState.next) ssSet(DISMISS_KEY, String(lastState.next.id))
+      removeWidget()
+    })
+    $('.webino-cprog__min', el).addEventListener('click', function () {
+      ssSet(COLLAPSE_KEY, '1')
+      setCollapsed(el, true)
+      var pill = $('.webino-cprog__pill', el)
+      if (pill) pill.focus()
+    })
+    $('.webino-cprog__pill', el).addEventListener('click', function () {
+      ssSet(COLLAPSE_KEY, '0')
+      setCollapsed(el, false)
+    })
+    var stored = ssGet(COLLAPSE_KEY)
+    var small = window.matchMedia && window.matchMedia('(max-width: 640px)').matches
+    // Cart / checkout: start as the compact pill so it never covers the totals or the checkout button.
+    var compactPage = !!(cfg.isCart || cfg.isCheckout)
+    setCollapsed(el, compactPage ? true : stored === null ? small : stored === '1')
+    return el
+  }
+
   function renderWidget(state) {
-    if (!settings.progress_widget || !state || state.empty || !state.next) {
+    if (!settings.progress_widget || !state || !state.next) {
       removeWidget()
       return
     }
@@ -250,77 +342,77 @@
       return
     }
     var ratio = Math.max(0, Math.min(1, Number(n.ratio) || 0))
-    var pct = Math.round(ratio * 100)
+    var pct = Math.floor(ratio * 100)
     var root = ensureRoot()
     var el = document.getElementById('webino-coupon-progress')
+    var fresh = !el
     if (!el) {
-      el = document.createElement('section')
-      el.id = 'webino-coupon-progress'
-      el.className = 'webino-cprog'
-      el.setAttribute('aria-live', 'polite')
-      el.innerHTML =
-        '<button type="button" class="webino-cprog__pill" aria-expanded="false">' +
-        '<span class="webino-cprog__pill-icon" aria-hidden="true">🎁</span>' +
-        '<span class="webino-cprog__pill-bar" aria-hidden="true"><span class="webino-cprog__pill-fill"></span></span>' +
-        '<span class="webino-cprog__pill-pct"></span></button>' +
-        '<div class="webino-cprog__card">' +
-        '<div class="webino-cprog__head">' +
-        '<span class="webino-cprog__eyebrow"></span>' +
-        '<span class="webino-cprog__actions">' +
-        '<button type="button" class="webino-cprog__min" aria-label=""><span aria-hidden="true">–</span></button>' +
-        '<button type="button" class="webino-cprog__close" aria-label=""><span aria-hidden="true">×</span></button>' +
-        '</span></div>' +
-        '<p class="webino-cprog__title"></p>' +
-        '<p class="webino-cprog__cta"></p>' +
-        '<div class="webino-cprog__track" role="progressbar" aria-valuemin="0"><div class="webino-cprog__fill"></div></div>' +
-        '<div class="webino-cprog__range"><span class="webino-cprog__cur"></span><span class="webino-cprog__pct"></span><span class="webino-cprog__target"></span></div>' +
-        '</div>'
+      el = buildWidget()
+      el.classList.add('is-entering')
       root.appendChild(el)
-      $('.webino-cprog__close', el).addEventListener('click', function () {
-        if (lastState && lastState.next) ssSet(DISMISS_KEY, String(lastState.next.id))
-        removeWidget()
-      })
-      $('.webino-cprog__min', el).addEventListener('click', function () {
-        ssSet(COLLAPSE_KEY, '1')
-        setCollapsed(el, true)
-      })
-      $('.webino-cprog__pill', el).addEventListener('click', function () {
-        ssSet(COLLAPSE_KEY, '0')
-        setCollapsed(el, false)
-      })
-      var stored = ssGet(COLLAPSE_KEY)
-      var small = window.matchMedia && window.matchMedia('(max-width: 640px)').matches
-      // Cart / checkout: start as the compact pill so it never covers the totals or the checkout button
-      // (RTL themes put the totals column on the left). The customer can still expand it.
-      var compactPage = !!(cfg.isCart || cfg.isCheckout)
-      setCollapsed(el, compactPage ? true : stored === null ? small : stored === '1')
     }
     el.setAttribute('dir', cfg.isRtl ? 'rtl' : 'ltr')
-    $('.webino-cprog__eyebrow', el).textContent = i18n.nextCoupon || 'Your next coupon'
+    el.setAttribute('aria-label', i18n.nextCoupon || 'Your next coupon')
+    var eyebrow = n.first || state.empty ? i18n.firstCoupon || i18n.nextCoupon : i18n.nextCoupon
+    $('.webino-cprog__eyebrow', el).textContent = eyebrow || ''
+    $('.webino-cprog__pill-label', el).textContent = n.title || eyebrow || ''
     $('.webino-cprog__title', el).textContent = n.title || ''
     $('.webino-cprog__cta', el).textContent = n.cta || ''
-    $('.webino-cprog__min', el).setAttribute('aria-label', i18n.hide || 'Hide')
-    $('.webino-cprog__min', el).setAttribute('title', i18n.hide || 'Hide')
-    $('.webino-cprog__close', el).setAttribute('aria-label', i18n.close || 'Close')
-    $('.webino-cprog__close', el).setAttribute('title', i18n.close || 'Close')
-    $('.webino-cprog__pill', el).setAttribute('aria-label', (i18n.show || '') + ' — ' + (n.message || ''))
-    $('.webino-cprog__pill-pct', el).textContent = fmtNum(pct) + (cfg.isRtl ? '٪' : '%')
-    $('.webino-cprog__pill-fill', el).style.width = pct + '%'
+    var min = $('.webino-cprog__min', el)
+    min.setAttribute('aria-label', i18n.hide || 'Hide')
+    min.setAttribute('title', i18n.hide || 'Hide')
+    var close = $('.webino-cprog__close', el)
+    close.setAttribute('aria-label', i18n.close || 'Close')
+    close.setAttribute('title', i18n.close || 'Close')
+    $('.webino-cprog__pill', el).setAttribute('aria-label', (i18n.show || '') + ' — ' + (n.message || n.title || ''))
+    $('.webino-cprog__pill-pct', el).textContent = pctText(pct)
+    $('.webino-cprog__pill-fill', el).style.width = Math.max(pct, 4) + '%'
     var track = $('.webino-cprog__track', el)
     track.setAttribute('aria-valuemax', String(n.target))
     track.setAttribute('aria-valuenow', String(Math.min(Number(n.current) || 0, Number(n.target) || 0)))
     track.setAttribute('aria-valuetext', (n.current_text || '') + ' / ' + (n.target_text || ''))
-    track.setAttribute('aria-label', n.message || '')
-    $('.webino-cprog__fill', el).style.width = pct + '%'
-    $('.webino-cprog__cur', el).textContent = n.current_text || ''
-    $('.webino-cprog__target', el).textContent = n.target_text || ''
-    $('.webino-cprog__pct', el).textContent = fmtNum(pct) + (cfg.isRtl ? '٪' : '%')
+    track.setAttribute('aria-label', n.message || n.title || '')
+    var fill = $('.webino-cprog__fill', el)
+    var setFill = function () {
+      fill.style.width = (pct > 0 ? Math.max(pct, 3) : 0) + '%'
+    }
+    if (fresh) requestAnimationFrame(function () { requestAnimationFrame(setFill) })
+    else setFill()
+    $('.webino-cprog__cur', el).innerHTML = safeHtml(n.current_html, n.current_text)
+    $('.webino-cprog__target', el).innerHTML = safeHtml(n.target_html, n.target_text)
+    $('.webino-cprog__pct', el).textContent = pctText(pct)
+
+    var proj = productProjection(n)
+    var ghost = $('.webino-cprog__ghost', el)
+    var hint = $('.webino-cprog__hint', el)
+    if (proj && proj.ratio > ratio) {
+      ghost.style.width = Math.round(proj.ratio * 100) + '%'
+      ghost.hidden = false
+      hint.hidden = false
+      hint.classList.toggle('is-unlock', proj.unlocks)
+      hint.textContent = proj.unlocks ? i18n.unlocksNow || '' : sprintf1(i18n.withProduct, pctText(Math.floor(proj.ratio * 100)))
+    } else {
+      ghost.style.width = '0'
+      ghost.hidden = true
+      hint.hidden = true
+      hint.textContent = ''
+    }
+    if (fresh) {
+      setTimeout(function () {
+        el.classList.remove('is-entering')
+      }, 30)
+    }
   }
 
   function setCollapsed(el, collapsed) {
     el.classList.toggle('is-collapsed', !!collapsed)
     var pill = $('.webino-cprog__pill', el)
     if (pill) pill.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
+    var card = $('.webino-cprog__card', el)
+    if (card) {
+      if (collapsed) card.setAttribute('aria-hidden', 'true')
+      else card.removeAttribute('aria-hidden')
+    }
   }
 
   /* ------------------------------------------------------ block cart chooser */
@@ -337,71 +429,27 @@
     }
   }
 
-  function chooserMarkup(state) {
-    var wrap = document.createElement('div')
-    wrap.className = 'webino-coupon-chooser webino-coupon-chooser--block'
-    wrap.setAttribute('role', 'region')
-    wrap.setAttribute('aria-label', i18n.chooserTitle || '')
-    var title = document.createElement('p')
-    title.className = 'webino-coupon-chooser__title'
-    title.textContent = i18n.chooserTitle || ''
-    var hint = document.createElement('p')
-    hint.className = 'webino-coupon-chooser__hint'
-    hint.textContent = i18n.chooserHint || ''
-    var list = document.createElement('ul')
-    list.className = 'webino-coupon-chooser__list'
-    state.eligible.forEach(function (row) {
-      var li = document.createElement('li')
-      li.className = 'webino-coupon-chooser__item' + (row.applied ? ' is-applied' : '')
-      var text = document.createElement('div')
-      text.className = 'webino-coupon-chooser__text'
-      var name = document.createElement('strong')
-      name.className = 'webino-coupon-chooser__name'
-      name.textContent = row.title
-      text.appendChild(name)
-      if (row.benefit && row.benefit !== row.title) {
-        var b = document.createElement('span')
-        b.className = 'webino-coupon-chooser__benefit'
-        b.textContent = row.benefit
-        text.appendChild(b)
-      }
-      if (row.saving_text) {
-        var s = document.createElement('span')
-        s.className = 'webino-coupon-chooser__saving'
-        s.textContent = sprintf1(i18n.youSave, row.saving_text)
-        text.appendChild(s)
-      }
-      var btn = document.createElement('button')
-      btn.type = 'button'
-      btn.className = 'webino-coupon-chooser__btn' + (row.applied ? ' is-applied' : '')
-      if (row.applied) {
-        btn.setAttribute('data-webino-coupon-remove', '1')
-        btn.setAttribute('data-webino-coupon-code', row.code)
-        btn.textContent = i18n.appliedRm || 'Remove'
-      } else {
-        btn.setAttribute('data-webino-coupon-id', String(row.id))
-        btn.setAttribute('data-webino-coupon-code', row.code)
-        btn.textContent = state.applied && state.applied.length ? i18n.useInstead || 'Use' : i18n.apply || 'Apply'
-      }
-      li.appendChild(text)
-      li.appendChild(btn)
-      list.appendChild(li)
-    })
-    var msg = document.createElement('p')
-    msg.className = 'webino-coupon-chooser__msg'
-    msg.setAttribute('aria-live', 'polite')
-    wrap.appendChild(title)
-    wrap.appendChild(hint)
-    wrap.appendChild(list)
-    wrap.appendChild(msg)
-    return wrap
+  function htmlToNode(html) {
+    var tpl = document.createElement('template')
+    tpl.innerHTML = String(html || '').trim()
+    return tpl.content.firstElementChild
   }
 
   function renderBlockChooser(state) {
     if (!hasBlockCart()) return
     var old = document.querySelector('.webino-coupon-chooser--block')
-    if (!settings.cart_chooser || !state || state.empty || !state.eligible || !state.eligible.length) {
+    if (!settings.cart_chooser || !state || state.empty || !state.eligible || !state.eligible.length || !state.chooser_html) {
+      if (old && old.parentNode && !(state && state.eligible && state.eligible.length && !state.chooser_html)) old.parentNode.removeChild(old)
+      return
+    }
+    var node = htmlToNode(state.chooser_html)
+    if (!node || node.hasAttribute('hidden')) {
       if (old && old.parentNode) old.parentNode.removeChild(old)
+      return
+    }
+    node.classList.add('webino-coupon-chooser--block')
+    if (old && old.parentNode) {
+      old.parentNode.replaceChild(node, old)
       return
     }
     var anchor =
@@ -412,32 +460,50 @@
       document.querySelector('.wc-block-cart__sidebar') ||
       document.querySelector('.wc-block-checkout__sidebar') ||
       document.querySelector('.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout')
-    var node = chooserMarkup(state)
-    if (old && old.parentNode) {
-      old.parentNode.replaceChild(node, old)
-      return
-    }
     if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(node, anchor.nextSibling)
     else if (sidebar) sidebar.insertBefore(node, sidebar.firstChild)
   }
 
   /* ------------------------------------------------------------- selection */
 
-  function setBusy(chooser, busy) {
+  function setBusy(chooser, busy, btn) {
     if (!chooser) return
     chooser.classList.toggle('is-busy', !!busy)
+    if (busy) chooser.setAttribute('aria-busy', 'true')
+    else chooser.removeAttribute('aria-busy')
     Array.prototype.forEach.call(chooser.querySelectorAll('button'), function (b) {
       b.disabled = !!busy
     })
+    if (btn) {
+      btn.classList.toggle('is-loading', !!busy)
+      var label = btn.querySelector('.webino-cc__btn-label')
+      if (label) {
+        if (busy) {
+          label.setAttribute('data-label', label.textContent)
+          if (!btn.hasAttribute('data-webino-coupon-remove')) label.textContent = i18n.applying || label.textContent
+        } else if (label.getAttribute('data-label')) {
+          label.textContent = label.getAttribute('data-label')
+        }
+      }
+    }
   }
 
   function chooserMessage(chooser, text, type) {
-    var el = chooser && chooser.querySelector('.webino-coupon-chooser__msg')
+    var el = chooser && chooser.querySelector('.webino-cc__msg')
     if (el) {
       el.textContent = text || ''
-      el.className = 'webino-coupon-chooser__msg' + (type === 'error' ? ' is-error' : '')
+      el.className = 'webino-cc__msg webino-coupon-chooser__msg' + (type === 'error' ? ' is-error' : text ? ' is-success' : '')
     }
     if (text) toast(text, type)
+  }
+
+  function replaceChooser(chooser, html) {
+    if (!chooser || !chooser.parentNode || !html) return chooser
+    var node = htmlToNode(html)
+    if (!node) return chooser
+    if (chooser.classList.contains('webino-coupon-chooser--block')) node.classList.add('webino-coupon-chooser--block')
+    chooser.parentNode.replaceChild(node, chooser)
+    return node
   }
 
   function afterChange() {
@@ -453,10 +519,14 @@
     schedule(150)
   }
 
-  function postSelect(data) {
-    var nonce = (lastState && lastState.nonce) || ''
+  function chooserNonce(chooser) {
+    return (chooser && chooser.getAttribute('data-nonce')) || (lastState && lastState.nonce) || ''
+  }
+
+  function postSelect(data, nonce) {
     var body = new URLSearchParams()
-    body.set('nonce', nonce)
+    body.set('nonce', nonce || '')
+    body.set('chooser', '1')
     Object.keys(data).forEach(function (k) {
       body.set(k, data[k])
     })
@@ -479,14 +549,14 @@
 
   function onChooserClick(e) {
     var btn = e.target && e.target.closest ? e.target.closest('[data-webino-coupon-id], [data-webino-coupon-remove]') : null
-    if (!btn) return
+    if (!btn || btn.disabled) return
     var chooser = btn.closest('.webino-coupon-chooser')
     if (!chooser) return
     e.preventDefault()
     var remove = btn.hasAttribute('data-webino-coupon-remove')
     var id = btn.getAttribute('data-webino-coupon-id')
     var code = btn.getAttribute('data-webino-coupon-code') || ''
-    setBusy(chooser, true)
+    setBusy(chooser, true, btn)
 
     var store = chooser.classList.contains('webino-coupon-chooser--block') ? blockStore() : null
     if (store && code && typeof store.dispatch.applyCoupon === 'function') {
@@ -494,37 +564,41 @@
       var p = remove ? store.dispatch.removeCoupon(code) : store.dispatch.applyCoupon(code)
       Promise.resolve(p)
         .then(function () {
-          schedule(50)
+          schedule(30)
+          setTimeout(function () {
+            if (document.body.contains(chooser)) setBusy(chooser, false, btn)
+          }, 5000)
         })
         .catch(function (err) {
+          setBusy(chooser, false, btn)
           chooserMessage(chooser, (err && err.message) || i18n.error, 'error')
-        })
-        .then(function () {
-          setBusy(chooser, false)
         })
       return
     }
 
     var payload = remove ? { remove: '1' } : { coupon_id: id }
-    var run = function (retry) {
-      return postSelect(payload).then(function (res) {
+    var current = chooser
+    var run = function (nonce, retry) {
+      return postSelect(payload, nonce).then(function (res) {
         if (res && res.success) {
-          if (res.data) applyState(res.data)
-          chooserMessage(chooser, res.data && res.data.message, 'success')
+          var msg = res.data && res.data.message
+          if (res.data) {
+            current = replaceChooser(current, res.data.chooser_html)
+            applyState(res.data)
+          }
+          chooserMessage(current, msg, 'success')
           afterChange()
           return
         }
-        if (!retry && res && res.data && res.data.nonce) return run(true)
-        chooserMessage(chooser, (res && res.data && res.data.message) || i18n.error, 'error')
+        if (!retry && res && res.data && res.data.nonce) return run(res.data.nonce, true)
+        setBusy(current, false, btn)
+        chooserMessage(current, (res && res.data && res.data.message) || i18n.error, 'error')
       })
     }
-    run(false)
-      .catch(function () {
-        chooserMessage(chooser, i18n.error, 'error')
-      })
-      .then(function () {
-        setBusy(chooser, false)
-      })
+    run(chooserNonce(chooser), false).catch(function () {
+      setBusy(current, false, btn)
+      chooserMessage(current, i18n.error, 'error')
+    })
   }
 
   /* --------------------------------------------------------------- state */
@@ -558,7 +632,8 @@
       queued = true
       return
     }
-    inflight = fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now(), {
+    var q = '_=' + Date.now() + (hasBlockCart() ? '&chooser=1' : '')
+    inflight = fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + q, {
       credentials: 'same-origin',
       headers: { Accept: 'application/json' },
       cache: 'no-store',
@@ -607,13 +682,17 @@
       if (key !== last) {
         var first = last === ''
         last = key
-        if (!first) schedule()
+        if (!first) schedule(120)
       }
     })
     return true
   }
 
+  var booted = false
+
   function boot() {
+    if (booted) return
+    booted = true
     var events =
       'added_to_cart removed_from_cart updated_cart_totals updated_wc_div wc_fragments_refreshed ' +
       'updated_checkout applied_coupon removed_coupon wc_cart_emptied updated_shipping_method'
@@ -633,14 +712,19 @@
       setTimeout(watchBlockStore, 1500)
     }
 
-    // Skip the request entirely when the cart is empty (cookie set by WooCommerce), except on cart/checkout.
-    if (cartHasItemsCookie() || cfg.isCart || cfg.isCheckout || (cfg.popup && !cartHasItemsCookie() && shouldShowPopup())) {
+    var hasItems = cartHasItemsCookie()
+    if (hasItems || cfg.isCart || cfg.isCheckout) {
+      // Live, per-visitor state (never baked into cached HTML).
       schedule(0)
+    } else {
+      // Empty cart: the first coupon tier is the same for everyone, so it ships with the page.
+      if (cfg.emptyState) applyState(cfg.emptyState)
+      if (cfg.popup && shouldShowPopup()) schedule(0)
     }
 
     if (hasBlockCart() && window.MutationObserver) {
       var mo = new MutationObserver(function () {
-        if (lastState && settings.cart_chooser && lastState.eligible && lastState.eligible.length && !document.querySelector('.webino-coupon-chooser--block')) {
+        if (lastState && settings.cart_chooser && lastState.chooser_html && lastState.eligible && lastState.eligible.length && !document.querySelector('.webino-coupon-chooser--block')) {
           renderBlockChooser(lastState)
         }
       })

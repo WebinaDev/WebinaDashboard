@@ -1026,3 +1026,52 @@ msgstr "Minimum spend cannot be greater than maximum spend."
 
 msgid "The condition value must be at least 1."
 msgstr "The condition value must be at least 1."
+
+#. translators: %s: max discount amount
+#, php-format
+msgid "Up to %s"
+msgstr "Up to %s"
+
+#. translators: %s: minimum order amount
+#, php-format
+msgid "Unlocks on orders of %s"
+msgstr "Unlocks on orders of %s"
+
+msgid "One coupon per order — pick the one you like."
+msgstr "One coupon per order — pick the one you like."
+
+msgid "Applied"
+msgstr "Applied"
+
+msgid "Best saving"
+msgstr "Best saving"
+
+msgid "You save"
+msgstr "You save"
+
+msgid "Remove"
+msgstr "Remove"
+
+#. translators: %s: coupon title
+#, php-format
+msgid "Remove coupon: %s"
+msgstr "Remove coupon: %s"
+
+#. translators: %s: coupon title
+#, php-format
+msgid "Apply coupon: %s"
+msgstr "Apply coupon: %s"
+
+msgid "Coupon waiting for you"
+msgstr "Coupon waiting for you"
+
+#. translators: %s: amount
+#, php-format
+msgid "With this product: %s"
+msgstr "With this product: %s"
+
+msgid "Adding this product unlocks it!"
+msgstr "Adding this product unlocks it!"
+
+msgid "Applying…"
+msgstr "Applying…"

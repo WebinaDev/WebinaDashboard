@@ -1056,3 +1056,52 @@ msgstr "حداقل خرید نمی‌تواند بیشتر از حداکثر خ�
 
 msgid "The condition value must be at least 1."
 msgstr "مقدار شرط باید حداقل ۱ باشد."
+
+#. translators: %s: max discount amount
+#, php-format
+msgid "Up to %s"
+msgstr "تا سقف %s"
+
+#. translators: %s: minimum order amount
+#, php-format
+msgid "Unlocks on orders of %s"
+msgstr "با خرید %s فعال می‌شود"
+
+msgid "One coupon per order — pick the one you like."
+msgstr "در هر سفارش فقط یک کوپن اعمال می‌شود؛ هر کدام را می‌خواهید انتخاب کنید."
+
+msgid "Applied"
+msgstr "اعمال شده"
+
+msgid "Best saving"
+msgstr "بیشترین صرفه‌جویی"
+
+msgid "You save"
+msgstr "سود شما"
+
+msgid "Remove"
+msgstr "حذف"
+
+#. translators: %s: coupon title
+#, php-format
+msgid "Remove coupon: %s"
+msgstr "حذف کوپن: %s"
+
+#. translators: %s: coupon title
+#, php-format
+msgid "Apply coupon: %s"
+msgstr "اعمال کوپن: %s"
+
+msgid "Coupon waiting for you"
+msgstr "کوپن در انتظار شماست"
+
+#. translators: %s: amount
+#, php-format
+msgid "With this product: %s"
+msgstr "با افزودن این محصول: %s"
+
+msgid "Adding this product unlocks it!"
+msgstr "با افزودن این محصول، این کوپن فعال می‌شود!"
+
+msgid "Applying…"
+msgstr "در حال اعمال…"

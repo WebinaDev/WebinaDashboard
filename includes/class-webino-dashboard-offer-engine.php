@@ -759,21 +759,54 @@ final class Webino_Dashboard_Offer_Engine {
 		if ( ! $store_pages && empty( $settings['progress_widget'] ) ) {
 			return;
 		}
-		$base = defined( 'WEBINO_DASHBOARD_URL' ) ? WEBINO_DASHBOARD_URL : plugins_url( '', WEBINO_DASHBOARD_FILE );
+		$base = defined( 'WEBINO_DASHBOARD_URL' ) ? WEBINO_DASHBOARD_URL : plugin_dir_url( WEBINO_DASHBOARD_FILE );
+		$dir  = defined( 'WEBINO_DASHBOARD_DIR' ) ? WEBINO_DASHBOARD_DIR : plugin_dir_path( WEBINO_DASHBOARD_FILE );
 		$ver  = defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '1';
-		wp_enqueue_style(
-			'webino-offers',
-			$base . 'assets/offers/webino-offers.css',
-			array(),
-			$ver
-		);
+
+		// CSS is printed inline: it can't go stale behind a CDN/browser cache, and optimizers that drop or
+		// delay stylesheets can't leave the chooser/widget unstyled.
+		$css = self::storefront_css( $dir . 'assets/offers/webino-offers.css', $ver );
+		if ( '' !== $css ) {
+			wp_register_style( 'webino-offers', false, array(), $ver );
+			wp_enqueue_style( 'webino-offers' );
+			wp_add_inline_style( 'webino-offers', $css );
+		} else {
+			wp_enqueue_style( 'webino-offers', $base . 'assets/offers/webino-offers.css', array(), $ver );
+		}
+		// JS URL carries a content hash in the file *name* (some stacks strip ?ver= and cache assets for hours).
 		wp_enqueue_script(
 			'webino-offers',
-			$base . 'assets/offers/webino-offers.js',
+			self::hashed_asset_url( 'webino-offers.js', $dir . 'assets/offers/webino-offers.js', $base . 'assets/offers/webino-offers.js', $ver ),
 			array(),
-			$ver,
+			null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- version is in the file name.
 			true
 		);
+		add_filter( 'script_loader_tag', array( __CLASS__, 'script_tag_attributes' ), 20, 2 );
+		add_filter( 'wp_inline_script_attributes', array( __CLASS__, 'inline_script_attributes' ), 20, 2 );
+
+		$product = null;
+		if ( is_product() ) {
+			$p = wc_get_product( get_queried_object_id() );
+			if ( $p && $p->is_purchasable() && $p->is_in_stock() ) {
+				$product = array(
+					'id'    => $p->get_id(),
+					'price' => (float) wc_get_price_to_display( $p ),
+				);
+			}
+		}
+		$empty_state = null;
+		if ( ! empty( $settings['progress_widget'] ) && class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) ) {
+			$tier        = Webino_Dashboard_Coupon_Storefront::first_tier();
+			$empty_state = array(
+				'empty'    => true,
+				'applied'  => array(),
+				'eligible' => array(),
+				'next'     => $tier,
+				'amount'   => 0,
+			);
+		}
+		$fa_digits = class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) && Webino_Dashboard_Coupon_Storefront::use_persian_digits();
+
 		$ajax = class_exists( 'WC_AJAX' ) ? WC_AJAX::get_endpoint( '%%endpoint%%' ) : add_query_arg( 'wc-ajax', '%%endpoint%%', home_url( '/' ) );
 		wp_localize_script(
 			'webino-offers',
@@ -786,33 +819,147 @@ final class Webino_Dashboard_Offer_Engine {
 				'isRtl'        => is_rtl(),
 				'isCart'       => is_cart(),
 				'isCheckout'   => is_checkout(),
+				'isProduct'    => is_product(),
 				'storePage'    => $store_pages,
 				'popup'        => $store_pages,
 				'chips'        => is_product(),
 				'settings'     => $settings,
+				'emptyState'   => $empty_state,
+				'product'      => $product,
+				'faDigits'     => $fa_digits,
 				'i18n'         => array(
-					'copy'        => __( 'Copy code', 'webino-dashboard' ),
-					'copied'      => __( 'Copied', 'webino-dashboard' ),
-					'giftTitle'   => __( 'You have a gift for this purchase', 'webino-dashboard' ),
-					'giftHint'    => __( 'Just reach the target amount in your cart', 'webino-dashboard' ),
-					'cta'         => __( 'Best sellers', 'webino-dashboard' ),
-					'close'       => __( 'Close', 'webino-dashboard' ),
-					'remaining'   => __( 'until the coupon unlocks', 'webino-dashboard' ),
-					'nextCoupon'  => __( 'Your next coupon', 'webino-dashboard' ),
-					'hide'        => __( 'Hide', 'webino-dashboard' ),
-					'show'        => __( 'Show next coupon progress', 'webino-dashboard' ),
-					'of'          => __( 'of', 'webino-dashboard' ),
-					'chooserTitle'=> __( 'Coupons you can use', 'webino-dashboard' ),
-					'chooserHint' => __( 'Only one coupon can be used per order. Pick the one you prefer.', 'webino-dashboard' ),
-					'apply'       => __( 'Apply', 'webino-dashboard' ),
-					'useInstead'  => __( 'Use this instead', 'webino-dashboard' ),
-					'appliedRm'   => __( 'Applied ✓ Remove', 'webino-dashboard' ),
-					/* translators: %s: saving amount */
-					'youSave'     => __( 'You save %s', 'webino-dashboard' ),
-					'error'       => __( 'Something went wrong. Please try again.', 'webino-dashboard' ),
+					'copy'         => __( 'Copy code', 'webino-dashboard' ),
+					'copied'       => __( 'Copied', 'webino-dashboard' ),
+					'giftTitle'    => __( 'You have a gift for this purchase', 'webino-dashboard' ),
+					'giftHint'     => __( 'Just reach the target amount in your cart', 'webino-dashboard' ),
+					'cta'          => __( 'Best sellers', 'webino-dashboard' ),
+					'close'        => __( 'Close', 'webino-dashboard' ),
+					'remaining'    => __( 'until the coupon unlocks', 'webino-dashboard' ),
+					'nextCoupon'   => __( 'Your next coupon', 'webino-dashboard' ),
+					'firstCoupon'  => __( 'Coupon waiting for you', 'webino-dashboard' ),
+					'hide'         => __( 'Hide', 'webino-dashboard' ),
+					'show'         => __( 'Show next coupon progress', 'webino-dashboard' ),
+					'of'           => __( 'of', 'webino-dashboard' ),
+					/* translators: %s: amount */
+					'withProduct'  => __( 'With this product: %s', 'webino-dashboard' ),
+					'unlocksNow'   => __( 'Adding this product unlocks it!', 'webino-dashboard' ),
+					'applying'     => __( 'Applying…', 'webino-dashboard' ),
+					'error'        => __( 'Something went wrong. Please try again.', 'webino-dashboard' ),
 				),
 			)
 		);
+	}
+
+	/**
+	 * Minified storefront CSS for inline output (cached per file version).
+	 *
+	 * @param string $file Absolute path.
+	 * @param string $ver  Plugin version.
+	 * @return string
+	 */
+	private static function storefront_css( $file, $ver ) {
+		if ( ! is_readable( $file ) ) {
+			return '';
+		}
+		$sig    = $ver . '|' . (string) filemtime( $file ) . '|' . (string) filesize( $file );
+		$cached = wp_cache_get( 'webino_offers_css', 'webino-dashboard' );
+		if ( is_array( $cached ) && isset( $cached['sig'], $cached['css'] ) && $cached['sig'] === $sig ) {
+			return (string) $cached['css'];
+		}
+		$css = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local plugin file.
+		$css = (string) preg_replace( '#/\*.*?\*/#s', '', $css );
+		$css = (string) preg_replace( '/\s+/', ' ', $css );
+		$css = (string) preg_replace( '/\s*([{};,>])\s*/', '$1', $css );
+		$css = str_replace( ';}', '}', trim( $css ) );
+		wp_cache_set( 'webino_offers_css', array( 'sig' => $sig, 'css' => $css ), 'webino-dashboard', DAY_IN_SECONDS );
+		return $css;
+	}
+
+	/**
+	 * Copy an asset to uploads under a content-hashed file name; falls back to the plugin URL (?ver=).
+	 *
+	 * @param string $name     Base file name, e.g. webino-offers.js.
+	 * @param string $file     Absolute source path.
+	 * @param string $fallback Plugin URL.
+	 * @param string $ver      Plugin version.
+	 * @return string
+	 */
+	private static function hashed_asset_url( $name, $file, $fallback, $ver ) {
+		$fallback = add_query_arg( 'ver', rawurlencode( $ver ), $fallback );
+		if ( ! is_readable( $file ) || ! function_exists( 'wp_upload_dir' ) ) {
+			return $fallback;
+		}
+		$sig  = $ver . '|' . (string) filemtime( $file ) . '|' . (string) filesize( $file );
+		$map  = get_option( 'webino_dashboard_asset_map', array() );
+		$map  = is_array( $map ) ? $map : array();
+		$up   = wp_upload_dir( null, false );
+		if ( ! empty( $up['error'] ) || empty( $up['basedir'] ) ) {
+			return $fallback;
+		}
+		$dir = trailingslashit( $up['basedir'] ) . 'webino-dashboard/assets/';
+		$url = trailingslashit( set_url_scheme( $up['baseurl'] ) ) . 'webino-dashboard/assets/';
+		if ( isset( $map[ $name ]['sig'], $map[ $name ]['file'] ) && $map[ $name ]['sig'] === $sig && is_readable( $dir . $map[ $name ]['file'] ) ) {
+			return $url . $map[ $name ]['file'];
+		}
+		if ( isset( $map[ $name ]['failed'] ) && $map[ $name ]['failed'] === $sig ) {
+			return $fallback;
+		}
+		$hash = substr( (string) md5_file( $file ), 0, 12 );
+		$info = pathinfo( $name );
+		$out  = $info['filename'] . '.' . $hash . '.' . ( isset( $info['extension'] ) ? $info['extension'] : 'js' );
+		$ok   = wp_mkdir_p( $dir ) && ( is_readable( $dir . $out ) || @copy( $file, $dir . $out ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		if ( ! $ok ) {
+			$map[ $name ] = array( 'failed' => $sig );
+			update_option( 'webino_dashboard_asset_map', $map, false );
+			return $fallback;
+		}
+		if ( ! file_exists( $dir . 'index.php' ) ) {
+			@file_put_contents( $dir . 'index.php', "<?php\n// Silence is golden.\n" ); // phpcs:ignore
+		}
+		foreach ( (array) glob( $dir . $info['filename'] . '.*.' . ( isset( $info['extension'] ) ? $info['extension'] : 'js' ) ) as $old ) {
+			if ( is_string( $old ) && basename( $old ) !== $out ) {
+				@unlink( $old ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
+			}
+		}
+		$map[ $name ] = array(
+			'sig'  => $sig,
+			'file' => $out,
+		);
+		update_option( 'webino_dashboard_asset_map', $map, false );
+		return $url . $out;
+	}
+
+	/**
+	 * Keep optimizers from delaying/combining the storefront script (it must run on first paint of cached pages).
+	 *
+	 * @param string $tag    Script tag.
+	 * @param string $handle Handle.
+	 * @return string
+	 */
+	public static function script_tag_attributes( $tag, $handle ) {
+		if ( 'webino-offers' !== $handle || false !== strpos( $tag, 'data-no-optimize' ) ) {
+			return $tag;
+		}
+		return (string) preg_replace( '#<script(?=[\s>])(?=[^>]*\ssrc=)#', '<script data-no-optimize="1" data-no-defer="1" data-noptimize="1" data-no-minify="1" data-cfasync="false" nowprocket', $tag, 1 );
+	}
+
+	/**
+	 * Same for the localized config / inline parts.
+	 *
+	 * @param array<string, mixed> $attributes Attributes.
+	 * @param string               $data       Inline JS.
+	 * @return array<string, mixed>
+	 */
+	public static function inline_script_attributes( $attributes, $data = '' ) {
+		unset( $data );
+		if ( is_array( $attributes ) && isset( $attributes['id'] ) && 0 === strpos( (string) $attributes['id'], 'webino-offers-js-' ) ) {
+			$attributes['data-no-optimize'] = '1';
+			$attributes['data-no-defer']    = '1';
+			$attributes['data-noptimize']   = '1';
+			$attributes['data-cfasync']     = 'false';
+			$attributes['nowprocket']       = true;
+		}
+		return $attributes;
 	}
 
 	/**

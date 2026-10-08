@@ -36,6 +36,9 @@ function wbt_ok( $cond, $label, $extra = '' ) {
 		echo "  FAIL {$label}" . ( '' !== $extra ? " — {$extra}" : '' ) . "\n";
 	}
 }
+function wbt_ascii( $s ) {
+	return strtr( (string) $s, array( '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9', '٪' => '%' ) );
+}
 function wbt_eq( $a, $b, $label ) {
 	wbt_ok( $a == $b, $label, 'got ' . wp_json_encode( $a ) . ' expected ' . wp_json_encode( $b ) ); // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
 }
@@ -178,7 +181,9 @@ try {
 	echo "== tiers / auto-apply / boundaries ==\n";
 	wbt_reset_cart();
 	$s = Webino_Dashboard_Coupon_Storefront::get_state();
-	wbt_ok( ! empty( $s['empty'] ) && null === $s['next'], 'empty cart → no widget data' );
+	wbt_ok( ! empty( $s['empty'] ) && empty( $s['eligible'] ), 'empty cart → nothing eligible' );
+	wbt_ok( is_array( $s['next'] ) && 1000000.0 === (float) $s['next']['target'] && 0.0 === (float) $s['next']['ratio'] && ! empty( $s['next']['first'] ), 'empty cart → first reachable tier at 0%', wp_json_encode( $s['next'] ) );
+	wbt_ok( is_array( $s['next'] ) && false !== strpos( wbt_ascii( $s['next']['target_html'] ?? '' ), '1,000,000' ), 'first tier carries formatted target html' );
 
 	$key_a = WC()->cart->add_to_cart( $p_a, 1 );
 	wbt_calc();
@@ -187,7 +192,7 @@ try {
 	wbt_eq( $s['next']['id'] ?? null, $t1, '400k: next coupon is the 1M tier' );
 	wbt_eq( (float) ( $s['next']['remaining'] ?? -1 ), 600000.0, '400k: remaining 600k' );
 	wbt_eq( (float) ( $s['next']['ratio'] ?? -1 ), 0.4, '400k: ratio 0.4' );
-	wbt_ok( false !== strpos( (string) ( $s['next']['message'] ?? '' ), '600' ), 'next message contains remaining amount', (string) ( $s['next']['message'] ?? '' ) );
+	wbt_ok( false !== strpos( wbt_ascii( $s['next']['message'] ?? '' ), '600' ), 'next message contains remaining amount', (string) ( $s['next']['message'] ?? '' ) );
 	wbt_ok( ! in_array( $exp, wp_list_pluck( $s['eligible'], 'id' ), true ) && ! in_array( $used, wp_list_pluck( $s['eligible'], 'id' ), true ), 'expired / used-up coupons are not offered' );
 	wbt_status( array( $bad ), 'publish' );
 	$s2 = Webino_Dashboard_Coupon_Storefront::get_state();
@@ -374,7 +379,7 @@ try {
 	wbt_ok( WC()->cart->apply_coupon( 'wbtest-rial' ), '2B rial cart passes 1.5B min spend' );
 	wbt_calc();
 	wbt_eq( (float) WC()->cart->get_total( 'edit' ), 1999500000.0, 'large rial total exact' );
-	wbt_ok( false !== strpos( Webino_Dashboard_Coupon_Storefront::price_text( 1500000000 ), '1,500,000,000' ), 'price text formats large amounts', Webino_Dashboard_Coupon_Storefront::price_text( 1500000000 ) );
+	wbt_ok( false !== strpos( wbt_ascii( Webino_Dashboard_Coupon_Storefront::price_text( 1500000000 ) ), '1,500,000,000' ), 'price text formats large amounts', Webino_Dashboard_Coupon_Storefront::price_text( 1500000000 ) );
 } catch ( Throwable $e ) {
 	wbt_ok( false, 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() );
 }
