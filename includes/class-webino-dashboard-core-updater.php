@@ -1,6 +1,6 @@
 <?php
 /**
- * In-place core update from CRM/Gitea release ZIP.
+ * In-place core update from ERP git (module-clone-url).
  *
  * @package WebinoDashboard
  */
@@ -10,18 +10,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Downloads and applies WebinoDashboard core package without touching installed Modules/{slug}.
+ * Clones and applies WebinoDashboard core package without touching installed Modules/{slug}.
  */
 final class Webino_Dashboard_Core_Updater {
 
-	const LOCK_KEY       = 'webino_dashboard_core_update_lock';
+	const LOCK_KEY        = 'webino_dashboard_core_update_lock';
 	const CHECK_CACHE_KEY = 'webino_dashboard_core_update_check';
 	const CHECK_CACHE_TTL = 900;
-	const MAX_BACKUPS    = 5;
-	const CORE_SLUG      = 'webino-dashboard';
+	const MAX_BACKUPS     = 5;
+	const CORE_SLUG       = 'webino-dashboard';
 
 	/**
-	 * Bootstrap-safe status: transient only, never calls CRM.
+	 * Bootstrap-safe status: transient only, never calls ERP.
 	 *
 	 * @return array<string,mixed>
 	 */
@@ -44,7 +44,7 @@ final class Webino_Dashboard_Core_Updater {
 	}
 
 	/**
-	 * @param bool $force_refresh Bypass transient and hit CRM.
+	 * @param bool $force_refresh Bypass transient and hit ERP.
 	 * @return array<string,mixed>
 	 */
 	public static function get_update_status( $force_refresh = false ) {
@@ -57,11 +57,13 @@ final class Webino_Dashboard_Core_Updater {
 			}
 		}
 		$license = Webino_Dashboard_License::instance();
-		$res = $license->crm_get(
+		// POST so HMAC is attached when a shared secret exists.
+		$res = $license->crm_post(
 			'wp-json/webinocrm/v1/marketplace/core/check',
 			array(
 				'current_version' => $current,
-			)
+			),
+			'sync'
 		);
 		if ( empty( $res['ok'] ) || ! is_array( $res['data'] ?? null ) ) {
 			$payload = array(
@@ -77,6 +79,9 @@ final class Webino_Dashboard_Core_Updater {
 			return $payload;
 		}
 		$data = $res['data'];
+		if ( isset( $data['data'] ) && is_array( $data['data'] ) ) {
+			$data = $data['data'];
+		}
 		$payload = array(
 			'version'           => $current,
 			'latest_version'    => (string) ( $data['latest_version'] ?? $current ),
@@ -85,13 +90,15 @@ final class Webino_Dashboard_Core_Updater {
 			'package_available' => ! empty( $data['package_available'] ),
 			'license_active'    => true,
 			'unavailable'       => false,
+			'distribution'      => (string) ( $data['distribution'] ?? 'git' ),
+			'module_slug'       => (string) ( $data['module_slug'] ?? self::CORE_SLUG ),
 		);
 		set_transient( self::CHECK_CACHE_KEY, $payload, self::CHECK_CACHE_TTL );
 		return $payload;
 	}
 
 	/**
-	 * @param string $version Target version (optional).
+	 * @param string $version Target version (optional tag/branch).
 	 * @return array<string,mixed>|WP_Error
 	 */
 	public static function run_update( $version = '' ) {
@@ -101,43 +108,54 @@ final class Webino_Dashboard_Core_Updater {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error( 'forbidden', __( 'You do not have permission to update the dashboard.', 'webino-dashboard' ), array( 'status' => 403 ) );
 		}
-		$license = Webino_Dashboard_License::instance();
-		if ( ! class_exists( 'ZipArchive' ) ) {
-			return new WP_Error( 'zip', __( 'ZipArchive is not available on this server.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		if ( ! self::git_is_available() ) {
+			return new WP_Error(
+				'git',
+				__( 'Git is required to update the dashboard core but is not available on this server.', 'webino-dashboard' ),
+				array( 'status' => 500 )
+			);
 		}
 
+		$license = Webino_Dashboard_License::instance();
 		set_transient( self::LOCK_KEY, 1, 15 * MINUTE_IN_SECONDS );
 		$backup_dir = null;
 		$staging    = null;
 
 		try {
-			$body = array( 'module_slug' => self::CORE_SLUG );
+			$status = self::get_update_status( true );
+			$slug   = sanitize_key( (string) ( $status['module_slug'] ?? self::CORE_SLUG ) );
+			if ( '' === $slug ) {
+				$slug = self::CORE_SLUG;
+			}
+
+			$body = array( 'module_slug' => $slug );
 			if ( '' !== $version ) {
 				$body['version'] = sanitize_text_field( $version );
 			}
-			$grant = $license->crm_post( 'wp-json/webinocrm/v1/marketplace/core/download-token', $body );
-			if ( empty( $grant['ok'] ) || empty( $grant['data']['download_url'] ) ) {
+			$grant = $license->crm_post( 'wp-json/webinocrm/v1/license/module-clone-url', $body, 'install' );
+			$grant_data = is_array( $grant['data'] ?? null ) ? $grant['data'] : array();
+			if ( isset( $grant_data['data'] ) && is_array( $grant_data['data'] ) ) {
+				$grant_data = $grant_data['data'];
+			}
+			$clone_url = (string) ( $grant_data['clone_url'] ?? '' );
+			if ( empty( $grant['ok'] ) || '' === $clone_url ) {
 				$msg = is_array( $grant['data'] ?? null ) && ! empty( $grant['data']['message'] )
 					? (string) $grant['data']['message']
-					: ( $grant['error'] ?? __( 'Could not obtain download URL.', 'webino-dashboard' ) );
+					: ( $grant['error'] ?? __( 'Could not obtain git clone URL.', 'webino-dashboard' ) );
+				if ( is_array( $grant['data']['error'] ?? null ) && ! empty( $grant['data']['error']['message'] ) ) {
+					$msg = (string) $grant['data']['error']['message'];
+				}
 				throw new Exception( $msg );
 			}
 
-			$download_url = (string) $grant['data']['download_url'];
-			if ( ! class_exists( 'Webino_Dashboard_Remote_Url', false ) || ! Webino_Dashboard_Remote_Url::is_allowed_download_url( $download_url ) ) {
-				throw new Exception( __( 'Download URL is not allowed.', 'webino-dashboard' ) );
-			}
-			$tmp = download_url( $download_url, 600 );
-			if ( is_wp_error( $tmp ) ) {
-				throw new Exception( $tmp->get_error_message() );
+			if ( ! class_exists( 'Webino_Dashboard_Remote_Url', false ) || ! Webino_Dashboard_Remote_Url::is_allowed_clone_url( $clone_url ) ) {
+				throw new Exception( __( 'Clone URL is not allowed.', 'webino-dashboard' ) );
 			}
 
 			$staging = trailingslashit( WP_CONTENT_DIR ) . '.webino-core-update-' . wp_generate_password( 8, false, false );
-			wp_mkdir_p( $staging );
-			$unzip = self::unzip_to( $tmp, $staging );
-			wp_delete_file( $tmp );
-			if ( is_wp_error( $unzip ) ) {
-				throw new Exception( $unzip->get_error_message() );
+			$cloned  = self::git_clone_to( $clone_url, $staging, $version );
+			if ( is_wp_error( $cloned ) ) {
+				throw new Exception( $cloned->get_error_message() );
 			}
 
 			$core_src = self::locate_core_source_dir( $staging );
@@ -191,10 +209,11 @@ final class Webino_Dashboard_Core_Updater {
 			self::prune_old_backups();
 
 			return array(
-				'ok'              => true,
-				'version'         => $new_version,
-				'previous_version'=> $current,
-				'reload_required' => true,
+				'ok'               => true,
+				'version'          => $new_version,
+				'previous_version' => $current,
+				'reload_required'  => true,
+				'distribution'     => 'git',
 			);
 		} catch ( Exception $e ) {
 			if ( $backup_dir && is_dir( $backup_dir ) ) {
@@ -217,23 +236,111 @@ final class Webino_Dashboard_Core_Updater {
 	}
 
 	/**
+	 * @return bool
+	 */
+	private static function git_is_available() {
+		if ( ! function_exists( 'proc_open' ) ) {
+			return false;
+		}
+		$descriptors = array(
+			0 => array( 'pipe', 'r' ),
+			1 => array( 'pipe', 'w' ),
+			2 => array( 'pipe', 'w' ),
+		);
+		$proc = @proc_open( 'git --version', $descriptors, $pipes, null, self::git_env() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( ! is_resource( $proc ) ) {
+			return false;
+		}
+		fclose( $pipes[0] );
+		$out = stream_get_contents( $pipes[1] );
+		fclose( $pipes[1] );
+		fclose( $pipes[2] );
+		$code = proc_close( $proc );
+		return 0 === (int) $code && is_string( $out ) && false !== stripos( $out, 'git version' );
+	}
+
+	/**
+	 * @return array<string,string>
+	 */
+	private static function git_env() {
+		$path = getenv( 'PATH' ) ? (string) getenv( 'PATH' ) : '/usr/local/bin:/usr/bin:/bin';
+		return array(
+			'PATH'                => $path,
+			'HOME'                => getenv( 'HOME' ) ? (string) getenv( 'HOME' ) : '/tmp',
+			'GIT_TERMINAL_PROMPT' => '0',
+			'GIT_ASKPASS'         => 'echo',
+			'LC_ALL'              => 'C',
+		);
+	}
+
+	/**
+	 * @param string $clone_url Clone URL.
+	 * @param string $dest      Destination directory.
+	 * @param string $version   Optional tag/branch.
+	 * @return true|WP_Error
+	 */
+	private static function git_clone_to( $clone_url, $dest, $version = '' ) {
+		$dest = untrailingslashit( (string) $dest );
+		if ( is_dir( $dest ) ) {
+			self::rrmdir( $dest );
+		}
+		$parent = dirname( $dest );
+		if ( ! wp_mkdir_p( $parent ) ) {
+			return new WP_Error( 'git_clone', __( 'Could not create staging directory.', 'webino-dashboard' ) );
+		}
+
+		$cmd = 'git clone --depth 1';
+		if ( '' !== $version ) {
+			$cmd .= ' --branch ' . escapeshellarg( sanitize_text_field( $version ) );
+		}
+		$cmd .= ' ' . escapeshellarg( (string) $clone_url ) . ' ' . escapeshellarg( $dest );
+
+		$descriptors = array(
+			0 => array( 'pipe', 'r' ),
+			1 => array( 'pipe', 'w' ),
+			2 => array( 'pipe', 'w' ),
+		);
+		$proc = @proc_open( $cmd, $descriptors, $pipes, $parent, self::git_env() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( ! is_resource( $proc ) ) {
+			return new WP_Error( 'git_clone', __( 'git clone failed to start.', 'webino-dashboard' ) );
+		}
+		fclose( $pipes[0] );
+		$stdout = stream_get_contents( $pipes[1] );
+		$stderr = stream_get_contents( $pipes[2] );
+		fclose( $pipes[1] );
+		fclose( $pipes[2] );
+		$code = proc_close( $proc );
+		if ( 0 !== (int) $code ) {
+			$msg = trim( (string) $stdout . "\n" . (string) $stderr );
+			if ( '' === $msg ) {
+				$msg = __( 'git clone failed.', 'webino-dashboard' );
+			}
+			if ( class_exists( 'Webino_Dashboard_Remote_Url', false ) ) {
+				$msg = str_replace( (string) $clone_url, Webino_Dashboard_Remote_Url::redact_url( $clone_url ), $msg );
+			}
+			return new WP_Error( 'git_clone', $msg );
+		}
+		return true;
+	}
+
+	/**
 	 * @param string $staging Staging root.
 	 * @return string|WP_Error Absolute path with trailing slash.
 	 */
 	private static function locate_core_source_dir( $staging ) {
-		$direct = trailingslashit( $staging ) . 'WebinoDashboard/';
+		$direct = trailingslashit( $staging ) . 'WebinaDashboard/';
 		if ( is_readable( $direct . 'webino-dashboard.php' ) ) {
 			return $direct;
 		}
 		self::flatten_single_root_folder( $staging );
-		$direct = trailingslashit( $staging ) . 'WebinoDashboard/';
+		$direct = trailingslashit( $staging ) . 'WebinaDashboard/';
 		if ( is_readable( $direct . 'webino-dashboard.php' ) ) {
 			return $direct;
 		}
 		if ( is_readable( trailingslashit( $staging ) . 'webino-dashboard.php' ) ) {
 			return trailingslashit( $staging );
 		}
-		return new WP_Error( 'invalid_package', __( 'Update ZIP does not contain WebinoDashboard/webino-dashboard.php.', 'webino-dashboard' ), array( 'status' => 500 ) );
+		return new WP_Error( 'invalid_package', __( 'Update package does not contain WebinoDashboard/webino-dashboard.php.', 'webino-dashboard' ), array( 'status' => 500 ) );
 	}
 
 	/**
@@ -409,8 +516,8 @@ final class Webino_Dashboard_Core_Updater {
 	}
 
 	/**
-	 * @param string        $src            Source directory (trailing slash).
-	 * @param string        $dest           Destination directory (trailing slash).
+	 * @param string            $src            Source directory (trailing slash).
+	 * @param string            $dest           Destination directory (trailing slash).
 	 * @param array<int,string> $skip_top_level Top-level names under $src to skip (e.g. Modules).
 	 * @return true|WP_Error
 	 */
@@ -440,6 +547,9 @@ final class Webino_Dashboard_Core_Updater {
 			if ( isset( $skip[ $top ] ) ) {
 				continue;
 			}
+			if ( '.git' === $top || 0 === strpos( $rel, '.git/' ) ) {
+				continue;
+			}
 			$target = $dest . $rel;
 			if ( $item->isDir() ) {
 				wp_mkdir_p( $target );
@@ -451,18 +561,6 @@ final class Webino_Dashboard_Core_Updater {
 			}
 		}
 		return true;
-	}
-
-	/**
-	 * @param string $zip Zip path.
-	 * @param string $dest Destination.
-	 * @return true|WP_Error
-	 */
-	private static function unzip_to( $zip, $dest ) {
-		if ( ! class_exists( 'Webino_Dashboard_Zip', false ) ) {
-			return new WP_Error( 'zip', __( 'ZIP helper is not available.', 'webino-dashboard' ), array( 'status' => 500 ) );
-		}
-		return Webino_Dashboard_Zip::extract_to( $zip, $dest );
 	}
 
 	/**

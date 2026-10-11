@@ -51,10 +51,96 @@ final class Webino_Dashboard_REST_Marketplace {
 		if ( '' === $slug || ! class_exists( 'Webino_Dashboard_License', false ) ) {
 			return;
 		}
+		// Best-effort: ERP Edge may not expose revoke; local uninstall already cleared the module.
 		Webino_Dashboard_License::instance()->crm_post(
 			'wp-json/webinocrm/v1/marketplace/entitlements/revoke',
 			array( 'module_slug' => $slug ),
 			'sync'
+		);
+	}
+
+	/**
+	 * Fetch ERP marketplace catalog (single endpoint) and normalize to Dashboard shape.
+	 *
+	 * @param bool $include_core Include core product rows.
+	 * @return array{ ok: bool, categories?: list<array<string,mixed>>, modules?: list<array<string,mixed>>, owned?: list<int|string>, error?: string }
+	 */
+	public static function fetch_erp_catalog( $include_core = false ) {
+		if ( ! class_exists( 'Webino_Dashboard_License', false ) ) {
+			return array( 'ok' => false, 'error' => 'license_missing' );
+		}
+		$license = Webino_Dashboard_License::instance();
+		// Prefer POST so HMAC (domain|product|ts) is attached when a shared secret exists.
+		$res = $license->crm_post(
+			'wp-json/webinocrm/v1/marketplace/catalog',
+			array(
+				'include_core' => $include_core ? 1 : 0,
+			),
+			'sync'
+		);
+		if ( empty( $res['ok'] ) ) {
+			return array(
+				'ok'    => false,
+				'error' => isset( $res['error'] ) ? (string) $res['error'] : 'catalog_failed',
+			);
+		}
+		$raw = is_array( $res['data'] ?? null ) ? $res['data'] : array();
+		if ( isset( $raw['data'] ) && is_array( $raw['data'] ) ) {
+			$raw = $raw['data'];
+		}
+		$modules_in = isset( $raw['modules'] ) && is_array( $raw['modules'] ) ? $raw['modules'] : array();
+		$cats_in    = isset( $raw['categories'] ) && is_array( $raw['categories'] ) ? $raw['categories'] : array();
+		$owned      = isset( $raw['owned_module_ids'] ) && is_array( $raw['owned_module_ids'] )
+			? $raw['owned_module_ids']
+			: ( isset( $raw['owned'] ) && is_array( $raw['owned'] ) ? $raw['owned'] : array() );
+		$owned_ids  = array_map( 'strval', $owned );
+
+		$modules = array();
+		foreach ( $modules_in as $m ) {
+			if ( ! is_array( $m ) ) {
+				continue;
+			}
+			$id   = isset( $m['id'] ) ? (string) $m['id'] : '';
+			$slug = sanitize_key( (string) ( $m['slug'] ?? '' ) );
+			if ( '' === $slug ) {
+				continue;
+			}
+			$modules[] = array(
+				'id'               => $id,
+				'slug'             => $slug,
+				'name'             => (string) ( $m['name'] ?? $slug ),
+				'description'      => (string) ( $m['description'] ?? '' ),
+				'price'            => (float) ( $m['price'] ?? 0 ),
+				'currency'         => (string) ( $m['currency'] ?? 'IRT' ),
+				'is_free'          => ! empty( $m['is_free'] ) || (float) ( $m['price'] ?? 0 ) <= 0,
+				'version'          => (string) ( $m['version'] ?? '' ),
+				'category_id'      => $m['category_id'] ?? null,
+				'category'         => (string) ( $m['category'] ?? '' ),
+				'distribution'     => (string) ( $m['distribution'] ?? 'git' ),
+				'requires_license' => array_key_exists( 'requires_license', $m ) ? (bool) $m['requires_license'] : true,
+				'git_repo'         => (string) ( $m['git_repo'] ?? '' ),
+				'entitled'         => ( '' !== $id && in_array( $id, $owned_ids, true ) ) || ! empty( $m['entitled'] ),
+				'icon_url'         => (string) ( $m['icon_url'] ?? '' ),
+			);
+		}
+
+		$categories = array();
+		foreach ( $cats_in as $c ) {
+			if ( ! is_array( $c ) ) {
+				continue;
+			}
+			$categories[] = array(
+				'id'   => $c['id'] ?? null,
+				'name' => (string) ( $c['name'] ?? '' ),
+				'slug' => sanitize_key( (string) ( $c['slug'] ?? '' ) ),
+			);
+		}
+
+		return array(
+			'ok'         => true,
+			'categories' => $categories,
+			'modules'    => $modules,
+			'owned'      => $owned,
 		);
 	}
 
@@ -293,15 +379,6 @@ final class Webino_Dashboard_REST_Marketplace {
 		if ( '' === $slug ) {
 			return '';
 		}
-		$license = Webino_Dashboard_License::instance();
-		$res     = $license->crm_get(
-			'wp-json/webinocrm/v1/marketplace/catalog/modules/' . rawurlencode( $slug ),
-			array(),
-			self::CRM_FAST_OPTS
-		);
-		if ( ! empty( $res['ok'] ) && is_array( $res['data']['module'] ?? null ) ) {
-			return trim( (string) ( $res['data']['module']['icon_url'] ?? '' ) );
-		}
 		$meta = self::fetch_module_meta( $slug );
 		return trim( (string) ( $meta['icon_url'] ?? '' ) );
 	}
@@ -470,30 +547,19 @@ final class Webino_Dashboard_REST_Marketplace {
 		$cached  = get_transient( $key );
 		$domain  = $license->get_current_domain();
 
-		$crm = $license->crm_get_many(
-			array(
-				'categories' => 'wp-json/webinocrm/v1/marketplace/catalog/categories',
-				'modules'    => 'wp-json/webinocrm/v1/marketplace/catalog/modules',
-			),
-			array(),
-			self::CRM_FAST_OPTS
-		);
-
-		$cats  = isset( $crm['categories'] ) && is_array( $crm['categories'] ) ? $crm['categories'] : array( 'ok' => false );
-		$mods  = isset( $crm['modules'] ) && is_array( $crm['modules'] ) ? $crm['modules'] : array( 'ok' => false );
+		$erp   = self::fetch_erp_catalog( false );
 		$debug = array(
-			'crm_categories_ok' => ! empty( $cats['ok'] ),
-			'crm_modules_ok'    => ! empty( $mods['ok'] ),
-			'elapsed_ms'        => (int) round( ( microtime( true ) - $started ) * 1000 ),
-			'domain'            => $domain,
+			'erp_catalog_ok' => ! empty( $erp['ok'] ),
+			'elapsed_ms'     => (int) round( ( microtime( true ) - $started ) * 1000 ),
+			'domain'         => $domain,
+			'source'         => 'erp',
 		);
 
-		if ( ! empty( $mods['ok'] ) ) {
-			$cat_data = ! empty( $cats['ok'] ) && is_array( $cats['data'] ?? null )
-				? $cats['data']
-				: array( 'categories' => array() );
-			$mod_data = is_array( $mods['data'] ) ? $mods['data'] : array();
-			$payload  = self::build_catalog_payload( $cat_data, $mod_data );
+		if ( ! empty( $erp['ok'] ) ) {
+			$payload = self::build_catalog_payload(
+				array( 'categories' => $erp['categories'] ?? array() ),
+				array( 'modules' => $erp['modules'] ?? array() )
+			);
 			unset( $payload['debug'] );
 			set_transient( $key, $payload, self::CATALOG_CACHE_TTL );
 			return new WP_REST_Response( self::attach_catalog_debug( $payload, $debug ), 200 );
@@ -528,26 +594,30 @@ final class Webino_Dashboard_REST_Marketplace {
 	 * @return WP_REST_Response
 	 */
 	public static function module_detail( $request ) {
-		$slug    = sanitize_key( (string) $request['slug'] );
-		$license = Webino_Dashboard_License::instance();
-		$res     = $license->crm_get(
-			'wp-json/webinocrm/v1/marketplace/catalog/modules/' . rawurlencode( $slug ),
-			array(),
-			self::CRM_FAST_OPTS
-		);
-		if ( empty( $res['ok'] ) || empty( $res['data']['module'] ) || ! is_array( $res['data']['module'] ) ) {
-			$message = is_array( $res['data'] ?? null ) && ! empty( $res['data']['message'] )
-				? (string) $res['data']['message']
-				: __( 'Module not found.', 'webino-dashboard' );
+		$slug = sanitize_key( (string) $request['slug'] );
+		$erp  = self::fetch_erp_catalog( true );
+		$mod  = null;
+		if ( ! empty( $erp['ok'] ) && is_array( $erp['modules'] ?? null ) ) {
+			foreach ( $erp['modules'] as $row ) {
+				if ( (string) ( $row['slug'] ?? '' ) === $slug ) {
+					$mod = $row;
+					break;
+				}
+			}
+		}
+		if ( ! is_array( $mod ) ) {
+			$mod = self::fetch_module_meta( $slug );
+		}
+		if ( ! is_array( $mod ) || empty( $mod['slug'] ) ) {
 			return new WP_REST_Response(
 				array(
 					'ok'      => false,
-					'message' => $message,
+					'message' => __( 'Module not found.', 'webino-dashboard' ),
 				),
 				404
 			);
 		}
-		$module = self::merge_local_module_flag( $res['data']['module'] );
+		$module = self::merge_local_module_flag( $mod );
 		return new WP_REST_Response(
 			array(
 				'ok'     => true,
@@ -561,11 +631,30 @@ final class Webino_Dashboard_REST_Marketplace {
 	 * @return WP_REST_Response
 	 */
 	public static function installed() {
-		$license = Webino_Dashboard_License::instance();
-		$ents    = $license->crm_get( 'wp-json/webinocrm/v1/marketplace/entitlements' );
-		$catalog = $license->crm_get( 'wp-json/webinocrm/v1/marketplace/catalog/modules' );
+		$erp     = self::fetch_erp_catalog( false );
 		$local   = self::local_by_slug();
 		$by_slug = array();
+		if ( ! empty( $erp['ok'] ) && is_array( $erp['modules'] ?? null ) ) {
+			$catalog = array(
+				'ok'   => true,
+				'data' => array( 'modules' => $erp['modules'] ),
+			);
+		} else {
+			$catalog = array( 'ok' => false, 'data' => array() );
+		}
+		$ents = array(
+			'ok'   => ! empty( $erp['ok'] ),
+			'data' => array(
+				'entitlements' => array_values(
+					array_filter(
+						isset( $erp['modules'] ) && is_array( $erp['modules'] ) ? $erp['modules'] : array(),
+						static function ( $m ) {
+							return is_array( $m ) && ! empty( $m['entitled'] );
+						}
+					)
+				),
+			),
+		);
 		if ( ! empty( $catalog['ok'] ) && is_array( $catalog['data']['modules'] ?? null ) ) {
 			foreach ( $catalog['data']['modules'] as $mod ) {
 				$by_slug[ (string) $mod['slug'] ] = $mod;
@@ -736,8 +825,8 @@ final class Webino_Dashboard_REST_Marketplace {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function purchase_url( WP_REST_Request $request ) {
-		$slug    = sanitize_key( (string) $request['slug'] );
-		$license = Webino_Dashboard_License::instance();
+		$slug     = sanitize_key( (string) $request['slug'] );
+		$license  = Webino_Dashboard_License::instance();
 		$callback = Webino_Dashboard_Rewrite::url( 'marketplace/payment-callback' );
 		$callback = add_query_arg(
 			array(
@@ -745,19 +834,32 @@ final class Webino_Dashboard_REST_Marketplace {
 			),
 			$callback
 		);
-		$res     = $license->crm_post(
-			'wp-json/webinocrm/v1/marketplace/purchase/init',
+		$res = $license->crm_post(
+			'wp-json/webinocrm/v1/marketplace/purchase',
 			array(
 				'module_slug'  => $slug,
 				'callback_url' => $callback,
+				'pay'          => true,
 			)
 		);
 		if ( empty( $res['ok'] ) ) {
 			$msg = is_array( $res['data'] ?? null ) && ! empty( $res['data']['message'] ) ? (string) $res['data']['message'] : ( $res['error'] ?? __( 'Purchase init failed.', 'webino-dashboard' ) );
 			return new WP_Error( 'purchase', $msg, array( 'status' => 502 ) );
 		}
-		$data = is_array( $res['data'] ) ? $res['data'] : array();
-		return new WP_REST_Response( $data, 200 );
+		$raw  = is_array( $res['data'] ) ? $res['data'] : array();
+		$data = isset( $raw['data'] ) && is_array( $raw['data'] ) ? $raw['data'] : $raw;
+		$payment = isset( $data['payment'] ) && is_array( $data['payment'] ) ? $data['payment'] : array();
+		// SPA expects purchase/init-shaped fields.
+		$out = array_merge(
+			$data,
+			array(
+				'ok'           => true,
+				'redirect_url' => (string) ( $payment['redirect_url'] ?? $data['redirect_url'] ?? '' ),
+				'payment_url'  => (string) ( $payment['redirect_url'] ?? $data['payment_url'] ?? '' ),
+				'is_free'      => empty( $payment ) && ! empty( $data['license'] ),
+			)
+		);
+		return new WP_REST_Response( $out, 200 );
 	}
 
 	/**
@@ -766,16 +868,18 @@ final class Webino_Dashboard_REST_Marketplace {
 	 */
 	public static function purchase_verify( WP_REST_Request $request ) {
 		$body    = $request->get_json_params();
+		$body    = is_array( $body ) ? $body : array();
 		$license = Webino_Dashboard_License::instance();
 		$res     = $license->crm_post(
-			'wp-json/webinocrm/v1/marketplace/purchase/verify',
-			is_array( $body ) ? $body : array()
+			'wp-json/webinocrm/v1/marketplace/payment-callback',
+			$body
 		);
 		if ( empty( $res['ok'] ) ) {
 			$msg = is_array( $res['data'] ?? null ) && ! empty( $res['data']['message'] ) ? (string) $res['data']['message'] : ( $res['error'] ?? __( 'Verification failed.', 'webino-dashboard' ) );
 			return new WP_Error( 'verify', $msg, array( 'status' => 502 ) );
 		}
-		return new WP_REST_Response( is_array( $res['data'] ) ? $res['data'] : array( 'ok' => true ), 200 );
+		$raw = is_array( $res['data'] ) ? $res['data'] : array();
+		return new WP_REST_Response( isset( $raw['data'] ) && is_array( $raw['data'] ) ? $raw['data'] : $raw, 200 );
 	}
 
 	/**
@@ -819,16 +923,12 @@ final class Webino_Dashboard_REST_Marketplace {
 	 * @return array<string,mixed>
 	 */
 	private static function fetch_module_meta( $slug ) {
-		$license = Webino_Dashboard_License::instance();
-		$res     = $license->crm_get(
-			'wp-json/webinocrm/v1/marketplace/catalog/modules',
-			array(),
-			self::CRM_FAST_OPTS
-		);
-		if ( empty( $res['ok'] ) || ! is_array( $res['data']['modules'] ?? null ) ) {
+		$slug = sanitize_key( (string) $slug );
+		$erp  = self::fetch_erp_catalog( true );
+		if ( empty( $erp['ok'] ) || ! is_array( $erp['modules'] ?? null ) ) {
 			return array();
 		}
-		foreach ( $res['data']['modules'] as $mod ) {
+		foreach ( $erp['modules'] as $mod ) {
 			if ( (string) ( $mod['slug'] ?? '' ) === $slug ) {
 				return $mod;
 			}

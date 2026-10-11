@@ -41,7 +41,18 @@ final class Webino_Dashboard_Remote_Url {
 		 *
 		 * @param list<string> $hosts Hostnames.
 		 */
-		$extra = apply_filters( 'webino_dashboard_allowed_download_hosts', array( 'package.webina.dev' ) );
+		$extra = apply_filters(
+			'webino_dashboard_allowed_download_hosts',
+			array(
+				'package.webina.dev',
+				'git.webinaagency.ir',
+				'git.webina.dev',
+				'gitea.webinaagency.ir',
+				'gitea.webina.dev',
+				'webinaagency.ir',
+				'webina.dev',
+			)
+		);
 		foreach ( (array) $extra as $host ) {
 			$host = strtolower( trim( (string) $host ) );
 			if ( '' !== $host ) {
@@ -69,5 +80,38 @@ final class Webino_Dashboard_Remote_Url {
 
 		$host = strtolower( $host );
 		return in_array( $host, self::allowed_hosts(), true );
+	}
+
+	/**
+	 * HTTPS git clone URL allowlist (credentials in userinfo are ignored for host check).
+	 *
+	 * @param string $url Clone URL from ERP module-clone-url.
+	 * @return bool
+	 */
+	public static function is_allowed_clone_url( $url ) {
+		$url = trim( (string) $url );
+		if ( '' === $url || 0 !== stripos( $url, 'https://' ) ) {
+			return false;
+		}
+		$parts = wp_parse_url( $url );
+		if ( ! is_array( $parts ) ) {
+			return false;
+		}
+		$host = isset( $parts['host'] ) ? strtolower( (string) $parts['host'] ) : '';
+		if ( '' === $host ) {
+			return false;
+		}
+		return in_array( $host, self::allowed_hosts(), true );
+	}
+
+	/**
+	 * Strip userinfo from a clone URL for logs/debug.
+	 *
+	 * @param string $url Clone URL.
+	 * @return string
+	 */
+	public static function redact_url( $url ) {
+		$url = (string) $url;
+		return (string) preg_replace( '#^(https?://)([^/@]+)@#i', '$1***@', $url );
 	}
 }

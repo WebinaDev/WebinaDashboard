@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name:       Webino Dashboard
- * Plugin URI:        https://webina.dev
+ * Plugin URI:        https://webinaagency.ir
  * Description:       Standalone customer dashboard at /dashboard (SPA), separate from wp-admin.
- * Version:           0.9.55
+ * Version:           0.9.57
  * Author:            Webina
- * Author URI:        https://webina.dev
+ * Author URI:        https://webinaagency.ir
  * Text Domain:       webino-dashboard
  * Domain Path:       /languages
  * Requires at least: 6.1
@@ -21,17 +21,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WEBINO_DASHBOARD_VERSION', '0.9.55' );
+define( 'WEBINO_DASHBOARD_VERSION', '0.9.57' );
 define( 'WEBINO_DASHBOARD_FILE', __FILE__ );
 define( 'WEBINO_DASHBOARD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_URL', plugin_dir_url( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_BASENAME', plugin_basename( __FILE__ ) );
 define( 'WEBINO_MODULES_DIR', trailingslashit( WEBINO_DASHBOARD_DIR ) . 'Modules/' );
 if ( ! defined( 'WEBINO_DASHBOARD_VENDOR_HOST' ) ) {
-	define( 'WEBINO_DASHBOARD_VENDOR_HOST', 'webina.dev' );
+	define( 'WEBINO_DASHBOARD_VENDOR_HOST', 'webinaagency.ir' );
 }
 if ( ! defined( 'WEBINO_DASHBOARD_VENDOR_URL' ) ) {
 	define( 'WEBINO_DASHBOARD_VENDOR_URL', 'https://' . WEBINO_DASHBOARD_VENDOR_HOST );
+}
+/** Product slug sent to ERP license Edge (domain + product identity). */
+if ( ! defined( 'WEBINO_DASHBOARD_LICENSE_PRODUCT' ) ) {
+	define( 'WEBINO_DASHBOARD_LICENSE_PRODUCT', 'webinodashboard' );
 }
 
 add_action(

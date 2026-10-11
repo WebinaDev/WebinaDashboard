@@ -219,20 +219,54 @@ final class Webino_Dashboard_REST_ModirPayamak {
 	}
 
 	/**
-	 * @param string              $path CRM path.
+	 * Normalize ERP Edge JSON (may wrap payload in `data` or set unavailable).
+	 *
+	 * @param mixed $data Response body.
+	 * @return array<string,mixed>
+	 */
+	private static function unwrap_erp_payload( $data ) {
+		if ( ! is_array( $data ) ) {
+			return array();
+		}
+		if ( isset( $data['data'] ) && is_array( $data['data'] ) && ! isset( $data['ok'] ) && ! isset( $data['account'] ) ) {
+			$inner = $data['data'];
+			if ( isset( $data['unavailable'] ) ) {
+				$inner['unavailable'] = $data['unavailable'];
+			}
+			if ( isset( $data['message'] ) && empty( $inner['message'] ) ) {
+				$inner['message'] = $data['message'];
+			}
+			return $inner;
+		}
+		return $data;
+	}
+
+	/**
+	 * @param string              $path Edge path under modirpayamak/ (or full webinocrm path).
 	 * @param array<string,mixed> $body Body.
 	 * @return WP_REST_Response
 	 */
 	private static function crm_post( $path, array $body = array() ) {
+		$path = ltrim( (string) $path, '/' );
+		if ( 0 === strpos( $path, 'newsletter/' ) || 'newsletter' === $path || 0 === strpos( $path, 'modirpayamak/newsletter' ) ) {
+			return self::crm_unavailable_response(
+				__( 'Newsletter SMS is handled locally on this site; ERP Edge does not provide newsletter.', 'webino-dashboard' )
+			);
+		}
 		$license = Webino_Dashboard_License::instance();
-		$res     = $license->crm_post( 'wp-json/webinocrm/v1/' . ltrim( $path, '/' ), $body );
+		$res     = $license->crm_post( 'wp-json/webinocrm/v1/' . $path, $body );
 		if ( empty( $res['ok'] ) ) {
 			$msg = is_array( $res['data'] ?? null ) && ! empty( $res['data']['message'] )
 				? (string) $res['data']['message']
-				: ( $res['error'] ?? __( 'CRM request failed.', 'webino-dashboard' ) );
+				: ( $res['error'] ?? __( 'SMS service temporarily unavailable.', 'webino-dashboard' ) );
 			return self::crm_unavailable_response( $msg );
 		}
-		return new WP_REST_Response( is_array( $res['data'] ) ? $res['data'] : array( 'ok' => true ), 200 );
+		$payload = self::unwrap_erp_payload( $res['data'] ?? array() );
+		if ( ! empty( $payload['unavailable'] ) ) {
+			$msg = ! empty( $payload['message'] ) ? (string) $payload['message'] : __( 'SMS service temporarily unavailable.', 'webino-dashboard' );
+			return self::crm_unavailable_response( $msg );
+		}
+		return new WP_REST_Response( $payload ? $payload : array( 'ok' => true ), 200 );
 	}
 
 	/**
@@ -278,13 +312,24 @@ final class Webino_Dashboard_REST_ModirPayamak {
 	 * @return WP_REST_Response
 	 */
 	private static function crm_get( $path, array $query = array() ) {
+		$path = ltrim( (string) $path, '/' );
+		if ( 0 === strpos( $path, 'newsletter/' ) || 'newsletter' === $path || 0 === strpos( $path, 'modirpayamak/newsletter' ) ) {
+			return self::crm_unavailable_response(
+				__( 'Newsletter SMS is handled locally on this site; ERP Edge does not provide newsletter.', 'webino-dashboard' )
+			);
+		}
 		$license = Webino_Dashboard_License::instance();
-		$res     = $license->crm_get( 'wp-json/webinocrm/v1/' . ltrim( $path, '/' ), $query, self::CRM_FAST_OPTS );
+		$res     = $license->crm_get( 'wp-json/webinocrm/v1/' . $path, $query, self::CRM_FAST_OPTS );
 		if ( empty( $res['ok'] ) ) {
-			$msg = $res['error'] ?? __( 'CRM request failed.', 'webino-dashboard' );
+			$msg = $res['error'] ?? __( 'SMS service temporarily unavailable.', 'webino-dashboard' );
 			return self::crm_unavailable_response( $msg );
 		}
-		return new WP_REST_Response( is_array( $res['data'] ) ? $res['data'] : array( 'ok' => true ), 200 );
+		$payload = self::unwrap_erp_payload( $res['data'] ?? array() );
+		if ( ! empty( $payload['unavailable'] ) ) {
+			$msg = ! empty( $payload['message'] ) ? (string) $payload['message'] : __( 'SMS service temporarily unavailable.', 'webino-dashboard' );
+			return self::crm_unavailable_response( $msg );
+		}
+		return new WP_REST_Response( $payload ? $payload : array( 'ok' => true ), 200 );
 	}
 
 	/**

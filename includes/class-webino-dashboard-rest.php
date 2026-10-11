@@ -28,6 +28,10 @@ class Webino_Dashboard_REST {
 		add_action( 'wp_ajax_webino_dashboard_overview', array( __CLASS__, 'ajax_overview' ) );
 		add_action( 'wp_ajax_webino_dashboard_sms_panel', array( __CLASS__, 'ajax_sms_panel' ) );
 		add_action( 'wp_ajax_webino_dashboard_shop_rest', array( __CLASS__, 'ajax_shop_rest' ) );
+		// License SPA when /wp-json is blocked by CDN/WAF (see client/src/lib/api.ts).
+		add_action( 'wp_ajax_webino_dashboard_license_remote_check', array( __CLASS__, 'ajax_license_remote_check' ) );
+		add_action( 'wp_ajax_webino_dashboard_license_diagnostics', array( __CLASS__, 'ajax_license_diagnostics' ) );
+		add_action( 'wp_ajax_webino_dashboard_license_remote_activate', array( __CLASS__, 'ajax_license_remote_activate' ) );
 	}
 
 	/**
@@ -132,6 +136,84 @@ class Webino_Dashboard_REST {
 			wp_send_json_error(
 				array(
 					'message' => $e->getMessage() ? $e->getMessage() : 'SMS panel failed',
+				),
+				500
+			);
+		}
+	}
+
+	/**
+	 * Shared admin-ajax gate for license SPA actions (manage_options + nonce).
+	 *
+	 * @return void
+	 */
+	private static function ajax_require_license_manage() {
+		if ( ! Webino_Dashboard_Rest_Base::can_manage_license() ) {
+			wp_send_json_error( array( 'message' => 'Forbidden', 'code' => 'forbidden' ), 403 );
+		}
+		self::ajax_require_nonce();
+	}
+
+	/**
+	 * admin-ajax fallback for POST /license/remote-check when /wp-json is blocked.
+	 *
+	 * @return void
+	 */
+	public static function ajax_license_remote_check() {
+		self::ajax_require_license_manage();
+		try {
+			$response = self::license_remote_check();
+			$data     = $response instanceof WP_REST_Response ? $response->get_data() : array();
+			wp_send_json_success( is_array( $data ) ? $data : array() );
+		} catch ( Throwable $e ) {
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage() ? $e->getMessage() : 'License check failed',
+					'code'    => 'license_check_failed',
+				),
+				500
+			);
+		}
+	}
+
+	/**
+	 * admin-ajax fallback for POST /license/diagnostics when /wp-json is blocked.
+	 *
+	 * @return void
+	 */
+	public static function ajax_license_diagnostics() {
+		self::ajax_require_license_manage();
+		try {
+			$response = self::license_diagnostics();
+			$data     = $response instanceof WP_REST_Response ? $response->get_data() : array();
+			wp_send_json_success( is_array( $data ) ? $data : array() );
+		} catch ( Throwable $e ) {
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage() ? $e->getMessage() : 'License diagnostics failed',
+					'code'    => 'license_diagnostics_failed',
+				),
+				500
+			);
+		}
+	}
+
+	/**
+	 * admin-ajax fallback for POST /license/remote-activate when /wp-json is blocked.
+	 *
+	 * @return void
+	 */
+	public static function ajax_license_remote_activate() {
+		self::ajax_require_license_manage();
+		try {
+			$response = self::license_remote_activate();
+			$data     = $response instanceof WP_REST_Response ? $response->get_data() : array();
+			wp_send_json_success( is_array( $data ) ? $data : array() );
+		} catch ( Throwable $e ) {
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage() ? $e->getMessage() : 'License activate failed',
+					'code'    => 'license_activate_failed',
 				),
 				500
 			);
@@ -1433,7 +1515,7 @@ class Webino_Dashboard_REST {
 	 * @return WP_REST_Response
 	 */
 	private static function license_mirror_deprecated_response( WP_REST_Response $response, $crm_path ) {
-		$host = 'webina.dev';
+		$host = defined( 'WEBINO_DASHBOARD_VENDOR_HOST' ) ? WEBINO_DASHBOARD_VENDOR_HOST : 'webinaagency.ir';
 		if ( class_exists( 'Webino_Dashboard_License', false ) ) {
 			$bases = Webino_Dashboard_License::instance()->get_server_urls();
 			if ( ! empty( $bases[0] ) ) {
@@ -1443,7 +1525,7 @@ class Webino_Dashboard_REST {
 				}
 			}
 		}
-		$successor = 'https://' . $host . '/wp-json/webinocrm/v1/' . ltrim( (string) $crm_path, '/' );
+		$successor = 'https://' . $host . '/api/webinocrm/v1/' . ltrim( (string) $crm_path, '/' );
 		$response->header( 'Deprecation', 'true' );
 		$response->header( 'Link', '<' . $successor . '>; rel="successor-version"' );
 		return $response;

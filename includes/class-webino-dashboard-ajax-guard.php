@@ -48,7 +48,7 @@ final class Webino_Dashboard_Ajax_Guard {
 			return false;
 		}
 		return (bool) preg_match(
-			'/^webino_dashboard_(bootstrap|auth_session|overview|sms_panel|shop_rest|bots_rest|payments_rest|analytics_rest|digikala_[a-z_]+|basalam_oauth_(start|complete))$/',
+			'/^webino_dashboard_(bootstrap|auth_session|overview|sms_panel|shop_rest|bots_rest|payments_rest|analytics_rest|license_(remote_check|diagnostics|remote_activate)|digikala_[a-z_]+|basalam_oauth_(start|complete))$/',
 			$action
 		);
 	}

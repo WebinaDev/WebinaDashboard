@@ -61,6 +61,16 @@ function ajaxActionForPath(path: string): string | null {
   if (clean === 'dashboard/sms-panel') {
     return 'webino_dashboard_sms_panel'
   }
+  // License SPA — prefer admin-ajax when CDN/WAF blocks /wp-json/.
+  if (clean === 'license/remote-check') {
+    return 'webino_dashboard_license_remote_check'
+  }
+  if (clean === 'license/diagnostics') {
+    return 'webino_dashboard_license_diagnostics'
+  }
+  if (clean === 'license/remote-activate') {
+    return 'webino_dashboard_license_remote_activate'
+  }
   if (clean === 'digikala/keys/generate') {
     return 'webino_dashboard_digikala_keys_generate'
   }

@@ -11,7 +11,17 @@ echo "== License security smoke =="
 
 grep -q 'remote_activate' "$REST" \
   || { echo "FAIL: license_activate must call remote_activate" >&2; exit 1; }
-echo "OK: license_activate uses CRM remote_activate"
+echo "OK: license_activate uses ERP remote_activate"
+
+grep -q "ERP_API_PREFIX" "$LICENSE" \
+  || { echo "FAIL: ERP_API_PREFIX missing" >&2; exit 1; }
+grep -q 'normalize_erp_path' "$LICENSE" \
+  || { echo "FAIL: normalize_erp_path missing" >&2; exit 1; }
+grep -q "webinaagency.ir" "$ROOT/webino-dashboard.php" \
+  || { echo "FAIL: default vendor host must be webinaagency.ir" >&2; exit 1; }
+grep -q "api/webinocrm/v1" "$LICENSE" \
+  || { echo "FAIL: ERP Edge path api/webinocrm/v1 missing" >&2; exit 1; }
+echo "OK: ERP Edge transport (host + path rewrite)"
 
 grep -q 'License key mismatch' "$REST" \
   || { echo "FAIL: license_activate must reject mismatched license_key" >&2; exit 1; }

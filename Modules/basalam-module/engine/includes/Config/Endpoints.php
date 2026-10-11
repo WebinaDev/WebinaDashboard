@@ -17,12 +17,49 @@ final class Endpoints
     const BASALAM_ACCOUNTS    = 'https://basalam.com/accounts/sso';
     const AUTH_TOKEN_URL      = 'https://auth.basalam.com/oauth/token';
 
-    /** Webina-owned OAuth client (secret lives only on WebinaCRM). */
-    const WEBINO_OAUTH_CLIENT_ID    = '2357';
-    const WEBINO_OAUTH_REDIRECT_URI = 'https://webina.dev/api/basalam/oauth/callback';
-    const WEBINO_CRM_OAUTH_START    = 'https://webina.dev/wp-json/webinocrm/v1/basalam/oauth/start';
-    const WEBINO_CRM_OAUTH_REFRESH  = 'https://webina.dev/wp-json/webinocrm/v1/basalam/oauth/refresh';
-    const WEBINO_CRM_OAUTH_DISCONNECT = 'https://webina.dev/wp-json/webinocrm/v1/basalam/oauth/disconnect';
+    /** Webina-owned OAuth client (secret lives only on WebinoERP Marketplace). */
+    const WEBINO_OAUTH_CLIENT_ID = '2357';
+
+    /**
+     * Public ERP vendor base (no trailing slash).
+     */
+    public static function vendorBaseUrl(): string
+    {
+        $host = defined('WEBINO_DASHBOARD_VENDOR_URL')
+            ? (string) WEBINO_DASHBOARD_VENDOR_URL
+            : 'https://webinaagency.ir';
+        return untrailingslashit($host);
+    }
+
+    /** Default Basalam OAuth redirect on ERP Edge. */
+    public static function oauthRedirectUri(): string
+    {
+        return self::vendorBaseUrl() . '/api/basalam/oauth/callback';
+    }
+
+    public static function oauthStartUrl(): string
+    {
+        return self::vendorBaseUrl() . '/api/webinocrm/v1/basalam/oauth/start';
+    }
+
+    public static function oauthRefreshUrl(): string
+    {
+        return self::vendorBaseUrl() . '/api/webinocrm/v1/basalam/oauth/refresh';
+    }
+
+    public static function oauthDisconnectUrl(): string
+    {
+        return self::vendorBaseUrl() . '/api/webinocrm/v1/basalam/oauth/disconnect';
+    }
+
+    /** @deprecated Use oauthRedirectUri() — kept for string constant callers. */
+    const WEBINO_OAUTH_REDIRECT_URI = 'https://webinaagency.ir/api/basalam/oauth/callback';
+    /** @deprecated Use oauthStartUrl() */
+    const WEBINO_CRM_OAUTH_START = 'https://webinaagency.ir/api/webinocrm/v1/basalam/oauth/start';
+    /** @deprecated Use oauthRefreshUrl() */
+    const WEBINO_CRM_OAUTH_REFRESH = 'https://webinaagency.ir/api/webinocrm/v1/basalam/oauth/refresh';
+    /** @deprecated Use oauthDisconnectUrl() */
+    const WEBINO_CRM_OAUTH_DISCONNECT = 'https://webinaagency.ir/api/webinocrm/v1/basalam/oauth/disconnect';
 
     // Products
 

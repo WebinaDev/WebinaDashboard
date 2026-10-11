@@ -7,7 +7,7 @@ use WebinoBasalam\Config\Endpoints;
 defined('ABSPATH') || exit;
 
 /**
- * Basalam OAuth via WebinaCRM proxy (webina.dev) — no Hamsalam dependency.
+ * Basalam OAuth via WebinoERP Edge proxy — no Hamsalam dependency.
  */
 class OAuthManager
 {
@@ -17,7 +17,7 @@ class OAuthManager
     /** Lifetime of a pending OAuth authorization — the SSO round-trip window. */
     const OAUTH_STATE_TTL = 600;
 
-    /** Max age for CRM handoff signature timestamp (seconds). */
+    /** Max age for ERP handoff signature timestamp (seconds). */
     const HANDOFF_MAX_AGE = 180;
 
     /**
@@ -63,20 +63,18 @@ class OAuthManager
     }
 
     /**
-     * CRM proxy host (webina.dev by default).
+     * ERP Edge host (webinaagency.ir by default).
      *
      * @return string
      */
     public static function crmBaseUrl()
     {
-        $host = defined( 'WEBINO_DASHBOARD_VENDOR_URL' )
-            ? (string) WEBINO_DASHBOARD_VENDOR_URL
-            : 'https://webina.dev';
+        $host = Endpoints::vendorBaseUrl();
         return untrailingslashit( apply_filters( 'webino_basalam_crm_oauth_base', $host ) );
     }
 
     /**
-     * Static OAuth metadata (Webina-owned client; secret stays on CRM).
+     * Static OAuth metadata (Webina-owned client; secret stays on ERP).
      *
      * @return array{client_id:string,redirect_uri:string}
      */
@@ -84,12 +82,12 @@ class OAuthManager
     {
         return array(
             'client_id'    => (string) apply_filters( 'webino_basalam_oauth_default_client_id', Endpoints::WEBINO_OAUTH_CLIENT_ID ),
-            'redirect_uri' => (string) apply_filters( 'webino_basalam_oauth_default_redirect_uri', Endpoints::WEBINO_OAUTH_REDIRECT_URI ),
+            'redirect_uri' => (string) apply_filters( 'webino_basalam_oauth_default_redirect_uri', Endpoints::oauthRedirectUri() ),
         );
     }
 
     /**
-     * Start OAuth via WebinaCRM and return SSO URL.
+     * Start OAuth via WebinoERP and return SSO URL.
      *
      * @param string $return_url Dashboard return after connect.
      * @return array{url:string,redirect_uri:string,client_id:string,state?:string}|array{error:string}
@@ -97,7 +95,11 @@ class OAuthManager
     public function startViaCrm( $return_url = '' )
     {
         $oauthData = $this->getOauthData();
-        $endpoint  = self::crmBaseUrl() . '/wp-json/webinocrm/v1/basalam/oauth/start';
+        $endpoint  = Endpoints::oauthStartUrl();
+        $filtered  = apply_filters( 'webino_basalam_crm_oauth_base', self::crmBaseUrl() );
+        if ( is_string( $filtered ) && '' !== $filtered && untrailingslashit( $filtered ) !== Endpoints::vendorBaseUrl() ) {
+            $endpoint = untrailingslashit( $filtered ) . '/api/webinocrm/v1/basalam/oauth/start';
+        }
 
         $response = wp_remote_post(
             $endpoint,
@@ -127,7 +129,7 @@ class OAuthManager
         }
 
         if ( $code < 200 || $code >= 300 || empty( $data['url'] ) ) {
-            $message = isset( $data['message'] ) ? (string) $data['message'] : __( 'WebinaCRM OAuth start failed.', 'webino-dashboard' );
+            $message = isset( $data['message'] ) ? (string) $data['message'] : __( 'ERP OAuth start failed.', 'webino-dashboard' );
             return array( 'error' => $message );
         }
 
@@ -140,7 +142,7 @@ class OAuthManager
     }
 
     /**
-     * Refresh access token through WebinaCRM (client_secret never leaves CRM).
+     * Refresh access token through WebinoERP (client_secret never leaves ERP).
      *
      * @return true|\WP_Error
      */
@@ -151,7 +153,11 @@ class OAuthManager
             return new \WP_Error( 'basalam_no_refresh', __( 'Refresh token missing.', 'webino-dashboard' ) );
         }
 
-        $endpoint = self::crmBaseUrl() . '/wp-json/webinocrm/v1/basalam/oauth/refresh';
+        $endpoint = Endpoints::oauthRefreshUrl();
+        $filtered = apply_filters( 'webino_basalam_crm_oauth_base', self::crmBaseUrl() );
+        if ( is_string( $filtered ) && '' !== $filtered && untrailingslashit( $filtered ) !== Endpoints::vendorBaseUrl() ) {
+            $endpoint = untrailingslashit( $filtered ) . '/api/webinocrm/v1/basalam/oauth/refresh';
+        }
         $response = wp_remote_post(
             $endpoint,
             array(

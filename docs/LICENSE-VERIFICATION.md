@@ -1,54 +1,60 @@
 # License verification
 
-Standard **domain-based** licensing. No per-site HMAC on outbound CRM calls. Install the plugin and it works.
+Standard **domain + product** licensing against **WebinoERP** Edge. No per-site HMAC required on outbound calls (optional shared deploy secret). Install the plugin and it works.
 
 ## Lifecycle
 
-1. Admin registers the customer domain in WebinoCRM with status **`active`** (domain is the license; no activation code).
+1. Admin registers the customer domain in WebinoERP (`core_licenses`) with status **`active`** and product **`webinodashboard`** (domain is the license; no activation code).
 2. Customer installs WebinoDashboard on their site — no wp-admin license step.
-3. On plugin activation, bootstrap (TTL default 5 min), and license gate, the plugin calls CRM `POST /wp-json/webinocrm/v1/license/check` with `{"domain":"example.com"}` from `home_url()`.
-4. If CRM returns `active`, the dashboard unlocks automatically. If `inactive`, the site stays gated until CRM activates the domain (no customer **Activate** button in the SPA).
-5. CRM webhooks on license create (active) and status changes trigger `remote_license_check` on the site. `wp-cron` refreshes every 12 hours.
+3. On plugin activation (one initial check) and License page “check now”, the plugin calls ERP `POST /api/webinocrm/v1/license/check` with `{"domain":"example.com","product":"webinodashboard","ts":...}` from `home_url()`.
+4. If ERP returns `active` / `demo`, the dashboard unlocks. If `invalid` / inactive, the site stays gated until ERP activates the domain.
+5. ERP → site webhook (`maneli_license_webhook`) triggers `remote_license_check` on the site. There is **no** recurring 12h cron poll (initial + on-demand only).
 
 ## Request format
 
 ```json
-{ "domain": "example.com" }
+{ "domain": "example.com", "product": "webinodashboard", "ts": 1710000000 }
 ```
 
-Only `domain` is required. The Dashboard plugin fills it from `home_url()` automatically.
+`domain` is filled from `home_url()` automatically. Optional `signature` (HMAC-SHA256 of `domain|{product}|ts`) when `WEBINOCRM_LICENSE_HMAC_SECRET` / filter `webino_dashboard_license_hmac_secret` is set on both sides.
 
-## CRM responses
+## ERP responses
 
 | Status | Meaning |
 |--------|---------|
 | `valid` / `active` | Licensed |
+| `demo` | Demo entitlement |
 | `inactive` | Domain registered, not activated yet |
 | `expired` | Past expiry date |
 | `cancelled` | Revoked |
-| `not_found` | Domain not in CRM — contact support |
+| `invalid` / `not_found` | Domain not licensed — contact support |
+
+Envelope: `{ "data": { "status", "active", "demo", "expiry_date", "entitlements", ... } }`.
 
 ## Security
 
-- `/check` is a lightweight public lookup by domain (rate-limited). Legacy mirror routes under `webino-dashboard/v1/webinocrm/v1/license/*` return `Deprecation: true` and link to CRM; primary path is outbound check + `wp_webino_dashboard_license`.
-- CRM → site webhook (`maneli_license_webhook`): **domain required**; on production hosts a shared secret is **required** via `WEBINO_DASHBOARD_LICENSE_WEBHOOK_SECRET` and header `X-Webino-Webhook-Secret` (CRM: `WEBINOCRM_LICENSE_WEBHOOK_SECRET`). Dev/staging hosts (localhost, `.local`, `.test`, `WP_DEBUG`) may omit the secret unless configured.
+- `/license/check` is a lightweight public lookup by domain (+ product), rate-limited. Legacy mirror routes under `webino-dashboard/v1/webinocrm/v1/license/*` return `Deprecation: true` and link to ERP Edge; primary path is outbound check + `wp_webino_dashboard_license`.
+- ERP → site webhook (`maneli_license_webhook`): **domain required**; on production hosts a shared secret is **required** via `WEBINO_DASHBOARD_LICENSE_WEBHOOK_SECRET` and header `X-Webino-Webhook-Secret` (ERP: `WEBINOCRM_LICENSE_WEBHOOK_SECRET`). Dev/staging hosts (localhost, `.local`, `.test`, `WP_DEBUG`) may omit the secret unless configured.
 - Filter `webino_dashboard_allow_open_webhook` — opt-in to allow webhooks without secret on production (default `false`).
-- Copying the plugin to another host does not grant a license until that domain is added in CRM.
+- Copying the plugin to another host does not grant a license until that domain is added in ERP.
+- ERP treats `webina.dev` ↔ `webinaagency.ir` as one license host family for subdomain matching.
 
-## Transport (Dashboard → CRM)
+## Transport (Dashboard → ERP)
 
-- HTTPS to `https://webina.dev` by default; optional HTTP via filter `webino_dashboard_license_allow_http_fallback`.
-- Sync UI timeouts: connect 2s, request 6s, no retry, 8s wall clock cap. Cron may retry once.
-- If CRM is unreachable and a good license was stored locally, UI shows last-known status with `warning: crm_unreachable`.
-- Filter `webino_dashboard_license_server_urls` — override CRM base URL(s). License checks always use the public domain (never IP / local NIC).
+- HTTPS to `https://webinaagency.ir` by default (`WEBINO_DASHBOARD_VENDOR_URL`); optional HTTP via filter `webino_dashboard_license_allow_http_fallback`.
+- Path prefix: `/api/webinocrm/v1/...` (legacy caller strings `wp-json/webinocrm/v1/...` are rewritten automatically).
+- Sync UI timeouts: connect 2s, request 6s, no retry, 8s wall clock cap.
+- If ERP is unreachable and a good license was stored locally, UI shows last-known status with `warning: crm_unreachable`.
+- Filter `webino_dashboard_license_server_urls` — override ERP base URL(s). License checks always use the public domain (never IP / local NIC).
+- Same-VPS Platform tenants may set base to `http://erp-backend:8080` via that filter / provisioner.
 
 ## Manual curl
 
 ```bash
 DOMAIN=example.com
-curl -sS -X POST "https://webina.dev/wp-json/webinocrm/v1/license/check" \
+curl -sS -X POST "https://webinaagency.ir/api/webinocrm/v1/license/check" \
   -H 'Content-Type: application/json' \
-  -d "{\"domain\":\"${DOMAIN}\"}"
+  -d "{\"domain\":\"${DOMAIN}\",\"product\":\"webinodashboard\",\"ts\":$(date +%s)}"
 ```
 
 Or:
@@ -61,10 +67,16 @@ WEBINO_LICENSE_DOMAIN=example.com ./scripts/test-license.sh check
 
 ```bash
 php -l includes/class-webino-dashboard-license.php
-php -l ../webinocrm/includes/class-license-api.php
+bash scripts/smoke-license-security.sh
+bash scripts/smoke-core-update.sh
 cd client && npm run lint && npm run build
 ```
 
-## CRM performance
+## Production cutover (CRM → ERP)
 
-License REST uses fast-path bootstrap (skips full WebinoCRM stack). Check cache TTL default 300s (`webinocrm_license_cache_ttl` filter).
+1. Confirm domain license exists in ERP (`webinodashboard`, status active) and ModirPayamak tables migrated if SMS is used.
+2. Deploy WebinoDashboard ≥ 0.9.57 (vendor host `webinaagency.ir`, Edge `/api/webinocrm/v1`).
+3. Hard-refresh dashboard clients; purge CDN/WAF caches for `/dashboard` and REST/admin-ajax license paths.
+4. Smoke: License check, SMS account (expect clear unavailable if Edge not ready), Basalam OAuth start, free module install (requires `git` on host), core update check.
+5. Staging override via `webino_dashboard_license_server_urls` before locking production to agency.
+6. WebinoCRM WordPress is no longer called by site traffic after cutover.

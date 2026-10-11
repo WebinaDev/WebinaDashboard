@@ -248,7 +248,7 @@ final class Webino_Dashboard_Marketplace_Install_Job {
 				$job_id,
 				array(
 					'status' => 'running',
-					'step'   => 'download_token',
+					'step'   => 'clone_url',
 				)
 			);
 
@@ -326,99 +326,118 @@ final class Webino_Dashboard_Marketplace_Install_Job {
 			return;
 		}
 
-		$token_body = array( 'module_slug' => $slug );
-		if ( '' !== $version ) {
-			$token_body['version'] = $version;
+		if ( ! self::git_is_available() ) {
+			self::fail(
+				$job_id,
+				'git',
+				__( 'Git is required to install marketplace modules but is not available on this server.', 'webino-dashboard' ),
+				$started,
+				$domain
+			);
+			return;
 		}
 
-		self::patch( $job_id, array( 'step' => 'download_token' ) );
+		// Free modules: ensure ERP entitlement via purchase (no payment).
+		if ( ! empty( $module['is_free'] ) && empty( $module['entitled'] ) ) {
+			self::patch( $job_id, array( 'step' => 'purchase' ) );
+			$free = $license->crm_post(
+				'wp-json/webinocrm/v1/marketplace/purchase',
+				array(
+					'module_slug' => $slug,
+					'pay'         => false,
+					'mark_paid'   => true,
+				),
+				'install'
+			);
+			if ( empty( $free['ok'] ) ) {
+				$msg = is_array( $free['data'] ?? null ) && ! empty( $free['data']['message'] )
+					? (string) $free['data']['message']
+					: ( $free['error'] ?? __( 'Could not claim free module entitlement.', 'webino-dashboard' ) );
+				self::fail( $job_id, 'purchase', $msg, $started, $domain );
+				return;
+			}
+		}
 
+		self::patch( $job_id, array( 'step' => 'clone_url' ) );
+
+		$clone_body = array( 'module_slug' => $slug );
+		if ( '' !== $version ) {
+			$clone_body['version'] = $version;
+		}
 		$grant = $license->crm_post(
-			'wp-json/webinocrm/v1/marketplace/download-token',
-			$token_body,
+			'wp-json/webinocrm/v1/license/module-clone-url',
+			$clone_body,
 			'install'
 		);
 
-		if ( empty( $module['is_free'] ) && empty( $grant['ok'] ) ) {
+		$grant_data = is_array( $grant['data'] ?? null ) ? $grant['data'] : array();
+		if ( isset( $grant_data['data'] ) && is_array( $grant_data['data'] ) ) {
+			$grant_data = $grant_data['data'];
+		}
+		$clone_url = (string) ( $grant_data['clone_url'] ?? '' );
+
+		if ( empty( $grant['ok'] ) || '' === $clone_url ) {
 			$msg = is_array( $grant['data'] ?? null ) && ! empty( $grant['data']['message'] )
 				? (string) $grant['data']['message']
-				: ( $grant['error'] ?? __( 'No license entitlement for this module.', 'webino-dashboard' ) );
-			self::fail( $job_id, 'download_token', $msg, $started, $domain );
-			return;
-		}
-
-		if ( empty( $grant['ok'] ) ) {
-			$free = $license->crm_post(
-				'wp-json/webinocrm/v1/marketplace/purchase/init',
-				array( 'module_slug' => $slug ),
-				'install'
-			);
-			if ( empty( $free['ok'] ) || empty( $free['data']['is_free'] ) ) {
-				$msg = is_array( $grant['data'] ?? null ) && ! empty( $grant['data']['message'] )
-					? (string) $grant['data']['message']
-					: ( $grant['error'] ?? __( 'Install not allowed.', 'webino-dashboard' ) );
-				self::fail( $job_id, 'download_token', $msg, $started, $domain );
-				return;
+				: ( $grant['error'] ?? __( 'Could not obtain git clone URL.', 'webino-dashboard' ) );
+			if ( is_array( $grant['data']['error'] ?? null ) && ! empty( $grant['data']['error']['message'] ) ) {
+				$msg = (string) $grant['data']['error']['message'];
 			}
-			$grant = $license->crm_post(
-				'wp-json/webinocrm/v1/marketplace/download-token',
-				$token_body,
-				'install'
-			);
-		}
-
-		if ( empty( $grant['ok'] ) || empty( $grant['data']['download_url'] ) ) {
-			$msg = is_array( $grant['data'] ?? null ) && ! empty( $grant['data']['message'] )
-				? (string) $grant['data']['message']
-				: ( $grant['error'] ?? __( 'Could not obtain download URL.', 'webino-dashboard' ) );
-			self::fail( $job_id, 'download_token', $msg, $started, $domain, self::crm_grant_debug( $grant ) );
+			self::fail( $job_id, 'clone_url', $msg, $started, $domain, self::crm_grant_debug( $grant ) );
 			return;
 		}
 
-		self::patch( $job_id, array( 'step' => 'download_zip' ) );
-
-		$download_url = (string) $grant['data']['download_url'];
-		if ( ! class_exists( 'Webino_Dashboard_Remote_Url', false ) || ! Webino_Dashboard_Remote_Url::is_allowed_download_url( $download_url ) ) {
-			self::fail( $job_id, 'download_zip', __( 'Download URL is not allowed.', 'webino-dashboard' ), $started, $domain );
-			return;
-		}
-		$tmp = download_url( $download_url, 300 );
-		if ( is_wp_error( $tmp ) ) {
-			self::fail( $job_id, 'download_zip', $tmp->get_error_message(), $started, $domain );
+		if ( ! class_exists( 'Webino_Dashboard_Remote_Url', false ) || ! Webino_Dashboard_Remote_Url::is_allowed_clone_url( $clone_url ) ) {
+			self::fail( $job_id, 'clone_url', __( 'Clone URL is not allowed.', 'webino-dashboard' ), $started, $domain );
 			return;
 		}
 
-		self::patch( $job_id, array( 'step' => 'unzip' ) );
+		self::patch( $job_id, array( 'step' => 'git_clone' ) );
 
-		$target       = Webino_Dashboard_Module_Registry::module_dir( $slug );
+		$staging = trailingslashit( WP_CONTENT_DIR ) . '.webino-mp-clone-' . wp_generate_password( 8, false, false );
+		$cloned  = self::git_clone_to( $clone_url, $staging, $version );
+		if ( is_wp_error( $cloned ) ) {
+			self::rrmdir( $staging );
+			self::fail( $job_id, 'git_clone', $cloned->get_error_message(), $started, $domain );
+			return;
+		}
+
+		self::patch( $job_id, array( 'step' => 'prepare' ) );
+
+		$package_root = self::locate_module_package_root( $staging, $slug );
+		if ( is_wp_error( $package_root ) ) {
+			self::rrmdir( $staging );
+			self::fail( $job_id, 'prepare', $package_root->get_error_message(), $started, $domain );
+			return;
+		}
+
+		$target        = Webino_Dashboard_Module_Registry::module_dir( $slug );
 		$was_installed = Webino_Dashboard_Module_Registry::is_installed( $slug ) && is_dir( $target );
-		$backup_dir   = '';
+		$backup_dir    = '';
 		if ( $was_installed ) {
 			$backup = Webino_Dashboard_Module_Registry::backup_module_dir( $slug );
 			if ( is_wp_error( $backup ) ) {
-				wp_delete_file( $tmp );
+				self::rrmdir( $staging );
 				self::fail( $job_id, 'backup', $backup->get_error_message(), $started, $domain );
 				return;
 			}
 			$backup_dir = (string) $backup;
 		}
 		if ( ! wp_mkdir_p( dirname( $target ) ) ) {
-			wp_delete_file( $tmp );
+			self::rrmdir( $staging );
 			self::fail( $job_id, 'prepare_dir', __( 'Could not create marketplace directory.', 'webino-dashboard' ), $started, $domain );
 			return;
 		}
 		if ( is_dir( $target ) ) {
 			Webino_Dashboard_REST_Marketplace::rrmdir( $target );
 		}
-		wp_mkdir_p( $target );
-		$unzip = Webino_Dashboard_REST_Marketplace::unzip_package_to( $tmp, $target );
-		wp_delete_file( $tmp );
-		if ( is_wp_error( $unzip ) ) {
+		$copied = self::copy_tree( $package_root, $target );
+		self::rrmdir( $staging );
+		if ( is_wp_error( $copied ) ) {
 			self::restore_failed_install( $slug, $backup_dir );
-			self::fail( $job_id, 'unzip', $unzip->get_error_message(), $started, $domain );
+			self::fail( $job_id, 'prepare', $copied->get_error_message(), $started, $domain );
 			return;
 		}
-		Webino_Dashboard_REST_Marketplace::flatten_single_root_folder( $target );
 
 		self::patch( $job_id, array( 'step' => 'validate' ) );
 
@@ -471,9 +490,210 @@ final class Webino_Dashboard_Marketplace_Install_Job {
 					'step'           => 'done',
 					'crm_elapsed_ms' => (int) round( ( microtime( true ) - $started ) * 1000 ),
 					'domain'         => $domain,
+					'distribution'   => 'git',
 				),
 			)
 		);
+	}
+
+	/**
+	 * @return bool
+	 */
+	private static function git_is_available() {
+		if ( ! function_exists( 'proc_open' ) ) {
+			return false;
+		}
+		$descriptors = array(
+			0 => array( 'pipe', 'r' ),
+			1 => array( 'pipe', 'w' ),
+			2 => array( 'pipe', 'w' ),
+		);
+		$proc = @proc_open( 'git --version', $descriptors, $pipes, null, self::git_env() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( ! is_resource( $proc ) ) {
+			return false;
+		}
+		fclose( $pipes[0] );
+		$out = stream_get_contents( $pipes[1] );
+		fclose( $pipes[1] );
+		fclose( $pipes[2] );
+		$code = proc_close( $proc );
+		return 0 === (int) $code && is_string( $out ) && false !== stripos( $out, 'git version' );
+	}
+
+	/**
+	 * @return array<string,string>
+	 */
+	private static function git_env() {
+		$path = getenv( 'PATH' ) ? (string) getenv( 'PATH' ) : '/usr/local/bin:/usr/bin:/bin';
+		return array(
+			'PATH'           => $path,
+			'HOME'           => getenv( 'HOME' ) ? (string) getenv( 'HOME' ) : '/tmp',
+			'GIT_TERMINAL_PROMPT' => '0',
+			'GIT_ASKPASS'    => 'echo',
+			'LC_ALL'         => 'C',
+		);
+	}
+
+	/**
+	 * @param string $clone_url Clone URL.
+	 * @param string $dest      Destination directory (created by git).
+	 * @param string $version   Optional tag/branch.
+	 * @return true|WP_Error
+	 */
+	private static function git_clone_to( $clone_url, $dest, $version = '' ) {
+		$dest = untrailingslashit( (string) $dest );
+		if ( is_dir( $dest ) ) {
+			self::rrmdir( $dest );
+		}
+		$parent = dirname( $dest );
+		if ( ! wp_mkdir_p( $parent ) ) {
+			return new WP_Error( 'git_clone', __( 'Could not create staging directory.', 'webino-dashboard' ) );
+		}
+
+		$cmd = 'git clone --depth 1';
+		if ( '' !== $version ) {
+			$cmd .= ' --branch ' . escapeshellarg( sanitize_text_field( $version ) );
+		}
+		$cmd .= ' ' . escapeshellarg( (string) $clone_url ) . ' ' . escapeshellarg( $dest );
+
+		$result = self::run_shell( $cmd, $parent );
+		if ( ! $result['ok'] ) {
+			$msg = trim( (string) $result['output'] );
+			if ( '' === $msg ) {
+				$msg = __( 'git clone failed.', 'webino-dashboard' );
+			}
+			// Never echo credentials from clone URL in error text.
+			if ( class_exists( 'Webino_Dashboard_Remote_Url', false ) ) {
+				$msg = str_replace( (string) $clone_url, Webino_Dashboard_Remote_Url::redact_url( $clone_url ), $msg );
+			}
+			return new WP_Error( 'git_clone', $msg );
+		}
+		return true;
+	}
+
+	/**
+	 * @param string $command Command.
+	 * @param string $cwd     Working directory.
+	 * @return array{ok:bool,exit_code:int,output:string}
+	 */
+	private static function run_shell( $command, $cwd ) {
+		$descriptors = array(
+			0 => array( 'pipe', 'r' ),
+			1 => array( 'pipe', 'w' ),
+			2 => array( 'pipe', 'w' ),
+		);
+		$proc = @proc_open( $command, $descriptors, $pipes, $cwd, self::git_env() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( ! is_resource( $proc ) ) {
+			return array(
+				'ok'        => false,
+				'exit_code' => 1,
+				'output'    => 'proc_open failed',
+			);
+		}
+		fclose( $pipes[0] );
+		$stdout = stream_get_contents( $pipes[1] );
+		$stderr = stream_get_contents( $pipes[2] );
+		fclose( $pipes[1] );
+		fclose( $pipes[2] );
+		$code = proc_close( $proc );
+		$out  = trim( (string) $stdout . "\n" . (string) $stderr );
+		return array(
+			'ok'        => 0 === (int) $code,
+			'exit_code' => (int) $code,
+			'output'    => $out,
+		);
+	}
+
+	/**
+	 * @param string $staging Staging clone root.
+	 * @param string $slug    Module slug.
+	 * @return string|WP_Error Absolute path with trailing slash.
+	 */
+	private static function locate_module_package_root( $staging, $slug ) {
+		$staging = trailingslashit( (string) $staging );
+		$slug    = sanitize_key( (string) $slug );
+		$candidates = array(
+			$staging,
+			$staging . $slug . '/',
+			$staging . 'Modules/' . $slug . '/',
+		);
+		foreach ( $candidates as $dir ) {
+			if ( is_readable( $dir . 'module.json' ) || is_readable( $dir . 'manifest.json' ) ) {
+				return trailingslashit( $dir );
+			}
+		}
+		// Flatten single root folder then retry.
+		Webino_Dashboard_REST_Marketplace::flatten_single_root_folder( untrailingslashit( $staging ) );
+		foreach ( array( $staging, $staging . $slug . '/' ) as $dir ) {
+			if ( is_readable( $dir . 'module.json' ) || is_readable( $dir . 'manifest.json' ) ) {
+				return trailingslashit( $dir );
+			}
+		}
+		return new WP_Error(
+			'invalid_package',
+			__( 'Cloned repository does not contain a valid module package (module.json).', 'webino-dashboard' )
+		);
+	}
+
+	/**
+	 * @param string $src  Source directory.
+	 * @param string $dest Destination directory.
+	 * @return true|WP_Error
+	 */
+	private static function copy_tree( $src, $dest ) {
+		$src  = trailingslashit( (string) $src );
+		$dest = trailingslashit( (string) $dest );
+		if ( ! is_dir( $src ) ) {
+			return new WP_Error( 'copy', __( 'Source directory is missing.', 'webino-dashboard' ) );
+		}
+		wp_mkdir_p( $dest );
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $src, RecursiveDirectoryIterator::SKIP_DOTS ),
+			RecursiveIteratorIterator::SELF_FIRST
+		);
+		foreach ( $iterator as $item ) {
+			$rel = substr( $item->getPathname(), strlen( $src ) );
+			$rel = ltrim( str_replace( '\\', '/', (string) $rel ), '/' );
+			if ( '' === $rel || 0 === strpos( $rel, '.git/' ) || '.git' === $rel ) {
+				continue;
+			}
+			$target = $dest . $rel;
+			if ( $item->isDir() ) {
+				wp_mkdir_p( $target );
+			} else {
+				wp_mkdir_p( dirname( $target ) );
+				if ( ! copy( $item->getPathname(), $target ) ) {
+					return new WP_Error( 'copy', __( 'Failed to copy module files.', 'webino-dashboard' ) );
+				}
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * @param string $dir Directory.
+	 * @return void
+	 */
+	private static function rrmdir( $dir ) {
+		$dir = (string) $dir;
+		if ( '' === $dir || ! is_dir( $dir ) ) {
+			return;
+		}
+		if ( class_exists( 'Webino_Dashboard_REST_Marketplace', false ) ) {
+			Webino_Dashboard_REST_Marketplace::rrmdir( $dir );
+			return;
+		}
+		$items = array_diff( scandir( $dir ) ?: array(), array( '.', '..' ) );
+		foreach ( $items as $item ) {
+			$path = $dir . '/' . $item;
+			if ( is_dir( $path ) ) {
+				self::rrmdir( $path );
+			} else {
+				wp_delete_file( $path );
+			}
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+		@rmdir( $dir );
 	}
 
 	/**

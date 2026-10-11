@@ -219,7 +219,7 @@ final class Webino_Dashboard_REST_Basalam {
 					array( 'host' => 'uploadio.basalam.com', 'domain' => 'media', 'status' => 'implemented' ),
 					array( 'host' => 'categorydetection.basalam.com', 'domain' => 'category', 'status' => 'implemented' ),
 					array( 'host' => 'auth.basalam.com', 'domain' => 'oauth', 'status' => 'implemented' ),
-					array( 'host' => 'webina.dev', 'domain' => 'oauth-proxy', 'status' => 'implemented' ),
+					array( 'host' => defined( 'WEBINO_DASHBOARD_VENDOR_HOST' ) ? WEBINO_DASHBOARD_VENDOR_HOST : 'webinaagency.ir', 'domain' => 'oauth-proxy', 'status' => 'implemented' ),
 					array( 'host' => 'accounting.basalam.com', 'domain' => 'finance', 'status' => 'implemented' ),
 					array( 'host' => 'identity.basalam.com', 'domain' => 'bank-accounts', 'status' => 'implemented' ),
 				),
@@ -507,7 +507,11 @@ final class Webino_Dashboard_REST_Basalam {
 	 * @return void
 	 */
 	private static function ping_crm_disconnect() {
-		$endpoint = \WebinoBasalam\Admin\Settings\OAuthManager::crmBaseUrl() . '/wp-json/webinocrm/v1/basalam/oauth/disconnect';
+		$endpoint = \WebinoBasalam\Config\Endpoints::oauthDisconnectUrl();
+		$filtered = apply_filters( 'webino_basalam_crm_oauth_base', \WebinoBasalam\Admin\Settings\OAuthManager::crmBaseUrl() );
+		if ( is_string( $filtered ) && '' !== $filtered && untrailingslashit( $filtered ) !== \WebinoBasalam\Config\Endpoints::vendorBaseUrl() ) {
+			$endpoint = untrailingslashit( $filtered ) . '/api/webinocrm/v1/basalam/oauth/disconnect';
+		}
 		wp_remote_post(
 			$endpoint,
 			array(

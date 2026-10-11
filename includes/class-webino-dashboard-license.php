@@ -1,6 +1,6 @@
 <?php
 /**
- * Outbound license checks to webina.dev (CRM) — separate from inbound CRM→site REST.
+ * Outbound license / Edge calls to WebinoERP — separate from inbound ERP→site webhooks.
  *
  * @package WebinoDashboard
  */
@@ -10,13 +10,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Persists CRM license state and exposes the bootstrap payload.
+ * Persists ERP license state and exposes the bootstrap payload.
  *
  * Network policy (0.9.48+): the license server is NEVER polled on a schedule.
  *  - One initial check: on plugin activation, or on first load when this site has never checked.
- *  - Thereafter only on explicit user request (License page "check now" / activate), or when the
- *    CRM itself pushes a webhook.
+ *  - Thereafter only on explicit user request (License page "check now" / activate), or when ERP
+ *    pushes a webhook.
  *  - Dashboard boot / page loads / bootstrap never wait on (or trigger) a license request.
+ *
+ * Edge base (0.9.57+): `{WEBINO_DASHBOARD_VENDOR_URL}/api/webinocrm/v1/...`
+ * Legacy caller paths `wp-json/webinocrm/v1/...` are rewritten to `/api/webinocrm/v1/...`.
  */
 final class Webino_Dashboard_License {
 
@@ -40,12 +43,15 @@ final class Webino_Dashboard_License {
 	const NAG_FORCE_DAYS = 2;
 
 	/**
-	 * Transient: CRM / license server circuit breaker. While open, dashboard-path CRM
+	 * Transient: ERP / license server circuit breaker. While open, dashboard-path Edge
 	 * reads return immediately instead of blocking PHP workers on a dead host.
 	 * Since 0.9.48 it does NOT auto-close on a timer (no re-probe after a cooldown): it stays open
-	 * until an explicit user action reaches the server (license "check now", activate, a CRM write).
+	 * until an explicit user action reaches the server (license "check now", activate, a write).
 	 */
 	const CRM_CIRCUIT_TRANSIENT = 'webino_dashboard_crm_circuit';
+
+	/** ERP Edge API prefix (replaces WordPress `/wp-json/webinocrm/v1`). */
+	const ERP_API_PREFIX = 'api/webinocrm/v1';
 
 	/** Legacy one-off background check hook (removed in 0.9.48; unscheduled on load). */
 	const ASYNC_CHECK_HOOK = 'webino_dashboard_license_async_check';
@@ -424,7 +430,7 @@ final class Webino_Dashboard_License {
 			$urls[] = 'http://' . WEBINO_DASHBOARD_VENDOR_HOST;
 		}
 		/**
-		 * License CRM base URLs (no trailing path). HTTPS first, then HTTP when allowed.
+		 * License / ERP Edge base URLs (no trailing path). HTTPS first, then HTTP when allowed.
 		 *
 		 * @param list<string> $urls Base URLs.
 		 */
@@ -447,12 +453,76 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
-	 * CRM bases to try (public domain HTTPS/HTTP only — never IP or local NIC).
+	 * ERP Edge bases to try (public domain HTTPS/HTTP only — never IP or local NIC).
 	 *
 	 * @return list<string>
 	 */
 	private function get_request_bases() {
 		return $this->get_server_urls();
+	}
+
+	/**
+	 * Rewrite legacy CRM WordPress REST paths to ERP Edge paths.
+	 *
+	 * Accepts:
+	 * - `wp-json/webinocrm/v1/...` (legacy callers)
+	 * - `api/webinocrm/v1/...` (canonical)
+	 * - `webinocrm/v1/...` / bare relative under the Edge namespace
+	 *
+	 * @param string $path Relative path.
+	 * @return string Path without leading slash under site root.
+	 */
+	public function normalize_erp_path( $path ) {
+		$path = ltrim( (string) $path, '/' );
+		$path = preg_replace( '#^wp-json/#', '', $path );
+		if ( 0 === strpos( $path, 'api/webinocrm/v1/' ) || 'api/webinocrm/v1' === $path ) {
+			return $path;
+		}
+		if ( 0 === strpos( $path, 'webinocrm/v1/' ) || 'webinocrm/v1' === $path ) {
+			return 'api/' . $path;
+		}
+		// Bare Edge-relative (e.g. license/check) → full ERP prefix.
+		if ( '' !== $path && 0 !== strpos( $path, 'api/' ) ) {
+			return self::ERP_API_PREFIX . '/' . $path;
+		}
+		return $path;
+	}
+
+	/**
+	 * Product slug for ERP domain+product license identity.
+	 *
+	 * @return string
+	 */
+	public function get_license_product() {
+		$product = defined( 'WEBINO_DASHBOARD_LICENSE_PRODUCT' )
+			? (string) WEBINO_DASHBOARD_LICENSE_PRODUCT
+			: 'webinodashboard';
+		/**
+		 * Filter ERP license product slug.
+		 *
+		 * @param string $product Product slug.
+		 */
+		return sanitize_key( (string) apply_filters( 'webino_dashboard_license_product', $product ) );
+	}
+
+	/**
+	 * Optional shared HMAC secret for ERP service auth (not license identity).
+	 *
+	 * @return string
+	 */
+	private function license_hmac_secret() {
+		$secret = '';
+		if ( defined( 'WEBINOCRM_LICENSE_HMAC_SECRET' ) ) {
+			$secret = (string) WEBINOCRM_LICENSE_HMAC_SECRET;
+		} elseif ( defined( 'WEBINO_DASHBOARD_LICENSE_HMAC_SECRET' ) ) {
+			$secret = (string) WEBINO_DASHBOARD_LICENSE_HMAC_SECRET;
+		}
+		/**
+		 * Shared HMAC secret for Dashboard→ERP Edge calls. Empty = unsigned (ERP allows).
+		 *
+		 * @param string $secret Secret.
+		 */
+		return (string) apply_filters( 'webino_dashboard_license_hmac_secret', $secret );
 	}
 
 	/**
@@ -590,8 +660,24 @@ final class Webino_Dashboard_License {
 	 * @return array<string,mixed>
 	 */
 	private function build_request_body( array $body ) {
-		$domain = isset( $body['domain'] ) ? $this->normalize_site_domain( (string) $body['domain'] ) : $this->get_current_domain();
-		return array_merge( $body, array( 'domain' => $domain ) );
+		$domain  = isset( $body['domain'] ) ? $this->normalize_site_domain( (string) $body['domain'] ) : $this->get_current_domain();
+		$product = isset( $body['product'] ) && '' !== (string) $body['product']
+			? sanitize_key( (string) $body['product'] )
+			: $this->get_license_product();
+		$ts      = isset( $body['ts'] ) ? (int) $body['ts'] : time();
+		$out     = array_merge(
+			$body,
+			array(
+				'domain'  => $domain,
+				'product' => $product,
+				'ts'      => $ts,
+			)
+		);
+		$secret = $this->license_hmac_secret();
+		if ( '' !== $secret && empty( $out['signature'] ) ) {
+			$out['signature'] = hash_hmac( 'sha256', $domain . '|' . $product . '|' . $ts, $secret );
+		}
+		return $out;
 	}
 
 	/**
@@ -695,17 +781,16 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
-	 * @param string              $path Relative to site root, e.g. wp-json/webinocrm/v1/license/check.
+	 * @param string              $path Relative to site root, e.g. api/webinocrm/v1/license/check (legacy wp-json/ accepted).
 	 * @param array<string,mixed> $body Body fields.
-	 * @param string              $context sync|cron.
-	 * @param string              $context sync|cron|install.
+	 * @param string              $context sync|cron|install|manual|write|webhook.
 	 * @return array{ ok: bool, code?: int, data?: mixed, error?: string, error_code?: string, transport_raw?: string }
 	 */
 	private function post_first_server( $path, array $body, $context = 'sync' ) {
 		if ( ! $this->context_bypasses_circuit( $context ) && $this->is_crm_circuit_open() ) {
 			return $this->circuit_open_result();
 		}
-		$path            = ltrim( (string) $path, '/' );
+		$path            = $this->normalize_erp_path( $path );
 		$payload         = $this->build_request_body( $body );
 		$correlation     = $this->correlation_id();
 		$retries         = $this->http_retry_count_for_context( $context );
@@ -877,7 +962,7 @@ final class Webino_Dashboard_License {
 	}
 
 	/**
-	 * Admin connectivity probes to webina.dev (CRM).
+	 * Admin connectivity probes to WebinoERP Edge.
 	 *
 	 * @return array<string,mixed>
 	 */
@@ -886,15 +971,22 @@ final class Webino_Dashboard_License {
 		$bases      = $this->get_server_urls();
 		$base       = ! empty( $bases[0] ) ? (string) $bases[0] : WEBINO_DASHBOARD_VENDOR_URL;
 		$base       = trailingslashit( $base );
-		$check_body = wp_json_encode( array( 'domain' => $domain ) );
+		$check_body = wp_json_encode(
+			$this->build_request_body(
+				array(
+					'domain'  => $domain,
+					'product' => $this->get_license_product(),
+				)
+			)
+		);
 
 		$probes   = array();
-		$probes[] = $this->diagnostic_probe( 'crm_home', 'GET', $base, 4 );
-		$probes[] = $this->diagnostic_probe( 'crm_rest_namespace', 'GET', $base . 'wp-json/webinocrm/v1/', 4 );
+		$probes[] = $this->diagnostic_probe( 'erp_home', 'GET', $base, 4 );
+		$probes[] = $this->diagnostic_probe( 'erp_api_namespace', 'GET', $base . self::ERP_API_PREFIX . '/', 4 );
 		$probes[] = $this->diagnostic_probe(
 			'license_check',
 			'POST',
-			$base . 'wp-json/webinocrm/v1/license/check',
+			$base . self::ERP_API_PREFIX . '/license/check',
 			6,
 			$check_body
 		);
@@ -1113,9 +1205,12 @@ final class Webino_Dashboard_License {
 	public function remote_license_check( $persist_errors = true, $context = 'sync' ) {
 		$domain = $this->get_current_domain();
 		$result  = $this->post_first_server(
-			'wp-json/webinocrm/v1/license/check',
+			self::ERP_API_PREFIX . '/license/check',
 			array_merge(
-				array( 'domain' => $domain ),
+				array(
+					'domain'  => $domain,
+					'product' => $this->get_license_product(),
+				),
 				(array) apply_filters( 'webino_dashboard_license_check_body', array() )
 			),
 			$context
@@ -1250,9 +1345,12 @@ final class Webino_Dashboard_License {
 	public function remote_activate() {
 		$domain = $this->get_current_domain();
 		$result = $this->post_first_server(
-			'wp-json/webinocrm/v1/license/activate',
+			self::ERP_API_PREFIX . '/license/activate',
 			array_merge(
-				array( 'domain' => $domain ),
+				array(
+					'domain'  => $domain,
+					'product' => $this->get_license_product(),
+				),
 				(array) apply_filters( 'webino_dashboard_license_activate_body', array() )
 			),
 			'manual'
@@ -1617,7 +1715,7 @@ final class Webino_Dashboard_License {
 		if ( 'sync' === $context ) {
 			$context = 'write';
 		}
-		return $this->post_first_server( ltrim( (string) $path, '/' ), $payload, $context );
+		return $this->post_first_server( $this->normalize_erp_path( $path ), $payload, $context );
 	}
 
 	/**
@@ -1630,7 +1728,7 @@ final class Webino_Dashboard_License {
 	public function crm_post_async( $path, array $body = array() ) {
 		$domain  = isset( $body['domain'] ) ? $this->normalize_site_domain( (string) $body['domain'] ) : $this->get_current_domain();
 		$payload = $this->build_request_body( array_merge( $body, array( 'domain' => $domain ) ) );
-		$path    = ltrim( (string) $path, '/' );
+		$path    = $this->normalize_erp_path( $path );
 		$bases   = $this->get_request_bases();
 		if ( ! $bases ) {
 			return;
@@ -1665,7 +1763,7 @@ final class Webino_Dashboard_License {
 		}
 		$domain       = isset( $query['domain'] ) ? $this->normalize_site_domain( (string) $query['domain'] ) : $this->get_current_domain();
 		$query        = array_merge( $query, array( 'domain' => $domain ) );
-		$path         = ltrim( (string) $path, '/' );
+		$path         = $this->normalize_erp_path( $path );
 		$timeout      = isset( $options['timeout'] ) ? max( 2, (int) $options['timeout'] ) : $this->crm_get_http_timeout();
 		$wall_cap     = isset( $options['wall_cap'] ) ? max( 3, (int) $options['wall_cap'] ) : $this->crm_get_wall_clock_cap();
 		$wall_started = microtime( true );
@@ -1787,7 +1885,7 @@ final class Webino_Dashboard_License {
 			$pending = array();
 			foreach ( $paths as $key => $path ) {
 				if ( empty( $results[ $key ]['ok'] ) ) {
-					$pending[ $key ] = ltrim( (string) $path, '/' );
+					$pending[ $key ] = $this->normalize_erp_path( $path );
 				}
 			}
 			if ( empty( $pending ) ) {
@@ -1910,7 +2008,7 @@ final class Webino_Dashboard_License {
 	 * @return array{ ok: bool, code?: int, data?: mixed, error?: string }
 	 */
 	private function crm_get_single_on_base( $base, $path, array $query, $timeout ) {
-		$url     = add_query_arg( $query, trailingslashit( (string) $base ) . ltrim( (string) $path, '/' ) );
+		$url     = add_query_arg( $query, trailingslashit( (string) $base ) . $this->normalize_erp_path( $path ) );
 		$headers = array( 'Accept' => 'application/json' );
 		$response = wp_remote_get(
 			$url,
