@@ -33,14 +33,19 @@ final class Webino_Dashboard_Migrate_Schema {
 			'media_files',
 			'categories',
 			'tags',
+			'blog_categories',
+			'blog_tags',
 			'brands',
+			'attribute_groups',
 			'customers',
 			'staff',
 			'products',
 			'coupons',
 			'reviews',
+			'blog_comments',
 			'pages',
 			'posts',
+			'stories',
 			'elementor_templates',
 			'orders',
 			'menus',
@@ -77,19 +82,24 @@ final class Webino_Dashboard_Migrate_Schema {
 			'media_files'         => 'سایر رسانه‌ها (ویدیو، PDF، SVG)',
 			'categories'          => 'دسته‌های محصول',
 			'tags'                => 'برچسب‌های محصول',
+			'blog_categories'     => 'دسته‌های نوشته',
+			'blog_tags'           => 'برچسب‌های نوشته',
 			'brands'              => 'برندها',
+			'attribute_groups'    => 'گروه‌ها و سواچ ویژگی',
 			'customers'           => 'مشتریان',
 			'staff'               => 'کارکنان (دعوت، بدون رمز)',
 			'products'            => 'محصولات و متغیرها',
 			'coupons'             => 'کوپن‌ها',
 			'reviews'             => 'دیدگاه‌ها و امتیاز محصول',
+			'blog_comments'       => 'دیدگاه‌های نوشته و برگه',
 			'pages'               => 'برگه‌ها',
 			'posts'               => 'نوشته‌ها',
+			'stories'             => 'استوری‌ها',
 			'elementor_templates' => 'قالب‌های المنتور',
 			'orders'              => 'سفارش‌ها',
 			'menus'               => 'فهرست‌ها',
 			'redirects'           => 'ریدایرکت‌ها',
-			'settings'            => 'تنظیمات فروشگاه',
+			'settings'            => 'تنظیمات فروشگاه و قالب',
 			'stats'               => 'آمار روزانه',
 			'waiting_list'        => 'لیست انتظار',
 			'permalinks'          => 'نقشه پیوندها',
@@ -131,30 +141,54 @@ final class Webino_Dashboard_Migrate_Schema {
 	 * @return list<string>
 	 */
 	public static function accepted_resources() {
+		// Fallback when ping omits resources. Prefer the live ping advertisement.
 		return array(
 			'media',
 			'categories',
 			'tags',
+			'blog_categories',
+			'blog_tags',
+			'brands',
+			'attribute_groups',
 			'customers',
+			'staff',
 			'products',
+			'coupons',
 			'pages',
 			'posts',
+			'stories',
+			'elementor_templates',
 			'orders',
+			'reviews',
+			'blog_comments',
 			'menus',
+			'redirects',
+			'permalinks',
+			'settings',
+			'waiting_list',
+			'tickets',
+			'returns',
+			'wallet',
+			'review_queue',
 			'stats',
 		);
 	}
 
 	/**
-	 * Resource names that need a new Webino importer. Documented in docs/WEBINO_MIGRATE.md.
+	 * Resource names historically treated as "extended". Kept for UI hints.
 	 *
 	 * @return list<string>
 	 */
 	public static function extended_resources() {
 		return array(
 			'brands',
+			'attribute_groups',
 			'coupons',
 			'reviews',
+			'blog_comments',
+			'stories',
+			'blog_categories',
+			'blog_tags',
 			'redirects',
 			'settings',
 			'elementor_templates',
@@ -192,8 +226,16 @@ final class Webino_Dashboard_Migrate_Schema {
 			'product_categories' => 'categories',
 			'product_tags'       => 'tags',
 			'users'              => 'customers',
+			'staff_users'        => 'staff',
 			'attachments'        => 'media',
+			'media_files'        => 'media',
 			'analytics'          => 'stats',
+			'post_tags'          => 'blog_tags',
+			'blog_category'      => 'blog_categories',
+			'comments'           => 'reviews',
+			'product_reviews'    => 'reviews',
+			'story'              => 'stories',
+			'swatches'           => 'attribute_groups',
 		);
 		return isset( $aliases[ $resource ] ) ? $aliases[ $resource ] : $resource;
 	}

@@ -219,6 +219,7 @@ final class Webino_Dashboard_Migrate_Job {
 			return $public;
 		}
 		try {
+			self::isolate_third_party_hooks();
 			$state = self::ensure_ping( $state );
 			if ( 'failed' !== ( isset( $state['status'] ) ? $state['status'] : '' ) && empty( $state['pause_until'] ) ) {
 				$state = self::step( $state );
@@ -227,13 +228,30 @@ final class Webino_Dashboard_Migrate_Job {
 			}
 			self::save( $state );
 		} catch ( Throwable $e ) {
-			$state['status']      = 'failed';
-			$state['last_error']  = Webino_Dashboard_Migrate_Schema::redact( $e->getMessage() );
-			$state['finished_at'] = gmdate( 'c' );
-			$state['log']         = Webino_Dashboard_Migrate_Schema::append_log(
+			// Third-party fatals (e.g. WC gateway null order) must not kill the job.
+			$entities = isset( $state['entities'] ) && is_array( $state['entities'] ) ? $state['entities'] : array();
+			$index    = isset( $state['entity_index'] ) ? (int) $state['entity_index'] : 0;
+			$entity   = isset( $entities[ $index ] ) ? (string) $entities[ $index ] : '';
+			$msg      = Webino_Dashboard_Migrate_Schema::redact( $e->getMessage() );
+			$state['last_error'] = $msg;
+			$state['status']     = 'running';
+			$state['finished_at'] = null;
+			$state['pause_until'] = 0;
+			if ( '' !== $entity ) {
+				if ( ! isset( $state['progress'][ $entity ] ) || ! is_array( $state['progress'][ $entity ] ) ) {
+					$state['progress'][ $entity ] = array( 'exported' => 0, 'failed' => 0, 'done' => false );
+				}
+				$state['progress'][ $entity ]['failed'] = (int) ( $state['progress'][ $entity ]['failed'] ?? 0 ) + 1;
+				$state['progress'][ $entity ]['done']   = true;
+				$state['entity_index']                  = $index + 1;
+				if ( (int) $state['entity_index'] >= count( $entities ) ) {
+					$state['phase'] = 'complete';
+				}
+			}
+			$state['log'] = Webino_Dashboard_Migrate_Schema::append_log(
 				isset( $state['log'] ) && is_array( $state['log'] ) ? $state['log'] : array(),
 				'error',
-				'خطای داخلی مهاجرت: ' . $state['last_error']
+				( '' !== $entity ? sprintf( 'خطا در «%s»؛ موجودیت رد شد و مهاجرت ادامه یافت: ', $entity ) : 'خطای داخلی مهاجرت: ' ) . $msg
 			);
 			self::save( $state );
 		}
@@ -251,26 +269,11 @@ final class Webino_Dashboard_Migrate_Job {
 		if ( 'complete' === ( isset( $state['phase'] ) ? $state['phase'] : '' ) || $index >= count( $entities ) ) {
 			return self::step_complete( $state );
 		}
-		$entity = (string) $entities[ $index ];
-		$cursor = isset( $state['cursors'][ $entity ] ) ? (string) $state['cursors'][ $entity ] : '';
-		$limit  = Webino_Dashboard_Migrate_Settings::batch_size();
-		$batch  = Webino_Dashboard_Migrate_Exporters::batch( $entity, $cursor, $limit );
-		if ( is_wp_error( $batch ) ) {
-			return Webino_Dashboard_Migrate_Runner::reduce(
-				$state,
-				array(
-					'entity'      => $entity,
-					'ok'          => false,
-					'http_status' => 0,
-					'error'       => $batch->get_error_message(),
-				)
-			);
-		}
-
-		$items    = isset( $batch['items'] ) && is_array( $batch['items'] ) ? $batch['items'] : array();
-		$done     = ! empty( $batch['done'] );
-		$next     = isset( $batch['next_cursor'] ) ? (string) $batch['next_cursor'] : $cursor;
+		$entity   = (string) $entities[ $index ];
+		$cursor   = isset( $state['cursors'][ $entity ] ) ? (string) $state['cursors'][ $entity ] : '';
+		$limit    = Webino_Dashboard_Migrate_Settings::batch_size();
 		$resource = Webino_Dashboard_Migrate_Schema::remote_resource( $entity );
+		// Skip before exporting so unsupported entities never run local exporters (avoids fatals).
 		if ( empty( $state['dry_run'] ) && ! Webino_Dashboard_Migrate_Schema::remote_accepts( $resource, isset( $state['remote_resources'] ) ? $state['remote_resources'] : array() ) ) {
 			$total = isset( $state['totals'][ $entity ] ) ? (int) $state['totals'][ $entity ] : 0;
 			return Webino_Dashboard_Migrate_Runner::reduce(
@@ -287,6 +290,34 @@ final class Webino_Dashboard_Migrate_Job {
 				)
 			);
 		}
+		try {
+			$batch = Webino_Dashboard_Migrate_Exporters::batch( $entity, $cursor, $limit );
+		} catch ( Throwable $e ) {
+			return Webino_Dashboard_Migrate_Runner::reduce(
+				$state,
+				array(
+					'entity'      => $entity,
+					'ok'          => false,
+					'http_status' => 0,
+					'error'       => 'Export failed: ' . $e->getMessage(),
+				)
+			);
+		}
+		if ( is_wp_error( $batch ) ) {
+			return Webino_Dashboard_Migrate_Runner::reduce(
+				$state,
+				array(
+					'entity'      => $entity,
+					'ok'          => false,
+					'http_status' => 0,
+					'error'       => $batch->get_error_message(),
+				)
+			);
+		}
+
+		$items = isset( $batch['items'] ) && is_array( $batch['items'] ) ? $batch['items'] : array();
+		$done  = ! empty( $batch['done'] );
+		$next  = isset( $batch['next_cursor'] ) ? (string) $batch['next_cursor'] : $cursor;
 		if ( ! $items && $done ) {
 			return Webino_Dashboard_Migrate_Runner::reduce(
 				$state,
@@ -408,20 +439,9 @@ final class Webino_Dashboard_Migrate_Job {
 					)
 				);
 			}
-			// Rate limits on run should pause without failing the already-accepted batch.
+			// Ingest already succeeded (idempotent). Do NOT advance the cursor on
+			// rate-limit / 5xx from /run — retry the same batch after pause.
 			if ( empty( $run['ok'] ) && 429 === (int) $run['http_status'] ) {
-				$state = Webino_Dashboard_Migrate_Runner::reduce(
-					$state,
-					array(
-						'entity'      => $entity,
-						'ok'          => true,
-						'http_status' => 200,
-						'exported'    => count( $items ),
-						'next_cursor' => $next,
-						'done'        => $done,
-						'warning'     => isset( $batch['warning'] ) ? (string) $batch['warning'] : '',
-					)
-				);
 				return Webino_Dashboard_Migrate_Runner::reduce(
 					$state,
 					array(
@@ -434,26 +454,15 @@ final class Webino_Dashboard_Migrate_Job {
 				);
 			}
 			if ( empty( $run['ok'] ) && (int) $run['http_status'] >= 500 ) {
-				// Batch is already queued; keep the cursor and retry later.
-				$state = Webino_Dashboard_Migrate_Runner::reduce(
-					$state,
-					array(
-						'entity'      => $entity,
-						'ok'          => true,
-						'http_status' => 200,
-						'exported'    => count( $items ),
-						'next_cursor' => $next,
-						'done'        => $done,
-						'warning'     => __( 'Batch accepted; Webino run will retry.', 'webino-dashboard' ),
-					)
-				);
 				return Webino_Dashboard_Migrate_Runner::reduce(
 					$state,
 					array(
 						'entity'      => $entity,
 						'ok'          => false,
 						'http_status' => (int) $run['http_status'],
-						'error'       => (string) $run['error'],
+						'error'       => (string) $run['error'] !== ''
+							? (string) $run['error']
+							: __( 'Batch accepted; Webino run will retry.', 'webino-dashboard' ),
 					)
 				);
 			}
@@ -553,6 +562,28 @@ final class Webino_Dashboard_Migrate_Job {
 				'error'       => '',
 			)
 		);
+	}
+
+	/**
+	 * Mute third-party WooCommerce callbacks that crash on null orders during export.
+	 */
+	private static function isolate_third_party_hooks() {
+		if ( ! function_exists( 'remove_all_actions' ) ) {
+			return;
+		}
+		foreach ( array(
+			'woocommerce_order_status_changed',
+			'woocommerce_order_status_failed',
+			'woocommerce_order_status_refunded',
+			'woocommerce_order_status_cancelled',
+			'woocommerce_payment_complete',
+			'woocommerce_thankyou',
+		) as $hook ) {
+			remove_all_actions( $hook );
+		}
+		if ( function_exists( 'remove_all_filters' ) ) {
+			remove_all_filters( 'woocommerce_available_payment_gateways' );
+		}
 	}
 
 	/**

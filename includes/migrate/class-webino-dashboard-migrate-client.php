@@ -76,11 +76,49 @@ final class Webino_Dashboard_Migrate_Client {
 				)
 			);
 		}
+		$resources = self::extract_ping_resources( isset( $result['body'] ) && is_array( $result['body'] ) ? $result['body'] : array() );
 		return array(
 			'ok'          => true,
 			'http_status' => (int) $result['http_status'],
 			'message'     => __( 'Connection succeeded.', 'webino-dashboard' ),
+			'resources'   => $resources,
+			'body'        => isset( $result['body'] ) && is_array( $result['body'] ) ? $result['body'] : array(),
 		);
+	}
+
+	/**
+	 * Pull the advertised resource list from a ping JSON body.
+	 *
+	 * Webino may wrap the payload as `{ data: { resources: [...] } }` or return
+	 * `resources` / `catalog` at the top level.
+	 *
+	 * @param array<string,mixed> $body Decoded response body.
+	 * @return list<string>
+	 */
+	public static function extract_ping_resources( array $body ) {
+		$candidates = array();
+		if ( isset( $body['data'] ) && is_array( $body['data'] ) ) {
+			$candidates[] = $body['data'];
+		}
+		$candidates[] = $body;
+		foreach ( $candidates as $node ) {
+			foreach ( array( 'resources', 'catalog' ) as $key ) {
+				if ( empty( $node[ $key ] ) || ! is_array( $node[ $key ] ) ) {
+					continue;
+				}
+				$out = array();
+				foreach ( $node[ $key ] as $name ) {
+					$name = is_string( $name ) ? strtolower( trim( $name ) ) : '';
+					if ( '' !== $name ) {
+						$out[] = $name;
+					}
+				}
+				if ( $out ) {
+					return array_values( array_unique( $out ) );
+				}
+			}
+		}
+		return array();
 	}
 
 	/**

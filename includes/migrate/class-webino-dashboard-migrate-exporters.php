@@ -23,17 +23,22 @@ final class Webino_Dashboard_Migrate_Exporters {
 			'media_files'         => 'Webino_Dashboard_Migrate_Export_Media_Files',
 			'categories'          => 'Webino_Dashboard_Migrate_Export_Categories',
 			'tags'                => 'Webino_Dashboard_Migrate_Export_Tags',
+			'blog_categories'     => 'Webino_Dashboard_Migrate_Export_Blog_Categories',
+			'blog_tags'           => 'Webino_Dashboard_Migrate_Export_Blog_Tags',
 			'brands'              => 'Webino_Dashboard_Migrate_Export_Brands',
+			'attribute_groups'    => 'Webino_Dashboard_Migrate_Export_Attribute_Groups',
 			'products'            => 'Webino_Dashboard_Migrate_Export_Products',
 			'customers'           => 'Webino_Dashboard_Migrate_Export_Customers',
 			'staff'               => 'Webino_Dashboard_Migrate_Export_Staff',
 			'orders'              => 'Webino_Dashboard_Migrate_Export_Orders',
 			'pages'               => 'Webino_Dashboard_Migrate_Export_Pages',
 			'posts'               => 'Webino_Dashboard_Migrate_Export_Posts',
+			'stories'             => 'Webino_Dashboard_Migrate_Export_Stories',
 			'elementor_templates' => 'Webino_Dashboard_Migrate_Export_Elementor_Templates',
 			'menus'               => 'Webino_Dashboard_Migrate_Export_Menus',
 			'coupons'             => 'Webino_Dashboard_Migrate_Export_Coupons',
 			'reviews'             => 'Webino_Dashboard_Migrate_Export_Reviews',
+			'blog_comments'       => 'Webino_Dashboard_Migrate_Export_Blog_Comments',
 			'redirects'           => 'Webino_Dashboard_Migrate_Export_Redirects',
 			'settings'            => 'Webino_Dashboard_Migrate_Export_Settings',
 			'stats'               => 'Webino_Dashboard_Migrate_Export_Stats',
@@ -1038,7 +1043,8 @@ final class Webino_Dashboard_Migrate_Export_Customers {
 	 * @return list<string>
 	 */
 	public static function roles() {
-		$roles = array( 'customer' );
+		// Include subscriber so guest-checkout accounts and newsletter users migrate.
+		$roles = array( 'customer', 'subscriber' );
 		if ( function_exists( 'apply_filters' ) ) {
 			$filtered = apply_filters( 'webino_dashboard_migrate_customer_roles', $roles );
 			if ( is_array( $filtered ) ) {
@@ -1060,6 +1066,11 @@ final class Webino_Dashboard_Migrate_Export_Customers {
 	 * @return array<string,mixed>
 	 */
 	public static function export_batch( $cursor, $limit ) {
+		$cursor = (string) $cursor;
+		if ( 0 === strpos( $cursor, 'g|' ) || 'guests' === $cursor ) {
+			$guest_cursor = ( 'guests' === $cursor ) ? 0 : (int) substr( $cursor, 2 );
+			return self::export_guest_customers( $guest_cursor, (int) $limit );
+		}
 		$ids   = self::user_ids_after( (int) $cursor, $limit );
 		$items = array();
 		$last  = (int) $cursor;
@@ -1071,26 +1082,157 @@ final class Webino_Dashboard_Migrate_Export_Customers {
 			}
 			$items[] = Webino_Dashboard_Migrate_Export_Support::filter_item( self::from_user( $user ), 'customers', $id );
 		}
+		$users_done = count( $ids ) < $limit;
 		return array(
 			'items'       => $items,
-			'next_cursor' => (string) $last,
-			'done'        => count( $ids ) < $limit,
+			'next_cursor' => $users_done ? 'g|0' : (string) $last,
+			'done'        => false,
+			'total'       => self::count_total(),
+			'warning'     => $users_done ? '' : '',
+		);
+	}
+
+	/**
+	 * Guest checkouts (customer_id = 0) keyed by stable email/phone so they are not dropped.
+	 *
+	 * @param int $cursor Last order id.
+	 * @param int $limit  Limit.
+	 * @return array<string,mixed>
+	 */
+	private static function export_guest_customers( $cursor, $limit ) {
+		if ( ! function_exists( 'wc_get_order' ) ) {
+			return array(
+				'items'       => array(),
+				'next_cursor' => 'g|' . (int) $cursor,
+				'done'        => true,
+				'total'       => self::count_total(),
+			);
+		}
+		$items = array();
+		$last  = (int) $cursor;
+		$scan  = (int) $cursor;
+		// Walk guest orders by id; stable external_id dedupes across batches on the destination.
+		while ( count( $items ) < $limit ) {
+			$need = max( ( $limit - count( $items ) ) * 4, 20 );
+			$ids  = self::guest_order_ids_after( $scan, $need );
+			if ( ! $ids ) {
+				break;
+			}
+			foreach ( $ids as $oid ) {
+				$last = $oid;
+				$scan = $oid;
+				$order = wc_get_order( $oid );
+				if ( ! $order || (int) $order->get_customer_id() > 0 ) {
+					continue;
+				}
+				$email = strtolower( trim( (string) $order->get_billing_email() ) );
+				$phone = preg_replace( '/[^\d+]/', '', (string) $order->get_billing_phone() );
+				$key   = '' !== $email ? 'e:' . $email : ( '' !== $phone ? 'p:' . $phone : 'o:' . $oid );
+				$first = (string) $order->get_billing_first_name();
+				$lastn = (string) $order->get_billing_last_name();
+				$name  = trim( $first . ' ' . $lastn );
+				$ext   = 'guest-' . substr( sha1( $key ), 0, 16 );
+				if ( '' === $email ) {
+					$email = 'wp-' . $ext . '@import.webino.local';
+				}
+				if ( '' === $name ) {
+					$name = $email;
+				}
+				$items[] = Webino_Dashboard_Migrate_Export_Support::filter_item(
+					array(
+						'source_id'     => 0,
+						'external_id'   => $ext,
+						'email'         => $email,
+						'name'          => $name,
+						'username'      => $ext,
+						'first_name'    => $first,
+						'last_name'     => $lastn,
+						'display_name'  => $name,
+						'roles'         => array( 'customer' ),
+						'registered_at' => Webino_Dashboard_Migrate_Export_Support::iso_date( $order->get_date_created() ? $order->get_date_created()->date( 'c' ) : '' ),
+						'billing'       => array(
+							'first_name' => $first,
+							'last_name'  => $lastn,
+							'email'      => (string) $order->get_billing_email(),
+							'phone'      => (string) $order->get_billing_phone(),
+							'address_1'  => (string) $order->get_billing_address_1(),
+							'city'       => (string) $order->get_billing_city(),
+							'postcode'   => (string) $order->get_billing_postcode(),
+							'country'    => (string) $order->get_billing_country(),
+						),
+						'shipping'      => array(),
+						'phone'         => (string) $phone,
+					),
+					'customers',
+					0
+				);
+				if ( count( $items ) >= $limit ) {
+					break;
+				}
+			}
+			if ( count( $ids ) < $need ) {
+				break;
+			}
+		}
+		return array(
+			'items'       => $items,
+			'next_cursor' => 'g|' . $last,
+			'done'        => count( $items ) < $limit,
 			'total'       => self::count_total(),
 		);
+	}
+
+	/**
+	 * @param int $cursor Last order id.
+	 * @param int $limit  Limit.
+	 * @return list<int>
+	 */
+	private static function guest_order_ids_after( $cursor, $limit ) {
+		global $wpdb;
+		$hpos = class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& method_exists( '\Automattic\WooCommerce\Utilities\OrderUtil', 'custom_orders_table_usage_is_enabled' )
+			&& \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+		if ( $hpos ) {
+			$table = $wpdb->prefix . 'wc_orders';
+			$sql   = "SELECT id FROM {$table} WHERE type = 'shop_order' AND customer_id = 0 AND status NOT IN ('trash','wc-trash','auto-draft','checkout-draft','wc-checkout-draft') AND id > %d ORDER BY id ASC LIMIT %d";
+			$ids   = $wpdb->get_col( $wpdb->prepare( $sql, (int) $cursor, (int) $limit ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return array_map( 'intval', is_array( $ids ) ? $ids : array() );
+		}
+		$sql = "SELECT p.ID FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_customer_user' AND (m.meta_value = '0' OR m.meta_value = '')
+			WHERE p.post_type = 'shop_order' AND p.post_status NOT IN ('trash','auto-draft','checkout-draft') AND p.ID > %d
+			ORDER BY p.ID ASC LIMIT %d";
+		$ids = $wpdb->get_col( $wpdb->prepare( $sql, (int) $cursor, (int) $limit ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return array_map( 'intval', is_array( $ids ) ? $ids : array() );
 	}
 
 	/**
 	 * @return int
 	 */
 	public static function count_total() {
-		if ( ! function_exists( 'count_users' ) ) {
-			return 0;
+		$total = 0;
+		if ( function_exists( 'count_users' ) ) {
+			$counts = count_users();
+			$avail  = isset( $counts['avail_roles'] ) && is_array( $counts['avail_roles'] ) ? $counts['avail_roles'] : array();
+			foreach ( self::roles() as $role ) {
+				$total += isset( $avail[ $role ] ) ? (int) $avail[ $role ] : 0;
+			}
 		}
-		$counts = count_users();
-		$total  = 0;
-		$avail  = isset( $counts['avail_roles'] ) && is_array( $counts['avail_roles'] ) ? $counts['avail_roles'] : array();
-		foreach ( self::roles() as $role ) {
-			$total += isset( $avail[ $role ] ) ? (int) $avail[ $role ] : 0;
+		if ( function_exists( 'wc_get_orders' ) ) {
+			$result = wc_get_orders(
+				array(
+					'limit'       => 1,
+					'paginate'    => true,
+					'customer_id' => 0,
+					'type'        => 'shop_order',
+					'return'      => 'ids',
+					'status'      => array_keys( function_exists( 'wc_get_order_statuses' ) ? wc_get_order_statuses() : array( 'wc-completed' => '' ) ),
+				)
+			);
+			if ( is_object( $result ) && isset( $result->total ) ) {
+				// Upper bound; distinct emails are fewer. Better to over-count than skip.
+				$total += (int) $result->total;
+			}
 		}
 		return $total;
 	}
@@ -1160,21 +1302,50 @@ final class Webino_Dashboard_Migrate_Export_Customers {
 		$raw = Webino_Dashboard_Migrate_Schema::strip_sensitive_keys( $raw );
 		unset( $raw['user_pass'], $raw['user_activation_key'] );
 		$display = isset( $raw['display_name'] ) ? (string) $raw['display_name'] : '';
-		$name    = isset( $raw['name'] ) ? (string) $raw['name'] : $display;
-		return array(
+		$first   = isset( $raw['first_name'] ) ? (string) $raw['first_name'] : '';
+		$last    = isset( $raw['last_name'] ) ? (string) $raw['last_name'] : '';
+		$name    = isset( $raw['name'] ) ? (string) $raw['name'] : '';
+		if ( '' === $name ) {
+			$name = trim( $first . ' ' . $last );
+		}
+		if ( '' === $name ) {
+			$name = $display;
+		}
+		$email = isset( $raw['email'] ) ? (string) $raw['email'] : '';
+		$phone = isset( $raw['phone'] ) ? (string) $raw['phone'] : '';
+		$billing = isset( $raw['billing'] ) && is_array( $raw['billing'] ) ? $raw['billing'] : array();
+		if ( '' === $email && ! empty( $billing['email'] ) ) {
+			$email = (string) $billing['email'];
+		}
+		if ( '' === $phone && ! empty( $billing['phone'] ) ) {
+			$phone = (string) $billing['phone'];
+		}
+		// Guests with neither email nor phone still get a stable synthetic email so import never drops them.
+		if ( '' === $email && '' === $phone ) {
+			$sid   = isset( $raw['source_id'] ) ? (int) $raw['source_id'] : 0;
+			$email = 'wp-user-' . max( 0, $sid ) . '@import.webino.local';
+		}
+		if ( '' === $name ) {
+			$name = '' !== $email ? $email : ( '' !== $phone ? $phone : 'Customer' );
+		}
+		$out = array(
 			'source_id'     => isset( $raw['source_id'] ) ? (int) $raw['source_id'] : 0,
-			'email'         => isset( $raw['email'] ) ? (string) $raw['email'] : '',
+			'email'         => $email,
 			'name'          => $name,
 			'username'      => isset( $raw['username'] ) ? (string) $raw['username'] : '',
-			'first_name'    => isset( $raw['first_name'] ) ? (string) $raw['first_name'] : '',
-			'last_name'     => isset( $raw['last_name'] ) ? (string) $raw['last_name'] : '',
-			'display_name'  => isset( $raw['display_name'] ) ? (string) $raw['display_name'] : '',
+			'first_name'    => $first,
+			'last_name'     => $last,
+			'display_name'  => $display,
 			'roles'         => isset( $raw['roles'] ) && is_array( $raw['roles'] ) ? array_values( array_map( 'strval', $raw['roles'] ) ) : array(),
 			'registered_at' => isset( $raw['registered_at'] ) ? (string) $raw['registered_at'] : '',
-			'billing'       => isset( $raw['billing'] ) && is_array( $raw['billing'] ) ? $raw['billing'] : array(),
+			'billing'       => $billing,
 			'shipping'      => isset( $raw['shipping'] ) && is_array( $raw['shipping'] ) ? $raw['shipping'] : array(),
-			'phone'         => isset( $raw['phone'] ) ? (string) $raw['phone'] : '',
+			'phone'         => $phone,
 		);
+		if ( ! empty( $raw['external_id'] ) ) {
+			$out['external_id'] = (string) $raw['external_id'];
+		}
+		return $out;
 	}
 }
 
@@ -1224,11 +1395,15 @@ final class Webino_Dashboard_Migrate_Export_Orders {
 		if ( ! function_exists( 'wc_get_orders' ) ) {
 			return 0;
 		}
-		$result = wc_get_orders(
+		$statuses = function_exists( 'wc_get_order_statuses' )
+			? array_keys( wc_get_order_statuses() )
+			: array( 'wc-pending', 'wc-processing', 'wc-on-hold', 'wc-completed', 'wc-cancelled', 'wc-refunded', 'wc-failed' );
+		$statuses = array_values( array_diff( $statuses, array( 'wc-checkout-draft', 'checkout-draft', 'trash', 'wc-trash', 'auto-draft' ) ) );
+		$result   = wc_get_orders(
 			array(
 				'limit'    => 1,
 				'paginate' => true,
-				'status'   => 'any',
+				'status'   => $statuses,
 				'type'     => 'shop_order',
 				'return'   => 'ids',
 			)

@@ -866,8 +866,85 @@ final class Webino_Dashboard_Migrate_Export_Settings {
 			'swatches'       => self::option_array( 'webino_dashboard_swatch_settings' ),
 			'attribute_groups' => self::option_array( 'webino_dashboard_attribute_groups' ),
 			'modules'        => self::module_flags(),
+			'theme_mods'     => self::theme_mods(),
+			'theme_slug'     => function_exists( 'get_stylesheet' ) ? (string) get_stylesheet() : '',
+			'webino_options' => self::webino_options_snapshot(),
+			'elementor_kit'  => self::elementor_kit_snapshot(),
 		);
 		return $package;
+	}
+
+	/**
+	 * Active theme Customizer mods (no serialized PHP objects).
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function theme_mods() {
+		if ( ! function_exists( 'get_theme_mods' ) ) {
+			return array();
+		}
+		$mods = get_theme_mods();
+		if ( ! is_array( $mods ) ) {
+			return array();
+		}
+		$clean = Webino_Dashboard_Migrate_Schema::strip_sensitive_keys( $mods );
+		return is_array( $clean ) ? $clean : array();
+	}
+
+	/**
+	 * Flat snapshot of webino_dashboard_* options (secrets stripped).
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function webino_options_snapshot() {
+		global $wpdb;
+		if ( ! isset( $wpdb ) ) {
+			return array();
+		}
+		$rows = $wpdb->get_results(
+			"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE 'webino_dashboard_%' LIMIT 400",
+			ARRAY_A
+		);
+		$out = array();
+		if ( ! is_array( $rows ) ) {
+			return $out;
+		}
+		foreach ( $rows as $row ) {
+			$name = isset( $row['option_name'] ) ? (string) $row['option_name'] : '';
+			if ( '' === $name || false !== strpos( $name, 'token' ) || false !== strpos( $name, 'secret' ) || false !== strpos( $name, 'password' ) ) {
+				continue;
+			}
+			$raw = isset( $row['option_value'] ) ? $row['option_value'] : '';
+			$val = maybe_unserialize( $raw );
+			if ( is_object( $val ) ) {
+				continue;
+			}
+			$out[ $name ] = $val;
+		}
+		$clean = Webino_Dashboard_Migrate_Schema::strip_sensitive_keys( $out );
+		return is_array( $clean ) ? $clean : array();
+	}
+
+	/**
+	 * Elementor active kit CSS / settings when present.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function elementor_kit_snapshot() {
+		$kit_id = 0;
+		if ( function_exists( 'get_option' ) ) {
+			$kit_id = (int) get_option( 'elementor_active_kit', 0 );
+		}
+		if ( $kit_id <= 0 ) {
+			return array();
+		}
+		$css = (string) get_post_meta( $kit_id, '_elementor_page_settings', true );
+		$page = get_post_meta( $kit_id, '_elementor_css', true );
+		return array(
+			'kit_id'         => $kit_id,
+			'page_settings'  => is_string( $css ) ? $css : ( is_array( $css ) ? $css : array() ),
+			'css_meta'       => is_array( $page ) ? $page : array(),
+		);
 	}
 
 	/**
@@ -966,29 +1043,31 @@ final class Webino_Dashboard_Migrate_Export_Settings {
 	 * @return list<array<string,mixed>>
 	 */
 	private static function payments() {
-		if ( ! function_exists( 'WC' ) ) {
+		// Read gateway options directly — avoid WC()->payment_gateways() which can
+		// call remote eligibility APIs (TorobPay etc.) and hang the migrate tick.
+		if ( ! function_exists( 'get_option' ) ) {
 			return array();
 		}
-		$wc = WC();
-		if ( ! is_object( $wc ) || ! method_exists( $wc, 'payment_gateways' ) ) {
-			return array();
-		}
-		$registry = $wc->payment_gateways();
-		if ( ! is_object( $registry ) || ! method_exists( $registry, 'payment_gateways' ) ) {
-			return array();
-		}
+		global $wpdb;
 		$out = array();
-		foreach ( (array) $registry->payment_gateways() as $gateway ) {
-			if ( ! is_object( $gateway ) ) {
+		if ( isset( $wpdb ) && is_object( $wpdb ) && method_exists( $wpdb, 'get_col' ) ) {
+			$keys = $wpdb->get_col( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'woocommerce\\_%\\_settings' LIMIT 80" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$keys = is_array( $keys ) ? $keys : array();
+		} else {
+			$keys = array();
+		}
+		foreach ( $keys as $key ) {
+			$key = (string) $key;
+			if ( ! preg_match( '/^woocommerce_(.+)_settings$/', $key, $m ) ) {
 				continue;
 			}
-			$id       = isset( $gateway->id ) ? (string) $gateway->id : '';
-			$settings = function_exists( 'get_option' ) ? get_option( 'woocommerce_' . $id . '_settings', array() ) : array();
+			$id       = (string) $m[1];
+			$settings = get_option( $key, array() );
 			$settings = is_array( $settings ) ? Webino_Dashboard_Migrate_Schema::strip_sensitive_keys( $settings ) : array();
 			$out[]    = array(
 				'id'       => $id,
-				'title'    => isset( $gateway->title ) ? (string) $gateway->title : '',
-				'enabled'  => isset( $gateway->enabled ) ? 'yes' === (string) $gateway->enabled : false,
+				'title'    => isset( $settings['title'] ) ? (string) $settings['title'] : $id,
+				'enabled'  => isset( $settings['enabled'] ) ? 'yes' === (string) $settings['enabled'] : false,
 				'settings' => is_array( $settings ) ? $settings : array(),
 			);
 		}
@@ -999,28 +1078,35 @@ final class Webino_Dashboard_Migrate_Export_Settings {
 	 * @return list<array<string,mixed>>
 	 */
 	private static function emails() {
-		if ( ! function_exists( 'WC' ) ) {
+		// Options-only: WC_Email::get_subject()/get_heading() can call has_status() on a null order.
+		if ( ! function_exists( 'get_option' ) ) {
 			return array();
 		}
-		$wc = WC();
-		if ( ! is_object( $wc ) || ! method_exists( $wc, 'mailer' ) ) {
-			return array();
-		}
-		$mailer = $wc->mailer();
-		if ( ! is_object( $mailer ) || ! method_exists( $mailer, 'get_emails' ) ) {
-			return array();
-		}
+		$known = array(
+			'new_order',
+			'cancelled_order',
+			'failed_order',
+			'customer_on_hold_order',
+			'customer_processing_order',
+			'customer_completed_order',
+			'customer_refunded_order',
+			'customer_invoice',
+			'customer_note',
+			'customer_reset_password',
+			'customer_new_account',
+		);
 		$out = array();
-		foreach ( (array) $mailer->get_emails() as $email ) {
-			if ( ! is_object( $email ) ) {
+		foreach ( $known as $id ) {
+			$settings = get_option( 'woocommerce_' . $id . '_settings', null );
+			if ( ! is_array( $settings ) ) {
 				continue;
 			}
 			$out[] = array(
-				'id'      => isset( $email->id ) ? (string) $email->id : '',
-				'title'   => isset( $email->title ) ? (string) $email->title : '',
-				'enabled' => isset( $email->enabled ) ? 'yes' === (string) $email->enabled : false,
-				'subject' => method_exists( $email, 'get_subject' ) ? (string) $email->get_subject() : '',
-				'heading' => method_exists( $email, 'get_heading' ) ? (string) $email->get_heading() : '',
+				'id'      => $id,
+				'title'   => isset( $settings['title'] ) ? (string) $settings['title'] : $id,
+				'enabled' => isset( $settings['enabled'] ) ? 'yes' === (string) $settings['enabled'] : false,
+				'subject' => isset( $settings['subject'] ) ? (string) $settings['subject'] : '',
+				'heading' => isset( $settings['heading'] ) ? (string) $settings['heading'] : '',
 			);
 		}
 		return $out;
@@ -1069,27 +1155,64 @@ final class Webino_Dashboard_Migrate_Export_Stats {
 		}
 		list( $table, $last ) = self::parse_cursor( $cursor, $tables );
 		global $wpdb;
-		$sql  = "SELECT * FROM {$table} WHERE id > %d ORDER BY id ASC LIMIT %d";
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, (int) $last, (int) $limit ), ARRAY_A );
+		$pk = self::primary_key( $table );
+		if ( '' === $pk ) {
+			// Table has no usable cursor key — skip without stalling the job.
+			$next = self::next_table( $table, $tables );
+			if ( null === $next ) {
+				return array( 'items' => array(), 'next_cursor' => $table . '|0', 'done' => true, 'total' => self::count_total() );
+			}
+			return array( 'items' => array(), 'next_cursor' => $next . '|0', 'done' => false, 'total' => self::count_total() );
+		}
+		if ( 'day' === $pk ) {
+			$sql  = "SELECT * FROM {$table} WHERE day > %s ORDER BY day ASC LIMIT %d";
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, (string) $last, (int) $limit ), ARRAY_A );
+		} elseif ( 'visitor_hash' === $pk ) {
+			$sql  = "SELECT * FROM {$table} WHERE visitor_hash > %s ORDER BY visitor_hash ASC LIMIT %d";
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, (string) $last, (int) $limit ), ARRAY_A );
+		} else {
+			$sql  = "SELECT * FROM {$table} WHERE `{$pk}` > %d ORDER BY `{$pk}` ASC LIMIT %d";
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, (int) $last, (int) $limit ), ARRAY_A );
+		}
 		$rows = is_array( $rows ) ? $rows : array();
 		$items = array();
-		foreach ( $rows as $row ) {
-			$last = isset( $row['id'] ) ? (int) $row['id'] : $last;
-			$items[] = Webino_Dashboard_Migrate_Export_Support::filter_item( self::shape_row( $table, $row ), 'stats', $last );
+		$next_last = $last;
+		foreach ( $rows as $i => $row ) {
+			$key = isset( $row[ $pk ] ) ? (string) $row[ $pk ] : (string) ( $i + 1 );
+			$next_last = $key;
+			$items[]   = Webino_Dashboard_Migrate_Export_Support::filter_item( self::shape_row( $table, $row ), 'stats', $key );
 		}
 		if ( count( $rows ) < (int) $limit ) {
 			$next = self::next_table( $table, $tables );
 			if ( null === $next ) {
-				return array( 'items' => $items, 'next_cursor' => $table . '|' . $last, 'done' => true, 'total' => self::count_total() );
+				return array( 'items' => $items, 'next_cursor' => $table . '|' . $next_last, 'done' => true, 'total' => self::count_total() );
 			}
 			return array( 'items' => $items, 'next_cursor' => $next . '|0', 'done' => false, 'total' => self::count_total() );
 		}
 		return array(
 			'items'       => $items,
-			'next_cursor' => $table . '|' . $last,
+			'next_cursor' => $table . '|' . $next_last,
 			'done'        => false,
 			'total'       => self::count_total(),
 		);
+	}
+
+	/**
+	 * Best cursor column for an analytics table (not every table has `id`).
+	 *
+	 * @param string $table Table.
+	 * @return string
+	 */
+	private static function primary_key( $table ) {
+		global $wpdb;
+		$cols = $wpdb->get_col( "DESCRIBE {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$cols = is_array( $cols ) ? $cols : array();
+		foreach ( array( 'id', 'day', 'visitor_hash' ) as $candidate ) {
+			if ( in_array( $candidate, $cols, true ) ) {
+				return $candidate;
+			}
+		}
+		return '';
 	}
 
 	/**
@@ -1533,5 +1656,307 @@ final class Webino_Dashboard_Migrate_Export_Review_Queue {
 		}
 		$next = $index + 1;
 		return isset( $kinds[ $next ] ) ? $kinds[ $next ] : null;
+	}
+}
+
+/**
+ * Blog categories (category taxonomy).
+ */
+final class Webino_Dashboard_Migrate_Export_Blog_Categories {
+
+	/**
+	 * @param string $cursor Cursor.
+	 * @param int    $limit  Limit.
+	 * @return array<string,mixed>
+	 */
+	public static function export_batch( $cursor, $limit ) {
+		return Webino_Dashboard_Migrate_Export_Categories::export_taxonomies( array( 'category' ), 'blog_categories', $cursor, $limit );
+	}
+
+	/**
+	 * @return int
+	 */
+	public static function count_total() {
+		return Webino_Dashboard_Migrate_Export_Categories::count_taxonomies( array( 'category' ) );
+	}
+}
+
+/**
+ * Blog tags (post_tag taxonomy).
+ */
+final class Webino_Dashboard_Migrate_Export_Blog_Tags {
+
+	/**
+	 * @param string $cursor Cursor.
+	 * @param int    $limit  Limit.
+	 * @return array<string,mixed>
+	 */
+	public static function export_batch( $cursor, $limit ) {
+		return Webino_Dashboard_Migrate_Export_Categories::export_taxonomies( array( 'post_tag' ), 'blog_tags', $cursor, $limit );
+	}
+
+	/**
+	 * @return int
+	 */
+	public static function count_total() {
+		return Webino_Dashboard_Migrate_Export_Categories::count_taxonomies( array( 'post_tag' ) );
+	}
+}
+
+/**
+ * Attribute groups / swatches from Webino Dashboard option storage.
+ */
+final class Webino_Dashboard_Migrate_Export_Attribute_Groups {
+
+	/**
+	 * @param string $cursor Cursor.
+	 * @param int    $limit  Limit.
+	 * @return array<string,mixed>
+	 */
+	public static function export_batch( $cursor, $limit ) {
+		unset( $limit );
+		if ( '' !== (string) $cursor ) {
+			return array( 'items' => array(), 'next_cursor' => '1', 'done' => true, 'total' => self::count_total() );
+		}
+		$groups = function_exists( 'get_option' ) ? get_option( 'webino_dashboard_attribute_groups', array() ) : array();
+		$swatch = function_exists( 'get_option' ) ? get_option( 'webino_dashboard_swatch_settings', array() ) : array();
+		$items  = array();
+		if ( is_array( $groups ) && $groups ) {
+			$items[] = Webino_Dashboard_Migrate_Export_Support::filter_item(
+				array(
+					'source_id' => 'attribute_groups',
+					'groups'    => $groups,
+					'swatches'  => is_array( $swatch ) ? $swatch : array(),
+				),
+				'attribute_groups',
+				1
+			);
+		}
+		return array(
+			'items'       => $items,
+			'next_cursor' => '1',
+			'done'        => true,
+			'total'       => count( $items ),
+		);
+	}
+
+	/**
+	 * @return int
+	 */
+	public static function count_total() {
+		$groups = function_exists( 'get_option' ) ? get_option( 'webino_dashboard_attribute_groups', array() ) : array();
+		return ( is_array( $groups ) && $groups ) ? 1 : 0;
+	}
+}
+
+/**
+ * Storefront stories (CPT story and common story plugins).
+ */
+final class Webino_Dashboard_Migrate_Export_Stories {
+
+	/**
+	 * @return list<string>
+	 */
+	public static function post_types() {
+		$types = array();
+		foreach ( array( 'story', 'stories', 'webino_story', 'product_story' ) as $type ) {
+			if ( function_exists( 'post_type_exists' ) && post_type_exists( $type ) ) {
+				$types[] = $type;
+			}
+		}
+		if ( function_exists( 'apply_filters' ) ) {
+			$filtered = apply_filters( 'webino_dashboard_migrate_story_post_types', $types );
+			if ( is_array( $filtered ) ) {
+				$types = array_values( array_filter( array_map( 'sanitize_key', $filtered ) ) );
+			}
+		}
+		return array_values( array_unique( $types ) );
+	}
+
+	/**
+	 * @param string $cursor Cursor.
+	 * @param int    $limit  Limit.
+	 * @return array<string,mixed>
+	 */
+	public static function export_batch( $cursor, $limit ) {
+		$types = self::post_types();
+		if ( ! $types ) {
+			return array(
+				'items'       => array(),
+				'next_cursor' => (string) $cursor,
+				'done'        => true,
+				'total'       => 0,
+				'warning'     => 'هیچ نوع نوشتهٔ استوری روی این سایت ثبت نشده است.',
+			);
+		}
+		$ids   = self::ids_after( (int) $cursor, $limit, $types );
+		$items = array();
+		$last  = (int) $cursor;
+		foreach ( $ids as $id ) {
+			$last = $id;
+			$post = get_post( $id );
+			if ( ! $post ) {
+				continue;
+			}
+			$thumb = (int) get_post_thumbnail_id( $id );
+			$url   = $thumb ? (string) wp_get_attachment_url( $thumb ) : '';
+			if ( '' === $url ) {
+				$url = (string) get_post_meta( $id, 'media_url', true );
+			}
+			if ( '' === $url ) {
+				$url = (string) get_post_meta( $id, '_story_media', true );
+			}
+			$mime = $thumb ? (string) get_post_mime_type( $thumb ) : '';
+			$type = ( 0 === strpos( $mime, 'video/' ) ) ? 'video' : 'image';
+			$product_id = (int) get_post_meta( $id, 'product_id', true );
+			if ( $product_id <= 0 ) {
+				$product_id = (int) get_post_meta( $id, '_product_id', true );
+			}
+			$link = (string) get_post_meta( $id, 'link_url', true );
+			if ( '' === $link ) {
+				$link = (string) get_permalink( $id );
+			}
+			$items[] = Webino_Dashboard_Migrate_Export_Support::filter_item(
+				array(
+					'source_id'          => $id,
+					'title'              => (string) $post->post_title,
+					'media_url'          => $url,
+					'media_type'         => $type,
+					'media_external_id'  => $thumb > 0 ? (string) $thumb : '',
+					'product_external_id'=> $product_id > 0 ? (string) $product_id : '',
+					'link_url'           => $link,
+					'sort_order'         => (int) $post->menu_order,
+					'is_active'          => 'publish' === $post->post_status,
+					'status'             => (string) $post->post_status,
+					'starts_at'          => Webino_Dashboard_Migrate_Export_Support::iso_date( $post->post_date_gmt ),
+					'ends_at'            => '',
+				),
+				'stories',
+				$id
+			);
+		}
+		return array(
+			'items'       => $items,
+			'next_cursor' => (string) $last,
+			'done'        => count( $ids ) < $limit,
+			'total'       => self::count_total(),
+		);
+	}
+
+	/**
+	 * @return int
+	 */
+	public static function count_total() {
+		$types = self::post_types();
+		if ( ! $types || ! function_exists( 'wp_count_posts' ) ) {
+			return 0;
+		}
+		$total = 0;
+		foreach ( $types as $type ) {
+			$counts = wp_count_posts( $type );
+			if ( is_object( $counts ) ) {
+				foreach ( (array) $counts as $status => $n ) {
+					if ( in_array( (string) $status, array( 'publish', 'draft', 'pending', 'private', 'future' ), true ) ) {
+						$total += (int) $n;
+					}
+				}
+			}
+		}
+		return $total;
+	}
+
+	/**
+	 * @param int          $cursor Last id.
+	 * @param int          $limit  Limit.
+	 * @param list<string> $types  Post types.
+	 * @return list<int>
+	 */
+	private static function ids_after( $cursor, $limit, array $types ) {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! $types ) {
+			return array();
+		}
+		$in   = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+		$args = array_merge( $types, array( (int) $cursor, (int) $limit ) );
+		$sql  = "SELECT ID FROM {$wpdb->posts} WHERE post_type IN ($in) AND post_status IN ('publish','draft','pending','private','future') AND ID > %d ORDER BY ID ASC LIMIT %d";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$cols = $wpdb->get_col( $wpdb->prepare( $sql, $args ) );
+		return array_map( 'intval', is_array( $cols ) ? $cols : array() );
+	}
+}
+
+/**
+ * Non-product comments (posts and pages).
+ */
+final class Webino_Dashboard_Migrate_Export_Blog_Comments {
+
+	/**
+	 * @param string $cursor Cursor.
+	 * @param int    $limit  Limit.
+	 * @return array<string,mixed>
+	 */
+	public static function export_batch( $cursor, $limit ) {
+		global $wpdb;
+		if ( ! isset( $wpdb ) ) {
+			return array( 'items' => array(), 'next_cursor' => (string) $cursor, 'done' => true, 'total' => 0 );
+		}
+		$sql = "SELECT c.comment_ID FROM {$wpdb->comments} c
+			INNER JOIN {$wpdb->posts} p ON p.ID = c.comment_post_ID
+			WHERE c.comment_ID > %d
+			  AND c.comment_type IN ('', 'comment')
+			  AND p.post_type IN ('post', 'page')
+			  AND c.comment_approved IN ('0','1','spam','trash')
+			ORDER BY c.comment_ID ASC
+			LIMIT %d";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$ids = $wpdb->get_col( $wpdb->prepare( $sql, (int) $cursor, (int) $limit ) );
+		$ids = array_map( 'intval', is_array( $ids ) ? $ids : array() );
+		$items = array();
+		$last  = (int) $cursor;
+		foreach ( $ids as $id ) {
+			$last    = $id;
+			$comment = get_comment( $id );
+			if ( ! $comment ) {
+				continue;
+			}
+			$post = get_post( (int) $comment->comment_post_ID );
+			$items[] = Webino_Dashboard_Migrate_Export_Support::filter_item(
+				array(
+					'source_id'        => $id,
+					'post_external_id' => (string) (int) $comment->comment_post_ID,
+					'post_type'        => $post ? (string) $post->post_type : 'post',
+					'author_name'      => (string) $comment->comment_author,
+					'author_email'     => (string) $comment->comment_author_email,
+					'content'          => (string) $comment->comment_content,
+					'status'           => (string) $comment->comment_approved,
+					'parent_external_id' => (string) (int) $comment->comment_parent,
+					'created_at'       => Webino_Dashboard_Migrate_Export_Support::iso_date( $comment->comment_date_gmt ),
+				),
+				'blog_comments',
+				$id
+			);
+		}
+		return array(
+			'items'       => $items,
+			'next_cursor' => (string) $last,
+			'done'        => count( $ids ) < $limit,
+			'total'       => self::count_total(),
+		);
+	}
+
+	/**
+	 * @return int
+	 */
+	public static function count_total() {
+		global $wpdb;
+		if ( ! isset( $wpdb ) ) {
+			return 0;
+		}
+		$sql = "SELECT COUNT(*) FROM {$wpdb->comments} c
+			INNER JOIN {$wpdb->posts} p ON p.ID = c.comment_post_ID
+			WHERE c.comment_type IN ('', 'comment')
+			  AND p.post_type IN ('post', 'page')";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return (int) $wpdb->get_var( $sql );
 	}
 }
