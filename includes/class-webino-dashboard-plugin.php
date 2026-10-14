@@ -158,6 +158,7 @@ final class Webino_Dashboard_Plugin {
 			set_transient( self::REWRITE_FLUSH_PENDING_TRANSIENT, WEBINO_DASHBOARD_VERSION, DAY_IN_SECONDS );
 			self::schedule_rewrite_flush();
 			self::flush_all_bootstrap_transients();
+			self::purge_upgrade_caches();
 			if ( class_exists( 'Webino_Dashboard_Variation_Swatches', false ) ) {
 				delete_option( Webino_Dashboard_Variation_Swatches::YITH_MIGRATE_OPTION );
 			}
@@ -255,6 +256,33 @@ final class Webino_Dashboard_Plugin {
 		$wpdb->query(
 			"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_webino_dashboard_boot_%' OR option_name LIKE '_transient_timeout_webino_dashboard_boot_%'"
 		);
+	}
+
+	/**
+	 * Clear stale runtime state after a plugin version change (CRM circuit lock,
+	 * cached SMS panel/update payloads, SSR caches, stale build assets).
+	 *
+	 * @return void
+	 */
+	public static function purge_upgrade_caches() {
+		global $wpdb;
+		delete_transient( 'webino_dashboard_crm_circuit' );
+		delete_transient( 'webino_dashboard_crm_circuit_fails' );
+		delete_transient( 'webino_dashboard_core_update_check' );
+		$prefixes = array( 'webino_dashboard_crm_circuit', 'webino_dashboard_sms_panel_', 'webino_dashboard_boot_' );
+		foreach ( $prefixes as $prefix ) {
+			$like  = $wpdb->esc_like( '_transient_' . $prefix ) . '%';
+			$tlike = $wpdb->esc_like( '_transient_timeout_' . $prefix ) . '%';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s", $like, $tlike ) );
+		}
+		if ( function_exists( 'wp_cache_flush' ) ) {
+			wp_cache_flush();
+		}
+		self::invalidate_dashboard_caches();
+		if ( class_exists( 'Webino_Dashboard_Assets', false ) && method_exists( 'Webino_Dashboard_Assets', 'purge_stale_build_assets' ) ) {
+			Webino_Dashboard_Assets::purge_stale_build_assets();
+		}
 	}
 
 	/**
