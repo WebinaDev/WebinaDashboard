@@ -266,6 +266,7 @@ final class Webino_Dashboard_Plugin {
 	 */
 	public static function purge_upgrade_caches() {
 		global $wpdb;
+		self::migrate_vendor_host_options();
 		delete_transient( 'webino_dashboard_crm_circuit' );
 		delete_transient( 'webino_dashboard_crm_circuit_fails' );
 		delete_transient( 'webino_dashboard_core_update_check' );
@@ -282,6 +283,49 @@ final class Webino_Dashboard_Plugin {
 		self::invalidate_dashboard_caches();
 		if ( class_exists( 'Webino_Dashboard_Assets', false ) && method_exists( 'Webino_Dashboard_Assets', 'purge_stale_build_assets' ) ) {
 			Webino_Dashboard_Assets::purge_stale_build_assets();
+		}
+	}
+
+	/**
+	 * Rewrite stored ERP API bases from https://webinaagency.ir to https://webina.dev
+	 * (the old host 301-redirects and WP turns redirected POSTs into GETs).
+	 * Only touches webino* options whose value contains webinaagency.ir/api or is the bare base.
+	 *
+	 * @return void
+	 */
+	public static function migrate_vendor_host_options() {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$names = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s AND option_name NOT LIKE %s AND option_value LIKE %s",
+				$wpdb->esc_like( 'webino' ) . '%',
+				$wpdb->esc_like( '_transient' ) . '%',
+				'%' . $wpdb->esc_like( 'webinaagency.ir' ) . '%'
+			)
+		);
+		$fix = static function ( $value ) use ( &$fix ) {
+			if ( is_array( $value ) ) {
+				foreach ( $value as $k => $v ) {
+					$value[ $k ] = $fix( $v );
+				}
+				return $value;
+			}
+			if ( ! is_string( $value ) ) {
+				return $value;
+			}
+			$trim = rtrim( $value, '/' );
+			if ( 'https://webinaagency.ir' === $trim || 'http://webinaagency.ir' === $trim ) {
+				return 'https://webina.dev';
+			}
+			return (string) preg_replace( '#https?://webinaagency\.ir/api(?=/|$)#', 'https://webina.dev/api', $value );
+		};
+		foreach ( (array) $names as $name ) {
+			$old = get_option( $name );
+			$new = $fix( $old );
+			if ( $new !== $old ) {
+				update_option( $name, $new );
+			}
 		}
 	}
 

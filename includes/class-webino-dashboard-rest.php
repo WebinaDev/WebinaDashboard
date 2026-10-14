@@ -1524,7 +1524,7 @@ class Webino_Dashboard_REST {
 	 * @return WP_REST_Response
 	 */
 	private static function license_mirror_deprecated_response( WP_REST_Response $response, $crm_path ) {
-		$host = defined( 'WEBINO_DASHBOARD_VENDOR_HOST' ) ? WEBINO_DASHBOARD_VENDOR_HOST : 'webinaagency.ir';
+		$host = defined( 'WEBINO_DASHBOARD_VENDOR_HOST' ) ? WEBINO_DASHBOARD_VENDOR_HOST : 'webina.dev';
 		if ( class_exists( 'Webino_Dashboard_License', false ) ) {
 			$bases = Webino_Dashboard_License::instance()->get_server_urls();
 			if ( ! empty( $bases[0] ) ) {

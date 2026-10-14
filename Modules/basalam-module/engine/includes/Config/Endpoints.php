@@ -27,14 +27,15 @@ final class Endpoints
     {
         $host = defined('WEBINO_DASHBOARD_VENDOR_URL')
             ? (string) WEBINO_DASHBOARD_VENDOR_URL
-            : 'https://webinaagency.ir';
+            : 'https://webina.dev';
         return untrailingslashit($host);
     }
 
     /** Default Basalam OAuth redirect on ERP Edge. */
     public static function oauthRedirectUri(): string
     {
-        return self::vendorBaseUrl() . '/api/basalam/oauth/callback';
+        // Pinned: must exactly match the redirect URI registered with Basalam (browser GET, so the 301 is harmless).
+        return self::WEBINO_OAUTH_REDIRECT_URI;
     }
 
     public static function oauthStartUrl(): string
@@ -55,11 +56,11 @@ final class Endpoints
     /** @deprecated Use oauthRedirectUri() — kept for string constant callers. */
     const WEBINO_OAUTH_REDIRECT_URI = 'https://webinaagency.ir/api/basalam/oauth/callback';
     /** @deprecated Use oauthStartUrl() */
-    const WEBINO_CRM_OAUTH_START = 'https://webinaagency.ir/api/webinocrm/v1/basalam/oauth/start';
+    const WEBINO_CRM_OAUTH_START = 'https://webina.dev/api/webinocrm/v1/basalam/oauth/start';
     /** @deprecated Use oauthRefreshUrl() */
-    const WEBINO_CRM_OAUTH_REFRESH = 'https://webinaagency.ir/api/webinocrm/v1/basalam/oauth/refresh';
+    const WEBINO_CRM_OAUTH_REFRESH = 'https://webina.dev/api/webinocrm/v1/basalam/oauth/refresh';
     /** @deprecated Use oauthDisconnectUrl() */
-    const WEBINO_CRM_OAUTH_DISCONNECT = 'https://webinaagency.ir/api/webinocrm/v1/basalam/oauth/disconnect';
+    const WEBINO_CRM_OAUTH_DISCONNECT = 'https://webina.dev/api/webinocrm/v1/basalam/oauth/disconnect';
 
     // Products
 

@@ -3,7 +3,7 @@
  * Plugin Name:       Webino Dashboard
  * Plugin URI:        https://webinaagency.ir
  * Description:       Standalone customer dashboard at /dashboard (SPA), separate from wp-admin.
- * Version:           0.9.58
+ * Version:           0.9.59
  * Author:            Webina
  * Author URI:        https://webinaagency.ir
  * Text Domain:       webino-dashboard
@@ -21,14 +21,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WEBINO_DASHBOARD_VERSION', '0.9.58' );
+define( 'WEBINO_DASHBOARD_VERSION', '0.9.59' );
 define( 'WEBINO_DASHBOARD_FILE', __FILE__ );
 define( 'WEBINO_DASHBOARD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_URL', plugin_dir_url( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_BASENAME', plugin_basename( __FILE__ ) );
 define( 'WEBINO_MODULES_DIR', trailingslashit( WEBINO_DASHBOARD_DIR ) . 'Modules/' );
 if ( ! defined( 'WEBINO_DASHBOARD_VENDOR_HOST' ) ) {
-	define( 'WEBINO_DASHBOARD_VENDOR_HOST', 'webinaagency.ir' );
+	// webinaagency.ir/api 301-redirects to webina.dev and WP downgrades redirected POSTs to GET — call webina.dev directly.
+	define( 'WEBINO_DASHBOARD_VENDOR_HOST', 'webina.dev' );
 }
 if ( ! defined( 'WEBINO_DASHBOARD_VENDOR_URL' ) ) {
 	define( 'WEBINO_DASHBOARD_VENDOR_URL', 'https://' . WEBINO_DASHBOARD_VENDOR_HOST );

@@ -63,7 +63,7 @@ class OAuthManager
     }
 
     /**
-     * ERP Edge host (webinaagency.ir by default).
+     * ERP Edge host (webina.dev by default).
      *
      * @return string
      */

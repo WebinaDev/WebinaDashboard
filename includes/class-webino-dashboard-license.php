@@ -443,8 +443,9 @@ final class Webino_Dashboard_License {
 	 */
 	public function get_server_urls() {
 		$urls = array( WEBINO_DASHBOARD_VENDOR_URL );
-		// Secondary ERP host (same backend) — used only when the primary fails at transport level.
-		$fallback = defined( 'WEBINO_DASHBOARD_VENDOR_FALLBACK_URL' ) ? (string) WEBINO_DASHBOARD_VENDOR_FALLBACK_URL : 'https://webina.dev';
+		// Optional secondary ERP base, used only when the primary fails at transport level.
+		// No default: webinaagency.ir/api 301-redirects to webina.dev, and redirected POSTs become GETs.
+		$fallback = defined( 'WEBINO_DASHBOARD_VENDOR_FALLBACK_URL' ) ? (string) WEBINO_DASHBOARD_VENDOR_FALLBACK_URL : '';
 		if ( '' !== $fallback ) {
 			$urls[] = $fallback;
 		}
