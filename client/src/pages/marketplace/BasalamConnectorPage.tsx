@@ -11,9 +11,9 @@ import { ModuleDynamicRoute } from '@/components/ModuleDynamicRoute'
  * (`settings/shop/basalam`, `settings/shop/basalam/products`, ...), so the
  * route key must be the current path — not the bare slug "basalam".
  */
-export const BASALAM_ROOT_ROUTE = 'settings/shop/basalam'
+const BASALAM_ROOT_ROUTE = 'settings/shop/basalam'
 
-export function basalamRouteFromPathname(pathname: string): string {
+function basalamRouteFromPathname(pathname: string): string {
   const clean = pathname.replace(/^\/+|\/+$/g, '')
   const idx = clean.indexOf(BASALAM_ROOT_ROUTE)
   if (idx < 0) return BASALAM_ROOT_ROUTE

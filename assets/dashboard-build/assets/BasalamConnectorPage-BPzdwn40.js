@@ -1,0 +1,1 @@
+import{i as e}from"./index-z0waR4P-.js";import{useLocation as t}from"react-router-dom";import{jsx as n}from"react/jsx-runtime";var r=`settings/shop/basalam`;function i(e){let t=e.replace(/^\/+|\/+$/g,``),n=t.indexOf(r);return n<0?r:t.slice(n)}function a(){let{pathname:r}=t();return n(e,{slug:`basalam-module`,routePath:i(r)})}export{a as default};
