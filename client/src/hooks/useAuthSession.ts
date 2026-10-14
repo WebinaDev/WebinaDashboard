@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { apiFetch } from '@/lib/api'
+import { apiFetch, applyFreshNonce } from '@/lib/api'
 import { AUTH_SESSION_QUERY_KEY, type AuthSession } from '@/lib/authLost'
 
 export type { AuthSession }
@@ -11,7 +11,12 @@ export function useAuthSession() {
 
   return useQuery({
     queryKey: AUTH_SESSION_QUERY_KEY,
-    queryFn: () => apiFetch<AuthSession>('auth/session'),
+    queryFn: async () => {
+      const res = await apiFetch<AuthSession & { nonce?: string }>('auth/session')
+      // Keep the REST nonce fresh while the SPA stays open (WP nonces expire in 12–24h).
+      applyFreshNonce(res?.nonce)
+      return { logged_in: Boolean(res?.logged_in) }
+    },
     staleTime: 30_000,
     retry: false,
     refetchOnWindowFocus: true,

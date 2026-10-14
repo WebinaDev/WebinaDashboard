@@ -1,5 +1,5 @@
 import { ApiError } from '@/lib/apiError'
-import { maybeMarkLoggedOut } from '@/lib/authLost'
+import { isNonceError, markLoggedOut, maybeMarkLoggedOut } from '@/lib/authLost'
 import { isAllowedRemoteUrl } from '@/lib/safeUrl'
 
 function cfg() {
@@ -280,7 +280,71 @@ async function apiFetchViaAjax<T>(path: string, timeoutMs: number, init: Request
   }
 }
 
+let nonceRefresh: Promise<boolean> | null = null
+
+/** Store a fresh REST nonce (from auth/session) in the runtime config. */
+export function applyFreshNonce(nonce: unknown): void {
+  const c = cfg()
+  if (c && typeof nonce === 'string' && nonce.length > 0) {
+    c.nonce = nonce
+  }
+}
+
+/**
+ * Fetch a fresh wp_rest nonce via admin-ajax auth/session (no nonce required).
+ * Resolves true when the WP session is still alive.
+ */
+export function refreshNonce(): Promise<boolean> {
+  if (nonceRefresh) return nonceRefresh
+  const c = cfg()
+  if (!c?.ajaxUrl) return Promise.resolve(false)
+  const body = new URLSearchParams()
+  body.set('action', 'webino_dashboard_auth_session')
+  nonceRefresh = fetch(c.ajaxUrl, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+    body,
+  })
+    .then((r) => r.json())
+    .then((json: { success?: boolean; data?: { logged_in?: boolean; nonce?: string } }) => {
+      const logged = Boolean(json?.success && json.data?.logged_in)
+      if (logged) applyFreshNonce(json.data?.nonce)
+      return logged && typeof json.data?.nonce === 'string' && json.data.nonce.length > 0
+    })
+    .catch(() => false)
+    .finally(() => {
+      window.setTimeout(() => {
+        nonceRefresh = null
+      }, 0)
+    })
+  return nonceRefresh
+}
+
 export async function apiFetch<T>(
+  path: string,
+  init: RequestInit = {},
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+): Promise<T> {
+  try {
+    return await apiFetchOnce<T>(path, init, timeoutMs)
+  } catch (err) {
+    if (!isNonceError(err)) throw err
+    const alive = await refreshNonce()
+    if (!alive) {
+      markLoggedOut()
+      throw err
+    }
+    // Retry once with the fresh nonce (drop any caller-supplied stale header).
+    const headers = { ...(init.headers as Record<string, string> | undefined) }
+    for (const k of Object.keys(headers)) {
+      if (k.toLowerCase() === 'x-wp-nonce') delete headers[k]
+    }
+    return apiFetchOnce<T>(path, { ...init, headers }, timeoutMs)
+  }
+}
+
+async function apiFetchOnce<T>(
   path: string,
   init: RequestInit = {},
   timeoutMs: number = DEFAULT_TIMEOUT_MS,

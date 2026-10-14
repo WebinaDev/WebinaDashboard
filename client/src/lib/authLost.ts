@@ -40,7 +40,27 @@ export function markLoggedOut(client?: QueryClient | null): void {
   qc.setQueryData<AuthSession>(AUTH_SESSION_QUERY_KEY, { logged_in: false })
 }
 
+const NONCE_CODES = new Set(['rest_cookie_invalid_nonce', 'invalid_nonce', 'ajax_referer_failed', '-1'])
+
+/**
+ * Stale REST nonce (WP nonces expire after 12–24h) — the WP login cookie is usually
+ * still valid, so this must NOT log the user out; the API layer refreshes the nonce
+ * and retries instead.
+ */
+export function isNonceError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const e = err as { code?: string; message?: string; status?: number }
+  if (e.status === 401) return false
+  const code = typeof e.code === 'string' ? e.code : ''
+  if (NONCE_CODES.has(code)) return true
+  const msg = typeof e.message === 'string' ? e.message.toLowerCase() : ''
+  return msg.includes('cookie nonce is invalid') || msg.includes('rest_cookie_invalid_nonce') || msg === 'invalid nonce'
+}
+
 export function maybeMarkLoggedOut(err: unknown): void {
+  if (isNonceError(err)) {
+    return
+  }
   if (isAuthLostError(err)) {
     markLoggedOut()
   }

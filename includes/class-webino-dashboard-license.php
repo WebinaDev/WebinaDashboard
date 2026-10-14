@@ -201,8 +201,11 @@ final class Webino_Dashboard_License {
 	 * @return int
 	 */
 	public function crm_circuit_ttl() {
-		$ttl = (int) apply_filters( 'webino_dashboard_crm_circuit_ttl', 0 );
-		return $ttl > 0 ? max( 30, $ttl ) : 0;
+		// Default 60s cooldown. The old default (0 = sticky) meant ONE timeout to the ERP
+		// disabled every ERP-backed feature (SMS wallet, license, marketplace) until a
+		// manual license check — the "connection keeps dropping" symptom.
+		$ttl = (int) apply_filters( 'webino_dashboard_crm_circuit_ttl', 60 );
+		return max( 15, $ttl );
 	}
 
 	/**
@@ -220,7 +223,12 @@ final class Webino_Dashboard_License {
 		}
 		$until = isset( $state['until'] ) ? (int) $state['until'] : 0;
 		// until = 0: sticky (no timed re-probe). Otherwise legacy/opt-in timed cooldown.
-		return 0 === $until || $until > time();
+		if ( 0 === $until ) {
+			// Legacy sticky state written by older versions: honour it for one TTL only.
+			$at = isset( $state['at'] ) ? (int) $state['at'] : 0;
+			return $at > 0 && ( $at + $this->crm_circuit_ttl() ) > time();
+		}
+		return $until > time();
 	}
 
 	/**
@@ -228,11 +236,17 @@ final class Webino_Dashboard_License {
 	 * @return void
 	 */
 	private function open_crm_circuit( $reason ) {
+		$threshold = max( 1, (int) apply_filters( 'webino_dashboard_crm_circuit_threshold', 3 ) );
+		$fails     = (int) get_transient( self::CRM_CIRCUIT_TRANSIENT . '_fails' ) + 1;
+		set_transient( self::CRM_CIRCUIT_TRANSIENT . '_fails', $fails, 5 * MINUTE_IN_SECONDS );
+		if ( $fails < $threshold ) {
+			return;
+		}
 		$ttl = $this->crm_circuit_ttl();
 		set_transient(
 			self::CRM_CIRCUIT_TRANSIENT,
 			array(
-				'until'  => $ttl > 0 ? time() + $ttl : 0,
+				'until'  => time() + $ttl,
 				'at'     => time(),
 				'reason' => substr( (string) $reason, 0, 200 ),
 			),
@@ -244,6 +258,9 @@ final class Webino_Dashboard_License {
 	 * @return void
 	 */
 	private function close_crm_circuit() {
+		if ( false !== get_transient( self::CRM_CIRCUIT_TRANSIENT . '_fails' ) ) {
+			delete_transient( self::CRM_CIRCUIT_TRANSIENT . '_fails' );
+		}
 		if ( false !== get_transient( self::CRM_CIRCUIT_TRANSIENT ) ) {
 			delete_transient( self::CRM_CIRCUIT_TRANSIENT );
 		}
@@ -426,6 +443,11 @@ final class Webino_Dashboard_License {
 	 */
 	public function get_server_urls() {
 		$urls = array( WEBINO_DASHBOARD_VENDOR_URL );
+		// Secondary ERP host (same backend) — used only when the primary fails at transport level.
+		$fallback = defined( 'WEBINO_DASHBOARD_VENDOR_FALLBACK_URL' ) ? (string) WEBINO_DASHBOARD_VENDOR_FALLBACK_URL : 'https://webina.dev';
+		if ( '' !== $fallback ) {
+			$urls[] = $fallback;
+		}
 		if ( (bool) apply_filters( 'webino_dashboard_license_allow_http_fallback', false ) ) {
 			$urls[] = 'http://' . WEBINO_DASHBOARD_VENDOR_HOST;
 		}
@@ -549,14 +571,14 @@ final class Webino_Dashboard_License {
 	 * @return int
 	 */
 	private function http_timeout() {
-		return max( 3, (int) apply_filters( 'webino_dashboard_license_http_timeout', 6 ) );
+		return max( 3, (int) apply_filters( 'webino_dashboard_license_http_timeout', 10 ) );
 	}
 
 	/**
 	 * @return int
 	 */
 	private function http_connect_timeout() {
-		return max( 2, (int) apply_filters( 'webino_dashboard_license_http_connect_timeout', 2 ) );
+		return max( 2, (int) apply_filters( 'webino_dashboard_license_http_connect_timeout', 4 ) );
 	}
 
 	/**
@@ -565,7 +587,7 @@ final class Webino_Dashboard_License {
 	 * @return int
 	 */
 	private function wall_clock_cap() {
-		return max( 5, (int) apply_filters( 'webino_dashboard_license_wall_clock_cap', 8 ) );
+		return max( 5, (int) apply_filters( 'webino_dashboard_license_wall_clock_cap', 15 ) );
 	}
 
 	/**
@@ -600,7 +622,7 @@ final class Webino_Dashboard_License {
 	 * @return int
 	 */
 	private function crm_get_http_timeout() {
-		return max( 2, (int) apply_filters( 'webino_dashboard_crm_get_timeout', 3 ) );
+		return max( 2, (int) apply_filters( 'webino_dashboard_crm_get_timeout', 8 ) );
 	}
 
 	/**
@@ -609,7 +631,7 @@ final class Webino_Dashboard_License {
 	 * @return int
 	 */
 	private function crm_get_wall_clock_cap() {
-		return max( 4, (int) apply_filters( 'webino_dashboard_crm_get_wall_clock_cap', 6 ) );
+		return max( 4, (int) apply_filters( 'webino_dashboard_crm_get_wall_clock_cap', 15 ) );
 	}
 
 	/**
@@ -1780,9 +1802,10 @@ final class Webino_Dashboard_License {
 			$response = wp_remote_get(
 				$url,
 				array(
-					'timeout'   => $timeout,
-					'headers'   => $headers,
-					'sslverify' => $this->should_verify_ssl_for_base( $base ),
+					'timeout'         => $timeout,
+					'connect_timeout' => $this->http_connect_timeout(),
+					'headers'         => $headers,
+					'sslverify'       => $this->should_verify_ssl_for_base( $base ),
 				)
 			);
 			if ( is_wp_error( $response ) ) {

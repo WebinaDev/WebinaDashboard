@@ -822,7 +822,11 @@ class Webino_Dashboard_Home_Overview {
 		if ( empty( $res['ok'] ) || ! is_array( $res['data'] ?? null ) ) {
 			return null;
 		}
-		$data    = $res['data'];
+		$data = $res['data'];
+		// ERP answers HTTP 200 with { ok:false, unavailable:true } on errors.
+		if ( ! empty( $data['unavailable'] ) || ( isset( $data['ok'] ) && false === $data['ok'] ) ) {
+			return null;
+		}
 		$account = isset( $data['account'] ) && is_array( $data['account'] ) ? $data['account'] : $data;
 		$balance = isset( $account['balance'] ) ? (float) $account['balance'] : 0.0;
 		return array(

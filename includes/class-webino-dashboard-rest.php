@@ -87,9 +87,12 @@ class Webino_Dashboard_REST {
 	 * @return void
 	 */
 	public static function ajax_auth_session() {
+		$logged = is_user_logged_in();
 		wp_send_json_success(
 			array(
-				'logged_in' => is_user_logged_in(),
+				'logged_in' => $logged,
+				// Fresh REST nonce so a long-open SPA never gets stuck on an expired one.
+				'nonce'     => $logged ? wp_create_nonce( 'wp_rest' ) : '',
 			)
 		);
 	}
@@ -1376,7 +1379,13 @@ class Webino_Dashboard_REST {
 		if ( ! Webino_Dashboard_Rest_Base::rate_limit_ok( 'auth_session', 60, 300 ) ) {
 			return new WP_Error( 'too_many', __( 'Too many attempts.', 'webino-dashboard' ), array( 'status' => 429 ) );
 		}
-		return new WP_REST_Response( array( 'logged_in' => is_user_logged_in() ) );
+		$logged = is_user_logged_in();
+		return new WP_REST_Response(
+			array(
+				'logged_in' => $logged,
+				'nonce'     => $logged ? wp_create_nonce( 'wp_rest' ) : '',
+			)
+		);
 	}
 
 	/**
