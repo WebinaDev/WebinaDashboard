@@ -87,6 +87,27 @@ class OAuthManager
     }
 
     /**
+     * Accept both the raw ERP Edge body and the generic `{success, data}` API envelope.
+     *
+     * @param mixed $decoded
+     * @return array<string,mixed>
+     */
+    private static function unwrapErpPayload( $decoded )
+    {
+        if ( ! is_array( $decoded ) ) {
+            return array();
+        }
+        if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) && ! isset( $decoded['url'] ) && ! isset( $decoded['access_token'] ) ) {
+            $inner = $decoded['data'];
+            if ( ! isset( $inner['message'] ) && isset( $decoded['message'] ) && is_string( $decoded['message'] ) ) {
+                $inner['message'] = $decoded['message'];
+            }
+            return $inner;
+        }
+        return $decoded;
+    }
+
+    /**
      * Start OAuth via WebinoERP and return SSO URL.
      *
      * @param string $return_url Dashboard return after connect.
@@ -123,10 +144,7 @@ class OAuthManager
         }
 
         $code = (int) wp_remote_retrieve_response_code( $response );
-        $data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
-        if ( ! is_array( $data ) ) {
-            $data = array();
-        }
+        $data = self::unwrapErpPayload( json_decode( (string) wp_remote_retrieve_body( $response ), true ) );
 
         if ( $code < 200 || $code >= 300 || empty( $data['url'] ) ) {
             $message = isset( $data['message'] ) ? (string) $data['message'] : __( 'ERP OAuth start failed.', 'webino-dashboard' );
@@ -181,7 +199,7 @@ class OAuthManager
         }
 
         $code = (int) wp_remote_retrieve_response_code( $response );
-        $data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+        $data = self::unwrapErpPayload( json_decode( (string) wp_remote_retrieve_body( $response ), true ) );
         if ( ! is_array( $data ) || $code < 200 || $code >= 300 || empty( $data['access_token'] ) ) {
             $message = isset( $data['message'] ) ? (string) $data['message'] : __( 'Token refresh failed.', 'webino-dashboard' );
             return new \WP_Error( 'basalam_refresh_failed', $message );
