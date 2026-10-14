@@ -89,6 +89,9 @@ final class Webino_Dashboard_Plugin {
 		add_filter( 'litespeed_ucss_exc', array( $this, 'litespeed_exclude_dashboard_uri' ) );
 		add_filter( 'litespeed_can_optm', array( $this, 'litespeed_can_optm_dashboard' ) );
 
+		if ( class_exists( 'Webino_Dashboard_Site_Auth', false ) ) {
+			Webino_Dashboard_Site_Auth::init();
+		}
 		Webino_Dashboard_REST::init();
 		Webino_Dashboard_REST_Crud::init();
 		if ( class_exists( 'Webino_Dashboard_Product_Slugs', false ) ) {

@@ -3,7 +3,7 @@
  * Plugin Name:       Webino Dashboard
  * Plugin URI:        https://webinaagency.ir
  * Description:       Standalone customer dashboard at /dashboard (SPA), separate from wp-admin.
- * Version:           0.9.60
+ * Version:           0.9.61
  * Author:            Webina
  * Author URI:        https://webinaagency.ir
  * Text Domain:       webino-dashboard
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WEBINO_DASHBOARD_VERSION', '0.9.60' );
+define( 'WEBINO_DASHBOARD_VERSION', '0.9.61' );
 define( 'WEBINO_DASHBOARD_FILE', __FILE__ );
 define( 'WEBINO_DASHBOARD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_URL', plugin_dir_url( __FILE__ ) );

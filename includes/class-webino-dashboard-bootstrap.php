@@ -24,6 +24,7 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-i18n.php',
 			'includes/class-webino-dashboard-install.php',
 			'includes/class-webino-dashboard-license.php',
+			'includes/class-webino-dashboard-site-auth.php',
 			'includes/class-webino-dashboard-module-registry.php',
 			'includes/class-webino-dashboard-modules.php',
 			'includes/class-webino-dashboard-taxonomies.php',
