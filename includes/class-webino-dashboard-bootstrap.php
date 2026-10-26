@@ -72,6 +72,7 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-order-document-settings.php',
 			'includes/class-webino-dashboard-locale.php',
 			'includes/class-webino-dashboard-currency.php',
+			'includes/class-webino-dashboard-pricing.php',
 			'includes/class-webino-dashboard-rest-site-settings.php',
 			'includes/class-webino-dashboard-rest-wc-settings.php',
 			'includes/class-webino-dashboard-ssr.php',

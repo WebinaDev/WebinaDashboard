@@ -948,6 +948,7 @@ class Webino_Dashboard_REST {
 				'wfcp'        => class_exists( 'Webino_Dashboard_Module_Registry', false )
 					? Webino_Dashboard_Module_Registry::wfcp_ready()
 					: class_exists( 'WFCP_Helper', false ),
+				'wfcpPricing' => class_exists( 'Webino_Dashboard_Pricing', false ) && Webino_Dashboard_Pricing::wfcp_on(),
 				'wnc'         => class_exists( 'WNC_Settings', false ) || ( class_exists( 'Webino_Dashboard_WNC_Loader', false ) && Webino_Dashboard_WNC_Loader::ready() ),
 				'baleBot'     => self::bot_ui_ready( 'bale' ),
 				'telegramBot' => self::bot_ui_ready( 'telegram' ),
@@ -2550,7 +2551,7 @@ class Webino_Dashboard_REST {
 		$platforms   = array();
 		$slugs       = array( 'digikala', 'basalam', 'technolife', 'snappshop', 'tapsishop', 'zarehbin', 'emalls', 'snapppay-search', 'torob' );
 
-		if ( $purchase_min > 0 && class_exists( 'WFCP_Calculator' ) ) {
+		if ( $purchase_min > 0 && class_exists( 'WFCP_Calculator' ) && Webino_Dashboard_Pricing::wfcp_on() ) {
 			$retail_min  = (float) WFCP_Calculator::calculate_price( $purchase_min, 'retail', $calc_id );
 			$retail_max  = $purchase_max > 0
 				? (float) WFCP_Calculator::calculate_price( $purchase_max, 'retail', $calc_id )
@@ -2574,6 +2575,32 @@ class Webino_Dashboard_REST {
 		$wholesale_rule = $p->get_meta( '_wfcp_wholesale_custom_rule', true );
 		if ( ! is_array( $wholesale_rule ) ) {
 			$wholesale_rule = null;
+		}
+
+		// Pricing module off: the single WooCommerce price is the retail price everywhere.
+		if ( ! Webino_Dashboard_Pricing::wfcp_on() ) {
+			$retail_min = 0.0;
+			$retail_max = 0.0;
+			if ( $p->is_type( 'variable' ) && method_exists( $p, 'get_variation_price' ) ) {
+				$retail_min = (float) $p->get_variation_price( 'min' );
+				$retail_max = (float) $p->get_variation_price( 'max' );
+			}
+			if ( $retail_min <= 0 ) {
+				$retail_min = Webino_Dashboard_Pricing::active_price( $p );
+				$retail_max = $retail_min;
+			}
+			$credit      = 0.0;
+			$wholesale   = 0.0;
+			$installment = null;
+			$marketplace = array();
+			foreach ( $slugs as $slug ) {
+				$platforms[ $slug ] = array(
+					'price'        => $retail_min > 0 ? $retail_min : null,
+					'lock'         => false,
+					'manual_price' => '',
+				);
+			}
+			$locked = false;
 		}
 
 		$out = array(
@@ -3125,7 +3152,7 @@ class Webino_Dashboard_REST {
 			$pp = class_exists( 'WFCP_Helper' ) ? WFCP_Helper::sanitize_price( $wfcp['purchase_price'] ) : (float) $wfcp['purchase_price'];
 			$p->update_meta_data( '_wfcp_purchase_price', $pp );
 			$p->save();
-			if ( class_exists( 'WFCP_Helper', false ) ) {
+			if ( Webino_Dashboard_Pricing::wfcp_on() ) {
 				WFCP_Helper::sync_retail_price_from_purchase( $id, $pp );
 				$p = wc_get_product( $id );
 			}
@@ -3143,7 +3170,7 @@ class Webino_Dashboard_REST {
 		}
 		if ( array_key_exists( 'wholesale_rule', $wfcp ) ) {
 			$rule = $wfcp['wholesale_rule'];
-			if ( class_exists( 'WFCP_Wholesale_Rules', false ) ) {
+			if ( class_exists( 'WFCP_Wholesale_Rules', false ) && Webino_Dashboard_Pricing::wfcp_on() ) {
 				WFCP_Wholesale_Rules::apply_to_wc_product( $p, $rule );
 			} elseif ( is_array( $rule ) && isset( $rule['discount_percent'] ) ) {
 				$p->update_meta_data(
@@ -3177,16 +3204,10 @@ class Webino_Dashboard_REST {
 		}
 		if ( isset( $wfcp['regular_price'] ) ) {
 			$price = wc_format_decimal( $wfcp['regular_price'] );
-			if ( class_exists( 'WFCP_Helper', false ) && method_exists( 'WFCP_Helper', 'set_regular_preserving_sale' ) ) {
+			if ( Webino_Dashboard_Pricing::wfcp_on() && method_exists( 'WFCP_Helper', 'set_regular_preserving_sale' ) ) {
 				WFCP_Helper::set_regular_preserving_sale( $p, $price );
 			} else {
-				$p->set_regular_price( $price );
-				$sale = $p->get_sale_price( 'edit' );
-				if ( '' !== $sale && is_numeric( $sale ) && (float) $sale > 0 && (float) $sale < (float) $price ) {
-					$p->set_price( (string) wc_format_decimal( $sale ) );
-				} else {
-					$p->set_price( $price );
-				}
+				Webino_Dashboard_Pricing::apply( $p, (string) $price, null );
 			}
 		}
 

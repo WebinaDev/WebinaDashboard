@@ -116,9 +116,28 @@ class WFCP_Main {
 	}
 
 	/**
+	 * Whether pricing-module storefront output may run: the module setting "enabled"
+	 * and the dashboard module toggle (filter `wfcp_storefront_active`).
+	 *
+	 * @return bool
+	 */
+	public static function storefront_active() {
+		$on = class_exists( 'WFCP_Helper', false ) ? WFCP_Helper::is_enabled() : false;
+		return (bool) apply_filters( 'wfcp_storefront_active', $on );
+	}
+
+	/**
 	 * Register all of the hooks related to the public-facing functionality.
 	 */
 	private function define_public_hooks() {
+		$plugin_i18n = new WFCP_i18n();
+		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
+
+		if ( ! self::storefront_active() ) {
+			// Pricing module switched off: no storefront forms, widgets, notices, assets, price/cart filters.
+			return;
+		}
+
 		WFCP_Storefront_Price::init();
 		WFCP_Gateway_Manager::init();
 		WFCP_Cart_Manager::init();
@@ -176,8 +195,7 @@ class WFCP_Main {
 		$this->loader->add_action( 'wp_ajax_wfcp_update_cart_type', 'WFCP_Cart_Manager', 'ajax_update_cart_type' );
 		$this->loader->add_action( 'wp_ajax_nopriv_wfcp_update_cart_type', 'WFCP_Cart_Manager', 'ajax_update_cart_type' );
 
-		$plugin_i18n = new WFCP_i18n();
-		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
+		// i18n registered at the top of define_public_hooks().
 	}
 
 	/**

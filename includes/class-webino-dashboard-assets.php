@@ -1027,6 +1027,7 @@ class Webino_Dashboard_Assets {
 				'wfcp'                   => class_exists( 'Webino_Dashboard_Module_Registry', false )
 					? Webino_Dashboard_Module_Registry::wfcp_ready()
 					: class_exists( 'WFCP_Helper', false ),
+				'wfcpPricing' => class_exists( 'Webino_Dashboard_Pricing', false ) && Webino_Dashboard_Pricing::wfcp_on(),
 				'baleBot'                => Webino_Dashboard_REST::bot_ui_ready( 'bale' ),
 				'telegramBot'            => Webino_Dashboard_REST::bot_ui_ready( 'telegram' ),
 				'elementor'              => defined( 'ELEMENTOR_VERSION' ),

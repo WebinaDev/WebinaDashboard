@@ -4864,22 +4864,15 @@ class Webino_Dashboard_REST_Crud {
 			$p->set_stock_status( 'instock' );
 		}
 		if ( ! $is_variable ) {
-			if ( null !== $request->get_param( 'regular_price' ) ) {
-				$pr = wc_format_decimal( $request->get_param( 'regular_price' ) );
-				$p->set_regular_price( $pr );
-				$p->set_price( $pr );
+			if ( null !== $request->get_param( 'regular_price' ) || null !== $request->get_param( 'sale_price' ) ) {
+				Webino_Dashboard_Pricing::apply(
+					$p,
+					null !== $request->get_param( 'regular_price' ) ? (string) $request->get_param( 'regular_price' ) : null,
+					null !== $request->get_param( 'sale_price' ) ? (string) $request->get_param( 'sale_price' ) : null
+				);
 			}
 			if ( null !== $request->get_param( 'stock_quantity' ) ) {
 				$p->set_stock_quantity( (int) $request->get_param( 'stock_quantity' ) );
-			}
-			if ( null !== $request->get_param( 'sale_price' ) ) {
-				$sale = (string) $request->get_param( 'sale_price' );
-				$p->set_sale_price( '' !== $sale ? wc_format_decimal( $sale ) : '' );
-				if ( '' !== $sale ) {
-					$p->set_price( wc_format_decimal( $sale ) );
-				} else {
-					$p->set_price( $p->get_regular_price() ? wc_format_decimal( $p->get_regular_price() ) : '' );
-				}
 			}
 		}
 		if ( null !== $request->get_param( 'description' ) ) {
@@ -4946,7 +4939,7 @@ class Webino_Dashboard_REST_Crud {
 		}
 
 		$wfcp = $request->get_param( 'wfcp' );
-		if ( is_array( $wfcp ) && array() !== $wfcp ) {
+		if ( is_array( $wfcp ) && array() !== $wfcp && Webino_Dashboard_Pricing::wfcp_on() ) {
 			$sub = new WP_REST_Request( 'PATCH' );
 			$sub->set_route( '/' . Webino_Dashboard_REST::NS . '/shop/products/' . $id . '/wfcp' );
 			$sub->set_url_params( array( 'id' => $id ) );
@@ -5001,20 +4994,12 @@ class Webino_Dashboard_REST_Crud {
 			}
 			self::apply_product_extended_fields( $p2, $request );
 			if ( ! $p2->is_type( 'variable' ) ) {
-				if ( null !== $request->get_param( 'regular_price' ) ) {
-					$pr = wc_format_decimal( $request->get_param( 'regular_price' ) );
-					$p2->set_regular_price( $pr );
-					$p2->set_price( $pr );
-				}
-				if ( null !== $request->get_param( 'sale_price' ) ) {
-					$sale = (string) $request->get_param( 'sale_price' );
-					$p2->set_sale_price( '' !== $sale ? wc_format_decimal( $sale ) : '' );
-					if ( '' !== $sale ) {
-						$p2->set_price( wc_format_decimal( $sale ) );
-					} else {
-						$reg = $p2->get_regular_price();
-						$p2->set_price( $reg ? wc_format_decimal( $reg ) : '' );
-					}
+				if ( null !== $request->get_param( 'regular_price' ) || null !== $request->get_param( 'sale_price' ) ) {
+					Webino_Dashboard_Pricing::apply(
+						$p2,
+						null !== $request->get_param( 'regular_price' ) ? (string) $request->get_param( 'regular_price' ) : null,
+						null !== $request->get_param( 'sale_price' ) ? (string) $request->get_param( 'sale_price' ) : null
+					);
 				}
 				if ( null !== $request->get_param( 'stock_quantity' ) ) {
 					$p2->set_stock_quantity( (int) $request->get_param( 'stock_quantity' ) );
@@ -5043,7 +5028,7 @@ class Webino_Dashboard_REST_Crud {
 			$p2->save();
 		}
 		$wfcp = $request->get_param( 'wfcp' );
-		if ( is_array( $wfcp ) && array() !== $wfcp ) {
+		if ( is_array( $wfcp ) && array() !== $wfcp && Webino_Dashboard_Pricing::wfcp_on() ) {
 			$sub = new WP_REST_Request( 'PATCH' );
 			$sub->set_route( '/' . Webino_Dashboard_REST::NS . '/shop/products/' . $pid . '/wfcp' );
 			$sub->set_url_params( array( 'id' => $pid ) );
@@ -5627,13 +5612,12 @@ class Webino_Dashboard_REST_Crud {
 		if ( null !== $request->get_param( 'sku' ) ) {
 			$v->set_sku( sanitize_text_field( (string) $request->get_param( 'sku' ) ) );
 		}
-		if ( null !== $request->get_param( 'regular_price' ) ) {
-			$rp = wc_format_decimal( $request->get_param( 'regular_price' ) );
-			$v->set_regular_price( $rp );
-		}
-		if ( null !== $request->get_param( 'sale_price' ) ) {
-			$sp = (string) $request->get_param( 'sale_price' );
-			$v->set_sale_price( '' !== $sp ? wc_format_decimal( $sp ) : '' );
+		if ( null !== $request->get_param( 'regular_price' ) || null !== $request->get_param( 'sale_price' ) ) {
+			Webino_Dashboard_Pricing::apply(
+				$v,
+				null !== $request->get_param( 'regular_price' ) ? (string) $request->get_param( 'regular_price' ) : null,
+				null !== $request->get_param( 'sale_price' ) ? (string) $request->get_param( 'sale_price' ) : null
+			);
 		}
 		if ( null !== $request->get_param( 'manage_stock' ) ) {
 			$v->set_manage_stock( (bool) $request->get_param( 'manage_stock' ) );
@@ -5753,18 +5737,13 @@ class Webino_Dashboard_REST_Crud {
 					$v->update_meta_data( '_wfcp_reference_url', $url );
 				}
 			}
-			if ( array_key_exists( 'wholesale_rule', $wfcp ) && class_exists( 'WFCP_Wholesale_Rules', false ) ) {
+			if ( array_key_exists( 'wholesale_rule', $wfcp ) && class_exists( 'WFCP_Wholesale_Rules', false ) && Webino_Dashboard_Pricing::wfcp_on() ) {
 				WFCP_Wholesale_Rules::apply_to_wc_product( $v, $wfcp['wholesale_rule'] );
 			}
 		}
 
-		$reg = $v->get_regular_price();
-		$sal = $v->get_sale_price();
-		if ( $sal && '' !== $sal ) {
-			$v->set_price( wc_format_decimal( $sal ) );
-		} elseif ( $reg && '' !== $reg ) {
-			$v->set_price( wc_format_decimal( $reg ) );
-		}
+		// Keep _price consistent with regular/sale (sale only when valid and below regular).
+		Webino_Dashboard_Pricing::apply( $v );
 		return true;
 	}
 
@@ -5784,7 +5763,7 @@ class Webino_Dashboard_REST_Crud {
 	 */
 	private static function maybe_sync_variation_wfcp( $variation_id, $request = null ) {
 		$variation_id = (int) $variation_id;
-		if ( $variation_id < 1 || ! class_exists( 'WFCP_Helper', false ) ) {
+		if ( $variation_id < 1 || ! Webino_Dashboard_Pricing::wfcp_on() ) {
 			return;
 		}
 		if ( $request instanceof WP_REST_Request ) {

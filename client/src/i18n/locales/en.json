@@ -6373,5 +6373,7 @@
   "coupons.storefront.auto_applyHint": "Applies the best qualifying coupon marked “apply automatically”.",
   "coupons.builder.errCondition": "Enter a condition value of at least 1.",
   "coupons.builder.errReward": "Enter a reward amount greater than zero.",
-  "coupons.builder.errPercent": "A percentage cannot be more than 100."
+  "coupons.builder.errPercent": "A percentage cannot be more than 100.",
+  "products.fieldPrice": "Price",
+  "products.editor.singlePriceHint": "Pricing module is off: this price is used directly as the WooCommerce price, in the cart, coupons and marketplaces."
 }

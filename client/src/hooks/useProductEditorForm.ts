@@ -16,6 +16,7 @@ import type {
   WholesaleRule,
   WholesaleRuleForm,
 } from '@/types/product'
+import { isWfcpPricingOn } from '@/lib/pricingMode'
 import { emptyProductIshop, emptyProductSeo } from '@/types/product'
 
 function emptyWholesaleRule(): WholesaleRuleForm {
@@ -372,7 +373,7 @@ export function useProductEditorForm() {
       backorders,
       seo,
       ishop,
-      wfcp: {
+      wfcp: !isWfcpPricingOn() ? undefined : {
         purchase_price: purchase,
         lock_price: lockPrice,
         reference_url: referenceUrl,

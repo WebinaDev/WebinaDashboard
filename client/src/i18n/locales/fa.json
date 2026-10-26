@@ -6376,5 +6376,7 @@
   "coupons.storefront.auto_applyHint": "بهترین کوپن واجد شرایطی که «اعمال خودکار» دارد را اعمال می‌کند.",
   "coupons.builder.errCondition": "مقدار شرط را حداقل ۱ وارد کنید.",
   "coupons.builder.errReward": "مقدار جایزه را بیشتر از صفر وارد کنید.",
-  "coupons.builder.errPercent": "درصد نمی‌تواند بیشتر از ۱۰۰ باشد."
+  "coupons.builder.errPercent": "درصد نمی‌تواند بیشتر از ۱۰۰ باشد.",
+  "products.fieldPrice": "قیمت",
+  "products.editor.singlePriceHint": "ماژول قیمت‌گذاری خاموش است؛ همین قیمت مستقیماً قیمت ووکامرس، سبد خرید، کوپن‌ها و بازارگاه‌ها می‌شود."
 }

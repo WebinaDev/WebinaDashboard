@@ -22,7 +22,14 @@ class WNC_Pricing {
 	 * @return bool
 	 */
 	public static function wfcp_available() {
-		return class_exists( 'WFCP_Calculator' ) && class_exists( 'WFCP_Helper' );
+		if ( ! class_exists( 'WFCP_Calculator' ) || ! class_exists( 'WFCP_Helper' ) ) {
+			return false;
+		}
+		// Installed but switched off (dashboard module toggle / module master switch) = not available.
+		if ( class_exists( 'Webino_Dashboard_Pricing', false ) ) {
+			return Webino_Dashboard_Pricing::wfcp_on();
+		}
+		return true;
 	}
 
 	/**
@@ -38,6 +45,11 @@ class WNC_Pricing {
 
 		if ( ! in_array( $platform, self::PLATFORMS, true ) ) {
 			return 0.0;
+		}
+
+		// Pricing module off: marketplaces get the single WooCommerce price (sale when valid).
+		if ( ! self::wfcp_available() ) {
+			return self::wc_active_price( $product_id );
 		}
 
 		// Manual lock override.
@@ -58,8 +70,25 @@ class WNC_Pricing {
 			return floatval( WFCP_Calculator::calculate_price( floatval( $purchase ), $platform, $product_id ) );
 		}
 
-		$product = wc_get_product( $product_id );
-		return $product ? floatval( $product->get_regular_price() ) : 0.0;
+		return self::wc_active_price( $product_id );
+	}
+
+	/**
+	 * WooCommerce active price (sale if set, else regular).
+	 *
+	 * @param int $product_id Product/variation id.
+	 * @return float
+	 */
+	public static function wc_active_price( $product_id ) {
+		if ( class_exists( 'Webino_Dashboard_Pricing', false ) ) {
+			return (float) Webino_Dashboard_Pricing::active_price( (int) $product_id );
+		}
+		$product = function_exists( 'wc_get_product' ) ? wc_get_product( (int) $product_id ) : null;
+		if ( ! $product ) {
+			return 0.0;
+		}
+		$p = (float) $product->get_price();
+		return $p > 0 ? $p : (float) $product->get_regular_price();
 	}
 
 	/**
