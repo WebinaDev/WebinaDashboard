@@ -65,6 +65,8 @@ export interface WebinoDashboardConfig {
   flags?: {
     woocommerce?: boolean
     wfcp?: boolean
+    /** Pricing module on AND its master switch enabled (product editor pricing fields). */
+    wfcpPricing?: boolean
     baleBot?: boolean
     telegramBot?: boolean
     elementor?: boolean

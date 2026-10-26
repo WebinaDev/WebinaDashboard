@@ -364,7 +364,7 @@ class Webino_Dashboard_Order_Reports {
 	 * @return bool
 	 */
 	private static function wfcp_enabled() {
-		return class_exists( 'WFCP_Helper' );
+		return ( class_exists( 'Webino_Dashboard_Pricing', false ) ? Webino_Dashboard_Pricing::wfcp_on() : class_exists( 'WFCP_Helper' ) );
 	}
 
 	/**

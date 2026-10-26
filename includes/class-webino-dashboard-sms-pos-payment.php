@@ -200,7 +200,18 @@ final class Webino_Dashboard_Sms_Pos_Payment {
 		if ( ! $order instanceof WC_Order ) {
 			return is_array( $snapshot ) ? $snapshot : array();
 		}
-		return self::enrich_snapshot( $order, is_array( $snapshot ) ? $snapshot : array() );
+		$snapshot = is_array( $snapshot ) ? $snapshot : array();
+		// Applied to EVERY order snapshot (all statuses): only fill gaps. Never overwrite the
+		// event's own values (phone, totals, links) and never inject the POS pattern code into
+		// non-POS events — the CRM would route/format status SMS with the POS (wrong) pattern.
+		$vars = self::enrich_snapshot( $order, array() );
+		unset( $vars['pattern_code'], $vars['pattern'] );
+		foreach ( $vars as $k => $v ) {
+			if ( ! array_key_exists( $k, $snapshot ) || '' === $snapshot[ $k ] || null === $snapshot[ $k ] ) {
+				$snapshot[ $k ] = $v;
+			}
+		}
+		return $snapshot;
 	}
 
 	/**

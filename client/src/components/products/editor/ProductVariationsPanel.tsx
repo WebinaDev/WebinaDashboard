@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
+import { isWfcpPricingOn } from '@/lib/pricingMode'
 
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
 import { useStoreCurrency } from '@/hooks/useStoreCurrency'
@@ -204,6 +205,13 @@ type VariationDraft = {
 
 function buildVariationPatchBody(draft: VariationDraft): Record<string, unknown> {
   const stockQty = draft.stock === '' ? null : parseInt(draft.stock, 10)
+  const body = buildVariationPatchBodyFull(draft, stockQty)
+  // Pricing module off: single WooCommerce price only — never send purchase/lock/wholesale meta.
+  if (!isWfcpPricingOn()) delete body.wfcp
+  return body
+}
+
+function buildVariationPatchBodyFull(draft: VariationDraft, stockQty: number | null): Record<string, unknown> {
   return {
     sku: draft.sku,
     regular_price: draft.price,
@@ -341,7 +349,7 @@ export function ProductVariationsPanel({
         regular_price: newPrice,
         status: 'publish',
         attributes: newAttrs,
-        wfcp: newPurchase.trim()
+        wfcp: isWfcpPricingOn() && newPurchase.trim()
           ? { purchase_price: newPurchase.trim() }
           : undefined,
       }
@@ -434,7 +442,7 @@ export function ProductVariationsPanel({
         body.manage_stock = true
         body.stock_quantity = qty != null && !Number.isNaN(qty) ? qty : 0
       }
-      if (applyPurchase && bulkPurchase.trim()) {
+      if (isWfcpPricingOn() && applyPurchase && bulkPurchase.trim()) {
         body.wfcp = { purchase_price: bulkPurchase.trim() }
       }
       return apiFetch<{ updated: number }>(`shop/products/${productId}/variations/bulk`, {
@@ -604,13 +612,15 @@ export function ProductVariationsPanel({
                 </label>
                 <FormattedNumberInput value={bulkStock} onChange={setBulkStock} disabled={!applyStock} />
               </div>
-              <div className="space-y-1.5">
-                <label className="flex items-center gap-2 text-xs">
-                  <Checkbox checked={applyPurchase} onCheckedChange={(v) => setApplyPurchase(v === true)} />
-                  {t('products.fieldPurchase')}
-                </label>
-                <FormattedNumberInput value={bulkPurchase} onChange={setBulkPurchase} disabled={!applyPurchase} />
-              </div>
+              {isWfcpPricingOn() ? (
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-2 text-xs">
+                    <Checkbox checked={applyPurchase} onCheckedChange={(v) => setApplyPurchase(v === true)} />
+                    {t('products.fieldPurchase')}
+                  </label>
+                  <FormattedNumberInput value={bulkPurchase} onChange={setBulkPurchase} disabled={!applyPurchase} />
+                </div>
+              ) : null}
             </div>
             <Button
               type="button"
@@ -672,10 +682,12 @@ export function ProductVariationsPanel({
               <Label>{t('products.fieldSku')}</Label>
               <Input value={newSku} onChange={(e) => setNewSku(e.target.value)} />
             </div>
-            <div className="space-y-1.5">
-              <Label>{t('products.fieldPurchase')}</Label>
-              <FormattedNumberInput value={newPurchase} onChange={setNewPurchase} />
-            </div>
+            {isWfcpPricingOn() ? (
+              <div className="space-y-1.5">
+                <Label>{t('products.fieldPurchase')}</Label>
+                <FormattedNumberInput value={newPurchase} onChange={setNewPurchase} />
+              </div>
+            ) : null}
             <div className="space-y-1.5">
               <Label>{t('products.fieldRegular')}</Label>
               <FormattedNumberInput value={newPrice} onChange={setNewPrice} />
@@ -986,8 +998,9 @@ function VariationCard({
     setDkVariant(dkMap?.dk_variant_id ?? '')
   }, [dkMap])
 
-  const retail = variation.wfcp_prices?.retail
-  const installment = variation.wfcp_prices?.installment
+  const pricingOn = isWfcpPricingOn()
+  const retail = pricingOn ? variation.wfcp_prices?.retail : undefined
+  const installment = pricingOn ? variation.wfcp_prices?.installment : undefined
   const installmentPrice =
     installment && typeof installment === 'object' && installment !== null && 'price' in installment
       ? installment.price
@@ -1119,6 +1132,7 @@ function VariationCard({
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
+        {pricingOn ? (
         <div className="space-y-1.5">
           <Label>{t('products.fieldPurchase')}</Label>
           <FormattedNumberInput
@@ -1140,17 +1154,19 @@ function VariationCard({
             <span>{t('products.lockPrice')}</span>
           </label>
         </div>
+        ) : null}
         <div className="space-y-1.5">
-          <Label>{t('products.fieldRegular')}</Label>
+          <Label>{pricingOn ? t('products.fieldRegular') : t('products.fieldPrice', t('products.fieldRegular'))}</Label>
           <FormattedNumberInput
             value={price}
             onChange={(v) => {
               setPrice(v)
               scheduleAutosave()
             }}
-            disabled={lockPrice}
+            disabled={pricingOn && lockPrice}
           />
         </div>
+        {pricingOn ? (
         <div className="space-y-1.5 sm:col-span-2">
           <Label>{t('products.editor.referenceUrl')}</Label>
           <div className="flex flex-wrap gap-2">
@@ -1199,6 +1215,8 @@ function VariationCard({
           </div>
           {referenceMeta ? <p className="text-muted-foreground text-xs">{referenceMeta}</p> : null}
         </div>
+        ) : null}
+        {pricingOn ? (
         <div className="space-y-1.5 sm:col-span-2">
           <WholesaleRuleFields
             rule={wholesaleRule}
@@ -1208,6 +1226,7 @@ function VariationCard({
             }}
           />
         </div>
+        ) : null}
         <div className="space-y-1.5">
           <Label>{t('products.fieldSku')}</Label>
           <Input

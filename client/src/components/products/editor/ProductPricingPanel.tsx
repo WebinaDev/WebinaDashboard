@@ -22,6 +22,7 @@ import {
   WFCP_MARKETPLACE_CHANNELS,
   WFCP_SEARCH_CHANNELS,
 } from '@/pages/settings/shop/wfcpPricingTabs'
+import { isWfcpPricingOn } from '@/lib/pricingMode'
 import type { WfcpPrices, WholesaleRuleForm } from '@/types/product'
 
 function formatPrice(v: number | null | undefined, currency: string | undefined, locale: string) {
@@ -94,6 +95,47 @@ export function ProductPricingPanel({
   const currency = wfcpPrices?.settings_currency
   const [marketsOpen, setMarketsOpen] = useState(true)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  if (!isWfcpPricingOn()) {
+    // Pricing module off: one price (plus optional WooCommerce sale price), nothing else.
+    if (productType === 'variable') {
+      return (
+        <Card className="gap-2 py-3 shadow-sm">
+          <CardHeader className="px-3 pb-0">
+            <CardTitle className="text-sm font-semibold">{t('products.editor.pricingPanel')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 px-3">
+            <p className="text-muted-foreground text-xs">{t('products.editor.variablePricingHint')}</p>
+          </CardContent>
+        </Card>
+      )
+    }
+    return (
+      <Card className="gap-2 py-3 shadow-sm">
+        <CardHeader className="px-3 pb-0">
+          <CardTitle className="text-sm font-semibold">{t('products.editor.pricingPanel')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 px-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="product-regular">{t('products.fieldPrice')}</Label>
+              <FormattedNumberInput id="product-regular" value={regular} onChange={onRegularChange} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="product-sale">{t('products.fieldSale')}</Label>
+              <FormattedNumberInput
+                id="product-sale"
+                value={sale}
+                onChange={onSaleChange}
+                placeholder={t('products.salePlaceholder')}
+              />
+            </div>
+          </div>
+          <p className="text-muted-foreground text-xs">{t('products.editor.singlePriceHint')}</p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (productType === 'variable') {
     return (

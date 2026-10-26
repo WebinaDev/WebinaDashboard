@@ -44,6 +44,7 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { formatNumber } from '@/lib/formatNumber'
 import { openPrintDocumentChecked, productLabelsPrintUrl } from '@/lib/orderPrint'
+import { isWfcpPricingOn } from '@/lib/pricingMode'
 import type { DashboardOverviewResponse } from '@/types/dashboardOverview'
 
 const COLUMNS_STORAGE_KEY = 'webino-products-list-columns'
@@ -108,7 +109,17 @@ const COLUMN_LABELS: Record<ProductColumnId, string> = {
   marketplaces: 'products.colMarketplaces',
 }
 
+const WFCP_ONLY_COLUMNS: ProductColumnId[] = ['purchase_price', 'installment', 'credit', 'wholesale']
+
 function loadColumnVisibility(): ProductColumnVisibility {
+  const cols = loadColumnVisibilityRaw()
+  if (isWfcpPricingOn()) return cols
+  const out = { ...cols }
+  for (const id of WFCP_ONLY_COLUMNS) out[id] = false
+  return out
+}
+
+function loadColumnVisibilityRaw(): ProductColumnVisibility {
   try {
     const raw = localStorage.getItem(COLUMNS_STORAGE_KEY)
     if (!raw) return DEFAULT_COLUMNS
@@ -442,7 +453,7 @@ export default function ProductsListPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="max-h-80 w-52 overflow-y-auto">
               <DropdownMenuLabel>{t('products.toggleColumns')}</DropdownMenuLabel>
-              {(Object.keys(COLUMN_LABELS) as ProductColumnId[]).map((id) => (
+              {(Object.keys(COLUMN_LABELS) as ProductColumnId[]).filter((id) => isWfcpPricingOn() || !WFCP_ONLY_COLUMNS.includes(id)).map((id) => (
                 <DropdownMenuCheckboxItem key={id} checked={columns[id]} onCheckedChange={(v) => toggleColumn(id, v === true)}>
                   {t(COLUMN_LABELS[id])}
                 </DropdownMenuCheckboxItem>

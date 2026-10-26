@@ -184,10 +184,10 @@ class Webino_Dashboard_Inventory_Reports {
 			'value_wholesale'      => 0.0,
 			'value_credit'         => 0.0,
 			'potential_profit'     => 0.0,
-			'wfcp_enabled'         => class_exists( 'WFCP_Helper' ),
+			'wfcp_enabled'         => ( class_exists( 'Webino_Dashboard_Pricing', false ) ? Webino_Dashboard_Pricing::wfcp_on() : class_exists( 'WFCP_Helper' ) ),
 			'target_margin_pct'    => 0.0,
 		);
-		if ( class_exists( 'WFCP_Helper' ) ) {
+		if ( ( class_exists( 'Webino_Dashboard_Pricing', false ) ? Webino_Dashboard_Pricing::wfcp_on() : class_exists( 'WFCP_Helper' ) ) ) {
 			$pct = WFCP_Helper::get_settings( 'retail', 'profit_percent' );
 			$summary['target_margin_pct'] = $pct ? (float) $pct : 0.0;
 		}
@@ -288,7 +288,7 @@ class Webino_Dashboard_Inventory_Reports {
 			'installment' => 0.0,
 		);
 
-		if ( class_exists( 'WFCP_Calculator' ) && $purchase > 0 ) {
+		if ( class_exists( 'WFCP_Calculator' ) && ( class_exists( 'Webino_Dashboard_Pricing', false ) ? Webino_Dashboard_Pricing::wfcp_on() : class_exists( 'WFCP_Helper' ) ) && $purchase > 0 ) {
 			$calc_id = $parent_id > 0 ? $parent_id : $id;
 			$prices['retail']      = (float) WFCP_Calculator::calculate_price( $purchase, 'retail', $calc_id );
 			$prices['credit']      = (float) WFCP_Calculator::calculate_price( $purchase, 'credit', $calc_id );

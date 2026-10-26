@@ -916,7 +916,7 @@ final class Webino_Dashboard_Order_Writer {
 	 * @return float|null
 	 */
 	public static function wfcp_unit_price( $product, $purchase_type = '' ) {
-		if ( ! class_exists( 'WFCP_Calculator' ) || ! $product ) {
+		if ( ! class_exists( 'WFCP_Calculator' ) || ! $product || ( class_exists( 'Webino_Dashboard_Pricing', false ) && ! Webino_Dashboard_Pricing::wfcp_on() ) ) {
 			return null;
 		}
 		$product_id = (int) $product->get_id();

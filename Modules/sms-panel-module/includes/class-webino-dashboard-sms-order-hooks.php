@@ -239,8 +239,9 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 		$license = Webino_Dashboard_License::instance();
 
 		$payload = array(
-			'event_key' => sanitize_key( $event_key ),
-			'order'     => $snapshot,
+			'event_key'  => sanitize_key( $event_key ),
+			'order'      => $snapshot,
+			'recipients' => self::recipients_for( $event_key, $snapshot ),
 		);
 
 		if ( $sync ) {
@@ -579,7 +580,7 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 	 * @param string              $event_key Canonical event key.
 	 * @return array{customer:bool,admin:bool}
 	 */
-	private static function resolve_event_toggles( array $events, $event_key ) {
+	public static function resolve_event_toggles( array $events, $event_key ) {
 		$event_key = Webino_Dashboard_Sms_Order_Map::normalize_event_key( $event_key );
 
 		if ( array_key_exists( $event_key, $events ) && is_array( $events[ $event_key ] ) ) {
@@ -609,6 +610,65 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 			'customer' => $customer,
 			'admin'    => $admin,
 		);
+	}
+
+	/**
+	 * Explicit per-role routing sent with every notify so the CRM never has to guess:
+	 * customer → the order's billing phone (when the customer toggle is on),
+	 * admin → shop admin numbers (only when the admin toggle is on).
+	 * Unknown settings (cache/CRM down) → null = let CRM apply its stored toggles.
+	 *
+	 * @param string              $event_key Canonical event key.
+	 * @param array<string,mixed> $snapshot  Snapshot.
+	 * @return array{customer:bool,admin:bool,customer_phone:string}|null
+	 */
+	public static function recipients_for( $event_key, array $snapshot ) {
+		$settings = self::shop_settings_cached();
+		$phone    = self::normalize_mobile( (string) ( $snapshot['customer_phone'] ?? $snapshot['mobile'] ?? '' ) );
+		if ( ! is_array( $settings ) ) {
+			return null;
+		}
+		$events = isset( $settings['events'] ) && is_array( $settings['events'] ) ? $settings['events'] : array();
+		return self::route( $events, $event_key, $phone );
+	}
+
+	/**
+	 * Pure routing (unit-testable).
+	 *
+	 * @param array<string,mixed> $events    Shop events map.
+	 * @param string              $event_key Event key.
+	 * @param string              $phone     Normalized customer mobile.
+	 * @return array{customer:bool,admin:bool,customer_phone:string}
+	 */
+	public static function route( array $events, $event_key, $phone ) {
+		$ev = self::resolve_event_toggles( $events, $event_key );
+		$stock_like = in_array( Webino_Dashboard_Sms_Order_Map::normalize_event_key( $event_key ), array( 'stock-low', 'stock-out' ), true );
+		$customer   = $ev['customer'] && ! $stock_like && '' !== $phone;
+		return array(
+			'customer'       => $customer,
+			'admin'          => (bool) $ev['admin'],
+			'customer_phone' => $customer ? $phone : '',
+		);
+	}
+
+	/**
+	 * 09xxxxxxxxx from +98 / 0098 / 98 / Persian digits.
+	 *
+	 * @param string $raw Raw phone.
+	 * @return string
+	 */
+	public static function normalize_mobile( $raw ) {
+		$s = strtr( (string) $raw, array( '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9', '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9' ) );
+		$d = preg_replace( '/\D+/', '', $s );
+		$d = (string) $d;
+		if ( 0 === strpos( $d, '0098' ) ) {
+			$d = '0' . substr( $d, 4 );
+		} elseif ( 0 === strpos( $d, '98' ) && 12 === strlen( $d ) ) {
+			$d = '0' . substr( $d, 2 );
+		} elseif ( 10 === strlen( $d ) && '9' === $d[0] ) {
+			$d = '0' . $d;
+		}
+		return $d;
 	}
 
 	/**
