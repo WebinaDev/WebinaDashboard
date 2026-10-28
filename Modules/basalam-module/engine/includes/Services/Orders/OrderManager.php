@@ -500,7 +500,7 @@ class OrderManager
                 $order->set_status($order_status);
             }
 
-            $purchase_count = $data['customer_data']['purchase_count'];
+            $purchase_count = $data['customer_data']['purchase_count'] ?? 0;
             $fee_amount = $data['financial_report']['product_cost']['report_items'][2]['amount'] ?? 0;
             $balance_amount = $data['financial_report']['product_cost']['total']['amount'] ?? 0;
 
@@ -512,6 +512,8 @@ class OrderManager
             if (isset($data['hash_id'])) {
                 $order->update_meta_data('_sync_basalam_hash_id', $data['hash_id']);
             }
+            // Order meta API (HPOS-safe); dashboard marketplace filter queries this key.
+            $order->update_meta_data('_is_sync_basalam_order', '1');
 
             self::executeWithoutWccfOrderSaveHooks(function () use ($order) {
                 $order->save();
@@ -538,7 +540,6 @@ class OrderManager
                     throw new \Exception("خطا در ذخیره اطلاعات سفارش در جدول webino_basalam_payments");
                 }
 
-                update_post_meta($order_id, '_is_sync_basalam_order', true);
 
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control statement; no object cache applicable.
                 $wpdb->query('COMMIT');
@@ -620,6 +621,19 @@ class OrderManager
         $order = wc_get_order($order_id);
 
         if ($order && $order instanceof \WC_Order) {
+            // Out-of-order webhooks must not move a finished order backwards.
+            $current = $order->get_status();
+            $final   = ['bslm-completed', 'bslm-rejected', 'completed', 'cancelled', 'refunded'];
+            if (in_array($current, $final, true) && $current !== $status) {
+                return [
+                    'success'    => true,
+                    'message'    => 'Order already in a final status; transition ignored.',
+                    'order_id'   => $order_id,
+                    'invoice_id' => $invoice_id,
+                    'status_key' => $current,
+                    'status'     => 200,
+                ];
+            }
             $order->update_status($status);
             return [
                 'success'    => true,
@@ -720,14 +734,13 @@ class OrderManager
         }
 
         if ($product_price > 0) {
-            $currency = get_woocommerce_currency();
-            if ($currency === 'IRT') {
-                $product_price = $product_price / 10;
-            } elseif ($currency === 'IRHT') {
-                $product_price = $product_price / 10000;
-            } elseif ($currency === 'IRHR') {
-                $product_price = $product_price / 1000;
+            // Basalam amounts are rial; convert with the shared dashboard factor table.
+            $factor = class_exists('Webino_Dashboard_Currency') ? (float) \Webino_Dashboard_Currency::to_rial_factor() : 0.0;
+            if ($factor <= 0) {
+                $map    = ['IRT' => 10, 'IRHR' => 1000, 'IRHT' => 10000];
+                $factor = (float) ($map[get_woocommerce_currency()] ?? 1);
             }
+            $product_price = $product_price / $factor;
 
             $order_item = $order->get_item($order_item_id);
             if ($order_item) {

@@ -31,7 +31,8 @@ class OrderColumn
             $order_id = $order_or_id;
         }
 
-        if (get_post_meta($order_id, "_is_sync_basalam_order", true)) {
+        $order = is_object($order_or_id) && method_exists($order_or_id, 'get_meta') ? $order_or_id : wc_get_order($order_id);
+        if ($order && $order->get_meta('_is_sync_basalam_order', true)) {
             echo "بله";
         } else {
             echo "خیر";
