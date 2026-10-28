@@ -391,14 +391,7 @@ class OrderManager
                 if (isset($data['financial_report']['shipping_submit']['total']['amount'])) {
                     $shipping_cost = $data['financial_report']['shipping_submit']['total']['amount'];
 
-                    $currency = get_woocommerce_currency();
-                    if ($currency === 'IRT') {
-                        $shipping_cost = $shipping_cost / 10;
-                    } elseif ($currency === 'IRHT') {
-                        $shipping_cost = $shipping_cost / 10000;
-                    } elseif ($currency === 'IRHR') {
-                        $shipping_cost = $shipping_cost / 1000;
-                    }
+                    $shipping_cost = self::rialToStore($shipping_cost);
 
                     $shipping_item = new \WC_Order_Item_Shipping();
 
@@ -467,14 +460,7 @@ class OrderManager
             }
 
             if ($total_price > 0) {
-                $currency = get_woocommerce_currency();
-                if ($currency === 'IRT') {
-                    $total_price = $total_price / 10;
-                } elseif ($currency === 'IRHT') {
-                    $total_price = $total_price / 10000;
-                } elseif ($currency === 'IRHR') {
-                    $total_price = $total_price / 1000;
-                }
+                $total_price = self::rialToStore($total_price);
                 $order->set_total($total_price);
             }
 
@@ -501,12 +487,16 @@ class OrderManager
             }
 
             $purchase_count = $data['customer_data']['purchase_count'] ?? 0;
-            $fee_amount = $data['financial_report']['product_cost']['report_items'][2]['amount'] ?? 0;
-            $balance_amount = $data['financial_report']['product_cost']['total']['amount'] ?? 0;
+            $fee_amount = self::findFeeAmountRial($data);
+            $balance_amount = (float) ($data['financial_report']['product_cost']['total']['amount'] ?? 0);
 
-
-            $order->update_meta_data('_basalam_fee_amount', intval($fee_amount / 10));
-            $order->update_meta_data('_basalam_balance_amount', intval($balance_amount / 10));
+            // Basalam API amounts are rial. Keep raw rial for accounting, and the
+            // legacy meta in toman (the order meta box labels it «تومان").
+            $irt_factor = class_exists('Webino_Dashboard_Currency') ? (float) \Webino_Dashboard_Currency::to_rial_factor('IRT') : 10.0;
+            $order->update_meta_data('_basalam_fee_amount_rial', (int) round(abs($fee_amount)));
+            $order->update_meta_data('_basalam_balance_amount_rial', (int) round($balance_amount));
+            $order->update_meta_data('_basalam_fee_amount', (int) round(abs($fee_amount) / $irt_factor));
+            $order->update_meta_data('_basalam_balance_amount', (int) round($balance_amount / $irt_factor));
             $order->update_meta_data('_basalam_purchase_count', $purchase_count);
 
             if (isset($data['hash_id'])) {
@@ -729,33 +719,87 @@ class OrderManager
         return $product_id ? $product_id : false;
     }
 
-    private static function set_item_price_from_financial_report($order, $order_item_id, $item, $quantity)
+    /**
+     * Convert a Basalam (rial) amount into the store currency via shared factors.
+     */
+    private static function rialToStore($amount)
     {
-        $product_price = 0;
+        $amount = (float) $amount;
+        if (class_exists('Webino_Dashboard_Currency')) {
+            return \Webino_Dashboard_Currency::from_rial($amount);
+        }
+        $map = ['IRT' => 10, 'TOMAN' => 10, 'IRHR' => 1000, 'IRHT' => 10000];
+        $factor = (float) ($map[strtoupper((string) get_woocommerce_currency())] ?? 1);
+        return $factor > 0 ? $amount / $factor : $amount;
+    }
+
+    /**
+     * Basalam commission/fee row (rial). Matched by title; falls back to the
+     * historical index 2 only when no titled row exists.
+     */
+    private static function findFeeAmountRial($data)
+    {
+        $items = $data['financial_report']['product_cost']['report_items'] ?? [];
+        if (!is_array($items)) {
+            return 0.0;
+        }
+        foreach ($items as $row) {
+            $title = isset($row['title']) ? (string) $row['title'] : '';
+            if ($title !== '' && isset($row['amount']) && preg_match('/کارمزد|commission|fee/iu', $title)) {
+                return (float) $row['amount'];
+            }
+        }
+        return (float) ($items[2]['amount'] ?? 0);
+    }
+
+    /**
+     * Resolve the line total (rial) for an order item.
+     *
+     * The «قیمت محصول» report row is the line amount (sum over all units; the
+     * order total is built by summing these rows). If Basalam also sends a unit
+     * price and the row equals that unit price for qty > 1, treat it as unit.
+     */
+    public static function resolveLineTotalRial(array $item, $quantity)
+    {
+        $quantity = max(1, (int) $quantity);
+        $row = 0.0;
         if (isset($item['financial_report']['report_items']) && is_array($item['financial_report']['report_items'])) {
             foreach ($item['financial_report']['report_items'] as $report_item) {
                 if (isset($report_item['title']) && $report_item['title'] === 'قیمت محصول' && isset($report_item['amount'])) {
-                    $product_price = (int) $report_item['amount'];
+                    $row = (float) $report_item['amount'];
                     break;
                 }
             }
         }
-
-        if ($product_price > 0) {
-            // Basalam amounts are rial; convert with the shared dashboard factor table.
-            $factor = class_exists('Webino_Dashboard_Currency') ? (float) \Webino_Dashboard_Currency::to_rial_factor() : 0.0;
-            if ($factor <= 0) {
-                $map    = ['IRT' => 10, 'IRHR' => 1000, 'IRHT' => 10000];
-                $factor = (float) ($map[get_woocommerce_currency()] ?? 1);
+        $unit = 0.0;
+        foreach (['price', 'unit_price', 'primary_price'] as $k) {
+            if (isset($item[$k]) && is_numeric($item[$k]) && (float) $item[$k] > 0) {
+                $unit = (float) $item[$k];
+                break;
             }
-            $product_price = $product_price / $factor;
+        }
+        if ($row <= 0) {
+            return $unit > 0 ? $unit * $quantity : 0.0;
+        }
+        if ($quantity > 1 && $unit > 0 && abs($row - $unit) < 1) {
+            return $unit * $quantity;
+        }
+        return $row;
+    }
 
-            $order_item = $order->get_item($order_item_id);
-            if ($order_item) {
-                $order_item->set_subtotal($product_price);
-                $order_item->set_total($product_price);
-                $order_item->save();
-            }
+    private static function set_item_price_from_financial_report($order, $order_item_id, $item, $quantity)
+    {
+        $line_total = self::resolveLineTotalRial(is_array($item) ? $item : [], $quantity);
+        if ($line_total <= 0) {
+            return;
+        }
+        // WC line subtotal/total are for the whole line (unit price * qty), never per unit.
+        $line_total = self::rialToStore($line_total);
+        $order_item = $order->get_item($order_item_id);
+        if ($order_item) {
+            $order_item->set_subtotal($line_total);
+            $order_item->set_total($line_total);
+            $order_item->save();
         }
     }
 

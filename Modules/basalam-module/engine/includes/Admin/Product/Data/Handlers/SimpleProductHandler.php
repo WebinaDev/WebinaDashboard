@@ -76,7 +76,9 @@ class SimpleProductHandler implements ProductDataHandlerInterface
         $stock = $product->get_stock_quantity();
         $stockStatus = $product->get_stock_status();
 
-        $calculatedStock = $stockStatus === 'instock' ? $stock ?? $defaultStock : 0;
+        $calculatedStock = $stockStatus === 'instock' ? (int) ($stock ?? $defaultStock) : 0;
+        // Backorder-enabled products can report negative stock; Basalam needs >= 0.
+        $calculatedStock = max(0, $calculatedStock);
 
         if ($safeStock > 0 && $calculatedStock <= $safeStock) return 0;
 
