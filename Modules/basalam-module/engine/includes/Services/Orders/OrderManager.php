@@ -101,6 +101,15 @@ class OrderManager
     {
         $parsedParams = $request->get_params();
 
+        // WooCommerce inactive/being updated: answer 503 so Basalam retries later instead of a fatal.
+        if (!function_exists('wc_get_order') || !function_exists('wc_create_order')) {
+            return self::createRestResponse([
+                'success' => false,
+                'message' => 'WooCommerce is not active.',
+                'status'  => 503,
+            ]);
+        }
+
         if ($checkSyncStatus && !webinoBasalamSettings()->getSettings(SettingsConfig::SYNC_STATUS_ORDER)) {
             return self::createRestResponse([
                 'success' => true,
@@ -197,6 +206,11 @@ class OrderManager
                     $invoice_id
                 )
             );
+
+            if (!$existingOrderId) {
+                // Fallback: order saved but payments-table row missing (crash between the two writes).
+                $existingOrderId = self::findOrderIdByInvoiceMeta($invoice_id);
+            }
 
             if ($existingOrderId) {
                 return [
@@ -298,6 +312,15 @@ class OrderManager
                         try {
                             if (!empty($item['variation']['id'])) {
                                 $woo_product_id = self::getWooProductVariableId($item['variation']['id']);
+                                if (!$woo_product_id) {
+                                    // Variant not mapped yet: fall back to the mapped parent, but only if it
+                                    // is a purchasable non-variable product (a variable parent has no stock/price).
+                                    $parentId = self::getWooProductSimpleId($sync_basalam_product_id);
+                                    $parent   = $parentId ? wc_get_product($parentId) : null;
+                                    if ($parent && !$parent->is_type('variable')) {
+                                        $woo_product_id = $parentId;
+                                    }
+                                }
                             } else {
                                 $woo_product_id = self::getWooProductSimpleId($sync_basalam_product_id);
                             }
@@ -594,6 +617,10 @@ class OrderManager
         );
 
         if (!$order_id) {
+            $order_id = self::findOrderIdByInvoiceMeta($invoice_id) ?: null;
+        }
+
+        if (!$order_id) {
             $create_result = self::createOrderWoo([
                 'invoice_id' => $invoice_id,
             ]);
@@ -619,7 +646,9 @@ class OrderManager
             // Out-of-order webhooks must not move a finished order backwards.
             $current = $order->get_status();
             $final   = ['bslm-completed', 'bslm-rejected', 'completed', 'cancelled', 'refunded'];
-            if (in_array($current, $final, true) && $current !== $status) {
+            // Replayed/late "confirm" must not pull a shipped order back to preparation.
+            $regress = ($current === 'bslm-shipping' && $status === 'bslm-preparation');
+            if ((in_array($current, $final, true) && $current !== $status) || $regress) {
                 return [
                     'success'    => true,
                     'message'    => 'Order already in a final status; transition ignored.',
@@ -653,6 +682,32 @@ class OrderManager
             'invoice_id' => $invoice_id,
             'status'     => 500,
         ];
+    }
+
+    /**
+     * Find a Woo order already created for this Basalam invoice via order meta.
+     * Works for both HPOS and legacy post storage (wc_get_orders abstracts it).
+     *
+     * @param int|string $invoice_id
+     * @return int
+     */
+    public static function findOrderIdByInvoiceMeta($invoice_id)
+    {
+        if (!function_exists('wc_get_orders') || empty($invoice_id)) {
+            return 0;
+        }
+        try {
+            $ids = wc_get_orders([
+                'limit'      => 1,
+                'return'     => 'ids',
+                'status'     => 'any',
+                'meta_key'   => '_basalam_invoice_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                'meta_value' => (string) $invoice_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+            ]);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+        return !empty($ids) ? (int) reset($ids) : 0;
     }
 
     public static function getPlaceholderProductId()

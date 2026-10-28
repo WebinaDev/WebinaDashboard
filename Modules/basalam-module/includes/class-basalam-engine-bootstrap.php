@@ -73,7 +73,14 @@ class Webino_Basalam_Engine_Bootstrap {
 		if ( ! class_exists( '\\WebinoBasalam\\Activator' ) ) {
 			return;
 		}
-		\WebinoBasalam\Activator::activateDb();
+		// dbDelta() on every request is slow (SHOW TABLES/DESCRIBE per table); run it only
+		// when the engine version changes or tables were never created.
+		$schema_key = 'webino_basalam_schema_version';
+		$schema_ver = (string) \WebinoBasalam\Plugin::VERSION . '|' . ( defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '' );
+		if ( (string) get_option( $schema_key, '' ) !== $schema_ver ) {
+			\WebinoBasalam\Activator::activateDb();
+			update_option( $schema_key, $schema_ver, true );
+		}
 		if ( ! get_option( 'webino_basalam_engine_version' ) ) {
 			update_option( 'webino_basalam_engine_version', \WebinoBasalam\Plugin::VERSION );
 		}

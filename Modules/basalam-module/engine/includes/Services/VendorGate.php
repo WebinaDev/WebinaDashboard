@@ -93,7 +93,7 @@ class VendorGate {
 		$response = wp_remote_get(
 			self::USERS_ME_URL,
 			array(
-				'timeout' => 20,
+				'timeout' => 10,
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $access_token,
 					'Accept'        => 'application/json',

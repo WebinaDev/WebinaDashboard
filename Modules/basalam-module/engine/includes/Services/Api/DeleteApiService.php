@@ -10,6 +10,7 @@ class DeleteApiService extends AbstractApiService
     {
         return wp_remote_request($request['url'], [
             'method'  => 'DELETE',
+            'timeout' => 10,
             'headers' => $request['headers'],
             'body'    => $request['data'],
         ]);
