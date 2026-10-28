@@ -87,11 +87,12 @@ class PriceService
 
     private function convertToRial(float $price, string $currency)
     {
-        if ($currency === 'IRT') return $price * 10;
-        if ($currency === 'IRHT') return $price * 10000;
-        if ($currency === 'IRHR') return $price * 1000;
-
-        return $price;
+        // Basalam prices are rial; use the shared dashboard factor table.
+        if (class_exists('Webino_Dashboard_Currency')) {
+            return $price * (float) \Webino_Dashboard_Currency::to_rial_factor($currency);
+        }
+        $map = ['IRT' => 10, 'TOMAN' => 10, 'IRHR' => 1000, 'IRHT' => 10000];
+        return $price * (float) ($map[strtoupper($currency)] ?? 1);
     }
 
     private function applyPriceChange(float $price, string $priceChangeValue, array $categoryIds): float
