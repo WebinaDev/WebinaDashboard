@@ -31,8 +31,7 @@ class OrderEndpoint
         $headers = $request->get_headers();
 
         if (!isset($headers['token'][0])) {
-            $webhookService = new WebhookService();
-            $webhookService->setupWebhook();
+            self::maybeResetupWebhook();
 
             Logger::error("سفارش جدیدی در باسلام ثبت شد، اما توکن ارسال نشد");
 
@@ -45,12 +44,11 @@ class OrderEndpoint
 
         $receive_token = sanitize_text_field($headers['token'][0]);
 
-        if ($receive_token === $webhook_token) {
+        if (is_string($webhook_token) && '' !== $webhook_token && hash_equals($webhook_token, $receive_token)) {
             return true;
         }
 
-        $webhookService = new WebhookService();
-        $webhookService->setupWebhook();
+        self::maybeResetupWebhook();
 
         Logger::error("سفارش جدیدی در باسلام ایجاد شد اما توکن ارسالی معتبر نیست.");
 
@@ -59,5 +57,16 @@ class OrderEndpoint
             'توکن وب‌هوک معتبر نیست.',
             ['status' => 403]
         );
+    }
+
+    /**
+     * Unauthenticated callers must not be able to trigger outbound Basalam API calls on every hit.
+     */
+    private static function maybeResetupWebhook(): void
+    {
+        $key = 'webino_basalam_webhook_resetup';
+        if (get_transient($key)) return;
+        set_transient($key, 1, 15 * MINUTE_IN_SECONDS);
+        (new WebhookService())->setupWebhook();
     }
 }

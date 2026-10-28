@@ -14,6 +14,20 @@ final class Webino_Basalam_Module {
 		add_filter( 'woocommerce_payment_gateways', array( __CLASS__, 'register_gateway' ) );
 		add_action( 'woocommerce_api_webino_basalam_gateway', array( __CLASS__, 'gateway_callback' ) );
 		add_action( 'webino_basalam_process_jobs', array( 'Basalam_Jobs', 'process_due' ) );
+		// Contract: the plugin owns the refresh token and refreshes >=300s before expires_at.
+		add_action(
+			'webino_basalam_process_jobs',
+			static function () {
+				if ( class_exists( '\\WebinoBasalam\\Admin\\Settings\\OAuthManager' ) ) {
+					try {
+						\WebinoBasalam\Admin\Settings\OAuthManager::maybeProactiveRefresh();
+					} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// Logged inside; never break cron.
+					}
+				}
+			},
+			5
+		);
 		add_filter( 'cron_schedules', array( __CLASS__, 'cron_schedules' ) );
 		Basalam_Webhook_Handler::init();
 		if ( ! wp_next_scheduled( 'webino_basalam_process_jobs' ) ) {

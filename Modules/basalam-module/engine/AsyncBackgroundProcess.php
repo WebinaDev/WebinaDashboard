@@ -154,8 +154,10 @@ abstract class AsyncBackgroundProcess
 
     protected function handle()
     {
-
-        $this->lockProcess();
+        // Another worker holds the lock: never process the same batch twice.
+        if (false === $this->lockProcess()) {
+            return;
+        }
 
         $batch = $this->getBatch();
 

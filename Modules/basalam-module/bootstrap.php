@@ -28,6 +28,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 			'class-basalam-endpoint-registry.php',
 			'class-webino-dashboard-rest-basalam.php',
 			'class-basalam-wnc-bridge.php',
+			'erp/class-basalam-erp-order-mirror.php',
 			'class-basalam-module.php',
 		),
 		'basalam-module'
@@ -52,3 +53,4 @@ if ( class_exists( 'WC_Payment_Gateway', false ) ) {
 }
 
 Webino_Basalam_Module::init();
+Webino_Basalam_Erp_Order_Mirror::init();

@@ -73,9 +73,18 @@ class ApiResponseHandler
 
         if ($statusCode === 401) {
             if ($this->isBasalamDomain($url)) {
+                // Try one refresh via ERP before giving up; never wipe the refresh token
+                // (wiping it made a single 401 permanently disconnect the shop).
+                $lock = 'webino_basalam_401_refresh_lock';
+                if (!get_transient($lock) && class_exists('\\WebinoBasalam\\Admin\\Settings\\OAuthManager')) {
+                    set_transient($lock, 1, 60);
+                    $refreshed = \WebinoBasalam\Admin\Settings\OAuthManager::refreshAccessToken();
+                    if (true === $refreshed) {
+                        throw RetryableException::temporary(esc_html__('توکن باسلام تمدید شد؛ درخواست دوباره تلاش می‌شود.', 'webino-dashboard'));
+                    }
+                }
                 SettingsManager::updateSettings([
-                    SettingsConfig::TOKEN         => null,
-                    SettingsConfig::REFRESH_TOKEN => null,
+                    SettingsConfig::TOKEN => null,
                 ]);
             }
             throw NonRetryableException::unauthorized(esc_html($this->enrichMessage(RequestStatusTracker::describeHttpStatusFa(401), $url, $statusCode)))

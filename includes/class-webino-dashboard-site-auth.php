@@ -19,6 +19,7 @@ final class Webino_Dashboard_Site_Auth {
 	const TRANSIENT_PEND  = 'webino_dashboard_site_auth_pending';
 	const TRANSIENT_LOCK  = 'webino_dashboard_site_auth_enroll_lock';
 	const CRON_HOOK       = 'webino_dashboard_site_auth_enroll';
+	const CRON_NOW_HOOK   = 'webino_dashboard_site_auth_enroll_now';
 	const EDGE_PATH_PREFIX = '/api/webinocrm/v1/';
 
 	/** @var bool */
@@ -30,6 +31,7 @@ final class Webino_Dashboard_Site_Auth {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_enroll' ) );
 		add_action( self::CRON_HOOK, array( __CLASS__, 'maybe_enroll' ) );
+		add_action( self::CRON_NOW_HOOK, array( __CLASS__, 'enroll_now_cron' ) );
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			wp_schedule_event( time() + 120, 'twicedaily', self::CRON_HOOK );
 		}
@@ -172,6 +174,56 @@ final class Webino_Dashboard_Site_Auth {
 				'callback'            => array( __CLASS__, 'receive' ),
 			)
 		);
+		register_rest_route(
+			'webino-dashboard/v1',
+			'/site-auth/enroll-now',
+			array(
+				'methods'             => 'POST',
+				'permission_callback' => '__return_true', // Public nudge; body ignored, rate-limited, no secrets returned.
+				'callback'            => array( __CLASS__, 'enroll_now' ),
+			)
+		);
+	}
+
+	/**
+	 * Public nudge from the ERP: enroll now if not enrolled. Ignores the body; rate-limited;
+	 * the actual enrollment runs in wp-cron (the ERP calls /receive back, so it must not block here).
+	 *
+	 * @param WP_REST_Request $request Request (unused).
+	 * @return WP_REST_Response
+	 */
+	public static function enroll_now( $request ) {
+		try {
+			if ( '' !== self::secret() ) {
+				return new WP_REST_Response( array( 'ok' => true, 'enrolled' => true ), 200 );
+			}
+			$ip     = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['REMOTE_ADDR'] ) ) : '';
+			$ip_key = 'webino_sa_enroll_now_ip_' . md5( $ip );
+			if ( get_transient( 'webino_sa_enroll_now_global' ) || get_transient( $ip_key ) ) {
+				return new WP_REST_Response( array( 'ok' => false, 'enrolled' => false, 'code' => 'rate_limited' ), 429 );
+			}
+			set_transient( 'webino_sa_enroll_now_global', 1, MINUTE_IN_SECONDS );
+			set_transient( $ip_key, 1, MINUTE_IN_SECONDS );
+			if ( ! wp_next_scheduled( self::CRON_NOW_HOOK ) ) {
+				wp_schedule_single_event( time(), self::CRON_NOW_HOOK );
+			}
+			if ( function_exists( 'spawn_cron' ) ) {
+				spawn_cron();
+			}
+		} catch ( \Throwable $e ) {
+			return new WP_REST_Response( array( 'ok' => false, 'enrolled' => false ), 200 );
+		}
+		return new WP_REST_Response( array( 'ok' => true, 'enrolled' => false, 'scheduled' => true ), 200 );
+	}
+
+	/** Cron target for enroll-now: bypasses the 6h retry lock (the REST route is itself rate-limited). */
+	public static function enroll_now_cron() {
+		try {
+			if ( '' === self::secret() ) {
+				self::maybe_enroll( true );
+			}
+		} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		}
 	}
 
 	/**
