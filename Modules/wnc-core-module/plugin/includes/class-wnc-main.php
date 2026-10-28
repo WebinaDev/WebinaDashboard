@@ -46,7 +46,7 @@ class WNC_Main {
 		require_once WNC_PLUGIN_DIR . 'includes/api/digikala/class-wnc-digikala-adapter.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/digikala/class-wnc-digikala-bootstrap.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/basalam/class-wnc-basalam-adapter.php';
-		require_once WNC_PLUGIN_DIR . 'includes/api/basalam/class-wnc-basalam-bootstrap.php';
+		require_once WNC_PLUGIN_DIR . 'includes/api/basalam/class-wnc-basalam-legacy-cleanup.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/technolife/class-wnc-technolife-adapter.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/snappshop/class-wnc-snappshop-adapter.php';
 		require_once WNC_PLUGIN_DIR . 'includes/api/tapsishop/class-wnc-tapsishop-adapter.php';
@@ -96,7 +96,8 @@ class WNC_Main {
 		WNC_Emalls_Feed::init();
 		WNC_SnappPay_Search_Feed::init();
 		WNC_Torob_Bootstrap::init();
-		WNC_Basalam_Bootstrap::init();
+		// Legacy WncBasalam engine removed in 0.9.65; Dashboard basalam-module is the only engine.
+		WNC_Basalam_Legacy_Cleanup::maybe_run();
 		WNC_Digikala_Bootstrap::init();
 	}
 

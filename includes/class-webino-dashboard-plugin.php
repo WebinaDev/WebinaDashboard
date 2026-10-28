@@ -454,7 +454,33 @@ final class Webino_Dashboard_Plugin {
 		wp_clear_scheduled_hook( self::FLUSH_REWRITES_HOOK );
 		wp_clear_scheduled_hook( self::DEFERRED_INSTALL_HOOK );
 		delete_transient( self::REWRITE_FLUSH_PENDING_TRANSIENT );
+		self::clear_basalam_cron();
 		flush_rewrite_rules( false );
+	}
+
+	/**
+	 * Unschedule every Basalam WP-Cron hook (current engine + removed legacy WncBasalam engine).
+	 * Data/options are kept; hooks are re-scheduled on next load after reactivation.
+	 *
+	 * @return void
+	 */
+	public static function clear_basalam_cron() {
+		$hooks = array( 'webino_basalam_process_jobs', 'webino_basalam_erp_flush' );
+		$queues = array(
+			'WebinoBasalam\\Queue\\Tasks\\CreateProduct' => 'CreateSingleProduct',
+			'WebinoBasalam\\Queue\\Tasks\\UpdateProduct' => 'sync_basalam_update_single_product',
+			'WncBasalam\\Queue\\Tasks\\CreateProduct'    => 'CreateSingleProduct',
+			'WncBasalam\\Queue\\Tasks\\UpdateProduct'    => 'sync_basalam_update_single_product',
+		);
+		foreach ( $queues as $class => $action ) {
+			// Matches AsyncBackgroundProcess::getIdentifier().
+			$id      = $action . '_' . substr( md5( $class ), 0, 8 );
+			$hooks[] = $id . '_cron';
+			$hooks[] = $id . '_immediate';
+		}
+		foreach ( $hooks as $hook ) {
+			wp_clear_scheduled_hook( $hook );
+		}
 	}
 
 	/**

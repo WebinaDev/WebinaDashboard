@@ -20,13 +20,7 @@ class WNC_Activator {
 	public static function activate() {
 		require_once WNC_PLUGIN_DIR . 'includes/class-wnc-storage.php';
 		WNC_Storage::ensure_schema();
-		$bs = WNC_PLUGIN_DIR . 'includes/api/basalam/class-wnc-basalam-bootstrap.php';
-		if ( file_exists( $bs ) ) {
-			require_once $bs;
-			if ( class_exists( 'WNC_Basalam_Schema', false ) ) {
-				WNC_Basalam_Schema::ensure();
-			}
-		}
+		// Legacy Basalam engine schema removed (0.9.65); its tables are kept untouched as user data.
 
 		$defaults = self::default_settings();
 		$existing = get_option( 'wnc_settings', array() );

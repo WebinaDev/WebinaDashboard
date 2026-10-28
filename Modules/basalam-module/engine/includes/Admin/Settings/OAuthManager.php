@@ -140,14 +140,21 @@ class OAuthManager
         );
 
         if ( is_wp_error( $response ) ) {
-            return array( 'error' => $response->get_error_message() );
+            return array( 'error' => self::humanizeTransportError( $response ) );
         }
 
-        $code = (int) wp_remote_retrieve_response_code( $response );
-        $data = self::unwrapErpPayload( json_decode( (string) wp_remote_retrieve_body( $response ), true ) );
+        $code    = (int) wp_remote_retrieve_response_code( $response );
+        $rawBody = (string) wp_remote_retrieve_body( $response );
+        $decoded = json_decode( $rawBody, true );
+        $data    = is_array( $decoded ) ? self::unwrapErpPayload( $decoded ) : array();
 
         if ( $code < 200 || $code >= 300 || empty( $data['url'] ) ) {
-            $message = isset( $data['message'] ) ? (string) $data['message'] : __( 'ERP OAuth start failed.', 'webino-dashboard' );
+            if ( isset( $data['message'] ) && is_string( $data['message'] ) && '' !== $data['message'] ) {
+                $message = $data['message'];
+            } else {
+                // Non-JSON (CDN/HTML error page, possibly truncated) — never show raw HTML.
+                $message = self::humanizeHttpFailure( $code );
+            }
             return array( 'error' => $message );
         }
 
@@ -166,6 +173,136 @@ class OAuthManager
      */
     public static function refreshAccessToken()
     {
+        // Single-flight: webhook, cron and admin requests may all detect expiry at once.
+        // Concurrent refreshes with a rotating refresh_token would invalidate each other.
+        $before = (string) webinoBasalamSettings()->getSettings( SettingsConfig::TOKEN );
+        if ( ! self::acquireRefreshLock() ) {
+            // Another request is refreshing — wait briefly for its result.
+            for ( $i = 0; $i < 10; $i++ ) {
+                usleep( 500000 );
+                webinoBasalamSettings()->forget();
+                wp_cache_delete( 'webino_basalam_sync_settings', 'options' );
+                wp_cache_delete( 'alloptions', 'options' );
+                $now = (string) webinoBasalamSettings()->getSettings( SettingsConfig::TOKEN );
+                if ( '' !== $now && $now !== $before ) {
+                    return true;
+                }
+                if ( ! self::refreshLockHeld() ) {
+                    break;
+                }
+            }
+            return new \WP_Error( 'basalam_refresh_in_progress', __( 'تمدید توکن باسلام در حال انجام است؛ چند لحظه بعد دوباره تلاش کنید.', 'webino-dashboard' ) );
+        }
+        try {
+            return self::doRefreshAccessToken();
+        } finally {
+            self::releaseRefreshLock();
+        }
+    }
+
+    const REFRESH_LOCK_OPTION = 'webino_basalam_refresh_lock';
+    const REFRESH_LOCK_TTL    = 60;
+
+    /**
+     * Atomic lock via add_option (INSERT fails if row exists). Stale locks expire.
+     *
+     * @return bool
+     */
+    private static function acquireRefreshLock()
+    {
+        if ( add_option( self::REFRESH_LOCK_OPTION, time(), '', 'no' ) ) {
+            return true;
+        }
+        $at = (int) get_option( self::REFRESH_LOCK_OPTION, 0 );
+        if ( $at > 0 && ( time() - $at ) > self::REFRESH_LOCK_TTL ) {
+            delete_option( self::REFRESH_LOCK_OPTION );
+            return (bool) add_option( self::REFRESH_LOCK_OPTION, time(), '', 'no' );
+        }
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    private static function refreshLockHeld()
+    {
+        wp_cache_delete( self::REFRESH_LOCK_OPTION, 'options' );
+        wp_cache_delete( 'notoptions', 'options' );
+        $at = (int) get_option( self::REFRESH_LOCK_OPTION, 0 );
+        return $at > 0 && ( time() - $at ) <= self::REFRESH_LOCK_TTL;
+    }
+
+    /**
+     * @return void
+     */
+    private static function releaseRefreshLock()
+    {
+        delete_option( self::REFRESH_LOCK_OPTION );
+    }
+
+    /**
+     * Persian, user-facing message for a transport failure (no raw cURL text).
+     *
+     * @param \WP_Error $error Error from wp_remote_*.
+     * @return string
+     */
+    public static function humanizeTransportError( $error )
+    {
+        $raw = is_wp_error( $error ) ? (string) $error->get_error_message() : (string) $error;
+        if ( function_exists( 'error_log' ) ) {
+            error_log( '[WebinoBasalam] ERP request failed: ' . $raw );
+        }
+        if ( preg_match( '/cURL error (\d+)/i', $raw, $m ) ) {
+            switch ( (int) $m[1] ) {
+                case 18: // Partial file — CDN/proxy truncated the (error) body.
+                case 56:
+                case 52:
+                    return __( 'پاسخ سرور وبینا ناقص رسید (احتمالاً CDN جلوی سرور پاسخ را قطع کرده). چند دقیقه بعد دوباره تلاش کنید؛ اگر تکرار شد به پشتیبانی وبینا خبر دهید.', 'webino-dashboard' );
+                case 28:
+                    return __( 'سرور وبینا در زمان مقرر پاسخ نداد. چند دقیقه بعد دوباره تلاش کنید.', 'webino-dashboard' );
+                case 6:
+                    return __( 'نشانی سرور وبینا پیدا نشد (خطای DNS روی هاست شما). با پشتیبانی هاست تماس بگیرید.', 'webino-dashboard' );
+                case 7:
+                    return __( 'اتصال به سرور وبینا برقرار نشد؛ ممکن است فایروال هاست درخواست‌های خروجی را مسدود کرده باشد.', 'webino-dashboard' );
+                case 35:
+                case 60:
+                    return __( 'ارتباط امن (SSL) با سرور وبینا برقرار نشد. گواهی‌های SSL هاست را بررسی کنید.', 'webino-dashboard' );
+            }
+        }
+        return __( 'ارتباط با سرور وبینا برقرار نشد. چند دقیقه بعد دوباره تلاش کنید.', 'webino-dashboard' );
+    }
+
+    /**
+     * Persian message for a non-JSON / non-2xx ERP response.
+     *
+     * @param int $code HTTP status.
+     * @return string
+     */
+    public static function humanizeHttpFailure( $code )
+    {
+        $code = (int) $code;
+        if ( 503 === $code ) {
+            return __( 'اتصال باسلام در سرور وبینا هنوز پیکربندی نشده یا موقتاً در دسترس نیست (کد 503).', 'webino-dashboard' );
+        }
+        if ( $code >= 500 ) {
+            /* translators: %d HTTP status */
+            return sprintf( __( 'سرور وبینا با خطا پاسخ داد (کد %d). چند دقیقه بعد دوباره تلاش کنید.', 'webino-dashboard' ), $code );
+        }
+        if ( 429 === $code ) {
+            return __( 'تعداد درخواست‌ها زیاد است؛ کمی صبر کنید و دوباره تلاش کنید.', 'webino-dashboard' );
+        }
+        /* translators: %d HTTP status */
+        return sprintf( __( 'پاسخ نامعتبر از سرور وبینا (کد %d).', 'webino-dashboard' ), $code );
+    }
+
+    /**
+     * Actual refresh (call only under lock).
+     *
+     * @return true|\WP_Error
+     */
+    private static function doRefreshAccessToken()
+    {
+        webinoBasalamSettings()->forget();
         if ( get_option( self::NEEDS_RECONNECT_OPTION ) ) {
             return new \WP_Error( 'basalam_needs_reconnect', __( 'اتصال باسلام منقضی شده؛ لطفاً دوباره متصل شوید.', 'webino-dashboard' ) );
         }
@@ -198,11 +335,16 @@ class OAuthManager
         );
 
         if ( is_wp_error( $response ) ) {
-            return $response;
+            return new \WP_Error( 'basalam_refresh_transport', self::humanizeTransportError( $response ) );
         }
 
-        $code = (int) wp_remote_retrieve_response_code( $response );
-        $data = self::unwrapErpPayload( json_decode( (string) wp_remote_retrieve_body( $response ), true ) );
+        $code    = (int) wp_remote_retrieve_response_code( $response );
+        $decoded = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+        $data    = is_array( $decoded ) ? self::unwrapErpPayload( $decoded ) : null;
+        if ( ! is_array( $data ) && 400 !== $code ) {
+            // HTML / truncated body (CDN): transient — keep tokens, do not force reconnect.
+            return new \WP_Error( 'basalam_refresh_failed', self::humanizeHttpFailure( $code ), array( 'status' => $code ) );
+        }
         if ( ! is_array( $data ) || $code < 200 || $code >= 300 || empty( $data['access_token'] ) ) {
             $message = is_array( $data ) && isset( $data['message'] ) ? (string) $data['message'] : __( 'Token refresh failed.', 'webino-dashboard' );
             if ( 400 === $code ) {

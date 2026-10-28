@@ -32,6 +32,8 @@ class JobsRunner
 
     public function checkAndRunJobs(): void
     {
+        // Jobs read/write Woo products & orders — skip entirely while WooCommerce is inactive.
+        if (!function_exists('wc_get_product')) return;
         if ($this->CheckHttpBlockService->SyncBasalamHttpBlock()) return;
         if (!$this->jobExecutor->acquireGlobalJobsLock(0)) return;
 

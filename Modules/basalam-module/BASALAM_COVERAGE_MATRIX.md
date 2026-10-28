@@ -6,7 +6,7 @@ Status legend: `implemented`, `queued`, `pending`.
 
 Independent dual ports:
 
-- WebinaConnector: `includes/api/basalam/engine` (`WncBasalam`) — yields runtime when Dashboard engine is present
+- WebinaConnector legacy `WncBasalam` engine: **removed in 0.9.65** (tables/options kept; cron unscheduled by `WNC_Basalam_Legacy_Cleanup`)
 - WebinaDashboard: `Modules/basalam-module/engine` (`WebinoBasalam`) — **owns** webhooks/jobs when installed
 
 ## Auth (Webina-owned)

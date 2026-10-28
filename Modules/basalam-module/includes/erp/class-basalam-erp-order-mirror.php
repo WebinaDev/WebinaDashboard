@@ -23,6 +23,8 @@ final class Webino_Basalam_Erp_Order_Mirror {
 	const PATH            = '/api/webinocrm/v1/crm/basalam/orders';
 	const BATCH           = 200;
 	const MAX_ATTEMPTS    = 12;
+	// Hard cap so a long ERP outage cannot grow the (non-autoloaded) option without bound.
+	const MAX_QUEUE       = 5000;
 
 	/** Basalam status ids by our Woo status slug (contract status mapping). */
 	const STATUS_IDS = array(
@@ -75,7 +77,13 @@ final class Webino_Basalam_Erp_Order_Mirror {
 			$q = get_option( self::QUEUE_OPTION, array() );
 			$q = is_array( $q ) ? $q : array();
 			// Reset attempts: the newest state should be sent soon.
+			unset( $q[ $order_id ] ); // Re-append so insertion order = recency.
 			$q[ $order_id ] = array( 'attempts' => 0, 'next' => time() );
+			if ( count( $q ) > self::MAX_QUEUE ) {
+				$drop = count( $q ) - self::MAX_QUEUE;
+				self::log( "queue over cap, dropping {$drop} oldest entries (backfill/reconcile will resend)" );
+				$q = array_slice( $q, $drop, null, true );
+			}
 			update_option( self::QUEUE_OPTION, $q, false );
 			if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 				wp_schedule_single_event( time() + 15, self::CRON_HOOK );
