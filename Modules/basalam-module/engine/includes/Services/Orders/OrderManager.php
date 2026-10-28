@@ -514,6 +514,7 @@ class OrderManager
             }
             // Order meta API (HPOS-safe); dashboard marketplace filter queries this key.
             $order->update_meta_data('_is_sync_basalam_order', '1');
+            $order->update_meta_data('_basalam_invoice_id', (string) $invoice_id);
 
             self::executeWithoutWccfOrderSaveHooks(function () use ($order) {
                 $order->save();
@@ -543,6 +544,10 @@ class OrderManager
 
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control statement; no object cache applicable.
                 $wpdb->query('COMMIT');
+
+                if (class_exists('Webino_Basalam_Erp_Order_Mirror', false)) {
+                    \Webino_Basalam_Erp_Order_Mirror::enqueue((int) $order_id);
+                }
 
                 return [
                     'success'  => true,
@@ -635,6 +640,9 @@ class OrderManager
                 ];
             }
             $order->update_status($status);
+            if (class_exists('Webino_Basalam_Erp_Order_Mirror', false)) {
+                \Webino_Basalam_Erp_Order_Mirror::enqueue((int) $order_id);
+            }
             return [
                 'success'    => true,
                 'message'    => 'Order status updated successfully.',

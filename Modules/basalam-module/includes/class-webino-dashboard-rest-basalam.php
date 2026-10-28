@@ -202,6 +202,12 @@ final class Webino_Dashboard_REST_Basalam {
 				'webhook_url'=> get_site_url() . '/wp-json/webino-basalam/v1/order-manager',
 				'webhook_id' => webinoBasalamSettings()->getSettings( 'webhook_id' ),
 				'owns_runtime' => true,
+				'needs_reconnect' => (bool) get_option( 'webino_basalam_needs_reconnect' ),
+				'token_expires_at' => (int) webinoBasalamSettings()->getSettings( 'expire_token_time' ) ?: null,
+				'erp_mirror'   => array(
+					'queued' => count( (array) get_option( 'webino_basalam_erp_queue', array() ) ),
+					'last'   => get_option( 'webino_basalam_erp_last_result', null ),
+				),
 				'version'    => \WebinoBasalam\Plugin::VERSION,
 				'checked_at' => gmdate( 'c' ),
 			)
@@ -621,6 +627,12 @@ final class Webino_Dashboard_REST_Basalam {
 			}
 		}
 
+		$v2 = \WebinoBasalam\Admin\Settings\OAuthManager::verifyHandoffV2( $query, $access_token, $refresh_token, $vendor_id );
+		if ( true !== $v2 ) {
+			return new WP_Error( 'basalam_oauth_sig2', $v2, array( 'status' => 403 ) );
+		}
+		$expires_at_q = isset( $query['expires_at'] ) ? absint( $query['expires_at'] ) : 0;
+
 		$cfg = \WebinoBasalam\Admin\Settings\SettingsConfig::class;
 
 		if ( 'false' === $is_vendor ) {
@@ -648,9 +660,10 @@ final class Webino_Dashboard_REST_Basalam {
 				$cfg::REFRESH_TOKEN        => $refresh_token,
 				$cfg::HAMSALAM_TOKEN       => $hamsalam_tok !== '' ? $hamsalam_tok : null,
 				$cfg::HAMSALAM_BUSINESS_ID => $hamsalam_business_id,
-				$cfg::EXPIRE_TOKEN_TIME    => $expires_in,
+				$cfg::EXPIRE_TOKEN_TIME    => \WebinoBasalam\Admin\Settings\OAuthManager::absoluteExpiry( $expires_at_q, $expires_in ),
 			)
 		);
+		delete_option( \WebinoBasalam\Admin\Settings\OAuthManager::NEEDS_RECONNECT_OPTION );
 
 		if ( function_exists( 'webinoBasalamSettings' ) ) {
 			webinoBasalamSettings()->forget();

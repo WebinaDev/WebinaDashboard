@@ -166,6 +166,9 @@ class OAuthManager
      */
     public static function refreshAccessToken()
     {
+        if ( get_option( self::NEEDS_RECONNECT_OPTION ) ) {
+            return new \WP_Error( 'basalam_needs_reconnect', __( 'اتصال باسلام منقضی شده؛ لطفاً دوباره متصل شوید.', 'webino-dashboard' ) );
+        }
         $refresh = (string) webinoBasalamSettings()->getSettings( SettingsConfig::REFRESH_TOKEN );
         if ( '' === $refresh ) {
             return new \WP_Error( 'basalam_no_refresh', __( 'Refresh token missing.', 'webino-dashboard' ) );
@@ -201,17 +204,31 @@ class OAuthManager
         $code = (int) wp_remote_retrieve_response_code( $response );
         $data = self::unwrapErpPayload( json_decode( (string) wp_remote_retrieve_body( $response ), true ) );
         if ( ! is_array( $data ) || $code < 200 || $code >= 300 || empty( $data['access_token'] ) ) {
-            $message = isset( $data['message'] ) ? (string) $data['message'] : __( 'Token refresh failed.', 'webino-dashboard' );
-            return new \WP_Error( 'basalam_refresh_failed', $message );
+            $message = is_array( $data ) && isset( $data['message'] ) ? (string) $data['message'] : __( 'Token refresh failed.', 'webino-dashboard' );
+            if ( 400 === $code ) {
+                // Contract: 400 = refresh token invalid/expired (or Basalam unreachable after ERP retries).
+                // Clear the access token and stop auto-refreshing until the merchant reconnects.
+                SettingsManager::updateSettings( array( SettingsConfig::TOKEN => null, SettingsConfig::EXPIRE_TOKEN_TIME => null ) );
+                update_option( self::NEEDS_RECONNECT_OPTION, array( 'at' => time(), 'message' => $message ), false );
+                if ( function_exists( 'webinoBasalamSettings' ) ) {
+                    webinoBasalamSettings()->forget();
+                }
+            }
+            return new \WP_Error( 'basalam_refresh_failed', $message, array( 'status' => $code ) );
         }
 
         SettingsManager::updateSettings(
             array(
                 SettingsConfig::TOKEN             => sanitize_text_field( (string) $data['access_token'] ),
-                SettingsConfig::REFRESH_TOKEN     => sanitize_text_field( (string) ( $data['refresh_token'] ?? $refresh ) ),
-                SettingsConfig::EXPIRE_TOKEN_TIME => isset( $data['expires_in'] ) ? absint( $data['expires_in'] ) : null,
+                // Always persist the returned refresh token (ERP echoes or rotates it).
+                SettingsConfig::REFRESH_TOKEN     => sanitize_text_field( (string) ( ! empty( $data['refresh_token'] ) ? $data['refresh_token'] : $refresh ) ),
+                SettingsConfig::EXPIRE_TOKEN_TIME => self::absoluteExpiry(
+                    isset( $data['expires_at'] ) ? absint( $data['expires_at'] ) : 0,
+                    isset( $data['expires_in'] ) ? absint( $data['expires_in'] ) : null
+                ),
             )
         );
+        delete_option( self::NEEDS_RECONNECT_OPTION );
         if ( function_exists( 'webinoBasalamSettings' ) ) {
             webinoBasalamSettings()->forget();
         }
@@ -263,6 +280,17 @@ class OAuthManager
             }
         }
 
+        // v2 handoff (contract §1): authenticated with the Site-Auth secret. Required once enrolled.
+        $v2 = self::verifyHandoffV2(wp_unslash($_GET), $accessToken, $refreshToken, $vendorId); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if (true !== $v2) {
+            wp_die(
+                esc_html($v2),
+                esc_html__( 'خطای امنیتی', 'webino-dashboard' ),
+                array( 'response' => 403 )
+            );
+        }
+        $expiresAtParam = isset( $_GET['expires_at'] ) ? absint( $_GET['expires_at'] ) : 0;
+
         // Persist return_url from CRM handoff if local transient was lost.
         if ( isset( $_GET['return_url'] ) && is_string( $_GET['return_url'] ) ) {
             $ru = esc_url_raw( wp_unslash( $_GET['return_url'] ) );
@@ -289,7 +317,7 @@ class OAuthManager
             SettingsConfig::IS_VENDOR         => $isVendor,
             SettingsConfig::TOKEN             => $accessToken,
             SettingsConfig::REFRESH_TOKEN     => $refreshToken,
-            SettingsConfig::EXPIRE_TOKEN_TIME => $expiresIn,
+            SettingsConfig::EXPIRE_TOKEN_TIME => self::absoluteExpiry($expiresAtParam, $expiresIn),
             // Clear legacy Hamsalam fields.
             SettingsConfig::HAMSALAM_TOKEN       => null,
             SettingsConfig::HAMSALAM_BUSINESS_ID => null,
@@ -297,6 +325,7 @@ class OAuthManager
 
         $data = array_merge( $data, $extraData );
         SettingsManager::updateSettings( $data );
+        delete_option( self::NEEDS_RECONNECT_OPTION );
 
         return true;
     }
@@ -356,5 +385,98 @@ class OAuthManager
             'url_req_token' => $started['url'],
             'client_id'     => $started['client_id'],
         );
+    }
+
+    /** Option set when refresh returned 400; cleared on successful (re)connect. */
+    const NEEDS_RECONNECT_OPTION = 'webino_basalam_needs_reconnect';
+
+    /** Refresh this many seconds before expiry (contract: now >= expires_at - 300). */
+    const REFRESH_SKEW = 300;
+
+    /**
+     * Absolute unix expiry from expires_at (preferred) or expires_in.
+     *
+     * @param int      $expiresAt Absolute unix time or 0.
+     * @param int|null $expiresIn Seconds.
+     * @return int|null
+     */
+    public static function absoluteExpiry( $expiresAt, $expiresIn )
+    {
+        $expiresAt = (int) $expiresAt;
+        if ( $expiresAt > 1000000000 ) {
+            return $expiresAt;
+        }
+        if ( null !== $expiresIn && (int) $expiresIn > 0 ) {
+            return time() + (int) $expiresIn;
+        }
+        return null;
+    }
+
+    /**
+     * Cron hook: refresh when within REFRESH_SKEW of expiry. Never loops after a 400.
+     */
+    public static function maybeProactiveRefresh()
+    {
+        if ( ! function_exists( 'webinoBasalamSettings' ) || get_option( self::NEEDS_RECONNECT_OPTION ) ) {
+            return;
+        }
+        $settings = webinoBasalamSettings();
+        if ( '' === (string) $settings->getSettings( SettingsConfig::REFRESH_TOKEN ) ) {
+            return;
+        }
+        $exp = (int) $settings->getSettings( SettingsConfig::EXPIRE_TOKEN_TIME );
+        // Legacy rows stored expires_in (small number) — treat as unknown.
+        if ( $exp < 1000000000 || time() < $exp - self::REFRESH_SKEW ) {
+            return;
+        }
+        if ( get_transient( 'webino_basalam_proactive_refresh_lock' ) ) {
+            return;
+        }
+        set_transient( 'webino_basalam_proactive_refresh_lock', 1, 120 );
+        $res = self::refreshAccessToken();
+        if ( is_wp_error( $res ) && class_exists( '\\WebinoBasalam\\Logger\\Logger' ) ) {
+            \WebinoBasalam\Logger\Logger::error( 'تمدید خودکار توکن باسلام ناموفق بود: ' . $res->get_error_message() );
+        }
+    }
+
+    /**
+     * Verify the v2 handoff signature (contract §1 Handoff).
+     *
+     * @return true|string True or error message.
+     */
+    public static function verifyHandoffV2( $query, $accessToken, $refreshToken, $vendorId )
+    {
+        $query = is_array( $query ) ? $query : array();
+        $secret   = class_exists( 'Webino_Dashboard_Site_Auth', false ) ? \Webino_Dashboard_Site_Auth::secret() : (string) get_option( 'webino_dashboard_site_auth_secret', '' );
+        $enrolled = '' !== $secret;
+        $sig2 = isset( $query['webino_sig2'] ) ? sanitize_text_field( (string) $query['webino_sig2'] ) : '';
+        if ( '' === $sig2 ) {
+            // Contract: reject when enrolled and sig2 missing. Unenrolled sites cannot verify v2 (grace mode).
+            return $enrolled ? __( 'امضای بازگشت (v2) ارسال نشده است.', 'webino-dashboard' ) : true;
+        }
+        if ( ! $enrolled ) {
+            return __( 'کلید امنیتی سایت ثبت نشده؛ امکان بررسی امضا نیست.', 'webino-dashboard' );
+        }
+        $ts    = isset( $query['webino_ts'] ) ? absint( $query['webino_ts'] ) : 0;
+        $nonce = isset( $query['webino_nonce'] ) ? sanitize_text_field( (string) $query['webino_nonce'] ) : '';
+        $rawIn = isset( $query['expires_in'] ) ? sanitize_text_field( (string) $query['expires_in'] ) : '';
+        if ( $ts < 1 || abs( time() - $ts ) > 300 ) {
+            return __( 'امضای بازگشت منقضی شده است.', 'webino-dashboard' );
+        }
+        if ( ! preg_match( '/^[A-Za-z0-9_-]{16,128}$/', $nonce ) ) {
+            return __( 'nonce بازگشت نامعتبر است.', 'webino-dashboard' );
+        }
+        $nonceKey = 'webino_bslm_hn_' . md5( $nonce );
+        if ( get_transient( $nonceKey ) ) {
+            return __( 'این لینک بازگشت قبلاً استفاده شده است.', 'webino-dashboard' );
+        }
+        $domain = class_exists( 'Webino_Dashboard_Site_Auth', false ) ? \Webino_Dashboard_Site_Auth::site_domain() : '';
+        $canon  = "v2\nbasalam-handoff\n" . $domain . "\n" . (string) $vendorId . "\n" . $ts . "\n" . $nonce . "\n" . $rawIn . "\n"
+            . hash( 'sha256', (string) $accessToken . '|' . (string) $refreshToken );
+        if ( ! hash_equals( hash_hmac( 'sha256', $canon, $secret ), strtolower( $sig2 ) ) ) {
+            return __( 'امضای بازگشت نامعتبر است.', 'webino-dashboard' );
+        }
+        set_transient( $nonceKey, 1, 600 );
+        return true;
     }
 }
