@@ -444,6 +444,18 @@ class OAuthManager
      *
      * @return true|string True or error message.
      */
+    /**
+     * Strict mode: reject unsigned handoffs even before Site-Auth enrollment. Default off.
+     * Enable via constant WEBINO_BASALAM_REQUIRE_SIGNED, option webino_basalam_require_signed,
+     * or filter webino_basalam_require_signed_handoff.
+     */
+    public static function requireSignedHandoff()
+    {
+        $on = ( defined( 'WEBINO_BASALAM_REQUIRE_SIGNED' ) && WEBINO_BASALAM_REQUIRE_SIGNED )
+            || (bool) get_option( 'webino_basalam_require_signed', false );
+        return (bool) apply_filters( 'webino_basalam_require_signed_handoff', $on );
+    }
+
     public static function verifyHandoffV2( $query, $accessToken, $refreshToken, $vendorId )
     {
         $query = is_array( $query ) ? $query : array();
@@ -452,7 +464,7 @@ class OAuthManager
         $sig2 = isset( $query['webino_sig2'] ) ? sanitize_text_field( (string) $query['webino_sig2'] ) : '';
         if ( '' === $sig2 ) {
             // Contract: reject when enrolled and sig2 missing. Unenrolled sites cannot verify v2 (grace mode).
-            return $enrolled ? __( 'امضای بازگشت (v2) ارسال نشده است.', 'webino-dashboard' ) : true;
+            return ( $enrolled || self::requireSignedHandoff() ) ? __( 'امضای بازگشت (v2) ارسال نشده است.', 'webino-dashboard' ) : true;
         }
         if ( ! $enrolled ) {
             return __( 'کلید امنیتی سایت ثبت نشده؛ امکان بررسی امضا نیست.', 'webino-dashboard' );
