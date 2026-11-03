@@ -121,26 +121,17 @@ class FinancialManagementService
             }
         );
 
-        $response = wp_remote_post(
-            Endpoints::vendorBaseUrl() . '/api/webinocrm/v1/basalam/finance/proxy',
-            [
-                'timeout' => 25,
-                'headers' => [
-                    'Accept'       => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-                'body'    => wp_json_encode($payload),
-            ]
-        );
+        $response = $this->remote('POST', Endpoints::vendorBaseUrl() . '/api/webinocrm/v1/basalam/finance/proxy', [
+            'timeout' => 25,
+            'headers' => [
+                'Accept'       => 'application/json',
+                'Content-Type' => 'application/json',
+            ],
+            'body'    => wp_json_encode($payload),
+        ]);
 
         if (is_wp_error($response)) {
-            return [
-                'success' => false,
-                'status_code' => 0,
-                'message' => $response->get_error_message(),
-                'data' => [],
-                'raw_body' => '',
-            ];
+            return $this->direct($op, $params);
         }
 
         $statusCode = (int) wp_remote_retrieve_response_code($response);
@@ -219,9 +210,8 @@ class FinancialManagementService
             }
         }
 
-        $response = wp_remote_request($url, [
-            'method'  => $method,
-            'timeout' => 20,
+        $response = $this->remote($method, $url, [
+            'timeout' => 25,
             'headers' => [
                 'Authorization' => 'Bearer ' . $token,
                 'Accept'        => 'application/json',
@@ -271,6 +261,38 @@ class FinancialManagementService
             'data' => $decoded,
             'raw_body' => $raw,
         ];
+    }
+
+    /**
+     * webina.dev and Basalam often drop HTTP/2 mid-body (cURL 18). Force HTTP/1.1 and retry once.
+     *
+     * @param array<string,mixed> $args
+     * @return array|\WP_Error
+     */
+    private function remote(string $method, string $url, array $args)
+    {
+        $args['method'] = $method;
+        $args['httpversion'] = '1.1';
+        $args['timeout'] = isset($args['timeout']) ? (int) $args['timeout'] : 25;
+
+        $response = wp_remote_request($url, $args);
+        if (!is_wp_error($response) || !$this->isTruncatedTransfer($response)) {
+            return $response;
+        }
+
+        return wp_remote_request($url, $args);
+    }
+
+    /**
+     * @param \WP_Error $error Transport error.
+     */
+    private function isTruncatedTransfer(\WP_Error $error): bool
+    {
+        $message = $error->get_error_message();
+        return strpos($message, 'cURL error 18') !== false
+            || strpos($message, 'cURL error 52') !== false
+            || strpos($message, 'cURL error 56') !== false
+            || strpos($message, 'transfer closed') !== false;
     }
 
     private function buildBalanceSettlementUrl(int $page, int $perPage, array $statuses = [], bool $withStatusFilter = false): string
