@@ -2,7 +2,9 @@
 
 namespace WebinoBasalam\Services;
 
+use WebinoBasalam\Admin\Settings\OAuthManager;
 use WebinoBasalam\Admin\Settings\SettingsConfig;
+use WebinoBasalam\Config\Endpoints;
 
 defined('ABSPATH') || exit;
 
@@ -38,40 +40,38 @@ class FinancialManagementService
 
     public function getBalance(): array
     {
-        return $this->requestJson(self::BALANCE_URL);
+        return $this->proxy('balance');
     }
 
     public function getActiveSettlements(int $page = 1, int $perPage = self::DEFAULT_PER_PAGE): array
     {
-        return $this->requestJson($this->getActiveSettlementsUrl($page, $perPage));
+        return $this->proxy('active_settlements', [
+            'page' => max(1, $page),
+            'per_page' => max(1, $perPage),
+        ]);
     }
 
     public function getSettlementHistory(int $page = 1, int $perPage = self::DEFAULT_PER_PAGE): array
     {
-        return $this->requestJson($this->getHistoryUrl($page, $perPage));
+        return $this->proxy('history', [
+            'page' => max(1, $page),
+            'per_page' => max(1, $perPage),
+        ]);
     }
 
     public function getBankAccounts(): array
     {
-        return $this->requestJson(self::BANK_ACCOUNTS_URL);
+        return $this->proxy('banks');
     }
 
     public function createSettlement(int $amount, int $method, ?int $investmentOptionId = null, ?int $bankAccountId = null): array
     {
-        $body = [
+        return $this->proxy('create_settlement', [
             'amount' => $amount,
-            'method' => $method,
-        ];
-
-        if ($investmentOptionId !== null) {
-            $body['investment_option_id'] = $investmentOptionId;
-        }
-
-        if ($bankAccountId !== null) {
-            $body['bank_account_id'] = $bankAccountId;
-        }
-
-        return $this->postJson(self::BALANCE_SETTLEMENT_POST_URL, $body);
+            'settlement_method' => $method,
+            'investment_option_id' => $investmentOptionId,
+            'bank_account_id' => $bankAccountId,
+        ]);
     }
 
     public function getToken(): string
@@ -90,17 +90,13 @@ class FinancialManagementService
         return is_string($token) ? trim($token) : '';
     }
 
-    private function requestJson(string $url): array
-    {
-        return $this->sendJsonRequest('GET', $url);
-    }
-
-    private function postJson(string $url, array $body): array
-    {
-        return $this->sendJsonRequest('POST', $url, $body);
-    }
-
-    private function sendJsonRequest(string $method, string $url, ?array $body = null): array
+    /**
+     * Booth balance goes through WebinoERP (webina.dev). Basalam accounting
+     * returns 403 when the shop calls it directly.
+     *
+     * @param array<string,mixed> $params
+     */
+    private function proxy(string $op, array $params = [], bool $retried = false): array
     {
         $token = $this->getToken();
         if ($token === '') {
@@ -113,24 +109,29 @@ class FinancialManagementService
             ];
         }
 
-        $args = [
-            'method'  => $method,
-            'timeout' => 20,
-            'headers' => [
-                'Authorization' => 'Bearer ' . $token,
-                'Accept'        => 'application/json',
-                'Content-Type'  => 'application/json',
-                'user-agent'    => 'Wp-Basalam',
-                'referer'       => get_site_url(),
-            ],
-        ];
+        $payload = array_merge($params, [
+            'op' => $op,
+            'site_url' => get_site_url(),
+            'access_token' => $token,
+        ]);
+        $payload = array_filter(
+            $payload,
+            static function ($value) {
+                return null !== $value;
+            }
+        );
 
-
-        if ($body !== null) {
-            $args['body'] = wp_json_encode($body);
-        }
-
-        $response = wp_remote_request($url, $args);
+        $response = wp_remote_post(
+            Endpoints::vendorBaseUrl() . '/api/webinocrm/v1/basalam/finance/proxy',
+            [
+                'timeout' => 25,
+                'headers' => [
+                    'Accept'       => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+                'body'    => wp_json_encode($payload),
+            ]
+        );
 
         if (is_wp_error($response)) {
             return [
@@ -145,6 +146,14 @@ class FinancialManagementService
         $statusCode = (int) wp_remote_retrieve_response_code($response);
         $body = (string) wp_remote_retrieve_body($response);
         $decoded = $this->decodeJsonResponse($body);
+
+        if ($statusCode === 404) {
+            return $this->direct($op, $params);
+        }
+
+        if ($statusCode === 401 && ! $retried && OAuthManager::refreshAccessToken() === true) {
+            return $this->proxy($op, $params, true);
+        }
 
         if ($statusCode < 200 || $statusCode > 299) {
             return [
@@ -172,6 +181,95 @@ class FinancialManagementService
             'message' => '',
             'data' => $decoded,
             'raw_body' => $body,
+        ];
+    }
+
+    /**
+     * Used only when the ERP route is not deployed yet.
+     *
+     * @param array<string,mixed> $params
+     */
+    private function direct(string $op, array $params): array
+    {
+        $token = $this->getToken();
+        $page = max(1, (int) ($params['page'] ?? 1));
+        $perPage = max(1, (int) ($params['per_page'] ?? self::DEFAULT_PER_PAGE));
+        $method = 'GET';
+        $url = self::BALANCE_URL;
+        $body = null;
+
+        if ($op === 'active_settlements') {
+            $url = $this->getActiveSettlementsUrl($page, $perPage);
+        } elseif ($op === 'history') {
+            $url = $this->getHistoryUrl($page, $perPage);
+        } elseif ($op === 'banks') {
+            $url = self::BANK_ACCOUNTS_URL;
+        } elseif ($op === 'create_settlement') {
+            $method = 'POST';
+            $url = self::BALANCE_SETTLEMENT_POST_URL;
+            $body = [
+                'amount' => (int) ($params['amount'] ?? 0),
+                'method' => (int) ($params['settlement_method'] ?? 0),
+            ];
+            if (!empty($params['investment_option_id'])) {
+                $body['investment_option_id'] = (int) $params['investment_option_id'];
+            }
+            if (!empty($params['bank_account_id'])) {
+                $body['bank_account_id'] = (int) $params['bank_account_id'];
+            }
+        }
+
+        $response = wp_remote_request($url, [
+            'method'  => $method,
+            'timeout' => 20,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token,
+                'Accept'        => 'application/json',
+                'Content-Type'  => 'application/json',
+                'user-agent'    => 'Wp-Basalam',
+                'referer'       => Endpoints::vendorBaseUrl(),
+            ],
+            'body' => $body !== null ? wp_json_encode($body) : null,
+        ]);
+
+        if (is_wp_error($response)) {
+            return [
+                'success' => false,
+                'status_code' => 0,
+                'message' => $response->get_error_message(),
+                'data' => [],
+                'raw_body' => '',
+            ];
+        }
+
+        $statusCode = (int) wp_remote_retrieve_response_code($response);
+        $raw = (string) wp_remote_retrieve_body($response);
+        $decoded = $this->decodeJsonResponse($raw);
+        if ($statusCode < 200 || $statusCode > 299) {
+            return [
+                'success' => false,
+                'status_code' => $statusCode,
+                'message' => $this->extractErrorMessage($decoded, $raw, $statusCode),
+                'data' => is_array($decoded) ? $decoded : [],
+                'raw_body' => $raw,
+            ];
+        }
+        if (!is_array($decoded)) {
+            return [
+                'success' => false,
+                'status_code' => $statusCode,
+                'message' => 'پاسخ API قابل تبدیل به JSON نیست.',
+                'data' => [],
+                'raw_body' => $raw,
+            ];
+        }
+
+        return [
+            'success' => true,
+            'status_code' => $statusCode,
+            'message' => '',
+            'data' => $decoded,
+            'raw_body' => $raw,
         ];
     }
 
