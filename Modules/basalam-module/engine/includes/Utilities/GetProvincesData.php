@@ -154,10 +154,10 @@ class GetProvincesData
         $stateMetaId = null;
         $cityMetaId  = null;
 
-        if (class_exists('Webino_Tapin_Locations', false) && Webino_Tapin_Locations::is_available()) {
-            $stateMetaId = Webino_Tapin_Locations::province_code_by_title($province);
+        if (class_exists(\Webino_Tapin_Locations::class, false) && \Webino_Tapin_Locations::is_available()) {
+            $stateMetaId = \Webino_Tapin_Locations::province_code_by_title($province);
             $cityMetaId  = $stateMetaId
-                ? Webino_Tapin_Locations::city_code_by_title((int) $stateMetaId, $city)
+                ? \Webino_Tapin_Locations::city_code_by_title((int) $stateMetaId, $city)
                 : null;
             if ($stateMetaId) {
                 $stateValue = (string) $stateMetaId;
@@ -193,13 +193,13 @@ class GetProvincesData
 
         if ($stateMetaId) {
             $order->update_meta_data("_{$type}_state_id", $stateMetaId);
-            if (class_exists('Webino_Tapin_Locations', false)) {
+            if (class_exists(\Webino_Tapin_Locations::class, false)) {
                 $order->update_meta_data('_webino_province_code', (int) $stateMetaId);
             }
         }
         if ($cityMetaId) {
             $order->update_meta_data("_{$type}_city_id", $cityMetaId);
-            if (class_exists('Webino_Tapin_Locations', false)) {
+            if (class_exists(\Webino_Tapin_Locations::class, false)) {
                 $order->update_meta_data('_webino_city_code', (int) $cityMetaId);
             }
         }
