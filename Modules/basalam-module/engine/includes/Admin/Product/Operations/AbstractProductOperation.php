@@ -15,6 +15,8 @@ abstract class AbstractProductOperation implements ProductOperationInterface
 {
     protected $validator;
 
+    protected $validationFailureMessage = '';
+
     public function __construct($validator = null)
     {
         $this->validator = $validator ?: webinoBasalamContainer()->get(ProductOperationValidator::class);
@@ -69,7 +71,10 @@ abstract class AbstractProductOperation implements ProductOperationInterface
     {
         $result = $this->validator->validate($product_id);
 
-        if (!$result['valid']) $this->validator->logValidationResult($product_id, $result, $this->getPersianOperationName());
+        if (!$result['valid']) {
+            $this->validationFailureMessage = (string) ($result['message'] ?? '');
+            $this->validator->logValidationResult($product_id, $result, $this->getPersianOperationName());
+        }
 
         return $result['valid'];
     }
@@ -100,10 +105,13 @@ abstract class AbstractProductOperation implements ProductOperationInterface
     protected function buildValidationErrorResult(int $product_id): array
     {
         $validation = $this->validator->validate($product_id);
+        $message = $this->validationFailureMessage !== ''
+            ? $this->validationFailureMessage
+            : (string) ($validation['message'] ?? '');
 
         return [
             'success' => false,
-            'message' => $validation['message'],
+            'message' => $message,
             'error' => 'validation_failed',
             'status_code' => 422,
             'product_id' => $product_id,

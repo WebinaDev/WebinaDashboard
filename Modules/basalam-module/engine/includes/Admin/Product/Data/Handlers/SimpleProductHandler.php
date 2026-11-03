@@ -118,14 +118,14 @@ class SimpleProductHandler implements ProductDataHandlerInterface
         if (class_exists(\Webino_Shipping_Weight::class, false) && is_a($product, 'WC_Product')) {
             $estimate = \Webino_Shipping_Weight::estimate_unit_package($product);
             $tare = isset($estimate['tare_g']) ? (int) $estimate['tare_g'] : 0;
-            return (int) ($weight + max(0, $tare));
+            return max($weight, (int) ($weight + max(0, $tare)));
         }
 
         $packageWeight = isset($this->settings[SettingsConfig::DEFAULT_PACKAGE_WEIGHT])
             ? (int) $this->settings[SettingsConfig::DEFAULT_PACKAGE_WEIGHT]
             : 0;
 
-        return (int) ($weight + $packageWeight);
+        return max($weight, (int) ($weight + $packageWeight));
     }
 
     public function getMainPhoto($product): ?int

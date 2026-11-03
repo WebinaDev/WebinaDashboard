@@ -75,6 +75,12 @@ class CreateProduct extends AbstractProductOperation
                 continue;
             }
 
+            $variationProduct = wc_get_product($variationId);
+            if (!$variationProduct || $variationProduct->get_status() !== 'publish') {
+                $skipped++;
+                continue;
+            }
+
             $pending++;
             $productData = null;
 
@@ -149,14 +155,13 @@ class CreateProduct extends AbstractProductOperation
         if ($product && $product->is_type('variable')) {
             $parentBasalamId = get_post_meta($product_id, ProductMetaKey::basalamProductId(), true);
             if (!empty($parentBasalamId)) {
-                Logger::warning(
-                    sprintf('محصول متغیر %d هنوز با مدل قدیمی (یک محصول + variants) متصل است. ابتدا قطع اتصال کنید.', $product_id),
-                    array(
-                        'product_id' => $product_id,
-                        'شناسه_محصول_باسلام' => $parentBasalamId,
-                        'عملیات' => $this->getOperationNameFromClass(),
-                    )
-                );
+                $message = sprintf('محصول متغیر %d هنوز با مدل قدیمی (یک محصول + variants) متصل است. ابتدا قطع اتصال کنید.', $product_id);
+                $this->validationFailureMessage = $message;
+                Logger::warning($message, array(
+                    'product_id' => $product_id,
+                    'شناسه_محصول_باسلام' => $parentBasalamId,
+                    'عملیات' => $this->getOperationNameFromClass(),
+                ));
                 return false;
             }
 
@@ -168,13 +173,12 @@ class CreateProduct extends AbstractProductOperation
                 }
             }
             if (!$pending) {
-                Logger::warning(
-                    sprintf('همهٔ متغیرهای محصول %d از قبل در باسلام ثبت شده‌اند.', $product_id),
-                    array(
-                        'product_id' => $product_id,
-                        'عملیات' => $this->getOperationNameFromClass(),
-                    )
-                );
+                $message = sprintf('همهٔ متغیرهای محصول %d از قبل در باسلام ثبت شده‌اند.', $product_id);
+                $this->validationFailureMessage = $message;
+                Logger::warning($message, array(
+                    'product_id' => $product_id,
+                    'عملیات' => $this->getOperationNameFromClass(),
+                ));
                 return false;
             }
 
@@ -183,7 +187,9 @@ class CreateProduct extends AbstractProductOperation
 
         $basalamProductId = get_post_meta($product_id, ProductMetaKey::basalamProductId(), true);
         if (!empty($basalamProductId)) {
-            Logger::warning(sprintf('محصول %d از قبل به باسلام متصل است.', $product_id), [
+            $message = sprintf('محصول %d از قبل به باسلام متصل است.', $product_id);
+            $this->validationFailureMessage = $message;
+            Logger::warning($message, [
                 'product_id' => $product_id,
                 'شناسه_محصول_باسلام' => $basalamProductId,
                 'عملیات' => $this->getOperationNameFromClass()

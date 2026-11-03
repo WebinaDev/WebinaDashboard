@@ -23,9 +23,16 @@ class UpdateSingleProductService
 
     public function updateProductInBasalam($productData, $productId)
     {
-        if (!get_post_type($productId) === 'product') throw NonRetryableException::invalidData('نوع post محصول نیست.');
+        $postType = get_post_type($productId);
+        if ($postType !== 'product' && $postType !== 'product_variation') {
+            throw NonRetryableException::invalidData('نوع post محصول نیست.');
+        }
 
         $productData = apply_filters('webino_basalam_product_data_before_update', $productData, $productId);
+
+        if (isset($productData['variants']) && $productData['variants'] === []) {
+            unset($productData['variants']);
+        }
 
         do_action('webino_basalam_before_update_product_api', $productId, $productData);
 

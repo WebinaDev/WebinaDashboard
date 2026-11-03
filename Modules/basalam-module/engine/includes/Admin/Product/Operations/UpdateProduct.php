@@ -53,12 +53,20 @@ class UpdateProduct extends AbstractProductOperation
     private function updateVariationsAsProducts($product, $categoryIds): array
     {
         $updated = 0;
+        $skipped = 0;
         $errors  = [];
         $lastOk  = null;
 
         foreach ($product->get_children() as $variationId) {
             $variationId = (int) $variationId;
             if (empty(get_post_meta($variationId, ProductMetaKey::basalamProductId(), true))) {
+                $skipped++;
+                continue;
+            }
+
+            $variationProduct = wc_get_product($variationId);
+            if (!$variationProduct || $variationProduct->get_status() !== 'publish') {
+                $skipped++;
                 continue;
             }
             try {
@@ -86,12 +94,22 @@ class UpdateProduct extends AbstractProductOperation
             throw new \Exception(esc_html('بروزرسانی محصولات متغیر ناموفق بود: ' . implode(' | ', $errors)));
         }
 
+        $message = sprintf('تعداد %d محصول متغیر در باسلام بروزرسانی شد.', $updated);
+        if ($skipped > 0) {
+            $message .= sprintf(' %d متغیر منتشرنشده یا هنوز ساخته‌نشده رد شد.', $skipped);
+        }
+        if (!empty($errors)) {
+            $message .= ' ' . implode(' | ', $errors);
+        }
+
         return array(
-            'success'     => true,
-            'message'     => sprintf('تعداد %d محصول متغیر در باسلام بروزرسانی شد.', $updated),
+            'success'     => $updated > 0 && empty($errors),
+            'message'     => $message,
             'status_code' => 200,
             'updated'     => $updated,
+            'skipped'     => $skipped,
             'errors'      => $errors,
+            'partial'     => $updated > 0 && !empty($errors),
         );
     }
 
@@ -101,6 +119,7 @@ class UpdateProduct extends AbstractProductOperation
 
         $validation = $this->validator->validateBasalamConnection($productId);
         if (!$validation['valid']) {
+            $this->validationFailureMessage = (string) ($validation['message'] ?? '');
             $this->validator->logValidationResult($productId, $validation, $this->getOperationNameFromClass());
             return false;
         }
