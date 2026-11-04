@@ -115,10 +115,39 @@ class Webino_Dashboard_Order_Reports {
 	 * @return float
 	 */
 	public static function order_net_total( $order ) {
-		if ( ! is_a( $order, 'WC_Order' ) ) {
+		if ( ! is_object( $order ) || ! is_callable( array( $order, 'get_total' ) ) ) {
 			return 0.0;
 		}
-		return max( 0.0, (float) $order->get_total() - (float) $order->get_total_refunded() );
+		$gross = (float) $order->get_total();
+		if ( self::basalam_sale_counts( $order ) && is_callable( array( $order, 'get_meta' ) ) ) {
+			$sale = $order->get_meta( '_basalam_sale_total' );
+			if ( is_numeric( $sale ) && (float) $sale > 0 ) {
+				$gross = (float) $sale;
+			}
+		}
+		$refunded = is_callable( array( $order, 'get_total_refunded' ) ) ? (float) $order->get_total_refunded() : 0.0;
+		return max( 0.0, $gross - $refunded );
+	}
+
+	/**
+	 * Paid Basalam orders (confirmed, shipped, or satisfaction recorded).
+	 *
+	 * Uses the stored Basalam status when Woo still has pending/processing.
+	 *
+	 * @param object $order Order.
+	 * @return bool
+	 */
+	public static function basalam_sale_counts( $order ) {
+		if ( ! is_object( $order ) || ! is_callable( array( $order, 'get_meta' ) ) ) {
+			return false;
+		}
+		if ( '1' !== (string) $order->get_meta( '_is_sync_basalam_order' ) ) {
+			return false;
+		}
+		$paid = array( 'bslm-preparation', 'bslm-shipping', 'bslm-completed' );
+		$status = self::normalize_status_slug( is_callable( array( $order, 'get_status' ) ) ? $order->get_status() : '' );
+		$remote = self::normalize_status_slug( (string) $order->get_meta( '_basalam_status_slug' ) );
+		return in_array( $status, $paid, true ) || in_array( $remote, $paid, true );
 	}
 
 	/**
@@ -128,6 +157,12 @@ class Webino_Dashboard_Order_Reports {
 	 * @return bool
 	 */
 	public static function order_counts_in_sale_metrics( $order ) {
+		if ( ! is_object( $order ) || ! is_callable( array( $order, 'get_status' ) ) ) {
+			return false;
+		}
+		if ( self::basalam_sale_counts( $order ) ) {
+			return self::order_net_total( $order ) > 0.00001;
+		}
 		if ( ! is_a( $order, 'WC_Order' ) ) {
 			return false;
 		}

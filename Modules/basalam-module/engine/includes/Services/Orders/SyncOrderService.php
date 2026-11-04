@@ -43,6 +43,10 @@ class SyncOrderService
             );
 
             if ($exists) {
+                $refreshed = OrderManager::refreshOrderFromInvoice($invoiceId);
+                if (!is_array($refreshed)) {
+                    OrderManager::applyListStatus($invoiceId, $order);
+                }
                 $skipped++;
                 continue;
             }

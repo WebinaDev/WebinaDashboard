@@ -98,7 +98,8 @@ class AdminRegistrar implements RegistrarInterface
         // Order Meta Boxes (Traditional CPT - non-HPOS)
         \add_action("add_meta_boxes_shop_order", [$orderMetaBox, "registerMetaBox"], 10);
 
-        // Order Statuses
+        // Order Statuses — register on init so cron/REST can persist bslm-* (otherwise Woo falls back to pending).
+        OrderStatuses::boot();
         \add_filter("wc_order_statuses", [$orderStatuses, "registerorderStatuses"]);
 
         // Order Stock Levels

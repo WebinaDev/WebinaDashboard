@@ -42,9 +42,24 @@ class TrackingCodeOrderService
             ];
         }
 
-        update_post_meta($orderId, '_basalam_order_tracking_code', $trackingCode);
+        $orderForMeta = function_exists('wc_get_order') ? wc_get_order($orderId) : null;
+        if ($orderForMeta) {
+            $orderForMeta->update_meta_data('_basalam_order_tracking_code', $trackingCode);
+            $orderForMeta->update_meta_data('_tracking_code', $trackingCode);
+            $orderForMeta->update_meta_data('_post_barcode', $trackingCode);
+            $orderForMeta->save();
+        } else {
+            update_post_meta($orderId, '_basalam_order_tracking_code', $trackingCode);
+        }
 
         $response = $this->sendTrackingCodeToBasalam($orderId, $trackingCode, $phoneNumber, $shippingMethod);
+        if ($response instanceof \WP_Error) {
+            return [
+                'success'     => false,
+                'message'     => $response->get_error_message(),
+                'status_code' => 500,
+            ];
+        }
 
         $statusCode = $response['status_code'];
         if ($statusCode !== 200 && $statusCode !== 201) {

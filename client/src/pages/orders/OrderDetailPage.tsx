@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CalendarDays, Hash, MessageSquare, Shield, Truck, UserRound } from 'lucide-react'
 import { Link, useMatch, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { toastApiError, ApiError } from '@/lib/apiError'
@@ -8,6 +9,7 @@ import { toastApiError, ApiError } from '@/lib/apiError'
 import { MarketplaceBadge } from '@/components/data/MarketplaceBadge'
 import { ModulePanel } from '@/components/ModulePanel'
 import { BasalamOrderActions } from '@/components/orders/BasalamOrderActions'
+import { BasalamOrderPanel } from '@/components/orders/BasalamOrderPanel'
 import { DigikalaOrderActions, digikalaWooStatusAllowed } from '@/components/orders/DigikalaOrderActions'
 import { OrderAddressBlock, type OrderAddress } from '@/components/orders/OrderAddressBlock'
 import { QueryErrorState } from '@/components/QueryErrorState'
@@ -28,7 +30,6 @@ import { PageShell } from '@/components/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
@@ -257,6 +258,50 @@ function visibleItemAttributes(
   })
 }
 
+function personName(address?: OrderAddress | null): string {
+  if (!address) return ''
+  if (address.name?.trim()) return address.name.trim()
+  return [address.first_name, address.last_name].filter(Boolean).join(' ').trim()
+}
+
+function customerLabel(
+  order: { is_guest?: boolean; billing?: OrderAddress },
+  billing: OrderAddress | null | undefined,
+  shipping: OrderAddress | null | undefined,
+  t: (key: string) => string,
+): string {
+  const name = personName(billing) || personName(shipping) || personName(order.billing)
+  if (name) return name
+  const email = billing?.email || order.billing?.email
+  if (email) return email
+  const phone = billing?.phone || shipping?.phone || order.billing?.phone
+  if (phone) return phone
+  return t('orders.guestCustomer')
+}
+
+function InfoTile({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Truck
+  label: string
+  value: string
+}) {
+  if (!value) return null
+  return (
+    <div className="bg-muted/40 flex items-start gap-2.5 rounded-xl px-3 py-2.5">
+      <span className="bg-background text-primary mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border">
+        <Icon className="size-4" aria-hidden />
+      </span>
+      <div className="min-w-0">
+        <p className="text-muted-foreground text-xs">{label}</p>
+        <p className="break-words text-sm font-medium">{value}</p>
+      </div>
+    </div>
+  )
+}
+
 function addressesEqual(a?: OrderAddress | null, b?: OrderAddress | null): boolean {
   if (!a || !b) return false
   const norm = (x: OrderAddress) =>
@@ -413,7 +458,11 @@ export default function OrderDetailPage() {
     q.isError &&
     q.error instanceof ApiError &&
     (q.error.status === 404 || q.error.code === 'not_found')
-  const paymentTitle = order?.payment_method_title || order?.payment_method || t('common.emptyValue')
+  const rawPayment = order?.payment_method_title || order?.payment_method || ''
+  const paymentTitle =
+    /basalam/i.test(rawPayment) || order?.marketplace === 'basalam'
+      ? t('basalam.paymentTitle')
+      : rawPayment || t('common.emptyValue')
   const digipay = order?.payment_gateway_meta
   const billingAddr = order?.billing_formatted ?? order?.billing
   const shippingAddr = order?.shipping_formatted ?? order?.shipping
@@ -436,6 +485,9 @@ export default function OrderDetailPage() {
         <QueryErrorState onRetry={() => void q.refetch()} />
       ) : order ? (
         <div className="space-y-6">
+          {order.marketplace === 'basalam' ? (
+            <BasalamOrderPanel orderId={order.id} />
+          ) : null}
           <Card className="shadow-sm">
             <CardContent className="flex flex-col gap-4 pt-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-2">
@@ -551,37 +603,26 @@ export default function OrderDetailPage() {
                   <CardTitle className="text-base">{t('orders.sectionGeneral')}</CardTitle>
                 </CardHeader>
                 <CardContent className="min-w-0 space-y-4">
-                  <dl className="grid min-w-0 gap-3 sm:grid-cols-2">
-                    <div className="min-w-0">
-                      <dt className="text-muted-foreground text-xs">{t('orders.orderDate')}</dt>
-                      <dd className="break-words text-sm">{formatDisplayDateTime(order.date_created ?? undefined, locale)}</dd>
-                    </div>
-                    <div className="min-w-0">
-                      <dt className="text-muted-foreground text-xs">{t('orders.customer')}</dt>
-                      <dd className="break-words text-sm">
-                        {order.is_guest
-                          ? t('orders.guestCustomer')
-                          : order.billing?.email || t('common.emptyValue')}
-                      </dd>
-                    </div>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <InfoTile
+                      icon={CalendarDays}
+                      label={t('orders.orderDate')}
+                      value={formatDisplayDateTime(order.date_created ?? undefined, locale)}
+                    />
+                    <InfoTile icon={UserRound} label={t('orders.customer')} value={customerLabel(order, billingAddr, shippingAddr, t)} />
                     {order.shipping_method ? (
-                      <div className="min-w-0">
-                        <dt className="text-muted-foreground text-xs">{t('orders.shippingMethod')}</dt>
-                        <dd className="break-words text-sm">{order.shipping_method}</dd>
-                      </div>
+                      <InfoTile icon={Truck} label={t('orders.shippingMethod')} value={order.shipping_method} />
                     ) : null}
                     {order.national_id ? (
-                      <div className="min-w-0">
-                        <dt className="text-muted-foreground text-xs">{t('orders.nationalId')}</dt>
-                        <dd className="break-all text-sm">{localizeDigits(order.national_id, locale)}</dd>
-                      </div>
+                      <InfoTile icon={Hash} label={t('orders.nationalId')} value={localizeDigits(order.national_id, locale)} />
                     ) : null}
-                  </dl>
+                  </div>
 
                   {canManageOrders ? (
                     <>
                   <Separator />
 
+                  {order.marketplace !== 'basalam' ? (
                   <OrderStatusStepper
                     currentStatus={order.status}
                     availableStatuses={
@@ -594,38 +635,38 @@ export default function OrderDetailPage() {
                     onShip={() => setShipOpen(true)}
                     onCancel={() => requestStatusChange('cancelled')}
                   />
+                  ) : null}
 
                   {order.marketplace === 'digikala' ? (
                     <DigikalaOrderActions orderId={order.id} order={order} onDone={invalidateOrder} />
                   ) : null}
                   {order.marketplace === 'basalam' ? (
-                    <BasalamOrderActions orderId={order.id} order={order} onDone={invalidateOrder} />
+                    <BasalamOrderActions orderId={order.id} order={order} phone={phone} onDone={invalidateOrder} />
                   ) : null}
 
                   <Separator />
 
-                  <div className="space-y-2">
-                    <Label>{t('orders.sms.title')}</Label>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={sendSms.isPending}
-                        onClick={() => sendSms.mutate({ force_customer: true })}
-                      >
-                        {t('orders.sms.sendCustomer')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={sendSms.isPending}
-                        onClick={() => sendSms.mutate({ force_admin: true })}
-                      >
-                        {t('orders.sms.sendAdmin')}
-                      </Button>
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={sendSms.isPending}
+                      onClick={() => sendSms.mutate({ force_customer: true })}
+                    >
+                      <MessageSquare className="size-3.5" aria-hidden />
+                      {t('orders.sms.sendCustomer')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={sendSms.isPending}
+                      onClick={() => sendSms.mutate({ force_admin: true })}
+                    >
+                      <Shield className="size-3.5" aria-hidden />
+                      {t('orders.sms.sendAdmin')}
+                    </Button>
                   </div>
                     </>
                   ) : null}

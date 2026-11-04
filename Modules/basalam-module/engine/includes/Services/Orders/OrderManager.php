@@ -487,31 +487,42 @@ class OrderManager
                 $order->set_total($total_price);
             }
 
-            $order->set_payment_method('basalam payment method');
-            $order->set_payment_method_title('Basalam Payment');
+            $order->set_payment_method('basalam');
+            $order->set_payment_method_title('پرداخت باسلام');
 
-            $orderStatusType = webinoBasalamSettings()->getSettings(SettingsConfig::ORDER_STATUES_TYPE);
+            $createdAt = self::parseBasalamTime($data['created_at'] ?? $data['paid_at'] ?? null);
+            if ($createdAt) {
+                $order->set_date_created($createdAt);
+            }
 
-            $status_map = [
-                3067 => 'bslm-rejected',
-                3739 => 'bslm-wait-vendor',
-                3237 => 'bslm-preparation',
-                3238 => 'bslm-shipping',
-                3195 => 'bslm-completed',
-                3233 => 'bslm-rejected',
-            ];
-            $status_id = $data['status']['id'] ?? null;
+            $remoteStatus = self::wooStatusForBasalam($data);
+            $order->set_status($remoteStatus !== '' ? $remoteStatus : 'bslm-wait-vendor');
 
-            if ($orderStatusType == 'woocommerce_statuses') {
-                $order->set_status('processing');
-            } else {
-                $order_status = $status_map[$status_id] ?? 'bslm-wait-vendor';
-                $order->set_status($order_status);
+            $tracking = self::pickString($data, [
+                'parcel_detail.tracking_code',
+                'parcel_detail.post_tracking_code',
+                'shipping.tracking_code',
+                'tracking_code',
+            ]);
+            if ($tracking !== '') {
+                $order->update_meta_data('_tracking_code', $tracking);
+                $order->update_meta_data('_post_barcode', $tracking);
+                $order->update_meta_data('_basalam_order_tracking_code', $tracking);
             }
 
             $purchase_count = $data['customer_data']['purchase_count'] ?? 0;
             $fee_amount = self::findFeeAmountRial($data);
             $balance_amount = (float) ($data['financial_report']['product_cost']['total']['amount'] ?? 0);
+            $sale_total = self::saleTotalFromInvoice($data);
+            if ($sale_total > 0) {
+                $order->set_total($sale_total);
+                $order->update_meta_data('_basalam_sale_total', $sale_total);
+            }
+            $status_slug = self::wooStatusForBasalam($data);
+            if ($status_slug !== '') {
+                $order->update_meta_data('_basalam_status_slug', $status_slug);
+            }
+            self::attachStoreCustomer($order, $data);
 
             // Basalam API amounts are rial. Keep raw rial for accounting, and the
             // legacy meta in toman (the order meta box labels it «تومان").
@@ -528,6 +539,9 @@ class OrderManager
             // Order meta API (HPOS-safe); dashboard marketplace filter queries this key.
             $order->update_meta_data('_is_sync_basalam_order', '1');
             $order->update_meta_data('_basalam_invoice_id', (string) $invoice_id);
+            if (class_exists('Webino_Basalam_Order_View')) {
+                \Webino_Basalam_Order_View::remember($order, $data);
+            }
 
             self::executeWithoutWccfOrderSaveHooks(function () use ($order) {
                 $order->save();
@@ -902,6 +916,570 @@ class OrderManager
         }
 
         return null;
+    }
+
+    /**
+     * Re-read a Basalam invoice and apply its status, date and tracking onto the Woo order.
+     *
+     * @return array<string,mixed>|null Raw invoice, or null when it cannot be loaded.
+     */
+    public static function refreshOrderFromInvoice($invoiceId)
+    {
+        $invoiceId = (int) $invoiceId;
+        $orderId = self::findOrderIdByInvoiceMeta($invoiceId);
+        if ($orderId < 1) {
+            return null;
+        }
+        $order = wc_get_order($orderId);
+        if (!$order) {
+            return null;
+        }
+        $data = self::fetchInvoice($invoiceId);
+        if (!is_array($data)) {
+            return null;
+        }
+        self::applyRemoteState($order, $data);
+        return $data;
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public static function fetchInvoice($invoiceId)
+    {
+        $vendorId = webinoBasalamSettings()->getSettings(SettingsConfig::VENDOR_ID);
+        if (!$vendorId || !$invoiceId) {
+            return null;
+        }
+        try {
+            $api = webinoBasalamContainer()->get(ApiServiceManager::class);
+            $response = $api->get(sprintf(Endpoints::ORDER_DETAIL, $vendorId, (int) $invoiceId));
+            $body = $response['body'] ?? '';
+            $data = is_array($body) ? $body : json_decode((string) $body, true);
+            return is_array($data) ? $data : null;
+        } catch (\Throwable $e) {
+            Logger::error('خطا در دریافت جزئیات سفارش باسلام: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * @param \WC_Order            $order Order.
+     * @param array<string,mixed>  $data  Invoice payload.
+     */
+    public static function applyRemoteState($order, array $data)
+    {
+        $slug = self::wooStatusForBasalam($data);
+        $current = $order->get_status();
+        $frozen = ['refunded', 'cancelled', 'trash', 'failed'];
+        if ($slug !== '' && $slug !== $current && !in_array($current, $frozen, true)) {
+            $order->set_status($slug);
+        }
+
+        $title = (string) $order->get_payment_method_title();
+        if ($title === '' || stripos($title, 'basalam') !== false) {
+            $order->set_payment_method('basalam');
+            $order->set_payment_method_title('پرداخت باسلام');
+        }
+
+        if (!$order->get_meta('_basalam_date_applied')) {
+            $createdAt = self::parseBasalamTime($data['created_at'] ?? $data['paid_at'] ?? null);
+            if ($createdAt) {
+                $order->set_date_created($createdAt);
+                $order->update_meta_data('_basalam_date_applied', '1');
+            }
+        }
+
+        $tracking = self::pickString($data, [
+            'parcel_detail.tracking_code',
+            'parcel_detail.post_tracking_code',
+            'shipping.tracking_code',
+            'tracking_code',
+        ]);
+        if ($tracking !== '' && $order->get_meta('_tracking_code') === '') {
+            $order->update_meta_data('_tracking_code', $tracking);
+            $order->update_meta_data('_post_barcode', $tracking);
+            $order->update_meta_data('_basalam_order_tracking_code', $tracking);
+        }
+
+        if ($slug !== '') {
+            $order->update_meta_data('_basalam_status_slug', $slug);
+        }
+        $saleTotal = self::saleTotalFromInvoice($data);
+        if ($saleTotal > 0) {
+            $order->set_total($saleTotal);
+            $order->update_meta_data('_basalam_sale_total', $saleTotal);
+        }
+        self::attachStoreCustomer($order, $data);
+        if (class_exists('Webino_Basalam_Order_View')) {
+            \Webino_Basalam_Order_View::remember($order, $data);
+        }
+
+        $order->save();
+    }
+
+    /**
+     * Vendor receivable in store currency: product net plus shipping the booth keeps.
+     *
+     * @param array<string,mixed> $data Invoice.
+     */
+    public static function saleTotalFromInvoice(array $data): float
+    {
+        $report = isset($data['financial_report']) && is_array($data['financial_report']) ? $data['financial_report'] : [];
+        $product = self::reportTotalRial($report, ['product_cost', 'product_submit']);
+        $shipping = self::reportTotalRial($report, ['shipping_cost', 'shipping_submit']);
+        $rial = $product + $shipping;
+        return $rial > 0 ? (float) self::rialToStore($rial) : 0.0;
+    }
+
+    /**
+     * @param array<string,mixed> $report Financial report.
+     * @param array<int,string>   $keys Block keys, first positive total wins.
+     */
+    private static function reportTotalRial(array $report, array $keys): float
+    {
+        foreach ($keys as $key) {
+            $block = $report[$key] ?? null;
+            if (!is_array($block)) {
+                continue;
+            }
+            $amount = $block['total']['amount'] ?? ($block['total'] ?? null);
+            if (is_numeric($amount) && (float) $amount > 0) {
+                return (float) $amount;
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * Apply a vendor-parcel list row when the invoice detail request failed.
+     *
+     * @param int                 $invoiceId Invoice id.
+     * @param array<string,mixed> $parcel List row.
+     */
+    public static function applyListStatus($invoiceId, array $parcel)
+    {
+        $orderId = self::findOrderIdByInvoiceMeta($invoiceId);
+        if ($orderId < 1) {
+            return;
+        }
+        $order = wc_get_order($orderId);
+        if (!$order) {
+            return;
+        }
+        $status = self::extractStatusNode($parcel);
+        if ($status === null || $status === '') {
+            return;
+        }
+        self::applyRemoteState($order, ['status' => $status]);
+    }
+
+    /**
+     * Move Basalam orders off Woo pending/processing onto the Basalam status.
+     *
+     * Runs from the orders list and the home sales card so existing imports
+     * leave «در انتظار» and enter sales totals without a manual re-fetch.
+     */
+    public static function repairStuckStatuses()
+    {
+        if (get_transient('webino_bslm_status_repair')) {
+            return;
+        }
+        set_transient('webino_bslm_status_repair', '1', 2 * MINUTE_IN_SECONDS);
+        if (!function_exists('wc_get_orders')) {
+            return;
+        }
+
+        $stuck = self::stuckBasalamOrderIds();
+        if (!$stuck) {
+            return;
+        }
+
+        $changed = self::applyStoredBasalamStatuses($stuck);
+        $stuck = self::stuckBasalamOrderIds();
+        if ($stuck) {
+            try {
+                $changed += self::syncStatusesFromParcelList(180);
+            } catch (\Throwable $e) {
+                Logger::error('همگام‌سازی وضعیت سفارش‌های باسلام ناموفق بود: ' . $e->getMessage());
+            }
+            $stuck = self::stuckBasalamOrderIds();
+        }
+        if ($stuck) {
+            $fetched = 0;
+            foreach ($stuck as $orderId) {
+                if ($fetched >= 15) {
+                    break;
+                }
+                $order = wc_get_order($orderId);
+                $invoice = $order ? (string) $order->get_meta('_basalam_invoice_id') : '';
+                if ($invoice !== '' && is_array(self::refreshOrderFromInvoice($invoice))) {
+                    $changed++;
+                }
+                $fetched++;
+            }
+        }
+        if ($changed > 0) {
+            self::flushSalesCaches();
+        }
+    }
+
+    /**
+     * @return int[]
+     */
+    private static function stuckBasalamOrderIds(): array
+    {
+        $ids = wc_get_orders([
+            'limit'      => 50,
+            'return'     => 'ids',
+            'status'     => ['pending', 'processing', 'on-hold'],
+            'meta_query' => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+                [
+                    'key'     => '_basalam_invoice_id',
+                    'compare' => 'EXISTS',
+                ],
+            ],
+        ]);
+        $out = [];
+        foreach ((array) $ids as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $out[] = $id;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param int[] $ids Order ids.
+     */
+    private static function applyStoredBasalamStatuses(array $ids): int
+    {
+        $valid = ['bslm-rejected', 'bslm-preparation', 'bslm-wait-vendor', 'bslm-shipping', 'bslm-completed'];
+        $changed = 0;
+        foreach ($ids as $orderId) {
+            $order = wc_get_order($orderId);
+            if (!$order) {
+                continue;
+            }
+            $slug = (string) $order->get_meta('_basalam_status_slug');
+            if (!in_array($slug, $valid, true)) {
+                $slug = self::slugFromSnapshot($order);
+            }
+            if (!in_array($slug, $valid, true) || $slug === $order->get_status()) {
+                continue;
+            }
+            $order->update_meta_data('_basalam_status_slug', $slug);
+            $order->set_status($slug);
+            $order->save();
+            $changed++;
+        }
+        return $changed;
+    }
+
+    /**
+     * @param \WC_Order $order Order.
+     */
+    private static function slugFromSnapshot($order): string
+    {
+        $raw = $order->get_meta('_basalam_order_snapshot');
+        if (!is_string($raw) || $raw === '') {
+            return '';
+        }
+        $view = json_decode($raw, true);
+        if (!is_array($view)) {
+            return '';
+        }
+        $slug = isset($view['woo_status']) ? (string) $view['woo_status'] : '';
+        if ($slug !== '') {
+            return $slug;
+        }
+        $id = (int) ($view['status_id'] ?? 0);
+        return $id > 0 ? self::wooStatusForBasalam(['status' => ['id' => $id]]) : '';
+    }
+
+    /**
+     * Pull recent vendor parcels and copy each Basalam status onto the Woo order.
+     *
+     * @param int $days Lookback.
+     */
+    private static function syncStatusesFromParcelList($days): int
+    {
+        $vendorReady = function_exists('webinoBasalamContainer') && function_exists('webinoBasalamSettings');
+        if (!$vendorReady) {
+            return 0;
+        }
+        $api = webinoBasalamContainer()->get(ApiServiceManager::class);
+        $since = gmdate('c', time() - max(1, (int) $days) * DAY_IN_SECONDS);
+        $cursor = null;
+        $pages = 0;
+        $changed = 0;
+        do {
+            $url = Endpoints::VENDOR_PARCELS . '?per_page=30&created_at%5Bgte%5D=' . rawurlencode($since);
+            if ($cursor) {
+                $url .= '&cursor=' . rawurlencode((string) $cursor);
+            }
+            $response = $api->get($url);
+            $body = $response['body'] ?? '';
+            $decoded = is_array($body) ? $body : json_decode((string) $body, true);
+            if (!is_array($decoded)) {
+                break;
+            }
+            foreach ((array) ($decoded['data'] ?? []) as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $invoice = $row['order']['id'] ?? ($row['order_id'] ?? null);
+                if (!$invoice) {
+                    continue;
+                }
+                $orderId = self::findOrderIdByInvoiceMeta($invoice);
+                $order = $orderId > 0 ? wc_get_order($orderId) : null;
+                $before = $order ? $order->get_status() : '';
+                self::applyListStatus((int) $invoice, $row);
+                if ($order) {
+                    $fresh = wc_get_order($orderId);
+                    if ($fresh && $fresh->get_status() !== $before) {
+                        $changed++;
+                    }
+                }
+            }
+            $cursor = $decoded['next_cursor'] ?? null;
+            $pages++;
+        } while ($cursor && $pages < 8);
+
+        return $changed;
+    }
+
+    private static function flushSalesCaches()
+    {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%webino_dashboard_sales_v%'" );
+    }
+
+    /**
+     * Refresh Basalam orders whose Woo status can still change.
+     *
+     * @param int $limit Max orders.
+     */
+    public static function refreshStaleOrders($limit = 20)
+    {
+        if (!function_exists('wc_get_orders')) {
+            return;
+        }
+        $ids = wc_get_orders([
+            'limit'      => max(1, (int) $limit),
+            'return'     => 'ids',
+            'status'     => ['pending', 'processing', 'on-hold', 'bslm-wait-vendor', 'bslm-preparation', 'bslm-shipping'],
+            'meta_key'   => '_is_sync_basalam_order', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+            'meta_value' => '1', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+        ]);
+        foreach ((array) $ids as $orderId) {
+            $order = wc_get_order($orderId);
+            if (!$order) {
+                continue;
+            }
+            $invoice = (string) $order->get_meta('_basalam_invoice_id');
+            if ($invoice !== '') {
+                self::refreshOrderFromInvoice($invoice);
+            }
+        }
+    }
+
+    /**
+     * Create or reuse a store customer from the Basalam recipient name and phone.
+     *
+     * @param \WC_Order           $order Order.
+     * @param array<string,mixed> $data Invoice.
+     */
+    private static function attachStoreCustomer($order, array $data)
+    {
+        if ((int) $order->get_customer_id() > 0) {
+            return;
+        }
+        $recipient = $data['customer_data']['recipient'] ?? null;
+        if (!is_array($recipient)) {
+            return;
+        }
+        $userId = self::ensureStoreCustomer($recipient);
+        if ($userId > 0) {
+            $order->set_customer_id($userId);
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $recipient Recipient.
+     */
+    private static function ensureStoreCustomer(array $recipient): int
+    {
+        $phone = trim((string) ($recipient['mobile'] ?? $recipient['phone'] ?? ''));
+        $digits = preg_replace('/\D+/', '', $phone);
+        $name = trim((string) ($recipient['name'] ?? ''));
+        if ($digits === '' || !function_exists('wp_insert_user')) {
+            return 0;
+        }
+        $local = $digits;
+        if (strpos($digits, '98') === 0 && strlen($digits) > 10) {
+            $local = '0' . substr($digits, 2);
+        }
+        $candidates = array_unique(array_filter([$phone, $digits, $local]));
+        foreach ($candidates as $candidate) {
+            $found = get_users([
+                'meta_key'   => 'billing_phone', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                'meta_value' => $candidate, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                'number'     => 1,
+                'fields'     => 'ID',
+            ]);
+            if (!empty($found)) {
+                return (int) $found[0];
+            }
+        }
+        $login = 'bslm' . $local;
+        $existing = get_user_by('login', $login);
+        if ($existing) {
+            update_user_meta($existing->ID, 'billing_phone', $local);
+            return (int) $existing->ID;
+        }
+        $parts = preg_split('/\s+/u', $name, -1, PREG_SPLIT_NO_EMPTY);
+        $first = $parts[0] ?? $name;
+        $last = is_array($parts) && count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : '';
+        $created = wp_insert_user([
+            'user_login'   => $login,
+            'user_pass'    => wp_generate_password(24),
+            'display_name' => $name !== '' ? $name : $local,
+            'first_name'   => $first,
+            'last_name'    => $last,
+            'role'         => 'customer',
+        ]);
+        if (is_wp_error($created)) {
+            return 0;
+        }
+        $userId = (int) $created;
+        update_user_meta($userId, 'billing_phone', $local);
+        update_user_meta($userId, 'billing_first_name', $first);
+        update_user_meta($userId, 'billing_last_name', $last);
+        return $userId;
+    }
+
+    /**
+     * @param array<string,mixed> $data Invoice payload.
+     */
+    public static function wooStatusForBasalam(array $data): string
+    {
+        $status = self::extractStatusNode($data);
+        $id = 0;
+        $title = '';
+        if (is_array($status)) {
+            $id = (int) ($status['id'] ?? $status['status_id'] ?? 0);
+            $title = (string) ($status['title'] ?? $status['name'] ?? '');
+        } elseif (is_numeric($status)) {
+            $id = (int) $status;
+        } elseif (is_string($status)) {
+            $title = $status;
+        }
+
+        $map = [
+            3067 => 'bslm-rejected',
+            3233 => 'bslm-rejected',
+            3739 => 'bslm-wait-vendor',
+            3237 => 'bslm-preparation',
+            3238 => 'bslm-shipping',
+            3195 => 'bslm-completed',
+        ];
+        if (isset($map[$id])) {
+            return $map[$id];
+        }
+        if (preg_match('/لغو|رد شده|مرجوع/u', $title)) {
+            return 'bslm-rejected';
+        }
+        if (preg_match('/انتظار فروشنده|انتظار تایید|انتظار تأیید|تایید غرفه|تأیید غرفه/u', $title)) {
+            return 'bslm-wait-vendor';
+        }
+        if (preg_match('/تکمیل|رضایت/u', $title)) {
+            return 'bslm-completed';
+        }
+        if (preg_match('/ارسال/u', $title)) {
+            return 'bslm-shipping';
+        }
+        if (preg_match('/آماد|تایید شده|تأیید شده/u', $title)) {
+            return 'bslm-preparation';
+        }
+        if ($id === 0 && $title === '') {
+            return '';
+        }
+        return 'bslm-wait-vendor';
+    }
+
+    /**
+     * @param array<string,mixed> $data Payload.
+     * @return mixed
+     */
+    private static function extractStatusNode(array $data)
+    {
+        $paths = [
+            ['status'],
+            ['order', 'status'],
+            ['parcel_detail', 'status'],
+            ['order_status'],
+            ['current_status'],
+        ];
+        foreach ($paths as $path) {
+            $cur = $data;
+            $found = true;
+            foreach ($path as $key) {
+                if (!is_array($cur) || !array_key_exists($key, $cur)) {
+                    $found = false;
+                    break;
+                }
+                $cur = $cur[$key];
+            }
+            if ($found && $cur !== null && $cur !== '') {
+                return $cur;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @param mixed $value Timestamp or date string.
+     */
+    public static function parseBasalamTime($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (is_numeric($value)) {
+            $n = (int) $value;
+            if ($n > 100000000000) {
+                $n = (int) floor($n / 1000);
+            }
+            return $n > 1000000000 ? $n : null;
+        }
+        $ts = strtotime((string) $value);
+        return $ts ? (int) $ts : null;
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     * @param array<int,string>   $paths
+     */
+    public static function pickString(array $data, array $paths): string
+    {
+        foreach ($paths as $path) {
+            $cur = $data;
+            foreach (explode('.', $path) as $key) {
+                if (!is_array($cur) || !array_key_exists($key, $cur)) {
+                    $cur = null;
+                    break;
+                }
+                $cur = $cur[$key];
+            }
+            if (is_scalar($cur) && trim((string) $cur) !== '') {
+                return trim((string) $cur);
+            }
+        }
+        return '';
     }
 
     private static function createRestResponse(array $result)

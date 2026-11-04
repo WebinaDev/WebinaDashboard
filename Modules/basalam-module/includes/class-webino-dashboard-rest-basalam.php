@@ -65,6 +65,7 @@ final class Webino_Dashboard_REST_Basalam {
 			'/basalam/orders/cancel-request'     => array( 'POST' => 'order_cancel_request' ),
 			'/basalam/orders/delay'              => array( 'POST' => 'order_delay' ),
 			'/basalam/orders/tracking'           => array( 'POST' => 'order_tracking' ),
+			'/basalam/orders/view'               => array( 'GET' => 'order_view' ),
 			'/basalam/categories'                => array( 'GET' => 'categories_get' ),
 			'/basalam/categories/detect'         => array( 'POST' => 'categories_detect' ),
 			'/basalam/categories/attributes'     => array( 'GET' => 'categories_attributes' ),
@@ -1549,13 +1550,33 @@ final class Webino_Dashboard_REST_Basalam {
 		return new WP_REST_Response( array( 'ok' => true, 'result' => $result ) );
 	}
 
+	public static function order_view( WP_REST_Request $request ) {
+		if ( ! class_exists( 'Webino_Basalam_Order_View' ) ) {
+			return new WP_Error( 'basalam_order', 'Order view unavailable', array( 'status' => 503 ) );
+		}
+		return Webino_Basalam_Order_View::rest( absint( $request->get_param( 'order_id' ) ) );
+	}
+
 	public static function order_tracking( WP_REST_Request $request ) {
 		$order_id = absint( $request->get_param( 'order_id' ) );
 		$code     = sanitize_text_field( (string) $request->get_param( 'tracking_code' ) );
 		$method   = absint( $request->get_param( 'shipping_method' ) ) ?: 3197;
 		$phone    = sanitize_text_field( (string) $request->get_param( 'phone' ) );
+		if ( '' === $phone && function_exists( 'wc_get_order' ) ) {
+			$order = wc_get_order( $order_id );
+			if ( $order ) {
+				$phone = sanitize_text_field( (string) ( $order->get_billing_phone() ?: $order->get_shipping_phone() ) );
+			}
+		}
 		$svc = new \WebinoBasalam\Services\Orders\TrackingCodeOrderService();
 		$result = $svc->trackingCodeOnBasalam( $order_id, $code, $phone, $method );
+		if ( empty( $result['success'] ) ) {
+			return new WP_Error(
+				'basalam_tracking',
+				(string) ( $result['message'] ?? __( 'ثبت کد رهگیری ناموفق بود.', 'webino-dashboard' ) ),
+				array( 'status' => (int) ( $result['status_code'] ?? 400 ) ?: 400 )
+			);
+		}
 		return new WP_REST_Response( array( 'ok' => true, 'result' => $result ) );
 	}
 

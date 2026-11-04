@@ -4,14 +4,33 @@ namespace WebinoBasalam\Admin\Order;
 
 class OrderStatuses
 {
+    public static function boot(): void
+    {
+        \add_action('init', [self::class, 'registerPostStatuses'], 5);
+    }
+
+    public static function registerPostStatuses(): void
+    {
+        $statuses = (new self())->getBasalamOrderStatuses();
+        foreach ($statuses as $key => $label) {
+            \register_post_status($key, [
+                'label'                     => $label,
+                'public'                    => true,
+                'show_in_admin_all_list'    => true,
+                'show_in_admin_status_list' => true,
+                'wc_status'                 => true,
+            ]);
+        }
+    }
+
     public function getBasalamOrderStatuses()
     {
         return [
-            "wc-bslm-rejected"     => "(باسلام) لغو شده",
-            "wc-bslm-preparation" => "(باسلام) آماده‌سازی سفارش",
-            "wc-bslm-wait-vendor" => "(باسلام) در انتظار تایید غرفه دار",
-            "wc-bslm-shipping"    => "(باسلام) ارسال سفارش برای مشتری",
-            "wc-bslm-completed"   => "(باسلام) تکمیل شده",
+            "wc-bslm-rejected"    => "ردشده",
+            "wc-bslm-preparation" => "آماده‌سازی",
+            "wc-bslm-wait-vendor" => "انتظار فروشنده",
+            "wc-bslm-shipping"    => "ارسال",
+            "wc-bslm-completed"   => "تکمیل",
         ];
     }
 

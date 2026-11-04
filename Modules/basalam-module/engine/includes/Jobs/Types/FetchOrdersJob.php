@@ -42,6 +42,10 @@ class FetchOrdersJob extends AbstractJobType
         $cursor = $payload['cursor'] ?? null;
         $day = $payload['day'] ?? 7;
 
+        if ($cursor === null && class_exists(\WebinoBasalam\Services\Orders\OrderManager::class)) {
+            \WebinoBasalam\Services\Orders\OrderManager::refreshStaleOrders(20);
+        }
+
         try {
             $fetchResult = $this->fetchOrdersService->fetchPage($day, $cursor);
         } catch (RetryableException $e) {

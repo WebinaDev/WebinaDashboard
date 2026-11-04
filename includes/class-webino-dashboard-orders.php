@@ -606,6 +606,9 @@ class Webino_Dashboard_Orders {
 		if ( ! self::wc_active() ) {
 			return $counts;
 		}
+		if ( $customer_id < 1 && class_exists( '\WebinoBasalam\Services\Orders\OrderManager' ) ) {
+			\WebinoBasalam\Services\Orders\OrderManager::repairStuckStatuses();
+		}
 		$statuses = wc_get_order_statuses();
 		$total    = 0;
 		if ( $customer_id > 0 ) {

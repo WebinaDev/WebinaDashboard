@@ -424,8 +424,11 @@ class Webino_Dashboard_Home_Overview {
 	 * @return array<string,mixed>
 	 */
 	private static function sales_section_cached( $locale ) {
+		if ( class_exists( '\WebinoBasalam\Services\Orders\OrderManager' ) ) {
+			\WebinoBasalam\Services\Orders\OrderManager::repairStuckStatuses();
+		}
 		$user_id = get_current_user_id();
-		$key     = 'webino_dashboard_sales_v4_' . (int) $user_id . '_' . md5( $locale );
+		$key     = 'webino_dashboard_sales_v6_' . (int) $user_id . '_' . md5( $locale );
 		if ( $user_id > 0 ) {
 			$cached = get_transient( $key );
 			if ( is_array( $cached ) ) {

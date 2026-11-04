@@ -16,6 +16,12 @@ import { formatAttributionSource, translateOrderStatus } from '@/lib/enumLabels'
 import { utmDisplayLabel } from '@/lib/utmLabel'
 import { cn } from '@/lib/utils'
 
+function paymentLabel(row: OrderListRow, t: (key: string) => string): string {
+  const raw = row.payment_method_title || row.payment_method || ''
+  if (/basalam/i.test(raw) || row.marketplace === 'basalam') return t('basalam.paymentTitle')
+  return raw || t('common.emptyValue')
+}
+
 export type OrderListRow = {
   id: number
   number: string
@@ -148,7 +154,10 @@ export function OrdersTable({
                       <Link to={`${detailBase}/${row.id}`} className="text-primary font-medium hover:underline">
                         #{localizeDigits(row.number, locale)}
                       </Link>
-                      <p className="truncate text-sm">{row.customer_name || t('common.emptyValue')}</p>
+                      <p className="flex flex-wrap items-center gap-1 truncate text-sm">
+                        <span className="truncate">{row.customer_name || t('common.emptyValue')}</span>
+                        {row.marketplace === 'basalam' ? <MarketplaceBadge slug="basalam" /> : null}
+                      </p>
                       {row.is_pos ? (
                         <Badge variant="outline" className="mt-1">
                           {t('pos.badge')}
@@ -180,9 +189,7 @@ export function OrdersTable({
                   />
                 </div>
                 {row.payment_method_title || row.payment_method ? (
-                  <p className="text-muted-foreground truncate text-xs">
-                    {row.payment_method_title || row.payment_method}
-                  </p>
+                  <p className="text-muted-foreground truncate text-xs">{paymentLabel(row, t)}</p>
                 ) : null}
               </MobileListCard>
             )
@@ -246,7 +253,12 @@ export function OrdersTable({
                     #{localizeDigits(row.number, locale)}
                   </Link>
                 </TableCell>
-                <TableCell className="text-sm">{row.customer_name || t('common.emptyValue')}</TableCell>
+                <TableCell className="text-sm">
+                  <span className="inline-flex flex-wrap items-center gap-1">
+                    <span>{row.customer_name || t('common.emptyValue')}</span>
+                    {row.marketplace === 'basalam' ? <MarketplaceBadge slug="basalam" /> : null}
+                  </span>
+                </TableCell>
                 <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                   {formatDisplayDateTime(row.date ?? undefined, locale)}
                 </TableCell>
@@ -278,7 +290,7 @@ export function OrdersTable({
                   )}
                 </TableCell>
                 <TableCell className="max-w-[8rem] truncate text-sm">
-                  {row.payment_method_title || row.payment_method || t('common.emptyValue')}
+                  {paymentLabel(row, t)}
                 </TableCell>
                 <TableCell className="max-w-[7rem] truncate text-sm">
                   {row.utm_source ? utmDisplayLabel(row.utm_source, t) : t('common.emptyValue')}

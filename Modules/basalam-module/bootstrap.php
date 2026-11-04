@@ -26,6 +26,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 			'webhooks/class-basalam-webhook-handler.php',
 			'class-basalam-jobs.php',
 			'class-basalam-endpoint-registry.php',
+			'class-basalam-order-view.php',
 			'class-webino-dashboard-rest-basalam.php',
 			'class-basalam-wnc-bridge.php',
 			'erp/class-basalam-erp-order-mirror.php',
