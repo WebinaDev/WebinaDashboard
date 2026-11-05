@@ -41,7 +41,7 @@ export default function SmsInboxPage() {
   useQueryErrorToast(q)
 
   const unavailable = isSmsUnavailable(q.data)
-  const rows = unavailable ? [] : unwrapSmsList(q.data?.data)
+  const rows = unavailable ? [] : unwrapSmsList(q.data)
 
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6 p-4 pb-10">

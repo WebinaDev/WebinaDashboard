@@ -12320,7 +12320,7 @@ function Xg() {
 		...Mp
 	});
 	ep(o);
-	let s = zg(o.data), c = s ? [] : Tm(o.data?.data);
+	let s = zg(o.data), c = s ? [] : Tm(o.data);
 	return /* @__PURE__ */ f("div", {
 		className: "mx-auto w-full max-w-[1400px] space-y-6 p-4 pb-10",
 		children: [
@@ -27593,7 +27593,7 @@ function fv() {
 		...Mp
 	});
 	ep(p);
-	let m = zg(p.data), h = x(() => m ? [] : Tm(p.data?.data), [m, p.data]), g = x(() => h.filter((e) => {
+	let m = zg(p.data), h = x(() => m ? [] : Tm(p.data), [m, p.data]), g = x(() => h.filter((e) => {
 		let t = Dm(e, "state_id");
 		return !!(Vm(Im(e)) || t != null && [
 			0,
@@ -28406,7 +28406,7 @@ function Av() {
 		...Mp
 	});
 	ep(o);
-	let s = zg(o.data), c = x(() => s ? [] : Tm(o.data?.data), [s, o.data]), u = t({
+	let s = zg(o.data), c = x(() => s ? [] : Tm(o.data), [s, o.data]), u = t({
 		queryKey: [
 			"sms",
 			"bulk-stats",

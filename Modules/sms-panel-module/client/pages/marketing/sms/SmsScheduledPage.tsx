@@ -53,7 +53,7 @@ export default function SmsScheduledPage() {
 
   const unavailable = isSmsUnavailable(outboxQ.data)
   const allItems = useMemo(
-    () => (unavailable ? [] : unwrapSmsList(outboxQ.data?.data)),
+    () => (unavailable ? [] : unwrapSmsList(outboxQ.data)),
     [unavailable, outboxQ.data],
   )
 

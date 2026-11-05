@@ -58,7 +58,7 @@ export default function SmsTargetedPage() {
   useQueryErrorToast(outboxQ)
   const unavailable = isSmsUnavailable(outboxQ.data)
   const rows = useMemo(
-    () => (unavailable ? [] : unwrapSmsList(outboxQ.data?.data)),
+    () => (unavailable ? [] : unwrapSmsList(outboxQ.data)),
     [unavailable, outboxQ.data],
   )
 
