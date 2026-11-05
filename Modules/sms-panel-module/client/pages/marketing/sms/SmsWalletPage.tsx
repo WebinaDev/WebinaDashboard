@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
 import { SmsServiceBanner, isSmsUnavailable } from '@/components/marketing/SmsServiceBanner'
 import { ScrollTable } from '@/components/ScrollTable'
 import { Button } from '@/components/ui/button'
@@ -75,8 +76,7 @@ export default function SmsWalletPage() {
               <Skeleton className="h-9 w-40" />
             ) : (
               <p className="text-3xl font-bold">
-                {(account?.balance ?? 0).toLocaleString()}{' '}
-                <span className="text-base font-normal">{t('marketing.sms.toman')}</span>
+                <SmsMoney amount={account?.balance ?? 0} locale={locale} amountClassName="text-3xl font-bold" />
               </p>
             )}
             <Button asChild className="mt-4" variant="outline" disabled={unavailable}>
@@ -179,9 +179,11 @@ export default function SmsWalletPage() {
                             {String(row.description ?? row.title ?? row.type ?? '—')}
                           </TableCell>
                           <TableCell>
-                            {typeof row.amount === 'number'
-                              ? row.amount.toLocaleString()
-                              : String(row.amount ?? '—')}
+                            {row.amount != null && row.amount !== '' ? (
+                              <SmsMoney amount={row.amount} locale={locale} />
+                            ) : (
+                              '—'
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}

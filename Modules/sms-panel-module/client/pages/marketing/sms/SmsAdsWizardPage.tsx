@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -243,9 +244,9 @@ export default function SmsAdsWizardPage() {
                 >
                   <span className="block text-sm font-medium">{label}</span>
                   <span className="mt-1 flex items-center gap-2 text-sm">
-                    <span className="font-semibold">{fmt(sale)}</span>
+                    <SmsMoney amount={sale} locale={locale} amountClassName="font-semibold" />
                     {list > sale ? (
-                      <span className="text-muted-foreground line-through">{fmt(list)}</span>
+                      <SmsMoney amount={list} locale={locale} className="text-muted-foreground line-through" />
                     ) : null}
                   </span>
                 </button>
@@ -317,7 +318,10 @@ export default function SmsAdsWizardPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('marketing.smsAds.unitPrice')}</span>
-              <span>{fmt(quote?.price_per_unit ?? (channel === 'sms' ? smsSale : notifSale))}</span>
+              <SmsMoney
+                amount={quote?.price_per_unit ?? (channel === 'sms' ? smsSale : notifSale)}
+                locale={locale}
+              />
             </div>
             {(quote?.discount_percent ?? 0) > 0 ? (
               <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
@@ -328,13 +332,13 @@ export default function SmsAdsWizardPage() {
             <div className="flex justify-between font-medium">
               <span>{t('marketing.smsAds.total')}</span>
               <span>
-                {fmt(quote?.customer_cost ?? 0)} {t('marketing.sms.toman')}
+                <SmsMoney amount={quote?.customer_cost ?? 0} locale={locale} />
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('marketing.sms.balance')}</span>
               <span>
-                {fmt(quote?.balance ?? account?.balance ?? 0)} {t('marketing.sms.toman')}
+                <SmsMoney amount={quote?.balance ?? account?.balance ?? 0} locale={locale} />
               </span>
             </div>
           </div>

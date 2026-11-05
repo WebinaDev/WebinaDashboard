@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Eye, RefreshCw } from 'lucide-react'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
 import { SmsServiceBanner, isSmsUnavailable } from '@/components/marketing/SmsServiceBanner'
 import { ScrollTable } from '@/components/ScrollTable'
 import { Badge } from '@/components/ui/badge'
@@ -79,7 +80,7 @@ function PaginationBar({
   )
 }
 
-function DetailRow({ label, value, ltr }: { label: string; value: string; ltr?: boolean }) {
+function DetailRow({ label, value, ltr }: { label: string; value: ReactNode; ltr?: boolean }) {
   return (
     <div className="grid gap-1 border-b py-2 last:border-0 sm:grid-cols-[10rem_1fr]">
       <div className="text-muted-foreground text-xs font-medium">{label}</div>
@@ -134,17 +135,16 @@ export default function SmsReportsPage() {
 
   const localMessages = useMemo(() => {
     if (isSmsUnavailable(messagesQ.data)) return []
-    const raw = messagesQ.data?.messages
-    return Array.isArray(raw) ? (raw as Array<Record<string, unknown>>) : []
+    return unwrapSmsList(messagesQ.data)
   }, [messagesQ.data])
 
   const outboxItems = useMemo(
-    () => (isSmsUnavailable(outboxQ.data) ? [] : unwrapSmsList(outboxQ.data?.data)),
+    () => (isSmsUnavailable(outboxQ.data) ? [] : unwrapSmsList(outboxQ.data)),
     [outboxQ.data],
   )
 
   const inboxItems = useMemo(
-    () => (isSmsUnavailable(inboxQ.data) ? [] : unwrapSmsList(inboxQ.data?.data)),
+    () => (isSmsUnavailable(inboxQ.data) ? [] : unwrapSmsList(inboxQ.data)),
     [inboxQ.data],
   )
 
@@ -252,12 +252,8 @@ export default function SmsReportsPage() {
                                 </TableCell>
                                 <TableCell dir="ltr">{smsField(m, 'exit_count') || '—'}</TableCell>
                                 <TableCell>{resolveOutboxStatus(t, m)}</TableCell>
-                                <TableCell dir="ltr">
-                                  {cost != null
-                                    ? (locale.startsWith('fa')
-                                        ? toPersianDigits(cost.toLocaleString('en-US'))
-                                        : cost.toLocaleString())
-                                    : '—'}
+                                <TableCell>
+                                  {cost != null ? <SmsMoney amount={cost} locale={locale} /> : '—'}
                                 </TableCell>
                                 <TableCell className="whitespace-nowrap">
                                   {formatSmsDateTime(outboxTime(m), locale)}
@@ -354,12 +350,8 @@ export default function SmsReportsPage() {
                                 <TableCell>{smsField(m, 'event_key') || '—'}</TableCell>
                                 <TableCell>{smsField(m, 'recipient_role', 'role') || '—'}</TableCell>
                                 <TableCell>{translateSmsStatus(t, smsField(m, 'status'))}</TableCell>
-                                <TableCell dir="ltr">
-                                  {cost != null
-                                    ? (locale.startsWith('fa')
-                                        ? toPersianDigits(cost.toLocaleString('en-US'))
-                                        : cost.toLocaleString())
-                                    : '—'}
+                                <TableCell>
+                                  {cost != null ? <SmsMoney amount={cost} locale={locale} /> : '—'}
                                 </TableCell>
                                 <TableCell className="font-mono text-xs" dir="ltr">
                                   {smsField(m, 'outbox_id') || '—'}
@@ -496,11 +488,12 @@ export default function SmsReportsPage() {
               <DetailRow
                 label={t('marketing.sms.cost')}
                 value={
-                  smsNum(detail, 'cost') != null
-                    ? String(smsNum(detail, 'cost'))
-                    : '—'
+                  smsNum(detail, 'cost') != null ? (
+                    <SmsMoney amount={smsNum(detail, 'cost')} locale={locale} />
+                  ) : (
+                    '—'
+                  )
                 }
-                ltr
               />
               <DetailRow
                 label={t('marketing.sms.sentAt')}

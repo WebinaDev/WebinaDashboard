@@ -17,6 +17,7 @@ export interface SmsAccount {
   balance: number
   default_from: string
   status: string
+  numbers?: SmsAttachedNumber[]
   price_per_unit?: number
   price_list?: number
   notif_price_per_unit?: number
@@ -38,6 +39,10 @@ export interface SmsMessage {
   cost: number
   status: string
   created_at?: string
+  message?: string
+  recipients?: string[]
+  from_number?: string
+  pattern_code?: string
 }
 
 export interface SmsShortcode {
@@ -87,6 +92,7 @@ export interface ShopSmsSettings {
   bot_ids?: number[] | string[]
   sender_line_service?: string
   sender_line_dedicated?: string
+  numbers?: SmsAttachedNumber[]
   use_service_line?: boolean
   require_pattern?: boolean
   events?: Record<string, { customer: boolean; admin: boolean }>

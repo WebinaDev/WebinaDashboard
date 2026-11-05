@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -52,9 +53,9 @@ export default function SmsAdsDetailPage() {
   const kpis = [
     { label: t('marketing.smsAds.kpi.sent'), value: fmt(data.sent) },
     { label: t('marketing.smsAds.kpi.failed'), value: fmt(data.failed) },
-    { label: t('marketing.smsAds.kpi.cost'), value: fmt(data.cost) },
+    { label: t('marketing.smsAds.kpi.cost'), value: <SmsMoney amount={data.cost} locale={locale} /> },
     { label: t('marketing.smsAds.kpi.orders'), value: fmt(data.orders) },
-    { label: t('marketing.smsAds.kpi.revenue'), value: fmt(data.revenue) },
+    { label: t('marketing.smsAds.kpi.revenue'), value: <SmsMoney amount={data.revenue} locale={locale} /> },
     {
       label: t('marketing.smsAds.kpi.roas'),
       value: data.roas == null ? '—' : fmt(data.roas),
@@ -105,7 +106,7 @@ export default function SmsAdsDetailPage() {
                   <Link className="text-primary hover:underline" to={`/orders/${o.id}`}>
                     #{o.number}
                   </Link>
-                  <span dir="ltr">{fmt(o.total)}</span>
+                  <SmsMoney amount={o.total} locale={locale} />
                 </li>
               ))}
             </ul>

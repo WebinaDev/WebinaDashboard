@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
 import { SmsServiceBanner, isSmsUnavailable } from '@/components/marketing/SmsServiceBanner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -11,7 +12,7 @@ import { toastApiError } from '@/lib/apiError'
 import { fetchSmsPackages, initSmsTopup, smsQueryOptions, type SmsPackage } from '@/lib/modirpayamak-api'
 
 export default function SmsTopupPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const packagesQ = useQuery({
     queryKey: ['sms', 'packages'],
@@ -72,7 +73,7 @@ export default function SmsTopupPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-2xl font-bold">
-                    {p.amount.toLocaleString()} {t('marketing.sms.toman')}
+                    <SmsMoney amount={p.amount} locale={i18n.language} amountClassName="text-2xl font-bold" />
                   </p>
                   {p.bonus > 0 ? (
                     <p className="text-muted-foreground text-sm">

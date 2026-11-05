@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
+import { DateTimePicker } from '@/components/DateTimePicker'
 import { SmsServiceBanner, isSmsUnavailable } from '@/components/marketing/SmsServiceBanner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,6 +29,7 @@ import {
   sendSmsP2p,
   type SmsAttachedNumber,
 } from '@/lib/modirpayamak-api'
+import { normalizeSmsLines } from '@/lib/sms-report'
 import { toastApiError } from '@/lib/apiError'
 
 type SendMode = 'webservice' | 'pattern' | 'p2p'
@@ -37,11 +40,6 @@ type IppanelPattern = {
   pattern_code?: string
   pattern_message?: string
   variable?: Array<{ name?: string; type?: string }> | null
-}
-
-function unwrapNumbers(payload: { data?: SmsAttachedNumber[]; numbers?: SmsAttachedNumber[] } | undefined): SmsAttachedNumber[] {
-  const list = payload?.numbers ?? payload?.data
-  return Array.isArray(list) ? list : []
 }
 
 function extractPatterns(raw: unknown): IppanelPattern[] {
@@ -78,8 +76,14 @@ function normalizeIranPhone(raw: string): string | null {
   return null
 }
 
+function lineRoleLabel(t: (key: string) => string, role: string): string {
+  if (role === 'service') return t('marketing.sms.roleService')
+  if (role === 'personal' || role === 'marketing') return t('marketing.sms.rolePersonal')
+  return role
+}
+
 export default function SmsSendPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const location = useLocation()
   const [kind, setKind] = useState<MessageKind>('marketing')
   const [mode, setMode] = useState<SendMode>('webservice')
@@ -89,8 +93,8 @@ export default function SmsSendPage() {
   const [from, setFrom] = useState('')
   const [patternCode, setPatternCode] = useState('')
   const [paramValues, setParamValues] = useState<Record<string, string>>({})
-  const [sendTime, setSendTime] = useState('')
-  const [priceHint, setPriceHint] = useState<string>('')
+  const [sendTime, setSendTime] = useState<number | null>(null)
+  const [priceHint, setPriceHint] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
 
   const numbersQ = useQuery({ queryKey: ['sms-numbers'], queryFn: fetchSmsNumbers })
@@ -99,7 +103,7 @@ export default function SmsSendPage() {
   useQueryErrorToast(patternsQ)
 
   const unavailable = isSmsUnavailable(numbersQ.data)
-  const numbers = useMemo(() => unwrapNumbers(numbersQ.data), [numbersQ.data])
+  const numbers = useMemo(() => normalizeSmsLines(numbersQ.data) as SmsAttachedNumber[], [numbersQ.data])
   const patterns = useMemo(() => extractPatterns(patternsQ.data?.data ?? patternsQ.data), [patternsQ.data])
   const selectedPattern = useMemo(
     () => patterns.find((p) => (p.pattern_code ?? '').trim() === patternCode.trim()),
@@ -157,12 +161,7 @@ export default function SmsSendPage() {
               : { message },
       })
       if (res.customer_cost != null) {
-        const parts = (res as { parts?: number }).parts
-        setPriceHint(
-          parts && parts > 1
-            ? `${res.customer_cost} (${parts}×)`
-            : String(res.customer_cost)
-        )
+        setPriceHint(Number(res.customer_cost))
       }
     } catch {
       setPriceHint('')
@@ -219,7 +218,7 @@ export default function SmsSendPage() {
           code: patternCode.trim(),
           recipients: [normalized],
           params,
-          send_time: sendTime || undefined,
+          send_time: sendTime ?? undefined,
         })
         if (res.ok) toast.success(t('marketing.sms.sent'))
         else toast.error(t('marketing.sms.sendFailed'))
@@ -233,7 +232,7 @@ export default function SmsSendPage() {
           phone: normalized,
           message,
           from_number: from || personalLine || undefined,
-          send_time: sendTime || undefined,
+          send_time: sendTime ?? undefined,
         })
         if (res.ok) toast.success(t('marketing.sms.sent'))
         else toast.error(t('marketing.sms.sendFailed'))
@@ -299,7 +298,8 @@ export default function SmsSendPage() {
                   <SelectContent>
                     {numbers.map((n) => (
                       <SelectItem key={`${n.role}-${n.number}`} value={n.number}>
-                        {n.number} ({n.role})
+                        {n.label ? `${n.label} — ` : ''}
+                        {n.number} ({lineRoleLabel(t, n.role)})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -395,18 +395,18 @@ export default function SmsSendPage() {
                 <Textarea className="mt-1" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} />
               </div>
             )}
-            {priceHint ? (
-              <p className="text-muted-foreground text-sm">{t('marketing.sms.estimatedCost', { cost: priceHint })}</p>
+            {priceHint != null ? (
+              <p className="text-muted-foreground flex items-center gap-2 text-sm">
+                <span>{t('marketing.sms.estimatePrice')}</span>
+                <SmsMoney amount={priceHint} locale={i18n.language} />
+              </p>
             ) : null}
-            <div>
-              <Label>{t('marketing.sms.sendTime')}</Label>
-              <Input
-                className="mt-1"
-                type="datetime-local"
-                value={sendTime}
-                onChange={(e) => setSendTime(e.target.value)}
-              />
-            </div>
+            <DateTimePicker
+              id="sms-send-time"
+              label={t('marketing.sms.sendTime')}
+              value={sendTime ?? undefined}
+              onChange={setSendTime}
+            />
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={() => void estimate()}>
                 {t('marketing.sms.estimatePrice')}

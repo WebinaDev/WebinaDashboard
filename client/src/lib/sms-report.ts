@@ -1,5 +1,10 @@
+import dayjs from 'dayjs'
+import jalali from 'jalaliday/dayjs'
+
 import { formatDisplayDateTime } from '@/lib/date'
 import { translateSmsStatus } from '@/lib/sms-ui'
+
+dayjs.extend(jalali)
 
 /** Unwrap Edge/CRM list payloads. */
 export function unwrapSmsList(data: unknown): Record<string, unknown>[] {
@@ -46,7 +51,27 @@ export function smsNum(row: Record<string, unknown> | null | undefined, ...keys:
   return Number.isFinite(n) ? n : null
 }
 
-/** Parse Edge unix (number|string) or MySQL/ISO datetime into display value. */
+/** Jalali `1405/08/14 14:58` or `1405-08-14` → unix seconds. */
+function jalaliToUnix(value: string): number | null {
+  const m = value.match(
+    /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/,
+  )
+  if (!m) return null
+  const year = Number(m[1])
+  if (year < 1300 || year > 1500) return null
+  const d = dayjs()
+    .calendar('jalali')
+    .year(year)
+    .month(Number(m[2]) - 1)
+    .date(Number(m[3]))
+    .hour(Number(m[4] ?? 0))
+    .minute(Number(m[5] ?? 0))
+    .second(Number(m[6] ?? 0))
+    .millisecond(0)
+  return d.isValid() ? d.calendar('gregory').unix() : null
+}
+
+/** Parse Edge unix (number|string), Jalali, or MySQL/ISO datetime into display value. */
 export function formatSmsDateTime(
   value: unknown,
   locale: string,
@@ -54,7 +79,6 @@ export function formatSmsDateTime(
 ): string {
   if (value == null || value === '') return empty
   if (typeof value === 'number' && Number.isFinite(value)) {
-    // Heuristic: seconds vs ms
     const sec = value > 1e12 ? Math.floor(value / 1000) : value
     return formatDisplayDateTime(sec, locale, empty)
   }
@@ -64,6 +88,16 @@ export function formatSmsDateTime(
   }
   if (/^\d{13}$/.test(s)) {
     return formatDisplayDateTime(Math.floor(Number(s) / 1000), locale, empty)
+  }
+  const jalaliUnix = jalaliToUnix(s)
+  if (jalaliUnix != null) {
+    return formatDisplayDateTime(jalaliUnix, locale, empty)
+  }
+  // Naive `YYYY-MM-DD HH:mm:ss` is Tehran wall time, not UTC.
+  const naive = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (naive && Number(naive[1]) < 1700) {
+    const iso = `${naive[1]}-${naive[2]}-${naive[3]}T${naive[4]}:${naive[5]}:${naive[6] ?? '00'}+03:30`
+    return formatDisplayDateTime(iso, locale, empty)
   }
   return formatDisplayDateTime(s, locale, empty)
 }
@@ -157,6 +191,24 @@ export function localMessagePreview(row: Record<string, unknown>): string {
   }
   if (typeof body === 'string' && body) return body
   return smsField(row, 'message', 'body', 'text') || '—'
+}
+
+export function normalizeSmsLines(
+  payload: unknown,
+): Array<{ id?: number; number: string; role: string; label?: string }> {
+  const out: Array<{ id?: number; number: string; role: string; label?: string }> = []
+  for (const row of unwrapSmsList(payload)) {
+    const number = smsField(row, 'number', 'line', 'from_number', 'sender', 'phone')
+    if (!number) continue
+    const roleRaw = smsField(row, 'role', 'type', 'line_type').toLowerCase()
+    let role = 'service'
+    if (/personal|marketing|dedicated|webservice|advert|اختصاص/.test(roleRaw)) role = 'personal'
+    else if (roleRaw && !/pattern|shared|service|خدماتی|پترن/.test(roleRaw)) role = roleRaw
+    const label = smsField(row, 'label', 'title', 'name')
+    const id = smsNum(row, 'id')
+    out.push({ number, role, label: label || undefined, id: id ?? undefined })
+  }
+  return out
 }
 
 export function isUnixFuture(value: unknown): boolean {

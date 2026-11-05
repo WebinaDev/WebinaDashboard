@@ -14,14 +14,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
-import { fetchSmsNumbers, smsQueryOptions, type SmsAttachedNumber } from '@/lib/modirpayamak-api'
-
-function unwrapNumbers(
-  payload: { data?: SmsAttachedNumber[]; numbers?: SmsAttachedNumber[] } | undefined
-): SmsAttachedNumber[] {
-  const list = payload?.numbers ?? payload?.data
-  return Array.isArray(list) ? list : []
-}
+import { fetchSmsNumbers, smsQueryOptions } from '@/lib/modirpayamak-api'
+import { normalizeSmsLines } from '@/lib/sms-report'
 
 export default function SmsLinesPage() {
   const { t } = useTranslation()
@@ -34,7 +28,7 @@ export default function SmsLinesPage() {
   useQueryErrorToast(numbersQ)
 
   const unavailable = isSmsUnavailable(numbersQ.data)
-  const numbers = unavailable ? [] : unwrapNumbers(numbersQ.data)
+  const numbers = unavailable ? [] : normalizeSmsLines(numbersQ.data)
   const loading = numbersQ.isPending
 
   return (

@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatNumber } from '@/lib/formatNumber'
 import type { DashboardOverviewSmsPanel } from '@/types/dashboardOverview'
 
 type HomeSmsBalanceCardProps = {
@@ -23,7 +23,9 @@ export function HomeSmsBalanceCard({ sms, locale }: HomeSmsBalanceCardProps) {
       </CardHeader>
       <CardContent>
         <p className="text-muted-foreground text-xs">{t('home.sms.charge')}</p>
-        <p className="text-2xl font-semibold">{formatNumber(sms.balance ?? 0, locale)}</p>
+        <p className="text-2xl font-semibold">
+          <SmsMoney amount={sms.balance ?? 0} locale={locale} amountClassName="text-2xl font-semibold" />
+        </p>
         {sms.low_balance ? (
           <p className="mt-1 text-xs text-amber-600">{t('home.sms.lowBalance')}</p>
         ) : null}

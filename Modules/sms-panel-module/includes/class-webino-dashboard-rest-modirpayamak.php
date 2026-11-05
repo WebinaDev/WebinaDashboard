@@ -242,6 +242,44 @@ final class Webino_Dashboard_REST_ModirPayamak {
 	}
 
 	/**
+	 * First list-shaped message collection on an ERP payload.
+	 *
+	 * @param array<string,mixed> $payload Payload.
+	 * @return array<int,mixed>
+	 */
+	private static function first_message_list( array $payload ) {
+		foreach ( array( 'messages', 'entries', 'items', 'rows', 'outbox' ) as $key ) {
+			if ( isset( $payload[ $key ] ) && is_array( $payload[ $key ] ) && self::is_list( $payload[ $key ] ) ) {
+				return $payload[ $key ];
+			}
+		}
+		if ( isset( $payload['data'] ) && is_array( $payload['data'] ) ) {
+			if ( self::is_list( $payload['data'] ) ) {
+				return $payload['data'];
+			}
+			return self::first_message_list( $payload['data'] );
+		}
+		return array();
+	}
+
+	/**
+	 * @param array<mixed> $value Value.
+	 */
+	private static function is_list( array $value ) {
+		if ( function_exists( 'array_is_list' ) ) {
+			return array_is_list( $value );
+		}
+		$i = 0;
+		foreach ( $value as $key => $_unused ) {
+			if ( $key !== $i ) {
+				return false;
+			}
+			$i++;
+		}
+		return true;
+	}
+
+	/**
 	 * @param string              $path Edge path under modirpayamak/ (or full webinocrm path).
 	 * @param array<string,mixed> $body Body.
 	 * @return WP_REST_Response
@@ -347,32 +385,20 @@ final class Webino_Dashboard_REST_ModirPayamak {
 		$license = Webino_Dashboard_License::instance();
 		$opts    = self::CRM_FAST_OPTS;
 
-		$account_res = $license->crm_get( 'wp-json/webinocrm/v1/modirpayamak/account', array(), $opts );
-		if ( empty( $account_res['ok'] ) ) {
-			$msg = $account_res['error'] ?? __( 'CRM request failed.', 'webino-dashboard' );
+		$dash_res = $license->crm_get( 'wp-json/webinocrm/v1/modirpayamak/dashboard', array(), $opts );
+		if ( empty( $dash_res['ok'] ) ) {
+			$msg = $dash_res['error'] ?? __( 'CRM request failed.', 'webino-dashboard' );
 			return self::crm_unavailable_response( $msg );
 		}
 
-		$account_data = is_array( $account_res['data'] ) ? $account_res['data'] : array();
-		$messages_res = $license->crm_get(
-			'wp-json/webinocrm/v1/modirpayamak/reports/messages',
-			array(
-				'page'  => 1,
-				'limit' => 10,
-			),
-			$opts
-		);
-		$messages_data = ! empty( $messages_res['ok'] ) && is_array( $messages_res['data'] ) ? $messages_res['data'] : array();
-
-		$payload = array_merge(
-			$account_data,
-			array(
-				'ok'       => true,
-				'messages' => isset( $messages_data['messages'] ) && is_array( $messages_data['messages'] )
-					? $messages_data['messages']
-					: array(),
-			)
-		);
+		$payload = self::unwrap_erp_payload( is_array( $dash_res['data'] ) ? $dash_res['data'] : array() );
+		if ( ! empty( $payload['unavailable'] ) ) {
+			$msg = ! empty( $payload['message'] ) ? (string) $payload['message'] : __( 'SMS service temporarily unavailable.', 'webino-dashboard' );
+			return self::crm_unavailable_response( $msg );
+		}
+		$messages = self::first_message_list( $payload );
+		$payload['ok']       = true;
+		$payload['messages'] = $messages;
 		set_transient( $key, $payload, self::CACHE_TTL );
 
 		return new WP_REST_Response( $payload, 200 );

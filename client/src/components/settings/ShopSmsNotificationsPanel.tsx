@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
 import { SmsServiceBanner } from '@/components/marketing/SmsServiceBanner'
 import { QueryErrorState } from '@/components/QueryErrorState'
 import { ScrollTable } from '@/components/ScrollTable'
@@ -51,6 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { normalizeSmsLines } from '@/lib/sms-report'
 import { getSsrPage } from '@/lib/ssrPage'
 import { cn } from '@/lib/utils'
 
@@ -86,7 +88,7 @@ function PatternBadge({ status }: { status: string }) {
 }
 
 export function ShopSmsNotificationsPanel() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const initial = useMemo(() => getSsrPage()?.shopSms as ShopSmsPayload | undefined, [])
   const q = useQuery({
@@ -113,7 +115,8 @@ export function ShopSmsNotificationsPanel() {
   const [settings, setSettings] = useState<ShopSmsSettings | null>(null)
   const [templates, setTemplates] = useState<SmsTemplateRow[]>([])
   const [registry, setRegistry] = useState<SmsPatternRegistryRow[]>([])
-  const [adminPhonesText, setAdminPhonesText] = useState('')
+  const [adminPhones, setAdminPhones] = useState<string[]>([])
+  const [phoneDraft, setPhoneDraft] = useState('')
   const [botIdsText, setBotIdsText] = useState('')
   const [selectedEvent, setSelectedEvent] = useState('pending_on_create')
 
@@ -123,7 +126,7 @@ export function ShopSmsNotificationsPanel() {
     if (q.data.templates) setTemplates([...q.data.templates])
     if (q.data.registry) setRegistry([...q.data.registry] as SmsPatternRegistryRow[])
     const phones = q.data.settings?.admin_phones
-    if (Array.isArray(phones)) setAdminPhonesText(phones.join('\n'))
+    if (Array.isArray(phones)) setAdminPhones(phones.map((p) => String(p)).filter(Boolean))
     const bots = q.data.settings?.bot_ids
     if (Array.isArray(bots)) setBotIdsText(bots.join(', '))
     const keys = q.data.event_catalog?.map((c) => c.key) ?? q.data.event_keys ?? []
@@ -136,10 +139,18 @@ export function ShopSmsNotificationsPanel() {
   }, [q.data])
 
   const attachedLines: SmsAttachedNumber[] = useMemo(() => {
-    const payload = numbersQ.data
-    const list = payload?.numbers ?? payload?.data
-    return Array.isArray(list) ? list : []
-  }, [numbersQ.data])
+    const fromNumbers = normalizeSmsLines(numbersQ.data)
+    const fromAccount = normalizeSmsLines(accountQ.data?.account?.numbers)
+    const fromSettings = normalizeSmsLines(settings?.numbers)
+    const merged = [...fromSettings, ...fromAccount, ...fromNumbers]
+    const seen = new Set<string>()
+    return merged.filter((line) => {
+      const key = `${line.role}:${line.number}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [numbersQ.data, accountQ.data, settings?.numbers])
 
   const setEventToggle = (key: string, role: 'customer' | 'admin', value: boolean) => {
     if (!settings) return
@@ -156,10 +167,7 @@ export function ShopSmsNotificationsPanel() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const phones = adminPhonesText
-        .split(/[\n,;]+/)
-        .map((p) => p.trim())
-        .filter(Boolean)
+      const phones = adminPhones.map((p) => p.trim()).filter(Boolean)
       const botIds = botIdsText
         .split(/[\s,;]+/)
         .map((p) => p.trim())
@@ -351,18 +359,37 @@ export function ShopSmsNotificationsPanel() {
         </CardHeader>
         <CardContent className="space-y-3">
           {accountQ.data?.account ? (
-            <p className="text-muted-foreground text-sm">
-              {t('settings.shopSms.balance', { amount: accountQ.data.account.balance })}
+            <p className="text-muted-foreground flex items-center gap-2 text-sm">
+              <span>{t('marketing.sms.balance')}</span>
+              <SmsMoney amount={accountQ.data.account.balance} locale={i18n.language} />
             </p>
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="bg-background/50 space-y-2 rounded-xl border p-3">
               <Label>{t('settings.siteSms.serviceLine')}</Label>
-              <Input value={settings.sender_line_service ?? ''} readOnly className="bg-muted" dir="ltr" />
+              <Input
+                value={
+                  settings.sender_line_service ||
+                  attachedLines.find((n) => n.role === 'service')?.number ||
+                  ''
+                }
+                readOnly
+                className="bg-muted"
+                dir="ltr"
+              />
             </div>
             <div className="bg-background/50 space-y-2 rounded-xl border p-3">
               <Label>{t('settings.siteSms.dedicatedLine')}</Label>
-              <Input value={settings.sender_line_dedicated ?? ''} readOnly className="bg-muted" dir="ltr" />
+              <Input
+                value={
+                  settings.sender_line_dedicated ||
+                  attachedLines.find((n) => n.role === 'personal' || n.role === 'marketing')?.number ||
+                  ''
+                }
+                readOnly
+                className="bg-muted"
+                dir="ltr"
+              />
             </div>
           </div>
           {attachedLines.length > 0 ? (
@@ -409,13 +436,59 @@ export function ShopSmsNotificationsPanel() {
             <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
                 <Label>{t('settings.shopSms.adminPhones')}</Label>
-                <Textarea
-                  className="font-mono text-sm"
-                  rows={3}
-                  value={adminPhonesText}
-                  onChange={(e) => setAdminPhonesText(e.target.value)}
-                  placeholder={t('settings.shopSms.phonePlaceholder')}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={phoneDraft}
+                    dir="ltr"
+                    className="font-mono"
+                    placeholder={t('settings.shopSms.phonePlaceholder')}
+                    onChange={(e) => setPhoneDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter') return
+                      e.preventDefault()
+                      const next = phoneDraft.trim()
+                      if (!next) return
+                      setAdminPhones((prev) => (prev.includes(next) ? prev : [...prev, next]))
+                      setPhoneDraft('')
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const next = phoneDraft.trim()
+                      if (!next) return
+                      setAdminPhones((prev) => (prev.includes(next) ? prev : [...prev, next]))
+                      setPhoneDraft('')
+                    }}
+                  >
+                    {t('settings.shopSms.addPhone')}
+                  </Button>
+                </div>
+                {adminPhones.length === 0 ? (
+                  <p className="text-muted-foreground text-xs">{t('settings.shopSms.adminPhonesEmpty')}</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {adminPhones.map((phone) => (
+                      <li
+                        key={phone}
+                        className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
+                      >
+                        <span className="font-mono text-sm" dir="ltr">
+                          {phone}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setAdminPhones((prev) => prev.filter((item) => item !== phone))}
+                        >
+                          {t('common.delete')}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>{t('settings.shopSms.botIds')}</Label>

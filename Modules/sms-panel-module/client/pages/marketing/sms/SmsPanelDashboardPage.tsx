@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
+import { SmsMoney } from '@/components/currency/SmsMoney'
 import { SmsServiceBanner } from '@/components/marketing/SmsServiceBanner'
 import { ScrollTable } from '@/components/ScrollTable'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,11 +18,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
-import { toPersianDigits } from '@/lib/date'
 import {
   formatSmsDateTime,
   localMessagePreview,
   localRecipientsPreview,
+  unwrapSmsList,
 } from '@/lib/sms-report'
 import { translateSmsStatus } from '@/lib/sms-ui'
 import {
@@ -91,16 +92,15 @@ export default function SmsPanelDashboardPage() {
 
   const unavailable = dashQ.data?.unavailable === true
   const account = unavailable ? null : dashQ.data?.account ?? null
-  const messages: SmsMessage[] = unavailable ? [] : (dashQ.data?.messages?.slice(0, 10) ?? [])
+  const messages: SmsMessage[] = unavailable
+    ? []
+    : (unwrapSmsList(dashQ.data).slice(0, 10) as unknown as SmsMessage[])
   const campaigns: SmsAdCampaign[] = adsQ.data?.items ?? []
   const balanceLoading = dashQ.isPending || dashQ.isFetching
 
   const retry = () => {
     void dashQ.refetch()
   }
-
-  const fmt = (n: number) =>
-    locale.startsWith('fa') ? toPersianDigits(n.toLocaleString('en-US')) : n.toLocaleString()
 
   const navLinks = [
     ['/marketing/sms', t('marketing.sms.home')],
@@ -164,9 +164,7 @@ export default function SmsPanelDashboardPage() {
             {balanceLoading ? (
               <Skeleton className="h-9 w-40" />
             ) : (
-              <>
-                {fmt(account?.balance ?? 0)} {t('marketing.sms.toman')}
-              </>
+              <SmsMoney amount={account?.balance ?? 0} locale={locale} amountClassName="text-3xl font-bold" />
             )}
           </CardContent>
         </Card>
@@ -250,8 +248,8 @@ export default function SmsPanelDashboardPage() {
                           {localMessagePreview(row)}
                         </TableCell>
                         <TableCell>{translateSmsStatus(t, m.status)}</TableCell>
-                        <TableCell dir="ltr">
-                          {cost != null ? fmt(cost) : '—'}
+                        <TableCell>
+                          {cost != null ? <SmsMoney amount={cost} locale={locale} /> : '—'}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {formatSmsDateTime(m.created_at, locale)}
