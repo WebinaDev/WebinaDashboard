@@ -380,11 +380,12 @@ export function sendSiteOtp(body: { phone: string; purpose?: 'login' | 'register
 export function testOrderSmsNotify(body: {
   event_key: string
   role?: 'customer' | 'admin'
+  scope?: string
   phone?: string
   order_id?: number
   order?: Record<string, unknown>
 }) {
-  return apiFetch<{ ok: boolean; results?: unknown; test?: boolean }>('modirpayamak/orders/test-notify', {
+  return apiFetch<{ ok: boolean; results?: unknown; test?: boolean; message?: string }>('modirpayamak/orders/test-notify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

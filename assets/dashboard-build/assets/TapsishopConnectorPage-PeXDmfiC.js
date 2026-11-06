@@ -1,1 +1,0 @@
-import{t as e}from"./SettingsModulesChrome-CArwjUrj.js";import{t}from"./WncPlatformPanel-Bn4inGON.js";import{jsx as n}from"react/jsx-runtime";function r(){return n(e,{children:n(t,{platform:`tapsishop`,titleKey:`wnc.modules.tapsishop.title`,subtitleKey:`wnc.modules.tapsishop.subtitle`,feedPlatform:!0,embedded:!0})})}export{r as default};

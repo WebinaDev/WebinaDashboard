@@ -41,6 +41,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { toastApiError } from '@/lib/apiError'
+import { patternDetail, type SmsPatternVariable } from '@/lib/sms-report'
 import {
   createSmsPattern,
   detachSmsPattern,
@@ -95,14 +96,9 @@ function extractPatterns(raw: unknown): IppanelPattern[] {
   return []
 }
 
-function varsFromPattern(p: IppanelPattern | undefined): string[] {
+function varsFromPattern(p: IppanelPattern | undefined): SmsPatternVariable[] {
   if (!p) return []
-  const fromVars = (p.variable ?? [])
-    .map((v) => (v.name ?? '').replace(/%/g, '').trim())
-    .filter(Boolean)
-  if (fromVars.length) return [...new Set(fromVars)]
-  const found = (p.pattern_message ?? '').match(/%([a-zA-Z0-9_]+)%/g) ?? []
-  return [...new Set(found.map((m) => m.slice(1, -1)))]
+  return patternDetail(p).variables
 }
 
 function eventLabel(
@@ -218,7 +214,7 @@ function RoleCell({
 }: RoleCellProps) {
   const { t } = useTranslation()
   const [patternMessage, setPatternMessage] = useState('')
-  const [patternVars, setPatternVars] = useState<string[]>([])
+  const [patternVars, setPatternVars] = useState<SmsPatternVariable[]>([])
   const [loadingPattern, setLoadingPattern] = useState(false)
 
   const loadPattern = async (code: string) => {
@@ -231,14 +227,16 @@ function RoleCell({
     setLoadingPattern(true)
     try {
       const res = await fetchSmsPattern(trimmed)
-      const data = (res.data ?? {}) as IppanelPattern
-      const msg = String(data.pattern_message ?? '')
-      setPatternMessage(msg)
-      const vars = varsFromPattern(data)
-      setPatternVars(vars)
+      const detail = patternDetail(res.data ?? res)
+      if (!detail.message && detail.variables.length === 0) {
+        const err = res as { message?: string; ok?: boolean }
+        throw new Error(err.message || t('marketing.sms.patternFetchEmpty'))
+      }
+      setPatternMessage(detail.message)
+      setPatternVars(detail.variables)
       const nextMap = { ...paramMap }
-      vars.forEach((v) => {
-        if (!nextMap[v]) nextMap[v] = `{${v}}`
+      detail.variables.forEach((v) => {
+        if (!nextMap[v.name]) nextMap[v.name] = `{${v.name}}`
       })
       onParamMap(nextMap)
       onBody(formatPcodePreview(trimmed, nextMap))
@@ -304,14 +302,19 @@ function RoleCell({
         <div className="space-y-2">
           <Label className="text-xs">{t('marketing.sms.mapPatternVars')}</Label>
           {patternVars.map((pv) => (
-            <div key={pv} className="grid gap-2 sm:grid-cols-[7rem_1fr]">
-              <code className="self-center font-mono text-xs" dir="ltr">
-                %{pv}%
-              </code>
+            <div key={pv.name} className="grid gap-2 sm:grid-cols-[9rem_1fr]">
+              <div className="self-center">
+                <code className="font-mono text-xs" dir="ltr">
+                  %{pv.name}%
+                </code>
+                <p className="text-muted-foreground text-[11px]">
+                  {pv.type === 'integer' ? t('marketing.sms.varInteger') : t('marketing.sms.varString')}
+                </p>
+              </div>
               <Select
-                value={paramMap[pv] || undefined}
+                value={paramMap[pv.name] || undefined}
                 onValueChange={(v) => {
-                  const next = { ...paramMap, [pv]: v }
+                  const next = { ...paramMap, [pv.name]: v }
                   onParamMap(next)
                   onBody(formatPcodePreview(patternCode, next))
                 }}
@@ -677,12 +680,16 @@ export default function SmsPatternsPage() {
   })
 
   const testCell = useMutation({
-    mutationFn: (opts: { eventKey: string; role: 'customer' | 'admin' }) =>
-      testOrderSmsNotify({
+    mutationFn: async (opts: { eventKey: string; role: 'customer' | 'admin' }) => {
+      const res = await testOrderSmsNotify({
         event_key: opts.eventKey,
         role: opts.role,
+        scope: opts.role === 'admin' ? ORDER_ADMIN : ORDER_CUSTOMER,
         phone: testPhone.trim() || undefined,
-      }),
+      })
+      if (!res.ok) throw new Error(res.message || t('marketing.sms.sendFailed'))
+      return res
+    },
     onSuccess: () => toast.success(t('settings.shopSms.testSent')),
     onError: (e: Error) => toastApiError(t, e),
   })

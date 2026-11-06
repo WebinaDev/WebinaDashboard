@@ -24,12 +24,13 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import {
   calculateSmsPrice,
   fetchSmsNumbers,
+  fetchSmsPattern,
   fetchSmsPatterns,
   sendSms,
   sendSmsP2p,
   type SmsAttachedNumber,
 } from '@/lib/modirpayamak-api'
-import { normalizeSmsLines } from '@/lib/sms-report'
+import { normalizeSmsLines, patternDetail, type SmsPatternVariable } from '@/lib/sms-report'
 import { toastApiError } from '@/lib/apiError'
 
 type SendMode = 'webservice' | 'pattern' | 'p2p'
@@ -58,14 +59,9 @@ function extractPatterns(raw: unknown): IppanelPattern[] {
   return []
 }
 
-function varsFromPattern(p: IppanelPattern | undefined): string[] {
+function varsFromPattern(p: IppanelPattern | undefined): SmsPatternVariable[] {
   if (!p) return []
-  const fromVars = (p.variable ?? [])
-    .map((v) => (v.name ?? '').replace(/%/g, '').trim())
-    .filter(Boolean)
-  if (fromVars.length) return [...new Set(fromVars)]
-  const found = (p.pattern_message ?? '').match(/%([a-zA-Z0-9_]+)%/g) ?? []
-  return [...new Set(found.map((m) => m.slice(1, -1)))]
+  return patternDetail(p).variables
 }
 
 function normalizeIranPhone(raw: string): string | null {
@@ -92,6 +88,7 @@ export default function SmsSendPage() {
   const [message, setMessage] = useState('')
   const [from, setFrom] = useState('')
   const [patternCode, setPatternCode] = useState('')
+  const [fetchedPattern, setFetchedPattern] = useState<IppanelPattern | null>(null)
   const [paramValues, setParamValues] = useState<Record<string, string>>({})
   const [sendTime, setSendTime] = useState<number | null>(null)
   const [priceHint, setPriceHint] = useState<number | null>(null)
@@ -105,10 +102,13 @@ export default function SmsSendPage() {
   const unavailable = isSmsUnavailable(numbersQ.data)
   const numbers = useMemo(() => normalizeSmsLines(numbersQ.data) as SmsAttachedNumber[], [numbersQ.data])
   const patterns = useMemo(() => extractPatterns(patternsQ.data?.data ?? patternsQ.data), [patternsQ.data])
-  const selectedPattern = useMemo(
-    () => patterns.find((p) => (p.pattern_code ?? '').trim() === patternCode.trim()),
-    [patterns, patternCode]
-  )
+  const selectedPattern = useMemo(() => {
+    const fromList = patterns.find((p) => (p.pattern_code ?? '').trim() === patternCode.trim())
+    if (fetchedPattern && (fetchedPattern.pattern_code ?? '').trim() === patternCode.trim()) {
+      return { ...fromList, ...fetchedPattern }
+    }
+    return fromList
+  }, [patterns, patternCode, fetchedPattern])
   const patternVars = useMemo(() => varsFromPattern(selectedPattern), [selectedPattern])
 
   const serviceLine = numbers.find((n) => n.role === 'service')?.number ?? ''
@@ -134,9 +134,34 @@ export default function SmsSendPage() {
   }, [location.state])
 
   useEffect(() => {
+    const code = patternCode.trim()
+    if (!code) {
+      setFetchedPattern(null)
+      return
+    }
+    let cancelled = false
+    void fetchSmsPattern(code)
+      .then((res) => {
+        if (cancelled) return
+        const detail = patternDetail(res.data ?? res)
+        setFetchedPattern({
+          pattern_code: code,
+          pattern_message: detail.message,
+          variable: detail.variables,
+        })
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedPattern(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [patternCode])
+
+  useEffect(() => {
     setParamValues((prev) => {
       const next: Record<string, string> = {}
-      for (const key of patternVars) next[key] = prev[key] ?? ''
+      for (const variable of patternVars) next[variable.name] = prev[variable.name] ?? ''
       return next
     })
   }, [patternVars])
@@ -211,7 +236,7 @@ export default function SmsSendPage() {
           return
         }
         const params: Record<string, string> = {}
-        for (const key of patternVars) params[key] = paramValues[key] ?? ''
+        for (const variable of patternVars) params[variable.name] = paramValues[variable.name] ?? ''
         const res = await sendSms({
           sending_type: 'pattern',
           from_number: from || serviceLine || undefined,
@@ -221,7 +246,7 @@ export default function SmsSendPage() {
           send_time: sendTime ?? undefined,
         })
         if (res.ok) toast.success(t('marketing.sms.sent'))
-        else toast.error(t('marketing.sms.sendFailed'))
+        else toast.error((res as { message?: string }).message || t('marketing.sms.sendFailed'))
       } else {
         if (!message.trim()) {
           toast.error(t('marketing.sms.messageRequired'))
@@ -373,14 +398,17 @@ export default function SmsSendPage() {
                 {patternVars.length > 0 ? (
                   <div className="space-y-3 rounded-xl border p-3">
                     <Label>{t('marketing.sms.patternParams')}</Label>
-                    {patternVars.map((key) => (
-                      <div key={key} className="space-y-1">
+                    {patternVars.map((variable) => (
+                      <div key={variable.name} className="space-y-1">
                         <Label className="font-mono text-xs" dir="ltr">
-                          %{key}%
+                          %{variable.name}%
+                          <span className="text-muted-foreground ms-2 font-sans">
+                            {variable.type === 'integer' ? t('marketing.sms.varInteger') : t('marketing.sms.varString')}
+                          </span>
                         </Label>
                         <Input
-                          value={paramValues[key] ?? ''}
-                          onChange={(e) => setParamValues((prev) => ({ ...prev, [key]: e.target.value }))}
+                          value={paramValues[variable.name] ?? ''}
+                          onChange={(e) => setParamValues((prev) => ({ ...prev, [variable.name]: e.target.value }))}
                         />
                       </div>
                     ))}

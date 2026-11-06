@@ -166,6 +166,61 @@ function digMessage(value: unknown): string {
   return ''
 }
 
+export type SmsPatternVariable = { name: string; type: 'string' | 'integer' }
+
+export function patternDetail(raw: unknown): { message: string; variables: SmsPatternVariable[] } {
+  const row = unwrapPattern(raw)
+  const code = smsField(row, 'pattern_code', 'code')
+  const message = outboxMessage(row)
+  const text = !message || message === '—' || message === code ? '' : message
+  return { message: text, variables: patternVariables(row, text) }
+}
+
+function unwrapPattern(raw: unknown): Record<string, unknown> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const row = raw as Record<string, unknown>
+  for (const key of ['data', 'pattern']) {
+    const nested = row[key]
+    if (!nested || typeof nested !== 'object' || Array.isArray(nested)) continue
+    const obj = nested as Record<string, unknown>
+    if (obj.pattern_message || obj.message || obj.variable || obj.vars) {
+      return { ...row, ...obj }
+    }
+  }
+  return row
+}
+
+function patternVariables(row: Record<string, unknown>, message: string): SmsPatternVariable[] {
+  const out: SmsPatternVariable[] = []
+  const seen = new Set<string>()
+  for (const list of [row.variable, row.vars, row.variables]) {
+    if (!Array.isArray(list)) continue
+    for (const item of list) {
+      const name =
+        typeof item === 'string'
+          ? item
+          : item && typeof item === 'object'
+            ? String((item as { name?: string }).name ?? '')
+            : ''
+      const clean = name.replace(/%/g, '').replace(/[{}]/g, '').trim()
+      if (!clean || seen.has(clean)) continue
+      seen.add(clean)
+      const type =
+        item && typeof item === 'object' && (item as { type?: string }).type === 'integer' ? 'integer' : 'string'
+      out.push({ name: clean, type })
+    }
+  }
+  const re = /%([A-Za-z0-9_]+)%|\{([A-Za-z0-9_]+)\}/g
+  let match: RegExpExecArray | null
+  while ((match = re.exec(message))) {
+    const name = match[1] || match[2]
+    if (!name || seen.has(name)) continue
+    seen.add(name)
+    out.push({ name, type: name === 'otp' || name === 'code' ? 'integer' : 'string' })
+  }
+  return out
+}
+
 export function outboxMessage(row: Record<string, unknown>): string {
   const code = smsField(row, 'pattern_code', 'code')
   let fallback = ''
