@@ -3025,7 +3025,7 @@
   "marketing.sms.messageRequired": "Message text is required.",
   "marketing.sms.patternCodeRequired": "Pattern code is required.",
   "marketing.sms.patternBindHelp": "Register and approve the pattern in the SMS panel, then enter the approved code.",
-  "marketing.sms.patternBindHint": "After loading the pattern message, map each variable to a site shortcode and save.",
+  "marketing.sms.patternBindHint": "Known variables such as name, order number, and tracking code connect to site fields automatically when the pattern is loaded.",
   "marketing.sms.fetchPattern": "Fetch pattern",
   "marketing.sms.patternFetchEmpty": "The SMS service did not return this pattern's text.",
   "marketing.sms.varString": "Text",

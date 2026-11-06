@@ -168,6 +168,51 @@ function digMessage(value: unknown): string {
 
 export type SmsPatternVariable = { name: string; type: 'string' | 'integer' }
 
+/** Pattern token → site field. Covers the approved IPPanel patterns (orderid, name, otp, …). */
+export const PATTERN_VAR_BINDINGS: Record<string, { key: string; label: string; scope: string }> = {
+  otp: { key: 'code', label: 'کد یکبارمصرف', scope: 'otp' },
+  code: { key: 'code', label: 'کد یکبارمصرف', scope: 'otp' },
+  name: { key: 'customer_name', label: 'نام مشتری', scope: 'order' },
+  orderid: { key: 'order_number', label: 'شماره سفارش', scope: 'order' },
+  order_id: { key: 'order_number', label: 'شماره سفارش', scope: 'order' },
+  total: { key: 'total', label: 'مبلغ سفارش', scope: 'order' },
+  amount: { key: 'total_amount', label: 'مبلغ سفارش', scope: 'order' },
+  status: { key: 'status_label', label: 'وضعیت سفارش', scope: 'order' },
+  post_tracking_code: { key: 'tracking_code', label: 'کد رهگیری', scope: 'order' },
+  tracking_code: { key: 'tracking_code', label: 'کد رهگیری', scope: 'order' },
+  post_tracking_url: { key: 'tracking_url', label: 'لینک رهگیری', scope: 'order' },
+  tracking_url: { key: 'tracking_url', label: 'لینک رهگیری', scope: 'order' },
+  product_name: { key: 'product_name', label: 'نام محصول', scope: 'stock' },
+  product_title: { key: 'product_name', label: 'نام محصول', scope: 'stock' },
+  product_code: { key: 'product_code', label: 'کد محصول', scope: 'stock' },
+  stock: { key: 'stock_quantity', label: 'موجودی', scope: 'stock' },
+  qty: { key: 'stock_quantity', label: 'موجودی', scope: 'stock' },
+  discount_code: { key: 'coupon_code', label: 'کد تخفیف', scope: 'recovery' },
+  discount_amount: { key: 'coupon_discount_text', label: 'میزان تخفیف', scope: 'recovery' },
+  discount_percent: { key: 'coupon_discount_text', label: 'میزان تخفیف', scope: 'recovery' },
+  expire_date: { key: 'coupon_expires', label: 'تاریخ انقضای تخفیف', scope: 'recovery' },
+  expire_time: { key: 'coupon_expires', label: 'مهلت استفاده از تخفیف', scope: 'recovery' },
+  cancel_reason: { key: 'cancel_reason', label: 'دلیل لغو', scope: 'order' },
+  mobile: { key: 'customer_phone', label: 'شماره موبایل', scope: 'order' },
+  phone: { key: 'customer_phone', label: 'شماره موبایل', scope: 'order' },
+  shipment: { key: 'shipping_method', label: 'روش ارسال', scope: 'order' },
+}
+
+export function bindingExpr(varName: string): string {
+  return `{${PATTERN_VAR_BINDINGS[varName]?.key ?? varName}}`
+}
+
+export function knownPatternShortcodes(): Array<{ key: string; label: string; scope: string }> {
+  const seen = new Set<string>()
+  const out: Array<{ key: string; label: string; scope: string }> = []
+  for (const row of Object.values(PATTERN_VAR_BINDINGS)) {
+    if (seen.has(row.key)) continue
+    seen.add(row.key)
+    out.push(row)
+  }
+  return out
+}
+
 export function patternDetail(raw: unknown): { message: string; variables: SmsPatternVariable[] } {
   const row = unwrapPattern(raw)
   const code = smsField(row, 'pattern_code', 'code')

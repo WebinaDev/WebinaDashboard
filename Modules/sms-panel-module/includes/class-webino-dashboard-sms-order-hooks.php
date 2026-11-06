@@ -235,6 +235,7 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 		if ( class_exists( 'Webino_Dashboard_Sms_Recovery', false ) ) {
 			$snapshot = Webino_Dashboard_Sms_Recovery::maybe_attach_coupon( $event_key, $snapshot );
 		}
+		$snapshot = self::with_pattern_aliases( $snapshot );
 
 		$license = Webino_Dashboard_License::instance();
 
@@ -333,17 +334,25 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 				$low_amount = (string) $low;
 			}
 		}
+		$sku = ( $product instanceof WC_Product && method_exists( $product, 'get_sku' ) ) ? (string) $product->get_sku() : '';
+		$qty_text = null !== $stock_qty ? (string) $stock_qty : '';
 
-		return array(
-			'id'               => 0,
-			'product_id'       => $product_id,
-			'product_name'     => $name ?: (string) $product_id,
-			'product_url'      => $url,
-			'stock_quantity'   => null !== $stock_qty ? (string) $stock_qty : '',
-			'qty'              => null !== $stock_qty ? (string) $stock_qty : '',
-			'low_stock_amount' => $low_amount,
-			'site_name'        => get_bloginfo( 'name' ),
-			'site_url'         => home_url(),
+		return self::with_pattern_aliases(
+			array(
+				'id'               => 0,
+				'product_id'       => $product_id,
+				'product_name'     => $name ?: (string) $product_id,
+				'product_title'    => $name ?: (string) $product_id,
+				'product_code'     => $sku,
+				'sku'              => $sku,
+				'product_url'      => $url,
+				'stock_quantity'   => $qty_text,
+				'qty'              => $qty_text,
+				'stock'            => $qty_text,
+				'low_stock_amount' => $low_amount,
+				'site_name'        => get_bloginfo( 'name' ),
+				'site_url'         => home_url(),
+			)
 		);
 	}
 
@@ -377,9 +386,11 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 			? Webino_Dashboard_Sms_Order_Map::persian_status_label( $status, (string) $wc_label )
 			: wp_strip_all_tags( (string) $wc_label );
 
-		$item_names = array();
-		$item_full  = array();
-		$items_qty  = 0;
+		$item_names   = array();
+		$item_full    = array();
+		$items_qty    = 0;
+		$product_name = '';
+		$product_code = '';
 		foreach ( $order->get_items() as $item ) {
 			if ( ! $item instanceof WC_Order_Item_Product ) {
 				continue;
@@ -388,6 +399,15 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 			$items_qty   += $qty;
 			$item_names[] = $item->get_name() . ( $qty > 1 ? ' ×' . $qty : '' );
 			$item_full[]  = $item->get_name() . ' ×' . $qty;
+			if ( '' === $product_name ) {
+				$product_name = $item->get_name();
+			}
+			if ( '' === $product_code ) {
+				$product = $item->get_product();
+				if ( $product && method_exists( $product, 'get_sku' ) ) {
+					$product_code = (string) $product->get_sku();
+				}
+			}
 		}
 
 		$shipping_methods = array();
@@ -474,6 +494,21 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 			'site_url'         => home_url(),
 		);
 
+		$cancel_reason = (string) $order->get_meta( '_cancel_reason' );
+		if ( '' === $cancel_reason ) {
+			$cancel_reason = (string) $order->get_meta( 'cancel_reason' );
+		}
+		$snapshot['product_name']       = $product_name;
+		$snapshot['product_title']      = $product_name;
+		$snapshot['product_code']       = $product_code;
+		$snapshot['sku']                = $product_code;
+		$snapshot['cancel_reason']      = $cancel_reason;
+		$snapshot['orderid']            = $order->get_order_number();
+		$snapshot['amount']             = $sms_amount;
+		$snapshot['post_tracking_code'] = $tracking_code;
+		$snapshot['post_tracking_url']  = $tracking_url;
+		$snapshot['shipment']           = implode( ', ', $shipping_methods );
+
 		/**
 		 * Filter order SMS snapshot (POS payment vars, module extras, etc.).
 		 *
@@ -481,7 +516,53 @@ final class Webino_Dashboard_Sms_Order_Hooks {
 		 * @param WC_Order            $order    Order.
 		 */
 		$filtered = apply_filters( 'webino_dashboard_sms_order_snapshot', $snapshot, $order );
-		return is_array( $filtered ) ? $filtered : $snapshot;
+		return self::with_pattern_aliases( is_array( $filtered ) ? $filtered : $snapshot );
+	}
+
+	/**
+	 * Copy site fields onto the variable names used by approved IPPanel patterns.
+	 *
+	 * @param array<string,mixed> $snapshot Snapshot.
+	 * @return array<string,mixed>
+	 */
+	public static function with_pattern_aliases( array $snapshot ) {
+		$map = array(
+			'name'               => array( 'customer_name', 'b_first_name' ),
+			'orderid'            => array( 'order_number', 'number', 'order_id' ),
+			'amount'             => array( 'total_amount', 'price_amount', 'total' ),
+			'post_tracking_code' => array( 'tracking_code', 'tracking', 'barcode' ),
+			'post_tracking_url'  => array( 'tracking_url' ),
+			'tracking_code'      => array( 'tracking', 'barcode', 'post_tracking_code' ),
+			'product_title'      => array( 'product_name' ),
+			'product_name'       => array( 'product_title' ),
+			'product_code'       => array( 'sku', 'product_sku' ),
+			'stock'              => array( 'stock_quantity', 'qty' ),
+			'discount_code'      => array( 'coupon_code', 'coupon' ),
+			'discount_amount'    => array( 'coupon_discount_text', 'coupon_amount' ),
+			'discount_percent'   => array( 'coupon_discount_text', 'coupon_amount' ),
+			'expire_date'        => array( 'coupon_expires' ),
+			'expire_time'        => array( 'coupon_expires' ),
+			'shipment'           => array( 'shipping_method' ),
+			'mobile'             => array( 'customer_phone', 'phone' ),
+			'otp'                => array( 'code' ),
+		);
+		foreach ( $map as $alias => $sources ) {
+			if ( isset( $snapshot[ $alias ] ) && is_scalar( $snapshot[ $alias ] ) && '' !== trim( (string) $snapshot[ $alias ] ) ) {
+				continue;
+			}
+			foreach ( $sources as $source ) {
+				if ( ! isset( $snapshot[ $source ] ) || ! is_scalar( $snapshot[ $source ] ) ) {
+					continue;
+				}
+				$value = trim( (string) $snapshot[ $source ] );
+				if ( '' === $value ) {
+					continue;
+				}
+				$snapshot[ $alias ] = (string) $snapshot[ $source ];
+				break;
+			}
+		}
+		return $snapshot;
 	}
 
 	/**

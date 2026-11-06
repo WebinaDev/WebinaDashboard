@@ -3024,7 +3024,7 @@
   "marketing.sms.messageRequired": "متن پیام الزامی است.",
   "marketing.sms.patternCodeRequired": "کد پترن الزامی است.",
   "marketing.sms.patternBindHelp": "پترن را در سامانه پیامک ثبت و تأیید کنید، سپس کد تأییدشده را وارد کنید.",
-  "marketing.sms.patternBindHint": "پس از دریافت پیام پترن، هر متغیر را به شورت‌کد سایت نگاشت کنید و ذخیره کنید.",
+  "marketing.sms.patternBindHint": "با دریافت پترن، متغیرهای شناخته‌شده مثل نام، شماره سفارش و کد رهگیری خودشان به فیلد سایت وصل می‌شوند.",
   "marketing.sms.fetchPattern": "دریافت پترن",
   "marketing.sms.patternFetchEmpty": "متن این پترن از سرویس پیامک برنگشت.",
   "marketing.sms.varString": "متن",

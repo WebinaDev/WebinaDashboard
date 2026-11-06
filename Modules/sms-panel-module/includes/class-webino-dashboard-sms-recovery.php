@@ -266,6 +266,11 @@ final class Webino_Dashboard_Sms_Recovery {
 			'coupon_expires'       => $expires,
 			'coupon_usage_limit'   => (string) $usage,
 			'coupon_discount_text' => $discount_text,
+			'discount_code'        => (string) $code,
+			'discount_amount'      => $discount_text,
+			'discount_percent'     => $discount_text,
+			'expire_date'          => $expires,
+			'expire_time'          => $expires,
 		);
 	}
 

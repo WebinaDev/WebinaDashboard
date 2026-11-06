@@ -41,7 +41,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { toastApiError } from '@/lib/apiError'
-import { patternDetail, type SmsPatternVariable } from '@/lib/sms-report'
+import { bindingExpr, knownPatternShortcodes, patternDetail, PATTERN_VAR_BINDINGS, type SmsPatternVariable } from '@/lib/sms-report'
 import {
   createSmsPattern,
   detachSmsPattern,
@@ -236,7 +236,9 @@ function RoleCell({
       setPatternVars(detail.variables)
       const nextMap = { ...paramMap }
       detail.variables.forEach((v) => {
-        if (!nextMap[v.name]) nextMap[v.name] = `{${v.name}}`
+        const target = bindingExpr(v.name)
+        const current = nextMap[v.name]
+        if (!current || current === `{${v.name}}`) nextMap[v.name] = target
       })
       onParamMap(nextMap)
       onBody(formatPcodePreview(trimmed, nextMap))
@@ -248,6 +250,17 @@ function RoleCell({
   }
 
   const preview = formatPcodePreview(patternCode, paramMap)
+  const siteOptions = useMemo(() => {
+    const byKey = new Map(knownPatternShortcodes().map((row) => [row.key, row]))
+    const merged = shortcodes
+      .filter((row) => row.key !== 'name')
+      .map((row) => byKey.get(row.key) ?? row)
+    for (const variable of patternVars) {
+      const bind = PATTERN_VAR_BINDINGS[variable.name]
+      if (bind && !merged.some((row) => row.key === bind.key)) merged.push(bind)
+    }
+    return merged
+  }, [shortcodes, patternVars])
 
   return (
     <div className="bg-background/50 space-y-3 rounded-xl border p-3">
@@ -324,7 +337,7 @@ function RoleCell({
                   <SelectValue placeholder={t('marketing.sms.pickSiteVar')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {shortcodes.map((s) => (
+                  {siteOptions.map((s) => (
                     <SelectItem key={s.key} value={`{${s.key}}`}>
                       {s.label} ({`{${s.key}}`})
                     </SelectItem>
