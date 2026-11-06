@@ -67,6 +67,7 @@ type IppanelPattern = {
   title?: string
   pattern_code?: string
   pattern_message?: string
+  message?: string
   pattern_description?: string
   pattern_status?: string
   pattern_status_fa?: string
@@ -1022,7 +1023,7 @@ export default function SmsPatternsPage() {
                               {code || '—'}
                             </TableCell>
                             <TableCell className="max-w-xs truncate text-xs" dir="auto">
-                              {p.title || p.pattern_message || '—'}
+                              {p.pattern_message || p.message || p.title || '—'}
                             </TableCell>
                             <TableCell className="font-mono text-xs" dir="ltr">
                               {v.length ? v.map((x) => `%${x}%`).join(', ') : '—'}
