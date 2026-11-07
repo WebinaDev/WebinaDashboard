@@ -1,1 +1,0 @@
-import{t as e}from"./SettingsModulesChrome-CmezFv3j.js";import{t}from"./WncPlatformPanel-RWINn4yA.js";import{jsx as n}from"react/jsx-runtime";function r(){return n(e,{children:n(t,{platform:`snappshop`,titleKey:`wnc.modules.snappshop.title`,subtitleKey:`wnc.modules.snappshop.subtitle`,feedPlatform:!0,embedded:!0})})}export{r as default};

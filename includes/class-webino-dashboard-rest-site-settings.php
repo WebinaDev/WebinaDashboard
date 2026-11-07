@@ -141,6 +141,7 @@ final class Webino_Dashboard_REST_Site_Settings {
 				'admin_email'     => get_option( 'admin_email', '' ),
 				'timezone_string' => get_option( 'timezone_string', '' ),
 				'WPLANG'          => get_option( 'WPLANG', '' ),
+				'enamad_file'     => class_exists( 'Webino_Dashboard_Enamad_File', false ) ? Webino_Dashboard_Enamad_File::code() : '',
 			)
 		);
 	}
@@ -170,6 +171,9 @@ final class Webino_Dashboard_REST_Site_Settings {
 		}
 		if ( null !== $request->get_param( 'WPLANG' ) ) {
 			update_option( 'WPLANG', $lang );
+		}
+		if ( null !== $request->get_param( 'enamad_file' ) && class_exists( 'Webino_Dashboard_Enamad_File', false ) ) {
+			Webino_Dashboard_Enamad_File::save( $request->get_param( 'enamad_file' ) );
 		}
 
 		if ( class_exists( 'Webino_Dashboard_SSR', false ) ) {

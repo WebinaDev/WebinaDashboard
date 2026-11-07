@@ -20,6 +20,12 @@ type SiteGeneral = {
   admin_email: string
   timezone_string: string
   WPLANG: string
+  enamad_file?: string
+}
+
+function enamadCode(raw: string): string {
+  const value = raw.trim().toLowerCase().replace(/\.txt$/, '')
+  return /^[0-9]{1,64}$/.test(value) ? value : ''
 }
 
 export function SiteGeneralSettingsPanel() {
@@ -108,6 +114,24 @@ export function SiteGeneralSettingsPanel() {
               onChange={(e) => setDraft({ ...draft, timezone_string: e.target.value })}
               className="w-full"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="enamad_file">{t('settings.site.enamadLabel')}</Label>
+            <Input
+              id="enamad_file"
+              dir="ltr"
+              inputMode="numeric"
+              placeholder="4534534"
+              value={draft.enamad_file ?? ''}
+              onChange={(e) => setDraft({ ...draft, enamad_file: e.target.value })}
+              className="w-full"
+            />
+            <p className="text-muted-foreground text-xs">{t('settings.site.enamadHint')}</p>
+            {enamadCode(draft.enamad_file ?? '') ? (
+              <p className="text-xs" dir="ltr">
+                {t('settings.site.enamadPublic', { file: `${enamadCode(draft.enamad_file ?? '')}.txt` })}
+              </p>
+            ) : null}
           </div>
           <div className="hidden sm:block">
             <Button type="button" disabled={save.isPending} onClick={() => void save.mutateAsync()}>

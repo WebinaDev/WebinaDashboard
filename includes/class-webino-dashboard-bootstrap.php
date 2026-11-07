@@ -73,6 +73,7 @@ final class Webino_Dashboard_Bootstrap {
 			'includes/class-webino-dashboard-locale.php',
 			'includes/class-webino-dashboard-currency.php',
 			'includes/class-webino-dashboard-pricing.php',
+			'includes/class-webino-dashboard-enamad-file.php',
 			'includes/class-webino-dashboard-rest-site-settings.php',
 			'includes/class-webino-dashboard-rest-wc-settings.php',
 			'includes/class-webino-dashboard-ssr.php',
@@ -175,6 +176,9 @@ final class Webino_Dashboard_Bootstrap {
 		}
 		if ( class_exists( 'Webino_Dashboard_License', false ) ) {
 			Webino_Dashboard_License::instance();
+		}
+		if ( class_exists( 'Webino_Dashboard_Enamad_File', false ) ) {
+			Webino_Dashboard_Enamad_File::init();
 		}
 		if ( class_exists( 'Webino_Dashboard_REST_Site_Settings', false ) ) {
 			Webino_Dashboard_REST_Site_Settings::init();
