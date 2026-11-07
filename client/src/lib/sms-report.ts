@@ -202,6 +202,15 @@ export function bindingExpr(varName: string): string {
   return `{${PATTERN_VAR_BINDINGS[varName]?.key ?? varName}}`
 }
 
+/** A saved map is stale when it only repeats the pattern token (`orderid` or `{orderid}`). */
+export function resolvePatternBinding(varName: string, stored: string | undefined | null): string {
+  const preferred = bindingExpr(varName)
+  const raw = (stored ?? '').trim()
+  if (!raw || raw === varName || raw === `{${varName}}`) return preferred
+  if (!raw.includes('{') && /^[A-Za-z0-9_]+$/.test(raw)) return `{${raw}}`
+  return raw
+}
+
 export function knownPatternShortcodes(): Array<{ key: string; label: string; scope: string }> {
   const seen = new Set<string>()
   const out: Array<{ key: string; label: string; scope: string }> = []

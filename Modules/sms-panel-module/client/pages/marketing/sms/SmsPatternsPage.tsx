@@ -41,7 +41,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { toastApiError } from '@/lib/apiError'
-import { bindingExpr, knownPatternShortcodes, patternDetail, PATTERN_VAR_BINDINGS, type SmsPatternVariable } from '@/lib/sms-report'
+import { knownPatternShortcodes, patternDetail, PATTERN_VAR_BINDINGS, resolvePatternBinding, type SmsPatternVariable } from '@/lib/sms-report'
 import {
   createSmsPattern,
   detachSmsPattern,
@@ -236,9 +236,7 @@ function RoleCell({
       setPatternVars(detail.variables)
       const nextMap = { ...paramMap }
       detail.variables.forEach((v) => {
-        const target = bindingExpr(v.name)
-        const current = nextMap[v.name]
-        if (!current || current === `{${v.name}}`) nextMap[v.name] = target
+        nextMap[v.name] = resolvePatternBinding(v.name, nextMap[v.name])
       })
       onParamMap(nextMap)
       onBody(formatPcodePreview(trimmed, nextMap))
@@ -325,7 +323,7 @@ function RoleCell({
                 </p>
               </div>
               <Select
-                value={paramMap[pv.name] || undefined}
+                value={resolvePatternBinding(pv.name, paramMap[pv.name]) || undefined}
                 onValueChange={(v) => {
                   const next = { ...paramMap, [pv.name]: v }
                   onParamMap(next)
@@ -555,10 +553,14 @@ export default function SmsPatternsPage() {
   const cellParamMap = (scope: string, eventKey: string): Record<string, string> => {
     const key = normalizeEventKey(eventKey)
     const fromTpl = getTpl(scope, key)?.param_map
-    if (fromTpl && typeof fromTpl === 'object') return { ...fromTpl }
     const fromReg = registry.find((r) => r.scope === scope && normalizeEventKey(r.event_key) === key)?.param_map
-    if (fromReg && typeof fromReg === 'object') return { ...fromReg }
-    return {}
+    const source = fromTpl && typeof fromTpl === 'object' ? fromTpl : fromReg && typeof fromReg === 'object' ? fromReg : null
+    if (!source) return {}
+    const next: Record<string, string> = {}
+    for (const [name, value] of Object.entries(source)) {
+      next[name] = resolvePatternBinding(name, value)
+    }
+    return next
   }
 
   const saveCell = useMutation({
