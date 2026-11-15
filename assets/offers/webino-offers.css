@@ -987,6 +987,18 @@
 .wp-block-woocommerce-checkout .webino-coupon-chooser.webino-cc {
   margin: 0.75rem 0 1rem;
 }
+/* Classic cart page containers are full-width; keep the chooser column-width like the checkout. */
+.woocommerce-cart .webino-coupon-chooser.webino-cc {
+  max-width: 46rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Block cart: same column width; checkout layout is intentionally left unchanged. */
+.wp-block-woocommerce-cart .webino-coupon-chooser.webino-cc {
+  max-width: 46rem;
+  margin-left: auto;
+  margin-right: auto;
+}
 /* Checkout order review table cell context. */
 #order_review .webino-coupon-chooser.webino-cc,
 .woocommerce-checkout-review-order .webino-coupon-chooser.webino-cc {
