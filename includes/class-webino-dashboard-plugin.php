@@ -103,6 +103,9 @@ final class Webino_Dashboard_Plugin {
 		if ( class_exists( 'Webino_Dashboard_Offer_Engine', false ) ) {
 			Webino_Dashboard_Offer_Engine::init();
 		}
+		if ( class_exists( 'Webino_Dashboard_Coupon_Gift', false ) ) {
+			Webino_Dashboard_Coupon_Gift::init();
+		}
 		if ( class_exists( 'Webino_Dashboard_Coupon_Storefront', false ) ) {
 			Webino_Dashboard_Coupon_Storefront::init();
 		}

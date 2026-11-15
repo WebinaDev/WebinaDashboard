@@ -183,27 +183,28 @@ function Sidebar({
 
   if (isMobile) {
     return (
-      <Sheet modal={false} open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      <Sheet modal open={openMobile} onOpenChange={setOpenMobile} {...props}>
         <SheetContent
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-(--sidebar-width) border-sidebar-border bg-background p-0 text-sidebar-foreground shadow-xl [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              backgroundColor: "var(--color-background)",
             } as React.CSSProperties
           }
           side={side}
           showCloseButton={false}
-          showOverlay={false}
+          showOverlay
           onFocusOutside={(event) => event.preventDefault()}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{i18n.t("a11y.sidebarTitle")}</SheetTitle>
             <SheetDescription>{i18n.t("a11y.sidebarDescription")}</SheetDescription>
           </SheetHeader>
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <div className="bg-background flex h-full w-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>
     )

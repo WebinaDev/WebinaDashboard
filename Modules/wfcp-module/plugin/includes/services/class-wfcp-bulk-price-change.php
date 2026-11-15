@@ -18,14 +18,16 @@ if ( ! defined( 'WPINC' ) ) {
  */
 class WFCP_Bulk_Price_Change {
 
-	const SLUG        = 'wfcp-price-changer';
-	const GROUP       = 'wfcp-bpc';
-	const PER_PAGE    = 100;
-	const LOCK_KEY    = 'wfcp_bpc_lock';
-	const PARAMS_KEY  = 'wfcp_bpc_params';
-	const STATE_KEY   = 'wfcp_bpc_state';
-	const LASTLOG_KEY = 'wfcp_bpc_last_log';
-	const LOG_DIR     = 'wfcp-bpc-logs';
+	const SLUG         = 'wfcp-price-changer';
+	const GROUP        = 'wfcp-bpc';
+	const PER_PAGE     = 100;
+	const LOCK_KEY     = 'wfcp_bpc_lock';
+	const PARAMS_KEY   = 'wfcp_bpc_params';
+	const STATE_KEY    = 'wfcp_bpc_state';
+	const LASTLOG_KEY  = 'wfcp_bpc_last_log';
+	const HISTORY_KEY  = 'wfcp_bpc_history';
+	const HISTORY_MAX  = 40;
+	const LOG_DIR      = 'wfcp-bpc-logs';
 
 	/**
 	 * Register hooks.
@@ -82,6 +84,132 @@ class WFCP_Bulk_Price_Change {
 		} else {
 			wp_schedule_single_event( time() + 1, $hook, array( (int) $page, (string) $run_id ) );
 		}
+	}
+
+	/**
+	 * Drop pending Action Scheduler / cron pages for this job group.
+	 *
+	 * @return void
+	 */
+	public function clear_queued_jobs() {
+		if ( function_exists( 'as_unschedule_all_actions' ) ) {
+			as_unschedule_all_actions( 'wfcp_bpc_process', null, self::GROUP );
+			as_unschedule_all_actions( 'wfcp_bpc_import_process', null, self::GROUP );
+		}
+		wp_clear_scheduled_hook( 'wfcp_bpc_process' );
+		wp_clear_scheduled_hook( 'wfcp_bpc_import_process' );
+	}
+
+	/**
+	 * Persist a finished / canceled / stalled run so the dashboard can show history.
+	 *
+	 * @param string               $status completed|canceled|failed|stalled.
+	 * @param string               $reason Human-readable reason.
+	 * @param array<string,mixed>  $extra  Extra fields merged into the archive row.
+	 * @return array<string,mixed>|null Archived row.
+	 */
+	public function archive_run( $status, $reason = '', $extra = array() ) {
+		$params = get_option( self::PARAMS_KEY );
+		$state  = get_option( self::STATE_KEY );
+		if ( ! is_array( $params ) || empty( $params['run_id'] ) ) {
+			return null;
+		}
+		$run_id = (string) $params['run_id'];
+		$prefix = ( isset( $params['job_type'] ) && 'import' === $params['job_type'] ) ? 'import-log-' : '';
+		$row    = array_merge(
+			array(
+				'run_id'       => $run_id,
+				'job_type'     => isset( $params['job_type'] ) ? (string) $params['job_type'] : 'bump',
+				'status'       => sanitize_key( (string) $status ),
+				'reason'       => sanitize_text_field( (string) $reason ),
+				'started_at'   => isset( $params['started_at'] ) ? (int) $params['started_at'] : 0,
+				'finished_at'  => time(),
+				'total'        => is_array( $state ) ? (int) ( $state['total'] ?? 0 ) : 0,
+				'pages'        => is_array( $state ) ? (int) ( $state['pages'] ?? 0 ) : 0,
+				'current_page' => is_array( $state ) ? (int) ( $state['current_page'] ?? 0 ) : 0,
+				'processed'    => is_array( $state ) ? (int) ( $state['processed'] ?? 0 ) : 0,
+				'updated'      => is_array( $state ) ? (int) ( $state['updated'] ?? $state['processed'] ?? 0 ) : 0,
+				'skipped'      => is_array( $state ) ? (int) ( $state['skipped'] ?? 0 ) : 0,
+				'errors'       => is_array( $state ) ? (int) ( $state['errors'] ?? 0 ) : 0,
+				'type'         => isset( $params['type'] ) ? (string) $params['type'] : '',
+				'value'        => isset( $params['value'] ) ? (float) $params['value'] : 0,
+				'cats'         => isset( $params['cats'] ) ? (string) $params['cats'] : '',
+				'log_url'      => $this->log_url( $run_id, $prefix ),
+			),
+			is_array( $extra ) ? $extra : array()
+		);
+		$history = get_option( self::HISTORY_KEY, array() );
+		if ( ! is_array( $history ) ) {
+			$history = array();
+		}
+		$history = array_values(
+			array_filter(
+				$history,
+				static function ( $item ) use ( $run_id ) {
+					return ! is_array( $item ) || (string) ( $item['run_id'] ?? '' ) !== $run_id;
+				}
+			)
+		);
+		array_unshift( $history, $row );
+		$history = array_slice( $history, 0, self::HISTORY_MAX );
+		update_option( self::HISTORY_KEY, $history, false );
+		update_option(
+			self::LASTLOG_KEY,
+			array(
+				'run'    => $run_id,
+				'url'    => $row['log_url'],
+				'status' => $row['status'],
+				'reason' => $row['reason'],
+			),
+			false
+		);
+		return $row;
+	}
+
+	/**
+	 * @return list<array<string,mixed>>
+	 */
+	public static function list_history() {
+		$history = get_option( self::HISTORY_KEY, array() );
+		return is_array( $history ) ? array_values( $history ) : array();
+	}
+
+	/**
+	 * If a job has params but no lock and no queued worker, mark it stalled.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public function maybe_mark_stalled() {
+		$params = get_option( self::PARAMS_KEY );
+		$state  = get_option( self::STATE_KEY );
+		if ( ! is_array( $params ) || empty( $params['run_id'] ) || ! is_array( $state ) ) {
+			return null;
+		}
+		if ( get_transient( self::LOCK_KEY ) ) {
+			return null;
+		}
+		$started = isset( $params['started_at'] ) ? (int) $params['started_at'] : 0;
+		// Give cron a short window after start / between pages.
+		if ( $started > 0 && ( time() - $started ) < 90 && (int) ( $state['current_page'] ?? 0 ) < 1 ) {
+			return null;
+		}
+		$reason = sprintf(
+			/* translators: 1: page, 2: total pages, 3: processed, 4: total */
+			'صف در صفحه %1$d از %2$d متوقف شد (%3$d از %4$d محصول). احتمالاً کرون/Action Scheduler قطع شده است.',
+			(int) ( $state['current_page'] ?? 0 ),
+			(int) ( $state['pages'] ?? 0 ),
+			(int) ( $state['processed'] ?? 0 ),
+			(int) ( $state['total'] ?? 0 )
+		);
+		$this->archive_run( 'stalled', $reason );
+		$this->clear_queued_jobs();
+		delete_option( self::PARAMS_KEY );
+		delete_option( self::STATE_KEY );
+		delete_transient( self::LOCK_KEY );
+		return array(
+			'status' => 'stalled',
+			'reason' => $reason,
+		);
 	}
 
 	/* ─────────────────────── CSV Import ─────────────────────── */
@@ -321,12 +449,7 @@ class WFCP_Bulk_Price_Change {
 				litespeed_purge_all();
 			}
 
-			$last = array(
-				'run' => $run,
-				'url' => $this->log_url( $run, 'import-log-' ),
-			);
-			update_option( self::LASTLOG_KEY, $last, false );
-
+			$this->archive_run( 'completed', 'ورود CSV تمام شد.' );
 			if ( file_exists( $params['file_path'] ) ) {
 				wp_delete_file( $params['file_path'] );
 			}
@@ -348,22 +471,33 @@ class WFCP_Bulk_Price_Change {
 		$params = get_option( self::PARAMS_KEY );
 		$state  = get_option( self::STATE_KEY );
 		if ( ! $params || ! $state || $run !== $params['run_id'] ) {
+			if ( is_array( $params ) && ! empty( $params['run_id'] ) && $run !== $params['run_id'] ) {
+				$this->archive_run( 'failed', 'شناسه اجرا با صف هم‌خوان نبود؛ پردازش قطع شد.' );
+				$this->clear_queued_jobs();
+				delete_option( self::PARAMS_KEY );
+				delete_option( self::STATE_KEY );
+			}
 			delete_transient( self::LOCK_KEY );
 			return;
 		}
-		$done                = $this->process_batch( $params, (int) $page );
+		$done                  = $this->process_batch( $params, (int) $page );
 		$state['current_page'] = (int) $page;
-		$state['processed']   += (int) $done['updated'];
+		$state['processed']    = (int) ( $state['processed'] ?? 0 ) + (int) $done['updated'] + (int) $done['skipped'];
+		$state['updated']      = (int) ( $state['updated'] ?? 0 ) + (int) $done['updated'];
+		$state['skipped']      = (int) ( $state['skipped'] ?? 0 ) + (int) $done['skipped'];
 		update_option( self::STATE_KEY, $state, false );
 		if ( $done['finished'] ) {
+			$this->archive_run(
+				'completed',
+				sprintf(
+					'تمام شد. به‌روز شد: %d، رد شد: %d.',
+					(int) ( $state['updated'] ?? 0 ),
+					(int) ( $state['skipped'] ?? 0 )
+				)
+			);
 			delete_option( self::PARAMS_KEY );
 			delete_option( self::STATE_KEY );
 			delete_transient( self::LOCK_KEY );
-			$last = array(
-				'run' => $run,
-				'url' => $this->log_url( $run ),
-			);
-			update_option( self::LASTLOG_KEY, $last, false );
 			if ( $from_ui ) {
 				wp_redirect( admin_url( 'admin.php?page=' . self::SLUG . '&wfcp_bpc_done=' . urlencode( 'پایان فرآیند افزایش قیمت. به‌روزرسانی انجام شد.' ) ) );
 				exit;
@@ -427,6 +561,9 @@ class WFCP_Bulk_Price_Change {
 			'pages'        => $pages,
 			'current_page' => 0,
 			'processed'    => 0,
+			'updated'      => 0,
+			'skipped'      => 0,
+			'errors'       => 0,
 		);
 		update_option( self::STATE_KEY, $state, false );
 
@@ -449,11 +586,21 @@ class WFCP_Bulk_Price_Change {
 			wp_die( 'Bad nonce' );
 		}
 		$params = get_option( self::PARAMS_KEY );
+		$state  = get_option( self::STATE_KEY );
 		if ( $params && isset( $params['job_type'] ) && 'import' === $params['job_type'] && ! empty( $params['file_path'] ) ) {
 			if ( file_exists( $params['file_path'] ) ) {
 				wp_delete_file( $params['file_path'] );
 			}
 		}
+		$reason = sprintf(
+			'لغو دستی در صفحه %d از %d (پردازش‌شده: %d از %d).',
+			is_array( $state ) ? (int) ( $state['current_page'] ?? 0 ) : 0,
+			is_array( $state ) ? (int) ( $state['pages'] ?? 0 ) : 0,
+			is_array( $state ) ? (int) ( $state['processed'] ?? 0 ) : 0,
+			is_array( $state ) ? (int) ( $state['total'] ?? 0 ) : 0
+		);
+		$this->archive_run( 'canceled', $reason );
+		$this->clear_queued_jobs();
 		delete_transient( self::LOCK_KEY );
 		delete_option( self::PARAMS_KEY );
 		delete_option( self::STATE_KEY );

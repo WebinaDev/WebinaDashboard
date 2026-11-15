@@ -24,56 +24,22 @@ class Webino_Shipping_Checkout_District {
 	 * @return void
 	 */
 	public static function assets() {
-		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
-			return;
-		}
-		$states = class_exists( 'Webino_Shipping_Cities', false ) ? Webino_Shipping_Cities::get_states() : array();
-		$map = array();
-		foreach ( $states as $st ) {
-			foreach ( Webino_Shipping_Cities::get_cities( $st['id'] ) as $city ) {
-				$districts = Webino_Shipping_Cities::get_districts( $city['id'] );
-				if ( $districts ) {
-					$map[ $city['name'] ] = array_map(
-						static function ( $d ) {
-							return array( 'id' => $d['id'], 'name' => $d['name'] );
-						},
-						$districts
-					);
-				}
-			}
-		}
-		$js = 'window.webinoDistricts=' . wp_json_encode( $map ) . ';'
-			. 'jQuery(function($){'
-			. 'function fill(citySel,distSel){'
-			. 'var city=$(citySel).val();'
-			. 'var list=(window.webinoDistricts&&window.webinoDistricts[city])||[];'
-			. 'var $el=$(distSel);'
-			. '$el.empty().append(\'<option value="">—</option>\');'
-			. 'list.forEach(function(x){$el.append($(\'<option/>\',{value:x.id,text:x.name}));});'
-			. '}'
-			. '$(document.body).on(\'change\',\'#billing_city,#shipping_city\',function(){'
-			. 'var isShip=this.id.indexOf(\'shipping\')===0;'
-			. 'fill(isShip?\'#shipping_city\':\'#billing_city\',isShip?\'#shipping_district\':\'#billing_district\');'
-			. '});'
-			. '});';
-		wp_add_inline_script( 'jquery', $js );
+		// Checkout no longer shows the neighborhood field.
 	}
 
 	/**
+	 * District/neighborhood is not a standard Iran checkout field — do not inject it.
+	 *
 	 * @param array $fields Fields.
 	 * @return array
 	 */
 	public static function fields( $fields ) {
-		$district = array(
-			'type'     => 'select',
-			'label'    => __( 'محله', 'webino-dashboard' ),
-			'required' => false,
-			'class'    => array( 'form-row-wide', 'address-field' ),
-			'options'  => array( '' => '—' ),
-			'priority' => 65,
-		);
-		$fields['billing']['billing_district'] = $district;
-		$fields['shipping']['shipping_district'] = $district;
+		if ( isset( $fields['billing']['billing_district'] ) ) {
+			unset( $fields['billing']['billing_district'] );
+		}
+		if ( isset( $fields['shipping']['shipping_district'] ) ) {
+			unset( $fields['shipping']['shipping_district'] );
+		}
 		return $fields;
 	}
 

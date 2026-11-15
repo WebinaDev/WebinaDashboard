@@ -60,6 +60,7 @@ type Coupon = {
   offer_visible?: boolean
   offer_public?: boolean
   max_discount?: string
+  gift_product_id?: number
 }
 
 /** Normalize Persian/Arabic digits and thousands separators typed into money fields. */
@@ -122,20 +123,23 @@ function buildCouponPayload(input: {
   showInStore: boolean
   autoApply: boolean
   maxDiscount: string
+  giftProductId: number
 }) {
   const usageRaw = cleanNumber(input.usageLimit)
   const usagePerUserRaw = cleanNumber(input.usageLimitPerUser)
+  const isGift = input.type === 'webino_gift'
 
   const body: Record<string, unknown> = {
     code: input.code,
-    amount: cleanNumber(input.amount),
+    amount: isGift ? '0' : cleanNumber(input.amount),
     type: input.type,
     description: input.description,
     minimum_amount: cleanNumber(input.minAmount),
     maximum_amount: cleanNumber(input.maxAmount),
     individual_use: input.individualUse,
-    free_shipping: input.freeShipping,
+    free_shipping: isGift ? false : input.freeShipping,
     exclude_sale_items: input.excludeSale,
+    gift_product_id: isGift ? input.giftProductId : 0,
     product_ids: input.productIds,
     excluded_product_ids: input.excludedProductIds,
     product_categories: input.categoryIds,
@@ -214,6 +218,7 @@ export default function CouponEditorPage() {
   const [showInStore, setShowInStore] = useState(false)
   const [autoApply, setAutoApply] = useState(false)
   const [maxDiscount, setMaxDiscount] = useState('')
+  const [giftProductId, setGiftProductId] = useState(0)
 
   const couponQ = useQuery({
     queryKey: ['coupon', id],
@@ -263,6 +268,7 @@ export default function CouponEditorPage() {
     setShowInStore(Boolean(c.offer_visible || c.offer_public))
     setAutoApply(Boolean(c.auto_apply))
     setMaxDiscount(c.max_discount ? String(c.max_discount) : '')
+    setGiftProductId(Number(c.gift_product_id) > 0 ? Number(c.gift_product_id) : 0)
   }, [couponQ.data])
 
   const generateCode = useMutation({
@@ -308,6 +314,7 @@ export default function CouponEditorPage() {
         showInStore,
         autoApply,
         maxDiscount,
+        giftProductId,
       })
 
       if (id) {
@@ -393,7 +400,14 @@ export default function CouponEditorPage() {
               {loading ? <Skeleton className="h-32 w-full" /> : (
                 <CouponGeneralPanel
                   type={type}
-                  onTypeChange={setType}
+                  onTypeChange={(next) => {
+                    setType(next)
+                    if (next === 'webino_gift') {
+                      setAmount('0')
+                      setFreeShipping(false)
+                      setShowInStore(true)
+                    }
+                  }}
                   amount={amount}
                   onAmountChange={setAmount}
                   freeShipping={freeShipping}
@@ -408,6 +422,8 @@ export default function CouponEditorPage() {
                   onIndividualUseChange={setIndividualUse}
                   excludeSale={excludeSale}
                   onExcludeSaleChange={setExcludeSale}
+                  giftProductId={giftProductId}
+                  onGiftProductIdChange={setGiftProductId}
                 />
               )}
             </CardContent>

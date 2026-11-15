@@ -21,6 +21,7 @@ class Webino_Dashboard_Coupons {
 	const META_ALLOWED_PURCHASE_TYPES   = '_webino_coupon_allowed_purchase_types';
 	const META_ALLOWED_SHIPPING_METHODS = '_webino_coupon_allowed_shipping_methods';
 	const META_ALLOWED_CHANNELS         = '_webino_coupon_allowed_channels';
+	const META_GIFT_PRODUCT_ID          = '_webino_gift_product_id';
 
 	/**
 	 * @return bool
@@ -211,6 +212,7 @@ class Webino_Dashboard_Coupons {
 				'email_restrictions'          => array_values( array_filter( array_map( 'strval', $c->get_email_restrictions() ) ) ),
 				'brand_ids'                   => self::get_brand_ids( $c->get_id() ),
 				'excluded_brand_ids'          => self::get_excluded_brand_ids( $c->get_id() ),
+				'gift_product_id'             => (int) get_post_meta( $c->get_id(), self::META_GIFT_PRODUCT_ID, true ),
 				'status'                      => $post ? $post->post_status : 'publish',
 				'date'                        => $post ? mysql2date( 'c', $post->post_date, false ) : null,
 				'visibility'                  => $post ? self::post_visibility_from_post( $post ) : 'public',
@@ -398,6 +400,20 @@ class Webino_Dashboard_Coupons {
 		$type = null !== $type && '' !== (string) $type ? sanitize_key( (string) $type ) : ( $is_new ? 'fixed_cart' : $existing->get_discount_type() );
 		if ( function_exists( 'wc_get_coupon_types' ) && ! array_key_exists( $type, wc_get_coupon_types() ) ) {
 			return $bad( 'coupon_type_invalid', __( 'Invalid discount type.', 'webino-dashboard' ) );
+		}
+		if ( 'webino_gift' === $type ) {
+			$gift_id = (int) $request->get_param( 'gift_product_id' );
+			if ( $gift_id < 1 && $existing instanceof WC_Coupon ) {
+				$gift_id = (int) get_post_meta( $existing->get_id(), self::META_GIFT_PRODUCT_ID, true );
+			}
+			if ( $gift_id < 1 || ! function_exists( 'wc_get_product' ) || ! wc_get_product( $gift_id ) ) {
+				return $bad( 'coupon_gift_product', __( 'برای کوپن هدیه باید یک محصول هدیه انتخاب شود.', 'webino-dashboard' ) );
+			}
+			$min_raw = $request->get_param( 'minimum_amount' );
+			$min_n   = null !== $min_raw ? $num( $min_raw ) : ( $is_new ? '' : (string) $existing->get_minimum_amount() );
+			if ( '' === $min_n || (float) $min_n <= 0 ) {
+				return $bad( 'coupon_gift_min', __( 'برای کوپن هدیه حداقل مبلغ سبد را مشخص کنید.', 'webino-dashboard' ) );
+			}
 		}
 
 		$amount_raw = $request->get_param( 'amount' );
@@ -623,6 +639,14 @@ class Webino_Dashboard_Coupons {
 				}
 			}
 			self::set_string_list_meta( $coupon_id, self::META_ALLOWED_CHANNELS, $channels );
+		}
+		if ( null !== $request->get_param( 'gift_product_id' ) || 'webino_gift' === sanitize_key( (string) $request->get_param( 'type' ) ) ) {
+			$gift_id = (int) $request->get_param( 'gift_product_id' );
+			if ( class_exists( 'Webino_Dashboard_Coupon_Gift', false ) ) {
+				Webino_Dashboard_Coupon_Gift::set_gift_product_id( $coupon_id, $gift_id );
+			} else {
+				update_post_meta( $coupon_id, self::META_GIFT_PRODUCT_ID, $gift_id > 0 ? $gift_id : 0 );
+			}
 		}
 		if ( class_exists( 'Webino_Dashboard_Offer_Engine', false ) ) {
 			Webino_Dashboard_Offer_Engine::apply_offer_fields( $coupon_id, $request );

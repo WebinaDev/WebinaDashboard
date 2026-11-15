@@ -1370,6 +1370,9 @@ final class Webino_Dashboard_REST_WFCP {
 				'pages'        => $pages,
 				'current_page' => 0,
 				'processed'    => 0,
+				'updated'      => 0,
+				'skipped'      => 0,
+				'errors'       => 0,
 			),
 			false
 		);
@@ -1398,12 +1401,43 @@ final class Webino_Dashboard_REST_WFCP {
 	 * @return WP_REST_Response
 	 */
 	public static function bulk_price_state() {
+		$svc = isset( $GLOBALS['wfcp_bulk_price_change'] ) && is_object( $GLOBALS['wfcp_bulk_price_change'] )
+			? $GLOBALS['wfcp_bulk_price_change']
+			: null;
+		if ( $svc instanceof WFCP_Bulk_Price_Change ) {
+			$svc->maybe_mark_stalled();
+		}
+		$params  = get_option( WFCP_Bulk_Price_Change::PARAMS_KEY );
+		$state   = get_option( WFCP_Bulk_Price_Change::STATE_KEY );
+		$locked  = (bool) get_transient( WFCP_Bulk_Price_Change::LOCK_KEY );
+		$history = WFCP_Bulk_Price_Change::list_history();
+		$active  = null;
+		if ( is_array( $params ) && ! empty( $params['run_id'] ) && is_array( $state ) ) {
+			$total     = max( 1, (int) ( $state['total'] ?? 1 ) );
+			$processed = (int) ( $state['processed'] ?? 0 );
+			$active    = array(
+				'run_id'       => (string) $params['run_id'],
+				'status'       => $locked ? 'running' : 'queued',
+				'progress_pct' => min( 100, (int) round( ( $processed / $total ) * 100 ) ),
+				'total'        => (int) ( $state['total'] ?? 0 ),
+				'pages'        => (int) ( $state['pages'] ?? 0 ),
+				'current_page' => (int) ( $state['current_page'] ?? 0 ),
+				'processed'    => $processed,
+				'updated'      => (int) ( $state['updated'] ?? 0 ),
+				'skipped'      => (int) ( $state['skipped'] ?? 0 ),
+				'type'         => (string) ( $params['type'] ?? '' ),
+				'value'        => isset( $params['value'] ) ? (float) $params['value'] : 0,
+				'started_at'   => isset( $params['started_at'] ) ? (int) $params['started_at'] : 0,
+			);
+		}
 		return new WP_REST_Response(
 			array(
-				'params' => get_option( WFCP_Bulk_Price_Change::PARAMS_KEY ),
-				'state'  => get_option( WFCP_Bulk_Price_Change::STATE_KEY ),
-				'locked' => (bool) get_transient( WFCP_Bulk_Price_Change::LOCK_KEY ),
-				'last'   => get_option( WFCP_Bulk_Price_Change::LASTLOG_KEY ),
+				'params'  => $params,
+				'state'   => $state,
+				'locked'  => $locked,
+				'active'  => $active,
+				'last'    => get_option( WFCP_Bulk_Price_Change::LASTLOG_KEY ),
+				'history' => $history,
 			)
 		);
 	}
@@ -1415,15 +1449,30 @@ final class Webino_Dashboard_REST_WFCP {
 	 */
 	public static function bulk_price_cancel() {
 		$params = get_option( WFCP_Bulk_Price_Change::PARAMS_KEY );
+		$state  = get_option( WFCP_Bulk_Price_Change::STATE_KEY );
 		if ( is_array( $params ) && isset( $params['job_type'] ) && 'import' === $params['job_type'] && ! empty( $params['file_path'] ) ) {
 			$file = (string) $params['file_path'];
 			if ( file_exists( $file ) ) {
 				wp_delete_file( $file );
 			}
 		}
+		$svc = isset( $GLOBALS['wfcp_bulk_price_change'] ) && is_object( $GLOBALS['wfcp_bulk_price_change'] )
+			? $GLOBALS['wfcp_bulk_price_change']
+			: null;
+		$reason = sprintf(
+			'لغو دستی در صفحه %d از %d (پردازش‌شده: %d از %d).',
+			is_array( $state ) ? (int) ( $state['current_page'] ?? 0 ) : 0,
+			is_array( $state ) ? (int) ( $state['pages'] ?? 0 ) : 0,
+			is_array( $state ) ? (int) ( $state['processed'] ?? 0 ) : 0,
+			is_array( $state ) ? (int) ( $state['total'] ?? 0 ) : 0
+		);
+		if ( $svc instanceof WFCP_Bulk_Price_Change ) {
+			$svc->archive_run( 'canceled', $reason );
+			$svc->clear_queued_jobs();
+		}
 		delete_transient( WFCP_Bulk_Price_Change::LOCK_KEY );
 		delete_option( WFCP_Bulk_Price_Change::PARAMS_KEY );
 		delete_option( WFCP_Bulk_Price_Change::STATE_KEY );
-		return new WP_REST_Response( array( 'success' => true, 'canceled' => true ) );
+		return new WP_REST_Response( array( 'success' => true, 'canceled' => true, 'reason' => $reason ) );
 	}
 }

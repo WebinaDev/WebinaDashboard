@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
-import { KeyValueList, StatusBadge } from '@/components/data/DumpUi'
 import { PageShell } from '@/components/PageShell'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -21,11 +21,64 @@ import { Textarea } from '@/components/ui/textarea'
 import { translateEnum } from '@/lib/enumLabels'
 import { apiFetch } from '@/lib/api'
 
+type BpcHistoryRow = {
+  run_id?: string
+  job_type?: string
+  status?: string
+  reason?: string
+  started_at?: number
+  finished_at?: number
+  total?: number
+  pages?: number
+  current_page?: number
+  processed?: number
+  updated?: number
+  skipped?: number
+  errors?: number
+  type?: string
+  value?: number
+  cats?: string
+  log_url?: string
+}
+
+type BpcActive = {
+  run_id?: string
+  status?: string
+  progress_pct?: number
+  total?: number
+  pages?: number
+  current_page?: number
+  processed?: number
+  updated?: number
+  skipped?: number
+  type?: string
+  value?: number
+  started_at?: number
+}
+
 type BpcState = {
   params?: Record<string, unknown>
   state?: Record<string, unknown>
   locked?: boolean
-  last?: { run?: string; url?: string }
+  active?: BpcActive | null
+  last?: { run?: string; url?: string; status?: string; reason?: string }
+  history?: BpcHistoryRow[]
+}
+
+function statusTone(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+  if (status === 'completed') return 'default'
+  if (status === 'running' || status === 'queued') return 'secondary'
+  if (status === 'canceled' || status === 'stalled' || status === 'failed') return 'destructive'
+  return 'outline'
+}
+
+function formatWhen(ts?: number): string {
+  if (!ts || ts < 1) return '—'
+  try {
+    return new Date(ts * 1000).toLocaleString('fa-IR')
+  } catch {
+    return String(ts)
+  }
 }
 
 export default function WfcpPriceChangerPage() {
@@ -44,21 +97,28 @@ export default function WfcpPriceChangerPage() {
   const st = useQuery({
     queryKey: ['wfcp', 'bpc', 'state'],
     queryFn: () => apiFetch<BpcState>('wfcp/bulk-price-change/state'),
-    refetchInterval: (q) => (q.state.data?.locked ? 2500 : 5000),
+    refetchInterval: (q) => (q.state.data?.locked || q.state.data?.active ? 2500 : 5000),
   })
 
   const locked = Boolean(st.data?.locked)
+  const hasJob = Boolean(st.data?.params && (st.data.params as { run_id?: string }).run_id)
+  const active = st.data?.active
+  const history = st.data?.history ?? []
+  const progressPct = Math.min(100, Math.max(0, Number(active?.progress_pct ?? 0)))
 
   const cancel = useMutation({
     mutationFn: () =>
-      apiFetch<{ success?: boolean }>('wfcp/bulk-price-change/cancel', {
+      apiFetch<{ success?: boolean; reason?: string }>('wfcp/bulk-price-change/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       }),
-    onSuccess: () => {
+    onSuccess: (res) => {
       void qc.invalidateQueries({ queryKey: ['wfcp', 'bpc', 'state'] })
-      toast.success(t('wfcp.bpcCanceled', { defaultValue: 'Bulk price job canceled' }))
+      toast.success(
+        res.reason ||
+          t('wfcp.bpcCanceled', { defaultValue: 'کار تغییر قیمت لغو شد و در تاریخچه ثبت شد.' }),
+      )
     },
     onError: (e: Error) => toastApiError(t, e),
   })
@@ -93,43 +153,63 @@ export default function WfcpPriceChangerPage() {
         <div className="space-y-3 rounded-lg border border-border p-4">
           <div className="space-y-2">
             <Label>{t('wfcp.bpcType')}</Label>
-            <Select value={type} onValueChange={(v) => setType(v as 'fixed' | 'percent')} disabled={locked}>
+            <Select value={type} onValueChange={(v) => setType(v as 'fixed' | 'percent')} disabled={locked || hasJob}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fixed">{translateEnum(t, "wfcp.priceMode", "fixed")}</SelectItem>
-                <SelectItem value="percent">{translateEnum(t, "wfcp.priceMode", "percent")}</SelectItem>
+                <SelectItem value="fixed">{translateEnum(t, 'wfcp.priceMode', 'fixed')}</SelectItem>
+                <SelectItem value="percent">{translateEnum(t, 'wfcp.priceMode', 'percent')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
             <Label>{t('wfcp.bpcValue')}</Label>
-            <Input value={value} onChange={(e) => setValue(e.target.value)} disabled={locked} />
+            <Input value={value} onChange={(e) => setValue(e.target.value)} disabled={locked || hasJob} />
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox id="bpc-apply-sale" checked={applySale} disabled={locked} onCheckedChange={(v) => setApplySale(v === true)} />
+            <Checkbox
+              id="bpc-apply-sale"
+              checked={applySale}
+              disabled={locked || hasJob}
+              onCheckedChange={(v) => setApplySale(v === true)}
+            />
             <Label htmlFor="bpc-apply-sale" className="cursor-pointer font-normal">
               {t('wfcp.bpcApplySale')}
             </Label>
           </div>
           <div className="space-y-2">
             <Label>{t('wfcp.bpcCategories')}</Label>
-            <Input value={cats} onChange={(e) => setCats(e.target.value)} disabled={locked} />
+            <Input value={cats} onChange={(e) => setCats(e.target.value)} disabled={locked || hasJob} />
             <p className="text-xs text-muted-foreground">{t('wfcp.bpcCategoriesHint')}</p>
           </div>
           <div className="space-y-2">
             <Label>{t('wfcp.bpcRangeRules')}</Label>
-            <Textarea className="min-h-20" value={rules} onChange={(e) => setRules(e.target.value)} disabled={locked} />
+            <Textarea
+              className="min-h-20"
+              value={rules}
+              onChange={(e) => setRules(e.target.value)}
+              disabled={locked || hasJob}
+            />
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox id="bpc-rules-combine" checked={rulesCombine} disabled={locked} onCheckedChange={(v) => setRulesCombine(v === true)} />
+            <Checkbox
+              id="bpc-rules-combine"
+              checked={rulesCombine}
+              disabled={locked || hasJob}
+              onCheckedChange={(v) => setRulesCombine(v === true)}
+            />
             <Label htmlFor="bpc-rules-combine" className="cursor-pointer font-normal">
               {t('wfcp.bpcRulesCombine')}
             </Label>
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox id="bpc-rounding" checked={rounding} disabled={locked} onCheckedChange={(v) => setRounding(v === true)} />
+            <Checkbox
+              id="bpc-rounding"
+              checked={rounding}
+              disabled={locked || hasJob}
+              onCheckedChange={(v) => setRounding(v === true)}
+            />
             <Label htmlFor="bpc-rounding" className="cursor-pointer font-normal">
               {t('wfcp.bpcRounding')}
             </Label>
@@ -137,53 +217,166 @@ export default function WfcpPriceChangerPage() {
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
               <Label>{t('wfcp.bpcRoundTh')}</Label>
-              <Input value={roundTh} onChange={(e) => setRoundTh(e.target.value)} disabled={locked} />
+              <Input value={roundTh} onChange={(e) => setRoundTh(e.target.value)} disabled={locked || hasJob} />
             </div>
             <div className="space-y-2">
               <Label>{t('wfcp.bpcRoundVal')}</Label>
-              <Input value={roundVal} onChange={(e) => setRoundVal(e.target.value)} disabled={locked} />
+              <Input value={roundVal} onChange={(e) => setRoundVal(e.target.value)} disabled={locked || hasJob} />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" disabled={start.isPending || locked} onClick={() => void start.mutateAsync()}>
+            <Button type="button" disabled={start.isPending || locked || hasJob} onClick={() => void start.mutateAsync()}>
               {t('wfcp.bpcStart')}
             </Button>
-            {locked ? (
+            {hasJob ? (
               <Button type="button" variant="outline" disabled={cancel.isPending} onClick={() => void cancel.mutateAsync()}>
-                {t('wfcp.bpcCancel', { defaultValue: 'Cancel job' })}
+                {t('wfcp.bpcCancel', { defaultValue: 'لغو کار' })}
               </Button>
             ) : null}
           </div>
         </div>
-        <div className="rounded-lg border border-border p-4">
+
+        <div className="space-y-4 rounded-lg border border-border p-4">
           <h3 className="text-sm font-medium">{t('wfcp.bpcStateTitle')}</h3>
-          <div className="mt-2 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge
-                status={locked ? 'locked' : 'idle'}
-                tone={locked ? 'warning' : 'secondary'}
-              />
-              {st.data?.last?.run ? (
-                <span className="text-muted-foreground text-xs">{String(st.data.last.run)}</span>
-              ) : null}
+          {active ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={statusTone(active.status || 'running')}>
+                  {t(`wfcp.bpcStatus.${active.status || 'running'}`, {
+                    defaultValue: active.status || 'running',
+                  })}
+                </Badge>
+                <span className="text-muted-foreground font-mono text-xs" dir="ltr">
+                  {active.run_id}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span>
+                    {t('wfcp.bpcProgress', {
+                      defaultValue: 'پیشرفت صف',
+                    })}
+                  </span>
+                  <span dir="ltr">
+                    {active.processed ?? 0}/{active.total ?? 0} ({progressPct}%)
+                  </span>
+                </div>
+                <div className="bg-muted h-2 overflow-hidden rounded-full">
+                  <div className="bg-primary h-full transition-all" style={{ width: `${progressPct}%` }} />
+                </div>
+              </div>
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <dt className="text-muted-foreground">{t('wfcp.bpcPage', { defaultValue: 'صفحه' })}</dt>
+                <dd dir="ltr">
+                  {active.current_page ?? 0}/{active.pages ?? 0}
+                </dd>
+                <dt className="text-muted-foreground">{t('wfcp.bpcUpdated', { defaultValue: 'به‌روز شده' })}</dt>
+                <dd dir="ltr">{active.updated ?? 0}</dd>
+                <dt className="text-muted-foreground">{t('wfcp.bpcSkipped', { defaultValue: 'رد شده' })}</dt>
+                <dd dir="ltr">{active.skipped ?? 0}</dd>
+                <dt className="text-muted-foreground">{t('wfcp.bpcStarted', { defaultValue: 'شروع' })}</dt>
+                <dd>{formatWhen(active.started_at)}</dd>
+              </dl>
+              <p className="text-muted-foreground text-xs">
+                {t('wfcp.bpcProgressHint', {
+                  defaultValue:
+                    'اگر صف وسط کار بایستد، در تاریخچه پایین با دلیل توقف ثبت می‌شود تا ببینید تا کجا رفته.',
+                })}
+              </p>
             </div>
-            <KeyValueList
-              emptyLabel={t('common.empty')}
-              rows={[
-                ...Object.entries(st.data?.state ?? {}).map(([k, v]) => ({
-                  label: k,
-                  value: String(v ?? '—'),
-                })),
-                ...Object.entries(st.data?.params ?? {})
-                  .slice(0, 8)
-                  .map(([k, v]) => ({
-                    label: `param.${k}`,
-                    value: typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v ?? '—'),
-                  })),
-              ]}
-            />
-          </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {t('wfcp.bpcIdle', { defaultValue: 'الان کار فعالی در صف نیست.' })}
+            </p>
+          )}
+          {st.data?.last?.reason ? (
+            <p className="border-border bg-muted/40 rounded-md border p-2 text-xs">
+              <span className="font-medium">
+                {t('wfcp.bpcLastReason', { defaultValue: 'آخرین نتیجه:' })}{' '}
+              </span>
+              {st.data.last.reason}
+              {st.data.last.url ? (
+                <>
+                  {' '}
+                  <a className="text-primary underline" href={st.data.last.url} target="_blank" rel="noreferrer">
+                    {t('wfcp.bpcLog', { defaultValue: 'لاگ CSV' })}
+                  </a>
+                </>
+              ) : null}
+            </p>
+          ) : null}
         </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <h3 className="text-base font-medium">{t('wfcp.bpcHistoryTitle', { defaultValue: 'تاریخچه درخواست‌ها' })}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('wfcp.bpcHistoryHint', {
+              defaultValue: 'همه درخواست‌های تغییر قیمت گروهی، وضعیت، دلیل لغو/توقف و میزان پیشرفت صف.',
+            })}
+          </p>
+        </div>
+        {history.length === 0 ? (
+          <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
+            {t('wfcp.bpcHistoryEmpty', { defaultValue: 'هنوز درخواستی ثبت نشده است.' })}
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full min-w-[52rem] text-sm">
+              <thead className="bg-muted/50 text-muted-foreground text-xs">
+                <tr>
+                  <th className="px-3 py-2 text-start font-medium">{t('wfcp.bpcColStatus', { defaultValue: 'وضعیت' })}</th>
+                  <th className="px-3 py-2 text-start font-medium">{t('wfcp.bpcColProgress', { defaultValue: 'پیشرفت' })}</th>
+                  <th className="px-3 py-2 text-start font-medium">{t('wfcp.bpcColReason', { defaultValue: 'دلیل / نتیجه' })}</th>
+                  <th className="px-3 py-2 text-start font-medium">{t('wfcp.bpcColWhen', { defaultValue: 'زمان' })}</th>
+                  <th className="px-3 py-2 text-start font-medium">{t('wfcp.bpcColLog', { defaultValue: 'لاگ' })}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((row) => {
+                  const status = row.status || 'unknown'
+                  return (
+                    <tr key={row.run_id || `${row.finished_at}-${row.started_at}`} className="border-t border-border">
+                      <td className="px-3 py-2 align-top">
+                        <Badge variant={statusTone(status)}>
+                          {t(`wfcp.bpcStatus.${status}`, { defaultValue: status })}
+                        </Badge>
+                        <div className="text-muted-foreground mt-1 font-mono text-[11px]" dir="ltr">
+                          {(row.run_id || '').slice(0, 8)}
+                          {row.type ? ` · ${row.type} ${row.value ?? ''}` : ''}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 align-top text-xs" dir="ltr">
+                        <div>
+                          {row.processed ?? 0}/{row.total ?? 0}
+                        </div>
+                        <div className="text-muted-foreground">
+                          page {row.current_page ?? 0}/{row.pages ?? 0} · ok {row.updated ?? 0} · skip{' '}
+                          {row.skipped ?? 0}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 align-top text-xs whitespace-pre-wrap">{row.reason || '—'}</td>
+                      <td className="px-3 py-2 align-top text-xs">
+                        <div>{formatWhen(row.started_at)}</div>
+                        <div className="text-muted-foreground">{formatWhen(row.finished_at)}</div>
+                      </td>
+                      <td className="px-3 py-2 align-top text-xs">
+                        {row.log_url ? (
+                          <a className="text-primary underline" href={row.log_url} target="_blank" rel="noreferrer">
+                            CSV
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </PageShell>
   )

@@ -945,12 +945,21 @@ textarea,
   --shadow-glow: 0 0 0 1px oklch(82% 0.14 95 / 22%), 0 10px 28px oklch(0% 0 0 / 38%);
 }
 
-/* Business accents — glass cards + translucent sidebar surfaces */
-[data-accent='cafe'],
-[data-accent='cosmetics'],
-[data-accent='mobile'],
-[data-accent='electronics'] {
-  --color-sidebar: color-mix(in oklch, var(--color-sidebar) 82%, transparent);
+/* Business accents — glass cards. Keep sidebar opaque on mobile drawers. */
+@media (min-width: 768px) {
+  [data-accent='cafe'],
+  [data-accent='cosmetics'],
+  [data-accent='mobile'],
+  [data-accent='electronics'] {
+    --color-sidebar: color-mix(in oklch, var(--color-sidebar) 82%, transparent);
+  }
+}
+
+[data-slot='sidebar'][data-mobile='true'] {
+  background-color: var(--color-background) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
 }
 
 [data-accent='cafe'] [data-slot='card'],
