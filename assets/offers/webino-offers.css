@@ -1,11 +1,12 @@
 /* Webino storefront offers — gift popup, chips, next-coupon progress widget, coupon chooser */
 .webino-offers-root {
-  /* Popup/CTA follows the site's theme primary color (Elementor, FSE presets, common themes). */
-  --wo-accent: var(--e-global-color-primary, var(--wp--preset--color--primary, var(--wp--preset--color--accent, var(--primary, var(--accent, var(--global-palette1, var(--ast-global-color-0, #10b981)))))));
-  --wo-bg: #fff;
-  --wo-text: #0f172a;
-  --wo-muted: #64748b;
-  --wo-border: #e2e8f0;
+  /* Colors come from the dashboard's «تنظیمات سایت ← استایل» brand palette (injected as --wd-brand-*),
+     falling back to the site theme, then to the dashboard default accent. */
+  --wo-accent: var(--wd-brand-accent, var(--e-global-color-primary, var(--wp--preset--color--primary, var(--wp--preset--color--accent, var(--primary, var(--accent, var(--global-palette1, var(--ast-global-color-0, #e11d48))))))));
+  --wo-bg: var(--wd-brand-bg, #fff);
+  --wo-text: var(--wd-brand-text, #0f172a);
+  --wo-muted: var(--wd-brand-muted, #64748b);
+  --wo-border: var(--wd-brand-border, #e2e8f0);
   font-family: inherit;
 }
 
@@ -155,12 +156,12 @@
  * Floating "next coupon" widget (bottom-left)
  * ------------------------------------------------------------------ */
 #webino-offers-root .webino-cprog {
-  --cp-bg: #0f172a;
-  --cp-bg2: #1e293b;
+  --cp-bg: var(--wd-brand-primary, #0f172a);
+  --cp-bg2: var(--wd-brand-secondary, #1e293b);
   --cp-text: #f8fafc;
   --cp-muted: #a5b4c8;
-  --cp-accent: #34d399;
-  --cp-accent2: #a3e635;
+  --cp-accent: var(--wd-brand-accent, #34d399);
+  --cp-accent2: var(--wd-brand-accent2, #a3e635);
   position: fixed;
   z-index: 9990;
   left: max(1rem, env(safe-area-inset-left, 0px));
@@ -217,7 +218,7 @@
   border-radius: 1.15rem;
   padding: 0.95rem 1rem 0.9rem;
   background:
-    radial-gradient(120% 90% at 0% 0%, rgba(52, 211, 153, 0.22), transparent 55%),
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--cp-accent) 22%, transparent), transparent 55%),
     linear-gradient(160deg, var(--cp-bg2), var(--cp-bg));
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 18px 45px -12px rgba(2, 6, 23, 0.55), 0 2px 6px rgba(2, 6, 23, 0.25);
@@ -235,10 +236,10 @@
   width: 2.4rem;
   height: 2.4rem;
   border-radius: 0.8rem;
-  color: #052e1c;
+  color: #0f172a;
   font-size: 1.05rem;
   background: linear-gradient(135deg, var(--cp-accent), var(--cp-accent2));
-  box-shadow: 0 6px 16px -4px rgba(52, 211, 153, 0.6);
+  box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--cp-accent) 60%, transparent);
 }
 #webino-offers-root .webino-cprog__heading {
   display: flex;
@@ -301,12 +302,12 @@
   transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 #webino-offers-root .webino-cprog__ghost {
-  background: repeating-linear-gradient(-45deg, rgba(163, 230, 53, 0.45) 0 6px, rgba(163, 230, 53, 0.2) 6px 12px);
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--cp-accent2) 45%, transparent) 0 6px, color-mix(in srgb, var(--cp-accent2) 20%, transparent) 6px 12px);
 }
 #webino-offers-root .webino-cprog__fill {
   overflow: hidden;
   background: linear-gradient(90deg, var(--cp-accent), var(--cp-accent2));
-  box-shadow: 0 0 12px rgba(52, 211, 153, 0.55);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--cp-accent) 55%, transparent);
 }
 [dir="rtl"] #webino-offers-root .webino-cprog__fill,
 #webino-offers-root .webino-cprog[dir="rtl"] .webino-cprog__fill {
@@ -346,7 +347,7 @@
 #webino-offers-root .webino-cprog__pct {
   padding: 0.05rem 0.5rem;
   border-radius: 999px;
-  background: rgba(52, 211, 153, 0.16);
+  background: color-mix(in srgb, var(--cp-accent) 16%, transparent);
   color: var(--cp-accent);
   font-weight: 800;
 }
@@ -354,8 +355,8 @@
   margin-top: 0.55rem;
   padding: 0.4rem 0.6rem;
   border-radius: 0.6rem;
-  background: rgba(163, 230, 53, 0.12);
-  color: #d9f99d;
+  background: color-mix(in srgb, var(--cp-accent2) 12%, transparent);
+  color: color-mix(in srgb, var(--cp-accent2) 80%, #fff);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -363,8 +364,8 @@
   display: none;
 }
 #webino-offers-root .webino-cprog__hint.is-unlock {
-  background: linear-gradient(90deg, rgba(52, 211, 153, 0.22), rgba(163, 230, 53, 0.18));
-  color: #bbf7d0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cp-accent) 22%, transparent), color-mix(in srgb, var(--cp-accent2) 18%, transparent));
+  color: color-mix(in srgb, var(--cp-accent) 45%, #fff);
 }
 
 /* Collapsed pill */
@@ -461,7 +462,7 @@
   left: 1rem;
   bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
   max-width: min(20rem, calc(100vw - 2rem));
-  background: #0f172a;
+  background: var(--wd-brand-primary, #0f172a);
   color: #fff;
   border-radius: 0.75rem;
   padding: 0.6rem 0.85rem;
@@ -472,7 +473,7 @@
   transition: opacity 0.35s ease, transform 0.35s ease;
 }
 .webino-coupon-toast--success {
-  background: #047857;
+  background: var(--wd-brand-accent, #047857);
 }
 .webino-coupon-toast--error {
   background: #b91c1c;
@@ -487,16 +488,16 @@
  * Everything is scoped under .webino-cc and resets theme styles on purpose.
  * ------------------------------------------------------------------ */
 .webino-coupon-chooser.webino-cc {
-  --cc-accent: #059669;
-  --cc-accent-strong: #047857;
-  --cc-accent-soft: #ecfdf5;
+  --cc-accent: var(--wd-brand-accent, #e11d48);
+  --cc-accent-strong: var(--wd-brand-accent-strong, #be123d);
+  --cc-accent-soft: var(--wd-brand-accent-soft, #fff1f2);
   --cc-best: #b45309;
   --cc-best-soft: #fffbeb;
-  --cc-text: #0f172a;
-  --cc-muted: #64748b;
-  --cc-border: #e2e8f0;
-  --cc-bg: #ffffff;
-  --cc-page: #f8fafc;
+  --cc-text: var(--wd-brand-text, #0f172a);
+  --cc-muted: var(--wd-brand-muted, #64748b);
+  --cc-border: var(--wd-brand-border, #e2e8f0);
+  --cc-bg: var(--wd-brand-bg, #ffffff);
+  --cc-page: var(--wd-brand-surface, #f8fafc);
   --cc-card-w: 320px;
   display: block;
   min-width: 0;
@@ -650,7 +651,7 @@
 .webino-cc .webino-cc__card.is-applied {
   border: 1.5px solid var(--cc-accent);
   background: linear-gradient(180deg, var(--cc-accent-soft), #fff 70%);
-  box-shadow: 0 8px 22px -12px rgba(5, 150, 105, 0.55);
+  box-shadow: 0 8px 22px -12px color-mix(in srgb, var(--cc-accent) 55%, transparent);
 }
 .webino-cc .webino-cc__main {
   display: flex;
@@ -736,7 +737,7 @@
   clip-path: inset(0 0 0 50%);
 }
 .webino-cc .webino-cc__card.is-applied .webino-cc__side {
-  border-top-color: rgba(5, 150, 105, 0.35);
+  border-top-color: color-mix(in srgb, var(--cc-accent) 35%, transparent);
 }
 .webino-cc .webino-cc__card.is-applied .webino-cc__side::before,
 .webino-cc .webino-cc__card.is-applied .webino-cc__side::after {
@@ -860,7 +861,7 @@
   background: var(--cc-accent) !important;
   color: #fff !important;
   border: 0 !important;
-  box-shadow: 0 6px 14px -6px rgba(5, 150, 105, 0.7) !important;
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--cc-accent) 70%, transparent) !important;
 }
 .webino-cc .webino-cc__btn--apply:hover {
   background: var(--cc-accent-strong) !important;
@@ -1008,7 +1009,7 @@
 /* ---------------- Gateway discounts (تخفیف درگاه پرداخت) ---------------- */
 .webino-gd {
   /* Follows the site's theme primary color (Elementor, FSE presets, common themes). */
-  --wo-gd-accent: var(--e-global-color-primary, var(--wp--preset--color--primary, var(--wp--preset--color--accent, var(--primary, var(--accent, var(--global-palette1, var(--ast-global-color-0, #10b981)))))));
+  --wo-gd-accent: var(--wd-brand-accent, var(--e-global-color-primary, var(--wp--preset--color--primary, var(--wp--preset--color--accent, var(--primary, var(--accent, var(--global-palette1, var(--ast-global-color-0, #e11d48))))))));
   margin: 0 0 1rem;
   display: grid;
   gap: 0.75rem;

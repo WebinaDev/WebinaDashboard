@@ -773,6 +773,12 @@ final class Webino_Dashboard_Offer_Engine {
 		} else {
 			wp_enqueue_style( 'webino-offers', $base . 'assets/offers/webino-offers.css', array(), $ver );
 		}
+		// Dashboard «موقعیت سایت ← استایل» palette drives the storefront widgets (popup / coupon chooser /
+		// progress widget / gateway banner / toasts). Printed inline so it always wins.
+		$brand_inline = self::storefront_brand_inline();
+		if ( '' !== $brand_inline ) {
+			wp_add_inline_style( 'webino-offers', $brand_inline );
+		}
 		// JS URL carries a content hash in the file *name* (some stacks strip ?ver= and cache assets for hours).
 		wp_enqueue_script(
 			'webino-offers',
@@ -858,6 +864,75 @@ final class Webino_Dashboard_Offer_Engine {
 					'error'        => __( 'Something went wrong. Please try again.', 'webino-dashboard' ),
 				),
 			)
+		);
+	}
+
+	/**
+	 * Inline `:root{--wd-brand-*:...}` built from the dashboard brand palette
+	 * (Webino_Dashboard_Brand_Style, option `webino_dashboard_brand_style`).
+	 * Emits an empty string when the brand module or a valid palette is unavailable.
+	 *
+	 * @return string
+	 */
+	private static function storefront_brand_inline() {
+		if ( ! class_exists( 'Webino_Dashboard_Brand_Style', false ) ) {
+			return '';
+		}
+		$brand = Webino_Dashboard_Brand_Style::get();
+		if ( ! is_array( $brand ) || empty( $brand['colors'] ) || ! is_array( $brand['colors'] ) ) {
+			return '';
+		}
+		$hex = static function ( $value ) {
+			$value = trim( (string) $value );
+			if ( preg_match( '/^#([0-9a-f]{3})$/i', $value, $m ) ) {
+				$h = strtolower( $m[1] );
+				return '#' . $h[0] . $h[0] . $h[1] . $h[1] . $h[2] . $h[2];
+			}
+			if ( preg_match( '/^#[0-9a-f]{6}$/i', $value ) ) {
+				return strtolower( $value );
+			}
+			return '';
+		};
+		$mix = static function ( $from, $to, $weight ) {
+			$weight = min( 1, max( 0, (float) $weight ) );
+			$a      = array( hexdec( substr( $from, 1, 2 ) ), hexdec( substr( $from, 3, 2 ) ), hexdec( substr( $from, 5, 2 ) ) );
+			$b      = array( hexdec( substr( $to, 1, 2 ) ), hexdec( substr( $to, 3, 2 ) ), hexdec( substr( $to, 5, 2 ) ) );
+			$out    = array();
+			foreach ( $a as $i => $c ) {
+				$out[] = (int) round( $c * ( 1 - $weight ) + $b[ $i ] * $weight );
+			}
+			return sprintf( '#%02x%02x%02x', $out[0], $out[1], $out[2] );
+		};
+		$c = array();
+		foreach ( array( 'primary', 'secondary', 'accent', 'bg', 'surface', 'text', 'muted' ) as $key ) {
+			$c[ $key ] = isset( $brand['colors'][ $key ] ) ? $hex( $brand['colors'][ $key ] ) : '';
+		}
+		if ( '' === $c['accent'] ) {
+			return '';
+		}
+		$defaults = Webino_Dashboard_Brand_Style::defaults();
+		foreach ( $c as $key => $value ) {
+			if ( '' === $value ) {
+				$c[ $key ] = isset( $defaults['colors'][ $key ] ) ? $defaults['colors'][ $key ] : '';
+			}
+		}
+		$accent_2      = $mix( $c['accent'], '#ffffff', 0.32 ); // lighter companion for gradients.
+		$accent_strong = $mix( $c['accent'], '#000000', 0.14 ); // hover/active.
+		$accent_soft   = $mix( $c['accent'], '#ffffff', 0.92 ); // tinted surface.
+		$border        = $mix( $c['bg'], $c['muted'], 0.16 );    // hairline derived from palette.
+		return sprintf(
+			':root{--wd-brand-accent:%s;--wd-brand-accent2:%s;--wd-brand-accent-strong:%s;--wd-brand-accent-soft:%s;--wd-brand-primary:%s;--wd-brand-secondary:%s;--wd-brand-bg:%s;--wd-brand-surface:%s;--wd-brand-text:%s;--wd-brand-muted:%s;--wd-brand-border:%s;}',
+			$c['accent'],
+			$accent_2,
+			$accent_strong,
+			$accent_soft,
+			$c['primary'],
+			$c['secondary'],
+			$c['bg'],
+			$c['surface'],
+			$c['text'],
+			$c['muted'],
+			$border
 		);
 	}
 
