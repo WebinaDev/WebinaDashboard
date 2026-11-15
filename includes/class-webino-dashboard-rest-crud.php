@@ -1191,6 +1191,47 @@ class Webino_Dashboard_REST_Crud {
 
 		register_rest_route(
 			self::NS,
+			'/marketing/gateway-discounts',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( 'Webino_Dashboard_Gateway_Discount', 'rest_items' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+					},
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( 'Webino_Dashboard_Gateway_Discount', 'rest_create' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+					},
+				),
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/marketing/gateway-discounts/(?P<id>gd_[A-Za-z0-9_\-]+)',
+			array(
+				array(
+					'methods'             => 'PATCH',
+					'callback'            => array( 'Webino_Dashboard_Gateway_Discount', 'rest_update' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+					},
+				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => array( 'Webino_Dashboard_Gateway_Discount', 'rest_delete' ),
+					'permission_callback' => function () {
+						return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+					},
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/marketing/offers/eligible',
 			array(
 				'methods'             => 'GET',

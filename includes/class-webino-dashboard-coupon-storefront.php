@@ -105,6 +105,7 @@ final class Webino_Dashboard_Coupon_Storefront {
 		// Single active coupon (classic cart, mini-cart, Store API / blocks, bots).
 		add_filter( 'woocommerce_apply_with_individual_use_coupon', array( __CLASS__, 'filter_apply_with_individual_use' ), 20, 4 );
 		add_filter( 'woocommerce_apply_individual_use_coupon', array( __CLASS__, 'mark_applying' ), 1, 2 );
+		add_filter( 'woocommerce_coupon_get_individual_use', array( __CLASS__, 'filter_gift_individual_use' ), 10, 2 );
 		add_action( 'woocommerce_applied_coupon', array( __CLASS__, 'on_applied_coupon' ), 5 );
 		add_action( 'woocommerce_removed_coupon', array( __CLASS__, 'on_removed_coupon' ), 5 );
 		add_action( 'woocommerce_before_calculate_totals', array( __CLASS__, 'enforce_single_coupon' ), 1 );
@@ -533,6 +534,50 @@ final class Webino_Dashboard_Coupon_Storefront {
 	}
 
 	/**
+	 * Per-request cache of gift-code checks.
+	 *
+	 * @var array<string, bool>
+	 */
+	private static $gift_cache = array();
+
+	/**
+	 * Whether the code belongs to a webino_gift coupon (gifts are allowed to stack with other coupons).
+	 *
+	 * @param string $code Coupon code.
+	 * @return bool
+	 */
+	public static function is_gift_code( $code ) {
+		$key = self::fmt_code( $code );
+		if ( '' === $key ) {
+			return false;
+		}
+		if ( isset( self::$gift_cache[ $key ] ) ) {
+			return self::$gift_cache[ $key ];
+		}
+		$is_gift = false;
+		if ( class_exists( 'WC_Coupon' ) ) {
+			$coupon  = new WC_Coupon( $key );
+			$is_gift = (bool) $coupon->get_id() && 'webino_gift' === $coupon->get_discount_type();
+		}
+		self::$gift_cache[ $key ] = $is_gift;
+		return $is_gift;
+	}
+
+	/**
+	 * Gift coupons never act alone: WooCommerce must not strip every other coupon when one is applied.
+	 *
+	 * @param bool      $individual_use Raw flag.
+	 * @param WC_Coupon $coupon         Coupon.
+	 * @return bool
+	 */
+	public static function filter_gift_individual_use( $individual_use, $coupon ) {
+		if ( $coupon instanceof WC_Coupon && 'webino_gift' === $coupon->get_discount_type() ) {
+			return false;
+		}
+		return $individual_use;
+	}
+
+	/**
 	 * @param WC_Coupon $coupon Coupon.
 	 * @return float
 	 */
@@ -572,6 +617,14 @@ final class Webino_Dashboard_Coupon_Storefront {
 		if ( $coupon instanceof WC_Coupon && self::$internal < 1 ) {
 			self::$applying = self::fmt_code( $coupon->get_code() );
 		}
+		// Gift coupons always survive an individual-use coupon being applied.
+		if ( function_exists( 'WC' ) && WC()->cart && is_array( $keep ) ) {
+			foreach ( WC()->cart->get_applied_coupons() as $code ) {
+				if ( self::is_gift_code( $code ) ) {
+					$keep[] = wc_format_coupon_code( (string) $code );
+				}
+			}
+		}
 		return $keep;
 	}
 
@@ -585,7 +638,10 @@ final class Webino_Dashboard_Coupon_Storefront {
 	 * @return bool
 	 */
 	public static function filter_apply_with_individual_use( $allow, $new = null, $existing = null, $applied = array() ) {
-		unset( $new, $existing, $applied );
+		unset( $existing, $applied );
+		if ( $new instanceof WC_Coupon && 'webino_gift' === $new->get_discount_type() ) {
+			return true;
+		}
 		return self::enabled( 'single_coupon' ) ? true : $allow;
 	}
 
@@ -613,8 +669,13 @@ final class Webino_Dashboard_Coupon_Storefront {
 			return;
 		}
 		$replaced = array();
+		$new_is_gift = self::is_gift_code( $code );
 		foreach ( WC()->cart->get_applied_coupons() as $other ) {
 			if ( self::fmt_code( $other ) === $code ) {
+				continue;
+			}
+			// Gift coupons always stack: never remove them, and applying a gift removes nothing.
+			if ( $new_is_gift || self::is_gift_code( $other ) ) {
 				continue;
 			}
 			self::internal_remove( $other );
@@ -675,8 +736,15 @@ final class Webino_Dashboard_Coupon_Storefront {
 		if ( count( $applied ) < 2 ) {
 			return;
 		}
-		$keep = end( $applied );
+		// Gift coupons always stack; the single-coupon rule applies to regular coupons only.
+		$regular = array();
 		foreach ( $applied as $code ) {
+			if ( ! self::is_gift_code( $code ) ) {
+				$regular[] = $code;
+			}
+		}
+		$keep = $regular ? end( $regular ) : null;
+		foreach ( $regular as $code ) {
 			if ( $code !== $keep ) {
 				self::internal_remove( $code, $cart );
 			}
@@ -720,9 +788,9 @@ final class Webino_Dashboard_Coupon_Storefront {
 		$cart = $cart ? $cart : WC()->cart;
 		++self::$internal;
 		try {
-			if ( self::enabled( 'single_coupon' ) ) {
+			if ( self::enabled( 'single_coupon' ) && ! self::is_gift_code( $code ) ) {
 				foreach ( $cart->get_applied_coupons() as $other ) {
-					if ( self::fmt_code( $other ) !== self::fmt_code( $code ) ) {
+					if ( self::fmt_code( $other ) !== self::fmt_code( $code ) && ! self::is_gift_code( $other ) ) {
 						$cart->remove_coupon( $other );
 					}
 				}
@@ -862,10 +930,13 @@ final class Webino_Dashboard_Coupon_Storefront {
 		$session = WC()->session;
 		$applied = array_values( array_map( array( __CLASS__, 'fmt_code' ), $cart->get_applied_coupons() ) );
 		$auto    = $session ? self::fmt_code( (string) $session->get( self::SESSION_AUTO ) ) : '';
+		$regular_applied = array_values( array_filter( $applied, static function ( $c ) {
+			return ! self::is_gift_code( $c );
+		} ) );
 
-		if ( $applied ) {
+		if ( $regular_applied ) {
 			// Only upgrade a coupon that auto-apply itself added; never replace a customer's code.
-			if ( 1 !== count( $applied ) || '' === $auto || $applied[0] !== $auto ) {
+			if ( 1 !== count( $regular_applied ) || '' === $auto || $regular_applied[0] !== $auto ) {
 				return false;
 			}
 		}
@@ -909,17 +980,17 @@ final class Webino_Dashboard_Coupon_Storefront {
 			return false;
 		}
 		$best_code = self::fmt_code( $best->get_code() );
-		if ( $applied ) {
-			if ( $applied[0] === $best_code ) {
+		if ( $regular_applied ) {
+			if ( $regular_applied[0] === $best_code ) {
 				return false;
 			}
-			$current = new WC_Coupon( $applied[0] );
+			$current = new WC_Coupon( $regular_applied[0] );
 			if ( $current->get_id() && $best_save <= self::estimate_saving( $current, $cart ) + 0.000001 ) {
 				return false;
 			}
 		}
 
-		$previous = $applied ? $applied[0] : '';
+		$previous = $regular_applied ? $regular_applied[0] : '';
 		if ( ! self::internal_apply( $best_code, $cart ) ) {
 			return false;
 		}
@@ -984,7 +1055,11 @@ final class Webino_Dashboard_Coupon_Storefront {
 	 * @return bool
 	 */
 	public static function filter_minimum_amount_check( $is_below, $coupon = null, $subtotal = 0 ) {
-		unset( $coupon, $subtotal );
+		unset( $subtotal );
+		// A gift coupon is “armed” by being applied; its free line appears once the threshold is reached.
+		if ( $coupon instanceof WC_Coupon && 'webino_gift' === $coupon->get_discount_type() ) {
+			return false;
+		}
 		return self::$bypass_thresholds ? false : $is_below;
 	}
 
