@@ -25,7 +25,6 @@ final class Webino_Dashboard_Coupon_Gift {
 		add_filter( 'woocommerce_coupon_discount_types', array( __CLASS__, 'register_type' ) );
 		add_filter( 'woocommerce_coupon_get_discount_amount', array( __CLASS__, 'zero_discount' ), 10, 5 );
 		add_action( 'woocommerce_before_calculate_totals', array( __CLASS__, 'sync_gift_items' ), 20 );
-		add_action( 'woocommerce_check_cart_items', array( __CLASS__, 'cart_notices' ), 20 );
 		add_action( 'woocommerce_before_cart', array( __CLASS__, 'cart_notices' ), 5 );
 		add_action( 'woocommerce_before_checkout_form', array( __CLASS__, 'cart_notices' ), 5 );
 		add_filter( 'woocommerce_get_item_data', array( __CLASS__, 'item_data' ), 10, 2 );
@@ -256,6 +255,12 @@ final class Webino_Dashboard_Coupon_Gift {
 		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
 			return;
 		}
+		// Never echo during AJAX (cart fragments) or REST — stray output breaks those responses.
+		if ( ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+			|| ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return;
+		}
+		static $printed = array();
 		$subtotal = self::paid_subtotal();
 		$shown    = array();
 		$candidates = array_merge( self::applied_gifts(), self::visible_gifts() );
@@ -289,6 +294,11 @@ final class Webino_Dashboard_Coupon_Gift {
 						wp_strip_all_tags( wc_price( $remaining ) )
 					);
 				}
+				$hash = md5( $msg );
+				if ( isset( $printed[ $hash ] ) ) {
+					continue;
+				}
+				$printed[ $hash ] = true;
 				wc_print_notice( $msg, 'notice' );
 			} elseif ( $applied ) {
 				$msg = sprintf(
@@ -296,6 +306,11 @@ final class Webino_Dashboard_Coupon_Gift {
 					__( 'محصول هدیه «%s» به سبد اضافه شد.', 'webino-dashboard' ),
 					$name
 				);
+				$hash = md5( $msg );
+				if ( isset( $printed[ $hash ] ) ) {
+					continue;
+				}
+				$printed[ $hash ] = true;
 				wc_print_notice( $msg, 'success' );
 			}
 		}

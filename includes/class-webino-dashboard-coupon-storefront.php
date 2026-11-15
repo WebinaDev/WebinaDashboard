@@ -1273,7 +1273,20 @@ final class Webino_Dashboard_Coupon_Storefront {
 
 		$parts   = array();
 		$details = array();
-		if ( $amount > 0 ) {
+		if ( 'webino_gift' === $type ) {
+			$gift_id   = (int) get_post_meta( $id, '_webino_gift_product_id', true );
+			$gift_name = '';
+			if ( $gift_id > 0 && function_exists( 'wc_get_product' ) ) {
+				$gift_product = wc_get_product( $gift_id );
+				if ( $gift_product ) {
+					$gift_name = $gift_product->get_name();
+				}
+			}
+			$parts[] = $gift_name
+				/* translators: %s: gift product name */
+				? sprintf( __( 'هدیه: %s', 'webino-dashboard' ), $gift_name )
+				: __( 'محصول هدیه', 'webino-dashboard' );
+		} elseif ( $amount > 0 ) {
 			if ( 'percent' === $type ) {
 				$pct     = wc_format_localized_decimal( wc_format_decimal( min( 100, $amount ), 2, true ) );
 				$parts[] = sprintf(

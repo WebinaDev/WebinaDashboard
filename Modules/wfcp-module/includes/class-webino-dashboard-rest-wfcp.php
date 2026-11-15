@@ -1319,6 +1319,9 @@ final class Webino_Dashboard_REST_WFCP {
 		/** @var WFCP_Bulk_Price_Change $svc */
 		$svc = $GLOBALS['wfcp_bulk_price_change'];
 
+		// Fail any abandoned run first (its params/state must not be overwritten silently).
+		$svc->maybe_mark_stalled();
+
 		if ( get_transient( WFCP_Bulk_Price_Change::LOCK_KEY ) ) {
 			return new WP_Error( 'wfcp_lock', __( 'A bulk job is already running.', 'webino-dashboard' ), array( 'status' => 409 ) );
 		}
@@ -1381,7 +1384,7 @@ final class Webino_Dashboard_REST_WFCP {
 		$ref_log->setAccessible( true );
 		$ref_log->invoke( $svc, $run_id );
 
-		set_transient( WFCP_Bulk_Price_Change::LOCK_KEY, 1, 30 * MINUTE_IN_SECONDS );
+		set_transient( WFCP_Bulk_Price_Change::LOCK_KEY, time(), WFCP_Bulk_Price_Change::LOCK_TTL );
 
 		$ref_enqueue = new ReflectionMethod( 'WFCP_Bulk_Price_Change', 'enqueue_job' );
 		$ref_enqueue->setAccessible( true );
@@ -1425,6 +1428,7 @@ final class Webino_Dashboard_REST_WFCP {
 				'processed'    => $processed,
 				'updated'      => (int) ( $state['updated'] ?? 0 ),
 				'skipped'      => (int) ( $state['skipped'] ?? 0 ),
+				'errors'       => (int) ( $state['errors'] ?? 0 ),
 				'type'         => (string) ( $params['type'] ?? '' ),
 				'value'        => isset( $params['value'] ) ? (float) $params['value'] : 0,
 				'started_at'   => isset( $params['started_at'] ) ? (int) $params['started_at'] : 0,
