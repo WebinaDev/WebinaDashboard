@@ -25,8 +25,10 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
 import { FormattedNumberInput, parseFormattedNumberInput } from '@/components/ui/formatted-number-input'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { PageShell } from '@/components/PageShell'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -37,6 +39,10 @@ import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
 import { formatNumber } from '@/lib/formatNumber'
+
+type GatewayItem = { id: string; title: string; enabled: boolean; preset?: boolean }
+
+const CUSTOM_GATEWAY = '__custom__'
 
 type Campaign = {
   id: string
@@ -70,7 +76,7 @@ type CampaignForm = {
 }
 
 const EMPTY_FORM: CampaignForm = {
-  gateway: 'ترب‌پی',
+  gateway: '',
   title: '',
   code: '',
   description: '',
@@ -82,8 +88,6 @@ const EMPTY_FORM: CampaignForm = {
   active: true,
   combine_with_site: true,
 }
-
-const GATEWAY_PRESETS = ['ترب‌پی', 'دیجی‌پی', 'اسنپ‌پی', 'زرین‌پال', 'تپسی‌پی', 'والکس']
 
 function formFromCampaign(c: Campaign): CampaignForm {
   return {
@@ -110,12 +114,20 @@ export default function GatewayDiscountsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<CampaignForm>(EMPTY_FORM)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [customGateway, setCustomGateway] = useState(false)
 
   const listQ = useQuery({
     queryKey: ['gateway-discounts', 'list'],
     queryFn: () => apiFetch<{ items: Campaign[] }>('marketing/gateway-discounts'),
   })
   useQueryErrorToast(listQ)
+  const gatewaysQ = useQuery({
+    queryKey: ['gateway-discounts', 'gateways'],
+    queryFn: () => apiFetch<{ items: GatewayItem[] }>('marketing/gateway-discounts/gateways'),
+    staleTime: 60_000,
+  })
+  const gatewayOptions = useMemo(() => gatewaysQ.data?.items ?? [], [gatewaysQ.data])
+  const gatewaysFailed = gatewaysQ.isError
   const items = useMemo(() => listQ.data?.items ?? [], [listQ.data])
 
   const invalidate = () => void qc.invalidateQueries({ queryKey: ['gateway-discounts'] })
@@ -177,15 +189,22 @@ export default function GatewayDiscountsPage() {
     onError: (e) => toastApiError(t, e as Error),
   })
 
+  const knownGateway = gatewayOptions.some((g) => g.title === form.gateway)
+  // The Select stays visible whenever it is usable; the free-text input appears beside it for custom names.
+  const showCustomGateway = customGateway || gatewaysFailed || (gatewaysQ.isSuccess && form.gateway !== '' && !knownGateway)
+  const gatewaySelectValue = showCustomGateway ? CUSTOM_GATEWAY : knownGateway ? form.gateway : ''
+
   function openCreate() {
     setEditingId(null)
     setForm(EMPTY_FORM)
+    setCustomGateway(false)
     setDialogOpen(true)
   }
 
   function openEdit(c: Campaign) {
     setEditingId(c.id)
     setForm(formFromCampaign(c))
+    setCustomGateway(gatewayOptions.length > 0 && !gatewayOptions.some((g) => g.title === c.gateway))
     setDialogOpen(true)
   }
 
@@ -343,24 +362,58 @@ export default function GatewayDiscountsPage() {
             className="grid gap-4"
             onSubmit={(e) => {
               e.preventDefault()
+              if (!form.gateway.trim()) {
+                toast.error(t('gatewayDiscounts.gatewayRequired'))
+                return
+              }
               saveM.mutate({ ...form, id: editingId ?? undefined })
             }}
           >
             <div className="grid gap-1.5">
-              <Label htmlFor="gd-gateway">{t('gatewayDiscounts.field.gateway')}</Label>
-              <Input
-                id="gd-gateway"
-                list="gd-gateway-presets"
-                value={form.gateway}
-                onChange={(e) => setForm({ ...form, gateway: e.target.value })}
-                placeholder={t('gatewayDiscounts.field.gatewayPlaceholder')}
-                required
-              />
-              <datalist id="gd-gateway-presets">
-                {GATEWAY_PRESETS.map((g) => (
-                  <option key={g} value={g} />
-                ))}
-              </datalist>
+              <Label>{t('gatewayDiscounts.field.gateway')}</Label>
+              {!gatewaysFailed ? (
+                <Select
+                  value={gatewaySelectValue}
+                  onValueChange={(v) => {
+                    if (v === CUSTOM_GATEWAY) {
+                      setCustomGateway(true)
+                      setForm({ ...form, gateway: '' })
+                      return
+                    }
+                    setCustomGateway(false)
+                    setForm({ ...form, gateway: v })
+                  }}
+                  disabled={gatewaysQ.isLoading}
+                >
+                  <SelectTrigger id="gd-gateway" className="w-full">
+                    <SelectValue placeholder={gatewaysQ.isLoading ? t('common.loading') : t('gatewayDiscounts.field.gatewayPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gatewayOptions.map((g) => (
+                      <SelectItem key={g.id} value={g.title}>
+                        {g.enabled ? g.title : `${g.title} (${t('gatewayDiscounts.gatewayDisabledSuffix')})`}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value={CUSTOM_GATEWAY}>{t('gatewayDiscounts.gatewayCustom')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : null}
+              {showCustomGateway ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="gd-gateway-custom"
+                    value={form.gateway}
+                    onChange={(e) => setForm({ ...form, gateway: e.target.value })}
+                    placeholder={t('gatewayDiscounts.field.gatewayPlaceholder')}
+                    autoFocus
+                  />
+                  {!gatewaysFailed ? (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => { setCustomGateway(false); setForm({ ...form, gateway: '' }) }}>
+                      {t('gatewayDiscounts.gatewayBackToList')}
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <div className="grid gap-1.5">
@@ -430,11 +483,11 @@ export default function GatewayDiscountsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="gd-start">{t('gatewayDiscounts.field.start')}</Label>
-                <Input id="gd-start" type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+                <DatePicker id="gd-start" value={form.start_date} onChange={(iso) => setForm({ ...form, start_date: iso })} />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="gd-end">{t('gatewayDiscounts.field.end')}</Label>
-                <Input id="gd-end" type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+                <DatePicker id="gd-end" value={form.end_date} onChange={(iso) => setForm({ ...form, end_date: iso })} />
               </div>
             </div>
 

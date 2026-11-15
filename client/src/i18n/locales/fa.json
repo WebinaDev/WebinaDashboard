@@ -6494,5 +6494,14 @@
   "gatewayDiscounts.field.descriptionPlaceholder": "مثلاً اعتبار تا پایان آذرماه یا فقط برای خرید نقدی.",
   "gatewayDiscounts.field.active": "فعال",
   "gatewayDiscounts.deleteTitle": "حذف کد تخفیف درگاه",
-  "gatewayDiscounts.deleteHint": "این کد از سبد خرید و تسویه‌حساب مشتریان حذف می‌شود. این عمل قابل بازگردانی نیست."
+  "gatewayDiscounts.deleteHint": "این کد از سبد خرید و تسویه‌حساب مشتریان حذف می‌شود. این عمل قابل بازگردانی نیست.",
+  "coupons.builder.reward.gift": "🎁 هدیه",
+  "coupons.builder.giftProduct": "محصول هدیه",
+  "coupons.builder.giftProductHint": "با رسیدن سبد به حداقل مبلغ، این محصول به‌صورت رایگان به سفارش اضافه می‌شود. کوپن هدیه با یک کوپن تخفیف دیگر همزمان اعمال می‌شود و جلوی هیچ کوپنی را نمی‌گیرد.",
+  "coupons.builder.giftCondForced": "هدیه فقط با شرط «حداقل مبلغ سفارش» ساخته می‌شود؛ یعنی شرط همین فیلد بالاست.",
+  "coupons.builder.errGiftProduct": "برای کوپن هدیه یک محصول هدیه انتخاب کنید.",
+  "gatewayDiscounts.gatewayCustom": "سایر (نام دلخواه)…",
+  "gatewayDiscounts.gatewayBackToList": "بازگشت به لیست درگاه‌ها",
+  "gatewayDiscounts.gatewayRequired": "یک درگاه را انتخاب یا نامش را وارد کنید.",
+  "gatewayDiscounts.gatewayDisabledSuffix": "غیرفعال"
 }

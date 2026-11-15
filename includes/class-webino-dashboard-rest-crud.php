@@ -1211,6 +1211,17 @@ class Webino_Dashboard_REST_Crud {
 		);
 		register_rest_route(
 			self::NS,
+			'/marketing/gateway-discounts/gateways',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'Webino_Dashboard_Gateway_Discount', 'rest_gateways' ),
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' );
+				},
+			)
+		);
+		register_rest_route(
+			self::NS,
 			'/marketing/gateway-discounts/(?P<id>gd_[A-Za-z0-9_\-]+)',
 			array(
 				array(

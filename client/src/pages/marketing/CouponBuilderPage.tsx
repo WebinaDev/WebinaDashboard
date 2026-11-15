@@ -1,4 +1,4 @@
-import { Check, ChevronUp, Percent, Plus, Share2, Trash2, Truck, Coins } from 'lucide-react'
+import { Check, ChevronUp, Percent, Plus, Share2, Trash2, Truck, Coins, Gift } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { PageShell } from '@/components/PageShell'
+import { ProductMultiSelect } from '@/components/coupons/ProductMultiSelect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -77,11 +78,13 @@ function TicketIcon({ icon, className }: { icon: string; className?: string }) {
   const cls = cn('size-5', className)
   if (icon === 'truck') return <Truck className={cls} />
   if (icon === 'percent') return <Percent className={cls} />
+  if (icon === 'gift') return <Gift className={cls} />
   return <Coins className={cls} />
 }
 
 function iconForCoupon(c: OfferCoupon | OfferTemplate): string {
   if ('icon' in c && c.icon) return c.icon
+  if ('type' in c && c.type === 'webino_gift') return 'gift'
   if (c.free_shipping || (c as OfferCoupon).shipping_percent) return 'truck'
   if (c.type === 'percent') return 'percent'
   return 'coins'
@@ -143,8 +146,9 @@ export default function CouponBuilderPage() {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [condType, setCondType] = useState<'order_nth' | 'min_amount' | 'min_items'>('min_amount')
   const [condValue, setCondValue] = useState('1000000')
-  const [rewardType, setRewardType] = useState<'fixed_cart' | 'percent' | 'free_shipping' | 'ship_pct'>('fixed_cart')
+  const [rewardType, setRewardType] = useState<'fixed_cart' | 'percent' | 'free_shipping' | 'ship_pct' | 'gift'>('fixed_cart')
   const [rewardAmount, setRewardAmount] = useState('50000')
+  const [giftProductId, setGiftProductId] = useState(0)
 
   const storefrontQ = useQuery({
     queryKey: ['coupons', 'storefront-settings'],
@@ -209,10 +213,14 @@ export default function CouponBuilderPage() {
       const reward = cleanNumber(rewardAmount)
       const condNum = Number(cond)
       const rewardNum = Number(reward)
+      const isGift = rewardType === 'gift'
       if (!cond || !Number.isFinite(condNum) || condNum < 1) {
         throw new Error(t('coupons.builder.errCondition'))
       }
-      if (rewardType !== 'free_shipping') {
+      if (isGift && giftProductId < 1) {
+        throw new Error(t('coupons.builder.errGiftProduct'))
+      }
+      if (rewardType !== 'free_shipping' && !isGift) {
         if (!reward || !Number.isFinite(rewardNum) || rewardNum <= 0) {
           throw new Error(t('coupons.builder.errReward'))
         }
@@ -223,13 +231,17 @@ export default function CouponBuilderPage() {
       const codeRes = await apiFetch<{ code: string }>('marketing/coupons/generate-code')
       const body: Record<string, unknown> = {
         code: codeRes.code,
-        type: rewardType === 'ship_pct' || rewardType === 'free_shipping' ? 'fixed_cart' : rewardType,
-        amount: rewardType === 'free_shipping' || rewardType === 'ship_pct' ? '0' : reward,
+        type: isGift
+          ? 'webino_gift'
+          : rewardType === 'ship_pct' || rewardType === 'free_shipping'
+            ? 'fixed_cart'
+            : rewardType,
+        amount: rewardType === 'free_shipping' || rewardType === 'ship_pct' || isGift ? '0' : reward,
         free_shipping: rewardType === 'free_shipping',
-        individual_use: true,
+        individual_use: !isGift,
         status: 'publish',
         is_offer: true,
-        condition_type: condType,
+        condition_type: isGift ? 'min_amount' : condType,
         condition_value: cond,
         auto_apply: true,
         offer_visible: true,
@@ -237,10 +249,13 @@ export default function CouponBuilderPage() {
         // Empty description: the server writes a readable one from the reward and condition.
         description: '',
       }
+      if (isGift) {
+        body.gift_product_id = giftProductId
+      }
       if (rewardType === 'ship_pct') {
         body.shipping_percent = rewardNum
       }
-      if (condType === 'min_amount') {
+      if (condType === 'min_amount' || isGift) {
         body.minimum_amount = cond
       }
       return apiFetch('marketing/coupons', { method: 'POST', body: JSON.stringify(body) })
@@ -288,9 +303,15 @@ export default function CouponBuilderPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="order_nth">{t('coupons.builder.cond.orderNth')}</SelectItem>
-                  <SelectItem value="min_amount">{t('coupons.builder.cond.minAmount')}</SelectItem>
-                  <SelectItem value="min_items">{t('coupons.builder.cond.minItems')}</SelectItem>
+                  {rewardType === 'gift' ? (
+                    <SelectItem value="min_amount">{t('coupons.builder.cond.minAmount')}</SelectItem>
+                  ) : (
+                    <>
+                      <SelectItem value="order_nth">{t('coupons.builder.cond.orderNth')}</SelectItem>
+                      <SelectItem value="min_amount">{t('coupons.builder.cond.minAmount')}</SelectItem>
+                      <SelectItem value="min_items">{t('coupons.builder.cond.minItems')}</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -307,6 +328,7 @@ export default function CouponBuilderPage() {
                   const wasPct = rewardType === 'percent' || rewardType === 'ship_pct'
                   const isPct = next === 'percent' || next === 'ship_pct'
                   if (wasPct !== isPct) setRewardAmount(isPct ? '10' : '50000')
+                  if (next === 'gift') setCondType('min_amount')
                   setRewardType(next)
                 }}
               >
@@ -318,16 +340,33 @@ export default function CouponBuilderPage() {
                   <SelectItem value="percent">{t('coupons.builder.reward.percent')}</SelectItem>
                   <SelectItem value="free_shipping">{t('coupons.builder.reward.freeShip')}</SelectItem>
                   <SelectItem value="ship_pct">{t('coupons.builder.reward.shipPct')}</SelectItem>
+                  <SelectItem value="gift">{t('coupons.builder.reward.gift')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {rewardType !== 'free_shipping' ? (
+            {rewardType !== 'free_shipping' && rewardType !== 'gift' ? (
               <div className="space-y-2">
                 <Label>{t('coupons.builder.rewardAmount')}</Label>
                 <Input inputMode="decimal" value={rewardAmount} onChange={(e) => setRewardAmount(e.target.value)} />
               </div>
             ) : null}
           </div>
+          {rewardType === 'gift' ? (
+            <div className="space-y-2 rounded-xl border border-dashed border-border/70 p-3">
+              <ProductMultiSelect
+                id="coupon-builder-gift-product"
+                label={t('coupons.builder.giftProduct')}
+                value={giftProductId > 0 ? [giftProductId] : []}
+                onChange={(ids) => setGiftProductId(ids.length ? ids[ids.length - 1] : 0)}
+              />
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {t('coupons.builder.giftProductHint')}
+              </p>
+              <p className="text-amber-600 dark:text-amber-400 text-xs leading-relaxed">
+                {t('coupons.builder.giftCondForced')}
+              </p>
+            </div>
+          ) : null}
           <Button type="button" onClick={() => createWizard.mutate()} disabled={createWizard.isPending}>
             {t('coupons.builder.publish')}
           </Button>

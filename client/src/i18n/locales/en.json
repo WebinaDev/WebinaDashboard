@@ -6491,5 +6491,14 @@
   "gatewayDiscounts.field.descriptionPlaceholder": "e.g. Valid until end of December or cash orders only.",
   "gatewayDiscounts.field.active": "Active",
   "gatewayDiscounts.deleteTitle": "Delete gateway discount",
-  "gatewayDiscounts.deleteHint": "The code will be removed from cart and checkout. This cannot be undone."
+  "gatewayDiscounts.deleteHint": "The code will be removed from cart and checkout. This cannot be undone.",
+  "coupons.builder.reward.gift": "🎁 Gift",
+  "coupons.builder.giftProduct": "Gift product",
+  "coupons.builder.giftProductHint": "When the cart reaches the minimum amount, this product is added to the order for free. The gift coupon stacks with one other coupon and never blocks any coupon.",
+  "coupons.builder.giftCondForced": "A gift can only be built on the “minimum cart amount” condition — that is the field above.",
+  "coupons.builder.errGiftProduct": "Pick a gift product for the gift coupon.",
+  "gatewayDiscounts.gatewayCustom": "Other (custom name)…",
+  "gatewayDiscounts.gatewayBackToList": "Back to gateway list",
+  "gatewayDiscounts.gatewayRequired": "Pick a gateway or type its name.",
+  "gatewayDiscounts.gatewayDisabledSuffix": "disabled"
 }

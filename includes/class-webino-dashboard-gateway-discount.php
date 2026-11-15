@@ -312,6 +312,63 @@ final class Webino_Dashboard_Gateway_Discount {
 	}
 
 	/**
+	 * Payment gateways available on the site (from WooCommerce), enabled ones first.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function rest_gateways() {
+		$items = array();
+		$seen  = array();
+		if ( function_exists( 'WC' ) && WC() && method_exists( WC(), 'payment_gateways' ) && WC()->payment_gateways() ) {
+			foreach ( WC()->payment_gateways()->payment_gateways() as $id => $gateway ) {
+				if ( ! is_object( $gateway ) ) {
+					continue;
+				}
+				$title = method_exists( $gateway, 'get_title' ) ? (string) $gateway->get_title() : '';
+				if ( '' === trim( wp_strip_all_tags( $title ) ) && method_exists( $gateway, 'get_method_title' ) ) {
+					$title = (string) $gateway->get_method_title();
+				}
+				$title = trim( html_entity_decode( wp_strip_all_tags( $title ), ENT_QUOTES, 'UTF-8' ) );
+				if ( '' === $title ) {
+					$title = (string) $id;
+				}
+				$enabled_raw = isset( $gateway->enabled ) ? $gateway->enabled : 'no';
+				$enabled     = ( 'yes' === $enabled_raw || true === $enabled_raw || 1 === $enabled_raw );
+				$key         = md5( $title );
+				$items[]     = array(
+					'id'      => (string) $id,
+					'title'   => $title,
+					'enabled' => $enabled,
+				);
+				$seen[ $key ] = true;
+			}
+		}
+		// Presets for gateways the site knows by name but that are not registered in WooCommerce.
+		foreach ( array( 'ترب‌پی', 'دیجی‌پی', 'اسنپ‌پی', 'زرین‌پال', 'تپسی‌پی' ) as $preset ) {
+			$key = md5( $preset );
+			if ( isset( $seen[ $key ] ) ) {
+				continue;
+			}
+			$items[] = array(
+				'id'      => 'preset:' . $preset,
+				'title'   => $preset,
+				'enabled' => false,
+				'preset'  => true,
+			);
+		}
+		usort(
+			$items,
+			static function ( $a, $b ) {
+				if ( (bool) $a['enabled'] !== (bool) $b['enabled'] ) {
+					return $a['enabled'] ? -1 : 1;
+				}
+				return strcasecmp( (string) $a['title'], (string) $b['title'] );
+			}
+		);
+		return new WP_REST_Response( array( 'items' => $items ) );
+	}
+
+	/**
 	 * @return WP_REST_Response
 	 */
 	public static function rest_items() {
