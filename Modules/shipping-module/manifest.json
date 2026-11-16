@@ -1,7 +1,7 @@
 {
   "slug": "shipping-module",
   "name": "Transport",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "is_builtin": true,
   "is_first_party": true,
   "default_active": true,
@@ -47,6 +47,12 @@
         "route": "/settings/shop/transport/rules",
         "title": "Rules",
         "titleKey": "shipping.rulesTitle"
+      },
+      {
+        "id": "item-cost",
+        "route": "/settings/shop/transport/item-cost",
+        "title": "Item shipping cost",
+        "titleKey": "shipping.itemCost.menu"
       }
     ]
   },
@@ -82,6 +88,11 @@
         "path": "settings/shop/transport/rules",
         "capability": "manage_woocommerce",
         "headerTitleKey": "shipping.rulesTitle"
+      },
+      {
+        "path": "settings/shop/transport/item-cost",
+        "capability": "manage_woocommerce",
+        "headerTitleKey": "shipping.itemCost.menu"
       }
     ]
   }

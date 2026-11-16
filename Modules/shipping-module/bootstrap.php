@@ -29,6 +29,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 			'class-webino-shipping-account-cities.php',
 			'class-webino-shipping-map.php',
 			'class-webino-shipping-rules.php',
+			'class-webino-shipping-item-cost.php',
 			'class-webino-shipping-dokan.php',
 			'class-webino-dashboard-rest-shipping.php',
 		),
@@ -46,6 +47,7 @@ Webino_Shipping_Checkout_District::init();
 Webino_Shipping_Account_Cities::init();
 Webino_Shipping_Map::init();
 Webino_Shipping_Rules::init();
+Webino_Shipping_Item_Cost::init();
 Webino_Shipping_Dokan::init();
 Webino_Shipping_Packer::init();
 Webino_Shipping_Method_Packaging::register();

@@ -3,6 +3,7 @@ import type { ComponentType } from 'react'
 import { OrderMapPanel } from './components/OrderMapPanel'
 import { OrderPackagingPanel } from './components/OrderPackagingPanel'
 import CitiesSettingsPage from './pages/CitiesSettingsPage'
+import ItemCostSettingsPage from './pages/ItemCostSettingsPage'
 import MapSettingsPage from './pages/MapSettingsPage'
 import PackagingSettingsPage from './pages/PackagingSettingsPage'
 import RulesSettingsPage from './pages/RulesSettingsPage'
@@ -16,6 +17,7 @@ export const routes: Record<string, ComponentType> = {
   'settings/shop/transport/cities': CitiesSettingsPage,
   'settings/shop/transport/map': MapSettingsPage,
   'settings/shop/transport/rules': RulesSettingsPage,
+  'settings/shop/transport/item-cost': ItemCostSettingsPage,
 }
 
 export const components: Record<string, ComponentType> = {
