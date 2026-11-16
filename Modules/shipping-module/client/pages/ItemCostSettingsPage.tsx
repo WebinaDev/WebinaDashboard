@@ -23,11 +23,12 @@ type GatewayRule = { gateway: string; type: 'override' | 'add'; amount: string; 
 type Settings = {
   enabled: boolean
   mode: 'each' | 'once' | 'max'
-  fee_label: string
   multiply_by_qty: boolean
   virtual_skip: boolean
   category_children: boolean
   skip_with_free_coupon: boolean
+  skip_free_methods: boolean
+  skip_local_pickup: boolean
   default_cost: string
   min_free_amount: string
   product_costs: Record<string, string>
@@ -45,11 +46,12 @@ const emptySet = (): SetCost => ({ id: `set_${Date.now()}_${Math.floor(Math.rand
 const emptySettings = (): Settings => ({
   enabled: false,
   mode: 'max',
-  fee_label: '',
   multiply_by_qty: true,
   virtual_skip: true,
   category_children: true,
   skip_with_free_coupon: false,
+  skip_free_methods: true,
+  skip_local_pickup: true,
   default_cost: '',
   min_free_amount: '',
   product_costs: {},
@@ -284,11 +286,12 @@ export default function ItemCostSettingsPage() {
       ...emptySettings(),
       enabled: !!s.enabled,
       mode: s.mode === 'each' || s.mode === 'once' || s.mode === 'max' ? s.mode : 'max',
-      fee_label: str(s.fee_label),
       multiply_by_qty: s.multiply_by_qty !== false,
       virtual_skip: s.virtual_skip !== false,
       category_children: s.category_children !== false,
       skip_with_free_coupon: !!s.skip_with_free_coupon,
+      skip_free_methods: s.skip_free_methods !== false,
+      skip_local_pickup: s.skip_local_pickup !== false,
       default_cost: str(s.default_cost),
       min_free_amount: str(s.min_free_amount),
       product_costs: mapToStr(s.product_costs),
@@ -354,11 +357,12 @@ export default function ItemCostSettingsPage() {
       const settings = {
         enabled: draft.enabled,
         mode: draft.mode,
-        fee_label: draft.fee_label.trim(),
         multiply_by_qty: draft.multiply_by_qty,
         virtual_skip: draft.virtual_skip,
         category_children: draft.category_children,
         skip_with_free_coupon: draft.skip_with_free_coupon,
+        skip_free_methods: draft.skip_free_methods,
+        skip_local_pickup: draft.skip_local_pickup,
         default_cost: num(draft.default_cost),
         min_free_amount: num(draft.min_free_amount),
         product_costs: numMap(draft.product_costs),
@@ -472,11 +476,6 @@ export default function ItemCostSettingsPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-2">
-            <Label htmlFor="ic-fee-label">{t('shipping.itemCost.feeLabel')}</Label>
-            <Input id="ic-fee-label" value={draft.fee_label} onChange={(e) => patch({ fee_label: e.target.value })} placeholder={t('shipping.itemCost.feeLabelPlaceholder')} />
-          </div>
-
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="ic-default">{t('shipping.itemCost.defaultCost')}</Label>
@@ -511,6 +510,20 @@ export default function ItemCostSettingsPage() {
                 <p className="text-muted-foreground text-xs">{t('shipping.itemCost.skipFreeCouponHint')}</p>
               </div>
               <Switch id="ic-skip-coupon" checked={draft.skip_with_free_coupon} onCheckedChange={(v) => patch({ skip_with_free_coupon: v })} />
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-xl border p-3">
+              <div>
+                <Label htmlFor="ic-skip-free-methods" className="text-sm">{t('shipping.itemCost.skipFreeMethods')}</Label>
+                <p className="text-muted-foreground text-xs">{t('shipping.itemCost.skipFreeMethodsHint')}</p>
+              </div>
+              <Switch id="ic-skip-free-methods" checked={draft.skip_free_methods} onCheckedChange={(v) => patch({ skip_free_methods: v })} />
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-xl border p-3">
+              <div>
+                <Label htmlFor="ic-skip-pickup" className="text-sm">{t('shipping.itemCost.skipLocalPickup')}</Label>
+                <p className="text-muted-foreground text-xs">{t('shipping.itemCost.skipLocalPickupHint')}</p>
+              </div>
+              <Switch id="ic-skip-pickup" checked={draft.skip_local_pickup} onCheckedChange={(v) => patch({ skip_local_pickup: v })} />
             </div>
           </div>
 

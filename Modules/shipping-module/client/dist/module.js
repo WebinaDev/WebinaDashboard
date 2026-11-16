@@ -6700,11 +6700,12 @@ var yu = () => ({
 }), bu = () => ({
 	enabled: !1,
 	mode: "max",
-	fee_label: "",
 	multiply_by_qty: !0,
 	virtual_skip: !0,
 	category_children: !0,
 	skip_with_free_coupon: !1,
+	skip_free_methods: !0,
+	skip_local_pickup: !0,
 	default_cost: "",
 	min_free_amount: "",
 	product_costs: {},
@@ -6868,11 +6869,12 @@ function Du() {
 			...bu(),
 			enabled: !!e.enabled,
 			mode: e.mode === "each" || e.mode === "once" || e.mode === "max" ? e.mode : "max",
-			fee_label: t(e.fee_label),
 			multiply_by_qty: e.multiply_by_qty !== !1,
 			virtual_skip: e.virtual_skip !== !1,
 			category_children: e.category_children !== !1,
 			skip_with_free_coupon: !!e.skip_with_free_coupon,
+			skip_free_methods: e.skip_free_methods !== !1,
+			skip_local_pickup: e.skip_local_pickup !== !1,
 			default_cost: t(e.default_cost),
 			min_free_amount: t(e.min_free_amount),
 			product_costs: Su(e.product_costs),
@@ -6920,11 +6922,12 @@ function Du() {
 			}, n = {
 				enabled: a.enabled,
 				mode: a.mode,
-				fee_label: a.fee_label.trim(),
 				multiply_by_qty: a.multiply_by_qty,
 				virtual_skip: a.virtual_skip,
 				category_children: a.category_children,
 				skip_with_free_coupon: a.skip_with_free_coupon,
+				skip_free_methods: a.skip_free_methods,
+				skip_local_pickup: a.skip_local_pickup,
 				default_cost: e(a.default_cost),
 				min_free_amount: e(a.min_free_amount),
 				product_costs: t(a.product_costs),
@@ -7064,18 +7067,6 @@ function Du() {
 						})]
 					}) : null,
 					/* @__PURE__ */ b("div", {
-						className: "grid gap-2",
-						children: [/* @__PURE__ */ y(Z, {
-							htmlFor: "ic-fee-label",
-							children: r("shipping.itemCost.feeLabel")
-						}), /* @__PURE__ */ y(X, {
-							id: "ic-fee-label",
-							value: a.fee_label,
-							onChange: (e) => w({ fee_label: e.target.value }),
-							placeholder: r("shipping.itemCost.feeLabelPlaceholder")
-						})]
-					}),
-					/* @__PURE__ */ b("div", {
 						className: "grid gap-4 sm:grid-cols-2",
 						children: [/* @__PURE__ */ b("div", {
 							className: "grid gap-2",
@@ -7163,6 +7154,36 @@ function Du() {
 									id: "ic-skip-coupon",
 									checked: a.skip_with_free_coupon,
 									onCheckedChange: (e) => w({ skip_with_free_coupon: e })
+								})]
+							}),
+							/* @__PURE__ */ b("div", {
+								className: "flex items-center justify-between gap-4 rounded-xl border p-3",
+								children: [/* @__PURE__ */ b("div", { children: [/* @__PURE__ */ y(Z, {
+									htmlFor: "ic-skip-free-methods",
+									className: "text-sm",
+									children: r("shipping.itemCost.skipFreeMethods")
+								}), /* @__PURE__ */ y("p", {
+									className: "text-muted-foreground text-xs",
+									children: r("shipping.itemCost.skipFreeMethodsHint")
+								})] }), /* @__PURE__ */ y($, {
+									id: "ic-skip-free-methods",
+									checked: a.skip_free_methods,
+									onCheckedChange: (e) => w({ skip_free_methods: e })
+								})]
+							}),
+							/* @__PURE__ */ b("div", {
+								className: "flex items-center justify-between gap-4 rounded-xl border p-3",
+								children: [/* @__PURE__ */ b("div", { children: [/* @__PURE__ */ y(Z, {
+									htmlFor: "ic-skip-pickup",
+									className: "text-sm",
+									children: r("shipping.itemCost.skipLocalPickup")
+								}), /* @__PURE__ */ y("p", {
+									className: "text-muted-foreground text-xs",
+									children: r("shipping.itemCost.skipLocalPickupHint")
+								})] }), /* @__PURE__ */ y($, {
+									id: "ic-skip-pickup",
+									checked: a.skip_local_pickup,
+									onCheckedChange: (e) => w({ skip_local_pickup: e })
 								})]
 							})
 						]

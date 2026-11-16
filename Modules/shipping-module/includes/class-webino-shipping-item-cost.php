@@ -1,7 +1,8 @@
 <?php
 /**
  * Item shipping cost — per-product / sets / category / brand / gateway costs,
- * aggregated per order (sum, flat-once or max).
+ * aggregated per order (sum, flat-once or max) and added to the shipping
+ * method rates shown in the cart/checkout.
  *
  * Master switch is OFF by default; when off this class does nothing and the
  * store behaves exactly as before.
@@ -14,7 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Cart-fee based item shipping cost engine for WooCommerce.
+ * Shipping-rate based item shipping cost engine for WooCommerce.
+ *
+ * The computed surcharge is added to EVERY applicable shipping rate
+ * (woocommerce_package_rates, priority 100 — additive, runs after the
+ * module's conditional shipping rules engine at priority 90). WooCommerce
+ * then charges the customer with the rate they select, so the item cost is
+ * part of the shipping line — no separate fee/line is added.
  *
  * Priority per cart line (first match wins):
  *   1. product_costs (exact product or variation id, then parent product)
@@ -25,22 +32,30 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Aggregation over contributing lines (mode setting):
  *   each — sum of line costs, multiplied by quantity when multiply_by_qty
- *   once — a single flat fee (default_cost, falling back to the max line cost)
+ *   once — a single flat amount (default_cost, falling back to the max line cost)
  *   max  — the highest line cost in the cart
  *
- * Gateway rules can override the computed fee or add on top of it when the
- * matching payment gateway is selected at checkout.
+ * The selected payment gateway (session: chosen_payment_method) can override
+ * the computed amount or add on top of it. WooCommerce caches shipping rates
+ * per package in the session, so when at least one gateway rule is configured
+ * the module forces a shipping recalculation on checkout updates
+ * (woocommerce_checkout_update_order_review) to keep the gateway-dependent
+ * amount fresh.
+ *
+ * Rates can be excluded from the surcharge (both ON by default):
+ *   skip_free_methods — zero-cost (free shipping) rates are never surcharged
+ *   skip_local_pickup — local pickup rates are never surcharged
  */
 final class Webino_Shipping_Item_Cost {
 
-	const OPTION       = 'webino_shipping_item_cost';
-	const DEFAULT_LABEL = 'هزینه ارسال';
+	const OPTION = 'webino_shipping_item_cost';
 
 	/**
 	 * @return void
 	 */
 	public static function init() {
-		add_filter( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'calculate' ), 30, 1 );
+		add_filter( 'woocommerce_package_rates', array( __CLASS__, 'apply_to_rates' ), 100, 2 );
+		add_action( 'woocommerce_checkout_update_order_review', array( __CLASS__, 'maybe_force_recalc' ), 5 );
 	}
 
 	/**
@@ -50,11 +65,12 @@ final class Webino_Shipping_Item_Cost {
 		return array(
 			'enabled'             => false,
 			'mode'                => 'max',
-			'fee_label'           => self::DEFAULT_LABEL,
 			'multiply_by_qty'     => true,
 			'virtual_skip'        => true,
 			'category_children'   => true,
 			'skip_with_free_coupon' => false,
+			'skip_free_methods'   => true,
+			'skip_local_pickup'   => true,
 			'default_cost'        => '',
 			'min_free_amount'     => '',
 			'product_costs'       => array(),
@@ -92,16 +108,12 @@ final class Webino_Shipping_Item_Cost {
 
 		$out = $d;
 
-		$out['enabled']             = ! empty( $raw['enabled'] );
-		$mode                       = isset( $raw['mode'] ) ? sanitize_key( (string) $raw['mode'] ) : 'max';
-		$out['mode']                = in_array( $mode, array( 'each', 'once', 'max' ), true ) ? $mode : 'max';
+		$out['enabled'] = ! empty( $raw['enabled'] );
+		$mode           = isset( $raw['mode'] ) ? sanitize_key( (string) $raw['mode'] ) : 'max';
+		$out['mode']    = in_array( $mode, array( 'each', 'once', 'max' ), true ) ? $mode : 'max';
 
-		$label = isset( $raw['fee_label'] ) ? sanitize_text_field( (string) $raw['fee_label'] ) : '';
-		$label = trim( function_exists( 'mb_substr' ) ? mb_substr( $label, 0, 80 ) : substr( $label, 0, 80 ) );
-		$out['fee_label'] = '' !== $label ? $label : self::DEFAULT_LABEL;
-
-		foreach ( array( 'multiply_by_qty', 'virtual_skip', 'category_children', 'skip_with_free_coupon' ) as $flag ) {
-			$out[ $flag ] = isset( $raw[ $flag ] ) ? (bool) $raw[ $flag ] : $d[ $flag ];
+		foreach ( array( 'multiply_by_qty', 'virtual_skip', 'category_children', 'skip_with_free_coupon', 'skip_free_methods', 'skip_local_pickup' ) as $flag ) {
+			$out[ $flag ] = array_key_exists( $flag, $raw ) ? (bool) $raw[ $flag ] : $d[ $flag ];
 		}
 
 		foreach ( array( 'default_cost', 'min_free_amount' ) as $amount_key ) {
@@ -196,7 +208,7 @@ final class Webino_Shipping_Item_Cost {
 			$cost = self::money( $set['cost'] ?? '' );
 			$cost = null !== $cost ? $cost : 0.0;
 
-			$ids_raw   = isset( $set['product_ids'] ) && is_array( $set['product_ids'] ) ? $set['product_ids'] : array();
+			$ids_raw     = isset( $set['product_ids'] ) && is_array( $set['product_ids'] ) ? $set['product_ids'] : array();
 			$product_ids = array();
 			foreach ( $ids_raw as $pid ) {
 				$pid = absint( $pid );
@@ -323,6 +335,7 @@ final class Webino_Shipping_Item_Cost {
 	 * @return float|null Null when no rule matches.
 	 */
 	private static function resolve_line_cost( $product_id, $parent_id, $product, $s, $cat_index ) {
+		unset( $product ); // kept for signature symmetry / future use.
 		foreach ( array( $product_id, $parent_id ) as $id ) {
 			$id = (int) $id;
 			if ( $id > 0 && isset( $s['product_costs'][ (string) $id ] ) ) {
@@ -393,128 +406,223 @@ final class Webino_Shipping_Item_Cost {
 	}
 
 	/**
-	 * Cart fee entry point. Never fatals: any failure silently skips the fee.
+	 * The payment gateway currently chosen at checkout (session), if any.
 	 *
-	 * @param WC_Cart $cart Cart.
-	 * @return void
+	 * @return string
 	 */
-	public static function calculate( $cart ) {
-		try {
-			if ( ! $cart instanceof WC_Cart ) {
-				return;
+	private static function chosen_payment_method() {
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return '';
+		}
+		$method = WC()->session->get( 'chosen_payment_method', '' );
+		return is_string( $method ) ? $method : '';
+	}
+
+	/**
+	 * Compute the item-cost surcharge for the current cart (before gateway rules)
+	 * and the gateway-adjusted effective amount.
+	 *
+	 * @param array<string,mixed> $s Settings.
+	 * @return array{base: float, effective: float}
+	 */
+	private static function compute_amount( $s ) {
+		$zero = array( 'base' => 0.0, 'effective' => 0.0 );
+
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return $zero;
+		}
+		$cart = WC()->cart;
+
+		$default = '' !== $s['default_cost'] ? (float) $s['default_cost'] : null;
+		$cat_index = self::category_index( $s );
+
+		$paid_subtotal = 0.0;
+		$lines         = array();
+		foreach ( (array) $cart->get_cart() as $item ) {
+			$product = isset( $item['data'] ) ? $item['data'] : null;
+			if ( ! $product instanceof WC_Product ) {
+				continue;
 			}
+			$line_total     = isset( $item['line_total'] ) ? (float) $item['line_total'] : 0.0; // after discounts.
+			$paid_subtotal += $line_total;
+
+			if ( ! empty( $s['virtual_skip'] ) && ( $product->is_virtual() || $product->is_downloadable() ) ) {
+				continue;
+			}
+			$product_id = (int) $product->get_id();
+			$parent_id  = (int) $product->get_parent_id();
+			$qty        = max( 1, (int) ( $item['quantity'] ?? 1 ) );
+			$cost       = self::resolve_line_cost( $product_id, $parent_id, $product, $s, $cat_index );
+			if ( null === $cost ) {
+				$cost = $default; // unmatched line falls back to the default (may stay null).
+			}
+			if ( null === $cost ) {
+				continue;
+			}
+			$lines[] = array(
+				'cost' => (float) $cost,
+				'qty'  => $qty,
+			);
+		}
+
+		// Free above a paid-subtotal threshold.
+		if ( '' !== $s['min_free_amount'] && (float) $s['min_free_amount'] > 0 && $paid_subtotal >= (float) $s['min_free_amount'] ) {
+			return $zero;
+		}
+		// Respect free-shipping coupons when the toggle is on.
+		if ( ! empty( $s['skip_with_free_coupon'] ) && self::has_free_shipping_coupon( $cart ) ) {
+			return $zero;
+		}
+
+		$base = 0.0;
+		if ( $lines ) {
+			switch ( $s['mode'] ) {
+				case 'each':
+					foreach ( $lines as $line ) {
+						$base += $line['cost'] * ( ! empty( $s['multiply_by_qty'] ) ? $line['qty'] : 1 );
+					}
+					break;
+				case 'once':
+					if ( null !== $default ) {
+						$base = $default;
+					} else {
+						$base = 0.0;
+						foreach ( $lines as $line ) {
+							$base = max( $base, $line['cost'] );
+						}
+					}
+					break;
+				case 'max':
+				default:
+					$base = 0.0;
+					foreach ( $lines as $line ) {
+						$base = max( $base, $line['cost'] );
+					}
+					break;
+			}
+		} elseif ( null !== $default ) {
+			// Cart has lines but every line was skipped (e.g. all virtual/downloadable): flat default for the order.
+			$base = $default;
+		}
+		$base = round( max( 0.0, $base ), 2 );
+
+		// Payment-gateway rule (selected gateway at checkout).
+		$effective = $base;
+		$method    = self::chosen_payment_method();
+		if ( '' !== $method ) {
+			foreach ( (array) $s['gateway_costs'] as $rule ) {
+				if ( (string) ( $rule['gateway'] ?? '' ) !== $method ) {
+					continue;
+				}
+				$amount = (float) $rule['amount'];
+				if ( 'override' === $rule['type'] ) {
+					$effective = $amount; // replaces the item cost entirely.
+				} else { // add
+					$effective = $base + $amount;
+				}
+				break;
+			}
+		}
+
+		return array(
+			'base'      => $base,
+			'effective' => round( max( 0.0, $effective ), 2 ),
+		);
+	}
+
+	/**
+	 * Filter every shipping rate for the package; additive surcharge baked into
+	 * the cost (and pro-rated into the rate's taxes when the rate is taxed).
+	 *
+	 * @param array<string, WC_Shipping_Rate> $rates   Rates.
+	 * @param array<string, mixed>            $package Package.
+	 * @return array<string, WC_Shipping_Rate>
+	 */
+	public static function apply_to_rates( $rates, $package ) {
+		if ( ! is_array( $rates ) || ! $rates ) {
+			return $rates;
+		}
+		try {
 			if ( function_exists( 'get_query_var' ) && get_query_var( 'webino_dashboard' ) ) {
-				return; // Never run inside the /dashboard SPA.
+				return $rates; // Never inside the /dashboard SPA.
 			}
 			$s = self::get();
 			if ( empty( $s['enabled'] ) ) {
-				return;
+				return $rates;
 			}
 
-			$default = '' !== $s['default_cost'] ? (float) $s['default_cost'] : null;
+			$amounts = self::compute_amount( $s );
+			if ( $amounts['effective'] <= 0 ) {
+				return $rates;
+			}
+			$add = $amounts['effective'];
 
-			$cat_index = self::category_index( $s );
-
-			// Paid subtotal (before this fee, before shipping cost is irrelevant here).
-			$paid_subtotal = 0.0;
-			$lines         = array();
-			foreach ( (array) $cart->get_cart() as $item ) {
-				$product = isset( $item['data'] ) ? $item['data'] : null;
-				if ( ! $product instanceof WC_Product ) {
+			foreach ( $rates as $key => $rate ) {
+				if ( ! is_a( $rate, 'WC_Shipping_Rate' ) ) {
 					continue;
 				}
-				$line_total     = isset( $item['line_total'] ) ? (float) $item['line_total'] : 0.0; // after discounts, before this fee
-				$paid_subtotal += $line_total;
-
-				if ( ! empty( $s['virtual_skip'] ) && ( $product->is_virtual() || $product->is_downloadable() ) ) {
+				$method_id = (string) $rate->get_method_id();
+				$rate_id   = (string) $rate->get_id();
+				$is_pickup = ( 'local_pickup' === $method_id ) || ( 0 === strpos( $rate_id, 'local_pickup' ) );
+				if ( ! empty( $s['skip_local_pickup'] ) && $is_pickup ) {
 					continue;
 				}
-				$product_id = (int) $product->get_id();
-				$parent_id  = (int) $product->get_parent_id();
-				$qty        = max( 1, (int) ( $item['quantity'] ?? 1 ) );
-				$cost       = self::resolve_line_cost( $product_id, $parent_id, $product, $s, $cat_index );
-				if ( null === $cost ) {
-					$cost = $default; // unmatched line falls back to the default (may stay null).
+				$base_cost = (float) $rate->get_cost();
+				if ( ! empty( $s['skip_free_methods'] ) && abs( $base_cost ) < 0.0001 ) {
+					continue; // zero-cost (free shipping) rate — keep free.
 				}
-				if ( null === $cost ) {
-					continue;
-				}
-				$lines[] = array(
-					'cost' => (float) $cost,
-					'qty'  => $qty,
-				);
-			}
+				$new_cost = round( $base_cost + $add, 2 );
 
-			// Free shipping above a paid-subtotal threshold.
-			if ( '' !== $s['min_free_amount'] && (float) $s['min_free_amount'] > 0 && $paid_subtotal >= (float) $s['min_free_amount'] ) {
-				return;
-			}
-			// Respect free-shipping coupons when the toggle is on.
-			if ( ! empty( $s['skip_with_free_coupon'] ) && self::has_free_shipping_coupon( $cart ) ) {
-				return;
-			}
-
-			$fee = 0.0;
-			if ( $lines ) {
-				switch ( $s['mode'] ) {
-					case 'each':
-						foreach ( $lines as $line ) {
-							$fee += $line['cost'] * ( ! empty( $s['multiply_by_qty'] ) ? $line['qty'] : 1 );
+				$taxes = $rate->get_taxes();
+				if ( is_array( $taxes ) && $taxes && $base_cost > 0 ) {
+					$factor = $new_cost / $base_cost;
+					foreach ( $taxes as $tax_key => $tax_amount ) {
+						if ( is_numeric( $tax_amount ) ) {
+							$taxes[ $tax_key ] = round( ( (float) $tax_amount ) * $factor, 2 );
 						}
-						break;
-					case 'once':
-						if ( null !== $default ) {
-							$fee = $default;
-						} else {
-							$fee = 0.0;
-							foreach ( $lines as $line ) {
-								$fee = max( $fee, $line['cost'] );
-							}
-						}
-						break;
-					case 'max':
-					default:
-						$fee = 0.0;
-						foreach ( $lines as $line ) {
-							$fee = max( $fee, $line['cost'] );
-						}
-						break;
-				}
-			} elseif ( null !== $default ) {
-				// Cart has lines but none matched and no default was baked in above — flat default for the order.
-				$fee = $default;
-			}
-
-			// Payment-gateway rules (selected gateway at checkout).
-			$method = '';
-			if ( function_exists( 'WC' ) && WC()->session ) {
-				$method = (string) WC()->session->get( 'chosen_payment_method', '' );
-			}
-			if ( '' !== $method ) {
-				foreach ( (array) $s['gateway_costs'] as $rule ) {
-					if ( (string) ( $rule['gateway'] ?? '' ) !== $method ) {
-						continue;
 					}
-					$amount = (float) $rule['amount'];
-					if ( 'override' === $rule['type'] ) {
-						$fee = $amount;
-					} else { // add
-						$fee += $amount;
-					}
-					break;
+					$rate->set_taxes( $taxes );
 				}
+				$rate->set_cost( $new_cost );
+				$rates[ $key ] = $rate;
 			}
-
-			if ( $fee <= 0 ) {
-				return;
-			}
-			$cart->add_fee( wp_strip_all_tags( (string) $s['fee_label'] ), round( $fee, 2 ), false );
+			return $rates;
 		} catch ( \Throwable $e ) {
-			// Never break cart/checkout because of this feature.
+			// Never break shipping calculation because of this feature.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && function_exists( 'error_log' ) ) {
 				error_log( '[webino-shipping-item-cost] ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
+			return $rates;
+		}
+	}
+
+	/**
+	 * WooCommerce caches shipping rates per package in the session. When at
+	 * least one gateway rule is configured, force a shipping recalculation on
+	 * checkout updates so a payment-gateway switch is reflected immediately
+	 * (including the gateway-dependent amount). No-op otherwise.
+	 */
+	public static function maybe_force_recalc() {
+		static $running = false;
+		if ( $running ) {
 			return;
+		}
+		try {
+			$s = self::get();
+			if ( empty( $s['enabled'] ) || empty( $s['gateway_costs'] ) ) {
+				return;
+			}
+			if ( ! function_exists( 'WC' ) || ! WC()->cart || ! method_exists( WC()->cart, 'calculate_shipping' ) ) {
+				return;
+			}
+			$running = true;
+			WC()->cart->calculate_shipping();
+			$running = false;
+		} catch ( \Throwable $e ) {
+			$running = false;
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && function_exists( 'error_log' ) ) {
+				error_log( '[webino-shipping-item-cost] ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
 		}
 	}
 
