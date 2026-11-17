@@ -30,7 +30,7 @@ class Webino_Shipping_Packer {
 	 * @return void
 	 */
 	public static function attach_plan_to_order( $order, $data = array() ) {
-		if ( ! is_a( $order, 'WC_Order' ) ) {
+		if ( ! is_a( $order, 'WC_Order' ) || ! Webino_Shipping_Packaging_Settings::is_enabled() ) {
 			return;
 		}
 		$plan = null;

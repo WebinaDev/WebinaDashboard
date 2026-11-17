@@ -401,6 +401,16 @@ class Webino_Dashboard_Coupon_Restrictions {
 		if ( in_array( strtolower( $state ), $norm, true ) ) {
 			return true;
 		}
+		if ( class_exists( 'Webino_Shipping_Cities', false ) ) {
+			$state_key = Webino_Shipping_Cities::resolve_state_key( $state );
+			if ( '' !== $state_key ) {
+				foreach ( $allowed as $a ) {
+					if ( Webino_Shipping_Cities::resolve_state_key( (string) $a ) === $state_key ) {
+						return true;
+					}
+				}
+			}
+		}
 		if ( taxonomy_exists( 'state_city' ) ) {
 			if ( ctype_digit( $state ) ) {
 				$term = get_term( (int) $state, 'state_city' );

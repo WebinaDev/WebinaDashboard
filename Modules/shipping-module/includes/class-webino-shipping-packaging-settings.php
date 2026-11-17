@@ -62,7 +62,8 @@ class Webino_Shipping_Packaging_Settings {
 			);
 		}
 		return array(
-			'add_packaging_cost_to_checkout'   => true,
+			'enabled'                           => false,
+			'add_packaging_cost_to_checkout'    => false,
 			'fill_factor'                       => 0.85,
 			'boxes'                             => $boxes,
 			'professional_fee_enabled'          => false,
@@ -78,6 +79,15 @@ class Webino_Shipping_Packaging_Settings {
 	}
 
 	/**
+	 * Whether the packaging carton system is enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		return ! empty( self::get()['enabled'] );
+	}
+
+	/**
 	 * @return array<string, mixed>
 	 */
 	public static function get() {
@@ -85,6 +95,9 @@ class Webino_Shipping_Packaging_Settings {
 		$out = self::defaults();
 		if ( ! is_array( $raw ) ) {
 			return $out;
+		}
+		if ( array_key_exists( 'enabled', $raw ) ) {
+			$out['enabled'] = (bool) $raw['enabled'];
 		}
 		if ( array_key_exists( 'add_packaging_cost_to_checkout', $raw ) ) {
 			$out['add_packaging_cost_to_checkout'] = (bool) $raw['add_packaging_cost_to_checkout'];
@@ -151,6 +164,9 @@ class Webino_Shipping_Packaging_Settings {
 		$current = self::get();
 		if ( ! is_array( $input ) ) {
 			return $current;
+		}
+		if ( array_key_exists( 'enabled', $input ) ) {
+			$current['enabled'] = (bool) $input['enabled'];
 		}
 		if ( array_key_exists( 'add_packaging_cost_to_checkout', $input ) ) {
 			$current['add_packaging_cost_to_checkout'] = (bool) $input['add_packaging_cost_to_checkout'];

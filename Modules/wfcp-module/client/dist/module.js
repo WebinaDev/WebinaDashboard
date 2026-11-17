@@ -8898,6 +8898,14 @@ function Fh() {
 									}),
 									/* @__PURE__ */ C("dt", {
 										className: "text-muted-foreground",
+										children: r("wfcp.bpcErrors", { defaultValue: "خطا" })
+									}),
+									/* @__PURE__ */ C("dd", {
+										dir: "ltr",
+										children: M.errors ?? 0
+									}),
+									/* @__PURE__ */ C("dt", {
+										className: "text-muted-foreground",
 										children: r("wfcp.bpcStarted", { defaultValue: "شروع" })
 									}),
 									/* @__PURE__ */ C("dd", { children: Ph(M.started_at) })
@@ -9004,7 +9012,9 @@ function Fh() {
 											e.updated ?? 0,
 											" · skip",
 											" ",
-											e.skipped ?? 0
+											e.skipped ?? 0,
+											" · err ",
+											e.errors ?? 0
 										]
 									})]
 								}),
@@ -12503,6 +12513,7 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"wfcp.bpcPage": "صفحه",
 		"wfcp.bpcUpdated": "به‌روز شده",
 		"wfcp.bpcSkipped": "رد شده",
+		"wfcp.bpcErrors": "خطا",
 		"wfcp.bpcStarted": "شروع",
 		"wfcp.bpcLastReason": "آخرین نتیجه:",
 		"wfcp.bpcLog": "لاگ CSV",
@@ -15267,7 +15278,7 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"shipping.citySearch": "جستجوی سریع شهر",
 		"shipping.citySearchPlaceholder": "حداقل ۲ حرف بنویسید…",
 		"shipping.districtsTitle": "محله‌ها",
-		"shipping.districtsHint": "محله را زیر شهر اضافه کنید؛ در چک‌اوت و حساب کاربری نمایش داده می‌شود.",
+		"shipping.districtsHint": "محله را زیر شهر اضافه کنید؛ برای مدیریت زون شهری در همین داشبورد استفاده می‌شود و به مشتری نمایش داده نمی‌شود.",
 		"shipping.districtName": "نام محله",
 		"shipping.addDistrict": "افزودن محله",
 		"shipping.noDistricts": "هنوز محله‌ای برای این شهر نیست.",
@@ -18955,6 +18966,7 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"wfcp.bpcPage": "Page",
 		"wfcp.bpcUpdated": "Updated",
 		"wfcp.bpcSkipped": "Skipped",
+		"wfcp.bpcErrors": "Errors",
 		"wfcp.bpcStarted": "Started",
 		"wfcp.bpcLastReason": "Last result:",
 		"wfcp.bpcLog": "CSV log",
@@ -21715,7 +21727,7 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"shipping.citySearch": "Quick city search",
 		"shipping.citySearchPlaceholder": "Type at least 2 characters…",
 		"shipping.districtsTitle": "Districts",
-		"shipping.districtsHint": "Add districts under a city; they appear at checkout and My Account.",
+		"shipping.districtsHint": "Add districts under a city; used for shipping-zone management in the dashboard. Never shown to customers.",
 		"shipping.districtName": "District name",
 		"shipping.addDistrict": "Add district",
 		"shipping.noDistricts": "No districts for this city yet.",

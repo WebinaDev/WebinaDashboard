@@ -29,7 +29,7 @@ class Webino_Tapin_Settings {
 	 */
 	public static function defaults() {
 		return array(
-			'enabled'                 => true,
+			'enabled'                 => false,
 			'token'                   => '',
 			'shop_id'                 => '',
 			'shop_title'              => '',
@@ -150,6 +150,15 @@ class Webino_Tapin_Settings {
 		update_option( self::OPTION, $clean, false );
 		delete_transient( 'webino_tapin_credit' );
 		return self::get();
+	}
+
+	/**
+	 * Whether Tapin shipping module is enabled in settings.
+	 *
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		return ! empty( self::get()['enabled'] );
 	}
 
 	/**

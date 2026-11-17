@@ -296,10 +296,27 @@ class Webino_Dashboard_Coffee_Blend {
 
 	/**
 	 * Public catalog of beans.
+	 * When source === 'pricing' (default), all main beans configured in Coffee Pricing are returned directly,
+	 * enriched with WooCommerce product metadata if linked.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function catalog() {
+		$settings = self::get_settings();
+		$source   = sanitize_key( (string) ( $settings['source'] ?? 'pricing' ) );
+
+		if ( ( 'pricing' === $source || '' === $source ) && class_exists( 'Webino_Dashboard_Coffee_Pricing', false ) ) {
+			$computed = Webino_Dashboard_Coffee_Pricing::computed();
+			$out      = array();
+			foreach ( (array) ( $computed['beans'] ?? array() ) as $b ) {
+				$mapped = self::map_pricing_bean( $b, false );
+				if ( $mapped ) {
+					$out[] = $mapped;
+				}
+			}
+			return $out;
+		}
+
 		$ids = self::catalog_product_ids();
 		$out = array();
 		foreach ( $ids as $id ) {
@@ -351,7 +368,7 @@ class Webino_Dashboard_Coffee_Blend {
 			$q   = new WP_Query( $q_args );
 			$ids = array_map( 'intval', $q->posts );
 		} else {
-			// Legacy "profile" source: still intersect with pricing beans so mixes never leak.
+			// Legacy "profile" source: intersect with linked pricing beans if configured so mixes never leak.
 			$q_args = array(
 				'post_type'      => 'product',
 				'post_status'    => 'publish',
@@ -372,34 +389,270 @@ class Webino_Dashboard_Coffee_Blend {
 			}
 			$q   = new WP_Query( $q_args );
 			$ids = array_map( 'intval', $q->posts );
+			if ( $bean_ids ) {
+				$allowed = array_fill_keys( $bean_ids, true );
+				$ids     = array_values(
+					array_filter(
+						$ids,
+						static function ( $id ) use ( $allowed ) {
+							return isset( $allowed[ (int) $id ] );
+						}
+					)
+				);
+			}
 		}
 
 		$ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ) ) ) );
 
-		// Always restrict to beans linked in coffee pricing (excludes shop mix SKUs).
-		if ( $bean_ids ) {
-			$allowed = array_fill_keys( $bean_ids, true );
-			$ids     = array_values(
-				array_filter(
-					$ids,
-					static function ( $id ) use ( $allowed ) {
-						return isset( $allowed[ (int) $id ] );
-					}
-				)
-			);
-			// Preserve pricing table order when source is pricing.
-			if ( 'pricing' === $source || '' === $source ) {
-				$ids = array_values( array_intersect( $bean_ids, $ids ) );
-			}
-		} else {
-			// No beans linked yet — empty catalog rather than showing mixes.
-			$ids = array();
+		if ( ( 'pricing' === $source || '' === $source ) && $bean_ids ) {
+			$ids = array_values( array_intersect( $bean_ids, $ids ) );
 		}
 
 		if ( $holder > 0 ) {
 			$ids = array_values( array_diff( $ids, array( $holder ) ) );
 		}
 		return $ids;
+	}
+
+	/**
+	 * Default sensory indicators when a main bean has no linked WooCommerce tasting profile.
+	 *
+	 * @param string $kind robusta|arabica.
+	 * @return array<string,mixed>
+	 */
+	private static function default_tasting_for_kind( $kind ) {
+		if ( 'robusta' === $kind ) {
+			return array(
+				'blend_robusta' => 100,
+				'blend_arabica' => 0,
+				'caffeine_mg'   => 170,
+				'bitterness'    => 7,
+				'sweetness'     => 3,
+				'body'          => 7,
+				'acidity_avg'   => 3,
+				'acidity'       => array(),
+			);
+		}
+		return array(
+			'blend_robusta' => 0,
+			'blend_arabica' => 100,
+			'caffeine_mg'   => 95,
+			'bitterness'    => 4,
+			'sweetness'     => 7,
+			'body'          => 5,
+			'acidity_avg'   => 7,
+			'acidity'       => array(),
+		);
+	}
+
+	/**
+	 * Map a bean row from Webino_Dashboard_Coffee_Pricing::computed() (with optional WC product enrichment).
+	 *
+	 * @param array<string,mixed> $bean Computed bean row.
+	 * @param bool                $include_purchase Include purchase/kg (server only).
+	 * @return array<string,mixed>|null
+	 */
+	public static function map_pricing_bean( $bean, $include_purchase = false ) {
+		if ( ! is_array( $bean ) || empty( $bean['id'] ) ) {
+			return null;
+		}
+		$bean_id  = (string) $bean['id'];
+		$kind     = 'robusta' === ( $bean['kind'] ?? '' ) ? 'robusta' : 'arabica';
+		$pid      = (int) ( $bean['product_id'] ?? 0 );
+		$product  = ( $pid > 0 && function_exists( 'wc_get_product' ) ) ? wc_get_product( $pid ) : null;
+		$defaults = self::default_tasting_for_kind( $kind );
+
+		$in_stock  = true;
+		$image     = '';
+		$origins   = array();
+		$name      = (string) ( $bean['name'] ?? $bean_id );
+		$price_id  = $pid;
+		$rob       = $defaults['blend_robusta'];
+		$ara       = $defaults['blend_arabica'];
+		$caffeine  = $defaults['caffeine_mg'];
+		$bitter    = $defaults['bitterness'];
+		$sweet     = $defaults['sweetness'];
+		$body      = $defaults['body'];
+		$acidity   = array();
+		$acid_avg  = $defaults['acidity_avg'];
+
+		if ( $product ) {
+			$in_stock = $product->is_in_stock();
+			$image_id = (int) $product->get_image_id();
+			if ( $image_id > 0 ) {
+				$image = (string) wp_get_attachment_image_url( $image_id, 'woocommerce_thumbnail' );
+			}
+			$pname = $product->get_name();
+			if ( '' !== $pname ) {
+				$name = $pname;
+			}
+			$origins = Webino_Dashboard_Coffee_Origins::items_for_product( $pid );
+			$profile = Webino_Dashboard_Coffee_Profile::get_profile( $pid );
+			if ( ( (int) $profile['blend_robusta'] + (int) $profile['blend_arabica'] ) > 0 ) {
+				$rob = (int) $profile['blend_robusta'];
+				$ara = (int) $profile['blend_arabica'];
+			}
+			if ( (int) $profile['caffeine_mg'] > 0 ) {
+				$caffeine = (int) $profile['caffeine_mg'];
+			}
+			if ( (int) $profile['bitterness'] > 0 ) {
+				$bitter = (int) $profile['bitterness'];
+			}
+			if ( (int) $profile['sweetness'] > 0 ) {
+				$sweet = (int) $profile['sweetness'];
+			}
+			if ( (int) $profile['body'] > 0 ) {
+				$body = (int) $profile['body'];
+			}
+			if ( ! empty( $profile['acidity'] ) && is_array( $profile['acidity'] ) && array_sum( $profile['acidity'] ) > 0 ) {
+				$acidity  = $profile['acidity'];
+				$acid_avg = (int) round( array_sum( $acidity ) / max( 1, count( $acidity ) ) );
+			}
+		}
+
+		$per_kg = isset( $bean['after_roast'] ) ? (float) $bean['after_roast'] : 0.0;
+		if ( $per_kg <= 0 && $product ) {
+			$resolved = self::resolve_wc_product_per_kg( $product );
+			$per_kg   = $resolved['per_kg'];
+			$price_id = $resolved['price_id'];
+		}
+
+		$retail = self::tier_price( $per_kg, 'retail', $price_id );
+		$item   = array(
+			'id'            => $bean_id,
+			'bean_id'       => $bean_id,
+			'product_id'    => $pid,
+			'kind'          => $kind,
+			'name'          => $name,
+			'image'         => $image,
+			'in_stock'      => $in_stock,
+			'blend_robusta' => $rob,
+			'blend_arabica' => $ara,
+			'caffeine_mg'   => $caffeine,
+			'bitterness'    => $bitter,
+			'sweetness'     => $sweet,
+			'body'          => $body,
+			'acidity_avg'   => $acid_avg,
+			'acidity'       => $acidity,
+			'origins'       => $origins,
+			'retail_per_kg' => $retail,
+			'retail_html'   => self::format_money( $retail ),
+		);
+		if ( $include_purchase ) {
+			$item['purchase_per_kg']  = $per_kg;
+			$item['price_product_id'] = $price_id;
+		}
+		return $item;
+	}
+
+	/**
+	 * Map a base mix from Webino_Dashboard_Coffee_Pricing::computed() into a blend item (used for simple mode & presets).
+	 *
+	 * @param string                   $mix_id Mix ID.
+	 * @param array<string,mixed>|null $computed Computed table.
+	 * @param bool                     $include_purchase Include purchase/kg.
+	 * @return array<string,mixed>|null
+	 */
+	public static function map_pricing_mix( $mix_id, $computed = null, $include_purchase = false ) {
+		if ( ! class_exists( 'Webino_Dashboard_Coffee_Pricing', false ) ) {
+			return null;
+		}
+		$c   = is_array( $computed ) ? $computed : Webino_Dashboard_Coffee_Pricing::computed();
+		$mix = null;
+		foreach ( (array) ( $c['base_mixes'] ?? array() ) as $m ) {
+			if ( is_array( $m ) && ( $m['id'] ?? '' ) === $mix_id ) {
+				$mix = $m;
+				break;
+			}
+		}
+		if ( ! $mix ) {
+			return null;
+		}
+
+		$beans_by_id = array();
+		foreach ( (array) ( $c['beans'] ?? array() ) as $b ) {
+			if ( is_array( $b ) && ! empty( $b['id'] ) ) {
+				$beans_by_id[ (string) $b['id'] ] = self::map_pricing_bean( $b, true );
+			}
+		}
+
+		$per_kg   = 0.0;
+		$rob      = 0.0;
+		$ara      = 0.0;
+		$caffeine = 0.0;
+		$bitter   = 0.0;
+		$sweet    = 0.0;
+		$body     = 0.0;
+		$acidity  = array();
+		$parts_desc = array();
+		$w_sum    = 0.0;
+		$parts    = (array) ( $mix['parts'] ?? array() );
+
+		foreach ( $parts as $p ) {
+			$bid = (string) ( $p['bean_id'] ?? '' );
+			$pct = (float) ( $p['percent'] ?? 0 );
+			if ( '' === $bid || $pct <= 0 || empty( $beans_by_id[ $bid ] ) ) {
+				continue;
+			}
+			$w_sum += $pct;
+		}
+		if ( $w_sum <= 0 ) {
+			return null;
+		}
+		foreach ( $parts as $p ) {
+			$bid = (string) ( $p['bean_id'] ?? '' );
+			$pct = (float) ( $p['percent'] ?? 0 );
+			if ( '' === $bid || $pct <= 0 || empty( $beans_by_id[ $bid ] ) ) {
+				continue;
+			}
+			$b    = $beans_by_id[ $bid ];
+			$frac = $pct / $w_sum;
+			$per_kg   += (float) $b['purchase_per_kg'] * $frac;
+			$rob      += (float) $b['blend_robusta'] * $frac;
+			$ara      += (float) $b['blend_arabica'] * $frac;
+			$caffeine += (float) $b['caffeine_mg'] * $frac;
+			$bitter   += (float) $b['bitterness'] * $frac;
+			$sweet    += (float) $b['sweetness'] * $frac;
+			$body     += (float) $b['body'] * $frac;
+			if ( ! empty( $b['acidity'] ) && is_array( $b['acidity'] ) ) {
+				foreach ( $b['acidity'] as $lid => $val ) {
+					$acidity[ $lid ] = ( $acidity[ $lid ] ?? 0.0 ) + ( (float) $val * $frac );
+				}
+			}
+			$parts_desc[] = (int) round( $pct ) . '٪ ' . $b['name'];
+		}
+
+		$kind   = 'robusta' === ( $mix['kind'] ?? '' ) ? 'robusta' : 'arabica';
+		$retail = self::tier_price( $per_kg, 'retail', 0 );
+		$key    = 'mix:' . $mix_id;
+		$item   = array(
+			'id'            => $key,
+			'bean_id'       => $key,
+			'mix_id'        => $mix_id,
+			'product_id'    => 0,
+			'kind'          => $kind,
+			'name'          => (string) $mix['name'],
+			'subtitle'      => implode( ' + ', $parts_desc ),
+			'parts'         => $parts,
+			'image'         => '',
+			'in_stock'      => true,
+			'blend_robusta' => (int) round( $rob ),
+			'blend_arabica' => (int) round( $ara ),
+			'caffeine_mg'   => (int) round( $caffeine ),
+			'bitterness'    => (int) round( $bitter ),
+			'sweetness'     => (int) round( $sweet ),
+			'body'          => (int) round( $body ),
+			'acidity_avg'   => $acidity ? (int) round( array_sum( $acidity ) / max( 1, count( $acidity ) ) ) : ( 'robusta' === $kind ? 3 : 7 ),
+			'acidity'       => array_map( 'intval', array_map( 'round', $acidity ) ),
+			'origins'       => array(),
+			'retail_per_kg' => $retail,
+			'retail_html'   => self::format_money( $retail ),
+		);
+		if ( $include_purchase ) {
+			$item['purchase_per_kg']  = $per_kg;
+			$item['price_product_id'] = 0;
+		}
+		return $item;
 	}
 
 	/**
@@ -415,11 +668,11 @@ class Webino_Dashboard_Coffee_Blend {
 		if ( ! $product || ! $product->is_purchasable() ) {
 			return null;
 		}
-		$profile = Webino_Dashboard_Coffee_Profile::get_profile( (int) $product_id );
-		$origins = Webino_Dashboard_Coffee_Origins::items_for_product( (int) $product_id );
-		$price_id = self::pricing_product_id( $product );
-		$purchase = self::product_purchase( $price_id, $product );
-		$per_kg   = self::purchase_per_kg( $purchase, $profile );
+		$profile  = Webino_Dashboard_Coffee_Profile::get_profile( (int) $product_id );
+		$origins  = Webino_Dashboard_Coffee_Origins::items_for_product( (int) $product_id );
+		$resolved = self::resolve_wc_product_per_kg( $product, $profile );
+		$per_kg   = $resolved['per_kg'];
+		$price_id = $resolved['price_id'];
 		$image_id = (int) $product->get_image_id();
 		$acidity  = isset( $profile['acidity'] ) && is_array( $profile['acidity'] ) ? $profile['acidity'] : array();
 		$acid_avg = 0;
@@ -428,6 +681,8 @@ class Webino_Dashboard_Coffee_Blend {
 		}
 		$item = array(
 			'id'             => (int) $product_id,
+			'bean_id'        => '',
+			'product_id'     => (int) $product_id,
 			'name'           => $product->get_name(),
 			'image'          => $image_id > 0 ? (string) wp_get_attachment_image_url( $image_id, 'woocommerce_thumbnail' ) : '',
 			'in_stock'       => $product->is_in_stock(),
@@ -444,10 +699,52 @@ class Webino_Dashboard_Coffee_Blend {
 			'retail_html'    => self::format_money( self::tier_price( $per_kg, 'retail', $price_id ) ),
 		);
 		if ( $include_purchase ) {
-			$item['purchase_per_kg'] = $per_kg;
+			$item['purchase_per_kg']  = $per_kg;
 			$item['price_product_id'] = $price_id;
 		}
 		return $item;
+	}
+
+	/**
+	 * Resolve a recipe bean entry (bean_id string, mix:<id>, or WC product_id).
+	 *
+	 * @param array<string,mixed>      $bean_row Recipe row.
+	 * @param array<string,mixed>|null $computed Computed pricing.
+	 * @param bool                     $include_purchase Include purchase/kg.
+	 * @return array<string,mixed>|null
+	 */
+	private static function resolve_recipe_bean( $bean_row, $computed = null, $include_purchase = true ) {
+		$key = isset( $bean_row['bean_id'] ) && '' !== (string) $bean_row['bean_id']
+			? (string) $bean_row['bean_id']
+			: (string) ( $bean_row['id'] ?? '' );
+
+		if ( '' !== $key && 0 === strpos( $key, 'mix:' ) ) {
+			return self::map_pricing_mix( substr( $key, 4 ), $computed, $include_purchase );
+		}
+
+		if ( '' !== $key && class_exists( 'Webino_Dashboard_Coffee_Pricing', false ) ) {
+			$c = is_array( $computed ) ? $computed : Webino_Dashboard_Coffee_Pricing::computed();
+			foreach ( (array) ( $c['beans'] ?? array() ) as $b ) {
+				if ( is_array( $b ) && (string) ( $b['id'] ?? '' ) === $key ) {
+					return self::map_pricing_bean( $b, $include_purchase );
+				}
+			}
+		}
+
+		$pid = (int) ( $bean_row['product_id'] ?? 0 );
+		if ( $pid > 0 ) {
+			if ( class_exists( 'Webino_Dashboard_Coffee_Pricing', false ) ) {
+				$c = is_array( $computed ) ? $computed : Webino_Dashboard_Coffee_Pricing::computed();
+				foreach ( (array) ( $c['beans'] ?? array() ) as $b ) {
+					if ( is_array( $b ) && (int) ( $b['product_id'] ?? 0 ) === $pid ) {
+						return self::map_pricing_bean( $b, $include_purchase );
+					}
+				}
+			}
+			return self::map_bean( $pid, $include_purchase );
+		}
+
+		return null;
 	}
 
 	/**
@@ -462,6 +759,9 @@ class Webino_Dashboard_Coffee_Blend {
 			return $recipe;
 		}
 		$settings = self::get_settings();
+		$computed = class_exists( 'Webino_Dashboard_Coffee_Pricing', false )
+			? Webino_Dashboard_Coffee_Pricing::computed()
+			: null;
 		$sum_kg   = 0.0;
 		$tasting  = array(
 			'blend_robusta' => 0.0,
@@ -472,11 +772,15 @@ class Webino_Dashboard_Coffee_Blend {
 			'body'          => 0.0,
 			'acidity'       => array(),
 		);
-		$lines = array();
+		$lines     = array();
+		$price_pid = 0;
 		foreach ( $recipe['beans'] as $bean ) {
-			$mapped = self::map_bean( (int) $bean['product_id'], true );
+			$mapped = self::resolve_recipe_bean( $bean, $computed, true );
 			if ( ! $mapped || empty( $mapped['in_stock'] ) ) {
 				return new WP_Error( 'invalid_bean', __( 'یک دان انتخاب‌شده ناموجود است.', 'webino-dashboard' ), array( 'status' => 400 ) );
+			}
+			if ( 0 === $price_pid && ! empty( $mapped['price_product_id'] ) ) {
+				$price_pid = (int) $mapped['price_product_id'];
 			}
 			$pct     = (float) $bean['percent'] / 100;
 			$sum_kg += (float) $mapped['purchase_per_kg'] * $pct;
@@ -496,11 +800,14 @@ class Webino_Dashboard_Coffee_Blend {
 			}
 			$roast_label = self::label_for( $settings['roasts'], $bean['roast'] );
 			$lines[]     = array(
-				'product_id' => (int) $bean['product_id'],
-				'name'       => $mapped['name'],
-				'percent'    => (float) $bean['percent'],
-				'roast'      => $bean['roast'],
-				'roast_label'=> $roast_label,
+				'id'          => $mapped['id'],
+				'bean_id'     => (string) ( $mapped['bean_id'] ?? '' ),
+				'product_id'  => (int) ( $mapped['product_id'] ?? 0 ),
+				'name'        => $mapped['name'],
+				'subtitle'    => (string) ( $mapped['subtitle'] ?? '' ),
+				'percent'     => (float) $bean['percent'],
+				'roast'       => $bean['roast'],
+				'roast_label' => $roast_label,
 			);
 		}
 
@@ -510,15 +817,20 @@ class Webino_Dashboard_Coffee_Blend {
 			$line_purchase += (float) $settings['grind_fee'] * ( $weight_g / 1000 );
 		}
 
-		$price_pid = isset( $recipe['beans'][0]['product_id'] ) ? (int) $recipe['beans'][0]['product_id'] : 0;
+		if ( 0 === $price_pid ) {
+			$price_pid = (int) ( $settings['holder_product_id'] ?? 0 );
+		}
 		$retail    = self::tier_price( $line_purchase, 'retail', $price_pid );
 		$credit    = self::tier_price( $line_purchase, 'credit', $price_pid );
+		$wholesale = self::tier_price( $line_purchase, 'wholesale', $price_pid );
 		$plans     = self::installment_plans( $line_purchase, $price_pid );
 
 		$chosen_type = $recipe['purchase_type'];
 		$line_price  = $retail;
 		if ( 'credit' === $chosen_type ) {
 			$line_price = $credit > 0 ? $credit : $retail;
+		} elseif ( 'wholesale' === $chosen_type ) {
+			$line_price = $wholesale > 0 ? $wholesale : $retail;
 		} elseif ( 'installment' === $chosen_type ) {
 			$months = (int) $recipe['installment_months'];
 			foreach ( $plans as $plan ) {
@@ -547,6 +859,7 @@ class Webino_Dashboard_Coffee_Blend {
 			'purchase'     => $line_purchase,
 			'retail'       => $retail,
 			'credit'       => $credit,
+			'wholesale'    => $wholesale,
 			'installment'  => $plans,
 			'line_price'   => $line_price,
 			'grind_label'  => self::grind_label( $recipe, $settings ),
@@ -567,14 +880,14 @@ class Webino_Dashboard_Coffee_Blend {
 		if ( ! is_array( $raw ) ) {
 			return new WP_Error( 'invalid', __( 'دستور پخت نامعتبر است.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
-		$settings = self::get_settings();
-		$mode     = sanitize_key( (string) ( $raw['mode'] ?? 'advanced' ) );
+		$settings  = self::get_settings();
+		$mode      = sanitize_key( (string) ( $raw['mode'] ?? 'advanced' ) );
 		if ( ! in_array( $mode, array( 'simple', 'advanced' ), true ) ) {
 			$mode = 'advanced';
 		}
-		$beans_in = isset( $raw['beans'] ) && is_array( $raw['beans'] ) ? $raw['beans'] : array();
-		$beans    = array();
-		$allowed  = self::allowed_bean_ids( $mode, $settings );
+		$beans_in  = isset( $raw['beans'] ) && is_array( $raw['beans'] ) ? $raw['beans'] : array();
+		$beans     = array();
+		$allowed   = self::allowed_bean_keys( $mode, $settings );
 		$roast_ids = array();
 		foreach ( $settings['roasts'] as $r ) {
 			$roast_ids[] = $r['id'];
@@ -584,20 +897,39 @@ class Webino_Dashboard_Coffee_Blend {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}
-			$pid = (int) ( $row['product_id'] ?? 0 );
 			$pct = (float) ( $row['percent'] ?? 0 );
-			if ( $pid < 1 || $pct <= 0 ) {
+			if ( $pct <= 0 ) {
 				continue;
 			}
-			if ( ! in_array( $pid, $allowed, true ) ) {
+			$raw_bean_id = (string) ( $row['bean_id'] ?? '' );
+			$raw_pid     = $row['product_id'] ?? '';
+			$raw_id      = $row['id'] ?? '';
+
+			$candidate_key = '';
+			if ( '' !== $raw_bean_id ) {
+				$candidate_key = $raw_bean_id;
+			} elseif ( '' !== (string) $raw_id ) {
+				$candidate_key = (string) $raw_id;
+			} elseif ( is_string( $raw_pid ) && ! ctype_digit( $raw_pid ) && '' !== $raw_pid ) {
+				$candidate_key = $raw_pid;
+			} elseif ( (int) $raw_pid > 0 ) {
+				$candidate_key = (string) (int) $raw_pid;
+			}
+
+			if ( '' === $candidate_key || ! in_array( $candidate_key, $allowed, true ) ) {
 				return new WP_Error( 'invalid_bean', __( 'دان انتخاب‌شده در کاتالوگ نیست.', 'webino-dashboard' ), array( 'status' => 400 ) );
 			}
-			$roast = sanitize_key( (string) ( $row['roast'] ?? 'medium' ) );
+
+			$pid     = ctype_digit( $candidate_key ) ? (int) $candidate_key : (int) $raw_pid;
+			$bean_id = ctype_digit( $candidate_key ) ? '' : $candidate_key;
+			$roast   = sanitize_key( (string) ( $row['roast'] ?? 'medium' ) );
 			if ( ! in_array( $roast, $roast_ids, true ) ) {
 				$roast = $roast_ids ? $roast_ids[0] : 'medium';
 			}
 			$beans[]  = array(
-				'product_id' => $pid,
+				'id'         => '' !== $bean_id ? $bean_id : $pid,
+				'bean_id'    => $bean_id,
+				'product_id' => max( 0, $pid ),
 				'percent'    => $pct,
 				'roast'      => $roast,
 			);
@@ -638,7 +970,7 @@ class Webino_Dashboard_Coffee_Blend {
 		}
 
 		$type = sanitize_key( (string) ( $raw['purchase_type'] ?? 'cash' ) );
-		if ( ! in_array( $type, array( 'cash', 'retail', 'credit', 'installment' ), true ) ) {
+		if ( ! in_array( $type, array( 'cash', 'retail', 'credit', 'installment', 'wholesale' ), true ) ) {
 			$type = 'cash';
 		}
 		if ( 'retail' === $type ) {
@@ -667,39 +999,115 @@ class Webino_Dashboard_Coffee_Blend {
 	}
 
 	/**
-	 * @param string               $mode Mode.
-	 * @param array<string,mixed>  $settings Settings.
-	 * @return array<int,int>
+	 * Allowed bean/mix keys for a given mode.
+	 *
+	 * @param string              $mode Mode.
+	 * @param array<string,mixed> $settings Settings.
+	 * @return list<string>
 	 */
-	private static function allowed_bean_ids( $mode, $settings ) {
+	private static function allowed_bean_keys( $mode, $settings ) {
+		$keys     = array();
+		$has_pricing = class_exists( 'Webino_Dashboard_Coffee_Pricing', false );
+		$computed    = $has_pricing ? Webino_Dashboard_Coffee_Pricing::computed() : array();
+
 		if ( 'simple' === $mode ) {
-			$ids = array();
 			if ( (int) $settings['robusta_product_id'] > 0 ) {
-				$ids[] = (int) $settings['robusta_product_id'];
+				$keys[] = (string) (int) $settings['robusta_product_id'];
 			}
 			if ( (int) $settings['arabica_product_id'] > 0 ) {
-				$ids[] = (int) $settings['arabica_product_id'];
+				$keys[] = (string) (int) $settings['arabica_product_id'];
 			}
-			$ids = array_values( array_unique( $ids ) );
-			$bean_ids = class_exists( 'Webino_Dashboard_Coffee_Pricing', false )
-				? Webino_Dashboard_Coffee_Pricing::bean_product_ids()
-				: array();
-			if ( $bean_ids ) {
-				$allowed = array_fill_keys( $bean_ids, true );
-				$ids     = array_values(
-					array_filter(
-						$ids,
-						static function ( $id ) use ( $allowed ) {
-							return isset( $allowed[ (int) $id ] );
-						}
-					)
-				);
-			} else {
-				$ids = array();
+			foreach ( (array) ( $computed['base_mixes'] ?? array() ) as $m ) {
+				if ( is_array( $m ) && ! empty( $m['id'] ) ) {
+					$keys[] = 'mix:' . (string) $m['id'];
+				}
 			}
-			return $ids;
+			foreach ( (array) ( $computed['beans'] ?? array() ) as $b ) {
+				if ( is_array( $b ) && ! empty( $b['id'] ) ) {
+					$keys[] = (string) $b['id'];
+				}
+			}
+			return array_values( array_unique( $keys ) );
 		}
-		return self::catalog_product_ids();
+
+		$source = sanitize_key( (string) ( $settings['source'] ?? 'pricing' ) );
+		if ( ( 'pricing' === $source || '' === $source ) && $has_pricing ) {
+			foreach ( (array) ( $computed['beans'] ?? array() ) as $b ) {
+				if ( is_array( $b ) && ! empty( $b['id'] ) ) {
+					$keys[] = (string) $b['id'];
+					if ( ! empty( $b['product_id'] ) ) {
+						$keys[] = (string) (int) $b['product_id'];
+					}
+				}
+			}
+			foreach ( (array) ( $computed['base_mixes'] ?? array() ) as $m ) {
+				if ( is_array( $m ) && ! empty( $m['id'] ) ) {
+					$keys[] = 'mix:' . (string) $m['id'];
+				}
+			}
+			return array_values( array_unique( $keys ) );
+		}
+
+		foreach ( self::catalog_product_ids() as $pid ) {
+			$keys[] = (string) (int) $pid;
+		}
+		return array_values( array_unique( $keys ) );
+	}
+
+	/**
+	 * Build Simple-mode style groups (Classic / Luxury / Economy) derived from main beans.
+	 *
+	 * @param array<string,mixed>|null $computed Computed pricing.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function build_simple_styles( $computed ) {
+		if ( ! is_array( $computed ) ) {
+			return array();
+		}
+		$styles     = array();
+		$shop_cfg   = isset( $computed['shop_styles'] ) && is_array( $computed['shop_styles'] ) ? $computed['shop_styles'] : array();
+		$classic_r  = self::map_pricing_mix( (string) ( $shop_cfg['classic']['robusta_mix_id'] ?? 'classic_robusta' ), $computed );
+		$classic_a  = self::map_pricing_mix( (string) ( $shop_cfg['classic']['arabica_mix_id'] ?? 'classic_arabica' ), $computed );
+		if ( $classic_r || $classic_a ) {
+			$styles[] = array(
+				'id'      => 'classic',
+				'label'   => 'کلاسیک',
+				'robusta' => $classic_r,
+				'arabica' => $classic_a,
+			);
+		}
+		$luxury_r = self::map_pricing_mix( (string) ( $shop_cfg['luxury']['robusta_mix_id'] ?? 'base_arabica' ), $computed );
+		$luxury_a = self::map_pricing_mix( (string) ( $shop_cfg['luxury']['arabica_mix_id'] ?? 'luxury_arabica' ), $computed );
+		if ( $luxury_r || $luxury_a ) {
+			$styles[] = array(
+				'id'      => 'luxury',
+				'label'   => 'لاکچری',
+				'robusta' => $luxury_r,
+				'arabica' => $luxury_a,
+			);
+		}
+		$eco      = isset( $computed['economy'] ) && is_array( $computed['economy'] ) ? $computed['economy'] : array();
+		$eco_r_id = (string) ( $eco['robusta_bean_id'] ?? '' );
+		$eco_a_id = (string) ( $eco['arabica_bean_id'] ?? '' );
+		$eco_r    = null;
+		$eco_a    = null;
+		foreach ( (array) ( $computed['beans'] ?? array() ) as $b ) {
+			if ( is_array( $b ) && ( $b['id'] ?? '' ) === $eco_r_id ) {
+				$eco_r = self::map_pricing_bean( $b, false );
+			}
+			if ( is_array( $b ) && ( $b['id'] ?? '' ) === $eco_a_id ) {
+				$eco_a = self::map_pricing_bean( $b, false );
+			}
+		}
+		if ( $eco_r || $eco_a ) {
+			$styles[] = array(
+				'id'      => 'economy',
+				'label'   => 'اقتصادی',
+				'robusta' => $eco_r,
+				'arabica' => $eco_a,
+			);
+		}
+		return $styles;
 	}
 
 	/**
@@ -710,10 +1118,30 @@ class Webino_Dashboard_Coffee_Blend {
 	public static function public_config() {
 		$settings = self::get_settings();
 		$profile  = Webino_Dashboard_Coffee_Profile::get_settings();
-		$simple   = array(
-			'robusta' => (int) $settings['robusta_product_id'] > 0 ? self::map_bean( (int) $settings['robusta_product_id'] ) : null,
-			'arabica' => (int) $settings['arabica_product_id'] > 0 ? self::map_bean( (int) $settings['arabica_product_id'] ) : null,
+		$computed = class_exists( 'Webino_Dashboard_Coffee_Pricing', false )
+			? Webino_Dashboard_Coffee_Pricing::computed()
+			: null;
+
+		$simple_styles = self::build_simple_styles( $computed );
+		$simple        = array(
+			'robusta' => (int) $settings['robusta_product_id'] > 0
+				? self::map_bean( (int) $settings['robusta_product_id'] )
+				: ( $simple_styles[0]['robusta'] ?? null ),
+			'arabica' => (int) $settings['arabica_product_id'] > 0
+				? self::map_bean( (int) $settings['arabica_product_id'] )
+				: ( $simple_styles[0]['arabica'] ?? null ),
 		);
+
+		$presets = array();
+		if ( is_array( $computed ) ) {
+			foreach ( (array) ( $computed['base_mixes'] ?? array() ) as $mix ) {
+				$mapped_mix = self::map_pricing_mix( (string) ( $mix['id'] ?? '' ), $computed, false );
+				if ( $mapped_mix ) {
+					$presets[] = $mapped_mix;
+				}
+			}
+		}
+
 		return array(
 			'mode'             => $settings['default_mode'],
 			'min_beans'        => (int) $settings['min_beans'],
@@ -725,6 +1153,8 @@ class Webino_Dashboard_Coffee_Blend {
 			'guide'            => $settings['guide'],
 			'catalog'          => self::catalog(),
 			'simple'           => $simple,
+			'simple_styles'    => ( (int) $settings['robusta_product_id'] > 0 || (int) $settings['arabica_product_id'] > 0 ) ? array() : $simple_styles,
+			'presets'          => $presets,
 			'labels'           => array(
 				'robusta' => (string) $profile['robusta_label'],
 				'arabica' => (string) $profile['arabica_label'],
@@ -918,15 +1348,31 @@ class Webino_Dashboard_Coffee_Blend {
 		if ( class_exists( 'WFCP_Storefront_Price', false ) ) {
 			WFCP_Storefront_Price::suspend( true );
 		}
-		foreach ( $cart->get_cart() as $item ) {
-			if ( empty( $item[ self::CART_KEY ] ) || empty( $item['data'] ) ) {
+		foreach ( $cart->get_cart() as $cart_item_key => $item ) {
+			if ( empty( $item[ self::CART_KEY ] ) || empty( $item['data'] ) || ! is_array( $item[ self::CART_KEY ] ) ) {
 				continue;
 			}
-			$quote = self::quote( $item[ self::CART_KEY ] );
+			$recipe = $item[ self::CART_KEY ];
+			if ( ! empty( $item['wfcp_purchase_type'] ) ) {
+				$ptype = sanitize_key( (string) $item['wfcp_purchase_type'] );
+				if ( in_array( $ptype, array( 'cash', 'retail', 'credit', 'installment', 'wholesale' ), true ) ) {
+					$recipe['purchase_type'] = 'retail' === $ptype ? 'cash' : $ptype;
+				}
+			}
+			if ( ! empty( $item['wfcp_installment_months'] ) ) {
+				$recipe['installment_months'] = (int) $item['wfcp_installment_months'];
+			}
+			$quote = self::quote( $recipe );
 			if ( is_wp_error( $quote ) ) {
 				continue;
 			}
 			$item['data']->set_price( (float) $quote['line_price'] );
+			if ( isset( $cart->cart_contents[ $cart_item_key ] ) ) {
+				$cart->cart_contents[ $cart_item_key ][ self::CART_KEY ] = $quote['recipe'];
+				if ( 'installment' === $quote['recipe']['purchase_type'] ) {
+					$cart->cart_contents[ $cart_item_key ]['wfcp_installment_total'] = (float) $quote['line_price'];
+				}
+			}
 		}
 		if ( class_exists( 'WFCP_Storefront_Price', false ) ) {
 			WFCP_Storefront_Price::suspend( false );
@@ -1123,6 +1569,82 @@ class Webino_Dashboard_Coffee_Blend {
 	}
 
 	/**
+	 * Resolve accurate per-kg purchase price & WFCP context product ID for a WooCommerce product.
+	 * Uses coffee pricing composition first when available, then picks the matching variation and scales by variation grams.
+	 *
+	 * @param WC_Product               $product Product.
+	 * @param array<string,mixed>|null $profile Optional coffee profile.
+	 * @return array{per_kg:float,price_id:int}
+	 */
+	private static function resolve_wc_product_per_kg( $product, $profile = null ) {
+		$pid     = (int) $product->get_id();
+		$profile = is_array( $profile ) ? $profile : Webino_Dashboard_Coffee_Profile::get_profile( $pid );
+		$settings = self::get_settings();
+
+		if ( class_exists( 'Webino_Dashboard_Coffee_Pricing', false ) ) {
+			$from_recipe = Webino_Dashboard_Coffee_Pricing::purchase_per_kg_for_profile( $profile );
+			if ( ! is_wp_error( $from_recipe ) && (float) $from_recipe > 0 ) {
+				return array(
+					'per_kg'   => (float) $from_recipe,
+					'price_id' => self::pricing_product_id( $product ),
+				);
+			}
+		}
+
+		$target_id = $pid;
+		$target    = $product;
+		$grams     = isset( $profile['pack_weight_g'] ) ? (int) $profile['pack_weight_g'] : (int) $settings['default_pack_weight_g'];
+
+		if ( $product->is_type( 'variable' ) ) {
+			$best_vid   = 0;
+			$best_v     = null;
+			$best_grams = 0;
+			foreach ( $product->get_children() as $vid ) {
+				$vid = (int) $vid;
+				$v   = function_exists( 'wc_get_product' ) ? wc_get_product( $vid ) : null;
+				if ( ! $v ) {
+					continue;
+				}
+				$vg = class_exists( 'Webino_Dashboard_Coffee_Pricing', false )
+					? Webino_Dashboard_Coffee_Pricing::grams_from_variation( $v )
+					: 0;
+				$has_pp = class_exists( 'WFCP_Helper', false ) && null !== WFCP_Helper::get_product_purchase_price( $vid ) && (float) WFCP_Helper::get_product_purchase_price( $vid ) > 0;
+				if ( 1000 === $vg && ( $has_pp || (float) $v->get_price() > 0 ) ) {
+					$best_vid   = $vid;
+					$best_v     = $v;
+					$best_grams = 1000;
+					break;
+				}
+				if ( 0 === $best_vid && ( $has_pp || (float) $v->get_price() > 0 ) ) {
+					$best_vid   = $vid;
+					$best_v     = $v;
+					$best_grams = $vg;
+				}
+			}
+			if ( $best_vid > 0 && $best_v ) {
+				$target_id = $best_vid;
+				$target    = $best_v;
+				if ( $best_grams > 0 ) {
+					$grams = $best_grams;
+				}
+			}
+		}
+
+		$purchase = self::product_purchase( $target_id, $target );
+		if ( 'pack' !== $settings['price_basis'] ) {
+			return array(
+				'per_kg'   => (float) $purchase,
+				'price_id' => $target_id,
+			);
+		}
+		$grams = max( 1, (int) $grams );
+		return array(
+			'per_kg'   => (float) $purchase / ( $grams / 1000 ),
+			'price_id' => $target_id,
+		);
+	}
+
+	/**
 	 * @param WC_Product $product Product.
 	 * @return int
 	 */
@@ -1141,7 +1663,7 @@ class Webino_Dashboard_Coffee_Blend {
 
 	/**
 	 * @param int        $product_id Pricing product ID.
-	 * @param WC_Product $product Product.
+	 * @param WC_Product $product Product or variation.
 	 * @return float
 	 */
 	private static function product_purchase( $product_id, $product ) {
@@ -1151,9 +1673,12 @@ class Webino_Dashboard_Coffee_Blend {
 				return (float) $pp;
 			}
 		}
-		$reg = (float) $product->get_regular_price();
+		$src = ( (int) $product_id !== (int) $product->get_id() && function_exists( 'wc_get_product' ) )
+			? ( wc_get_product( $product_id ) ?: $product )
+			: $product;
+		$reg = (float) $src->get_regular_price();
 		if ( $reg <= 0 ) {
-			$reg = (float) $product->get_price();
+			$reg = (float) $src->get_price();
 		}
 		return max( 0, $reg );
 	}

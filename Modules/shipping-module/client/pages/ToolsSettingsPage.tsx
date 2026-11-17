@@ -14,6 +14,7 @@ import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
 
 type ToolsSettings = {
+  enabled: boolean
   hide_when_free: boolean
   hide_when_courier: boolean
   default_product_weight_g: number
@@ -30,18 +31,19 @@ type ToolsSettings = {
 }
 
 const empty = (): ToolsSettings => ({
+  enabled: false,
   hide_when_free: false,
   hide_when_courier: false,
   default_product_weight_g: 500,
   default_package_weight_g: 100,
   post_weight_limit_kg: 30,
-  status_enable: true,
+  status_enable: false,
   free_shipping_title: '',
-  hide_country: true,
+  hide_country: false,
   swap_state_city: false,
   disable_default_method: false,
   free_first_order: false,
-  honor_free_shipping_coupon: true,
+  honor_free_shipping_coupon: false,
   method_images: {},
 })
 
@@ -93,6 +95,17 @@ export default function ToolsSettingsPage() {
           {t('common.save')}
         </Button>
       </div>
+      <Card className="mb-4 border-primary/20 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{t('shipping.toolsMasterTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <label className="flex items-center justify-between gap-3 text-sm">
+            <span>{t('shipping.toolsMasterEnable')}</span>
+            <Switch checked={!!draft.enabled} onCheckedChange={(v) => setDraft({ ...draft, enabled: v })} />
+          </label>
+        </CardContent>
+      </Card>
       <Card className="mb-4 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('shipping.toolsRatesTitle')}</CardTitle>

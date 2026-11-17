@@ -1,3 +1,4 @@
+import { Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -24,12 +25,15 @@ import { formatNumber } from '@/lib/formatNumber'
 import type { AttributeTerm, GlobalAttribute } from '@/types/attributes'
 
 import type {
-  CoffeePricingBean,
   CoffeePricingBaseMix,
+  CoffeePricingBean,
   CoffeePricingPayload,
   CoffeePricingSettings,
   CoffeeWeightPack,
+  CoffeeWfcpPreviewConfig,
 } from '../types'
+
+const RATIOS = [90, 80, 70, 60, 50, 40, 30, 20, 10]
 
 function emptySettings(): CoffeePricingSettings {
   return {
@@ -51,9 +55,18 @@ function attrTaxonomy(attr: GlobalAttribute): string {
   return attr.slug ? `pa_${attr.slug}` : ''
 }
 
+function normalizeDigits(raw: string): string {
+  return String(raw)
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/٫/g, '.')
+    .replace(/٬/g, '')
+}
+
 function guessGrams(name: string, slug: string): number {
-  const raw = `${name} ${slug}`.trim()
-  const kg = raw.match(/(\d+(?:[.,]\d+)?)\s*(kg|کیلو)/iu)
+  const raw = normalizeDigits(`${name} ${slug}`.trim())
+  if (raw.includes('نیم کیلو')) return 500
+  const kg = raw.match(/(\d+(?:[.,]\d+)?)\s*(kg|kilo|کیلوگرم|کیلو)/iu)
   if (kg) {
     return Math.round(Number(String(kg[1]).replace(',', '.')) * 1000)
   }
@@ -66,23 +79,47 @@ function packsFromTerms(terms: AttributeTerm[], prev: CoffeeWeightPack[]): Coffe
     const slug = term.slug || ''
     const name = term.name || slug
     const prevHit = prev.find((p) => {
-      const t = p.term.toLowerCase()
-      const l = p.label.toLowerCase()
-      return (
-        t === slug.toLowerCase() ||
-        t === name.toLowerCase() ||
-        l === name.toLowerCase() ||
-        l === slug.toLowerCase()
-      )
+      const t = normalizeDigits(p.term).toLowerCase()
+      const l = normalizeDigits(p.label).toLowerCase()
+      const ns = normalizeDigits(slug).toLowerCase()
+      const nn = normalizeDigits(name).toLowerCase()
+      return t === ns || t === nn || l === nn || l === ns
     })
-    const grams =
-      prevHit && prevHit.grams > 0 ? prevHit.grams : guessGrams(name, slug)
+    const grams = prevHit && prevHit.grams > 0 ? prevHit.grams : guessGrams(name, slug)
     return {
       term: slug || name,
       label: name,
       grams,
     }
   })
+}
+
+function computeWfcpRetail(purchase: number, wfcp?: CoffeeWfcpPreviewConfig): number {
+  if (!Number.isFinite(purchase) || purchase <= 0) return 0
+  if (!wfcp || !wfcp.enabled) return purchase
+  let price = purchase
+  if (
+    wfcp.exchange_rate_enabled &&
+    (!wfcp.purchase_currency || wfcp.purchase_currency === 'base') &&
+    wfcp.exchange_rate > 0
+  ) {
+    price = price * wfcp.exchange_rate
+  }
+  if (wfcp.profit_percent > 0) {
+    price = price + (price * wfcp.profit_percent) / 100
+  }
+  if (wfcp.round_enabled && wfcp.round_to > 0) {
+    const to = Math.max(1, wfcp.round_to)
+    price = Math.round(price / to) * to
+  }
+  return price
+}
+
+function makeNewBeanId(existing: CoffeePricingBean[]): string {
+  const used = new Set(existing.map((b) => b.id))
+  let idx = existing.length + 1
+  while (used.has(`bean_${idx}`)) idx += 1
+  return `bean_${idx}`
 }
 
 export default function CoffeePricingPage() {
@@ -170,11 +207,23 @@ export default function CoffeePricingPage() {
       apiFetch<CoffeePricingPayload>('shop/coffee-pricing', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: payload.settings, recalc: payload.recalc === true }),
+        body: JSON.stringify({
+          settings: payload.settings,
+          recalc: payload.recalc !== false,
+        }),
       }),
-    onSuccess: (data, vars) => {
-      toast.success(vars.recalc ? t('coffeeProfile.pricingQueued') : t('common.saved'))
+    onSuccess: (data) => {
+      const done = data.recalc?.done ?? data.queued?.done ?? 0
+      const total = data.recalc?.total ?? data.queued?.total ?? 0
+      if (data.recalc?.status === 'running') {
+        toast.success(t('coffeeProfile.pricingQueued'))
+      } else if (total > 0) {
+        toast.success(t('coffeeProfile.pricingRecalcDone', { done, total, failed: data.recalc?.failed ?? 0 }))
+      } else {
+        toast.success(t('common.saved'))
+      }
       void qc.setQueryData(['coffee-pricing'], data)
+      void qc.invalidateQueries({ queryKey: ['coffee-blend-settings'] })
       if (data.settings) {
         syncedTermsKey.current = ''
         setDraft({
@@ -197,7 +246,7 @@ export default function CoffeePricingPage() {
         await apiFetch('shop/coffee-pricing', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ settings: draft }),
+          body: JSON.stringify({ settings: draft, recalc: false }),
         })
       }
       return apiFetch<CoffeePricingPayload & { total?: number }>('shop/coffee-pricing/apply-all', {
@@ -205,7 +254,19 @@ export default function CoffeePricingPage() {
       })
     },
     onSuccess: (data) => {
-      toast.success(t('coffeeProfile.pricingQueued'))
+      if (data?.recalc?.status === 'running') {
+        toast.success(t('coffeeProfile.pricingQueued'))
+      } else if (data?.recalc) {
+        toast.success(
+          t('coffeeProfile.pricingRecalcDone', {
+            done: data.recalc.done,
+            total: data.recalc.total,
+            failed: data.recalc.failed,
+          })
+        )
+      } else {
+        toast.success(t('coffeeProfile.pricingQueued'))
+      }
       void qc.invalidateQueries({ queryKey: ['coffee-pricing'] })
       if (data?.recalc) {
         void qc.setQueryData(['coffee-pricing'], (prev: CoffeePricingPayload | undefined) =>
@@ -217,24 +278,62 @@ export default function CoffeePricingPage() {
   })
 
   const beanAfter = useMemo(() => {
-    if (!draft) return new Map<string, number>()
-    const y = draft.roast_yield > 0 ? draft.roast_yield : 0.85
     const m = new Map<string, number>()
+    if (!draft) return m
+    const y = draft.roast_yield > 0 ? draft.roast_yield : 0.85
     for (const b of draft.beans) {
       m.set(b.id, b.green_price / y)
     }
     return m
   }, [draft])
 
-  const retailByPurchase = useMemo(() => {
-    const map = new Map<number, number>()
-    for (const b of q.data?.beans ?? []) {
-      if (typeof b.after_roast === 'number' && typeof b.retail_preview === 'number') {
-        map.set(Math.round(b.after_roast * 100), b.retail_preview)
+  const mixAfter = useMemo(() => {
+    const m = new Map<string, number>()
+    if (!draft) return m
+    for (const mix of draft.base_mixes) {
+      let sum = 0
+      let w = 0
+      for (const p of mix.parts || []) {
+        const after = beanAfter.get(p.bean_id)
+        if (after === undefined || p.percent <= 0) continue
+        sum += after * p.percent
+        w += p.percent
       }
+      m.set(mix.id, w > 0 ? sum / w : 0)
     }
-    return map
-  }, [q.data])
+    return m
+  }, [draft, beanAfter])
+
+  const shopMixRows = useMemo(() => {
+    if (!draft) return []
+    const cr = mixAfter.get(draft.shop_styles.classic.robusta_mix_id) ?? 0
+    const ca = mixAfter.get(draft.shop_styles.classic.arabica_mix_id) ?? 0
+    const lr = mixAfter.get(draft.shop_styles.luxury.robusta_mix_id) ?? 0
+    const la = mixAfter.get(draft.shop_styles.luxury.arabica_mix_id) ?? 0
+    return RATIOS.map((rPct) => {
+      const aPct = 100 - rPct
+      return {
+        rPct,
+        aPct,
+        classicAfter: cr * (rPct / 100) + ca * (aPct / 100),
+        luxuryAfter: lr * (rPct / 100) + la * (aPct / 100),
+      }
+    })
+  }, [draft, mixAfter])
+
+  const economyMixRows = useMemo(() => {
+    if (!draft) return []
+    const er = beanAfter.get(draft.economy_beans.robusta_bean_id) ?? 0
+    const ea = beanAfter.get(draft.economy_beans.arabica_bean_id) ?? 0
+    return RATIOS.map((rPct) => {
+      const aPct = 100 - rPct
+      return {
+        rPct,
+        aPct,
+        after: er * (rPct / 100) + ea * (aPct / 100),
+      }
+    })
+  }, [draft, beanAfter])
 
   if (!draft) {
     return (
@@ -244,8 +343,13 @@ export default function CoffeePricingPage() {
     )
   }
 
+  const wfcpConfig = q.data?.wfcp_config
   const recalc = q.data?.recalc
   const busy = save.isPending || applyAll.isPending || recalc?.status === 'running'
+  const robustaBeans = draft.beans.filter((b) => b.kind === 'robusta')
+  const arabicaBeans = draft.beans.filter((b) => b.kind === 'arabica')
+  const robustaMixes = draft.base_mixes.filter((m) => m.kind === 'robusta')
+  const arabicaMixes = draft.base_mixes.filter((m) => m.kind === 'arabica')
 
   function updateBean(id: string, patch: Partial<CoffeePricingBean>) {
     setDraft((d) =>
@@ -256,6 +360,49 @@ export default function CoffeePricingPage() {
           }
         : d
     )
+  }
+
+  function addBean() {
+    setDraft((d) => {
+      if (!d) return d
+      const newId = makeNewBeanId(d.beans)
+      return {
+        ...d,
+        beans: [
+          ...d.beans,
+          {
+            id: newId,
+            name: '',
+            kind: 'robusta',
+            green_price: 0,
+            product_id: 0,
+          },
+        ],
+      }
+    })
+  }
+
+  function removeBean(id: string) {
+    setDraft((d) => {
+      if (!d || d.beans.length <= 1) return d
+      const beans = d.beans.filter((b) => b.id !== id)
+      const nextR = beans.find((b) => b.kind === 'robusta')?.id ?? beans[0]?.id ?? ''
+      const nextA = beans.find((b) => b.kind === 'arabica')?.id ?? beans[0]?.id ?? ''
+      return {
+        ...d,
+        beans,
+        base_mixes: d.base_mixes.map((mix) => ({
+          ...mix,
+          parts: (mix.parts || []).filter((p) => p.bean_id !== id),
+        })),
+        economy_beans: {
+          robusta_bean_id:
+            d.economy_beans.robusta_bean_id === id ? nextR : d.economy_beans.robusta_bean_id,
+          arabica_bean_id:
+            d.economy_beans.arabica_bean_id === id ? nextA : d.economy_beans.arabica_bean_id,
+        },
+      }
+    })
   }
 
   function updatePackGrams(index: number, grams: number) {
@@ -286,8 +433,15 @@ export default function CoffeePricingPage() {
   }
 
   function previewRetail(after: number) {
-    const hit = retailByPurchase.get(Math.round(after * 100))
-    return hit ?? after
+    return computeWfcpRetail(after, wfcpConfig)
+  }
+
+  function formatPartsSummary(mix: CoffeePricingBaseMix) {
+    const map = new Map(draft!.beans.map((b) => [b.id, b.name || b.id]))
+    return (mix.parts || [])
+      .filter((p) => p.percent > 0 && map.has(p.bean_id))
+      .map((p) => `${fmt(p.percent)}٪ ${map.get(p.bean_id)}`)
+      .join(' + ')
   }
 
   return (
@@ -295,14 +449,19 @@ export default function CoffeePricingPage() {
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <Button
           type="button"
+          size="sm"
+          disabled={busy}
+          onClick={() => void save.mutateAsync({ settings: draft, recalc: true })}
+        >
+          {t('coffeeProfile.pricingSaveAndApply')}
+        </Button>
+        <Button
+          type="button"
           variant="outline"
           size="sm"
           disabled={busy}
-          onClick={() => void save.mutateAsync({ settings: draft })}
+          onClick={() => void applyAll.mutateAsync()}
         >
-          {t('common.save')}
-        </Button>
-        <Button type="button" size="sm" disabled={busy} onClick={() => void applyAll.mutateAsync()}>
           {t('coffeeProfile.pricingApplyAll')}
         </Button>
       </div>
@@ -350,8 +509,12 @@ export default function CoffeePricingPage() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
             <CardTitle>{t('coffeeProfile.pricingBeans')}</CardTitle>
+            <Button type="button" variant="outline" size="sm" onClick={addBean}>
+              <Plus className="me-1 h-4 w-4" />
+              {t('coffeeProfile.pricingAddBean')}
+            </Button>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
@@ -363,6 +526,7 @@ export default function CoffeePricingPage() {
                   <TableHead>{t('coffeeProfile.pricingColAfter')}</TableHead>
                   <TableHead>{t('coffeeProfile.pricingColRetail')}</TableHead>
                   <TableHead>{t('coffeeProfile.pricingColProduct')}</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -370,7 +534,13 @@ export default function CoffeePricingPage() {
                   const after = beanAfter.get(bean.id) ?? 0
                   return (
                     <TableRow key={bean.id}>
-                      <TableCell className="font-medium">{bean.name}</TableCell>
+                      <TableCell className="min-w-[170px]">
+                        <Input
+                          value={bean.name}
+                          placeholder={t('coffeeProfile.pricingBeanNamePlaceholder')}
+                          onChange={(e) => updateBean(bean.id, { name: e.target.value })}
+                        />
+                      </TableCell>
                       <TableCell>
                         <Select
                           value={bean.kind}
@@ -397,8 +567,8 @@ export default function CoffeePricingPage() {
                           }
                         />
                       </TableCell>
-                      <TableCell>{fmt(after)}</TableCell>
-                      <TableCell>{fmt(previewRetail(after))}</TableCell>
+                      <TableCell className="tabular-nums">{fmt(after)}</TableCell>
+                      <TableCell className="tabular-nums">{fmt(previewRetail(after))}</TableCell>
                       <TableCell className="min-w-[220px]">
                         <ProductMultiSelect
                           id={`bean-prod-${bean.id}`}
@@ -409,6 +579,18 @@ export default function CoffeePricingPage() {
                           }
                         />
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={draft.beans.length <= 1}
+                          onClick={() => removeBean(bean.id)}
+                          aria-label={t('common.delete')}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   )
                 })}
@@ -416,6 +598,271 @@ export default function CoffeePricingPage() {
             </Table>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('coffeeProfile.pricingBaseMixes')}</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('coffeeProfile.pricingColName')}</TableHead>
+                  <TableHead>{t('coffeeProfile.pricingColKind')}</TableHead>
+                  <TableHead>{t('coffeeProfile.pricingColFormula')}</TableHead>
+                  <TableHead>{t('coffeeProfile.pricingColAfter')}</TableHead>
+                  <TableHead>{t('coffeeProfile.pricingColRetail')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {draft.base_mixes.map((mix) => {
+                  const after = mixAfter.get(mix.id) ?? 0
+                  return (
+                    <TableRow key={mix.id}>
+                      <TableCell className="font-medium">{mix.name}</TableCell>
+                      <TableCell>
+                        {mix.kind === 'robusta'
+                          ? t('coffeeProfile.pricingRobusta')
+                          : t('coffeeProfile.pricingArabica')}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {formatPartsSummary(mix)}
+                      </TableCell>
+                      <TableCell className="tabular-nums">{fmt(after)}</TableCell>
+                      <TableCell className="tabular-nums">{fmt(previewRetail(after))}</TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('coffeeProfile.pricingShopMixes')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>{t('coffeeProfile.pricingShopClassicRobusta')}</Label>
+                  <Select
+                    value={draft.shop_styles.classic.robusta_mix_id}
+                    onValueChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        shop_styles: {
+                          ...draft.shop_styles,
+                          classic: { ...draft.shop_styles.classic, robusta_mix_id: v },
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {robustaMixes.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t('coffeeProfile.pricingShopClassicArabica')}</Label>
+                  <Select
+                    value={draft.shop_styles.classic.arabica_mix_id}
+                    onValueChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        shop_styles: {
+                          ...draft.shop_styles,
+                          classic: { ...draft.shop_styles.classic, arabica_mix_id: v },
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {arabicaMixes.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t('coffeeProfile.pricingShopLuxuryRobusta')}</Label>
+                  <Select
+                    value={draft.shop_styles.luxury.robusta_mix_id}
+                    onValueChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        shop_styles: {
+                          ...draft.shop_styles,
+                          luxury: { ...draft.shop_styles.luxury, robusta_mix_id: v },
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {robustaMixes.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t('coffeeProfile.pricingShopLuxuryArabica')}</Label>
+                  <Select
+                    value={draft.shop_styles.luxury.arabica_mix_id}
+                    onValueChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        shop_styles: {
+                          ...draft.shop_styles,
+                          luxury: { ...draft.shop_styles.luxury, arabica_mix_id: v },
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {arabicaMixes.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('coffeeProfile.pricingColRatio')}</TableHead>
+                      <TableHead>{t('coffeeProfile.pricingClassicAfter')}</TableHead>
+                      <TableHead>{t('coffeeProfile.pricingClassicRetail')}</TableHead>
+                      <TableHead>{t('coffeeProfile.pricingLuxuryAfter')}</TableHead>
+                      <TableHead>{t('coffeeProfile.pricingLuxuryRetail')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {shopMixRows.map((row) => (
+                      <TableRow key={row.rPct}>
+                        <TableCell className="tabular-nums font-medium">
+                          {fmt(row.rPct)} / {fmt(row.aPct)}
+                        </TableCell>
+                        <TableCell className="tabular-nums">{fmt(row.classicAfter)}</TableCell>
+                        <TableCell className="tabular-nums">
+                          {fmt(previewRetail(row.classicAfter))}
+                        </TableCell>
+                        <TableCell className="tabular-nums">{fmt(row.luxuryAfter)}</TableCell>
+                        <TableCell className="tabular-nums">
+                          {fmt(previewRetail(row.luxuryAfter))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('coffeeProfile.pricingEconomyMixes')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>{t('coffeeProfile.pricingEconomyRobusta')}</Label>
+                  <Select
+                    value={draft.economy_beans.robusta_bean_id}
+                    onValueChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        economy_beans: { ...draft.economy_beans, robusta_bean_id: v },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {robustaBeans.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name || b.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t('coffeeProfile.pricingEconomyArabica')}</Label>
+                  <Select
+                    value={draft.economy_beans.arabica_bean_id}
+                    onValueChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        economy_beans: { ...draft.economy_beans, arabica_bean_id: v },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {arabicaBeans.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name || b.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('coffeeProfile.pricingColRatio')}</TableHead>
+                      <TableHead>{t('coffeeProfile.pricingColAfter')}</TableHead>
+                      <TableHead>{t('coffeeProfile.pricingColRetail')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {economyMixRows.map((row) => (
+                      <TableRow key={row.rPct}>
+                        <TableCell className="tabular-nums font-medium">
+                          {fmt(row.rPct)} / {fmt(row.aPct)}
+                        </TableCell>
+                        <TableCell className="tabular-nums">{fmt(row.after)}</TableCell>
+                        <TableCell className="tabular-nums">{fmt(previewRetail(row.after))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>

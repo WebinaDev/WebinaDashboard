@@ -34,6 +34,9 @@ class Webino_Shipping_Checkout_District {
 	 * @return array
 	 */
 	public static function fields( $fields ) {
+		if ( class_exists( 'Webino_Shipping_Cities', false ) && ! Webino_Shipping_Cities::is_enabled() ) {
+			return $fields;
+		}
 		if ( isset( $fields['billing']['billing_district'] ) ) {
 			unset( $fields['billing']['billing_district'] );
 		}
@@ -48,6 +51,9 @@ class Webino_Shipping_Checkout_District {
 	 * @return void
 	 */
 	public static function save( $order_id ) {
+		if ( class_exists( 'Webino_Shipping_Cities', false ) && ! Webino_Shipping_Cities::is_enabled() ) {
+			return;
+		}
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
 			return;

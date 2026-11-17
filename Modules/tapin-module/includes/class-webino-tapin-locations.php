@@ -193,13 +193,40 @@ class Webino_Tapin_Locations {
 	 * @return int|null
 	 */
 	public static function province_code_by_title( $title ) {
-		$needle = self::normalize( $title );
+		$raw = trim( (string) $title );
+		if ( '' === $raw ) {
+			return null;
+		}
+		if ( class_exists( 'Webino_Shipping_Cities', false ) ) {
+			$resolved = Webino_Shipping_Cities::resolve_state_name( $raw );
+			if ( '' !== $resolved ) {
+				$raw = $resolved;
+			}
+		}
+		$needle = self::normalize( $raw );
 		foreach ( self::get_tree() as $p ) {
 			if ( self::normalize( $p['title'] ) === $needle ) {
 				return (int) $p['code'];
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Best-effort single auto-sync when dashboard opens Tapin provinces for the first time.
+	 * Cached via transient so offline/airgapped hosts never stall repeatedly.
+	 *
+	 * @return void
+	 */
+	public static function maybe_auto_sync() {
+		if ( self::is_available() ) {
+			return;
+		}
+		if ( get_transient( 'webino_tapin_loc_auto_sync' ) ) {
+			return;
+		}
+		set_transient( 'webino_tapin_loc_auto_sync', 1, 5 * MINUTE_IN_SECONDS );
+		self::sync_from_tapin();
 	}
 
 	/**

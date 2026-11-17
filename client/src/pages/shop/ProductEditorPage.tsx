@@ -101,13 +101,6 @@ export default function ProductEditorPage() {
     form.productQ.data?.rank_math_available ?? lookup?.rank_math_available ?? true
 
   async function handleSave() {
-    if (form.id && coffeeSaveRef.current) {
-      try {
-        await coffeeSaveRef.current()
-      } catch {
-        return
-      }
-    }
     if (form.id && !form.save.isPending && !form.patchWfcp.isPending) {
       try {
         await form.patchWfcp.mutateAsync()
@@ -116,6 +109,14 @@ export default function ProductEditorPage() {
       }
     }
     await form.save.mutateAsync()
+    if (form.id && coffeeSaveRef.current) {
+      try {
+        await coffeeSaveRef.current()
+        await form.refreshPricing()
+      } catch {
+        return
+      }
+    }
   }
 
   /** Autosave WFCP purchase fields only — wired solely to the purchase input, not type Select. */
@@ -297,11 +298,19 @@ export default function ProductEditorPage() {
         </TabsContent>
 
         {coffeeProfileActive ? (
-          <TabsContent value="coffee" className="space-y-3 outline-none">
+          <TabsContent
+            value="coffee"
+            forceMount
+            className="space-y-3 outline-none data-[state=inactive]:hidden"
+          >
             <ModulePanel
               slug="coffee-profile-module"
               component="CoffeeProfileProductPanel"
-              componentProps={{ productId: form.id || undefined, registerSave: registerCoffeeSave }}
+              componentProps={{
+                productId: form.id || undefined,
+                registerSave: registerCoffeeSave,
+                onPricingApplied: form.refreshPricing,
+              }}
             />
             {form.productType === 'variable' && form.id && form.productQ.data?.type === 'variable' ? (
               <ModulePanel

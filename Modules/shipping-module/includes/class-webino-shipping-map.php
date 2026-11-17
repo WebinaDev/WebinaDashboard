@@ -40,8 +40,17 @@ class Webino_Shipping_Map {
 			'store_location'        => array( 'lat' => 35.6892, 'lng' => 51.3890 ),
 			'store_marker_enable'   => true,
 			'distance_mode'         => 'none',
-			'enabled'               => true,
+			'enabled'               => false,
 		);
+	}
+
+	/**
+	 * Whether checkout map pin feature is enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		return ! empty( self::get()['enabled'] );
 	}
 
 	/**
@@ -242,6 +251,9 @@ JS;
 	 * @return void
 	 */
 	public static function save_checkout( $order_id ) {
+		if ( ! self::is_enabled() ) {
+			return;
+		}
 		$loc = isset( $_POST['webino_map_location'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['webino_map_location'] ) ) : '';
 		if ( '' === $loc ) {
 			return;

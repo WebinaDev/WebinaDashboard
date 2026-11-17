@@ -193,6 +193,7 @@ export function CoffeeBlendSettingsPanel() {
       <Card>
         <CardHeader>
           <CardTitle>{t('coffeeProfile.blendSectionSimple')}</CardTitle>
+          <p className="text-muted-foreground mt-1 text-xs">{t('coffeeProfile.blendSimpleAutoHint')}</p>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <ProductMultiSelect

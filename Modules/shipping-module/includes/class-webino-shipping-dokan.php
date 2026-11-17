@@ -83,6 +83,9 @@ class Webino_Shipping_Dokan {
 	 * @return void
 	 */
 	public static function vendor_order_notice( $order ) {
+		if ( class_exists( 'Webino_Tapin_Settings', false ) && ! Webino_Tapin_Settings::is_enabled() ) {
+			return;
+		}
 		if ( ! is_a( $order, 'WC_Order' ) ) {
 			return;
 		}

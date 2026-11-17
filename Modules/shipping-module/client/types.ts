@@ -9,6 +9,7 @@ export type PackagingBox = {
 }
 
 export type PackagingSettings = {
+  enabled: boolean
   add_packaging_cost_to_checkout: boolean
   fill_factor: number
   boxes: Record<string, PackagingBox>

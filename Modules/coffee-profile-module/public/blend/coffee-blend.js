@@ -43,6 +43,7 @@
     var state = {
       uiMode: defaultMode,
       step: 0,
+      simpleStyle: cfg.simple_styles && cfg.simple_styles[0] ? String(cfg.simple_styles[0].id) : '',
       selected: {},
       roasts: {},
       percents: {},
@@ -60,16 +61,32 @@
 
     var quoteTimer = null;
 
+    function beanKey(b) {
+      return b ? String(b.id) : '';
+    }
+
+    function activeSimplePair() {
+      var list = cfg.simple_styles || [];
+      if (list.length) {
+        for (var i = 0; i < list.length; i++) {
+          if (String(list[i].id) === String(state.simpleStyle)) return list[i];
+        }
+        return list[0];
+      }
+      return cfg.simple || {};
+    }
+
     function beans() {
       return (cfg.catalog || []).filter(function (b) {
-        return state.selected[b.id];
+        return !!state.selected[beanKey(b)];
       });
     }
 
     function simpleBeans() {
       var out = [];
-      if (state.selected.robusta && cfg.simple && cfg.simple.robusta) out.push(cfg.simple.robusta);
-      if (state.selected.arabica && cfg.simple && cfg.simple.arabica) out.push(cfg.simple.arabica);
+      var pair = activeSimplePair();
+      if (state.selected.robusta && pair && pair.robusta) out.push(pair.robusta);
+      if (state.selected.arabica && pair && pair.arabica) out.push(pair.arabica);
       return out;
     }
 
@@ -88,14 +105,15 @@
       var rest = 100 - base * n;
       state.percents = {};
       list.forEach(function (b, i) {
-        state.percents[b.id] = base + (i === 0 ? rest : 0);
-        if (!state.roasts[b.id]) state.roasts[b.id] = state.sharedRoast || 'medium';
+        var k = beanKey(b);
+        state.percents[k] = base + (i === 0 ? rest : 0);
+        if (!state.roasts[k]) state.roasts[k] = state.sharedRoast || 'medium';
       });
     }
 
     function percentSum() {
       return currentBeans().reduce(function (s, b) {
-        return s + Number(state.percents[b.id] || 0);
+        return s + Number(state.percents[beanKey(b)] || 0);
       }, 0);
     }
 
@@ -104,10 +122,13 @@
       return {
         mode: state.uiMode,
         beans: list.map(function (b) {
+          var k = beanKey(b);
           return {
-            product_id: b.id,
-            percent: Number(state.percents[b.id] || 0),
-            roast: state.uiMode === 'simple' ? state.sharedRoast : state.roasts[b.id] || 'medium',
+            id: b.id,
+            bean_id: b.bean_id || (typeof b.id === 'string' ? b.id : ''),
+            product_id: Number(b.product_id || (typeof b.id === 'number' ? b.id : 0)) || 0,
+            percent: Number(state.percents[k] || 0),
+            roast: state.uiMode === 'simple' ? state.sharedRoast : state.roasts[k] || 'medium',
           };
         }),
         grind: state.grind,
@@ -242,12 +263,13 @@
         : '<span class="wcb-card-ph"></span>';
       var media =
         '<span class="wcb-card-media">' + img + originFlagsHtml(b.origins) + '</span>';
+      var k = beanKey(b);
       return (
         '<button type="button" class="wcb-card' +
         (on ? ' is-on' : '') +
         (b.in_stock ? '' : ' is-off') +
         '" data-id="' +
-        b.id +
+        esc(k) +
         '"' +
         (b.in_stock ? '' : ' disabled') +
         '>' +
@@ -256,6 +278,7 @@
         '<strong>' +
         esc(b.name) +
         '</strong>' +
+        (b.subtitle ? '<div class="wcb-hint" style="font-size:11px;margin:2px 0 4px">' + esc(b.subtitle) + '</div>' : '') +
         (originNames ? '<span class="wcb-chip">' + originNames + '</span>' : '') +
         '<span class="wcb-meta">' +
         (b.blend_arabica ? '<span class="wcb-chip">' + esc((cfg.labels && cfg.labels.arabica) || 'عربیکا') + ' ' + fa(b.blend_arabica) + '٪</span>' : '') +
@@ -395,6 +418,22 @@
       var stepName = steps()[state.step];
       if (stepName === 'دان‌ها') {
         var n = beans().length;
+        var presetsHtml =
+          cfg.presets && cfg.presets.length
+            ? '<div class="wcb-suggest" style="margin-bottom:.75rem">' +
+              cfg.presets
+                .map(function (p) {
+                  return (
+                    '<button type="button" data-act="preset" data-id="' +
+                    esc(p.mix_id || p.id) +
+                    '">' +
+                    esc(p.name) +
+                    '</button>'
+                  );
+                })
+                .join('') +
+              '</div>'
+            : '';
         return (
           '<p class="wcb-hint">از ' +
           fa(cfg.min_beans) +
@@ -403,10 +442,11 @@
           ' دان انتخاب کنید. (' +
           fa(n) +
           ' انتخاب شده)</p>' +
+          presetsHtml +
           '<div class="wcb-grid">' +
           (cfg.catalog || [])
             .map(function (b) {
-              return cardHtml(b, !!state.selected[b.id]);
+              return cardHtml(b, !!state.selected[beanKey(b)]);
             })
             .join('') +
           '</div>'
@@ -416,6 +456,7 @@
         return (
           currentBeans()
             .map(function (b) {
+              var k = beanKey(b);
               return (
                 '<div class="wcb-row"><div><strong>' +
                 esc(b.name) +
@@ -424,9 +465,9 @@
                   .map(function (r) {
                     return (
                       '<button type="button" class="wcb-choice' +
-                      ((state.roasts[b.id] || 'medium') === r.id ? ' is-on' : '') +
+                      ((state.roasts[k] || 'medium') === r.id ? ' is-on' : '') +
                       '" data-act="roast" data-id="' +
-                      b.id +
+                      esc(k) +
                       '" data-v="' +
                       esc(r.id) +
                       '">' +
@@ -449,7 +490,8 @@
           '٪</strong></p>' +
           currentBeans()
             .map(function (b) {
-              var v = Number(state.percents[b.id] || 0);
+              var k = beanKey(b);
+              var v = Number(state.percents[k] || 0);
               return (
                 '<div class="wcb-row"><div><strong>' +
                 esc(b.name) +
@@ -459,7 +501,7 @@
                 '<input class="wcb-range" type="range" min="0" max="100" value="' +
                 v +
                 '" data-act="pct" data-id="' +
-                b.id +
+                esc(k) +
                 '"></div>'
               );
             })
@@ -503,17 +545,37 @@
 
     function renderSimple() {
       if (state.step === 0) {
+        var pair = activeSimplePair();
         var items = [];
-        if (cfg.simple && cfg.simple.robusta) items.push({ key: 'robusta', bean: cfg.simple.robusta, label: (cfg.labels && cfg.labels.robusta) || 'روبوستا' });
-        if (cfg.simple && cfg.simple.arabica) items.push({ key: 'arabica', bean: cfg.simple.arabica, label: (cfg.labels && cfg.labels.arabica) || 'عربیکا' });
+        if (pair && pair.robusta) items.push({ key: 'robusta', bean: pair.robusta, label: (cfg.labels && cfg.labels.robusta) || 'روبوستا' });
+        if (pair && pair.arabica) items.push({ key: 'arabica', bean: pair.arabica, label: (cfg.labels && cfg.labels.arabica) || 'عربیکا' });
         if (!items.length) {
-          return '<p class="wcb-error">محصول نماینده روبوستا/عربیکا در تنظیمات ماژول انتخاب نشده است.</p>';
+          return '<p class="wcb-error">دان‌های پایه در تنظیمات قیمت‌گذاری قهوه تعریف نشده‌اند.</p>';
         }
+        var styleBar =
+          cfg.simple_styles && cfg.simple_styles.length
+            ? '<div class="wcb-choices" style="margin-bottom:.85rem">' +
+              cfg.simple_styles
+                .map(function (s) {
+                  return (
+                    '<button type="button" class="wcb-choice' +
+                    (String(state.simpleStyle) === String(s.id) ? ' is-on' : '') +
+                    '" data-act="simple-style" data-v="' +
+                    esc(s.id) +
+                    '">' +
+                    esc(s.label) +
+                    '</button>'
+                  );
+                })
+                .join('') +
+              '</div>'
+            : '';
         return (
+          styleBar +
           '<p class="wcb-hint">گونه را انتخاب کنید. بعداً درصد هر کدام را تنظیم می‌کنید.</p><div class="wcb-grid">' +
           items
             .map(function (it) {
-              return cardHtml(it.bean, !!state.selected[it.key]).replace('data-id="' + it.bean.id + '"', 'data-act="species" data-v="' + it.key + '" data-id="' + it.bean.id + '"');
+              return cardHtml(it.bean, !!state.selected[it.key]).replace('data-id="' + esc(beanKey(it.bean)) + '"', 'data-act="species" data-v="' + it.key + '" data-id="' + esc(beanKey(it.bean)) + '"');
             })
             .join('') +
           '</div>'
@@ -553,7 +615,8 @@
           '</div>' +
           currentBeans()
             .map(function (b) {
-              var v = Number(state.percents[b.id] || 0);
+              var k = beanKey(b);
+              var v = Number(state.percents[k] || 0);
               return (
                 '<div class="wcb-row"><div><strong>' +
                 esc(b.name) +
@@ -563,7 +626,7 @@
                 '<input class="wcb-range" type="range" min="0" max="100" value="' +
                 v +
                 '" data-act="pct" data-id="' +
-                b.id +
+                esc(k) +
                 '"></div>'
               );
             })
@@ -741,7 +804,8 @@
         return;
       }
       if (act === 'pick') {
-        var pid = Number(id);
+        var pid = String(id || '');
+        if (!pid) return;
         var max = cfg.max_beans || 4;
         if (state.selected[pid]) delete state.selected[pid];
         else {
@@ -749,6 +813,47 @@
           state.selected[pid] = true;
         }
         equalize();
+        scheduleQuote();
+        render();
+        return;
+      }
+      if (act === 'preset') {
+        var preset = null;
+        var presets = cfg.presets || [];
+        for (var pi = 0; pi < presets.length; pi++) {
+          if (String(presets[pi].mix_id || presets[pi].id) === String(id)) {
+            preset = presets[pi];
+            break;
+          }
+        }
+        if (!preset || !preset.parts) return;
+        state.selected = {};
+        state.percents = {};
+        preset.parts.forEach(function (part) {
+          var bid = String(part.bean_id || '');
+          if (!bid) return;
+          state.selected[bid] = true;
+          state.percents[bid] = Number(part.percent || 0);
+          if (!state.roasts[bid]) state.roasts[bid] = 'medium';
+        });
+        scheduleQuote();
+        render();
+        return;
+      }
+      if (act === 'simple-style') {
+        var oldPair = activeSimplePair();
+        var oldRobPct = oldPair && oldPair.robusta ? state.percents[beanKey(oldPair.robusta)] : undefined;
+        var oldAraPct = oldPair && oldPair.arabica ? state.percents[beanKey(oldPair.arabica)] : undefined;
+        state.simpleStyle = String(v || '');
+        var nextPair = activeSimplePair();
+        state.percents = {};
+        if (nextPair && nextPair.robusta && oldRobPct !== undefined) {
+          state.percents[beanKey(nextPair.robusta)] = oldRobPct;
+        }
+        if (nextPair && nextPair.arabica && oldAraPct !== undefined) {
+          state.percents[beanKey(nextPair.arabica)] = oldAraPct;
+        }
+        if (!Object.keys(state.percents).length) equalize();
         scheduleQuote();
         render();
         return;
@@ -807,13 +912,14 @@
       if (act === 'suggest') {
         var arabica = Number(t.getAttribute('data-arabica')) || 0;
         var robusta = Number(t.getAttribute('data-robusta')) || 0;
-        if (cfg.simple && cfg.simple.arabica) {
+        var pair = activeSimplePair();
+        if (pair && pair.arabica) {
           state.selected.arabica = arabica > 0;
-          state.percents[cfg.simple.arabica.id] = arabica;
+          state.percents[beanKey(pair.arabica)] = arabica;
         }
-        if (cfg.simple && cfg.simple.robusta) {
+        if (pair && pair.robusta) {
           state.selected.robusta = robusta > 0;
-          state.percents[cfg.simple.robusta.id] = robusta;
+          state.percents[beanKey(pair.robusta)] = robusta;
         }
         scheduleQuote();
         render();
@@ -836,11 +942,11 @@
         return;
       }
       if (t.getAttribute('data-act') !== 'pct') return;
-      var id = t.getAttribute('data-id');
+      var id = String(t.getAttribute('data-id') || '');
       var val = Number(t.value) || 0;
       var list = currentBeans();
       if (list.length === 2) {
-        var other = list[0].id == id ? list[1].id : list[0].id;
+        var other = beanKey(list[0]) === id ? beanKey(list[1]) : beanKey(list[0]);
         state.percents[id] = val;
         state.percents[other] = 100 - val;
       } else {

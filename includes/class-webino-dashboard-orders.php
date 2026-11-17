@@ -1821,6 +1821,20 @@ class Webino_Dashboard_Orders {
 				}
 			}
 		}
+		if ( array() === $states ) {
+			$geo_file = WEBINO_DASHBOARD_DIR . 'Modules/shipping-module/data/state_city.php';
+			if ( is_readable( $geo_file ) ) {
+				require_once $geo_file;
+				if ( function_exists( 'webino_shipping_get_states' ) ) {
+					foreach ( webino_shipping_get_states() as $code => $label ) {
+						$states[] = array(
+							'code'  => (string) $code,
+							'label' => (string) $label,
+						);
+					}
+				}
+			}
+		}
 
 		return array(
 			'payments'       => $payments,

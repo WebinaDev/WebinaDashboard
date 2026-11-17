@@ -471,6 +471,7 @@ class Webino_Dashboard_REST_Tapin {
 	 * @return WP_REST_Response
 	 */
 	public static function provinces_get() {
+		Webino_Tapin_Locations::maybe_auto_sync();
 		return rest_ensure_response( array( 'items' => Webino_Tapin_Locations::provinces() ) );
 	}
 
@@ -479,6 +480,7 @@ class Webino_Dashboard_REST_Tapin {
 	 * @return WP_REST_Response
 	 */
 	public static function cities_get( $request ) {
+		Webino_Tapin_Locations::maybe_auto_sync();
 		$p = (int) $request->get_param( 'province' );
 		return rest_ensure_response( array( 'items' => Webino_Tapin_Locations::cities( $p ) ) );
 	}

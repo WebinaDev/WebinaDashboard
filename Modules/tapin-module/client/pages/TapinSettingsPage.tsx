@@ -302,9 +302,18 @@ export default function TapinSettingsPage() {
             </p>
           )}
         </div>
-        <Button type="button" disabled={save.isPending} onClick={() => save.mutate(draft)}>
-          {t('common.save')}
-        </Button>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <Switch
+              checked={draft.enabled}
+              onCheckedChange={(v) => setDraft({ ...draft, enabled: v })}
+            />
+            <span>{t('tapin.enabled')}</span>
+          </label>
+          <Button type="button" disabled={save.isPending} onClick={() => save.mutate(draft)}>
+            {t('common.save')}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="connect" className="gap-4">
@@ -412,8 +421,17 @@ export default function TapinSettingsPage() {
         <TabsContent value="origin" className="space-y-4 outline-none">
           <Card className="shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{t('tapin.originTitle')}</CardTitle>
-              <CardDescription>{t('tapin.originHint')}</CardDescription>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base">{t('tapin.originTitle')}</CardTitle>
+                  <CardDescription>{t('tapin.originHint')}</CardDescription>
+                </div>
+                {provinces.length === 0 ? (
+                  <Button type="button" variant="outline" size="sm" disabled={syncLoc.isPending} onClick={() => void syncLoc.mutate()}>
+                    {t('tapin.syncLocations')}
+                  </Button>
+                ) : null}
+              </div>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">

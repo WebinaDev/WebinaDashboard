@@ -58,6 +58,9 @@ class WC_Shipping_Webino_Flat_City extends WC_Shipping_Method {
 	 * @return void
 	 */
 	public function calculate_shipping( $package = array() ) {
+		if ( ! class_exists( 'Webino_Shipping_Cities', false ) || ! Webino_Shipping_Cities::is_enabled() ) {
+			return;
+		}
 		$dest = isset( $package['destination'] ) ? $package['destination'] : array();
 		$city = (string) ( $dest['city'] ?? '' );
 		$cost = null;

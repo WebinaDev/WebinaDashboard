@@ -45,6 +45,9 @@ class Webino_Tapin_Shipments {
 	 * @return array<string, mixed>
 	 */
 	public static function barcode_from_note( $data, $args = array() ) {
+		if ( ! Webino_Tapin_Settings::is_enabled() ) {
+			return $data;
+		}
 		$content = isset( $data['comment_content'] ) ? trim( (string) $data['comment_content'] ) : '';
 		if ( ! preg_match( '/^\d{20,}$/', $content ) ) {
 			return $data;

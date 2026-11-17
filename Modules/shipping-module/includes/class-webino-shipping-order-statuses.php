@@ -43,9 +43,9 @@ class Webino_Shipping_Order_Statuses {
 	 */
 	public static function enabled() {
 		if ( ! class_exists( 'Webino_Shipping_Tools', false ) ) {
-			return true;
+			return false;
 		}
-		return ! empty( Webino_Shipping_Tools::get()['status_enable'] );
+		return Webino_Shipping_Tools::is_enabled() && ! empty( Webino_Shipping_Tools::get()['status_enable'] );
 	}
 
 	/**

@@ -1,6 +1,8 @@
 <?php
 /**
- * Province/city/district selectors on My Account + classic WC order admin.
+ * Province/city selectors on My Account + city/district picker inside the classic WC order admin screen.
+ * Note: no district/محله field is exposed to customers (checkout or address book).
+ * Storefront customer hooks stay inactive when the Cities shipping section is OFF.
  *
  * @package WebinoDashboard
  */
@@ -16,7 +18,7 @@ class Webino_Shipping_Account_Cities {
 	 */
 	public static function init() {
 		add_filter( 'woocommerce_address_to_edit', array( __CLASS__, 'address_fields' ), 40, 2 );
-		add_action( 'woocommerce_customer_save_address', array( __CLASS__, 'save_customer_district' ), 20, 2 );
+		add_filter( 'woocommerce_checkout_fields', array( __CLASS__, 'checkout_fields' ), 30 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_account' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_order' ) );
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( __CLASS__, 'admin_order_fields' ), 20 );
@@ -31,7 +33,7 @@ class Webino_Shipping_Account_Cities {
 	 * @return void
 	 */
 	public static function ajax_search() {
-		$q = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['q'] ) ) : '';
+		$q     = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['q'] ) ) : '';
 		$state = isset( $_GET['state'] ) ? (int) $_GET['state'] : 0;
 		wp_send_json_success( array( 'items' => Webino_Shipping_Cities::search( $q, $state, 40 ) ) );
 	}
@@ -41,15 +43,23 @@ class Webino_Shipping_Account_Cities {
 	 */
 	public static function ajax_children() {
 		$parent = isset( $_GET['parent'] ) ? (int) $_GET['parent'] : 0;
+		if ( $parent > 0 ) {
+			Webino_Shipping_Cities::ensure_state_cities_seeded( $parent );
+		}
 		wp_send_json_success( array( 'items' => Webino_Shipping_Cities::get_children( $parent ) ) );
 	}
 
 	/**
+	 * Convert My Account city inputs into dropdowns when Cities section is enabled.
+	 *
 	 * @param array  $fields Fields.
 	 * @param string $load_address billing|shipping.
 	 * @return array
 	 */
 	public static function address_fields( $fields, $load_address = 'billing' ) {
+		if ( ! Webino_Shipping_Cities::is_enabled() ) {
+			return $fields;
+		}
 		$type = ( 'shipping' === $load_address ) ? 'shipping' : 'billing';
 		if ( isset( $fields[ $type . '_state' ] ) ) {
 			$fields[ $type . '_state' ]['class'] = array_merge(
@@ -65,43 +75,56 @@ class Webino_Shipping_Account_Cities {
 				array( 'webino-city-field', 'address-field' )
 			);
 		}
-		$fields[ $type . '_district' ] = array(
-			'label'    => __( 'محله', 'webino-dashboard' ),
-			'required' => false,
-			'class'    => array( 'form-row-wide', 'webino-district-field', 'address-field' ),
-			'type'     => 'select',
-			'options'  => array( '' => '—' ),
-			'priority' => 65,
-		);
 		return $fields;
 	}
 
 	/**
-	 * @param int    $user_id User.
-	 * @param string $load_address Address type.
-	 * @return void
+	 * Convert Checkout city inputs into dropdowns when Cities section is enabled (unless Tapin owns checkout).
+	 *
+	 * @param array $fields Checkout fields.
+	 * @return array
 	 */
-	public static function save_customer_district( $user_id, $load_address ) {
-		$type = ( 'shipping' === $load_address ) ? 'shipping' : 'billing';
-		$key  = $type . '_district';
-		if ( ! isset( $_POST[ $key ] ) ) {
-			return;
+	public static function checkout_fields( $fields ) {
+		if ( ! Webino_Shipping_Cities::is_enabled() ) {
+			return $fields;
 		}
-		$id = (int) wp_unslash( $_POST[ $key ] );
-		update_user_meta( $user_id, $key . '_id', $id );
-		if ( $id ) {
-			$term = get_term( $id, Webino_Shipping_Cities::TAXONOMY );
-			if ( $term && ! is_wp_error( $term ) ) {
-				update_user_meta( $user_id, $key, $term->name );
+		if ( class_exists( 'Webino_Tapin_Settings', false ) && Webino_Tapin_Settings::is_enabled()
+			&& class_exists( 'Webino_Tapin_Locations', false ) && Webino_Tapin_Locations::is_available() ) {
+			return $fields;
+		}
+		foreach ( array( 'billing', 'shipping' ) as $type ) {
+			if ( isset( $fields[ $type ][ $type . '_state' ] ) ) {
+				$fields[ $type ][ $type . '_state' ]['class'] = array_merge(
+					(array) ( $fields[ $type ][ $type . '_state' ]['class'] ?? array() ),
+					array( 'webino-state-field' )
+				);
+			}
+			if ( isset( $fields[ $type ][ $type . '_city' ] ) ) {
+				$fields[ $type ][ $type . '_city' ]['type']    = 'select';
+				$fields[ $type ][ $type . '_city' ]['options'] = array( '' => '—' );
+				$fields[ $type ][ $type . '_city' ]['class']   = array_merge(
+					(array) ( $fields[ $type ][ $type . '_city' ]['class'] ?? array() ),
+					array( 'webino-city-field', 'address-field' )
+				);
 			}
 		}
+		return $fields;
 	}
 
 	/**
 	 * @return void
 	 */
 	public static function enqueue_account() {
-		if ( ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
+		if ( ! Webino_Shipping_Cities::is_enabled() ) {
+			return;
+		}
+		$on_account  = function_exists( 'is_account_page' ) && is_account_page();
+		$on_checkout = function_exists( 'is_checkout' ) && is_checkout();
+		if ( ! $on_account && ! $on_checkout ) {
+			return;
+		}
+		if ( $on_checkout && class_exists( 'Webino_Tapin_Settings', false ) && Webino_Tapin_Settings::is_enabled()
+			&& class_exists( 'Webino_Tapin_Locations', false ) && Webino_Tapin_Locations::is_available() ) {
 			return;
 		}
 		self::enqueue_city_script( 'jquery' );
@@ -112,6 +135,7 @@ class Webino_Shipping_Account_Cities {
 	 * @return void
 	 */
 	public static function enqueue_admin_order( $hook ) {
+		unset( $hook );
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		if ( ! $screen ) {
 			return;
@@ -128,44 +152,73 @@ class Webino_Shipping_Account_Cities {
 	 * @return void
 	 */
 	private static function enqueue_city_script( $dep ) {
-		$states = Webino_Shipping_Cities::get_states();
+		$states  = Webino_Shipping_Cities::get_states();
+		$aliases = Webino_Shipping_Cities::wc_to_state_key_map();
 		wp_add_inline_script(
 			$dep,
 			'window.webinoCityAjax=' . wp_json_encode(
 				array(
-					'url'    => admin_url( 'admin-ajax.php' ),
-					'states' => $states,
+					'url'     => admin_url( 'admin-ajax.php' ),
+					'states'  => $states,
+					'aliases' => $aliases,
 				)
 			) . ';'
 			. <<<'JS'
 jQuery(function($){
-  function fillSelect($el, items, useId){
+  function norm(v){
+    return String(v||'').replace(/[\u200C\u00A0]/g,' ').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/\s+/g,' ').trim();
+  }
+  function fillSelect($el, items, useId, preferred){
     if(!$el.length) return;
-    var cur=$el.val();
+    var cur=preferred!==undefined&&preferred!==''?preferred:$el.val();
     $el.empty().append($('<option/>',{value:'',text:'—'}));
     (items||[]).forEach(function(it){
       $el.append($('<option/>',{value:useId?String(it.id):(it.name||''),text:it.name}));
     });
-    if(cur) $el.val(cur);
+    if(cur){
+      $el.val(cur);
+      if(!$el.val()&&!useId){
+        var curN=norm(cur);
+        $el.find('option').each(function(){
+          if(norm($(this).val())===curN){ $el.val($(this).val()); return false; }
+        });
+      }
+    }
   }
-  function findStateId(val){
+  function findStateId(val, labelText){
     val=String(val||'').trim();
-    if(!val) return 0;
+    if(!val && !labelText) return 0;
     if(/^\d+$/.test(val)) return parseInt(val,10);
-    var list=(window.webinoCityAjax&&window.webinoCityAjax.states)||[];
+    var cfg=window.webinoCityAjax||{};
+    var list=cfg.states||[];
+    var aliases=cfg.aliases||{};
+    var clean=val.replace(/^IR:/i,'').toUpperCase();
+    var mapped=aliases[clean]||clean;
+    var labelN=norm(labelText||'');
+    var valN=norm(val);
     for(var i=0;i<list.length;i++){
       var s=list[i];
-      if(s.name===val) return s.id;
-      if(String(s.slug).toLowerCase()===val.toLowerCase()) return s.id;
-      if(('IR:'+String(s.slug).toUpperCase())===('IR:'+val.toUpperCase()) || ('IR:'+String(s.slug).toUpperCase())===val.toUpperCase()) return s.id;
+      var slugU=String(s.slug||'').toUpperCase();
+      if(slugU===mapped || slugU===clean) return s.id;
+      var sN=norm(s.name);
+      if(sN===valN || (labelN && sN===labelN)) return s.id;
     }
     return 0;
   }
-  function loadChildren(parent, $target, useId){
-    if(!parent){fillSelect($target,[], useId);return;}
+  function loadChildren(parent, $target, useId, preferred){
+    if(!parent){fillSelect($target,[], useId, preferred);return;}
     $.get(window.webinoCityAjax.url,{action:'webino_shipping_cities_children',parent:parent},function(res){
-      if(res&&res.success) fillSelect($target,res.data.items||[], useId);
+      if(res&&res.success) fillSelect($target,res.data.items||[], useId, preferred);
     });
+  }
+  function syncGroup(prefix){
+    var $state=$('#'+prefix+'_state,select[name='+prefix+'_state]').first();
+    var $city=$('#'+prefix+'_city').first();
+    if(!$state.length||!$city.length) return;
+    var lbl=$state.is('select')?$state.find('option:selected').text():'';
+    var sid=findStateId($state.val(), lbl);
+    var pref=$city.attr('data-value')||$city.val()||'';
+    loadChildren(sid,$city,false,pref);
   }
   $(document.body).on('change','select[name=webino_billing_state],.webino-state-select',function(){
     var $root=$(this).closest('.webino-admin-cities,form,div');
@@ -177,26 +230,15 @@ jQuery(function($){
     loadChildren(parseInt($(this).val(),10)||0, $root.find('.webino-district-select,select[name=webino_billing_district]').first(), true);
   });
   $(document.body).on('change','#billing_state,#shipping_state,select[name=billing_state],select[name=shipping_state]',function(){
-    var isShip=this.id.indexOf('shipping')===0 || (this.name||'').indexOf('shipping')===0;
-    var sid=findStateId($(this).val());
-    var $city=$(isShip?'#shipping_city':'#billing_city');
-    var $dist=$(isShip?'#shipping_district':'#billing_district');
-    loadChildren(sid,$city,false);
-    fillSelect($dist,[],true);
+    var isShip=(this.id||'').indexOf('shipping')===0 || (this.name||'').indexOf('shipping')===0;
+    syncGroup(isShip?'shipping':'billing');
   });
-  $(document.body).on('change','#billing_city,#shipping_city,select[name=billing_city],select[name=shipping_city]',function(){
-    var isShip=this.id.indexOf('shipping')===0 || (this.name||'').indexOf('shipping')===0;
-    var $dist=$(isShip?'#shipping_district':'#billing_district');
-    var name=$(this).val();
-    if(!name){fillSelect($dist,[],true);return;}
-    $.get(window.webinoCityAjax.url,{action:'webino_shipping_cities_search',q:name},function(res){
-      var items=(res&&res.success&&res.data.items)||[];
-      var hit=null;
-      for(var i=0;i<items.length;i++){ if(items[i].type==='city'&&items[i].name===name){hit=items[i];break;} }
-      if(!hit) hit=items[0];
-      if(hit) loadChildren(hit.id,$dist,true);
-    });
+  $(document.body).on('updated_checkout country_to_state_changed',function(){
+    syncGroup('billing');
+    syncGroup('shipping');
   });
+  syncGroup('billing');
+  syncGroup('shipping');
 });
 JS
 		);

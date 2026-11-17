@@ -68,22 +68,26 @@ function patchRule(rules: Rule[], idx: number, patch: Partial<Rule>): Rule[] {
 
 export default function RulesSettingsPage() {
   const { t } = useTranslation()
+  const [enabled, setEnabled] = useState(false)
   const [rules, setRules] = useState<Rule[]>([])
   const q = useQuery({
     queryKey: ['shipping-rules'],
-    queryFn: () => apiFetch<{ rules: Rule[] }>('shipping/rules'),
+    queryFn: () => apiFetch<{ enabled?: boolean; rules: Rule[] }>('shipping/rules'),
   })
   useQueryErrorToast(q)
   useEffect(() => {
-    if (q.data?.rules) setRules(q.data.rules)
+    if (q.data) {
+      setEnabled(Boolean(q.data.enabled))
+      if (q.data.rules) setRules(q.data.rules)
+    }
   }, [q.data])
 
   const save = useMutation({
-    mutationFn: (next: Rule[]) =>
+    mutationFn: (payload: { enabled: boolean; rules: Rule[] }) =>
       apiFetch('shipping/rules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rules: next }),
+        body: JSON.stringify(payload),
       }),
     onSuccess: () => toast.success(t('common.saved')),
     onError: (e: Error) => toastApiError(t, e),
@@ -91,11 +95,22 @@ export default function RulesSettingsPage() {
 
   return (
     <PageShell title={t('shipping.rulesTitle')} description={t('shipping.rulesHint')}>
+      <Card className="mb-4 border-primary/20 shadow-sm">
+        <CardContent className="pt-4">
+          <label className="flex items-center justify-between gap-3 text-sm">
+            <div>
+              <div className="font-medium">{t('shipping.rulesMasterEnable')}</div>
+              <p className="text-muted-foreground text-xs">{t('shipping.rulesMasterHint')}</p>
+            </div>
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
+          </label>
+        </CardContent>
+      </Card>
       <div className="mb-4 flex flex-wrap gap-2">
         <Button type="button" variant="secondary" onClick={() => setRules((r) => [...r, newRule()])}>
           {t('shipping.addRule')}
         </Button>
-        <Button type="button" disabled={save.isPending} onClick={() => save.mutate(rules)}>
+        <Button type="button" disabled={save.isPending} onClick={() => save.mutate({ enabled, rules })}>
           {t('common.save')}
         </Button>
       </div>
