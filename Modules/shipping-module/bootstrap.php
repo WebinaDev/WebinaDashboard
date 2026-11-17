@@ -35,6 +35,10 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 		),
 		'shipping-module'
 	) ) {
+	return;
+}
+
+if ( ! function_exists( 'webino_shipping_ensure_safe_defaults_v0989' ) ) {
 	/**
 	 * One-time safe defaults migration for 0.9.89+: ensure shipping sections default OFF
 	 * on upgraded stores without losing existing credentials, boxes, rules or prices.
@@ -48,30 +52,36 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 		}
 		update_option( $flag, '1', false );
 
-		$pack = get_option( Webino_Shipping_Packaging_Settings::OPTION, null );
-		if ( is_array( $pack ) ) {
-			$pack['enabled']                        = false;
-			$pack['add_packaging_cost_to_checkout'] = false;
-			update_option( Webino_Shipping_Packaging_Settings::OPTION, $pack, false );
+		if ( class_exists( 'Webino_Shipping_Packaging_Settings', false ) ) {
+			$pack = get_option( Webino_Shipping_Packaging_Settings::OPTION, null );
+			if ( is_array( $pack ) ) {
+				$pack['enabled']                        = false;
+				$pack['add_packaging_cost_to_checkout'] = false;
+				update_option( Webino_Shipping_Packaging_Settings::OPTION, $pack, false );
+			}
 		}
 
-		$tools = get_option( Webino_Shipping_Tools::OPTION, null );
-		if ( is_array( $tools ) ) {
-			$tools['enabled'] = false;
-			update_option( Webino_Shipping_Tools::OPTION, $tools, false );
+		if ( class_exists( 'Webino_Shipping_Tools', false ) ) {
+			$tools = get_option( Webino_Shipping_Tools::OPTION, null );
+			if ( is_array( $tools ) ) {
+				$tools['enabled'] = false;
+				update_option( Webino_Shipping_Tools::OPTION, $tools, false );
+			}
 		}
 
-		$map = get_option( Webino_Shipping_Map::OPTION, null );
-		if ( is_array( $map ) ) {
-			$map['enabled'] = false;
-			update_option( Webino_Shipping_Map::OPTION, $map, false );
+		if ( class_exists( 'Webino_Shipping_Map', false ) ) {
+			$map = get_option( Webino_Shipping_Map::OPTION, null );
+			if ( is_array( $map ) ) {
+				$map['enabled'] = false;
+				update_option( Webino_Shipping_Map::OPTION, $map, false );
+			}
 		}
 
-		if ( null === get_option( Webino_Shipping_Cities::SETTINGS_OPTION, null ) ) {
+		if ( class_exists( 'Webino_Shipping_Cities', false ) && null === get_option( Webino_Shipping_Cities::SETTINGS_OPTION, null ) ) {
 			update_option( Webino_Shipping_Cities::SETTINGS_OPTION, array( 'enabled' => false ), false );
 		}
 
-		if ( null === get_option( Webino_Shipping_Rules::ENABLED_OPTION, null ) ) {
+		if ( class_exists( 'Webino_Shipping_Rules', false ) && null === get_option( Webino_Shipping_Rules::ENABLED_OPTION, null ) ) {
 			update_option( Webino_Shipping_Rules::ENABLED_OPTION, '0', false );
 		}
 
