@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { toastApiError } from '@/lib/apiError'
 
 import { NeshanMapPicker } from '@/components/account/NeshanMapPicker'
+import { LocationStateCityFields } from '@/components/common/LocationStateCityFields'
 import { OrderSidebarPanel } from '@/components/orders/OrderSidebarPanel'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,7 +21,9 @@ export type UserAddress = {
   first_name: string
   last_name: string
   state: string
+  state_term?: string
   city: string
+  city_term?: string
   address_1: string
   address_2?: string
   plaque?: string
@@ -44,7 +47,9 @@ const emptyForm = (): Omit<UserAddress, 'id'> => ({
   first_name: '',
   last_name: '',
   state: '',
+  state_term: '',
   city: '',
+  city_term: '',
   address_1: '',
   address_2: '',
   plaque: '',
@@ -125,7 +130,9 @@ export function UserAddressesPanel({
       first_name: addr.first_name,
       last_name: addr.last_name,
       state: addr.state,
+      state_term: addr.state_term ?? '',
       city: addr.city,
+      city_term: addr.city_term ?? '',
       address_1: addr.address_1,
       address_2: addr.address_2 ?? '',
       plaque: addr.plaque ?? '',
@@ -184,18 +191,47 @@ export function UserAddressesPanel({
 
         {showForm ? (
           <div className="space-y-2 rounded-md border border-dashed p-3">
-            {(['label', 'first_name', 'last_name', 'state', 'city', 'address_1', 'address_2', 'plaque', 'unit', 'postcode', 'phone'] as const).map(
-              (key) => (
-                <div key={key}>
-                  <Label className="text-xs">{t(`users.addr.${key}`)}</Label>
-                  <Input
-                    className="mt-1"
-                    value={form[key] ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  />
-                </div>
-              ),
-            )}
+            {(['label', 'first_name', 'last_name'] as const).map((key) => (
+              <div key={key}>
+                <Label className="text-xs">{t(`users.addr.${key}`)}</Label>
+                <Input
+                  className="mt-1"
+                  value={form[key] ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                />
+              </div>
+            ))}
+            <LocationStateCityFields
+              variant="labeled"
+              stateLabel={t('users.addr.state')}
+              cityLabel={t('users.addr.city')}
+              stateValue={form.state ?? ''}
+              cityValue={form.city ?? ''}
+              onStateChange={(value, meta) =>
+                setForm((f) => ({
+                  ...f,
+                  state: value,
+                  state_term: meta?.id && /^\d+$/.test(meta.id) ? meta.id : '',
+                }))
+              }
+              onCityChange={(value, meta) =>
+                setForm((f) => ({
+                  ...f,
+                  city: value,
+                  city_term: meta?.id && /^\d+$/.test(meta.id) ? meta.id : '',
+                }))
+              }
+            />
+            {(['address_1', 'address_2', 'plaque', 'unit', 'postcode', 'phone'] as const).map((key) => (
+              <div key={key}>
+                <Label className="text-xs">{t(`users.addr.${key}`)}</Label>
+                <Input
+                  className="mt-1"
+                  value={form[key] ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                />
+              </div>
+            ))}
             <NeshanMapPicker
               lat={form.lat ?? ''}
               lng={form.lng ?? ''}

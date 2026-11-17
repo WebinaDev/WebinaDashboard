@@ -6228,7 +6228,7 @@ function du() {
 			body: JSON.stringify({ settings: { enabled: e } })
 		}),
 		onSuccess: (e) => {
-			e.settings && D(!!e.settings.enabled), h.success(r("common.saved")), i.invalidateQueries({ queryKey: ["shipping-cities-tree"] }), i.invalidateQueries({ queryKey: ["shipping-hub-status"] });
+			e.settings && D(!!e.settings.enabled), h.success(r("common.saved")), i.invalidateQueries({ queryKey: ["shipping-cities-tree"] }), i.invalidateQueries({ queryKey: ["shipping-hub-status"] }), i.invalidateQueries({ queryKey: ["shop-locations-states"] });
 		},
 		onError: (e) => vl(r, e)
 	}), A = async () => {
@@ -8720,7 +8720,7 @@ function zu() {
 			body: JSON.stringify(e)
 		}),
 		onSuccess: (e) => {
-			i.setQueryData(["shipping-hub-status"], e), h.success(r("common.saved"));
+			i.setQueryData(["shipping-hub-status"], e), i.invalidateQueries({ queryKey: ["shop-locations-states"] }), h.success(r("common.saved"));
 		},
 		onError: (e) => vl(r, e)
 	}), s = a.data?.sections;

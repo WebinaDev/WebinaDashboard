@@ -80,6 +80,7 @@ export default function CitiesSettingsPage() {
       toast.success(t('common.saved'))
       void qc.invalidateQueries({ queryKey: ['shipping-cities-tree'] })
       void qc.invalidateQueries({ queryKey: ['shipping-hub-status'] })
+      void qc.invalidateQueries({ queryKey: ['shop-locations-states'] })
     },
     onError: (e: Error) => toastApiError(t, e),
   })

@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { LocationStateCityFields } from '@/components/common/LocationStateCityFields'
 import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -420,8 +421,15 @@ export default function OrderComposerPage() {
               <Input placeholder={t('pos.newPhone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
               <Input placeholder={t('users.fieldEmail')} value={email} onChange={(e) => setEmail(e.target.value)} />
               <Input className="col-span-2" placeholder={t('pos.address')} value={address1} onChange={(e) => setAddress1(e.target.value)} />
-              <Input placeholder={t('pos.city')} value={city} onChange={(e) => setCity(e.target.value)} />
-              <Input placeholder={t('pos.state')} value={state} onChange={(e) => setState(e.target.value)} />
+              <LocationStateCityFields
+                variant="compact"
+                statePlaceholder={t('pos.state')}
+                cityPlaceholder={t('pos.city')}
+                stateValue={state}
+                cityValue={city}
+                onStateChange={(val) => setState(val)}
+                onCityChange={(val) => setCity(val)}
+              />
             </div>
           </div>
 

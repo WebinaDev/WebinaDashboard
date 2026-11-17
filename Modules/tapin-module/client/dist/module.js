@@ -7748,7 +7748,7 @@ function Ku() {
 			body: JSON.stringify({ settings: e })
 		}),
 		onSuccess: (e) => {
-			h.success(r("common.saved")), e.settings && o(e.settings), i.invalidateQueries({ queryKey: ["tapin-settings"] });
+			h.success(r("common.saved")), e.settings && o(e.settings), i.invalidateQueries({ queryKey: ["tapin-settings"] }), i.invalidateQueries({ queryKey: ["shipping-hub-status"] }), i.invalidateQueries({ queryKey: ["shop-locations-states"] });
 		},
 		onError: (e) => $(r, e)
 	}), A = e({
@@ -7775,7 +7775,7 @@ function Ku() {
 			body: "{}"
 		}),
 		onSuccess: (e) => {
-			e.ok ? h.success(e.message) : h.error(e.message), i.invalidateQueries({ queryKey: ["tapin-provinces"] }), i.invalidateQueries({ queryKey: ["tapin-settings"] });
+			e.ok ? h.success(e.message) : h.error(e.message), i.invalidateQueries({ queryKey: ["tapin-provinces"] }), i.invalidateQueries({ queryKey: ["tapin-settings"] }), i.invalidateQueries({ queryKey: ["shop-locations-states"] });
 		},
 		onError: (e) => $(r, e)
 	}), M = e({

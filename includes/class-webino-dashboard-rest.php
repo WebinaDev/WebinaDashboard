@@ -683,6 +683,8 @@ class Webino_Dashboard_REST {
 				'permission_callback' => function () {
 					return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' )
 						|| Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' )
+						|| Webino_Dashboard_Rest_Base::can( 'edit_users' )
+						|| Webino_Dashboard_Rest_Base::can( 'list_users' )
 						|| Webino_Dashboard_Rest_Base::has_account_portal();
 				},
 			)
@@ -697,6 +699,8 @@ class Webino_Dashboard_REST {
 				'permission_callback' => function () {
 					return Webino_Dashboard_Rest_Base::can( 'edit_shop_coupons' )
 						|| Webino_Dashboard_Rest_Base::can( 'edit_shop_orders' )
+						|| Webino_Dashboard_Rest_Base::can( 'edit_users' )
+						|| Webino_Dashboard_Rest_Base::can( 'list_users' )
 						|| Webino_Dashboard_Rest_Base::has_account_portal();
 				},
 			)
@@ -3726,12 +3730,19 @@ class Webino_Dashboard_REST {
 			'shipping' => array(),
 		);
 
+		$cities_enabled = class_exists( 'Webino_Shipping_Cities', false ) && Webino_Shipping_Cities::is_enabled();
+		$tapin_enabled  = class_exists( 'Webino_Tapin_Settings', false ) && Webino_Tapin_Settings::is_enabled()
+			&& ( ! class_exists( 'Webino_Dashboard_Module_Registry', false ) || Webino_Dashboard_Module_Registry::is_active( 'tapin-module' ) )
+			&& class_exists( 'Webino_Tapin_Locations', false ) && Webino_Tapin_Locations::is_available();
+		$city_selector_enabled = $cities_enabled || $tapin_enabled;
+
 		return new WP_REST_Response(
 			array(
-				'items'          => $items,
-				'payments'       => $opts['payments'] ?? array(),
-				'shipping'       => $opts['shipping'] ?? array(),
-				'purchase_types' => $purchase_types,
+				'items'                 => $items,
+				'payments'              => $opts['payments'] ?? array(),
+				'shipping'              => $opts['shipping'] ?? array(),
+				'purchase_types'        => $purchase_types,
+				'city_selector_enabled' => $city_selector_enabled,
 			)
 		);
 	}

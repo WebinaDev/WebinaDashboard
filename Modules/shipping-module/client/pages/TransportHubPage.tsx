@@ -53,6 +53,7 @@ export default function TransportHubPage() {
       }),
     onSuccess: (data) => {
       qc.setQueryData(['shipping-hub-status'], data)
+      void qc.invalidateQueries({ queryKey: ['shop-locations-states'] })
       toast.success(t('common.saved'))
     },
     onError: (e: Error) => toastApiError(t, e),

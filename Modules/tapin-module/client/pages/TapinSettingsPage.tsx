@@ -196,6 +196,8 @@ export default function TapinSettingsPage() {
       toast.success(t('common.saved'))
       if (data.settings) setDraft(data.settings)
       void qc.invalidateQueries({ queryKey: ['tapin-settings'] })
+      void qc.invalidateQueries({ queryKey: ['shipping-hub-status'] })
+      void qc.invalidateQueries({ queryKey: ['shop-locations-states'] })
     },
     onError: (e: Error) => toastApiError(t, e),
   })
@@ -234,6 +236,7 @@ export default function TapinSettingsPage() {
       else toast.error(data.message)
       void qc.invalidateQueries({ queryKey: ['tapin-provinces'] })
       void qc.invalidateQueries({ queryKey: ['tapin-settings'] })
+      void qc.invalidateQueries({ queryKey: ['shop-locations-states'] })
     },
     onError: (e: Error) => toastApiError(t, e),
   })
