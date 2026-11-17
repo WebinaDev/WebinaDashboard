@@ -6651,5 +6651,9 @@
   "marketplace.module.wfcp-module-search-engines": "Search engines",
   "marketplace.module.wfcp-module-notifications": "Notifications & badges",
   "marketplace.module.wfcp-module-style": "Product box style",
-  "marketplace.module.wfcp-module-advanced": "Advanced"
+  "marketplace.module.wfcp-module-advanced": "Advanced",
+  "location.pickState": "Select province",
+  "location.pickCity": "Select city",
+  "location.enterManually": "Enter manually",
+  "location.useDropdown": "Pick from list"
 }

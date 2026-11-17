@@ -6651,5 +6651,9 @@
   "marketplace.module.wfcp-module-search-engines": "موتورهای جستجو",
   "marketplace.module.wfcp-module-notifications": "اعلان‌ها و بج",
   "marketplace.module.wfcp-module-style": "ظاهر باکس محصول",
-  "marketplace.module.wfcp-module-advanced": "پیشرفته"
+  "marketplace.module.wfcp-module-advanced": "پیشرفته",
+  "location.pickState": "انتخاب استان",
+  "location.pickCity": "انتخاب شهر",
+  "location.enterManually": "ورود دستی",
+  "location.useDropdown": "انتخاب از لیست"
 }
