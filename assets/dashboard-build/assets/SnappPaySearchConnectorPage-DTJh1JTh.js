@@ -1,1 +1,0 @@
-import{t as e}from"./SettingsModulesChrome-ijW7f5Re.js";import{t}from"./WncPlatformPanel-Dui-GKlq.js";import{jsx as n}from"react/jsx-runtime";function r(){return n(e,{children:n(t,{platform:`snapppay-search`,titleKey:`wnc.modules.snapppay-search.title`,subtitleKey:`wnc.modules.snapppay-search.subtitle`,feedPlatform:!0,embedded:!0})})}export{r as default};
