@@ -193,6 +193,37 @@ if [[ "$GUARDED_BOOTSTRAPS_OK" -eq 1 ]]; then
   echo "OK: guarded bootstraps use require_module_files"
 fi
 
+# Verify every bootstrap.php that calls require_module_files returns cleanly in the guard block
+# and never nests function definitions inside the failure guard.
+if command -v python3 >/dev/null 2>&1; then
+  python3 - "$MODULES" <<'PY' || FAIL=1
+import glob, os, re, sys
+mods = sys.argv[1]
+for b in sorted(glob.glob(os.path.join(mods, "*/bootstrap.php"))):
+    s = open(b, encoding="utf-8").read()
+    if "require_module_files" not in s:
+        continue
+    m = re.search(r"if\s*\([^;]*?require_module_files\s*\(.*?\)\s*\)\s*\{", s, re.S)
+    if not m:
+        print(f"FAIL: {b} has unexpected require_module_files guard syntax")
+        sys.exit(1)
+    # Extract the body of this if-block by matching braces
+    pos = m.end()
+    depth = 1
+    while pos < len(s) and depth > 0:
+        if s[pos] == "{":
+            depth += 1
+        elif s[pos] == "}":
+            depth -= 1
+        pos += 1
+    body = s[m.end():pos - 1]
+    if "function " in body or "return;" not in body:
+        print(f"FAIL: {b} require_module_files guard must only return cleanly (found invalid body)")
+        sys.exit(1)
+print("OK: all require_module_files guards return cleanly")
+PY
+fi
+
 if php "$ROOT/scripts/test-incomplete-module-package.php" 2>/dev/null; then
   echo "OK: incomplete module package CLI test passed"
 elif command -v php >/dev/null 2>&1; then
