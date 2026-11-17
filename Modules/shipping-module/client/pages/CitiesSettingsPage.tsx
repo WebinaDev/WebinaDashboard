@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
@@ -22,8 +23,9 @@ import { toastApiError } from '@/lib/apiError'
 type State = { id: number; name: string; slug: string }
 type Col = { key: string; label: string; method_id: string }
 type Row = { id: number; name: string; prices: Record<string, string | number> }
-type SearchItem = { id: number; name: string; parent: number; type: string }
+type SearchItem = { id: number; name: string; parent: number; state_id?: number; type: string }
 type TreeResponse = {
+  enabled?: boolean
   states: State[]
   installed: boolean
   needs_seed?: boolean
@@ -52,12 +54,35 @@ export default function CitiesSettingsPage() {
   const [draftPrices, setDraftPrices] = useState<Record<string, Record<string, string>>>({})
   const [seedProgress, setSeedProgress] = useState<{ done: number; total: number } | null>(null)
   const [seeding, setSeeding] = useState(false)
+  const [citiesEnabled, setCitiesEnabled] = useState(false)
 
   const treeQ = useQuery({
     queryKey: ['shipping-cities-tree'],
     queryFn: () => apiFetch<TreeResponse>('shipping/cities/tree', {}, 60_000),
   })
   useQueryErrorToast(treeQ)
+
+  useEffect(() => {
+    if (treeQ.data && typeof treeQ.data.enabled === 'boolean') {
+      setCitiesEnabled(treeQ.data.enabled)
+    }
+  }, [treeQ.data])
+
+  const toggleCities = useMutation({
+    mutationFn: (enabled: boolean) =>
+      apiFetch<{ settings: { enabled: boolean } }>('shipping/cities/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: { enabled } }),
+      }),
+    onSuccess: (d) => {
+      if (d.settings) setCitiesEnabled(Boolean(d.settings.enabled))
+      toast.success(t('common.saved'))
+      void qc.invalidateQueries({ queryKey: ['shipping-cities-tree'] })
+      void qc.invalidateQueries({ queryKey: ['shipping-hub-status'] })
+    },
+    onError: (e: Error) => toastApiError(t, e),
+  })
 
   const runSeedBatches = async () => {
     if (seeding) return
@@ -236,6 +261,24 @@ export default function CitiesSettingsPage() {
 
   return (
     <PageShell title={t('shipping.citiesTitle')} description={t('shipping.citiesHint')}>
+      <Card className="mb-4 border-primary/20 shadow-sm">
+        <CardContent className="pt-4">
+          <label className="flex items-center justify-between gap-3 text-sm">
+            <div>
+              <div className="font-medium">{t('shipping.citiesMasterEnable')}</div>
+              <p className="text-muted-foreground text-xs">{t('shipping.citiesMasterHint')}</p>
+            </div>
+            <Switch
+              checked={citiesEnabled}
+              disabled={toggleCities.isPending}
+              onCheckedChange={(v) => {
+                setCitiesEnabled(v)
+                void toggleCities.mutate(v)
+              }}
+            />
+          </label>
+        </CardContent>
+      </Card>
       <div className="mb-4 flex flex-wrap gap-2">
         <Button
           type="button"
@@ -301,11 +344,17 @@ export default function CitiesSettingsPage() {
                       type="button"
                       className="hover:bg-muted w-full px-2 py-1.5 text-start"
                       onClick={() => {
+                        if (it.type === 'state') {
+                          setStateId(it.id)
+                          setCityId(0)
+                          return
+                        }
                         if (it.type === 'city' || it.type === 'district') {
-                          if (stateId < 1 && it.parent) {
-                            /* keep current state; user picks province first for bulk */
+                          const targetState = it.state_id || (it.type === 'city' ? it.parent : 0)
+                          if (targetState > 0 && targetState !== stateId) {
+                            setStateId(targetState)
                           }
-                          if (it.type === 'city') setCityId(it.id)
+                          if (it.type === 'city') setTimeout(() => setCityId(it.id), 0)
                           toast.message(`${it.name} (${it.type})`)
                         }
                       }}

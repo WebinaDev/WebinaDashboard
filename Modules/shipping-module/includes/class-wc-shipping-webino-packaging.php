@@ -67,6 +67,9 @@ class WC_Shipping_Webino_Packaging extends WC_Shipping_Method {
 	 * @return void
 	 */
 	public function calculate_shipping( $package = array() ) {
+		if ( ! class_exists( 'Webino_Shipping_Packaging_Settings', false ) || ! Webino_Shipping_Packaging_Settings::is_enabled() ) {
+			return;
+		}
 		$contents = isset( $package['contents'] ) && is_array( $package['contents'] ) ? $package['contents'] : array();
 		$plan     = Webino_Shipping_Packer::pack_from_package_contents( $contents );
 

@@ -5672,8 +5672,54 @@ function Yl({ className: e, ...t }) {
 	});
 }
 //#endregion
+//#region src/lib/queryClient.ts
+var Xl = null;
+function Zl() {
+	return Xl;
+}
+//#endregion
+//#region src/lib/authLost.ts
+var Ql = ["auth", "session"], $l = new Set([
+	"rest_cookie_invalid_nonce",
+	"rest_not_logged_in",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function eu(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !0;
+	let n = typeof t.code == "string" ? t.code : "";
+	if ($l.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
+}
+function tu(e) {
+	let t = e ?? Zl();
+	t && t.setQueryData(Ql, { logged_in: !1 });
+}
+var nu = new Set([
+	"rest_cookie_invalid_nonce",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function ru(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !1;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (nu.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || r === "invalid nonce";
+}
+function iu(e) {
+	ru(e) || eu(e) && tu();
+}
+//#endregion
 //#region src/lib/safeUrl.ts
-function Xl(e) {
+function au(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -5685,38 +5731,38 @@ function Xl(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function Zl() {
+function ou() {
 	return window.webinoDashboard;
 }
-var Ql = 3e4;
-function $l(e) {
+var su = 3e4;
+function cu(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function eu(e) {
-	let t = Zl();
+function lu(e) {
+	let t = ou();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if ($l(e) || Xl(e)) return e;
-	throw new du("Request blocked: URL not allowed", {
+	if (cu(e) || au(e)) return e;
+	throw new wu("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function tu(e, t) {
+function uu(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function nu(e) {
+function du(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
-	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : null;
+	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "license/remote-check" ? "webino_dashboard_license_remote_check" : t === "license/diagnostics" ? "webino_dashboard_license_diagnostics" : t === "license/remote-activate" ? "webino_dashboard_license_remote_activate" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function ru(e, t) {
+function fu(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -5732,13 +5778,28 @@ function ru(e, t) {
 		code: "invalid_json"
 	};
 }
-function iu(e, t) {
+function pu(e, t) {
 	let n = e.toLowerCase();
-	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
+	return t === 504 || t === 524 || n.includes("gateway timeout") || n.includes("gateway time-out") || n.includes("timed out") || n.includes("timeout") ? {
+		message: `Gateway timeout (HTTP ${t || 0})`,
+		code: "gateway_timeout"
+	} : t === 502 || t === 503 || t === 520 || t === 521 || t === 522 ? {
+		message: `Server temporarily unavailable (HTTP ${t})`,
+		code: "server_unavailable"
+	} : e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? {
+		message: "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry",
+		code: "rest_cdn_blocked"
+	} : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? {
+		message: `Invalid AJAX response (HTML, HTTP ${t || 0})`,
+		code: "invalid_json"
+	} : {
+		message: `Invalid AJAX response (HTTP ${t || 0})`,
+		code: "invalid_json"
+	};
 }
-async function au(e, t, n = {}) {
-	let r = nu(e), i = Zl();
-	if (!r || !i.ajaxUrl) throw new du("AJAX fallback unavailable", {
+async function mu(e, t, n = {}) {
+	let r = du(e), i = ou();
+	if (!r || !i.ajaxUrl) throw new wu("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
 	});
@@ -5751,7 +5812,7 @@ async function au(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = tu({}, t);
+	let { signal: l, clear: u } = uu({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -5763,21 +5824,25 @@ async function au(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new du(iu(t, e.status), {
-				code: "invalid_json",
+			let n = pu(t, e.status);
+			throw new wu(n.message, {
+				code: n.code,
 				status: e.status
 			});
 		}
-		if (!n.success) throw new du(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
-			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
-			status: e.status
-		});
+		if (!n.success) {
+			let t = new wu(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
+				status: e.status
+			});
+			throw iu(t), t;
+		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof du ? e : e instanceof DOMException && e.name === "AbortError" ? new du("Request timed out", {
-			code: "timeout",
+		throw e instanceof wu ? (iu(e), e) : e instanceof DOMException && e.name === "AbortError" ? new wu("Request timed out", {
+			code: "request_timeout",
 			status: 0
-		}) : e instanceof TypeError ? new du("Network unavailable", {
+		}) : e instanceof TypeError ? new wu("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -5785,11 +5850,49 @@ async function au(e, t, n = {}) {
 		u();
 	}
 }
-async function Q(e, t = {}, n = Ql) {
-	if (nu(e) && Zl().ajaxUrl) return au(e, n, t);
-	let r = eu(e), i = Zl(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+var hu = null;
+function gu(e) {
+	let t = ou();
+	t && typeof e == "string" && e.length > 0 && (t.nonce = e);
+}
+function _u() {
+	if (hu) return hu;
+	let e = ou();
+	if (!e?.ajaxUrl) return Promise.resolve(!1);
+	let t = new URLSearchParams();
+	return t.set("action", "webino_dashboard_auth_session"), hu = fetch(e.ajaxUrl, {
+		method: "POST",
+		credentials: "same-origin",
+		headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+		body: t
+	}).then((e) => e.json()).then((e) => {
+		let t = !!(e?.success && e.data?.logged_in);
+		return t && gu(e.data?.nonce), t && typeof e.data?.nonce == "string" && e.data.nonce.length > 0;
+	}).catch(() => !1).finally(() => {
+		window.setTimeout(() => {
+			hu = null;
+		}, 0);
+	}), hu;
+}
+async function Q(e, t = {}, n = su) {
+	try {
+		return await vu(e, t, n);
+	} catch (r) {
+		if (!ru(r)) throw r;
+		if (!await _u()) throw tu(), r;
+		let i = { ...t.headers };
+		for (let e of Object.keys(i)) e.toLowerCase() === "x-wp-nonce" && delete i[e];
+		return vu(e, {
+			...t,
+			headers: i
+		}, n);
+	}
+}
+async function vu(e, t = {}, n = su) {
+	if (du(e) && ou().ajaxUrl) return mu(e, n, t);
+	let r = lu(e), i = ou(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
 	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
-	let { signal: s, clear: c } = tu(t, n);
+	let { signal: s, clear: c } = uu(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -5800,25 +5903,25 @@ async function Q(e, t = {}, n = Ql) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = ru(n, e.status);
-			throw new du(t.message, {
+			let t = fu(n, e.status);
+			throw new wu(t.message, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		if (!e.ok) {
-			let t = i;
-			throw new du(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			let t = i, n = new wu(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
+			throw iu(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof du ? e : e instanceof DOMException && e.name === "AbortError" ? new du("Request timed out", {
-			code: "timeout",
+		throw e instanceof wu ? (iu(e), e) : e instanceof DOMException && e.name === "AbortError" ? new wu("Request timed out", {
+			code: "request_timeout",
 			status: 0
-		}) : e instanceof TypeError ? new du("Network unavailable", {
+		}) : e instanceof TypeError ? new wu("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -5828,41 +5931,41 @@ async function Q(e, t = {}, n = Ql) {
 }
 //#endregion
 //#region src/lib/marketplace-api.ts
-function ou(e) {
+function yu(e) {
 	return `marketplace.installStep.${e}`;
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/typeof.js
-function su(e) {
+function bu(e) {
 	"@babel/helpers - typeof";
-	return su = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
+	return bu = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
 		return typeof e;
 	} : function(e) {
 		return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
-	}, su(e);
+	}, bu(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPrimitive.js
-function cu(e, t) {
-	if (su(e) != "object" || !e) return e;
+function xu(e, t) {
+	if (bu(e) != "object" || !e) return e;
 	var n = e[Symbol.toPrimitive];
 	if (n !== void 0) {
 		var r = n.call(e, t || "default");
-		if (su(r) != "object") return r;
+		if (bu(r) != "object") return r;
 		throw TypeError("@@toPrimitive must return a primitive value.");
 	}
 	return (t === "string" ? String : Number)(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPropertyKey.js
-function lu(e) {
-	var t = cu(e, "string");
-	return su(t) == "symbol" ? t : t + "";
+function Su(e) {
+	var t = xu(e, "string");
+	return bu(t) == "symbol" ? t : t + "";
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/defineProperty.js
-function uu(e, t, n) {
-	return (t = lu(t)) in e ? Object.defineProperty(e, t, {
+function Cu(e, t, n) {
+	return (t = Su(t)) in e ? Object.defineProperty(e, t, {
 		value: n,
 		enumerable: !0,
 		configurable: !0,
@@ -5871,11 +5974,11 @@ function uu(e, t, n) {
 }
 //#endregion
 //#region src/lib/apiError.ts
-var du = class extends Error {
+var wu = class extends Error {
 	constructor(e, t) {
-		super(e), uu(this, "code", void 0), uu(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
+		super(e), Cu(this, "code", void 0), Cu(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
 	}
-}, fu = {
+}, Tu = {
 	invalid: "errors.api.invalid",
 	ai_disabled: "aiContent.errDisabled",
 	ai_entity_off: "aiContent.errEntityOff",
@@ -5888,6 +5991,11 @@ var du = class extends Error {
 	forbidden_role: "errors.api.forbiddenRole",
 	invalid_nonce: "errors.api.invalidNonce",
 	timeout: "errors.api.timeout",
+	request_timeout: "errors.api.requestTimeout",
+	gateway_timeout: "errors.api.gatewayTimeout",
+	server_unavailable: "errors.api.serverUnavailable",
+	ajax_unhandled: "errors.api.invalidResponse",
+	empty_response: "errors.api.invalidResponse",
 	empty_reply: "errors.api.emptyReply",
 	transport: "errors.api.transport",
 	network_offline: "errors.api.networkOffline",
@@ -5905,22 +6013,22 @@ var du = class extends Error {
 	install_job_start_failed: "marketplace.installJobStartFailed",
 	build_dev_only: "buildPipeline.devOnly"
 };
-function pu(e) {
+function Eu(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 28") || t.includes("timed out") || t.includes("did not respond in time") || t.includes("زمان") && t.includes("پاسخ");
 }
-function mu(e) {
+function Du(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 52") || t.includes("empty reply") || t.includes("closed the connection without a response") || t.includes("پاسخ") && t.includes("خالی");
 }
-function hu(e, t) {
-	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(ou(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
+function Ou(e, t) {
+	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(yu(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
 }
-function gu(e, t) {
+function ku(e, t) {
 	let n = t;
-	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return hu(e, n);
-	if (t instanceof du && t.code) {
-		let n = fu[t.code];
+	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return Ou(e, n);
+	if (t instanceof wu && t.code) {
+		let n = Tu[t.code];
 		if (n === "marketplace.installFailedGeneric") {
 			let n = t.message?.trim();
 			return n ? e("marketplace.installFailed", { message: n }) : e("marketplace.installFailedGeneric");
@@ -5928,24 +6036,24 @@ function gu(e, t) {
 		if (n) return e(n);
 	}
 	if (t && typeof t == "object" && "code" in t) {
-		let n = fu[String(t.code)];
+		let n = Tu[String(t.code)];
 		if (n) return e(n);
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return pu(n) ? e("errors.api.timeout") : mu(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return Eu(n) ? e("errors.api.requestTimeout") : Du(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
 function $(e, t) {
-	h.error(gu(e, t));
+	h.error(ku(e, t));
 }
 //#endregion
 //#region src/hooks/useQueryErrorToast.ts
-function _u(e) {
+function Au(e) {
 	let { t } = m(), n = f(!1);
 	l(() => {
-		e.isError && e.error ? n.current || (n.current = !0, h.error(gu(t, e.error))) : n.current = !1;
+		e.isError && e.error ? n.current || (n.current = !0, h.error(ku(t, e.error))) : n.current = !1;
 	}, [
 		e.isError,
 		e.error,
@@ -5955,17 +6063,17 @@ function _u(e) {
 }
 //#endregion
 //#region ../Modules/tapin-module/client/components/OrderTapinPanel.tsx
-function vu(e) {
+function ju(e) {
 	let t = window.open("", "_blank");
 	t && (t.document.write(e), t.document.close());
 }
-function yu({ orderId: r }) {
+function Mu({ orderId: r }) {
 	let { t: i } = m(), a = n(), [o, s] = p(0), [c, u] = p(0), [d, f] = p(1), [g, _] = p(1), [x, S] = p(0), [C, w] = p(0), [T, E] = p(""), D = t({
 		queryKey: ["tapin-order", r],
 		queryFn: () => Q(`shipping/tapin/orders/${r}`),
 		enabled: r > 0
 	});
-	_u(D);
+	Au(D);
 	let O = t({
 		queryKey: ["tapin-kiosks"],
 		queryFn: () => Q("shipping/tapin/kiosks"),
@@ -6056,7 +6164,7 @@ function yu({ orderId: r }) {
 				h.error(e.message);
 				return;
 			}
-			h.success(e.message), e.html && vu(e.html);
+			h.success(e.message), e.html && ju(e.html);
 		},
 		onError: (e) => $(i, e)
 	}), te = e({
@@ -6320,7 +6428,7 @@ function yu({ orderId: r }) {
 }
 //#endregion
 //#region src/components/PageShell.tsx
-function bu({ title: e, description: t, eyebrow: n, children: r }) {
+function Nu({ title: e, description: t, eyebrow: n, children: r }) {
 	return /* @__PURE__ */ b("div", {
 		className: "space-y-5",
 		children: [/* @__PURE__ */ b("header", {
@@ -6344,7 +6452,7 @@ function bu({ title: e, description: t, eyebrow: n, children: r }) {
 }
 //#endregion
 //#region src/components/ui/tabs.tsx
-function xu({ className: e, orientation: t = "horizontal", dir: n, ...r }) {
+function Pu({ className: e, orientation: t = "horizontal", dir: n, ...r }) {
 	let i = Hl();
 	return /* @__PURE__ */ y($s, {
 		"data-slot": "tabs",
@@ -6355,31 +6463,31 @@ function xu({ className: e, orientation: t = "horizontal", dir: n, ...r }) {
 		...r
 	});
 }
-var Su = E("group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none", {
+var Fu = E("group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none", {
 	variants: { variant: {
 		default: "bg-muted",
 		line: "gap-1 bg-transparent"
 	} },
 	defaultVariants: { variant: "default" }
 });
-function Cu({ className: e, variant: t = "default", dir: n, ...r }) {
+function Iu({ className: e, variant: t = "default", dir: n, ...r }) {
 	let i = Hl();
 	return /* @__PURE__ */ y(ec, {
 		"data-slot": "tabs-list",
 		"data-variant": t,
 		dir: n ?? i,
-		className: W(Su({ variant: t }), e),
+		className: W(Fu({ variant: t }), e),
 		...r
 	});
 }
-function wu({ className: e, ...t }) {
+function Lu({ className: e, ...t }) {
 	return /* @__PURE__ */ y(tc, {
 		"data-slot": "tabs-trigger",
 		className: W("relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm group-data-[variant=line]/tabs-list:data-[state=active]:shadow-none dark:text-muted-foreground dark:hover:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:border-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent", "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground", "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:inset-inline-end-0 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100", e),
 		...t
 	});
 }
-function Tu({ className: e, ...t }) {
+function Ru({ className: e, ...t }) {
 	return /* @__PURE__ */ y(nc, {
 		"data-slot": "tabs-content",
 		className: W("flex-1 outline-none", e),
@@ -6388,12 +6496,12 @@ function Tu({ className: e, ...t }) {
 }
 //#endregion
 //#region ../Modules/tapin-module/client/pages/TapinCatalogPage.tsx
-function Eu() {
+function zu() {
 	let { t: r } = m(), i = n(), [a, o] = p(1), [s, c] = p(""), [l, u] = p(""), [d, f] = p(0), [g, _] = p(100), [v, S] = p(""), [C, w] = p(""), T = t({
 		queryKey: ["tapin-products", a],
 		queryFn: () => Q(`shipping/tapin/products?page=${a}&count=30`)
 	});
-	_u(T);
+	Au(T);
 	let E = t({
 		queryKey: ["tapin-customers"],
 		queryFn: () => Q("shipping/tapin/customers?page=1&count=40")
@@ -6454,7 +6562,7 @@ function Eu() {
 		},
 		onError: (e) => $(r, e)
 	});
-	return /* @__PURE__ */ b(bu, {
+	return /* @__PURE__ */ b(Nu, {
 		title: r("tapin.catalogTitle"),
 		description: r("tapin.catalogHint"),
 		children: [/* @__PURE__ */ b("div", {
@@ -6476,32 +6584,32 @@ function Eu() {
 					children: r("tapin.opsTitle")
 				})
 			})]
-		}), /* @__PURE__ */ b(xu, {
+		}), /* @__PURE__ */ b(Pu, {
 			defaultValue: "products",
 			children: [
-				/* @__PURE__ */ b(Cu, { children: [
-					/* @__PURE__ */ y(wu, {
+				/* @__PURE__ */ b(Iu, { children: [
+					/* @__PURE__ */ y(Lu, {
 						value: "products",
 						children: r("tapin.products")
 					}),
-					/* @__PURE__ */ y(wu, {
+					/* @__PURE__ */ y(Lu, {
 						value: "categories",
 						children: r("tapin.productCategories")
 					}),
-					/* @__PURE__ */ y(wu, {
+					/* @__PURE__ */ y(Lu, {
 						value: "customers",
 						children: r("tapin.customers")
 					}),
-					/* @__PURE__ */ y(wu, {
+					/* @__PURE__ */ y(Lu, {
 						value: "employees",
 						children: r("tapin.employees")
 					}),
-					/* @__PURE__ */ y(wu, {
+					/* @__PURE__ */ y(Lu, {
 						value: "tasks",
 						children: r("tapin.tasks")
 					})
 				] }),
-				/* @__PURE__ */ b(Tu, {
+				/* @__PURE__ */ b(Ru, {
 					value: "products",
 					className: "space-y-4",
 					children: [
@@ -6645,7 +6753,7 @@ function Eu() {
 						})
 					]
 				}),
-				/* @__PURE__ */ y(Tu, {
+				/* @__PURE__ */ y(Ru, {
 					value: "categories",
 					children: /* @__PURE__ */ b("div", {
 						className: "grid gap-4 md:grid-cols-2",
@@ -6688,7 +6796,7 @@ function Eu() {
 						})]
 					})
 				}),
-				/* @__PURE__ */ y(Tu, {
+				/* @__PURE__ */ y(Ru, {
 					value: "customers",
 					children: /* @__PURE__ */ y(K, {
 						className: "shadow-sm",
@@ -6739,7 +6847,7 @@ function Eu() {
 						})
 					})
 				}),
-				/* @__PURE__ */ y(Tu, {
+				/* @__PURE__ */ y(Ru, {
 					value: "employees",
 					children: /* @__PURE__ */ y(K, {
 						className: "shadow-sm",
@@ -6790,7 +6898,7 @@ function Eu() {
 						})
 					})
 				}),
-				/* @__PURE__ */ b(Tu, {
+				/* @__PURE__ */ b(Ru, {
 					value: "tasks",
 					className: "space-y-4",
 					children: [/* @__PURE__ */ y(K, {
@@ -6887,12 +6995,12 @@ function Eu() {
 }
 //#endregion
 //#region ../Modules/tapin-module/client/pages/TapinFinancePage.tsx
-function Du() {
+function Bu() {
 	let { t: r } = m(), i = n(), [a, o] = p(1e5), [s, c] = p(1), [l, u] = p(""), [d, f] = p(""), [g, _] = p(""), [v, S] = p(""), C = t({
 		queryKey: ["tapin-credit-history", s],
 		queryFn: () => Q(`shipping/tapin/credit/history?page=${s}&count=20`)
 	});
-	_u(C);
+	Au(C);
 	let w = t({
 		queryKey: ["tapin-shop-detail"],
 		queryFn: () => Q("shipping/tapin/shop/detail")
@@ -6929,7 +7037,7 @@ function Du() {
 		},
 		onError: (e) => $(r, e)
 	});
-	return /* @__PURE__ */ b(bu, {
+	return /* @__PURE__ */ b(Nu, {
 		title: r("tapin.financeTitle"),
 		description: r("tapin.financeHint"),
 		children: [
@@ -7126,16 +7234,16 @@ function Du() {
 }
 //#endregion
 //#region ../Modules/tapin-module/client/pages/TapinOpsPage.tsx
-function Ou(e) {
+function Vu(e) {
 	let t = window.open("", "_blank");
 	t && (t.document.write(e), t.document.close());
 }
-function ku() {
+function Hu() {
 	let { t: n } = m(), [r, i] = p(1), [a, o] = p(""), [s, c] = p(2), [l, u] = p(""), [d, f] = p(""), g = t({
 		queryKey: ["tapin-orders-list", r],
 		queryFn: () => Q(`shipping/tapin/orders-list?page=${r}&count=20`)
 	});
-	_u(g);
+	Au(g);
 	let _ = t({
 		queryKey: ["tapin-change-report"],
 		queryFn: () => Q("shipping/tapin/status/change-report")
@@ -7174,7 +7282,7 @@ function ku() {
 				h.error(e.message);
 				return;
 			}
-			h.success(e.message), e.html && Ou(e.html);
+			h.success(e.message), e.html && Vu(e.html);
 		},
 		onError: (e) => $(n, e)
 	}), A = e({
@@ -7191,11 +7299,11 @@ function ku() {
 				h.error(e.message);
 				return;
 			}
-			h.success(e.message), e.html && Ou(e.html);
+			h.success(e.message), e.html && Vu(e.html);
 		},
 		onError: (e) => $(n, e)
 	}), j = g.data?.items ?? [];
-	return /* @__PURE__ */ b(bu, {
+	return /* @__PURE__ */ b(Nu, {
 		title: n("tapin.opsTitle"),
 		description: n("tapin.opsHint"),
 		children: [
@@ -7467,7 +7575,7 @@ function ku() {
 }
 //#endregion
 //#region src/components/ui/switch.tsx
-function Au({ className: e, size: t = "default", ...n }) {
+function Uu({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ y(Is, {
 		"data-slot": "switch",
 		"data-size": t,
@@ -7482,7 +7590,7 @@ function Au({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region ../Modules/tapin-module/client/pages/TapinSettingsPage.tsx
-var ju = () => ({
+var Wu = () => ({
 	enabled: !0,
 	token: "",
 	shop_id: "",
@@ -7530,7 +7638,7 @@ var ju = () => ({
 	default_kiosk_id: 0,
 	notify_customer_link: !0
 });
-function Mu({ title: e, rows: t, onChange: n }) {
+function Gu({ title: e, rows: t, onChange: n }) {
 	let { t: r } = m();
 	return /* @__PURE__ */ b("div", {
 		className: "space-y-2 rounded-xl border border-border/80 p-3",
@@ -7604,12 +7712,12 @@ function Mu({ title: e, rows: t, onChange: n }) {
 		}, i))]
 	});
 }
-function Nu() {
+function Ku() {
 	let { t: r } = m(), i = n(), [a, o] = p(null), [s, c] = p([]), [u, f] = p(null), [g, _] = p(null), S = t({
 		queryKey: ["tapin-settings"],
 		queryFn: () => Q("shipping/tapin/settings")
 	});
-	_u(S);
+	Au(S);
 	let C = t({
 		queryKey: ["tapin-provinces"],
 		queryFn: () => Q("shipping/tapin/provinces")
@@ -7619,10 +7727,10 @@ function Nu() {
 	});
 	l(() => {
 		S.data?.settings && o({
-			...ju(),
+			...Wu(),
 			...S.data.settings,
 			methods: {
-				...ju().methods,
+				...Wu().methods,
 				...S.data.settings.methods
 			}
 		}), typeof S.data?.credit == "number" && _(S.data.credit);
@@ -7695,7 +7803,7 @@ function Nu() {
 		O,
 		r
 	]);
-	return a ? /* @__PURE__ */ b(bu, {
+	return a ? /* @__PURE__ */ b(Nu, {
 		title: r("tapin.settingsTitle"),
 		description: r("tapin.settingsSubtitle"),
 		children: [
@@ -7749,48 +7857,60 @@ function Nu() {
 							})
 						]
 					})]
-				}), /* @__PURE__ */ y(G, {
-					type: "button",
-					disabled: k.isPending,
-					onClick: () => k.mutate(a),
-					children: r("common.save")
+				}), /* @__PURE__ */ b("div", {
+					className: "flex items-center gap-4",
+					children: [/* @__PURE__ */ b("label", {
+						className: "flex items-center gap-2 text-sm font-medium",
+						children: [/* @__PURE__ */ y(Uu, {
+							checked: a.enabled,
+							onCheckedChange: (e) => o({
+								...a,
+								enabled: e
+							})
+						}), /* @__PURE__ */ y("span", { children: r("tapin.enabled") })]
+					}), /* @__PURE__ */ y(G, {
+						type: "button",
+						disabled: k.isPending,
+						onClick: () => k.mutate(a),
+						children: r("common.save")
+					})]
 				})]
 			}),
-			/* @__PURE__ */ b(xu, {
+			/* @__PURE__ */ b(Pu, {
 				defaultValue: "connect",
 				className: "gap-4",
 				children: [
-					/* @__PURE__ */ b(Cu, {
+					/* @__PURE__ */ b(Iu, {
 						variant: "line",
 						className: "w-full justify-start overflow-x-auto",
 						children: [
-							/* @__PURE__ */ y(wu, {
+							/* @__PURE__ */ y(Lu, {
 								value: "connect",
 								children: r("tapin.tabConnect")
 							}),
-							/* @__PURE__ */ y(wu, {
+							/* @__PURE__ */ y(Lu, {
 								value: "origin",
 								children: r("tapin.tabOrigin")
 							}),
-							/* @__PURE__ */ y(wu, {
+							/* @__PURE__ */ y(Lu, {
 								value: "methods",
 								children: r("tapin.tabMethods")
 							}),
-							/* @__PURE__ */ y(wu, {
+							/* @__PURE__ */ y(Lu, {
 								value: "tariffs",
 								children: r("tapin.tabTariffs")
 							}),
-							/* @__PURE__ */ y(wu, {
+							/* @__PURE__ */ y(Lu, {
 								value: "ship",
 								children: r("tapin.tabShip")
 							}),
-							/* @__PURE__ */ y(wu, {
+							/* @__PURE__ */ y(Lu, {
 								value: "notify",
 								children: r("tapin.tabNotify")
 							})
 						]
 					}),
-					/* @__PURE__ */ y(Tu, {
+					/* @__PURE__ */ y(Ru, {
 						value: "connect",
 						className: "space-y-4 outline-none",
 						children: /* @__PURE__ */ b(K, {
@@ -7806,7 +7926,7 @@ function Nu() {
 								children: [
 									/* @__PURE__ */ b("label", {
 										className: "flex items-center gap-3 text-sm",
-										children: [/* @__PURE__ */ y(Au, {
+										children: [/* @__PURE__ */ y(Uu, {
 											checked: a.enabled,
 											onCheckedChange: (e) => o({
 												...a,
@@ -7833,7 +7953,7 @@ function Nu() {
 									}),
 									/* @__PURE__ */ b("label", {
 										className: "flex items-center gap-3 text-sm",
-										children: [/* @__PURE__ */ y(Au, {
+										children: [/* @__PURE__ */ y(Uu, {
 											checked: a.show_credit,
 											onCheckedChange: (e) => o({
 												...a,
@@ -7899,17 +8019,27 @@ function Nu() {
 							})]
 						})
 					}),
-					/* @__PURE__ */ y(Tu, {
+					/* @__PURE__ */ y(Ru, {
 						value: "origin",
 						className: "space-y-4 outline-none",
 						children: /* @__PURE__ */ b(K, {
 							className: "shadow-sm",
-							children: [/* @__PURE__ */ b(q, {
+							children: [/* @__PURE__ */ y(q, {
 								className: "pb-2",
-								children: [/* @__PURE__ */ y(J, {
-									className: "text-base",
-									children: r("tapin.originTitle")
-								}), /* @__PURE__ */ y(Ol, { children: r("tapin.originHint") })]
+								children: /* @__PURE__ */ b("div", {
+									className: "flex flex-wrap items-center justify-between gap-2",
+									children: [/* @__PURE__ */ b("div", { children: [/* @__PURE__ */ y(J, {
+										className: "text-base",
+										children: r("tapin.originTitle")
+									}), /* @__PURE__ */ y(Ol, { children: r("tapin.originHint") })] }), E.length === 0 ? /* @__PURE__ */ y(G, {
+										type: "button",
+										variant: "outline",
+										size: "sm",
+										disabled: j.isPending,
+										onClick: () => void j.mutate(),
+										children: r("tapin.syncLocations")
+									}) : null]
+								})
 							}), /* @__PURE__ */ b(Y, {
 								className: "grid gap-3 sm:grid-cols-2",
 								children: [/* @__PURE__ */ b("div", {
@@ -7943,7 +8073,7 @@ function Nu() {
 							})]
 						})
 					}),
-					/* @__PURE__ */ y(Tu, {
+					/* @__PURE__ */ y(Ru, {
 						value: "methods",
 						className: "space-y-4 outline-none",
 						children: /* @__PURE__ */ b(K, {
@@ -7966,7 +8096,7 @@ function Nu() {
 										["courier", "tapin.methodCourier"]
 									].map(([e, t]) => /* @__PURE__ */ b("label", {
 										className: "flex items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2.5 text-sm",
-										children: [/* @__PURE__ */ y("span", { children: r(t) }), /* @__PURE__ */ y(Au, {
+										children: [/* @__PURE__ */ y("span", { children: r(t) }), /* @__PURE__ */ y(Uu, {
 											checked: !!a.methods[e],
 											onCheckedChange: (t) => o({
 												...a,
@@ -8068,7 +8198,7 @@ function Nu() {
 									}),
 									/* @__PURE__ */ b("label", {
 										className: "flex items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2.5 text-sm",
-										children: [/* @__PURE__ */ y("span", { children: r("tapin.usePwsFormula") }), /* @__PURE__ */ y(Au, {
+										children: [/* @__PURE__ */ y("span", { children: r("tapin.usePwsFormula") }), /* @__PURE__ */ y(Uu, {
 											checked: a.use_pws_formula,
 											onCheckedChange: (e) => o({
 												...a,
@@ -8103,7 +8233,7 @@ function Nu() {
 							})]
 						})
 					}),
-					/* @__PURE__ */ y(Tu, {
+					/* @__PURE__ */ y(Ru, {
 						value: "tariffs",
 						className: "space-y-4 outline-none",
 						children: /* @__PURE__ */ b(K, {
@@ -8123,7 +8253,7 @@ function Nu() {
 							}), /* @__PURE__ */ y(Y, {
 								className: "space-y-4",
 								children: u ? /* @__PURE__ */ b(v, { children: [
-									/* @__PURE__ */ y(Mu, {
+									/* @__PURE__ */ y(Gu, {
 										title: r("tapin.methodPishtaz"),
 										rows: u.pishtaz,
 										onChange: (e) => f({
@@ -8131,7 +8261,7 @@ function Nu() {
 											pishtaz: e
 										})
 									}),
-									/* @__PURE__ */ y(Mu, {
+									/* @__PURE__ */ y(Gu, {
 										title: r("tapin.methodVip"),
 										rows: u.vip,
 										onChange: (e) => f({
@@ -8139,7 +8269,7 @@ function Nu() {
 											vip: e
 										})
 									}),
-									/* @__PURE__ */ y(Mu, {
+									/* @__PURE__ */ y(Gu, {
 										title: r("tapin.methodTipax"),
 										rows: u.tipax,
 										onChange: (e) => f({
@@ -8154,7 +8284,7 @@ function Nu() {
 							})]
 						})
 					}),
-					/* @__PURE__ */ y(Tu, {
+					/* @__PURE__ */ y(Ru, {
 						value: "ship",
 						className: "space-y-4 outline-none",
 						children: /* @__PURE__ */ b(K, {
@@ -8170,7 +8300,7 @@ function Nu() {
 								children: [
 									/* @__PURE__ */ b("label", {
 										className: "flex items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2.5 text-sm",
-										children: [/* @__PURE__ */ y("span", { children: r("tapin.autoRegister") }), /* @__PURE__ */ y(Au, {
+										children: [/* @__PURE__ */ y("span", { children: r("tapin.autoRegister") }), /* @__PURE__ */ y(Uu, {
 											checked: a.auto_register,
 											onCheckedChange: (e) => o({
 												...a,
@@ -8281,7 +8411,7 @@ function Nu() {
 									}),
 									/* @__PURE__ */ b("label", {
 										className: "flex items-center gap-3 text-sm",
-										children: [/* @__PURE__ */ y(Au, {
+										children: [/* @__PURE__ */ y(Uu, {
 											checked: a.has_insurance,
 											onCheckedChange: (e) => o({
 												...a,
@@ -8293,7 +8423,7 @@ function Nu() {
 							})]
 						})
 					}),
-					/* @__PURE__ */ y(Tu, {
+					/* @__PURE__ */ y(Ru, {
 						value: "notify",
 						className: "space-y-4 outline-none",
 						children: /* @__PURE__ */ b(K, {
@@ -8322,7 +8452,7 @@ function Nu() {
 				]
 			})
 		]
-	}) : /* @__PURE__ */ y(bu, {
+	}) : /* @__PURE__ */ y(Nu, {
 		title: r("tapin.settingsTitle"),
 		children: /* @__PURE__ */ y("p", {
 			className: "text-muted-foreground text-sm",
@@ -8332,14 +8462,14 @@ function Nu() {
 }
 //#endregion
 //#region ../Modules/tapin-module/client/module-entry.tsx
-var Pu = {
-	"settings/shop/transport/tapin": Nu,
-	"settings/shop/transport/tapin/ops": ku,
-	"settings/shop/transport/tapin/finance": Du,
-	"settings/shop/transport/tapin/catalog": Eu
-}, Fu = { OrderTapinPanel: yu }, Iu = {
-	routes: Pu,
-	components: Fu
+var qu = {
+	"settings/shop/transport/tapin": Ku,
+	"settings/shop/transport/tapin/ops": Hu,
+	"settings/shop/transport/tapin/finance": Bu,
+	"settings/shop/transport/tapin/catalog": zu
+}, Ju = { OrderTapinPanel: Mu }, Yu = {
+	routes: qu,
+	components: Ju
 };
 //#endregion
-export { Fu as components, Iu as default, Pu as routes };
+export { Ju as components, Yu as default, qu as routes };

@@ -34,18 +34,19 @@ class Webino_Shipping_Tools {
 	 */
 	public static function defaults() {
 		return array(
+			'enabled'                   => false,
 			'hide_when_free'            => false,
 			'hide_when_courier'         => false,
 			'default_product_weight_g'  => 500,
 			'default_package_weight_g'  => 100,
 			'post_weight_limit_kg'      => 30,
-			'status_enable'             => true,
+			'status_enable'             => false,
 			'free_shipping_title'       => '',
-			'hide_country'              => true,
+			'hide_country'              => false,
 			'swap_state_city'           => false,
 			'disable_default_method'    => false,
 			'free_first_order'          => false,
-			'honor_free_shipping_coupon'=> true,
+			'honor_free_shipping_coupon'=> false,
 			'method_images'             => array(
 				'webino_tapin_pishtaz'   => '',
 				'webino_tapin_vip'       => '',
@@ -58,6 +59,15 @@ class Webino_Shipping_Tools {
 				'webino_pishtaz_1405'   => '',
 			),
 		);
+	}
+
+	/**
+	 * Whether transport tools overrides are enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		return ! empty( self::get()['enabled'] );
 	}
 
 	/**
@@ -79,7 +89,7 @@ class Webino_Shipping_Tools {
 				$out[ $key ] = $raw[ $key ];
 			}
 		}
-		$bools = array( 'hide_when_free', 'hide_when_courier', 'status_enable', 'hide_country', 'swap_state_city', 'disable_default_method', 'free_first_order', 'honor_free_shipping_coupon' );
+		$bools = array( 'enabled', 'hide_when_free', 'hide_when_courier', 'status_enable', 'hide_country', 'swap_state_city', 'disable_default_method', 'free_first_order', 'honor_free_shipping_coupon' );
 		foreach ( $bools as $b ) {
 			$out[ $b ] = (bool) $out[ $b ];
 		}
@@ -118,6 +128,9 @@ class Webino_Shipping_Tools {
 	 * @return string
 	 */
 	public static function maybe_force_ir( $country ) {
+		if ( ! self::is_enabled() ) {
+			return $country;
+		}
 		$tools = self::get();
 		if ( ! empty( $tools['hide_country'] ) ) {
 			return 'IR';
@@ -130,6 +143,9 @@ class Webino_Shipping_Tools {
 	 * @return array
 	 */
 	public static function checkout_fields( $fields ) {
+		if ( ! self::is_enabled() ) {
+			return $fields;
+		}
 		$tools = self::get();
 		if ( ! empty( $tools['hide_country'] ) ) {
 			foreach ( array( 'billing', 'shipping' ) as $type ) {
@@ -159,7 +175,7 @@ class Webino_Shipping_Tools {
 	 * @return void
 	 */
 	public static function enqueue_checkout_ux() {
-		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
+		if ( ! self::is_enabled() || ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
 			return;
 		}
 		$tools = self::get();
@@ -180,6 +196,10 @@ class Webino_Shipping_Tools {
 	 * @return string
 	 */
 	public static function maybe_disable_default_method( $default, $rates ) {
+		if ( ! self::is_enabled() ) {
+			unset( $rates );
+			return $default;
+		}
 		$tools = self::get();
 		if ( ! empty( $tools['disable_default_method'] ) ) {
 			return '';
@@ -233,7 +253,7 @@ class Webino_Shipping_Tools {
 	 */
 	public static function filter_package_rates( $rates, $package ) {
 		unset( $package );
-		if ( ! is_array( $rates ) || array() === $rates ) {
+		if ( ! self::is_enabled() || ! is_array( $rates ) || array() === $rates ) {
 			return $rates;
 		}
 		$tools = self::get();
@@ -305,7 +325,7 @@ class Webino_Shipping_Tools {
 	 * @return string
 	 */
 	public static function method_image_label( $label, $rate ) {
-		if ( ! is_a( $rate, 'WC_Shipping_Rate' ) ) {
+		if ( ! self::is_enabled() || ! is_a( $rate, 'WC_Shipping_Rate' ) ) {
 			return $label;
 		}
 		$method_id = (string) $rate->get_method_id();

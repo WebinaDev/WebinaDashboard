@@ -3594,7 +3594,70 @@ class Webino_Dashboard_REST {
 	}
 
 	/**
-	 * Province list for coupon location restrictions (state_city parents preferred).
+	 * Load bundled state/city helpers safely even when shipping-module is inactive.
+	 *
+	 * @return bool
+	 */
+	private static function ensure_bundled_geo_loaded() {
+		$file = WEBINO_DASHBOARD_DIR . 'Modules/shipping-module/data/state_city.php';
+		if ( is_readable( $file ) ) {
+			require_once $file;
+		}
+		return function_exists( 'webino_shipping_get_states' ) && function_exists( 'webino_shipping_get_state_city' );
+	}
+
+	/**
+	 * Resolve any state id/slug/WC-code/label into bundled data key (e.g. 'TE').
+	 *
+	 * @param string $state State input.
+	 * @return string
+	 */
+	private static function resolve_bundled_state_key( $state ) {
+		if ( class_exists( 'Webino_Shipping_Cities', false ) ) {
+			return Webino_Shipping_Cities::resolve_state_key( $state );
+		}
+		if ( ! self::ensure_bundled_geo_loaded() ) {
+			return '';
+		}
+		$states = webino_shipping_get_states();
+		$val    = trim( (string) $state );
+		if ( '' === $val ) {
+			return '';
+		}
+		if ( 0 === stripos( $val, 'IR:' ) ) {
+			$val = trim( substr( $val, 3 ) );
+		}
+		$upper  = strtoupper( $val );
+		$wc_map = array(
+			'WAZ' => 'AW', 'EAZ' => 'AE', 'ESF' => 'IS', 'ABZ' => 'AL', 'ALB' => 'AL',
+			'THR' => 'TE', 'TEH' => 'TE', 'TEHRAN' => 'TE', 'ALBORZ' => 'AL', 'ISFAHAN' => 'IS',
+			'RKH' => 'KV', 'KJR' => 'KV', 'KHZ' => 'KZ', 'FRS' => 'FA', 'MZN' => 'MN',
+			'ZJN' => 'ZA', 'ADL' => 'AR', 'ILM' => 'IL', 'BHR' => 'BU', 'CHB' => 'CM',
+			'NKH' => 'KS', 'KJS' => 'KS', 'SKH' => 'KJ', 'SMN' => 'SM', 'SBN' => 'SB',
+			'GZN' => 'QZ', 'QZN' => 'QZ', 'QHM' => 'QM', 'KRD' => 'KD', 'KRN' => 'KE',
+			'KRH' => 'BK', 'KBD' => 'KB', 'GLS' => 'GO', 'GIL' => 'GI', 'LRS' => 'LO',
+			'MKZ' => 'MK', 'HRZ' => 'HG', 'HDN' => 'HD', 'YZD' => 'YA',
+		);
+		if ( isset( $states[ $upper ] ) ) {
+			return $upper;
+		}
+		if ( isset( $wc_map[ $upper ] ) ) {
+			return $wc_map[ $upper ];
+		}
+		$norm = static function ( $s ) {
+			return trim( (string) preg_replace( '/\s+/u', ' ', str_replace( array( "\xE2\x80\x8C", 'ي', 'ك' ), array( ' ', 'ی', 'ک' ), (string) $s ) ) );
+		};
+		$needle = $norm( $val );
+		foreach ( $states as $k => $label ) {
+			if ( $norm( $label ) === $needle ) {
+				return (string) $k;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * Province list for coupon location restrictions (state_city parents preferred, bundled fallback).
 	 *
 	 * @return WP_REST_Response
 	 */
@@ -3613,7 +3676,7 @@ class Webino_Dashboard_REST {
 					if ( ! ( $term instanceof WP_Term ) ) {
 						continue;
 					}
-					$code = (string) get_term_meta( $term->term_id, 'state_code', true );
+					$code    = (string) get_term_meta( $term->term_id, 'state_code', true );
 					$items[] = array(
 						'id'    => (string) $term->term_id,
 						'code'  => '' !== $code ? $code : (string) $term->term_id,
@@ -3641,6 +3704,15 @@ class Webino_Dashboard_REST {
 				}
 			}
 		}
+		if ( array() === $items && self::ensure_bundled_geo_loaded() ) {
+			foreach ( webino_shipping_get_states() as $code => $label ) {
+				$items[] = array(
+					'id'    => (string) $code,
+					'code'  => (string) $code,
+					'label' => (string) $label,
+				);
+			}
+		}
 
 		$purchase_types = array(
 			array( 'id' => 'cash', 'label' => __( 'نقدی', 'webino-dashboard' ) ),
@@ -3665,7 +3737,7 @@ class Webino_Dashboard_REST {
 	}
 
 	/**
-	 * Cities under a province (state_city children).
+	 * Cities under a province (state_city children with bundled/webino_state_city fallback).
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
@@ -3675,69 +3747,84 @@ class Webino_Dashboard_REST {
 		if ( '' === $state ) {
 			return new WP_Error( 'invalid', __( 'State is required.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
-		if ( ! taxonomy_exists( 'state_city' ) ) {
-			return new WP_REST_Response( array( 'items' => array() ) );
-		}
 
-		$parent_id = 0;
-		if ( ctype_digit( $state ) ) {
-			$parent_id = (int) $state;
-		} else {
-			$found = get_terms(
-				array(
-					'taxonomy'   => 'state_city',
-					'hide_empty' => false,
-					'parent'     => 0,
-					'meta_query' => array(
-						array(
-							'key'   => 'state_code',
-							'value' => $state,
-						),
-					),
-					'number'     => 1,
-				)
-			);
-			if ( is_array( $found ) && ! empty( $found[0] ) && $found[0] instanceof WP_Term ) {
-				$parent_id = (int) $found[0]->term_id;
+		$items = array();
+		if ( taxonomy_exists( 'state_city' ) ) {
+			$parent_id = 0;
+			if ( ctype_digit( $state ) ) {
+				$parent_id = (int) $state;
 			} else {
-				$by_name = get_terms(
+				$found = get_terms(
 					array(
 						'taxonomy'   => 'state_city',
 						'hide_empty' => false,
 						'parent'     => 0,
-						'name'       => $state,
+						'meta_query' => array(
+							array(
+								'key'   => 'state_code',
+								'value' => $state,
+							),
+						),
 						'number'     => 1,
 					)
 				);
-				if ( is_array( $by_name ) && ! empty( $by_name[0] ) && $by_name[0] instanceof WP_Term ) {
-					$parent_id = (int) $by_name[0]->term_id;
+				if ( is_array( $found ) && ! empty( $found[0] ) && $found[0] instanceof WP_Term ) {
+					$parent_id = (int) $found[0]->term_id;
+				} else {
+					$by_name = get_terms(
+						array(
+							'taxonomy'   => 'state_city',
+							'hide_empty' => false,
+							'parent'     => 0,
+							'name'       => $state,
+							'number'     => 1,
+						)
+					);
+					if ( is_array( $by_name ) && ! empty( $by_name[0] ) && $by_name[0] instanceof WP_Term ) {
+						$parent_id = (int) $by_name[0]->term_id;
+					}
 				}
 			}
-		}
 
-		if ( $parent_id < 1 ) {
-			return new WP_REST_Response( array( 'items' => array() ) );
-		}
-
-		$children = get_terms(
-			array(
-				'taxonomy'   => 'state_city',
-				'hide_empty' => false,
-				'parent'     => $parent_id,
-			)
-		);
-		$items = array();
-		if ( is_array( $children ) ) {
-			foreach ( $children as $term ) {
-				if ( ! ( $term instanceof WP_Term ) ) {
-					continue;
-				}
-				$items[] = array(
-					'id'    => (string) $term->term_id,
-					'label' => (string) $term->name,
+			if ( $parent_id > 0 ) {
+				$children = get_terms(
+					array(
+						'taxonomy'   => 'state_city',
+						'hide_empty' => false,
+						'parent'     => $parent_id,
+					)
 				);
+				if ( is_array( $children ) ) {
+					foreach ( $children as $term ) {
+						if ( ! ( $term instanceof WP_Term ) ) {
+							continue;
+						}
+						$items[] = array(
+							'id'    => (string) $term->term_id,
+							'label' => (string) $term->name,
+						);
+					}
+				}
 			}
 		}
+
+		// Fallback to bundled Webino province/city catalog when PWS state_city is absent or empty.
+		if ( array() === $items ) {
+			$key = self::resolve_bundled_state_key( $state );
+			if ( '' !== $key && self::ensure_bundled_geo_loaded() ) {
+				foreach ( webino_shipping_get_state_city( $key ) as $city_name ) {
+					$city_name = (string) $city_name;
+					if ( '' === $city_name ) {
+						continue;
+					}
+					$items[] = array(
+						'id'    => $city_name,
+						'label' => $city_name,
+					);
+				}
+			}
+		}
+
 		return new WP_REST_Response( array( 'items' => $items ) );
 	}
 

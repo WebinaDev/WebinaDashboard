@@ -11,13 +11,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Webino_Shipping_Rules {
 
-	const OPTION = 'webino_shipping_rules';
+	const OPTION         = 'webino_shipping_rules';
+	const ENABLED_OPTION = 'webino_shipping_rules_enabled';
 
 	/**
 	 * @return void
 	 */
 	public static function init() {
 		add_filter( 'woocommerce_package_rates', array( __CLASS__, 'apply' ), 90, 2 );
+	}
+
+	/**
+	 * Whether conditional shipping rules are enabled (OFF by default).
+	 *
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		return '1' === (string) get_option( self::ENABLED_OPTION, '0' );
+	}
+
+	/**
+	 * @param bool $enabled Enable rules engine.
+	 * @return bool
+	 */
+	public static function set_enabled( $enabled ) {
+		$val = ! empty( $enabled );
+		update_option( self::ENABLED_OPTION, $val ? '1' : '0', false );
+		return $val;
 	}
 
 	/**
@@ -67,7 +87,7 @@ class Webino_Shipping_Rules {
 	 * @return array<string, WC_Shipping_Rate>
 	 */
 	public static function apply( $rates, $package ) {
-		if ( ! is_array( $rates ) ) {
+		if ( ! self::is_enabled() || ! is_array( $rates ) ) {
 			return $rates;
 		}
 		foreach ( self::get() as $rule ) {

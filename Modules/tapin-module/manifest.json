@@ -1,10 +1,10 @@
 {
   "slug": "tapin-module",
   "name": "Tapin",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "is_builtin": true,
   "is_first_party": true,
-  "default_active": true,
+  "default_active": false,
   "parent_slug": "shipping-module",
   "requires_woocommerce": true,
   "bootstrap": "bootstrap.php",

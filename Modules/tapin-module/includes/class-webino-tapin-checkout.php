@@ -30,7 +30,7 @@ class Webino_Tapin_Checkout {
 	 * @return array<string, array<string, string>>
 	 */
 	public static function filter_states( $states ) {
-		if ( ! Webino_Tapin_Locations::is_available() ) {
+		if ( ! Webino_Tapin_Settings::is_enabled() || ! Webino_Tapin_Locations::is_available() ) {
 			return $states;
 		}
 		$map = Webino_Tapin_Locations::wc_states_map();
@@ -45,7 +45,7 @@ class Webino_Tapin_Checkout {
 	 * @return array<string, mixed>
 	 */
 	public static function checkout_fields( $fields ) {
-		if ( ! Webino_Tapin_Locations::is_available() ) {
+		if ( ! Webino_Tapin_Settings::is_enabled() || ! Webino_Tapin_Locations::is_available() ) {
 			return $fields;
 		}
 		foreach ( array( 'billing', 'shipping' ) as $group ) {
@@ -65,7 +65,7 @@ class Webino_Tapin_Checkout {
 	 * @return void
 	 */
 	public static function enqueue_checkout_script() {
-		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() || ! Webino_Tapin_Locations::is_available() ) {
+		if ( ! Webino_Tapin_Settings::is_enabled() || ! function_exists( 'is_checkout' ) || ! is_checkout() || ! Webino_Tapin_Locations::is_available() ) {
 			return;
 		}
 		$tree = Webino_Tapin_Locations::get_tree();
@@ -77,12 +77,12 @@ class Webino_Tapin_Checkout {
 			}
 			$payload[ $p['title'] ] = $cities;
 		}
-		wp_register_script( 'webino-tapin-checkout', '', array( 'jquery' ), '1.0.0', true );
+		wp_register_script( 'webino-tapin-checkout', '', array( 'jquery' ), '1.0.1', true );
 		wp_enqueue_script( 'webino-tapin-checkout' );
 		wp_add_inline_script(
 			'webino-tapin-checkout',
 			'window.webinoTapinCities=' . wp_json_encode( $payload ) . ';'
-			. '(function($){function fill(group){var s=$("#"+group+"_state"),c=$("#"+group+"_city");if(!s.length||!c.length)return;var cities=(window.webinoTapinCities||{})[s.val()]||{};var cur=c.val();c.empty().append($("<option/>").val("").text("انتخاب شهر"));$.each(cities,function(k,v){c.append($("<option/>").val(k).text(v));});if(cur&&cities[cur])c.val(cur);} $(document.body).on("change","#billing_state,#shipping_state",function(){fill(this.id.indexOf("shipping")===0?"shipping":"billing");});$(function(){fill("billing");fill("shipping");});})(jQuery);'
+			. '(function($){function fill(group){var s=$("#"+group+"_state"),c=$("#"+group+"_city");if(!s.length||!c.length)return;var cities=(window.webinoTapinCities||{})[s.val()]||{};var cur=c.val();c.empty().append($("<option/>").val("").text("انتخاب شهر"));$.each(cities,function(k,v){c.append($("<option/>").val(k).text(v));});if(cur&&cities[cur])c.val(cur);} $(document.body).on("change","#billing_state,#shipping_state",function(){fill(this.id.indexOf("shipping")===0?"shipping":"billing");});$(document.body).on("updated_checkout country_to_state_changed",function(){fill("billing");fill("shipping");});$(function(){fill("billing");fill("shipping");});})(jQuery);'
 		);
 	}
 
@@ -91,6 +91,9 @@ class Webino_Tapin_Checkout {
 	 * @return void
 	 */
 	public static function save_order_meta( $order_id ) {
+		if ( ! Webino_Tapin_Settings::is_enabled() ) {
+			return;
+		}
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
 			return;
@@ -105,7 +108,7 @@ class Webino_Tapin_Checkout {
 	 */
 	public static function attach_codes_on_create( $order, $data = array() ) {
 		unset( $data );
-		if ( is_a( $order, 'WC_Order' ) ) {
+		if ( Webino_Tapin_Settings::is_enabled() && is_a( $order, 'WC_Order' ) ) {
 			self::persist_codes( $order );
 		}
 	}

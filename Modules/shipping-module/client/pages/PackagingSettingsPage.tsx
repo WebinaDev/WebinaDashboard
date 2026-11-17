@@ -65,6 +65,24 @@ export default function PackagingSettingsPage() {
         </Button>
       </div>
 
+      <Card className="mb-4 border-primary/20 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{t('shipping.packagingMasterTitle')}</CardTitle>
+          <CardDescription>{t('shipping.packagingMasterHint')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <label className="flex items-center justify-between gap-3 text-sm">
+            <span>{t('shipping.packagingMasterEnable')}</span>
+            <Switch
+              checked={!!draft.enabled}
+              onCheckedChange={(v) =>
+                setDraft((d) => (d ? { ...d, enabled: v } : d))
+              }
+            />
+          </label>
+        </CardContent>
+      </Card>
+
       <Card className="mb-4 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('shipping.checkoutToggleTitle')}</CardTitle>

@@ -29,6 +29,47 @@ class Webino_Dashboard_REST_Shipping {
 	public static function register_routes() {
 		register_rest_route(
 			self::NS,
+			'/shipping/hub/status',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'hub_status_get' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shipping/hub/toggle',
+			array(
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'hub_toggle_post' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shipping/cities/settings',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'cities_settings_get' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+				array(
+					'methods'             => array( 'POST', 'PUT' ),
+					'callback'            => array( __CLASS__, 'cities_settings_put' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shipping/packaging/settings',
 			array(
 				array(
@@ -432,10 +473,119 @@ class Webino_Dashboard_REST_Shipping {
 	}
 
 	/**
+	 * Return ON/OFF status for every shipping subsystem card on Transport Hub.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function hub_status_get() {
+		$tapin_enabled = false;
+		if ( class_exists( 'Webino_Tapin_Settings', false ) ) {
+			$tapin_enabled = Webino_Tapin_Settings::is_enabled();
+		} else {
+			$raw_tapin = get_option( 'webino_tapin_settings', array() );
+			$tapin_enabled = is_array( $raw_tapin ) && ! empty( $raw_tapin['enabled'] );
+		}
+		$tapin_active = ! class_exists( 'Webino_Dashboard_Module_Registry', false )
+			|| Webino_Dashboard_Module_Registry::is_active( 'tapin-module' );
+
+		return rest_ensure_response(
+			array(
+				'sections' => array(
+					'packaging' => Webino_Shipping_Packaging_Settings::is_enabled(),
+					'tools'     => Webino_Shipping_Tools::is_enabled(),
+					'cities'    => Webino_Shipping_Cities::is_enabled(),
+					'map'       => Webino_Shipping_Map::is_enabled(),
+					'rules'     => Webino_Shipping_Rules::is_enabled(),
+					'item_cost' => ! empty( Webino_Shipping_Item_Cost::get()['enabled'] ),
+					'tapin'     => $tapin_active && $tapin_enabled,
+				),
+			)
+		);
+	}
+
+	/**
+	 * Toggle ON/OFF state of an individual shipping section from Transport Hub.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function hub_toggle_post( $request ) {
+		$body    = self::body( $request );
+		$section = sanitize_key( (string) ( $body['section'] ?? '' ) );
+		$enabled = ! empty( $body['enabled'] );
+
+		switch ( $section ) {
+			case 'packaging':
+				Webino_Shipping_Packaging_Settings::update( array( 'enabled' => $enabled ) );
+				break;
+			case 'tools':
+				Webino_Shipping_Tools::update( array( 'enabled' => $enabled ) );
+				break;
+			case 'cities':
+				Webino_Shipping_Cities::update_settings( array( 'enabled' => $enabled ) );
+				break;
+			case 'map':
+				Webino_Shipping_Map::update( array( 'enabled' => $enabled ) );
+				break;
+			case 'rules':
+				Webino_Shipping_Rules::set_enabled( $enabled );
+				break;
+			case 'item_cost':
+			case 'item-cost':
+				$cur            = Webino_Shipping_Item_Cost::get();
+				$cur['enabled'] = $enabled;
+				Webino_Shipping_Item_Cost::update( $cur );
+				break;
+			case 'tapin':
+				if ( class_exists( 'Webino_Tapin_Settings', false ) ) {
+					if ( $enabled && class_exists( 'Webino_Dashboard_Module_Registry', false )
+						&& ! Webino_Dashboard_Module_Registry::is_active( 'tapin-module' ) ) {
+						Webino_Dashboard_Module_Registry::set_active( 'tapin-module', true );
+					}
+					Webino_Tapin_Settings::update( array( 'enabled' => $enabled ) );
+				} else {
+					$raw = get_option( 'webino_tapin_settings', array() );
+					if ( ! is_array( $raw ) ) {
+						$raw = array();
+					}
+					$raw['enabled'] = $enabled;
+					update_option( 'webino_tapin_settings', $raw, false );
+				}
+				break;
+			default:
+				return new WP_Error( 'invalid_section', __( 'بخش حمل‌ونقل معتبر نیست.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+
+		return self::hub_status_get();
+	}
+
+	/**
+	 * @return WP_REST_Response
+	 */
+	public static function cities_settings_get() {
+		return rest_ensure_response( array( 'settings' => Webino_Shipping_Cities::get_settings() ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function cities_settings_put( $request ) {
+		$body  = self::body( $request );
+		$input = isset( $body['settings'] ) && is_array( $body['settings'] ) ? $body['settings'] : $body;
+		return rest_ensure_response( array( 'settings' => Webino_Shipping_Cities::update_settings( $input ) ) );
+	}
+
+	/**
 	 * @return WP_REST_Response
 	 */
 	public static function rules_get() {
-		return rest_ensure_response( array( 'rules' => Webino_Shipping_Rules::get() ) );
+		return rest_ensure_response(
+			array(
+				'enabled' => Webino_Shipping_Rules::is_enabled(),
+				'rules'   => Webino_Shipping_Rules::get(),
+			)
+		);
 	}
 
 	/**
@@ -443,9 +593,17 @@ class Webino_Dashboard_REST_Shipping {
 	 * @return WP_REST_Response
 	 */
 	public static function rules_put( $request ) {
-		$body  = self::body( $request );
+		$body = self::body( $request );
+		if ( array_key_exists( 'enabled', $body ) ) {
+			Webino_Shipping_Rules::set_enabled( ! empty( $body['enabled'] ) );
+		}
 		$rules = isset( $body['rules'] ) && is_array( $body['rules'] ) ? $body['rules'] : $body;
-		return rest_ensure_response( array( 'rules' => Webino_Shipping_Rules::update( $rules ) ) );
+		return rest_ensure_response(
+			array(
+				'enabled' => Webino_Shipping_Rules::is_enabled(),
+				'rules'   => Webino_Shipping_Rules::update( $rules ),
+			)
+		);
 	}
 
 	/**
@@ -453,9 +611,11 @@ class Webino_Dashboard_REST_Shipping {
 	 */
 	public static function cities_tree() {
 		Webino_Shipping_Cities::register_taxonomy();
+		Webino_Shipping_Cities::ensure_states_seeded();
 		$status = Webino_Shipping_Cities::seed_status();
 		return rest_ensure_response(
 			array(
+				'enabled'      => Webino_Shipping_Cities::is_enabled(),
 				'states'       => Webino_Shipping_Cities::get_states(),
 				'installed'    => $status['installed'],
 				'needs_seed'   => $status['needs_seed'],
