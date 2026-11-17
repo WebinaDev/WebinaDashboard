@@ -133,19 +133,45 @@ export type CoffeePricingRecalc = {
   errors?: { product_id: number; message: string }[]
 }
 
+export type CoffeeWfcpPreviewConfig = {
+  enabled: boolean
+  exchange_rate_enabled: boolean
+  exchange_rate: number
+  purchase_currency: string
+  profit_percent: number
+  round_enabled: boolean
+  round_to: number
+}
+
+export type CoffeeShopMixRow = {
+  robusta_pct: number
+  arabica_pct: number
+  classic_after_roast: number
+  luxury_after_roast: number
+}
+
+export type CoffeeEconomyMixRow = {
+  robusta_pct: number
+  arabica_pct: number
+  after_roast: number
+}
+
 export type CoffeePricingPayload = {
   settings: CoffeePricingSettings
   beans: CoffeePricingBean[]
   base_mixes: CoffeePricingBaseMix[]
   shop_styles: CoffeePricingSettings['shop_styles']
+  shop_mixes?: CoffeeShopMixRow[]
+  economy_mixes?: CoffeeEconomyMixRow[]
   economy: {
     robusta_bean_id: string
     arabica_bean_id: string
     robusta_after: number
     arabica_after: number
   }
+  wfcp_config?: CoffeeWfcpPreviewConfig
   recalc: CoffeePricingRecalc
-  queued?: { ok: boolean; total: number; queued: boolean }
+  queued?: { ok: boolean; total: number; done?: number; status?: string; queued: boolean }
 }
 
 export type CoffeeOrigin = {
@@ -166,6 +192,11 @@ export type CoffeeProductPayload = {
   profile: CoffeeProfile
   settings: CoffeeSettings
   origins: CoffeeOrigin[]
+  pricing?: {
+    ok?: boolean
+    per_kg?: number
+    updated_count?: number
+  } | null
 }
 
 export type BlendIdLabel = { id: string; label: string }

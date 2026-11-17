@@ -104,7 +104,8 @@ class Webino_Dashboard_REST_Coffee_Pricing {
 			array_merge(
 				$computed,
 				array(
-					'recalc' => Webino_Dashboard_Coffee_Pricing::recalc_state(),
+					'wfcp_config' => Webino_Dashboard_Coffee_Pricing::wfcp_preview_config(),
+					'recalc'      => Webino_Dashboard_Coffee_Pricing::recalc_state(),
 				)
 			)
 		);
@@ -119,22 +120,28 @@ class Webino_Dashboard_REST_Coffee_Pricing {
 		if ( ! is_array( $body ) ) {
 			$body = array();
 		}
-		$recalc = ! empty( $body['recalc'] );
+		// Auto-recalculate all beans & linked products on Save unless caller explicitly opts out.
+		$recalc = ! array_key_exists( 'recalc', $body ) || ! empty( $body['recalc'] );
 		if ( isset( $body['settings'] ) && is_array( $body['settings'] ) ) {
 			$body = $body['settings'];
 		}
 		Webino_Dashboard_Coffee_Pricing::save( $body );
+		$queued = null;
+		if ( $recalc ) {
+			$queued = Webino_Dashboard_Coffee_Pricing::queue_recalc_all();
+		}
 		$response = self::get();
 		$data     = $response->get_data();
 		if ( ! is_array( $data ) ) {
 			$data = array();
 		}
-		if ( $recalc ) {
-			$queued           = Webino_Dashboard_Coffee_Pricing::queue_recalc_all();
-			$data['queued']   = $queued;
-			$data['recalc']   = Webino_Dashboard_Coffee_Pricing::recalc_state();
+		if ( null !== $queued ) {
+			$data['queued'] = $queued;
+			$data['recalc'] = Webino_Dashboard_Coffee_Pricing::recalc_state();
 			$response->set_data( $data );
-			$response->set_status( 202 );
+			if ( 'running' === ( $data['recalc']['status'] ?? '' ) ) {
+				$response->set_status( 202 );
+			}
 		}
 		return $response;
 	}

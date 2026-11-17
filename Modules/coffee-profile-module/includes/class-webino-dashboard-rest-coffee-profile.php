@@ -204,7 +204,7 @@ class Webino_Dashboard_REST_Coffee_Profile {
 		}
 		$pricing = null;
 		$mode    = sanitize_key( (string) ( $saved['price_mode'] ?? '' ) );
-		if ( '' !== $mode && 'none' !== $mode && class_exists( 'Webino_Dashboard_Coffee_Pricing', false ) ) {
+		if ( ( ! empty( $saved['price_parts'] ) || ( '' !== $mode && 'none' !== $mode ) ) && class_exists( 'Webino_Dashboard_Coffee_Pricing', false ) ) {
 			$res = Webino_Dashboard_Coffee_Pricing::apply_to_product( $id );
 			if ( ! is_wp_error( $res ) ) {
 				$pricing = $res;

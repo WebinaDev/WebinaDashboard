@@ -527,6 +527,16 @@ export function useProductEditorForm() {
     onError: (e: Error) => toastApiError(t, e),
   })
 
+  const refreshPricing = useCallback(async () => {
+    if (!id) return
+    const p = await apiFetch<Product>(`shop/products/${id}`)
+    void qc.setQueryData(['product', id], p)
+    void qc.invalidateQueries({ queryKey: ['product-variations', id] })
+    setRegular(p.regular ?? '')
+    setSale(p.sale ?? '')
+    applyWfcpFromProduct(p)
+  }, [id, qc, applyWfcpFromProduct])
+
   const typeChangeDisabled = Boolean(id && variationCount > 0)
   const loadFailed = Boolean(id) && (productQ.isError || lookupQ.isError)
 
@@ -626,5 +636,6 @@ export function useProductEditorForm() {
     save,
     patchWfcp,
     fetchReference,
+    refreshPricing,
   }
 }

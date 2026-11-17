@@ -24,16 +24,19 @@ import { formatNumber } from '@/lib/formatNumber'
 import { CoffeeFlag } from './CoffeeFlag'
 import type {
   CoffeeOrigin,
+  CoffeePriceMode,
   CoffeePricePart,
   CoffeePricingBaseMix,
   CoffeePricingPayload,
   CoffeeProductPayload,
   CoffeeProfile,
+  CoffeeWfcpPreviewConfig,
 } from '../types'
 
 type Props = {
   productId?: number
   registerSave?: (fn: (() => Promise<void>) | null) => void
+  onPricingApplied?: () => Promise<void> | void
 }
 
 function emptyProfile(): CoffeeProfile {
@@ -73,7 +76,7 @@ function mergeVisible(fromServer?: CoffeeProfile['visible']): CoffeeProfile['vis
   return vis
 }
 
-export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
+export function CoffeeProfileProductPanel({ productId, registerSave, onPricingApplied }: Props) {
   const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const [draft, setDraft] = useState<CoffeeProfile>(emptyProfile)
@@ -133,14 +136,22 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
       })
       dirty.current = false
       if (data.profile) {
-        setDraft({ ...emptyProfile(), ...data.profile, visible: mergeVisible(data.profile.visible) })
+        setDraft(
+          hydratePriceParts(
+            { ...emptyProfile(), ...data.profile, visible: mergeVisible(data.profile.visible) },
+            pricingQ.data?.base_mixes ?? []
+          )
+        )
       }
       qc.setQueryData(['coffee-profile', productId], data)
+      if (data.pricing && onPricingApplied) {
+        await onPricingApplied()
+      }
       if (opts?.toast !== false) {
         toast.success(t('common.saved'))
       }
     },
-    [productId, qc, t]
+    [productId, qc, t, pricingQ.data?.base_mixes, onPricingApplied]
   )
 
   useEffect(() => {
@@ -168,7 +179,44 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
     return m
   }, [pricingQ.data?.beans])
 
-  const pricePreviewKg = useMemo(() => weightedParts(draft.price_parts, beanAfter), [draft.price_parts, beanAfter])
+  const mixAfter = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const mix of pricingQ.data?.base_mixes ?? []) {
+      if (typeof mix.after_roast === 'number') {
+        m.set(mix.id, mix.after_roast)
+      }
+    }
+    return m
+  }, [pricingQ.data?.base_mixes])
+
+  const pricePreviewKg = useMemo(() => {
+    if (draft.price_mode === 'shop') {
+      const style = draft.price_shop_style === 'luxury' ? 'luxury' : 'classic'
+      const cfg = pricingQ.data?.shop_styles?.[style]
+      const rAfter = cfg ? (mixAfter.get(cfg.robusta_mix_id) ?? 0) : 0
+      const aAfter = cfg ? (mixAfter.get(cfg.arabica_mix_id) ?? 0) : 0
+      const sum = draft.blend_robusta + draft.blend_arabica
+      if (sum <= 0) return 0
+      const r = draft.blend_robusta / sum
+      const a = draft.blend_arabica / sum
+      return rAfter * r + aAfter * a
+    }
+    if (draft.price_mode === 'economy') {
+      const rAfter = pricingQ.data?.economy?.robusta_after ?? 0
+      const aAfter = pricingQ.data?.economy?.arabica_after ?? 0
+      const sum = draft.blend_robusta + draft.blend_arabica
+      if (sum <= 0) return 0
+      const r = draft.blend_robusta / sum
+      const a = draft.blend_arabica / sum
+      return rAfter * r + aAfter * a
+    }
+    return weightedParts(draft.price_parts, beanAfter)
+  }, [draft, beanAfter, mixAfter, pricingQ.data])
+
+  const retailPreviewKg = useMemo(
+    () => previewWfcpRetail(pricePreviewKg, pricingQ.data?.wfcp_config),
+    [pricePreviewKg, pricingQ.data?.wfcp_config]
+  )
 
   const detectedPattern = useMemo(
     () => detectMixPattern(draft.price_parts, pricingQ.data?.base_mixes ?? []),
@@ -409,112 +457,256 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
           <p className="text-muted-foreground text-xs">{t('coffeeProfile.packWeightHint')}</p>
         </div>
 
-        <div className="space-y-3 rounded-lg border p-4">
+        <div className="space-y-4 rounded-lg border p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <Label>{t('coffeeProfile.priceComposition')}</Label>
               <p className="text-muted-foreground mt-1 text-xs">{t('coffeeProfile.priceCompositionHint')}</p>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                patchDraft((d) => ({
-                  ...d,
-                  price_mode: 'custom',
-                  price_parts: [
-                    ...d.price_parts,
-                    {
-                      bean_id: pricingQ.data?.beans?.[0]?.id ?? '',
-                      percent: d.price_parts.length === 0 ? 100 : 0,
-                    },
-                  ],
-                }))
-              }
-            >
-              {t('coffeeProfile.pricingAddPart')}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={draft.price_mode === 'single' || draft.price_mode === 'base_mix' ? 'custom' : draft.price_mode}
+                onValueChange={(v) => {
+                  const mode = v as CoffeePriceMode
+                  patchDraft((d) => ({
+                    ...d,
+                    price_mode: mode,
+                    price_parts:
+                      mode === 'custom'
+                        ? d.price_parts.length > 0
+                          ? d.price_parts
+                          : [{ bean_id: pricingQ.data?.beans?.[0]?.id ?? '', percent: 100 }]
+                        : [],
+                  }))
+                }}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('coffeeProfile.priceModeNone')}</SelectItem>
+                  <SelectItem value="custom">{t('coffeeProfile.priceModeCustom')}</SelectItem>
+                  <SelectItem value="shop">{t('coffeeProfile.priceModeShop')}</SelectItem>
+                  <SelectItem value="economy">{t('coffeeProfile.priceModeEconomy')}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {draft.price_mode === 'custom' || draft.price_parts.length > 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    patchDraft((d) => ({
+                      ...d,
+                      price_mode: 'custom',
+                      price_parts: [
+                        ...d.price_parts,
+                        {
+                          bean_id: pricingQ.data?.beans?.[0]?.id ?? '',
+                          percent: d.price_parts.length === 0 ? 100 : 0,
+                        },
+                      ],
+                    }))
+                  }
+                >
+                  {t('coffeeProfile.pricingAddPart')}
+                </Button>
+              ) : null}
+            </div>
           </div>
 
-          {draft.price_parts.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t('coffeeProfile.priceCompositionEmpty')}</p>
-          ) : null}
-
-          {draft.price_parts.map((part, idx) => (
-            <div key={`part-${idx}`} className="flex flex-wrap items-center gap-2">
+          {draft.price_mode === 'shop' ? (
+            <div className="space-y-2">
+              <Label>{t('coffeeProfile.priceShopStyle')}</Label>
               <Select
-                value={part.bean_id || undefined}
+                value={draft.price_shop_style}
                 onValueChange={(v) =>
                   patchDraft((d) => ({
                     ...d,
-                    price_mode: 'custom',
-                    price_parts: d.price_parts.map((p, i) => (i === idx ? { ...p, bean_id: v } : p)),
-                    price_bean_id: d.price_parts.length === 1 ? v : d.price_bean_id,
+                    price_mode: 'shop',
+                    price_parts: [],
+                    price_shop_style: v === 'luxury' ? 'luxury' : 'classic',
                   }))
                 }
               >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder={t('coffeeProfile.pricePickBean')} />
+                <SelectTrigger className="w-44">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(pricingQ.data?.beans ?? []).map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="classic">{t('coffeeProfile.priceShopClassic')}</SelectItem>
+                  <SelectItem value="luxury">{t('coffeeProfile.priceShopLuxury')}</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                type="number"
-                className="w-24"
-                min={0}
-                max={100}
-                value={part.percent}
-                onChange={(e) =>
-                  patchDraft((d) => ({
-                    ...d,
-                    price_mode: 'custom',
-                    price_parts: d.price_parts.map((p, i) =>
-                      i === idx ? { ...p, percent: Number(e.target.value) || 0 } : p
-                    ),
-                  }))
-                }
-              />
-              <span className="text-muted-foreground text-sm">%</span>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  patchDraft((d) => {
-                    const price_parts = d.price_parts.filter((_, i) => i !== idx)
-                    return {
-                      ...d,
-                      price_parts,
-                      price_mode: price_parts.length ? 'custom' : 'none',
-                    }
-                  })
-                }
-              >
-                {t('common.delete')}
-              </Button>
+              <p className="text-muted-foreground text-xs">
+                {t('coffeeProfile.priceRatioNote', {
+                  robusta: draft.blend_robusta,
+                  arabica: draft.blend_arabica,
+                })}
+              </p>
             </div>
-          ))}
+          ) : null}
 
-          {detectedPattern ? (
-            <p className="text-sm">
-              {t('coffeeProfile.pricePatternDetected', { name: detectedPattern.name })}
+          {draft.price_mode === 'economy' ? (
+            <p className="text-muted-foreground text-xs">
+              {t('coffeeProfile.priceRatioNote', {
+                robusta: draft.blend_robusta,
+                arabica: draft.blend_arabica,
+              })}
             </p>
           ) : null}
 
-          {draft.price_parts.length > 0 ? (
-            <p className="text-muted-foreground text-sm">
-              {t('coffeeProfile.pricePreviewKg')}:{' '}
-              <span className="text-foreground font-medium">
-                {formatNumber(Math.round(pricePreviewKg), i18n.language)}
-              </span>
-            </p>
+          {draft.price_mode === 'custom' || draft.price_parts.length > 0 ? (
+            <>
+              {(pricingQ.data?.base_mixes ?? []).length > 0 ? (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-muted-foreground text-xs">
+                    {t('coffeeProfile.priceBaseMixPresets')}:
+                  </span>
+                  {(pricingQ.data?.base_mixes ?? []).map((mix) => (
+                    <Button
+                      key={mix.id}
+                      type="button"
+                      size="sm"
+                      variant={detectedPattern?.id === mix.id ? 'default' : 'outline'}
+                      className="h-7 px-2.5 text-xs"
+                      onClick={() =>
+                        patchDraft((d) => ({
+                          ...d,
+                          price_mode: 'custom',
+                          price_mix_id: mix.id,
+                          price_parts: (mix.parts ?? []).map((p) => ({
+                            bean_id: p.bean_id,
+                            percent: p.percent,
+                          })),
+                        }))
+                      }
+                    >
+                      {mix.name}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+
+              {draft.price_parts.length === 0 ? (
+                <p className="text-muted-foreground text-sm">{t('coffeeProfile.priceCompositionEmpty')}</p>
+              ) : null}
+
+              {draft.price_parts.map((part, idx) => (
+                <div key={`part-${idx}`} className="flex flex-wrap items-center gap-2">
+                  <Select
+                    value={part.bean_id || undefined}
+                    onValueChange={(v) =>
+                      patchDraft((d) => ({
+                        ...d,
+                        price_mode: 'custom',
+                        price_parts: d.price_parts.map((p, i) => (i === idx ? { ...p, bean_id: v } : p)),
+                        price_bean_id: d.price_parts.length === 1 ? v : d.price_bean_id,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-44">
+                      <SelectValue placeholder={t('coffeeProfile.pricePickBean')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(pricingQ.data?.beans ?? []).map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    className="w-24"
+                    min={0}
+                    max={100}
+                    value={part.percent}
+                    onChange={(e) =>
+                      patchDraft((d) => ({
+                        ...d,
+                        price_mode: 'custom',
+                        price_parts: d.price_parts.map((p, i) =>
+                          i === idx ? { ...p, percent: Number(e.target.value) || 0 } : p
+                        ),
+                      }))
+                    }
+                  />
+                  <span className="text-muted-foreground text-sm">%</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      patchDraft((d) => {
+                        const price_parts = d.price_parts.filter((_, i) => i !== idx)
+                        return {
+                          ...d,
+                          price_parts,
+                          price_mode: price_parts.length ? 'custom' : 'none',
+                        }
+                      })
+                    }
+                  >
+                    {t('common.delete')}
+                  </Button>
+                </div>
+              ))}
+
+              {detectedPattern ? (
+                <p className="text-sm">
+                  {t('coffeeProfile.pricePatternDetected', { name: detectedPattern.name })}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+
+          {draft.price_mode !== 'none' && pricePreviewKg > 0 ? (
+            <div className="bg-muted/40 grid gap-2 rounded-md p-3 text-sm sm:grid-cols-2">
+              <div>
+                <span className="text-muted-foreground">{t('coffeeProfile.pricePreviewKg')}: </span>
+                <span className="font-medium tabular-nums">
+                  {formatNumber(Math.round(pricePreviewKg), i18n.language)}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t('coffeeProfile.pricePreviewRetailKg')}: </span>
+                <span className="font-medium tabular-nums">
+                  {formatNumber(Math.round(retailPreviewKg), i18n.language)}
+                </span>
+              </div>
+              {draft.pack_weight_g !== 1000 ? (
+                <>
+                  <div>
+                    <span className="text-muted-foreground">
+                      {t('coffeeProfile.pricePreviewPack', { grams: draft.pack_weight_g })}:{' '}
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      {formatNumber(
+                        Math.round(pricePreviewKg * (draft.pack_weight_g / 1000)),
+                        i18n.language
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">
+                      {t('coffeeProfile.pricePreviewRetailPack', { grams: draft.pack_weight_g })}:{' '}
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      {formatNumber(
+                        Math.round(
+                          previewWfcpRetail(
+                            pricePreviewKg * (draft.pack_weight_g / 1000),
+                            pricingQ.data?.wfcp_config
+                          )
+                        ),
+                        i18n.language
+                      )}
+                    </span>
+                  </div>
+                </>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
@@ -544,6 +736,27 @@ export function CoffeeProfileProductPanel({ productId, registerSave }: Props) {
       </CardContent>
     </Card>
   )
+}
+
+function previewWfcpRetail(purchase: number, wfcp?: CoffeeWfcpPreviewConfig): number {
+  if (!Number.isFinite(purchase) || purchase <= 0) return 0
+  if (!wfcp || !wfcp.enabled) return purchase
+  let price = purchase
+  if (
+    wfcp.exchange_rate_enabled &&
+    (!wfcp.purchase_currency || wfcp.purchase_currency === 'base') &&
+    wfcp.exchange_rate > 0
+  ) {
+    price = price * wfcp.exchange_rate
+  }
+  if (wfcp.profit_percent > 0) {
+    price = price + (price * wfcp.profit_percent) / 100
+  }
+  if (wfcp.round_enabled && wfcp.round_to > 0) {
+    const to = Math.max(1, wfcp.round_to)
+    price = Math.round(price / to) * to
+  }
+  return price
 }
 
 function hydratePriceParts(profile: CoffeeProfile, mixes: CoffeePricingBaseMix[]): CoffeeProfile {

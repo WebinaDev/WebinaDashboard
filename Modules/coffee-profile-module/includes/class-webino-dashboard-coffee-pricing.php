@@ -14,10 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Webino_Dashboard_Coffee_Pricing {
 
-	const OPTION_KEY   = 'webino_coffee_pricing';
-	const BATCH_HOOK   = 'webino_coffee_pricing_recalc_batch';
-	const BATCH_OPTION = 'webino_coffee_pricing_recalc_state';
-	const BATCH_SIZE   = 25;
+	const OPTION_KEY       = 'webino_coffee_pricing';
+	const SCHEMA_V2_OPTION = 'webino_coffee_pricing_schema_v2';
+	const BATCH_HOOK       = 'webino_coffee_pricing_recalc_batch';
+	const BATCH_OPTION     = 'webino_coffee_pricing_recalc_state';
+	const BATCH_SIZE       = 25;
 
 	/**
 	 * @return void
@@ -27,22 +28,24 @@ final class Webino_Dashboard_Coffee_Pricing {
 	}
 
 	/**
-	 * Defaults from Coffee price site.xlsx.
+	 * Defaults from Coffee price site.xlsx (قیمت پایه سبز ها / رست تک دون ها / میکس های پایه).
 	 *
 	 * @return array<string,mixed>
 	 */
 	public static function defaults() {
 		$beans = array(
-			array( 'id' => 'vietnam', 'name' => 'Vietnam', 'kind' => 'robusta', 'green_price' => 1353, 'product_id' => 0 ),
-			array( 'id' => 'pb', 'name' => 'PB', 'kind' => 'robusta', 'green_price' => 1562, 'product_id' => 0 ),
-			array( 'id' => 'cherry', 'name' => 'Cherry', 'kind' => 'robusta', 'green_price' => 1672, 'product_id' => 0 ),
-			array( 'id' => 'uganda', 'name' => 'Uganda', 'kind' => 'robusta', 'green_price' => 1672, 'product_id' => 0 ),
-			array( 'id' => 'indonesia', 'name' => 'Indonesia', 'kind' => 'robusta', 'green_price' => 1870, 'product_id' => 0 ),
-			array( 'id' => 'rio', 'name' => 'Rio', 'kind' => 'arabica', 'green_price' => 1980, 'product_id' => 0 ),
-			array( 'id' => 'ethiopia', 'name' => 'Ethiopia', 'kind' => 'arabica', 'green_price' => 2145, 'product_id' => 0 ),
-			array( 'id' => 'kenya', 'name' => 'Kenya', 'kind' => 'arabica', 'green_price' => 2420, 'product_id' => 0 ),
-			array( 'id' => 'santos', 'name' => 'Santos', 'kind' => 'arabica', 'green_price' => 3025, 'product_id' => 0 ),
-			array( 'id' => 'colombia', 'name' => 'Colombia', 'kind' => 'arabica', 'green_price' => 3795, 'product_id' => 0 ),
+			array( 'id' => 'vietnam', 'name' => 'Vietnam', 'kind' => 'robusta', 'green_price' => 1400, 'product_id' => 0 ),
+			array( 'id' => 'pb', 'name' => 'PB', 'kind' => 'robusta', 'green_price' => 1550, 'product_id' => 0 ),
+			array( 'id' => 'cherry', 'name' => 'Cherry', 'kind' => 'robusta', 'green_price' => 1650, 'product_id' => 0 ),
+			array( 'id' => 'uganda', 'name' => 'Uganda', 'kind' => 'robusta', 'green_price' => 1650, 'product_id' => 0 ),
+			array( 'id' => 'indonesia', 'name' => 'Indonesia', 'kind' => 'robusta', 'green_price' => 2100, 'product_id' => 0 ),
+			array( 'id' => 'rio', 'name' => 'Rio', 'kind' => 'arabica', 'green_price' => 2100, 'product_id' => 0 ),
+			array( 'id' => 'ethiopia', 'name' => 'Ethiopia', 'kind' => 'arabica', 'green_price' => 2200, 'product_id' => 0 ),
+			array( 'id' => 'kenya', 'name' => 'Kenya', 'kind' => 'arabica', 'green_price' => 3000, 'product_id' => 0 ),
+			array( 'id' => 'santos', 'name' => 'Santos', 'kind' => 'arabica', 'green_price' => 3350, 'product_id' => 0 ),
+			array( 'id' => 'colombia', 'name' => 'Colombia', 'kind' => 'arabica', 'green_price' => 3700, 'product_id' => 0 ),
+			array( 'id' => 'arabica_plantation', 'name' => 'Arabica Plantation', 'kind' => 'arabica', 'green_price' => 3100, 'product_id' => 0 ),
+			array( 'id' => 'ethiopia_yirgacheffe', 'name' => 'Ethiopia Yirgacheffe', 'kind' => 'arabica', 'green_price' => 3700, 'product_id' => 0 ),
 		);
 
 		$base_mixes = array(
@@ -57,7 +60,7 @@ final class Webino_Dashboard_Coffee_Pricing {
 			),
 			array(
 				'id'    => 'base_arabica',
-				'name'  => 'Base Arabica',
+				'name'  => 'Luxury Robusta',
 				'kind'  => 'robusta',
 				'parts' => array(
 					array( 'bean_id' => 'vietnam', 'percent' => 50 ),
@@ -130,11 +133,52 @@ final class Webino_Dashboard_Coffee_Pricing {
 	 * @return array<string,mixed>
 	 */
 	public static function get() {
-		$stored = get_option( self::OPTION_KEY, array() );
-		if ( ! is_array( $stored ) ) {
-			$stored = array();
+		$stored = get_option( self::OPTION_KEY, null );
+		$defaults = self::defaults();
+		if ( ! is_array( $stored ) || array() === $stored ) {
+			if ( ! get_option( self::SCHEMA_V2_OPTION ) ) {
+				update_option( self::SCHEMA_V2_OPTION, '1', false );
+			}
+			return self::sanitize( $defaults );
 		}
-		return self::sanitize( array_merge( self::defaults(), $stored ) );
+
+		// One-time schema v2 upgrade: add new Excel beans without overwriting existing user prices.
+		if ( ! get_option( self::SCHEMA_V2_OPTION ) ) {
+			$dirty = false;
+			if ( ! empty( $stored['beans'] ) && is_array( $stored['beans'] ) ) {
+				$have_ids = array();
+				foreach ( $stored['beans'] as $b ) {
+					if ( is_array( $b ) && ! empty( $b['id'] ) ) {
+						$have_ids[ sanitize_key( (string) $b['id'] ) ] = true;
+					}
+				}
+				foreach ( array( 'arabica_plantation', 'ethiopia_yirgacheffe' ) as $new_id ) {
+					if ( ! isset( $have_ids[ $new_id ] ) ) {
+						foreach ( $defaults['beans'] as $db ) {
+							if ( $db['id'] === $new_id ) {
+								$stored['beans'][] = $db;
+								$dirty = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+			if ( ! empty( $stored['base_mixes'] ) && is_array( $stored['base_mixes'] ) ) {
+				foreach ( $stored['base_mixes'] as $i => $m ) {
+					if ( is_array( $m ) && 'base_arabica' === ( $m['id'] ?? '' ) && 'Base Arabica' === ( $m['name'] ?? '' ) ) {
+						$stored['base_mixes'][ $i ]['name'] = 'Luxury Robusta';
+						$dirty = true;
+					}
+				}
+			}
+			if ( $dirty ) {
+				update_option( self::OPTION_KEY, self::sanitize( array_merge( $defaults, $stored ) ), false );
+			}
+			update_option( self::SCHEMA_V2_OPTION, '1', false );
+		}
+
+		return self::sanitize( array_merge( $defaults, $stored ) );
 	}
 
 	/**
@@ -164,6 +208,9 @@ final class Webino_Dashboard_Coffee_Pricing {
 	public static function save( $input ) {
 		$clean = self::sanitize( is_array( $input ) ? $input : array() );
 		update_option( self::OPTION_KEY, $clean, false );
+		if ( ! get_option( self::SCHEMA_V2_OPTION ) ) {
+			update_option( self::SCHEMA_V2_OPTION, '1', false );
+		}
 		return $clean;
 	}
 
@@ -211,13 +258,27 @@ final class Webino_Dashboard_Coffee_Pricing {
 		$beans_in = isset( $input['beans'] ) && is_array( $input['beans'] ) ? $input['beans'] : $defaults['beans'];
 		$beans    = array();
 		$seen     = array();
-		foreach ( $beans_in as $row ) {
+		foreach ( $beans_in as $idx => $row ) {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}
-			$id = sanitize_key( (string) ( $row['id'] ?? '' ) );
-			if ( '' === $id || isset( $seen[ $id ] ) ) {
+			$name = sanitize_text_field( (string) ( $row['name'] ?? '' ) );
+			$raw_id = (string) ( $row['id'] ?? '' );
+			$id = sanitize_key( $raw_id );
+			if ( '' === $id && '' !== $name ) {
+				$id = sanitize_key( $name );
+			}
+			if ( '' === $id && '' !== $name ) {
+				$id = 'bean_' . substr( md5( $name . '_' . $idx ), 0, 8 );
+			}
+			if ( '' === $id ) {
 				continue;
+			}
+			$base_id = $id;
+			$suffix  = 2;
+			while ( isset( $seen[ $id ] ) ) {
+				$id = $base_id . '_' . $suffix;
+				++$suffix;
 			}
 			$seen[ $id ] = true;
 			$kind        = sanitize_key( (string) ( $row['kind'] ?? 'robusta' ) );
@@ -226,7 +287,7 @@ final class Webino_Dashboard_Coffee_Pricing {
 			}
 			$beans[] = array(
 				'id'          => $id,
-				'name'        => sanitize_text_field( (string) ( $row['name'] ?? $id ) ),
+				'name'        => '' !== $name ? $name : $id,
 				'kind'        => $kind,
 				'green_price' => max( 0, (float) ( $row['green_price'] ?? 0 ) ),
 				'product_id'  => max( 0, (int) ( $row['product_id'] ?? 0 ) ),
@@ -236,12 +297,26 @@ final class Webino_Dashboard_Coffee_Pricing {
 			$beans = $defaults['beans'];
 		}
 
-		$bean_ids = array();
+		$bean_ids     = array();
+		$first_rob    = '';
+		$first_ara    = '';
 		foreach ( $beans as $b ) {
 			$bean_ids[ $b['id'] ] = true;
+			if ( 'robusta' === $b['kind'] && '' === $first_rob ) {
+				$first_rob = $b['id'];
+			}
+			if ( 'arabica' === $b['kind'] && '' === $first_ara ) {
+				$first_ara = $b['id'];
+			}
+		}
+		if ( '' === $first_rob ) {
+			$first_rob = $beans[0]['id'];
+		}
+		if ( '' === $first_ara ) {
+			$first_ara = $beans[0]['id'];
 		}
 
-		// Keep Excel patterns for mix-name detection (not edited on pricing UI).
+		// Keep Excel patterns for mix-name detection and base mix calculations.
 		$mixes_in = isset( $input['base_mixes'] ) && is_array( $input['base_mixes'] ) ? $input['base_mixes'] : $defaults['base_mixes'];
 		$mixes    = array();
 		$mix_seen = array();
@@ -319,13 +394,13 @@ final class Webino_Dashboard_Coffee_Pricing {
 		}
 
 		$eco_in = isset( $input['economy_beans'] ) && is_array( $input['economy_beans'] ) ? $input['economy_beans'] : $defaults['economy_beans'];
-		$eco_r  = sanitize_key( (string) ( $eco_in['robusta_bean_id'] ?? 'vietnam' ) );
-		$eco_a  = sanitize_key( (string) ( $eco_in['arabica_bean_id'] ?? 'rio' ) );
+		$eco_r  = sanitize_key( (string) ( $eco_in['robusta_bean_id'] ?? $first_rob ) );
+		$eco_a  = sanitize_key( (string) ( $eco_in['arabica_bean_id'] ?? $first_ara ) );
 		if ( empty( $bean_ids[ $eco_r ] ) ) {
-			$eco_r = 'vietnam';
+			$eco_r = $first_rob;
 		}
 		if ( empty( $bean_ids[ $eco_a ] ) ) {
-			$eco_a = 'rio';
+			$eco_a = $first_ara;
 		}
 
 		return array(
@@ -343,7 +418,7 @@ final class Webino_Dashboard_Coffee_Pricing {
 	}
 
 	/**
-	 * Computed table for UI: beans after roast + mixes.
+	 * Computed table for UI: beans after roast + base mixes + shop mixes + economy mixes.
 	 *
 	 * @param array<string,mixed>|null $settings Settings.
 	 * @return array<string,mixed>
@@ -361,7 +436,7 @@ final class Webino_Dashboard_Coffee_Pricing {
 					'after_roast' => $after,
 				)
 			);
-			$beans_out[]         = $row;
+			$beans_out[]       = $row;
 			$by_id[ $b['id'] ] = $after;
 		}
 
@@ -379,21 +454,102 @@ final class Webino_Dashboard_Coffee_Pricing {
 			$mix_by_id[ $m['id'] ] = $price;
 		}
 
+		$shop_mixes = array();
+		foreach ( array( 'classic', 'luxury' ) as $style ) {
+			$cfg = isset( $s['shop_styles'][ $style ] ) ? $s['shop_styles'][ $style ] : array();
+			$r_id = (string) ( $cfg['robusta_mix_id'] ?? '' );
+			$a_id = (string) ( $cfg['arabica_mix_id'] ?? '' );
+			$r_after = (float) ( $mix_by_id[ $r_id ] ?? 0 );
+			$a_after = (float) ( $mix_by_id[ $a_id ] ?? 0 );
+			for ( $rob = 90; $rob >= 10; $rob -= 10 ) {
+				$ara = 100 - $rob;
+				$shop_mixes[] = array(
+					'style'       => $style,
+					'robusta_pct' => $rob,
+					'arabica_pct' => $ara,
+					'after_roast' => ( $r_after * ( $rob / 100 ) ) + ( $a_after * ( $ara / 100 ) ),
+				);
+			}
+		}
+
+		$eco_r_id    = (string) $s['economy_beans']['robusta_bean_id'];
+		$eco_a_id    = (string) $s['economy_beans']['arabica_bean_id'];
+		$eco_r_after = (float) ( $by_id[ $eco_r_id ] ?? 0 );
+		$eco_a_after = (float) ( $by_id[ $eco_a_id ] ?? 0 );
+		$economy_mixes = array();
+		for ( $rob = 90; $rob >= 10; $rob -= 10 ) {
+			$ara = 100 - $rob;
+			$economy_mixes[] = array(
+				'robusta_pct' => $rob,
+				'arabica_pct' => $ara,
+				'after_roast' => ( $eco_r_after * ( $rob / 100 ) ) + ( $eco_a_after * ( $ara / 100 ) ),
+			);
+		}
+
 		return array(
-			'settings'    => $s,
-			'beans'       => $beans_out,
-			'base_mixes'  => $mixes_out,
-			'shop_styles' => $s['shop_styles'],
-			'economy'     => array(
-				'robusta_bean_id' => $s['economy_beans']['robusta_bean_id'],
-				'arabica_bean_id' => $s['economy_beans']['arabica_bean_id'],
-				'robusta_after'   => (float) ( $by_id[ $s['economy_beans']['robusta_bean_id'] ] ?? 0 ),
-				'arabica_after'   => (float) ( $by_id[ $s['economy_beans']['arabica_bean_id'] ] ?? 0 ),
+			'settings'      => $s,
+			'beans'         => $beans_out,
+			'base_mixes'    => $mixes_out,
+			'shop_styles'   => $s['shop_styles'],
+			'shop_mixes'    => $shop_mixes,
+			'economy_mixes' => $economy_mixes,
+			'economy'       => array(
+				'robusta_bean_id' => $eco_r_id,
+				'arabica_bean_id' => $eco_a_id,
+				'robusta_after'   => $eco_r_after,
+				'arabica_after'   => $eco_a_after,
 			),
-			'_maps'       => array(
+			'_maps'         => array(
 				'beans' => $by_id,
 				'mixes' => $mix_by_id,
 			),
+		);
+	}
+
+	/**
+	 * WFCP parameters needed for live client-side retail preview.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function wfcp_preview_config() {
+		if ( ! class_exists( 'WFCP_Helper', false ) ) {
+			return array(
+				'enabled'               => false,
+				'exchange_rate_enabled' => false,
+				'exchange_rate'         => 1,
+				'purchase_currency'     => 'base',
+				'profit_percent'        => 0,
+				'round_enabled'         => false,
+				'round_to'              => 1000,
+			);
+		}
+		$general = WFCP_Helper::get_settings( 'general' );
+		if ( ! is_array( $general ) ) {
+			$general = array();
+		}
+		$exchange_rate_enabled = isset( $general['exchange_rate_enabled'] )
+			? WFCP_Helper::to_bool( $general['exchange_rate_enabled'] )
+			: true;
+		$exchange_rate = isset( $general['exchange_rate'] ) && (float) $general['exchange_rate'] > 0
+			? (float) $general['exchange_rate']
+			: 42000.0;
+		$purchase_currency = isset( $general['purchase_currency'] ) && '' !== (string) $general['purchase_currency']
+			? (string) $general['purchase_currency']
+			: 'base';
+		$profit_percent = (float) WFCP_Helper::get_settings( 'retail', 'profit_percent' );
+		$round_raw      = WFCP_Helper::get_settings( 'retail', 'round_enabled' );
+		$round_enabled  = null === $round_raw ? true : WFCP_Helper::to_bool( $round_raw );
+		$round_to       = WFCP_Helper::get_settings( 'retail', 'round_to' );
+		$round_to       = $round_to ? max( 1, (int) $round_to ) : 1000;
+
+		return array(
+			'enabled'               => WFCP_Helper::is_enabled(),
+			'exchange_rate_enabled' => $exchange_rate_enabled,
+			'exchange_rate'         => $exchange_rate,
+			'purchase_currency'     => $purchase_currency,
+			'profit_percent'        => $profit_percent,
+			'round_enabled'         => $round_enabled,
+			'round_to'              => $round_to,
 		);
 	}
 
@@ -643,6 +799,9 @@ final class Webino_Dashboard_Coffee_Pricing {
 				);
 			}
 			WC_Product_Variable::sync( $product_id );
+			if ( function_exists( 'wc_delete_product_transients' ) ) {
+				wc_delete_product_transients( $product_id );
+			}
 		} else {
 			$grams    = (int) ( $profile['pack_weight_g'] ?? 1000 );
 			$purchase = (float) $per_kg * ( $grams / 1000 );
@@ -655,11 +814,11 @@ final class Webino_Dashboard_Coffee_Pricing {
 		}
 
 		return array(
-			'ok'           => true,
-			'product_id'   => $product_id,
-			'per_kg'       => (float) $per_kg,
-			'updated'      => $updated,
-			'updated_count'=> count( $updated ),
+			'ok'            => true,
+			'product_id'    => $product_id,
+			'per_kg'        => (float) $per_kg,
+			'updated'       => $updated,
+			'updated_count' => count( $updated ),
 		);
 	}
 
@@ -667,12 +826,13 @@ final class Webino_Dashboard_Coffee_Pricing {
 	 * Sync bean catalog products linked in pricing settings (single-origin SKUs).
 	 *
 	 * @param array<string,mixed>|null $computed Computed.
-	 * @return array{updated:int,items:list<array>}
+	 * @return array{updated:int,product_ids:list<int>,items:list<array>}
 	 */
 	public static function apply_linked_bean_products( $computed = null ) {
-		$c       = is_array( $computed ) ? $computed : self::computed();
-		$updated = 0;
-		$items   = array();
+		$c           = is_array( $computed ) ? $computed : self::computed();
+		$updated     = 0;
+		$product_ids = array();
+		$items       = array();
 		foreach ( (array) ( $c['beans'] ?? array() ) as $bean ) {
 			$pid = (int) ( $bean['product_id'] ?? 0 );
 			if ( $pid <= 0 ) {
@@ -694,12 +854,14 @@ final class Webino_Dashboard_Coffee_Pricing {
 			$res = self::apply_to_product( $pid, $c );
 			if ( ! is_wp_error( $res ) ) {
 				++$updated;
-				$items[] = $res;
+				$product_ids[] = $pid;
+				$items[]       = $res;
 			}
 		}
 		return array(
-			'updated' => $updated,
-			'items'   => $items,
+			'updated'     => $updated,
+			'product_ids' => array_values( array_unique( $product_ids ) ),
+			'items'       => $items,
 		);
 	}
 
@@ -728,8 +890,88 @@ final class Webino_Dashboard_Coffee_Pricing {
 	}
 
 	/**
+	 * Normalize Persian/Arabic digits and decimal separators to ASCII.
+	 *
+	 * @param string $raw Raw input.
+	 * @return string
+	 */
+	public static function normalize_digits( $raw ) {
+		return strtr(
+			(string) $raw,
+			array(
+				'۰' => '0',
+				'۱' => '1',
+				'۲' => '2',
+				'۳' => '3',
+				'۴' => '4',
+				'۵' => '5',
+				'۶' => '6',
+				'۷' => '7',
+				'۸' => '8',
+				'۹' => '9',
+				'٠' => '0',
+				'١' => '1',
+				'٢' => '2',
+				'٣' => '3',
+				'٤' => '4',
+				'٥' => '5',
+				'٦' => '6',
+				'٧' => '7',
+				'٨' => '8',
+				'٩' => '9',
+				'٫' => '.',
+				'٬' => '',
+			)
+		);
+	}
+
+	/**
+	 * Resolve decoded slug + taxonomy term name variants for one variation attribute value.
+	 *
+	 * @param string $attr Attribute name/taxonomy.
+	 * @param string $val  Raw stored value.
+	 * @return list<string>
+	 */
+	private static function attr_value_variants( $attr, $val ) {
+		$val = (string) $val;
+		if ( '' === $val ) {
+			return array();
+		}
+		$decoded = rawurldecode( $val );
+		$list    = array(
+			$val,
+			$decoded,
+			self::normalize_digits( $val ),
+			self::normalize_digits( $decoded ),
+		);
+		$tax = taxonomy_exists( $attr ) ? $attr : '';
+		if ( '' === $tax && taxonomy_exists( rawurldecode( $attr ) ) ) {
+			$tax = rawurldecode( $attr );
+		}
+		if ( '' !== $tax ) {
+			foreach ( array_unique( array( $val, $decoded, sanitize_title( $val ), sanitize_title( $decoded ) ) ) as $probe ) {
+				if ( '' === $probe ) {
+					continue;
+				}
+				$term = get_term_by( 'slug', $probe, $tax );
+				if ( ! $term || is_wp_error( $term ) ) {
+					$term = get_term_by( 'name', $probe, $tax );
+				}
+				if ( $term && ! is_wp_error( $term ) ) {
+					$list[] = (string) $term->slug;
+					$list[] = rawurldecode( (string) $term->slug );
+					$list[] = (string) $term->name;
+					$list[] = self::normalize_digits( (string) $term->name );
+					break;
+				}
+			}
+		}
+		return array_values( array_unique( array_filter( $list ) ) );
+	}
+
+	/**
 	 * Parse grams from variation weight attribute.
-	 * Prefers weight_packs map, then parses attribute values.
+	 * Prefers weight_packs map, then resolves taxonomy terms and parses digits.
 	 *
 	 * @param WC_Product $variation Variation.
 	 * @return int
@@ -748,76 +990,92 @@ final class Webino_Dashboard_Coffee_Pricing {
 			if ( ! is_array( $pack ) ) {
 				continue;
 			}
-			$term  = strtolower( trim( (string) ( $pack['term'] ?? '' ) ) );
-			$label = strtolower( trim( (string) ( $pack['label'] ?? '' ) ) );
 			$grams = (int) ( $pack['grams'] ?? 0 );
 			if ( $grams <= 0 ) {
 				continue;
 			}
-			if ( '' !== $term ) {
-				$pack_map[ $term ] = $grams;
-			}
-			if ( '' !== $label ) {
-				$pack_map[ $label ] = $grams;
+			foreach ( array( (string) ( $pack['term'] ?? '' ), (string) ( $pack['label'] ?? '' ) ) as $raw_key ) {
+				if ( '' === trim( $raw_key ) ) {
+					continue;
+				}
+				foreach ( array( $raw_key, rawurldecode( $raw_key ), self::normalize_digits( rawurldecode( $raw_key ) ) ) as $variant ) {
+					$k = strtolower( trim( $variant ) );
+					if ( '' !== $k ) {
+						$pack_map[ $k ] = $grams;
+					}
+				}
 			}
 		}
 
-		$candidates = array();
+		$ordered_entries = array();
 		if ( '' !== $attr_key ) {
 			$slug = sanitize_title( $attr_key );
 			foreach ( $attrs as $name => $val ) {
 				$n = (string) $name;
 				if ( $n === $attr_key || $n === 'pa_' . $slug || $n === $slug || false !== strpos( $n, $slug ) ) {
-					$candidates[] = (string) $val;
+					$ordered_entries[] = array( 'name' => $n, 'val' => (string) $val, 'is_weight' => true );
 				}
 			}
 		}
 		foreach ( $attrs as $name => $val ) {
-			$hay = strtolower( (string) $name . ' ' . (string) $val );
-			if ( false !== strpos( $hay, 'weight' ) || false !== strpos( $hay, 'وزن' ) || false !== strpos( (string) $name, 'pa_wt' ) || false !== strpos( (string) $name, 'wt' ) ) {
-				$candidates[] = (string) $val;
+			$n   = (string) $name;
+			$v   = (string) $val;
+			$hay = strtolower( $n . ' ' . rawurldecode( $v ) );
+			if ( false !== strpos( $hay, 'weight' ) || false !== strpos( $hay, 'وزن' ) || false !== strpos( $n, 'pa_wt' ) || false !== strpos( $n, 'wt' ) ) {
+				$ordered_entries[] = array( 'name' => $n, 'val' => $v, 'is_weight' => true );
 			}
 		}
-		foreach ( $attrs as $val ) {
-			$candidates[] = (string) $val;
+		foreach ( $attrs as $name => $val ) {
+			$ordered_entries[] = array( 'name' => (string) $name, 'val' => (string) $val, 'is_weight' => false );
 		}
 
-		foreach ( $candidates as $val ) {
-			$key = strtolower( trim( $val ) );
-			if ( '' !== $key && isset( $pack_map[ $key ] ) ) {
-				return (int) $pack_map[ $key ];
+		foreach ( $ordered_entries as $entry ) {
+			$variants = self::attr_value_variants( $entry['name'], $entry['val'] );
+			foreach ( $variants as $v ) {
+				$key = strtolower( trim( $v ) );
+				if ( '' !== $key && isset( $pack_map[ $key ] ) ) {
+					return (int) $pack_map[ $key ];
+				}
 			}
-			// Match pack term as substring (e.g. "250g", "250 گرم").
-			foreach ( $packs as $pack ) {
-				if ( ! is_array( $pack ) ) {
-					continue;
+			foreach ( $variants as $v ) {
+				$key = strtolower( trim( $v ) );
+				foreach ( $packs as $pack ) {
+					if ( ! is_array( $pack ) ) {
+						continue;
+					}
+					$term  = strtolower( trim( self::normalize_digits( rawurldecode( (string) ( $pack['term'] ?? '' ) ) ) ) );
+					$label = strtolower( trim( self::normalize_digits( (string) ( $pack['label'] ?? '' ) ) ) );
+					$grams = (int) ( $pack['grams'] ?? 0 );
+					if ( $grams <= 0 ) {
+						continue;
+					}
+					if ( ( '' !== $term && ( $key === $term || false !== strpos( $key, $term ) ) )
+						|| ( '' !== $label && ( $key === $label || false !== strpos( $key, $label ) ) )
+						|| (string) $grams === $key ) {
+						return $grams;
+					}
 				}
-				$term  = strtolower( trim( (string) ( $pack['term'] ?? '' ) ) );
-				$grams = (int) ( $pack['grams'] ?? 0 );
-				if ( $grams <= 0 || '' === $term ) {
-					continue;
-				}
-				if ( $key === $term || false !== strpos( $key, $term ) || (string) $grams === $key ) {
+			}
+		}
+
+		foreach ( $ordered_entries as $entry ) {
+			$variants = self::attr_value_variants( $entry['name'], $entry['val'] );
+			foreach ( $variants as $v ) {
+				$hay       = strtolower( $entry['name'] . ' ' . $v );
+				$is_weight = $entry['is_weight'] || false !== strpos( $hay, 'weight' ) || false !== strpos( $hay, 'وزن' ) || false !== strpos( $hay, 'گرم' ) || false !== strpos( $hay, 'کیلو' ) || false !== strpos( $hay, 'kg' );
+				$grams     = self::parse_grams( $v );
+				if ( $grams > 0 && ( $is_weight || ( $grams >= 10 && preg_match( '/^\d+/', self::normalize_digits( $v ) ) ) ) ) {
 					return $grams;
 				}
 			}
 		}
 
-		foreach ( $attrs as $name => $val ) {
-			$hay       = strtolower( (string) $name . ' ' . (string) $val );
-			$is_weight = ( false !== strpos( $hay, 'weight' ) || false !== strpos( $hay, 'وزن' ) || false !== strpos( (string) $name, 'pa_wt' ) || false !== strpos( (string) $name, 'wt' ) );
-			$grams     = self::parse_grams( (string) $val );
-			if ( $grams > 0 && ( $is_weight || $grams >= 10 ) ) {
-				if ( $is_weight || preg_match( '/^\d+/', (string) $val ) ) {
+		foreach ( $ordered_entries as $entry ) {
+			foreach ( self::attr_value_variants( $entry['name'], $entry['val'] ) as $v ) {
+				$grams = self::parse_grams( $v );
+				if ( $grams >= 50 && $grams <= 5000 ) {
 					return $grams;
 				}
-			}
-		}
-		// Fallback: any numeric attribute that looks like grams.
-		foreach ( $attrs as $val ) {
-			$grams = self::parse_grams( (string) $val );
-			if ( $grams >= 50 && $grams <= 5000 ) {
-				return $grams;
 			}
 		}
 		return 0;
@@ -828,15 +1086,21 @@ final class Webino_Dashboard_Coffee_Pricing {
 	 * @return int
 	 */
 	public static function parse_grams( $raw ) {
-		$raw = trim( (string) $raw );
+		$raw = trim( self::normalize_digits( rawurldecode( (string) $raw ) ) );
 		if ( '' === $raw ) {
 			return 0;
 		}
-		if ( preg_match( '/(\d+(?:[.,]\d+)?)\s*(kg|کیلو)/iu', $raw, $m ) ) {
+		if ( false !== mb_stripos( $raw, 'نیم کیلو' ) ) {
+			return 500;
+		}
+		if ( preg_match( '/(\d+(?:[.,]\d+)?)\s*(?:kg|kilo|کیلوگرم|کیلو)/iu', $raw, $m ) ) {
 			return (int) round( (float) str_replace( ',', '.', $m[1] ) * 1000 );
 		}
-		if ( preg_match( '/(\d+)/u', $raw, $m ) ) {
-			return (int) $m[1];
+		if ( preg_match( '/(\d+(?:[.,]\d+)?)\s*(?:g|gr|gram|گرم)/iu', $raw, $m ) ) {
+			return (int) round( (float) str_replace( ',', '.', $m[1] ) );
+		}
+		if ( preg_match( '/(\d+(?:[.,]\d+)?)/u', $raw, $m ) ) {
+			return (int) round( (float) str_replace( ',', '.', $m[1] ) );
 		}
 		return 0;
 	}
@@ -882,32 +1146,63 @@ final class Webino_Dashboard_Coffee_Pricing {
 	}
 
 	/**
-	 * Queue full recalc of all priced coffee products (+ linked beans).
+	 * Recalculate linked beans and all priced coffee products immediately (first batch synchronous, remaining batched).
 	 *
-	 * @return array{ok:bool,total:int,queued:bool}
+	 * @return array{ok:bool,total:int,done:int,queued:bool,status:string}
 	 */
 	public static function queue_recalc_all() {
-		$computed = self::computed();
-		self::apply_linked_bean_products( $computed );
+		$computed      = self::computed();
+		$linked        = self::apply_linked_bean_products( $computed );
+		$linked_pids   = isset( $linked['product_ids'] ) && is_array( $linked['product_ids'] ) ? $linked['product_ids'] : array();
+		$linked_done   = count( $linked_pids );
+		$remaining_ids = array_values( array_diff( self::priced_product_ids(), $linked_pids ) );
+		$total         = $linked_done + count( $remaining_ids );
+		$now           = current_time( 'mysql', true );
 
-		$ids = self::priced_product_ids();
+		if ( empty( $remaining_ids ) ) {
+			$state = array(
+				'status'      => 'done',
+				'total'       => $total,
+				'done'        => $linked_done,
+				'failed'      => 0,
+				'offset'      => 0,
+				'ids'         => array(),
+				'started_at'  => $now,
+				'updated_at'  => $now,
+				'finished_at' => $now,
+				'errors'      => array(),
+			);
+			update_option( self::BATCH_OPTION, $state, false );
+			return array(
+				'ok'     => true,
+				'total'  => $total,
+				'done'   => $linked_done,
+				'queued' => false,
+				'status' => 'done',
+			);
+		}
+
 		$state = array(
-			'status'    => 'running',
-			'total'     => count( $ids ),
-			'done'      => 0,
-			'failed'    => 0,
-			'offset'    => 0,
-			'ids'       => $ids,
-			'started_at'=> current_time( 'mysql', true ),
-			'updated_at'=> current_time( 'mysql', true ),
-			'errors'    => array(),
+			'status'     => 'running',
+			'total'      => $total,
+			'done'       => $linked_done,
+			'failed'     => 0,
+			'offset'     => 0,
+			'ids'        => $remaining_ids,
+			'started_at' => $now,
+			'updated_at' => $now,
+			'errors'     => array(),
 		);
 		update_option( self::BATCH_OPTION, $state, false );
-		self::schedule_batch( 0 );
+		// Run batch 0 synchronously so typical stores finish immediately on Save without waiting for WP-Cron.
+		self::process_recalc_batch( 0 );
+		$after = self::recalc_state();
 		return array(
 			'ok'     => true,
-			'total'  => count( $ids ),
-			'queued' => true,
+			'total'  => (int) $after['total'],
+			'done'   => (int) $after['done'],
+			'queued' => 'running' === $after['status'],
+			'status' => (string) $after['status'],
 		);
 	}
 
@@ -981,6 +1276,17 @@ final class Webino_Dashboard_Coffee_Pricing {
 		$state = get_option( self::BATCH_OPTION, array() );
 		if ( ! is_array( $state ) ) {
 			$state = array();
+		}
+		// Advance a stalled background job (e.g. if WP-Cron is disabled in this environment).
+		if ( 'running' === ( $state['status'] ?? '' ) && ! empty( $state['ids'] ) ) {
+			$updated = strtotime( (string) ( $state['updated_at'] ?? '' ) . ' UTC' );
+			if ( $updated && ( time() - $updated ) >= 4 ) {
+				self::process_recalc_batch( (int) ( $state['offset'] ?? 0 ) );
+				$state = get_option( self::BATCH_OPTION, array() );
+				if ( ! is_array( $state ) ) {
+					$state = array();
+				}
+			}
 		}
 		return array(
 			'status'      => (string) ( $state['status'] ?? 'idle' ),
