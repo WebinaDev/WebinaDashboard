@@ -1,6 +1,7 @@
 <?php
 /**
- * Province/city/district selectors on My Account + classic WC order admin.
+ * Province/city selectors on My Account + city/district picker inside the classic WC order admin screen.
+ * Note: no district/محله field is exposed to customers (checkout or address book).
  *
  * @package WebinoDashboard
  */
@@ -16,7 +17,6 @@ class Webino_Shipping_Account_Cities {
 	 */
 	public static function init() {
 		add_filter( 'woocommerce_address_to_edit', array( __CLASS__, 'address_fields' ), 40, 2 );
-		add_action( 'woocommerce_customer_save_address', array( __CLASS__, 'save_customer_district' ), 20, 2 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_account' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_order' ) );
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( __CLASS__, 'admin_order_fields' ), 20 );
@@ -65,36 +65,7 @@ class Webino_Shipping_Account_Cities {
 				array( 'webino-city-field', 'address-field' )
 			);
 		}
-		$fields[ $type . '_district' ] = array(
-			'label'    => __( 'محله', 'webino-dashboard' ),
-			'required' => false,
-			'class'    => array( 'form-row-wide', 'webino-district-field', 'address-field' ),
-			'type'     => 'select',
-			'options'  => array( '' => '—' ),
-			'priority' => 65,
-		);
 		return $fields;
-	}
-
-	/**
-	 * @param int    $user_id User.
-	 * @param string $load_address Address type.
-	 * @return void
-	 */
-	public static function save_customer_district( $user_id, $load_address ) {
-		$type = ( 'shipping' === $load_address ) ? 'shipping' : 'billing';
-		$key  = $type . '_district';
-		if ( ! isset( $_POST[ $key ] ) ) {
-			return;
-		}
-		$id = (int) wp_unslash( $_POST[ $key ] );
-		update_user_meta( $user_id, $key . '_id', $id );
-		if ( $id ) {
-			$term = get_term( $id, Webino_Shipping_Cities::TAXONOMY );
-			if ( $term && ! is_wp_error( $term ) ) {
-				update_user_meta( $user_id, $key, $term->name );
-			}
-		}
 	}
 
 	/**
@@ -180,22 +151,7 @@ jQuery(function($){
     var isShip=this.id.indexOf('shipping')===0 || (this.name||'').indexOf('shipping')===0;
     var sid=findStateId($(this).val());
     var $city=$(isShip?'#shipping_city':'#billing_city');
-    var $dist=$(isShip?'#shipping_district':'#billing_district');
     loadChildren(sid,$city,false);
-    fillSelect($dist,[],true);
-  });
-  $(document.body).on('change','#billing_city,#shipping_city,select[name=billing_city],select[name=shipping_city]',function(){
-    var isShip=this.id.indexOf('shipping')===0 || (this.name||'').indexOf('shipping')===0;
-    var $dist=$(isShip?'#shipping_district':'#billing_district');
-    var name=$(this).val();
-    if(!name){fillSelect($dist,[],true);return;}
-    $.get(window.webinoCityAjax.url,{action:'webino_shipping_cities_search',q:name},function(res){
-      var items=(res&&res.success&&res.data.items)||[];
-      var hit=null;
-      for(var i=0;i<items.length;i++){ if(items[i].type==='city'&&items[i].name===name){hit=items[i];break;} }
-      if(!hit) hit=items[0];
-      if(hit) loadChildren(hit.id,$dist,true);
-    });
   });
 });
 JS

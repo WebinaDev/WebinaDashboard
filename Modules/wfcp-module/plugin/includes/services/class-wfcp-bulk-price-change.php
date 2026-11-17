@@ -27,7 +27,14 @@ class WFCP_Bulk_Price_Change {
 	const LASTLOG_KEY  = 'wfcp_bpc_last_log';
 	const HISTORY_KEY  = 'wfcp_bpc_history';
 	const HISTORY_MAX  = 40;
+	const FATAL_KEY    = 'wfcp_bpc_last_fatal';
+	const LOCK_TTL     = 3 * MINUTE_IN_SECONDS;
 	const LOG_DIR      = 'wfcp-bpc-logs';
+
+	/**
+	 * @var bool One shutdown handler per process (PHP fatal guard for background jobs).
+	 */
+	private static $fatal_guard_registered = false;
 
 	/**
 	 * Register hooks.
@@ -175,6 +182,84 @@ class WFCP_Bulk_Price_Change {
 	}
 
 	/**
+	 * Heartbeat lock TTL. The lock is re-set at the start of every batch page, so a
+	 * short TTL doubles as a crash detector: if the worker dies mid-run, the lock
+	 * expires quickly and maybe_mark_stalled() can archive the run with its progress.
+	 *
+	 * @return void
+	 */
+	private function lock_heartbeat() {
+		set_transient( self::LOCK_KEY, time(), self::LOCK_TTL );
+	}
+
+	/**
+	 * Register a shutdown handler that captures PHP fatals (memory exhausted, max
+	 * execution time, uncaught engine errors) and fails the run with the real reason
+	 * instead of leaving it silently abandoned.
+	 *
+	 * @param string $run_id Run ID the background job is processing.
+	 * @return void
+	 */
+	private function arm_fatal_guard( $run_id ) {
+		$run_id = (string) $run_id;
+		if ( '' === $run_id || self::$fatal_guard_registered ) {
+			return;
+		}
+		self::$fatal_guard_registered = true;
+		register_shutdown_function(
+			function() use ( $run_id ) {
+				$err = function_exists( 'error_get_last' ) ? error_get_last() : null;
+				if ( ! is_array( $err ) || empty( $err['type'] ) ) {
+					return;
+				}
+				$fatal_types = array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR );
+				if ( ! in_array( (int) $err['type'], $fatal_types, true ) ) {
+					return;
+				}
+				$state  = get_option( self::STATE_KEY );
+				$params = get_option( self::PARAMS_KEY );
+				if ( ! is_array( $params ) || (string) ( $params['run_id'] ?? '' ) !== $run_id ) {
+					return; // Job already finished or was archived.
+				}
+				$page      = is_array( $state ) ? (int) ( $state['current_page'] ?? 0 ) : 0;
+				$processed = is_array( $state ) ? (int) ( $state['processed'] ?? 0 ) : 0;
+				$total     = is_array( $state ) ? (int) ( $state['total'] ?? 0 ) : 0;
+				$reason    = sprintf(
+					'خطای بحرانی در پردازش (صفحه %d، پردازش‌شده %d از %d): %s',
+					$page,
+					$processed,
+					$total,
+					(string) ( $err['message'] ?? 'unknown error' )
+				);
+				// Best effort: archive right away so history is written even on a hard crash.
+				try {
+					$this->archive_run( 'failed', $reason );
+					$this->clear_queued_jobs();
+					delete_option( self::PARAMS_KEY );
+					delete_option( self::STATE_KEY );
+					delete_transient( self::LOCK_KEY );
+					delete_option( self::FATAL_KEY );
+					return;
+				} catch ( \Throwable $e ) {
+					unset( $e ); // Fall through: leave FATAL_KEY for maybe_mark_stalled() to pick up.
+				}
+				update_option(
+					self::FATAL_KEY,
+					array(
+						'run_id'    => $run_id,
+						'message'   => $reason,
+						'at'        => time(),
+						'current'   => $page,
+						'processed' => $processed,
+						'total'     => $total,
+					),
+					false
+				);
+			}
+		);
+	}
+
+	/**
 	 * If a job has params but no lock and no queued worker, mark it stalled.
 	 *
 	 * @return array<string,mixed>|null
@@ -185,6 +270,23 @@ class WFCP_Bulk_Price_Change {
 		if ( ! is_array( $params ) || empty( $params['run_id'] ) || ! is_array( $state ) ) {
 			return null;
 		}
+		$run_id = (string) $params['run_id'];
+		$fatal  = get_option( self::FATAL_KEY );
+		if ( is_array( $fatal ) && (string) ( $fatal['run_id'] ?? '' ) === $run_id && ! empty( $fatal['message'] ) ) {
+			// A PHP fatal was captured for this exact run — fail it with the real reason.
+			$reason = (string) $fatal['message'];
+			$this->archive_run( 'failed', $reason );
+			$this->clear_queued_jobs();
+			delete_option( self::PARAMS_KEY );
+			delete_option( self::STATE_KEY );
+			delete_transient( self::LOCK_KEY );
+			delete_option( self::FATAL_KEY );
+			return array(
+				'status' => 'failed',
+				'reason' => $reason,
+			);
+		}
+		delete_option( self::FATAL_KEY ); // Stale fatal record for a different run — drop it.
 		if ( get_transient( self::LOCK_KEY ) ) {
 			return null;
 		}
@@ -206,6 +308,7 @@ class WFCP_Bulk_Price_Change {
 		delete_option( self::PARAMS_KEY );
 		delete_option( self::STATE_KEY );
 		delete_transient( self::LOCK_KEY );
+		delete_option( self::FATAL_KEY );
 		return array(
 			'status' => 'stalled',
 			'reason' => $reason,
@@ -287,10 +390,11 @@ class WFCP_Bulk_Price_Change {
 			'current_page'  => 0,
 			'processed'     => 0,
 			'processed_ids' => array(),
+			'errors'        => 0,
 		);
 		update_option( self::STATE_KEY, $state, false );
 
-		set_transient( self::LOCK_KEY, 1, 30 * MINUTE_IN_SECONDS );
+		$this->lock_heartbeat();
 		$this->enqueue_job( 'wfcp_bpc_import_process', 1, $run_id );
 
 		wp_redirect( admin_url( 'admin.php?page=' . self::SLUG . '&queued=1' ) );
@@ -301,13 +405,55 @@ class WFCP_Bulk_Price_Change {
 	 * Background job: process a single CSV import batch.
 	 */
 	public function job_import( $page = 1, $run = '' ) {
-		set_transient( self::LOCK_KEY, 1, 30 * MINUTE_IN_SECONDS );
+		$this->lock_heartbeat();
+		try {
+			$this->job_import_page( $page, $run );
+		} catch ( \Throwable $e ) {
+			$params = get_option( self::PARAMS_KEY );
+			if ( is_array( $params ) && (string) ( $params['run_id'] ?? '' ) === (string) $run ) {
+				$state  = get_option( self::STATE_KEY );
+				$reason = sprintf(
+					'خطای غیرمنتظره در ورود CSV (صفحه %d، پردازش‌شده %d از %d): %s',
+					(int) $page,
+					is_array( $state ) ? (int) ( $state['processed'] ?? 0 ) : 0,
+					is_array( $state ) ? (int) ( $state['total'] ?? 0 ) : 0,
+					$e->getMessage()
+				);
+				$this->archive_run( 'failed', $reason );
+				$this->clear_queued_jobs();
+				delete_option( self::PARAMS_KEY );
+				delete_option( self::STATE_KEY );
+				delete_transient( self::LOCK_KEY );
+			}
+		}
+	}
+
+	/**
+	 * @param int    $page Page.
+	 * @param string $run  Run ID.
+	 * @return void
+	 */
+	private function job_import_page( $page = 1, $run = '' ) {
 		$params = get_option( self::PARAMS_KEY );
 		$state  = get_option( self::STATE_KEY );
-		if ( ! $params || ! $state || $run !== $params['run_id'] || empty( $params['file_path'] ) || ! file_exists( $params['file_path'] ) ) {
+		if ( ! is_array( $params ) || ! is_array( $state ) ) {
 			delete_transient( self::LOCK_KEY );
 			return;
 		}
+		if ( $run !== (string) $params['run_id'] ) {
+			// Orphaned page from a superseded run — do NOT touch the active run's options/lock.
+			return;
+		}
+		if ( empty( $params['file_path'] ) || ! file_exists( $params['file_path'] ) ) {
+			$this->archive_run( 'failed', 'فایل ورودی دیگر در دسترس نیست؛ پردازش متوقف شد.' );
+			$this->clear_queued_jobs();
+			delete_option( self::PARAMS_KEY );
+			delete_option( self::STATE_KEY );
+			delete_transient( self::LOCK_KEY );
+			delete_option( self::FATAL_KEY );
+			return;
+		}
+		$this->arm_fatal_guard( (string) $params['run_id'] );
 
 		$processed_ids_map = isset( $state['processed_ids'] ) ? $state['processed_ids'] : array();
 
@@ -342,9 +488,13 @@ class WFCP_Bulk_Price_Change {
 		$processed_in_batch    = 0;
 		$total_processed_so_far = ( $page - 1 ) * self::PER_PAGE;
 		$log_rows              = array();
+		$batch_errors          = 0;
 
 		while ( $processed_in_batch < self::PER_PAGE && false !== ( $row = fgetcsv( $handle ) ) ) {
 			$processed_in_batch++;
+			if ( 0 === $processed_in_batch % 25 ) {
+				$this->lock_heartbeat(); // Keep the crash-detect heartbeat fresh on long imports.
+			}
 			$product_id = ! empty( $row[ $id_idx ] ) ? absint( $row[ $id_idx ] ) : 0;
 			if ( ! $product_id ) {
 				continue;
@@ -404,6 +554,7 @@ class WFCP_Bulk_Price_Change {
 						WC_Product_Variable::sync( $product );
 						$log_rows[] = $this->row_import( $product_id, 'SUCCESS', $old_reg_price, $sanitized_reg_price, 'All variations updated.' );
 					} else {
+						$batch_errors++;
 						$log_rows[] = $this->row_import( $product_id, 'FAILED', $old_reg_price, $sanitized_reg_price, 'One or more variations failed to save silently.' );
 					}
 				} else {
@@ -419,12 +570,14 @@ class WFCP_Bulk_Price_Change {
 					if ( $update_result > 0 ) {
 						$log_rows[] = $this->row_import( $product_id, 'SUCCESS', $old_reg_price, $sanitized_reg_price, 'Product updated.' );
 					} else {
+						$batch_errors++;
 						$log_rows[] = $this->row_import( $product_id, 'FAILED', $old_reg_price, $sanitized_reg_price, 'Save command failed silently.' );
 					}
 				}
 				wc_delete_product_transients( $product_id );
 				$processed_ids_map[ $product_id ] = true;
 			} catch ( \Throwable $e ) {
+				$batch_errors++;
 				$log_rows[] = $this->row_import( $product_id, 'ERROR', $old_reg_price, $reg_price_csv, 'Exception during save: ' . $e->getMessage() );
 			}
 		}
@@ -439,6 +592,7 @@ class WFCP_Bulk_Price_Change {
 		$state['current_page']  = (int) $page;
 		$state['processed']     = $total_processed_so_far + $processed_in_batch;
 		$state['processed_ids'] = $processed_ids_map;
+		$state['errors']        = (int) ( $state['errors'] ?? 0 ) + $batch_errors;
 		update_option( self::STATE_KEY, $state, false );
 
 		if ( $is_last_batch || $state['processed'] >= $state['total'] ) {
@@ -449,13 +603,17 @@ class WFCP_Bulk_Price_Change {
 				litespeed_purge_all();
 			}
 
-			$this->archive_run( 'completed', 'ورود CSV تمام شد.' );
+			$this->archive_run(
+				'completed',
+				sprintf( 'ورود CSV تمام شد. خطاها: %d.', (int) ( $state['errors'] ?? 0 ) )
+			);
 			if ( file_exists( $params['file_path'] ) ) {
 				wp_delete_file( $params['file_path'] );
 			}
 			delete_option( self::PARAMS_KEY );
 			delete_option( self::STATE_KEY );
 			delete_transient( self::LOCK_KEY );
+			delete_option( self::FATAL_KEY );
 		} else {
 			$this->enqueue_job( 'wfcp_bpc_import_process', (int) $page + 1, $run );
 		}
@@ -467,37 +625,57 @@ class WFCP_Bulk_Price_Change {
 	 * Background job: process a single bump batch.
 	 */
 	public function job_bump( $page = 1, $run = '', $from_ui = false ) {
-		set_transient( self::LOCK_KEY, 1, 30 * MINUTE_IN_SECONDS );
+		$this->lock_heartbeat();
 		$params = get_option( self::PARAMS_KEY );
 		$state  = get_option( self::STATE_KEY );
-		if ( ! $params || ! $state || $run !== $params['run_id'] ) {
-			if ( is_array( $params ) && ! empty( $params['run_id'] ) && $run !== $params['run_id'] ) {
-				$this->archive_run( 'failed', 'شناسه اجرا با صف هم‌خوان نبود؛ پردازش قطع شد.' );
-				$this->clear_queued_jobs();
-				delete_option( self::PARAMS_KEY );
-				delete_option( self::STATE_KEY );
-			}
+		if ( ! is_array( $params ) || ! is_array( $state ) ) {
+			// No meaningful job context — clear any stale lock and stop.
 			delete_transient( self::LOCK_KEY );
 			return;
 		}
-		$done                  = $this->process_batch( $params, (int) $page );
+		if ( $run !== (string) $params['run_id'] ) {
+			// Orphaned page from a superseded run — do NOT touch the active run's options/lock.
+			return;
+		}
+		$this->arm_fatal_guard( (string) $params['run_id'] );
+		try {
+			$done = $this->process_batch( $params, (int) $page );
+		} catch ( \Throwable $e ) {
+			$reason = sprintf(
+				'خطای غیرمنتظره در تغییر قیمت (صفحه %d، پردازش‌شده %d از %d): %s',
+				(int) $page,
+				is_array( $state ) ? (int) ( $state['processed'] ?? 0 ) : 0,
+				is_array( $state ) ? (int) ( $state['total'] ?? 0 ) : 0,
+				$e->getMessage()
+			);
+			$this->archive_run( 'failed', $reason );
+			$this->clear_queued_jobs();
+			delete_option( self::PARAMS_KEY );
+			delete_option( self::STATE_KEY );
+			delete_transient( self::LOCK_KEY );
+			delete_option( self::FATAL_KEY );
+			return;
+		}
 		$state['current_page'] = (int) $page;
 		$state['processed']    = (int) ( $state['processed'] ?? 0 ) + (int) $done['updated'] + (int) $done['skipped'];
 		$state['updated']      = (int) ( $state['updated'] ?? 0 ) + (int) $done['updated'];
 		$state['skipped']      = (int) ( $state['skipped'] ?? 0 ) + (int) $done['skipped'];
+		$state['errors']       = (int) ( $state['errors'] ?? 0 ) + (int) ( $done['errors'] ?? 0 );
 		update_option( self::STATE_KEY, $state, false );
 		if ( $done['finished'] ) {
 			$this->archive_run(
 				'completed',
 				sprintf(
-					'تمام شد. به‌روز شد: %d، رد شد: %d.',
+					'تمام شد. به‌روز شد: %d، رد شد: %d، خطا: %d.',
 					(int) ( $state['updated'] ?? 0 ),
-					(int) ( $state['skipped'] ?? 0 )
+					(int) ( $state['skipped'] ?? 0 ),
+					(int) ( $state['errors'] ?? 0 )
 				)
 			);
 			delete_option( self::PARAMS_KEY );
 			delete_option( self::STATE_KEY );
 			delete_transient( self::LOCK_KEY );
+			delete_option( self::FATAL_KEY );
 			if ( $from_ui ) {
 				wp_redirect( admin_url( 'admin.php?page=' . self::SLUG . '&wfcp_bpc_done=' . urlencode( 'پایان فرآیند افزایش قیمت. به‌روزرسانی انجام شد.' ) ) );
 				exit;
@@ -568,7 +746,7 @@ class WFCP_Bulk_Price_Change {
 		update_option( self::STATE_KEY, $state, false );
 
 		$this->init_log( $run_id );
-		set_transient( self::LOCK_KEY, 1, 30 * MINUTE_IN_SECONDS );
+		$this->lock_heartbeat();
 		$this->enqueue_job( 'wfcp_bpc_process', 1, $run_id );
 
 		wp_redirect( admin_url( 'admin.php?page=' . self::SLUG . '&queued=1' ) );
@@ -1075,10 +1253,16 @@ class WFCP_Bulk_Price_Change {
 
 		$updated = 0;
 		$skipped = 0;
+		$errors  = 0;
+		$i       = 0;
 		$d       = function_exists( 'wc_get_price_decimals' ) ? wc_get_price_decimals() : 2;
 		$rows    = array();
 
 		foreach ( $q->posts as $pid ) {
+			$i++;
+			if ( 0 === $i % 25 ) {
+				$this->lock_heartbeat(); // Keep the crash-detect heartbeat fresh on long batches.
+			}
 			$product = wc_get_product( $pid );
 			if ( ! $product ) {
 				$skipped++;
@@ -1152,6 +1336,7 @@ class WFCP_Bulk_Price_Change {
 				}
 			} catch ( \Throwable $e ) {
 				$skipped++;
+				$errors++;
 				$rows[] = $this->row( time(), $paged, 'product', $pid, '', '', '', '', '', 'error', $e->getMessage() );
 			}
 		}
@@ -1161,7 +1346,7 @@ class WFCP_Bulk_Price_Change {
 			$this->log_rows( $run_id, $rows );
 		}
 		$finished = ( $q->post_count < self::PER_PAGE );
-		return compact( 'finished', 'updated', 'skipped' );
+		return compact( 'finished', 'updated', 'skipped', 'errors' );
 	}
 
 	/**

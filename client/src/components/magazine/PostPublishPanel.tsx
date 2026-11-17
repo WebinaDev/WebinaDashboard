@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { JalaliDateTimeInput } from '@/components/JalaliDateTimeInput'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -261,11 +262,10 @@ export function PostPublishPanel({
             {!draftImmediate ? (
               <div className="space-y-2">
                 <Label htmlFor="publish-date">{t('posts.publishScheduled')}</Label>
-                <Input
+                <JalaliDateTimeInput
                   id="publish-date"
-                  type="datetime-local"
                   value={draftDate}
-                  onChange={(e) => setDraftDate(e.target.value)}
+                  onChange={setDraftDate}
                 />
               </div>
             ) : null}

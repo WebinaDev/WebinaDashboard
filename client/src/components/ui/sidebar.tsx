@@ -192,7 +192,8 @@ function Sidebar({
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              backgroundColor: "var(--color-background)",
+              // Guaranteed opaque: dark accent themes give --color-sidebar an alpha channel.
+              backgroundColor: "var(--color-background, #ffffff)",
             } as React.CSSProperties
           }
           side={side}

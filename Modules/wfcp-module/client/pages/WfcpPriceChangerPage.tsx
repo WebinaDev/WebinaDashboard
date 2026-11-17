@@ -51,6 +51,7 @@ type BpcActive = {
   processed?: number
   updated?: number
   skipped?: number
+  errors?: number
   type?: string
   value?: number
   started_at?: number
@@ -274,6 +275,8 @@ export default function WfcpPriceChangerPage() {
                 <dd dir="ltr">{active.updated ?? 0}</dd>
                 <dt className="text-muted-foreground">{t('wfcp.bpcSkipped', { defaultValue: 'رد شده' })}</dt>
                 <dd dir="ltr">{active.skipped ?? 0}</dd>
+                <dt className="text-muted-foreground">{t('wfcp.bpcErrors', { defaultValue: 'خطا' })}</dt>
+                <dd dir="ltr">{active.errors ?? 0}</dd>
                 <dt className="text-muted-foreground">{t('wfcp.bpcStarted', { defaultValue: 'شروع' })}</dt>
                 <dd>{formatWhen(active.started_at)}</dd>
               </dl>
@@ -353,7 +356,7 @@ export default function WfcpPriceChangerPage() {
                         </div>
                         <div className="text-muted-foreground">
                           page {row.current_page ?? 0}/{row.pages ?? 0} · ok {row.updated ?? 0} · skip{' '}
-                          {row.skipped ?? 0}
+                          {row.skipped ?? 0} · err {row.errors ?? 0}
                         </div>
                       </td>
                       <td className="px-3 py-2 align-top text-xs whitespace-pre-wrap">{row.reason || '—'}</td>

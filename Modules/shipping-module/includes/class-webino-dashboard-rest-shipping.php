@@ -46,6 +46,32 @@ class Webino_Dashboard_REST_Shipping {
 
 		register_rest_route(
 			self::NS,
+			'/shipping/item-cost/settings',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'item_cost_get' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+				array(
+					'methods'             => array( 'POST', 'PUT' ),
+					'callback'            => array( __CLASS__, 'item_cost_put' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/shipping/item-cost/names',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'Webino_Shipping_Item_Cost', 'rest_names' ),
+				'permission_callback' => array( __CLASS__, 'perm_manage' ),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shipping/orders/(?P<id>\d+)/packaging',
 			array(
 				array(
@@ -283,6 +309,25 @@ class Webino_Dashboard_REST_Shipping {
 			}
 		}
 		return is_array( $body ) ? $body : array();
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function item_cost_get( $request ) {
+		unset( $request );
+		return rest_ensure_response( array( 'settings' => Webino_Shipping_Item_Cost::get() ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function item_cost_put( $request ) {
+		$body  = self::body( $request );
+		$input = isset( $body['settings'] ) && is_array( $body['settings'] ) ? $body['settings'] : $body;
+		return rest_ensure_response( array( 'settings' => Webino_Shipping_Item_Cost::update( $input ) ) );
 	}
 
 	/**

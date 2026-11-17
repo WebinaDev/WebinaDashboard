@@ -226,6 +226,12 @@ export const dashboardRoutes: DashboardRouteDef[] = [
     Component: lazyPage(() => import('@/pages/marketing/SalePricesPage')),
   },
   {
+    path: 'marketing/gateway-discounts',
+    capability: 'edit_shop_coupons',
+    headerTitleKey: 'gatewayDiscounts.title',
+    Component: lazyPage(() => import('@/pages/marketing/GatewayDiscountsPage')),
+  },
+  {
     path: 'marketing/coupons/new',
     capability: 'edit_shop_coupons',
     headerTitleKey: 'coupons.newTitle',

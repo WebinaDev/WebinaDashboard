@@ -15,6 +15,7 @@ const cards = [
   { to: '/settings/shop/transport/cities', title: 'shipping.citiesTitle', hint: 'shipping.citiesCardHint', cta: 'shipping.openCities' },
   { to: '/settings/shop/transport/map', title: 'shipping.mapTitle', hint: 'shipping.mapCardHint', cta: 'shipping.openMap' },
   { to: '/settings/shop/transport/rules', title: 'shipping.rulesTitle', hint: 'shipping.rulesCardHint', cta: 'shipping.openRules' },
+  { to: '/settings/shop/transport/item-cost', title: 'shipping.itemCost.title', hint: 'shipping.itemCost.cardHint', cta: 'shipping.itemCost.open' },
   { to: '/settings/shop/shipping', title: 'shipping.zonesTitle', hint: 'shipping.zonesHint', cta: 'shipping.openZones', secondary: true },
 ] as const
 

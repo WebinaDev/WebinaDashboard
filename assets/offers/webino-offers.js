@@ -899,6 +899,14 @@
         schedule()
       })
     })
+    // Gateway discount banners: delegated copy handler (survives fragment refreshes).
+    document.addEventListener('click', function (e) {
+      var gdBtn = e.target && e.target.closest ? e.target.closest('[data-webino-gd-copy]') : null
+      if (gdBtn) {
+        e.preventDefault()
+        copyText(gdBtn.getAttribute('data-webino-gd-copy') || '', gdBtn)
+      }
+    })
     document.addEventListener('click', onChooserClick)
     window.addEventListener('resize', schedulePlace)
     window.addEventListener('scroll', schedulePlace, { passive: true })
