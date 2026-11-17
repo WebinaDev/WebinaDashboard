@@ -556,6 +556,8 @@ class Webino_Dashboard_REST_Shipping {
 				return new WP_Error( 'invalid_section', __( 'بخش حمل‌ونقل معتبر نیست.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 
+		Webino_Shipping_Item_Cost::bust_shipping_cache();
+
 		return self::hub_status_get();
 	}
 

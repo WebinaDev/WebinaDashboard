@@ -55,6 +55,7 @@ final class Webino_Shipping_Item_Cost {
 	 */
 	public static function init() {
 		add_filter( 'woocommerce_package_rates', array( __CLASS__, 'apply_to_rates' ), 100, 2 );
+		add_filter( 'woocommerce_cart_shipping_packages', array( __CLASS__, 'tag_packages_with_settings_hash' ), 10 );
 		add_action( 'woocommerce_checkout_update_order_review', array( __CLASS__, 'maybe_force_recalc' ), 5 );
 	}
 
@@ -63,21 +64,28 @@ final class Webino_Shipping_Item_Cost {
 	 */
 	public static function defaults() {
 		return array(
-			'enabled'             => false,
-			'mode'                => 'max',
-			'multiply_by_qty'     => true,
-			'virtual_skip'        => true,
-			'category_children'   => true,
+			'enabled'               => false,
+			'mode'                  => 'max',
+			'multiply_by_qty'       => true,
+			'default_cost_once'     => false,
+			'virtual_skip'          => true,
+			'category_children'     => true,
 			'skip_with_free_coupon' => false,
-			'skip_free_methods'   => true,
-			'skip_local_pickup'   => true,
-			'default_cost'        => '',
-			'min_free_amount'     => '',
-			'product_costs'       => array(),
-			'set_costs'           => array(),
-			'category_costs'      => array(),
-			'brand_costs'         => array(),
-			'gateway_costs'       => array(),
+			'skip_free_methods'     => true,
+			'skip_local_pickup'     => true,
+			'default_cost'          => '',
+			'min_free_amount'       => '',
+			'product_costs'         => array(),
+			'set_costs'             => array(),
+			'category_costs'        => array(),
+			'brand_costs'           => array(),
+			'rule_qty_modes'        => array(
+				'products'   => array(),
+				'sets'       => array(),
+				'categories' => array(),
+				'brands'     => array(),
+			),
+			'gateway_costs'         => array(),
 		);
 	}
 
@@ -89,12 +97,53 @@ final class Webino_Shipping_Item_Cost {
 	}
 
 	/**
+	 * Invalidate WooCommerce shipping transient/session cache so saved rules apply immediately.
+	 *
+	 * @return void
+	 */
+	public static function bust_shipping_cache() {
+		if ( class_exists( 'WC_Cache_Helper' ) && method_exists( 'WC_Cache_Helper', 'get_transient_version' ) ) {
+			WC_Cache_Helper::get_transient_version( 'shipping', true );
+		}
+	}
+
+	/**
+	 * Tag each shipping package with a hash of current item-cost settings so WooCommerce
+	 * recalculates session-cached rates immediately whenever settings change.
+	 *
+	 * @param array<int|string, array<string,mixed>> $packages Shipping packages.
+	 * @return array<int|string, array<string,mixed>>
+	 */
+	public static function tag_packages_with_settings_hash( $packages ) {
+		if ( ! is_array( $packages ) || ! $packages ) {
+			return $packages;
+		}
+		$s = self::get();
+		if ( empty( $s['enabled'] ) ) {
+			$sig = 'off';
+		} else {
+			$payload = array( 's' => $s );
+			if ( ! empty( $s['gateway_costs'] ) ) {
+				$payload['gw'] = self::chosen_payment_method();
+			}
+			$sig = substr( md5( (string) wp_json_encode( $payload ) ), 0, 12 );
+		}
+		foreach ( $packages as $idx => $pkg ) {
+			if ( is_array( $pkg ) ) {
+				$packages[ $idx ]['webino_item_cost_sig'] = $sig;
+			}
+		}
+		return $packages;
+	}
+
+	/**
 	 * @param mixed $input Raw input from REST.
 	 * @return array<string,mixed>
 	 */
 	public static function update( $input ) {
 		$clean = self::sanitize( $input );
 		update_option( self::OPTION, $clean, false );
+		self::bust_shipping_cache();
 		return $clean;
 	}
 
@@ -112,7 +161,7 @@ final class Webino_Shipping_Item_Cost {
 		$mode           = isset( $raw['mode'] ) ? sanitize_key( (string) $raw['mode'] ) : 'max';
 		$out['mode']    = in_array( $mode, array( 'each', 'once', 'max' ), true ) ? $mode : 'max';
 
-		foreach ( array( 'multiply_by_qty', 'virtual_skip', 'category_children', 'skip_with_free_coupon', 'skip_free_methods', 'skip_local_pickup' ) as $flag ) {
+		foreach ( array( 'multiply_by_qty', 'default_cost_once', 'virtual_skip', 'category_children', 'skip_with_free_coupon', 'skip_free_methods', 'skip_local_pickup' ) as $flag ) {
 			$out[ $flag ] = array_key_exists( $flag, $raw ) ? (bool) $raw[ $flag ] : $d[ $flag ];
 		}
 
@@ -130,9 +179,55 @@ final class Webino_Shipping_Item_Cost {
 		$out['category_costs'] = self::sanitize_cost_map( $raw['category_costs'] ?? array(), 300 );
 		$out['brand_costs']    = self::sanitize_cost_map( $raw['brand_costs'] ?? array(), 300 );
 		$out['set_costs']      = self::sanitize_sets( $raw['set_costs'] ?? array() );
+		$out['rule_qty_modes'] = self::sanitize_qty_modes( $raw['rule_qty_modes'] ?? array(), $out );
 		$out['gateway_costs']  = self::sanitize_gateways( $raw['gateway_costs'] ?? array() );
 
 		return $out;
+	}
+
+	/**
+	 * Sanitize per-rule quantity mode overrides ('per_qty' | 'once'; 'inherit' is omitted).
+	 *
+	 * @param mixed               $raw Raw rule_qty_modes payload.
+	 * @param array<string,mixed> $out Already-sanitized rule collections.
+	 * @return array<string,array<string,string>>
+	 */
+	private static function sanitize_qty_modes( $raw, $out ) {
+		$clean = array(
+			'products'   => array(),
+			'sets'       => array(),
+			'categories' => array(),
+			'brands'     => array(),
+		);
+		if ( ! is_array( $raw ) ) {
+			return $clean;
+		}
+		$set_ids = array();
+		foreach ( (array) ( $out['set_costs'] ?? array() ) as $set ) {
+			if ( ! empty( $set['id'] ) ) {
+				$set_ids[ (string) $set['id'] ] = true;
+			}
+		}
+		$allowed_keys = array(
+			'products'   => $out['product_costs'] ?? array(),
+			'categories' => $out['category_costs'] ?? array(),
+			'brands'     => $out['brand_costs'] ?? array(),
+			'sets'       => $set_ids,
+		);
+		foreach ( $allowed_keys as $bucket => $valid_map ) {
+			$src = isset( $raw[ $bucket ] ) && is_array( $raw[ $bucket ] ) ? $raw[ $bucket ] : array();
+			foreach ( $src as $key => $val ) {
+				$k = 'sets' === $bucket ? sanitize_key( (string) $key ) : (string) absint( $key );
+				if ( '' === $k || '0' === $k || ! array_key_exists( $k, $valid_map ) ) {
+					continue;
+				}
+				$mode = sanitize_key( (string) $val );
+				if ( in_array( $mode, array( 'per_qty', 'once' ), true ) ) {
+					$clean[ $bucket ][ $k ] = $mode;
+				}
+			}
+		}
+		return $clean;
 	}
 
 	/**
@@ -298,16 +393,23 @@ final class Webino_Shipping_Item_Cost {
 	 * Directly configured categories always win over inherited ones.
 	 *
 	 * @param array<string,mixed> $s Settings.
-	 * @return array<int,float> term_id => cost
+	 * @return array<int,array{cost:float,rule_id:int}> term_id => rule info
 	 */
 	private static function category_index( $s ) {
 		$direct = array();
 		foreach ( (array) $s['category_costs'] as $tid => $cost ) {
-			$direct[ (int) $tid ] = (float) $cost;
+			$tid = (int) $tid;
+			if ( $tid > 0 ) {
+				$direct[ $tid ] = array(
+					'cost'    => (float) $cost,
+					'rule_id' => $tid,
+				);
+			}
 		}
 		$index = $direct;
 		if ( ! empty( $s['category_children'] ) && $direct ) {
-			foreach ( $direct as $tid => $cost ) {
+			foreach ( $direct as $tid => $entry ) {
+				$cost     = $entry['cost'];
 				$children = get_term_children( (int) $tid, 'product_cat' );
 				if ( is_wp_error( $children ) || ! is_array( $children ) ) {
 					continue;
@@ -317,7 +419,12 @@ final class Webino_Shipping_Item_Cost {
 					if ( isset( $direct[ $child_id ] ) ) {
 						continue; // directly configured — do not override.
 					}
-					$index[ $child_id ] = isset( $index[ $child_id ] ) ? max( (float) $index[ $child_id ], $cost ) : $cost;
+					if ( ! isset( $index[ $child_id ] ) || $cost > (float) $index[ $child_id ]['cost'] ) {
+						$index[ $child_id ] = array(
+							'cost'    => $cost,
+							'rule_id' => $tid,
+						);
+					}
 				}
 			}
 		}
@@ -325,42 +432,64 @@ final class Webino_Shipping_Item_Cost {
 	}
 
 	/**
-	 * Resolve the shipping cost for one cart line (product id is the variation when present).
+	 * Resolve matching shipping cost rule for one cart line (product id is the variation when present).
 	 *
-	 * @param int                  $product_id Product/variation id.
-	 * @param int                  $parent_id  Parent product id (variations).
-	 * @param WC_Product           $product    Product object.
-	 * @param array<string,mixed>  $s          Settings.
-	 * @param array<int,float>     $cat_index  Category term => cost map (with children).
-	 * @return float|null Null when no rule matches.
+	 * @param int                                       $product_id Product/variation id.
+	 * @param int                                       $parent_id  Parent product id (variations).
+	 * @param WC_Product                                $product    Product object.
+	 * @param array<string,mixed>                       $s          Settings.
+	 * @param array<int,array{cost:float,rule_id:int}>  $cat_index  Category term => rule info.
+	 * @return array{cost:float,group_key:string,qty_mode:string}|null Null when no rule matches.
 	 */
-	private static function resolve_line_cost( $product_id, $parent_id, $product, $s, $cat_index ) {
+	private static function resolve_line_rule( $product_id, $parent_id, $product, $s, $cat_index ) {
 		unset( $product ); // kept for signature symmetry / future use.
+		$qty_modes = isset( $s['rule_qty_modes'] ) && is_array( $s['rule_qty_modes'] ) ? $s['rule_qty_modes'] : array();
+
 		foreach ( array( $product_id, $parent_id ) as $id ) {
 			$id = (int) $id;
 			if ( $id > 0 && isset( $s['product_costs'][ (string) $id ] ) ) {
-				return (float) $s['product_costs'][ (string) $id ];
+				$qm = (string) ( $qty_modes['products'][ (string) $id ] ?? 'inherit' );
+				return array(
+					'cost'      => (float) $s['product_costs'][ (string) $id ],
+					'group_key' => 'product:' . $id,
+					'qty_mode'  => in_array( $qm, array( 'per_qty', 'once' ), true ) ? $qm : 'inherit',
+				);
 			}
 		}
 		foreach ( (array) $s['set_costs'] as $set ) {
 			$ids = isset( $set['product_ids'] ) ? (array) $set['product_ids'] : array();
 			if ( in_array( $product_id, $ids, true ) || ( $parent_id > 0 && in_array( $parent_id, $ids, true ) ) ) {
-				return (float) $set['cost'];
+				$sid = (string) ( $set['id'] ?? '' );
+				$qm  = '' !== $sid ? (string) ( $qty_modes['sets'][ $sid ] ?? 'inherit' ) : 'inherit';
+				return array(
+					'cost'      => (float) $set['cost'],
+					'group_key' => 'set:' . ( '' !== $sid ? $sid : md5( implode( ',', $ids ) ) ),
+					'qty_mode'  => in_array( $qm, array( 'per_qty', 'once' ), true ) ? $qm : 'inherit',
+				);
 			}
 		}
 		$cat_terms = wc_get_product_term_ids( $product_id, 'product_cat' );
 		if ( $parent_id > 0 ) {
 			$cat_terms = array_unique( array_merge( $cat_terms, wc_get_product_term_ids( $parent_id, 'product_cat' ) ) );
 		}
-		$best = null;
+		$best_cat = null;
 		foreach ( (array) $cat_terms as $tid ) {
 			$tid = (int) $tid;
 			if ( isset( $cat_index[ $tid ] ) ) {
-				$best = null === $best ? (float) $cat_index[ $tid ] : max( $best, (float) $cat_index[ $tid ] );
+				$entry = $cat_index[ $tid ];
+				if ( null === $best_cat || (float) $entry['cost'] > (float) $best_cat['cost'] ) {
+					$best_cat = $entry;
+				}
 			}
 		}
-		if ( null !== $best ) {
-			return $best;
+		if ( null !== $best_cat ) {
+			$rule_tid = (int) $best_cat['rule_id'];
+			$qm       = (string) ( $qty_modes['categories'][ (string) $rule_tid ] ?? 'inherit' );
+			return array(
+				'cost'      => (float) $best_cat['cost'],
+				'group_key' => 'category:' . $rule_tid,
+				'qty_mode'  => in_array( $qm, array( 'per_qty', 'once' ), true ) ? $qm : 'inherit',
+			);
 		}
 		$brand_tax = self::brand_taxonomy();
 		if ( '' !== $brand_tax ) {
@@ -368,15 +497,27 @@ final class Webino_Shipping_Item_Cost {
 			if ( $parent_id > 0 ) {
 				$brand_terms = array_unique( array_merge( $brand_terms, wc_get_product_term_ids( $parent_id, $brand_tax ) ) );
 			}
+			$best_brand = null;
 			foreach ( (array) $brand_terms as $tid ) {
 				$tid = (int) $tid;
 				if ( isset( $s['brand_costs'][ (string) $tid ] ) ) {
 					$cost = (float) $s['brand_costs'][ (string) $tid ];
-					$best = null === $best ? $cost : max( $best, $cost );
+					if ( null === $best_brand || $cost > (float) $best_brand['cost'] ) {
+						$best_brand = array(
+							'cost'    => $cost,
+							'rule_id' => $tid,
+						);
+					}
 				}
 			}
-			if ( null !== $best ) {
-				return $best;
+			if ( null !== $best_brand ) {
+				$rule_bid = (int) $best_brand['rule_id'];
+				$qm       = (string) ( $qty_modes['brands'][ (string) $rule_bid ] ?? 'inherit' );
+				return array(
+					'cost'      => (float) $best_brand['cost'],
+					'group_key' => 'brand:' . $rule_bid,
+					'qty_mode'  => in_array( $qm, array( 'per_qty', 'once' ), true ) ? $qm : 'inherit',
+				);
 			}
 		}
 		return null;
@@ -419,32 +560,47 @@ final class Webino_Shipping_Item_Cost {
 	}
 
 	/**
-	 * Compute the item-cost surcharge for the current cart (before gateway rules)
+	 * Compute the item-cost surcharge for the current cart/package (before gateway rules)
 	 * and the gateway-adjusted effective amount.
 	 *
-	 * @param array<string,mixed> $s Settings.
+	 * @param array<string,mixed> $s       Settings.
+	 * @param array<string,mixed> $package WooCommerce shipping package.
 	 * @return array{base: float, effective: float}
 	 */
-	private static function compute_amount( $s ) {
+	private static function compute_amount( $s, $package = array() ) {
 		$zero = array( 'base' => 0.0, 'effective' => 0.0 );
 
-		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+		$cart       = ( function_exists( 'WC' ) && WC()->cart ) ? WC()->cart : null;
+		$cart_items = $cart ? (array) $cart->get_cart() : array();
+		$pkg_items  = ( isset( $package['contents'] ) && is_array( $package['contents'] ) && $package['contents'] )
+			? $package['contents']
+			: $cart_items;
+
+		if ( ! $pkg_items ) {
 			return $zero;
 		}
-		$cart = WC()->cart;
 
-		$default = '' !== $s['default_cost'] ? (float) $s['default_cost'] : null;
+		$default   = '' !== $s['default_cost'] ? (float) $s['default_cost'] : null;
 		$cat_index = self::category_index( $s );
 
+		// Paid subtotal from full cart (fall back to package lines when cart unavailable).
 		$paid_subtotal = 0.0;
-		$lines         = array();
-		foreach ( (array) $cart->get_cart() as $item ) {
+		$subtotal_src  = $cart_items ? $cart_items : $pkg_items;
+		foreach ( $subtotal_src as $item ) {
+			if ( ! isset( $item['data'] ) || ! $item['data'] instanceof WC_Product ) {
+				continue;
+			}
+			$paid_subtotal += isset( $item['line_total'] ) ? (float) $item['line_total'] : 0.0;
+		}
+
+		$had_items = false;
+		$lines     = array();
+		foreach ( $pkg_items as $item ) {
 			$product = isset( $item['data'] ) ? $item['data'] : null;
 			if ( ! $product instanceof WC_Product ) {
 				continue;
 			}
-			$line_total     = isset( $item['line_total'] ) ? (float) $item['line_total'] : 0.0; // after discounts.
-			$paid_subtotal += $line_total;
+			$had_items = true;
 
 			if ( ! empty( $s['virtual_skip'] ) && ( $product->is_virtual() || $product->is_downloadable() ) ) {
 				continue;
@@ -452,17 +608,27 @@ final class Webino_Shipping_Item_Cost {
 			$product_id = (int) $product->get_id();
 			$parent_id  = (int) $product->get_parent_id();
 			$qty        = max( 1, (int) ( $item['quantity'] ?? 1 ) );
-			$cost       = self::resolve_line_cost( $product_id, $parent_id, $product, $s, $cat_index );
-			if ( null === $cost ) {
-				$cost = $default; // unmatched line falls back to the default (may stay null).
-			}
-			if ( null === $cost ) {
-				continue;
+			$rule       = self::resolve_line_rule( $product_id, $parent_id, $product, $s, $cat_index );
+			if ( null === $rule ) {
+				if ( null === $default ) {
+					continue;
+				}
+				$rule = array(
+					'cost'      => $default,
+					'group_key' => 'default',
+					'qty_mode'  => ! empty( $s['default_cost_once'] ) ? 'once' : 'inherit',
+				);
 			}
 			$lines[] = array(
-				'cost' => (float) $cost,
-				'qty'  => $qty,
+				'cost'      => (float) $rule['cost'],
+				'qty'       => $qty,
+				'group_key' => (string) $rule['group_key'],
+				'qty_mode'  => (string) $rule['qty_mode'],
 			);
+		}
+
+		if ( ! $had_items ) {
+			return $zero;
 		}
 
 		// Free above a paid-subtotal threshold.
@@ -470,7 +636,7 @@ final class Webino_Shipping_Item_Cost {
 			return $zero;
 		}
 		// Respect free-shipping coupons when the toggle is on.
-		if ( ! empty( $s['skip_with_free_coupon'] ) && self::has_free_shipping_coupon( $cart ) ) {
+		if ( ! empty( $s['skip_with_free_coupon'] ) && $cart && self::has_free_shipping_coupon( $cart ) ) {
 			return $zero;
 		}
 
@@ -478,8 +644,22 @@ final class Webino_Shipping_Item_Cost {
 		if ( $lines ) {
 			switch ( $s['mode'] ) {
 				case 'each':
+					$once_groups = array();
 					foreach ( $lines as $line ) {
-						$base += $line['cost'] * ( ! empty( $s['multiply_by_qty'] ) ? $line['qty'] : 1 );
+						$qmode = $line['qty_mode'];
+						if ( 'once' === $qmode ) {
+							$gk                 = $line['group_key'];
+							$once_groups[ $gk ] = isset( $once_groups[ $gk ] )
+								? max( (float) $once_groups[ $gk ], $line['cost'] )
+								: $line['cost'];
+						} elseif ( 'per_qty' === $qmode ) {
+							$base += $line['cost'] * $line['qty'];
+						} else {
+							$base += $line['cost'] * ( ! empty( $s['multiply_by_qty'] ) ? $line['qty'] : 1 );
+						}
+					}
+					foreach ( $once_groups as $group_cost ) {
+						$base += (float) $group_cost;
 					}
 					break;
 				case 'once':
@@ -543,7 +723,7 @@ final class Webino_Shipping_Item_Cost {
 			return $rates;
 		}
 		try {
-			if ( function_exists( 'get_query_var' ) && get_query_var( 'webino_dashboard' ) ) {
+			if ( isset( $GLOBALS['wp_query'] ) && $GLOBALS['wp_query'] instanceof WP_Query && function_exists( 'get_query_var' ) && get_query_var( 'webino_dashboard' ) ) {
 				return $rates; // Never inside the /dashboard SPA.
 			}
 			$s = self::get();
@@ -551,7 +731,7 @@ final class Webino_Shipping_Item_Cost {
 				return $rates;
 			}
 
-			$amounts = self::compute_amount( $s );
+			$amounts = self::compute_amount( $s, is_array( $package ) ? $package : array() );
 			if ( $amounts['effective'] <= 0 ) {
 				return $rates;
 			}

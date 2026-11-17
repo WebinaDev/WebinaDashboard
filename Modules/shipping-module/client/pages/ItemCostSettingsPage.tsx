@@ -18,12 +18,20 @@ import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
 import { cn } from '@/lib/utils'
 
+type QtyMode = 'inherit' | 'per_qty' | 'once'
+type RuleQtyModes = {
+  products: Record<string, QtyMode>
+  sets: Record<string, QtyMode>
+  categories: Record<string, QtyMode>
+  brands: Record<string, QtyMode>
+}
 type SetCost = { id: string; name: string; product_ids: number[]; cost: string }
 type GatewayRule = { gateway: string; type: 'override' | 'add'; amount: string; enabled: boolean }
 type Settings = {
   enabled: boolean
   mode: 'each' | 'once' | 'max'
   multiply_by_qty: boolean
+  default_cost_once: boolean
   virtual_skip: boolean
   category_children: boolean
   skip_with_free_coupon: boolean
@@ -35,6 +43,7 @@ type Settings = {
   set_costs: SetCost[]
   category_costs: Record<string, string>
   brand_costs: Record<string, string>
+  rule_qty_modes: RuleQtyModes
   gateway_costs: GatewayRule[]
 }
 type GatewayItem = { id: string; title: string; enabled: boolean; preset?: boolean }
@@ -47,6 +56,7 @@ const emptySettings = (): Settings => ({
   enabled: false,
   mode: 'max',
   multiply_by_qty: true,
+  default_cost_once: false,
   virtual_skip: true,
   category_children: true,
   skip_with_free_coupon: false,
@@ -58,8 +68,26 @@ const emptySettings = (): Settings => ({
   set_costs: [],
   category_costs: {},
   brand_costs: {},
+  rule_qty_modes: { products: {}, sets: {}, categories: {}, brands: {} },
   gateway_costs: [],
 })
+
+function qtyModesFromRaw(raw: unknown): RuleQtyModes {
+  const out: RuleQtyModes = { products: {}, sets: {}, categories: {}, brands: {} }
+  if (!raw || typeof raw !== 'object') return out
+  const src = raw as Record<string, unknown>
+  for (const bucket of ['products', 'sets', 'categories', 'brands'] as const) {
+    const sub = src[bucket]
+    if (sub && typeof sub === 'object' && !Array.isArray(sub)) {
+      for (const [k, v] of Object.entries(sub as Record<string, unknown>)) {
+        if (v === 'per_qty' || v === 'once') {
+          out[bucket][k] = v
+        }
+      }
+    }
+  }
+  return out
+}
 
 function numToStr(v: unknown): string {
   if (v === null || v === undefined || v === '') return ''
@@ -187,25 +215,54 @@ function ProductAddBox({ onAdd }: { onAdd: (p: ProductOption) => void }) {
   )
 }
 
+function QtyModeSelect({
+  value,
+  onChange,
+}: {
+  value: QtyMode
+  onChange: (v: QtyMode) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <Select value={value} onValueChange={(v) => onChange(v as QtyMode)}>
+      <SelectTrigger className="h-9 w-36 text-xs" aria-label={t('shipping.itemCost.qtyModeLabel')}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="inherit">{t('shipping.itemCost.qtyModeInherit')}</SelectItem>
+        <SelectItem value="per_qty">{t('shipping.itemCost.qtyModePerQty')}</SelectItem>
+        <SelectItem value="once">{t('shipping.itemCost.qtyModeOnce')}</SelectItem>
+      </SelectContent>
+    </Select>
+  )
+}
+
 function CostRow({
   id,
   label,
   value,
+  showQtyMode,
+  qtyMode,
+  onQtyModeChange,
   onChange,
   onRemove,
 }: {
   id: string
   label: string
   value: string
+  showQtyMode?: boolean
+  qtyMode?: QtyMode
+  onQtyModeChange?: (v: QtyMode) => void
   onChange: (v: string) => void
   onRemove: () => void
 }) {
   const { t } = useTranslation()
   return (
-    <li className="flex items-center gap-2 rounded-xl border p-2">
+    <li className="flex flex-wrap items-center gap-2 rounded-xl border p-2">
       <span className="min-w-0 flex-1 truncate text-sm font-medium" title={label}>
         {label}
       </span>
+      {showQtyMode && onQtyModeChange ? <QtyModeSelect value={qtyMode ?? 'inherit'} onChange={onQtyModeChange} /> : null}
       <FormattedNumberInput
         id={id}
         inputMode="numeric"
@@ -287,6 +344,7 @@ export default function ItemCostSettingsPage() {
       enabled: !!s.enabled,
       mode: s.mode === 'each' || s.mode === 'once' || s.mode === 'max' ? s.mode : 'max',
       multiply_by_qty: s.multiply_by_qty !== false,
+      default_cost_once: !!s.default_cost_once,
       virtual_skip: s.virtual_skip !== false,
       category_children: s.category_children !== false,
       skip_with_free_coupon: !!s.skip_with_free_coupon,
@@ -298,6 +356,7 @@ export default function ItemCostSettingsPage() {
       set_costs: sets,
       category_costs: mapToStr(s.category_costs),
       brand_costs: mapToStr(s.brand_costs),
+      rule_qty_modes: qtyModesFromRaw(s.rule_qty_modes),
       gateway_costs: gatewayCosts,
     })
   }, [q.data])
@@ -354,10 +413,18 @@ export default function ItemCostSettingsPage() {
         }
         return out
       }
+      const cleanQtyBucket = (src: Record<string, QtyMode>, validKeys: Set<string>) => {
+        const out: Record<string, QtyMode> = {}
+        for (const [k, v] of Object.entries(src)) {
+          if (validKeys.has(k) && (v === 'per_qty' || v === 'once')) out[k] = v
+        }
+        return out
+      }
       const settings = {
         enabled: draft.enabled,
         mode: draft.mode,
         multiply_by_qty: draft.multiply_by_qty,
+        default_cost_once: draft.default_cost_once,
         virtual_skip: draft.virtual_skip,
         category_children: draft.category_children,
         skip_with_free_coupon: draft.skip_with_free_coupon,
@@ -374,6 +441,12 @@ export default function ItemCostSettingsPage() {
         })),
         category_costs: numMap(draft.category_costs),
         brand_costs: numMap(draft.brand_costs),
+        rule_qty_modes: {
+          products: cleanQtyBucket(draft.rule_qty_modes.products, new Set(Object.keys(draft.product_costs))),
+          sets: cleanQtyBucket(draft.rule_qty_modes.sets, new Set(draft.set_costs.map((s) => s.id))),
+          categories: cleanQtyBucket(draft.rule_qty_modes.categories, new Set(Object.keys(draft.category_costs))),
+          brands: cleanQtyBucket(draft.rule_qty_modes.brands, new Set(Object.keys(draft.brand_costs))),
+        },
         gateway_costs: draft.gateway_costs
           .filter((g) => g.enabled && g.gateway.trim() !== '')
           .map((g) => ({ gateway: g.gateway, type: g.type, amount: strToNum(g.amount) })),
@@ -387,6 +460,7 @@ export default function ItemCostSettingsPage() {
     onSuccess: () => {
       toast.success(t('common.saved'))
       void qc.invalidateQueries({ queryKey: ['shipping-item-cost'] })
+      void qc.invalidateQueries({ queryKey: ['shipping-hub-status'] })
     },
     onError: (e: Error) => toastApiError(t, e),
   })
@@ -413,6 +487,30 @@ export default function ItemCostSettingsPage() {
   const patch = (p: Partial<Settings>) => setDraft((d) => (d ? { ...d, ...p } : d))
   const patchMap = (key: 'product_costs' | 'category_costs' | 'brand_costs', map: Record<string, string>) =>
     setDraft((d) => (d ? { ...d, [key]: map } : d))
+  const patchQtyMode = (bucket: keyof RuleQtyModes, id: string, val: QtyMode) =>
+    setDraft((d) => {
+      if (!d) return d
+      const nextBucket = { ...d.rule_qty_modes[bucket] }
+      if (val === 'inherit') {
+        delete nextBucket[id]
+      } else {
+        nextBucket[id] = val
+      }
+      return { ...d, rule_qty_modes: { ...d.rule_qty_modes, [bucket]: nextBucket } }
+    })
+  const removeCostRule = (mapKey: 'product_costs' | 'category_costs' | 'brand_costs', bucket: keyof RuleQtyModes, id: string) =>
+    setDraft((d) => {
+      if (!d) return d
+      const nextMap = Object.fromEntries(Object.entries(d[mapKey]).filter(([k]) => k !== id))
+      const nextBucket = { ...d.rule_qty_modes[bucket] }
+      delete nextBucket[id]
+      return {
+        ...d,
+        [mapKey]: nextMap,
+        rule_qty_modes: { ...d.rule_qty_modes, [bucket]: nextBucket },
+      }
+    })
+  const isEachMode = draft.mode === 'each'
 
   const nameOf = (kind: 'products' | 'categories' | 'brands', id: string) =>
     names[kind][id] ?? catalogCats.find((c) => String(c.id) === id)?.name ?? catalogBrands.find((c) => String(c.id) === id)?.name ?? `#${id}`
@@ -466,14 +564,23 @@ export default function ItemCostSettingsPage() {
             </p>
           </div>
 
-          {draft.mode === 'each' ? (
-            <div className="flex items-center justify-between gap-4 rounded-xl border p-3">
-              <div>
-                <Label htmlFor="ic-mul-qty" className="text-sm">{t('shipping.itemCost.multiplyQty')}</Label>
-                <p className="text-muted-foreground text-xs">{t('shipping.itemCost.multiplyQtyHint')}</p>
+          {isEachMode ? (
+            <>
+              <div className="flex items-center justify-between gap-4 rounded-xl border p-3">
+                <div>
+                  <Label htmlFor="ic-mul-qty" className="text-sm">{t('shipping.itemCost.multiplyQty')}</Label>
+                  <p className="text-muted-foreground text-xs">{t('shipping.itemCost.multiplyQtyHint')}</p>
+                </div>
+                <Switch id="ic-mul-qty" checked={draft.multiply_by_qty} onCheckedChange={(v) => patch({ multiply_by_qty: v })} />
               </div>
-              <Switch id="ic-mul-qty" checked={draft.multiply_by_qty} onCheckedChange={(v) => patch({ multiply_by_qty: v })} />
-            </div>
+              <div className="flex items-center justify-between gap-4 rounded-xl border p-3">
+                <div>
+                  <Label htmlFor="ic-default-once" className="text-sm">{t('shipping.itemCost.defaultCostOnce')}</Label>
+                  <p className="text-muted-foreground text-xs leading-relaxed">{t('shipping.itemCost.defaultCostOnceHint')}</p>
+                </div>
+                <Switch id="ic-default-once" checked={draft.default_cost_once} onCheckedChange={(v) => patch({ default_cost_once: v })} />
+              </div>
+            </>
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -554,13 +661,11 @@ export default function ItemCostSettingsPage() {
                   id={`ic-product-cost-${id}`}
                   label={nameOf('products', id)}
                   value={cost}
+                  showQtyMode={isEachMode}
+                  qtyMode={draft.rule_qty_modes.products[id] ?? 'inherit'}
+                  onQtyModeChange={(v) => patchQtyMode('products', id, v)}
                   onChange={(v) => patchMap('product_costs', { ...draft.product_costs, [id]: v })}
-                  onRemove={() =>
-                    patchMap(
-                      'product_costs',
-                      Object.fromEntries(Object.entries(draft.product_costs).filter(([k]) => k !== id)),
-                    )
-                  }
+                  onRemove={() => removeCostRule('product_costs', 'products', id)}
                 />
               ))}
             </ul>
@@ -588,14 +693,20 @@ export default function ItemCostSettingsPage() {
           ) : (
             draft.set_costs.map((set) => (
               <div key={set.id} className="grid gap-3 rounded-xl border p-3">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
                     value={set.name}
                     onChange={(e) => setDraft((d) => (d ? { ...d, set_costs: d.set_costs.map((s) => (s.id === set.id ? { ...s, name: e.target.value } : s)) } : d))}
                     placeholder={t('shipping.itemCost.setNamePlaceholder')}
-                    className="flex-1"
+                    className="min-w-40 flex-1"
                     aria-label={t('shipping.itemCost.setName')}
                   />
+                  {isEachMode ? (
+                    <QtyModeSelect
+                      value={draft.rule_qty_modes.sets[set.id] ?? 'inherit'}
+                      onChange={(v) => patchQtyMode('sets', set.id, v)}
+                    />
+                  ) : null}
                   <FormattedNumberInput
                     inputMode="numeric"
                     value={set.cost}
@@ -609,7 +720,18 @@ export default function ItemCostSettingsPage() {
                     variant="ghost"
                     size="icon"
                     className="text-destructive size-9"
-                    onClick={() => setDraft((d) => (d ? { ...d, set_costs: d.set_costs.filter((s) => s.id !== set.id) } : d))}
+                    onClick={() =>
+                      setDraft((d) => {
+                        if (!d) return d
+                        const nextSets = { ...d.rule_qty_modes.sets }
+                        delete nextSets[set.id]
+                        return {
+                          ...d,
+                          set_costs: d.set_costs.filter((s) => s.id !== set.id),
+                          rule_qty_modes: { ...d.rule_qty_modes, sets: nextSets },
+                        }
+                      })
+                    }
                     aria-label={t('common.delete')}
                   >
                     <Trash2 className="size-4" />
@@ -655,13 +777,11 @@ export default function ItemCostSettingsPage() {
                   id={`ic-cat-cost-${id}`}
                   label={nameOf('categories', id)}
                   value={cost}
+                  showQtyMode={isEachMode}
+                  qtyMode={draft.rule_qty_modes.categories[id] ?? 'inherit'}
+                  onQtyModeChange={(v) => patchQtyMode('categories', id, v)}
                   onChange={(v) => patchMap('category_costs', { ...draft.category_costs, [id]: v })}
-                  onRemove={() =>
-                    patchMap(
-                      'category_costs',
-                      Object.fromEntries(Object.entries(draft.category_costs).filter(([k]) => k !== id)),
-                    )
-                  }
+                  onRemove={() => removeCostRule('category_costs', 'categories', id)}
                 />
               ))}
             </ul>
@@ -696,13 +816,11 @@ export default function ItemCostSettingsPage() {
                   id={`ic-brand-cost-${id}`}
                   label={nameOf('brands', id)}
                   value={cost}
+                  showQtyMode={isEachMode}
+                  qtyMode={draft.rule_qty_modes.brands[id] ?? 'inherit'}
+                  onQtyModeChange={(v) => patchQtyMode('brands', id, v)}
                   onChange={(v) => patchMap('brand_costs', { ...draft.brand_costs, [id]: v })}
-                  onRemove={() =>
-                    patchMap(
-                      'brand_costs',
-                      Object.fromEntries(Object.entries(draft.brand_costs).filter(([k]) => k !== id)),
-                    )
-                  }
+                  onRemove={() => removeCostRule('brand_costs', 'brands', id)}
                 />
               ))}
             </ul>
