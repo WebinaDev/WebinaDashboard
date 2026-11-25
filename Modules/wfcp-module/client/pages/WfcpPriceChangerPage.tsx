@@ -21,6 +21,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { translateEnum } from '@/lib/enumLabels'
 import { apiFetch } from '@/lib/api'
 
+type BpcFailure = {
+  id?: number
+  parent?: number
+  entity?: string
+  reason?: string
+  message?: string
+  at?: number
+}
+
 type BpcHistoryRow = {
   run_id?: string
   job_type?: string
@@ -39,6 +48,8 @@ type BpcHistoryRow = {
   value?: number
   cats?: string
   log_url?: string
+  failures?: BpcFailure[]
+  failure_count?: number
 }
 
 type BpcActive = {
@@ -64,6 +75,7 @@ type BpcState = {
   active?: BpcActive | null
   last?: { run?: string; url?: string; status?: string; reason?: string }
   history?: BpcHistoryRow[]
+  failures?: BpcFailure[]
 }
 
 function statusTone(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
@@ -105,6 +117,7 @@ export default function WfcpPriceChangerPage() {
   const hasJob = Boolean(st.data?.params && (st.data.params as { run_id?: string }).run_id)
   const active = st.data?.active
   const history = st.data?.history ?? []
+  const failures = st.data?.failures ?? []
   const progressPct = Math.min(100, Math.max(0, Number(active?.progress_pct ?? 0)))
 
   const cancel = useMutation({
@@ -301,7 +314,7 @@ export default function WfcpPriceChangerPage() {
               {st.data.last.url ? (
                 <>
                   {' '}
-                  <a className="text-primary underline" href={st.data.last.url} target="_blank" rel="noreferrer">
+                  <a className="text-primary underline" href={st.data.last.url} target="_blank" rel="noopener noreferrer">
                     {t('wfcp.bpcLog', { defaultValue: 'لاگ CSV' })}
                   </a>
                 </>
@@ -310,6 +323,63 @@ export default function WfcpPriceChangerPage() {
           ) : null}
         </div>
       </div>
+
+      {failures.length > 0 ? (
+        <div className="mt-8 space-y-3" data-testid="wfcp-bpc-failures">
+          <div>
+            <h3 className="text-base font-medium">
+              {t('wfcp.bpcFailuresTitle', { defaultValue: 'محصولات ناموفق و دلیل آن‌ها' })}
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              {t('wfcp.bpcFailuresHint', {
+                defaultValue:
+                  'این محصولات به‌روزرسانی نشدند و دلیل هر کدام ثبت شده است. بعد از رفع مشکل، می‌توانید همان محصولات را انتخاب و دوباره اجرا کنید.',
+              })}
+            </p>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full min-w-[40rem] text-sm">
+              <thead className="bg-muted/50 text-muted-foreground text-xs">
+                <tr>
+                  <th className="px-3 py-2 text-start font-medium">
+                    {t('wfcp.bpcColProduct', { defaultValue: 'محصول' })}
+                  </th>
+                  <th className="px-3 py-2 text-start font-medium">
+                    {t('wfcp.bpcColFailureReason', { defaultValue: 'دلیل ناموفق بودن' })}
+                  </th>
+                  <th className="px-3 py-2 text-start font-medium">
+                    {t('wfcp.bpcColWhen', { defaultValue: 'زمان' })}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {failures.map((row, idx) => (
+                  <tr key={`${row.id}-${idx}`} className="border-t border-border">
+                    <td className="px-3 py-2 align-top">
+                      <div className="font-mono text-xs" dir="ltr">
+                        #{row.id ?? '—'}
+                        {row.parent ? ` ← ${row.parent}` : ''}
+                      </div>
+                      <div className="text-muted-foreground text-start text-[11px]">
+                        {t(`wfcp.bpcEntity.${row.entity || 'product'}`, { defaultValue: row.entity || 'product' })}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 align-top text-xs">
+                      <div>{row.reason || '—'}</div>
+                      {row.message ? (
+                        <div className="text-muted-foreground mt-0.5 break-words" dir="ltr">
+                          {row.message}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2 align-top text-xs">{formatWhen(row.at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-8 space-y-3">
         <div>
@@ -358,6 +428,23 @@ export default function WfcpPriceChangerPage() {
                           page {row.current_page ?? 0}/{row.pages ?? 0} · ok {row.updated ?? 0} · skip{' '}
                           {row.skipped ?? 0} · err {row.errors ?? 0}
                         </div>
+                        {row.failures?.length ? (
+                          <details className="mt-1">
+                            <summary className="text-destructive cursor-pointer text-[11px]">
+                              {t('wfcp.bpcRowFailures', {
+                                count: row.failures.length,
+                                defaultValue: '{{count}} محصول ناموفق',
+                              })}
+                            </summary>
+                            <ul className="mt-1 space-y-0.5">
+                              {row.failures.slice(0, 25).map((f, i) => (
+                                <li key={`${f.id}-${i}`} className="text-[11px]">
+                                  <span className="font-mono">#{f.id}</span> — {f.reason}
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2 align-top text-xs whitespace-pre-wrap">{row.reason || '—'}</td>
                       <td className="px-3 py-2 align-top text-xs">
@@ -366,7 +453,7 @@ export default function WfcpPriceChangerPage() {
                       </td>
                       <td className="px-3 py-2 align-top text-xs">
                         {row.log_url ? (
-                          <a className="text-primary underline" href={row.log_url} target="_blank" rel="noreferrer">
+                          <a className="text-primary underline" href={row.log_url} target="_blank" rel="noopener noreferrer">
                             CSV
                           </a>
                         ) : (

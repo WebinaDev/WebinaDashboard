@@ -1361,6 +1361,7 @@ final class Webino_Dashboard_REST_WFCP {
 			'rounding_value'     => $rounding_value,
 		);
 		update_option( WFCP_Bulk_Price_Change::PARAMS_KEY, $job, false );
+		update_option( WFCP_Bulk_Price_Change::FAILURES_KEY, array( 'run_id' => $run_id, 'items' => array() ), false );
 
 		$ref_count = new ReflectionMethod( 'WFCP_Bulk_Price_Change', 'count_products' );
 		$ref_count->setAccessible( true );
@@ -1429,19 +1430,29 @@ final class Webino_Dashboard_REST_WFCP {
 				'updated'      => (int) ( $state['updated'] ?? 0 ),
 				'skipped'      => (int) ( $state['skipped'] ?? 0 ),
 				'errors'       => (int) ( $state['errors'] ?? 0 ),
+				'failed'       => (int) ( $state['failed'] ?? $state['errors'] ?? 0 ),
 				'type'         => (string) ( $params['type'] ?? '' ),
 				'value'        => isset( $params['value'] ) ? (float) $params['value'] : 0,
 				'started_at'   => isset( $params['started_at'] ) ? (int) $params['started_at'] : 0,
 			);
 		}
+		$run_id   = is_array( $params ) && ! empty( $params['run_id'] ) ? (string) $params['run_id'] : '';
+		$failures = '';
+		if ( '' !== $run_id ) {
+			$failures = WFCP_Bulk_Price_Change::get_failures( $run_id );
+		}
+		if ( ! $failures && ! empty( $history[0]['failures'] ) && is_array( $history[0]['failures'] ) ) {
+			$failures = $history[0]['failures'];
+		}
 		return new WP_REST_Response(
 			array(
-				'params'  => $params,
-				'state'   => $state,
-				'locked'  => $locked,
-				'active'  => $active,
-				'last'    => get_option( WFCP_Bulk_Price_Change::LASTLOG_KEY ),
-				'history' => $history,
+				'params'   => $params,
+				'state'    => $state,
+				'locked'   => $locked,
+				'active'   => $active,
+				'last'     => get_option( WFCP_Bulk_Price_Change::LASTLOG_KEY ),
+				'history'  => $history,
+				'failures' => $failures,
 			)
 		);
 	}

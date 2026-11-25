@@ -510,7 +510,8 @@ export default function ItemCostSettingsPage() {
         rule_qty_modes: { ...d.rule_qty_modes, [bucket]: nextBucket },
       }
     })
-  const isEachMode = draft.mode === 'each'
+  // Quantity handling applies to every mode: «max» sums the units of the winning line, «once» stays flat.
+  const showQtyControls = true
 
   const nameOf = (kind: 'products' | 'categories' | 'brands', id: string) =>
     names[kind][id] ?? catalogCats.find((c) => String(c.id) === id)?.name ?? catalogBrands.find((c) => String(c.id) === id)?.name ?? `#${id}`
@@ -564,7 +565,7 @@ export default function ItemCostSettingsPage() {
             </p>
           </div>
 
-          {isEachMode ? (
+          {showQtyControls ? (
             <>
               <div className="flex items-center justify-between gap-4 rounded-xl border p-3">
                 <div>
@@ -661,7 +662,7 @@ export default function ItemCostSettingsPage() {
                   id={`ic-product-cost-${id}`}
                   label={nameOf('products', id)}
                   value={cost}
-                  showQtyMode={isEachMode}
+                  showQtyMode={showQtyControls}
                   qtyMode={draft.rule_qty_modes.products[id] ?? 'inherit'}
                   onQtyModeChange={(v) => patchQtyMode('products', id, v)}
                   onChange={(v) => patchMap('product_costs', { ...draft.product_costs, [id]: v })}
@@ -701,7 +702,7 @@ export default function ItemCostSettingsPage() {
                     className="min-w-40 flex-1"
                     aria-label={t('shipping.itemCost.setName')}
                   />
-                  {isEachMode ? (
+                  {showQtyControls ? (
                     <QtyModeSelect
                       value={draft.rule_qty_modes.sets[set.id] ?? 'inherit'}
                       onChange={(v) => patchQtyMode('sets', set.id, v)}
@@ -777,7 +778,7 @@ export default function ItemCostSettingsPage() {
                   id={`ic-cat-cost-${id}`}
                   label={nameOf('categories', id)}
                   value={cost}
-                  showQtyMode={isEachMode}
+                  showQtyMode={showQtyControls}
                   qtyMode={draft.rule_qty_modes.categories[id] ?? 'inherit'}
                   onQtyModeChange={(v) => patchQtyMode('categories', id, v)}
                   onChange={(v) => patchMap('category_costs', { ...draft.category_costs, [id]: v })}
@@ -816,7 +817,7 @@ export default function ItemCostSettingsPage() {
                   id={`ic-brand-cost-${id}`}
                   label={nameOf('brands', id)}
                   value={cost}
-                  showQtyMode={isEachMode}
+                  showQtyMode={showQtyControls}
                   qtyMode={draft.rule_qty_modes.brands[id] ?? 'inherit'}
                   onQtyModeChange={(v) => patchQtyMode('brands', id, v)}
                   onChange={(v) => patchMap('brand_costs', { ...draft.brand_costs, [id]: v })}

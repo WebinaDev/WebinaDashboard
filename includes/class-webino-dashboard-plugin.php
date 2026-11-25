@@ -133,6 +133,9 @@ final class Webino_Dashboard_Plugin {
 		if ( class_exists( 'Webino_Dashboard_Checkout_Geo', false ) ) {
 			Webino_Dashboard_Checkout_Geo::init();
 		}
+		if ( class_exists( 'Webino_Dashboard_Bulk_Sale', false ) ) {
+			Webino_Dashboard_Bulk_Sale::init();
+		}
 
 		add_action( 'woocommerce_new_order', array( __CLASS__, 'invalidate_dashboard_caches' ) );
 		add_action( 'woocommerce_update_order', array( __CLASS__, 'invalidate_dashboard_caches' ) );

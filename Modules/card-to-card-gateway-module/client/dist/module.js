@@ -2207,36 +2207,36 @@ function Vt(e) {
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/typeof.js
-function Z(e) {
+function Ht(e) {
 	"@babel/helpers - typeof";
-	return Z = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
+	return Ht = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
 		return typeof e;
 	} : function(e) {
 		return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
-	}, Z(e);
+	}, Ht(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPrimitive.js
-function Ht(e, t) {
-	if (Z(e) != "object" || !e) return e;
+function Ut(e, t) {
+	if (Ht(e) != "object" || !e) return e;
 	var n = e[Symbol.toPrimitive];
 	if (n !== void 0) {
 		var r = n.call(e, t || "default");
-		if (Z(r) != "object") return r;
+		if (Ht(r) != "object") return r;
 		throw TypeError("@@toPrimitive must return a primitive value.");
 	}
 	return (t === "string" ? String : Number)(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPropertyKey.js
-function Ut(e) {
-	var t = Ht(e, "string");
-	return Z(t) == "symbol" ? t : t + "";
+function Wt(e) {
+	var t = Ut(e, "string");
+	return Ht(t) == "symbol" ? t : t + "";
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/defineProperty.js
-function Wt(e, t, n) {
-	return (t = Ut(t)) in e ? Object.defineProperty(e, t, {
+function Gt(e, t, n) {
+	return (t = Wt(t)) in e ? Object.defineProperty(e, t, {
 		value: n,
 		enumerable: !0,
 		configurable: !0,
@@ -2245,11 +2245,11 @@ function Wt(e, t, n) {
 }
 //#endregion
 //#region src/lib/apiError.ts
-var Q = class extends Error {
+var Z = class extends Error {
 	constructor(e, t) {
-		super(e), Wt(this, "code", void 0), Wt(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
+		super(e), Gt(this, "code", void 0), Gt(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
 	}
-}, Gt = {
+}, Kt = {
 	invalid: "errors.api.invalid",
 	ai_disabled: "aiContent.errDisabled",
 	ai_entity_off: "aiContent.errEntityOff",
@@ -2262,6 +2262,11 @@ var Q = class extends Error {
 	forbidden_role: "errors.api.forbiddenRole",
 	invalid_nonce: "errors.api.invalidNonce",
 	timeout: "errors.api.timeout",
+	request_timeout: "errors.api.requestTimeout",
+	gateway_timeout: "errors.api.gatewayTimeout",
+	server_unavailable: "errors.api.serverUnavailable",
+	ajax_unhandled: "errors.api.invalidResponse",
+	empty_response: "errors.api.invalidResponse",
 	empty_reply: "errors.api.emptyReply",
 	transport: "errors.api.transport",
 	network_offline: "errors.api.networkOffline",
@@ -2279,22 +2284,22 @@ var Q = class extends Error {
 	install_job_start_failed: "marketplace.installJobStartFailed",
 	build_dev_only: "buildPipeline.devOnly"
 };
-function Kt(e) {
+function qt(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 28") || t.includes("timed out") || t.includes("did not respond in time") || t.includes("زمان") && t.includes("پاسخ");
 }
-function qt(e) {
+function Jt(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 52") || t.includes("empty reply") || t.includes("closed the connection without a response") || t.includes("پاسخ") && t.includes("خالی");
 }
-function Jt(e, t) {
+function Yt(e, t) {
 	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(Vt(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
 }
-function Yt(e, t) {
+function Xt(e, t) {
 	let n = t;
-	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return Jt(e, n);
-	if (t instanceof Q && t.code) {
-		let n = Gt[t.code];
+	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return Yt(e, n);
+	if (t instanceof Z && t.code) {
+		let n = Kt[t.code];
 		if (n === "marketplace.installFailedGeneric") {
 			let n = t.message?.trim();
 			return n ? e("marketplace.installFailed", { message: n }) : e("marketplace.installFailedGeneric");
@@ -2302,21 +2307,67 @@ function Yt(e, t) {
 		if (n) return e(n);
 	}
 	if (t && typeof t == "object" && "code" in t) {
-		let n = Gt[String(t.code)];
+		let n = Kt[String(t.code)];
 		if (n) return e(n);
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return Kt(n) ? e("errors.api.timeout") : qt(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return qt(n) ? e("errors.api.requestTimeout") : Jt(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
-function Xt(e, t) {
-	i.error(Yt(e, t));
+function Zt(e, t) {
+	i.error(Xt(e, t));
+}
+//#endregion
+//#region src/lib/queryClient.ts
+var Qt = null;
+function $t() {
+	return Qt;
+}
+//#endregion
+//#region src/lib/authLost.ts
+var en = ["auth", "session"], tn = new Set([
+	"rest_cookie_invalid_nonce",
+	"rest_not_logged_in",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function nn(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !0;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (tn.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
+}
+function rn(e) {
+	let t = e ?? $t();
+	t && t.setQueryData(en, { logged_in: !1 });
+}
+var an = new Set([
+	"rest_cookie_invalid_nonce",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function on(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !1;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (an.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || r === "invalid nonce";
+}
+function sn(e) {
+	on(e) || nn(e) && rn();
 }
 //#endregion
 //#region src/lib/safeUrl.ts
-function Zt(e) {
+function cn(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -2328,38 +2379,38 @@ function Zt(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function Qt() {
+function Q() {
 	return window.webinoDashboard;
 }
-var $t = 3e4;
-function en(e) {
+var ln = 3e4;
+function un(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function tn(e) {
-	let t = Qt();
+function dn(e) {
+	let t = Q();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (en(e) || Zt(e)) return e;
-	throw new Q("Request blocked: URL not allowed", {
+	if (un(e) || cn(e)) return e;
+	throw new Z("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function nn(e, t) {
+function fn(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function rn(e) {
+function pn(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
-	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : null;
+	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "license/remote-check" ? "webino_dashboard_license_remote_check" : t === "license/diagnostics" ? "webino_dashboard_license_diagnostics" : t === "license/remote-activate" ? "webino_dashboard_license_remote_activate" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function an(e, t) {
+function mn(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -2375,13 +2426,28 @@ function an(e, t) {
 		code: "invalid_json"
 	};
 }
-function on(e, t) {
+function hn(e, t) {
 	let n = e.toLowerCase();
-	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
+	return t === 504 || t === 524 || n.includes("gateway timeout") || n.includes("gateway time-out") || n.includes("timed out") || n.includes("timeout") ? {
+		message: `Gateway timeout (HTTP ${t || 0})`,
+		code: "gateway_timeout"
+	} : t === 502 || t === 503 || t === 520 || t === 521 || t === 522 ? {
+		message: `Server temporarily unavailable (HTTP ${t})`,
+		code: "server_unavailable"
+	} : e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? {
+		message: "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry",
+		code: "rest_cdn_blocked"
+	} : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? {
+		message: `Invalid AJAX response (HTML, HTTP ${t || 0})`,
+		code: "invalid_json"
+	} : {
+		message: `Invalid AJAX response (HTTP ${t || 0})`,
+		code: "invalid_json"
+	};
 }
-async function sn(e, t, n = {}) {
-	let r = rn(e), i = Qt();
-	if (!r || !i.ajaxUrl) throw new Q("AJAX fallback unavailable", {
+async function gn(e, t, n = {}) {
+	let r = pn(e), i = Q();
+	if (!r || !i.ajaxUrl) throw new Z("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
 	});
@@ -2394,7 +2460,7 @@ async function sn(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = nn({}, t);
+	let { signal: l, clear: u } = fn({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -2406,21 +2472,25 @@ async function sn(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new Q(on(t, e.status), {
-				code: "invalid_json",
+			let n = hn(t, e.status);
+			throw new Z(n.message, {
+				code: n.code,
 				status: e.status
 			});
 		}
-		if (!n.success) throw new Q(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
-			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
-			status: e.status
-		});
+		if (!n.success) {
+			let t = new Z(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
+				status: e.status
+			});
+			throw sn(t), t;
+		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof Q ? e : e instanceof DOMException && e.name === "AbortError" ? new Q("Request timed out", {
-			code: "timeout",
+		throw e instanceof Z ? (sn(e), e) : e instanceof DOMException && e.name === "AbortError" ? new Z("Request timed out", {
+			code: "request_timeout",
 			status: 0
-		}) : e instanceof TypeError ? new Q("Network unavailable", {
+		}) : e instanceof TypeError ? new Z("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -2428,11 +2498,49 @@ async function sn(e, t, n = {}) {
 		u();
 	}
 }
-async function cn(e, t = {}, n = $t) {
-	if (rn(e) && Qt().ajaxUrl) return sn(e, n, t);
-	let r = tn(e), i = Qt(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+var _n = null;
+function vn(e) {
+	let t = Q();
+	t && typeof e == "string" && e.length > 0 && (t.nonce = e);
+}
+function yn() {
+	if (_n) return _n;
+	let e = Q();
+	if (!e?.ajaxUrl) return Promise.resolve(!1);
+	let t = new URLSearchParams();
+	return t.set("action", "webino_dashboard_auth_session"), _n = fetch(e.ajaxUrl, {
+		method: "POST",
+		credentials: "same-origin",
+		headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+		body: t
+	}).then((e) => e.json()).then((e) => {
+		let t = !!(e?.success && e.data?.logged_in);
+		return t && vn(e.data?.nonce), t && typeof e.data?.nonce == "string" && e.data.nonce.length > 0;
+	}).catch(() => !1).finally(() => {
+		window.setTimeout(() => {
+			_n = null;
+		}, 0);
+	}), _n;
+}
+async function bn(e, t = {}, n = ln) {
+	try {
+		return await xn(e, t, n);
+	} catch (r) {
+		if (!on(r)) throw r;
+		if (!await yn()) throw rn(), r;
+		let i = { ...t.headers };
+		for (let e of Object.keys(i)) e.toLowerCase() === "x-wp-nonce" && delete i[e];
+		return xn(e, {
+			...t,
+			headers: i
+		}, n);
+	}
+}
+async function xn(e, t = {}, n = ln) {
+	if (pn(e) && Q().ajaxUrl) return gn(e, n, t);
+	let r = dn(e), i = Q(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
 	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
-	let { signal: s, clear: c } = nn(t, n);
+	let { signal: s, clear: c } = fn(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -2443,25 +2551,25 @@ async function cn(e, t = {}, n = $t) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = an(n, e.status);
-			throw new Q(t.message, {
+			let t = mn(n, e.status);
+			throw new Z(t.message, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		if (!e.ok) {
-			let t = i;
-			throw new Q(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			let t = i, n = new Z(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
+			throw sn(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof Q ? e : e instanceof DOMException && e.name === "AbortError" ? new Q("Request timed out", {
-			code: "timeout",
+		throw e instanceof Z ? (sn(e), e) : e instanceof DOMException && e.name === "AbortError" ? new Z("Request timed out", {
+			code: "request_timeout",
 			status: 0
-		}) : e instanceof TypeError ? new Q("Network unavailable", {
+		}) : e instanceof TypeError ? new Z("Network unavailable", {
 			code: "network_offline",
 			status: 0
 		}) : e;
@@ -2471,12 +2579,12 @@ async function cn(e, t = {}, n = $t) {
 }
 //#endregion
 //#region ../Modules/card-to-card-gateway-module/client/pages/C2CReceiptsPage.tsx
-function ln() {
+function Sn() {
 	let { t: s } = r(), c = n(), l = t({
 		queryKey: ["c2c", "receipts"],
-		queryFn: () => cn("c2c/receipts?status=pending")
+		queryFn: () => bn("c2c/receipts?status=pending")
 	}), u = e({
-		mutationFn: async (e) => cn(`c2c/receipts/${e.id}`, {
+		mutationFn: async (e) => bn(`c2c/receipts/${e.id}`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ action: e.action })
@@ -2484,7 +2592,7 @@ function ln() {
 		onSuccess: async () => {
 			i.success(s("common.saved")), await c.invalidateQueries({ queryKey: ["c2c", "receipts"] });
 		},
-		onError: (e) => Xt(s, e)
+		onError: (e) => Zt(s, e)
 	}), d = l.data?.items ?? [];
 	return /* @__PURE__ */ a(m, {
 		title: s("c2c.receiptsTitle"),
@@ -2577,10 +2685,10 @@ function ln() {
 }
 //#endregion
 //#region node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
-var un = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), dn = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), fn = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), pn = (e) => {
-	let t = fn(e);
+var Cn = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), wn = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), Tn = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), En = (e) => {
+	let t = Tn(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, mn = {
+}, Dn = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -2590,30 +2698,30 @@ var un = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, hn = (e) => {
+}, On = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, gn = c({}), _n = () => d(gn), vn = u(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
-	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = _n() ?? {}, h = r ?? f ? Number(n ?? d) * 24 / Number(t ?? u) : n ?? d;
+}, kn = c({}), An = () => d(kn), jn = u(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
+	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = An() ?? {}, h = r ?? f ? Number(n ?? d) * 24 / Number(t ?? u) : n ?? d;
 	return l("svg", {
 		ref: c,
-		...mn,
-		width: t ?? u ?? mn.width,
-		height: t ?? u ?? mn.height,
+		...Dn,
+		width: t ?? u ?? Dn.width,
+		height: t ?? u ?? Dn.height,
 		stroke: e ?? p,
 		strokeWidth: h,
-		className: un("lucide", m, i),
-		...!a && !hn(s) && { "aria-hidden": "true" },
+		className: Cn("lucide", m, i),
+		...!a && !On(s) && { "aria-hidden": "true" },
 		...s
 	}, [...o.map(([e, t]) => l(e, t)), ...Array.isArray(a) ? a : [a]]);
-}), yn = ((e, t) => {
-	let n = u(({ className: n, ...r }, i) => l(vn, {
+}), Mn = ((e, t) => {
+	let n = u(({ className: n, ...r }, i) => l(jn, {
 		ref: i,
 		iconNode: t,
-		className: un(`lucide-${dn(pn(e))}`, `lucide-${e}`, n),
+		className: Cn(`lucide-${wn(En(e))}`, `lucide-${e}`, n),
 		...r
 	}));
-	return n.displayName = pn(e), n;
+	return n.displayName = En(e), n;
 })("copy", [["rect", {
 	width: "14",
 	height: "14",
@@ -2625,42 +2733,42 @@ var un = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) 
 }], ["path", {
 	d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
 	key: "zix9uf"
-}]]), bn = {
+}]]), Nn = {
 	default: "",
 	stat: "wd-card-stat",
 	hero: "wd-card-hero",
 	glass: "wd-card-glass"
 };
-function xn({ className: e, variant: t = "default", ...n }) {
+function Pn({ className: e, variant: t = "default", ...n }) {
 	return /* @__PURE__ */ a("div", {
 		"data-slot": "card",
 		"data-variant": t,
-		className: Y("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", bn[t], e),
+		className: Y("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", Nn[t], e),
 		...n
 	});
 }
-function Sn({ className: e, ...t }) {
+function Fn({ className: e, ...t }) {
 	return /* @__PURE__ */ a("div", {
 		"data-slot": "card-header",
 		className: Y("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 text-start has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", e),
 		...t
 	});
 }
-function Cn({ className: e, ...t }) {
+function In({ className: e, ...t }) {
 	return /* @__PURE__ */ a("div", {
 		"data-slot": "card-title",
 		className: Y("leading-none font-semibold", e),
 		...t
 	});
 }
-function wn({ className: e, ...t }) {
+function Ln({ className: e, ...t }) {
 	return /* @__PURE__ */ a("div", {
 		"data-slot": "card-description",
 		className: Y("text-sm text-muted-foreground", e),
 		...t
 	});
 }
-function Tn({ className: e, ...t }) {
+function Rn({ className: e, ...t }) {
 	return /* @__PURE__ */ a("div", {
 		"data-slot": "card-content",
 		className: Y("px-6 text-start", e),
@@ -2669,7 +2777,7 @@ function Tn({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/input.tsx
-function En({ className: e, type: t, ...n }) {
+function zn({ className: e, type: t, ...n }) {
 	return /* @__PURE__ */ a("input", {
 		type: t,
 		"data-slot": "input",
@@ -2679,7 +2787,7 @@ function En({ className: e, type: t, ...n }) {
 }
 //#endregion
 //#region src/components/ui/label.tsx
-function Dn({ className: e, ...t }) {
+function Bn({ className: e, ...t }) {
 	return /* @__PURE__ */ a(M, {
 		"data-slot": "label",
 		className: Y("flex items-center gap-2 text-start text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", e),
@@ -2688,7 +2796,7 @@ function Dn({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/ui/switch.tsx
-function On({ className: e, size: t = "default", ...n }) {
+function Vn({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ a(Ce, {
 		"data-slot": "switch",
 		"data-size": t,
@@ -2703,7 +2811,7 @@ function On({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region src/components/ui/textarea.tsx
-function kn({ className: e, ...t }) {
+function Hn({ className: e, ...t }) {
 	return /* @__PURE__ */ a("textarea", {
 		"data-slot": "textarea",
 		className: Y("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
@@ -2712,7 +2820,7 @@ function kn({ className: e, ...t }) {
 }
 //#endregion
 //#region src/components/payments/GatewaySettingsLayout.tsx
-function An({ title: e, description: t, notice: n, meta: s, sections: c, actions: l, children: u }) {
+function Un({ title: e, description: t, notice: n, meta: s, sections: c, actions: l, children: u }) {
 	let { t: d } = r(), f = async (e) => {
 		try {
 			await navigator.clipboard.writeText(e), i.success(d("common.copied", { defaultValue: "Copied" }));
@@ -2746,7 +2854,7 @@ function An({ title: e, description: t, notice: n, meta: s, sections: c, actions
 								variant: "outline",
 								className: "size-8 shrink-0",
 								onClick: () => void f(e.value),
-								children: /* @__PURE__ */ a(yn, { className: "size-3.5" })
+								children: /* @__PURE__ */ a(Mn, { className: "size-3.5" })
 							}) : null]
 						})]
 					}, e.label))
@@ -2766,13 +2874,13 @@ function An({ title: e, description: t, notice: n, meta: s, sections: c, actions
 				}) : null,
 				/* @__PURE__ */ a("div", {
 					className: "space-y-5",
-					children: c.map((e) => /* @__PURE__ */ o(xn, {
+					children: c.map((e) => /* @__PURE__ */ o(Pn, {
 						id: e.id,
 						className: "scroll-mt-24",
-						children: [/* @__PURE__ */ o(Sn, { children: [/* @__PURE__ */ a(Cn, {
+						children: [/* @__PURE__ */ o(Fn, { children: [/* @__PURE__ */ a(In, {
 							className: "text-base",
 							children: e.title
-						}), e.description ? /* @__PURE__ */ a(wn, { children: e.description }) : null] }), /* @__PURE__ */ a(Tn, { children: e.children })]
+						}), e.description ? /* @__PURE__ */ a(Ln, { children: e.description }) : null] }), /* @__PURE__ */ a(Rn, { children: e.children })]
 					}, e.id))
 				}),
 				l ? /* @__PURE__ */ a("div", {
@@ -2787,8 +2895,8 @@ function $({ label: e, value: t, onChange: n, type: r = "text", placeholder: i, 
 	return /* @__PURE__ */ o("div", {
 		className: Y("space-y-2", c),
 		children: [
-			/* @__PURE__ */ a(Dn, { children: e }),
-			/* @__PURE__ */ a(En, {
+			/* @__PURE__ */ a(Bn, { children: e }),
+			/* @__PURE__ */ a(zn, {
 				type: r,
 				value: t,
 				placeholder: i,
@@ -2801,12 +2909,12 @@ function $({ label: e, value: t, onChange: n, type: r = "text", placeholder: i, 
 		]
 	});
 }
-function jn({ label: e, value: t, onChange: n, hint: r, className: i }) {
+function Wn({ label: e, value: t, onChange: n, hint: r, className: i }) {
 	return /* @__PURE__ */ o("div", {
 		className: Y("space-y-2", i),
 		children: [
-			/* @__PURE__ */ a(Dn, { children: e }),
-			/* @__PURE__ */ a(kn, {
+			/* @__PURE__ */ a(Bn, { children: e }),
+			/* @__PURE__ */ a(Hn, {
 				value: t,
 				onChange: (e) => n(e.target.value),
 				rows: 3
@@ -2818,7 +2926,7 @@ function jn({ label: e, value: t, onChange: n, hint: r, className: i }) {
 		]
 	});
 }
-function Mn({ label: e, description: t, checked: n, onChange: r }) {
+function Gn({ label: e, description: t, checked: n, onChange: r }) {
 	return /* @__PURE__ */ o("div", {
 		className: "flex items-start justify-between gap-4 rounded-lg border border-border/70 px-3 py-3",
 		children: [/* @__PURE__ */ o("div", {
@@ -2830,14 +2938,14 @@ function Mn({ label: e, description: t, checked: n, onChange: r }) {
 				className: "text-muted-foreground text-xs leading-relaxed",
 				children: t
 			}) : null]
-		}), /* @__PURE__ */ a(On, {
+		}), /* @__PURE__ */ a(Vn, {
 			checked: n,
 			onCheckedChange: (e) => r(!!e),
 			className: "mt-0.5 shrink-0"
 		})]
 	});
 }
-function Nn({ children: e }) {
+function Kn({ children: e }) {
 	return /* @__PURE__ */ a("div", {
 		className: "grid gap-4 md:grid-cols-2",
 		children: e
@@ -2845,26 +2953,26 @@ function Nn({ children: e }) {
 }
 //#endregion
 //#region ../Modules/card-to-card-gateway-module/client/pages/C2CSettingsPage.tsx
-var Pn = () => ({
+var qn = () => ({
 	number: "",
 	name: "",
 	bank: ""
 });
-function Fn() {
+function Jn() {
 	let { t: s } = r(), c = n(), [l, u] = p(null), d = t({
 		queryKey: ["c2c", "settings"],
-		queryFn: () => cn("c2c/settings")
+		queryFn: () => bn("c2c/settings")
 	});
 	f(() => {
 		if (!d.data?.settings) return;
 		let e = d.data.settings;
 		u({
 			...e,
-			cards: e.cards?.length ? e.cards : [Pn()]
+			cards: e.cards?.length ? e.cards : [qn()]
 		});
 	}, [d.data]);
 	let h = e({
-		mutationFn: async () => cn("c2c/settings", {
+		mutationFn: async () => bn("c2c/settings", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -2875,10 +2983,10 @@ function Fn() {
 		onSuccess: async (e) => {
 			i.success(s("common.saved")), e.settings && u({
 				...e.settings,
-				cards: e.settings.cards?.length ? e.settings.cards : [Pn()]
+				cards: e.settings.cards?.length ? e.settings.cards : [qn()]
 			}), await c.invalidateQueries({ queryKey: ["c2c", "settings"] }), await c.invalidateQueries({ queryKey: ["payment-gateways"] });
 		},
-		onError: (e) => Xt(s, e)
+		onError: (e) => Zt(s, e)
 	}), g = (e, t) => {
 		if (!l) return;
 		let n = l.cards.map((n, r) => r === e ? {
@@ -2890,7 +2998,7 @@ function Fn() {
 			cards: n
 		});
 	};
-	return l ? /* @__PURE__ */ a(An, {
+	return l ? /* @__PURE__ */ a(Un, {
 		title: s("c2c.title"),
 		description: s("c2c.subtitle"),
 		sections: [{
@@ -2898,7 +3006,7 @@ function Fn() {
 			title: s("gateway.section.checkout"),
 			children: /* @__PURE__ */ o("div", {
 				className: "space-y-4",
-				children: [/* @__PURE__ */ a(Mn, {
+				children: [/* @__PURE__ */ a(Gn, {
 					label: s("c2c.enabled"),
 					description: s("c2c.enabledHint"),
 					checked: l.enabled,
@@ -2906,7 +3014,7 @@ function Fn() {
 						...l,
 						enabled: e
 					})
-				}), /* @__PURE__ */ o(Nn, { children: [
+				}), /* @__PURE__ */ o(Kn, { children: [
 					/* @__PURE__ */ a($, {
 						label: s("c2c.checkoutTitle"),
 						value: l.title,
@@ -2933,7 +3041,7 @@ function Fn() {
 						}),
 						hint: s("c2c.deadlineHint")
 					}),
-					/* @__PURE__ */ a(jn, {
+					/* @__PURE__ */ a(Wn, {
 						className: "md:col-span-2",
 						label: s("gateway.field.description"),
 						value: l.description ?? "",
@@ -2942,7 +3050,7 @@ function Fn() {
 							description: e
 						})
 					}),
-					/* @__PURE__ */ a(jn, {
+					/* @__PURE__ */ a(Wn, {
 						className: "md:col-span-2",
 						label: s("c2c.instructions"),
 						value: l.instructions,
@@ -2998,10 +3106,10 @@ function Fn() {
 					children: [
 						/* @__PURE__ */ o("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ a(Dn, {
+							children: [/* @__PURE__ */ a(Bn, {
 								className: "text-xs",
 								children: s("c2c.cardNumber")
-							}), /* @__PURE__ */ a(En, {
+							}), /* @__PURE__ */ a(zn, {
 								value: e.number,
 								className: "font-mono",
 								onChange: (e) => g(t, { number: e.target.value })
@@ -3009,20 +3117,20 @@ function Fn() {
 						}),
 						/* @__PURE__ */ o("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ a(Dn, {
+							children: [/* @__PURE__ */ a(Bn, {
 								className: "text-xs",
 								children: s("c2c.cardName")
-							}), /* @__PURE__ */ a(En, {
+							}), /* @__PURE__ */ a(zn, {
 								value: e.name,
 								onChange: (e) => g(t, { name: e.target.value })
 							})]
 						}),
 						/* @__PURE__ */ o("div", {
 							className: "space-y-1",
-							children: [/* @__PURE__ */ a(Dn, {
+							children: [/* @__PURE__ */ a(Bn, {
 								className: "text-xs",
 								children: s("c2c.cardBank")
-							}), /* @__PURE__ */ a(En, {
+							}), /* @__PURE__ */ a(zn, {
 								value: e.bank,
 								onChange: (e) => g(t, { bank: e.target.value })
 							})]
@@ -3033,7 +3141,7 @@ function Fn() {
 					variant: "outline",
 					onClick: () => u({
 						...l,
-						cards: [...l.cards, Pn()]
+						cards: [...l.cards, qn()]
 					}),
 					children: s("c2c.addCard")
 				})]
@@ -3052,9 +3160,9 @@ function Fn() {
 }
 //#endregion
 //#region ../Modules/card-to-card-gateway-module/client/module-entry.tsx
-var In = {
-	"settings/shop/c2c": Fn,
-	"shop/c2c-receipts": ln
-}, Ln = { routes: In };
+var Yn = {
+	"settings/shop/c2c": Jn,
+	"shop/c2c-receipts": Sn
+}, Xn = { routes: Yn };
 //#endregion
-export { Ln as default, In as routes };
+export { Xn as default, Yn as routes };

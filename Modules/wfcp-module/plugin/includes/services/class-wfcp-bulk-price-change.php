@@ -28,6 +28,8 @@ class WFCP_Bulk_Price_Change {
 	const HISTORY_KEY  = 'wfcp_bpc_history';
 	const HISTORY_MAX  = 40;
 	const FATAL_KEY    = 'wfcp_bpc_last_fatal';
+	const FAILURES_KEY = 'wfcp_bpc_failures';
+	const FAILURES_MAX = 500;
 	const LOCK_TTL     = 3 * MINUTE_IN_SECONDS;
 	const LOG_DIR      = 'wfcp-bpc-logs';
 
@@ -145,6 +147,10 @@ class WFCP_Bulk_Price_Change {
 			),
 			is_array( $extra ) ? $extra : array()
 		);
+		if ( ! isset( $row['failures'] ) ) {
+			$row['failures'] = self::get_failures( $run_id );
+			$row['failure_count'] = count( $row['failures'] );
+		}
 		$history = get_option( self::HISTORY_KEY, array() );
 		if ( ! is_array( $history ) ) {
 			$history = array();
@@ -179,6 +185,58 @@ class WFCP_Bulk_Price_Change {
 	public static function list_history() {
 		$history = get_option( self::HISTORY_KEY, array() );
 		return is_array( $history ) ? array_values( $history ) : array();
+	}
+
+	/**
+	 * Record a per-product failure for the active run.
+	 *
+	 * The run history keeps aggregate counters; this list answers "which product failed and why" so
+	 * the merchant can fix it and re-run just those products instead of the whole catalog.
+	 *
+	 * @param string $run_id  Run ID.
+	 * @param int    $id      Product/variation ID.
+	 * @param string $reason  Human readable reason.
+	 * @param string $entity  product|variation.
+	 * @param int    $parent  Parent product ID for variations.
+	 * @param string $message Technical message.
+	 * @return void
+	 */
+	public function log_failure( $run_id, $id, $reason, $entity = 'product', $parent = 0, $message = '' ) {
+		$run_id = (string) $run_id;
+		if ( '' === $run_id ) {
+			return;
+		}
+		$store = get_option( self::FAILURES_KEY, array() );
+		if ( ! is_array( $store ) || (string) ( $store['run_id'] ?? '' ) !== $run_id ) {
+			$store = array( 'run_id' => $run_id, 'items' => array() );
+		}
+		$store['items'][] = array(
+			'id'      => (int) $id,
+			'parent'  => (int) $parent,
+			'entity'  => sanitize_key( (string) $entity ),
+			'reason'  => sanitize_text_field( (string) $reason ),
+			'message' => sanitize_text_field( (string) $message ),
+			'at'      => time(),
+		);
+		$store['items'] = array_slice( $store['items'], -self::FAILURES_MAX );
+		update_option( self::FAILURES_KEY, $store, false );
+	}
+
+	/**
+	 * Failures recorded for a run (most recent last).
+	 *
+	 * @param string $run_id Run ID, '' = active run.
+	 * @return list<array<string,mixed>>
+	 */
+	public static function get_failures( $run_id = '' ) {
+		$store = get_option( self::FAILURES_KEY, array() );
+		if ( ! is_array( $store ) ) {
+			return array();
+		}
+		if ( '' !== (string) $run_id && (string) ( $store['run_id'] ?? '' ) !== (string) $run_id ) {
+			return array();
+		}
+		return isset( $store['items'] ) && is_array( $store['items'] ) ? array_values( $store['items'] ) : array();
 	}
 
 	/**
@@ -656,6 +714,11 @@ class WFCP_Bulk_Price_Change {
 			delete_option( self::FATAL_KEY );
 			return;
 		}
+		$fresh = get_option( self::STATE_KEY );
+		if ( ! is_array( $fresh ) || (int) ( $fresh['current_page'] ?? 0 ) >= (int) $page ) {
+			// Another worker already handled this page (or the run ended): do not double-count.
+			return;
+		}
 		$state['current_page'] = (int) $page;
 		$state['processed']    = (int) ( $state['processed'] ?? 0 ) + (int) $done['updated'] + (int) $done['skipped'];
 		$state['updated']      = (int) ( $state['updated'] ?? 0 ) + (int) $done['updated'];
@@ -731,6 +794,7 @@ class WFCP_Bulk_Price_Change {
 			'rounding_value'     => $rounding_value,
 		);
 		update_option( self::PARAMS_KEY, $params, false );
+		update_option( self::FAILURES_KEY, array( 'run_id' => $run_id, 'items' => array() ), false );
 
 		$total = $this->count_products( $cat_slugs );
 		$pages = (int) ceil( max( 1, $total ) / self::PER_PAGE );
@@ -1213,7 +1277,7 @@ class WFCP_Bulk_Price_Change {
 			'post_status'    => 'publish',
 			'fields'         => 'ids',
 			'posts_per_page' => -1,
-			'no_found_rows'  => true,
+			'no_found_rows'  => false,
 		);
 		if ( ! empty( $cat_slugs ) ) {
 			$args['tax_query'] = array(
@@ -1225,7 +1289,9 @@ class WFCP_Bulk_Price_Change {
 			);
 		}
 		$q = new WP_Query( $args );
-		return intval( $q->post_count );
+		// found_posts is the authoritative total; post_count can be truncated which used to make the
+		// job look finished before every product was processed.
+		return intval( $q->found_posts );
 	}
 
 	/**
@@ -1266,6 +1332,14 @@ class WFCP_Bulk_Price_Change {
 			$product = wc_get_product( $pid );
 			if ( ! $product ) {
 				$skipped++;
+				$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $pid, 'product_not_found', 'product' );
+				continue;
+			}
+			if ( $this->is_price_locked( $pid ) ) {
+				// A locked WFCP price is the source of truth; silently raising it would break WFCP.
+				$skipped++;
+				$rows[] = $this->row( time(), $paged, 'product', $pid, '', '', '', '', '', 'skipped', 'wfcp_price_locked' );
+				$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $pid, 'wfcp_price_locked', 'product' );
 				continue;
 			}
 			try {
@@ -1275,6 +1349,13 @@ class WFCP_Bulk_Price_Change {
 						$v = wc_get_product( $vid );
 						if ( ! $v ) {
 							$skipped++;
+							$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $vid, 'variation_not_found', 'variation', $pid );
+							continue;
+						}
+						if ( $this->is_price_locked( $vid ) ) {
+							$skipped++;
+							$rows[] = $this->row( time(), $paged, 'variation', $vid, $pid, '', '', '', '', 'skipped', 'wfcp_price_locked' );
+							$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $vid, 'wfcp_price_locked', 'variation', $pid );
 							continue;
 						}
 						$reg_old  = $v->get_regular_price( 'edit' );
@@ -1333,11 +1414,13 @@ class WFCP_Bulk_Price_Change {
 				} else {
 					$skipped++;
 					$rows[] = $this->row( time(), $paged, 'product', $pid, '', '', '', '', '', 'skipped', 'unsupported_type: ' . $product->get_type() );
+					$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $pid, 'unsupported_type:' . $product->get_type(), 'product' );
 				}
 			} catch ( \Throwable $e ) {
 				$skipped++;
 				$errors++;
 				$rows[] = $this->row( time(), $paged, 'product', $pid, '', '', '', '', '', 'error', $e->getMessage() );
+				$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $pid, 'exception', 'product', 0, $e->getMessage() );
 			}
 		}
 
@@ -1345,8 +1428,25 @@ class WFCP_Bulk_Price_Change {
 			$run_id = isset( $params['run_id'] ) ? $params['run_id'] : '';
 			$this->log_rows( $run_id, $rows );
 		}
-		$finished = ( $q->post_count < self::PER_PAGE );
+		// Compare against the *ids we actually read*: post_count can be clamped by filters/plugins and
+		// used to end the run while later pages still had products.
+		$found    = isset( $q->found_posts ) ? (int) $q->found_posts : (int) $q->post_count;
+		$read     = is_array( $q->posts ) ? count( $q->posts ) : (int) $q->post_count;
+		$finished = $read < self::PER_PAGE || ( (int) $paged * self::PER_PAGE ) >= $found;
 		return compact( 'finished', 'updated', 'skipped', 'errors' );
+	}
+
+	/**
+	 * Is the product's WFCP price locked (WFCP owns the number)?
+	 *
+	 * @param int $product_id Product or variation ID.
+	 * @return bool
+	 */
+	private function is_price_locked( $product_id ) {
+		if ( ! class_exists( 'WFCP_Helper' ) || ! method_exists( 'WFCP_Helper', 'is_product_price_locked' ) ) {
+			return false;
+		}
+		return (bool) WFCP_Helper::is_product_price_locked( (int) $product_id );
 	}
 
 	/**
@@ -1539,7 +1639,7 @@ class WFCP_Bulk_Price_Change {
 			str_replace( array( "\n", "\r", '"' ), array( ' ', ' ', "'" ), (string) $message ),
 		);
 		$fh = fopen( 'php://temp', 'r+' );
-		fputcsv( $fh, $csv );
+		fputcsv( $fh, $csv, ',', '"', '\\' );
 		rewind( $fh );
 		$line = stream_get_contents( $fh );
 		fclose( $fh );
@@ -1559,7 +1659,7 @@ class WFCP_Bulk_Price_Change {
 			str_replace( array( "\n", "\r", '"' ), array( ' ', ' ', "'" ), (string) $message ),
 		);
 		$fh = fopen( 'php://temp', 'r+' );
-		fputcsv( $fh, $csv );
+		fputcsv( $fh, $csv, ',', '"', '\\' );
 		rewind( $fh );
 		$line = stream_get_contents( $fh );
 		fclose( $fh );

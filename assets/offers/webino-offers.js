@@ -14,6 +14,10 @@
   var STORAGE_KEY = 'webino_offers_popup_at'
   var DISMISS_KEY = 'webino_cprog_dismissed'
   var COLLAPSE_KEY = 'webino_cprog_collapsed'
+  // Visitor placement of the floating progress widget (survives reloads) + "parked on the screen edge" state.
+  var POS_KEY = 'webino_cprog_pos'
+  var HIDE_KEY = 'webino_cprog_hidden'
+  var TAB_ID = 'webino-coupon-progress-tab'
   var DAY_MS = 24 * 60 * 60 * 1000
   var lastState = null
   var timer = null
@@ -307,6 +311,9 @@
   function removeWidget() {
     var el = document.getElementById('webino-coupon-progress')
     if (el && el.parentNode) el.parentNode.removeChild(el)
+    var tab = document.getElementById(TAB_ID)
+    if (tab && tab.parentNode) tab.parentNode.removeChild(tab)
+    dockState.parked = false
   }
 
   function productProjection(n) {
@@ -330,12 +337,16 @@
       '<span class="webino-cprog__pill-pct"></span></button>' +
       '<div class="webino-cprog__card">' +
       '<div class="webino-cprog__head">' +
+      '<span class="webino-cprog__grab" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>' +
       '<span class="webino-cprog__icon">' + GIFT_SVG + '</span>' +
       '<span class="webino-cprog__heading"><span class="webino-cprog__eyebrow"></span><span class="webino-cprog__title"></span></span>' +
       '<span class="webino-cprog__actions">' +
-      '<button type="button" class="webino-cprog__iconbtn webino-cprog__min"><span aria-hidden="true">' +
+      '<button type="button" class="webino-cprog__iconbtn webino-cprog__min" aria-label="' + esc(i18n.collapse || 'Minimize') + '"><span aria-hidden="true">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"/></svg></span></button>' +
-      '<button type="button" class="webino-cprog__iconbtn webino-cprog__close"><span aria-hidden="true">' +
+      '<button type="button" class="webino-cprog__iconbtn webino-cprog__dock" aria-label="' + esc(i18n.dock || 'Move to the side') + '"><span aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l7 7-7 7"/></svg></span></button>' +
+      '<button type="button" class="webino-cprog__iconbtn webino-cprog__close" aria-label="' + esc(i18n.close || 'Close') + '"><span aria-hidden="true">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>' +
       '</span></div>' +
       '<p class="webino-cprog__cta"></p>' +
@@ -343,21 +354,54 @@
       '<span class="webino-cprog__ghost"></span><span class="webino-cprog__fill"><span class="webino-cprog__shine"></span></span></div>' +
       '<div class="webino-cprog__range"><span class="webino-cprog__cur"></span><span class="webino-cprog__pct"></span><span class="webino-cprog__target"></span></div>' +
       '<p class="webino-cprog__hint" hidden></p>' +
+      '<button type="button" class="webino-cprog__dockrow"><span class="webino-cprog__dockrow-arrow" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>' +
+      '<span class="webino-cprog__dockrow-label"></span></button>' +
       '</div>'
-    $('.webino-cprog__close', el).addEventListener('click', function () {
+    // Close = remove for this coupon. Docking keeps it one tap away instead of losing the progress bar.
+    $('.webino-cprog__close', el).addEventListener('click', function (e) {
+      e.stopPropagation()
       if (lastState && lastState.next) ssSet(DISMISS_KEY, String(lastState.next.id))
+      ssSet(HIDE_KEY, null)
       removeWidget()
     })
-    $('.webino-cprog__min', el).addEventListener('click', function () {
+    $('.webino-cprog__min', el).addEventListener('click', function (e) {
+      e.stopPropagation()
       ssSet(COLLAPSE_KEY, '1')
       setCollapsed(el, true)
       var pill = $('.webino-cprog__pill', el)
       if (pill) pill.focus()
+      schedulePlace()
     })
-    $('.webino-cprog__pill', el).addEventListener('click', function () {
-      ssSet(COLLAPSE_KEY, '0')
-      setCollapsed(el, false)
+    var dockBtn = $('.webino-cprog__dock', el)
+    if (dockBtn) {
+      dockBtn.addEventListener('click', function (e) {
+        e.stopPropagation()
+        park(tabSide())
+      })
+    }
+    var dockRow = $('.webino-cprog__dockrow', el)
+    if (dockRow) {
+      dockRow.addEventListener('click', function (e) {
+        e.stopPropagation()
+        park(tabSide())
+      })
+    }
+    $('.webino-cprog__pill', el).addEventListener('click', function (e) {
+      if (el.getAttribute('data-was-dragged')) return
+      // Expanding from the compact pill is still a drag-safe tap.
+      if (e && e.preventDefault) e.preventDefault()
+      if (el.classList.contains('is-collapsed')) {
+        ssSet(COLLAPSE_KEY, '0')
+        setCollapsed(el, false)
+        schedulePlace()
+      } else {
+        ssSet(COLLAPSE_KEY, '1')
+        setCollapsed(el, true)
+        schedulePlace()
+      }
     })
+    bindDrag(el)
     var stored = ssGet(COLLAPSE_KEY)
     // Phones, cart and checkout always start as the compact pill (never over add-to-cart, totals or the
     // checkout button); the card opens only when tapped. Desktop remembers the visitor's last choice.
@@ -394,8 +438,15 @@
     setText($('.webino-cprog__title', el), n.title || '')
     setText($('.webino-cprog__cta', el), n.cta || '')
     var min = $('.webino-cprog__min', el)
-    min.setAttribute('aria-label', i18n.hide || 'Hide')
-    min.setAttribute('title', i18n.hide || 'Hide')
+    min.setAttribute('aria-label', i18n.collapse || i18n.hide || 'Hide')
+    min.setAttribute('title', i18n.collapse || i18n.hide || 'Hide')
+    var dock = $('.webino-cprog__dock', el)
+    if (dock) {
+      dock.setAttribute('aria-label', i18n.dock || 'Move to the side')
+      dock.setAttribute('title', i18n.dock || 'Move to the side')
+    }
+    var dockLabel = $('.webino-cprog__dockrow-label', el)
+    if (dockLabel) setText(dockLabel, i18n.dock || 'Move to the side')
     var close = $('.webino-cprog__close', el)
     close.setAttribute('aria-label', i18n.close || 'Close')
     close.setAttribute('title', i18n.close || 'Close')
@@ -434,12 +485,23 @@
       hint.hidden = true
       hint.textContent = ''
     }
+    if (fresh && isHiddenByVisitor()) {
+      // Visitor parked the widget earlier in this session: come back as the edge tab, not as a card.
+      park(tabSide())
+      setTimeout(function () {
+        el.classList.remove('is-entering')
+      }, 30)
+      return
+    }
     if (fresh) {
       setTimeout(function () {
         el.classList.remove('is-entering')
       }, 30)
       setTimeout(placeWidget, 60)
       setTimeout(placeWidget, 1500)
+    } else if (!dockState.parked) {
+      // Content changed (new tier, collapse toggle): re-clamp so the box never hangs off-screen.
+      schedulePlace()
     }
   }
 
@@ -474,16 +536,273 @@
     return Math.round(max)
   }
 
+  /* ---- position: visitor-draggable, never allowed to cover prices / buttons ---- */
+
+  var EDGE_PAD = 8
+
+  function viewport() {
+    return {
+      w: window.innerWidth || document.documentElement.clientWidth,
+      h: window.innerHeight || document.documentElement.clientHeight,
+    }
+  }
+
+  function posRead() {
+    var raw = ssGet(POS_KEY)
+    if (!raw) return null
+    try {
+      var p = JSON.parse(raw)
+      if (!p || typeof p.side !== 'string') return null
+      return {
+        side: p.side === 'right' ? 'right' : 'left',
+        x: Number(p.x) || 0, // horizontal distance from the widget's own side edge
+        y: Math.max(EDGE_PAD, Number(p.y) || EDGE_PAD),
+      }
+    } catch (e) {
+      return null
+    }
+  }
+
+  function posWrite(pos) {
+    ssSet(POS_KEY, JSON.stringify({ side: pos.side, x: Math.round(pos.x), y: Math.round(pos.y) }))
+  }
+
+  // Keep the widget fully inside the viewport and above the bottom bar (add-to-cart, checkout button, cookie bars).
+  function clampPos(el, pos) {
+    var vp = viewport()
+    var rect = el.getBoundingClientRect()
+    var w = rect.width || Math.min(vp.w - 2 * EDGE_PAD, 240)
+    var h = rect.height || 120
+    var bar = bottomBarHeight()
+    var maxY = Math.max(EDGE_PAD, vp.h - h - EDGE_PAD - (bar > 0 ? bar : 0))
+    var maxX = Math.max(EDGE_PAD, vp.w - w - EDGE_PAD)
+    return {
+      side: pos.side === 'right' ? 'right' : 'left',
+      x: Math.min(maxX, Math.max(EDGE_PAD, Number(pos.x) || EDGE_PAD)),
+      y: Math.min(maxY, Math.max(EDGE_PAD, Number(pos.y) || EDGE_PAD)),
+    }
+  }
+
+  function applyPos(el, pos) {
+    var p = clampPos(el, pos)
+    el.style.left = p.side === 'right' ? 'auto' : p.x + 'px'
+    el.style.right = p.side === 'right' ? p.x + 'px' : 'auto'
+    el.style.top = p.y + 'px'
+    el.style.bottom = 'auto'
+    el.setAttribute('data-side', p.side)
+    return p
+  }
+
+  // The corner the widget lives in: the visitor's saved spot, else the classic bottom-left.
+  function defaultPos(el) {
+    var vp = viewport()
+    var rect = el ? el.getBoundingClientRect() : { width: 0, height: 0 }
+    var bar = bottomBarHeight()
+    var h = rect.height || (el && el.classList.contains('is-collapsed') ? 48 : 190)
+    var saved = posRead()
+    if (saved) return saved
+    return {
+      side: cfg.isRtl ? 'right' : 'left',
+      x: EDGE_PAD + 8,
+      y: Math.max(EDGE_PAD, vp.h - h - (bar > 0 ? bar + 10 : 16)),
+    }
+  }
+
   var placeTimer = null
+
   function placeWidget() {
     var el = document.getElementById('webino-coupon-progress')
+    if (dockState.parked) {
+      // Parked on the edge: keep the slim rail tab pinned inside the viewport instead of the card.
+      var parkedTab = document.getElementById(TAB_ID)
+      if (parkedTab) {
+        var y = parseInt(parkedTab.style.top, 10)
+        if (!isFinite(y)) y = Math.round(viewport().h * 0.42)
+        parkedTab.style.top = Math.max(EDGE_PAD, Math.min(viewport().h - 64, y)) + 'px'
+      }
+      return
+    }
     if (!el) return
-    var h = bottomBarHeight()
-    el.style.bottom = h > 0 ? 'calc(' + (h + 10) + 'px + env(safe-area-inset-bottom, 0px))' : ''
+    var staleTab = document.getElementById(TAB_ID)
+    if (staleTab && staleTab.parentNode) staleTab.parentNode.removeChild(staleTab)
+    el.style.display = ''
+    var pos = posRead() || defaultPos(el)
+    applyPos(el, pos)
+    el.classList.remove('is-parked')
+    el.removeAttribute('aria-hidden')
+    el.removeAttribute('inert')
   }
+
   function schedulePlace() {
     if (placeTimer) clearTimeout(placeTimer)
     placeTimer = setTimeout(placeWidget, 120)
+  }
+
+  /* ---- edge dock: "park" the widget into a slim rail tab with an arrow ---- */
+
+  var dockState = { parked: false }
+
+  function isHiddenByVisitor() {
+    return ssGet(HIDE_KEY) === '1'
+  }
+
+  function setHidden(el, hidden) {
+    el.classList.toggle('is-parked', !!hidden)
+    if (hidden) {
+      el.setAttribute('aria-hidden', 'true')
+      el.setAttribute('inert', '')
+    } else {
+      el.removeAttribute('aria-hidden')
+      el.removeAttribute('inert')
+    }
+  }
+
+  function tabSide() {
+    var pos = posRead()
+    if (pos) return pos.side
+    return cfg.isRtl ? 'right' : 'left'
+  }
+
+  function buildTab() {
+    var label = i18n.show || 'Show'
+    var btn = document.createElement('button')
+    btn.type = 'button'
+    btn.id = TAB_ID
+    btn.className = 'webino-cprog-tab'
+    btn.innerHTML =
+      '<span class="webino-cprog-tab__arrow" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>' +
+      '</span><span class="webino-cprog-tab__icon" aria-hidden="true">' + GIFT_SVG + '</span>'
+    btn.setAttribute('aria-label', label)
+    btn.setAttribute('title', label)
+    btn.setAttribute('aria-expanded', 'false')
+    btn.addEventListener('click', function (e) {
+      e.preventDefault()
+      e.stopPropagation()
+      restoreWidget()
+    })
+    return btn
+  }
+
+  function park(side) {
+    var el = document.getElementById('webino-coupon-progress')
+    var root = ensureRoot()
+    var tab = document.getElementById(TAB_ID)
+    if (!el) return
+    el.classList.add('is-parked')
+    el.style.display = 'none'
+    ssSet(HIDE_KEY, '1')
+    dockState.parked = true
+    if (!tab) {
+      tab = buildTab()
+      root.appendChild(tab)
+    }
+    var y = parseInt(el.getAttribute('data-y') || '', 10)
+    var pos = posRead()
+    if (pos) y = pos.y
+    if (!isFinite(y)) y = Math.round(viewport().h * 0.42)
+    y = Math.max(EDGE_PAD, Math.min(viewport().h - 64, y))
+    tab.style.top = y + 'px'
+    var s = side || tabSide() || 'left'
+    tab.setAttribute('data-side', s)
+    tab.style.left = s === 'right' ? 'auto' : '0'
+    tab.style.right = s === 'right' ? '0' : 'auto'
+    tab.classList.toggle('is-in', true)
+  }
+
+  function restoreWidget() {
+    var tab = document.getElementById(TAB_ID)
+    if (tab && tab.parentNode) tab.parentNode.removeChild(tab)
+    ssSet(HIDE_KEY, null)
+    dockState.parked = false
+    var el = document.getElementById('webino-coupon-progress')
+    if (!el) {
+      if (lastState) renderWidget(lastState)
+      else schedule(0)
+      return
+    }
+    el.style.display = ''
+    setHidden(el, false)
+    el.classList.remove('is-parked')
+    var pos = posRead() || defaultPos(el)
+    pos = applyPos(el, pos)
+    var pill = $('.webino-cprog__pill', el)
+    if (isSmall() || cfg.isCart || cfg.isCheckout) setCollapsed(el, true)
+    else if (pill) pill.focus()
+    schedulePlace()
+  }
+
+  // Drag & drop (pointer events: mouse + touch + pen). A short tap still opens/closes the card.
+  function bindDrag(el) {
+    var start = null
+
+    function onDown(e) {
+      if (e.button != null && e.button !== 0) return
+      if (e.target && e.target.closest && e.target.closest('button.webino-cprog__iconbtn')) return
+      var rect = el.getBoundingClientRect()
+      start = {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        left: rect.left,
+        top: rect.top,
+        w: rect.width,
+        h: rect.height,
+        moved: false,
+      }
+      el.classList.add('is-dragging')
+      try {
+        el.setPointerCapture(e.pointerId)
+      } catch (err) {}
+    }
+
+    function onMove(e) {
+      if (!start || e.pointerId !== start.id) return
+      var dx = e.clientX - start.x
+      var dy = e.clientY - start.y
+      if (!start.moved && Math.abs(dx) + Math.abs(dy) < 6) return
+      start.moved = true
+      var vp = viewport()
+      var left = Math.min(Math.max(EDGE_PAD, start.left + dx), vp.w - start.w - EDGE_PAD)
+      var top = Math.min(Math.max(EDGE_PAD, start.top + dy), vp.h - start.h - EDGE_PAD)
+      el.style.left = left + 'px'
+      el.style.right = 'auto'
+      el.style.top = top + 'px'
+      el.style.bottom = 'auto'
+      e.preventDefault()
+    }
+
+    function finish(e) {
+      if (!start || (e && e.pointerId != null && e.pointerId !== start.id)) return
+      var moved = start.moved
+      var rect = el.getBoundingClientRect()
+      start = null
+      el.classList.remove('is-dragging')
+      try {
+        el.releasePointerCapture(e.pointerId)
+      } catch (err) {}
+      if (!moved) return
+      // Block the click that follows a drag so the card does not toggle.
+      el.setAttribute('data-was-dragged', '1')
+      setTimeout(function () {
+        el.removeAttribute('data-was-dragged')
+      }, 60)
+      var vp = viewport()
+      var center = rect.left + rect.width / 2
+      var side = center < vp.w / 2 ? 'left' : 'right'
+      posWrite({ side: side, x: Math.abs(side === 'left' ? rect.left : vp.w - rect.right), y: rect.top })
+      // Dragging the card all the way to a side edge parks it there (never covering the page).
+      if (rect.left <= EDGE_PAD + 3 || rect.right >= vp.w - EDGE_PAD - 3) {
+        park(side)
+        return
+      }
+      schedulePlace()
+    }
+
+    el.addEventListener('pointerdown', onDown)
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerup', finish)
+    el.addEventListener('pointercancel', finish)
   }
 
   function setCollapsed(el, collapsed) {

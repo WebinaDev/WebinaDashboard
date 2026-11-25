@@ -333,7 +333,7 @@ export default function PageEditorPage() {
                   </Button>
                   {pageQ.data?.elementor_url ? (
                     <Button type="button" size="sm" variant="outline" asChild>
-                      <a href={pageQ.data.elementor_url} target="_blank" rel="noreferrer">
+                      <a href={pageQ.data.elementor_url} target="_blank" rel="noopener noreferrer">
                         {t('pages.actionElementor')}
                       </a>
                     </Button>

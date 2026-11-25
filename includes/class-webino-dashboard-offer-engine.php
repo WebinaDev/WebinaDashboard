@@ -853,6 +853,8 @@ final class Webino_Dashboard_Offer_Engine {
 					'nextCoupon'   => __( 'Your next coupon', 'webino-dashboard' ),
 					'firstCoupon'  => __( 'Coupon waiting for you', 'webino-dashboard' ),
 					'hide'         => __( 'Hide', 'webino-dashboard' ),
+					'collapse'     => __( 'Minimize', 'webino-dashboard' ),
+					'dock'         => __( 'Move to the side', 'webino-dashboard' ),
 					'show'         => __( 'Show next coupon progress', 'webino-dashboard' ),
 					'of'           => __( 'of', 'webino-dashboard' ),
 					/* translators: %s: amount */

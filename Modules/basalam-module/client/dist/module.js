@@ -2484,6 +2484,11 @@ var X = class extends Error {
 	forbidden_role: "errors.api.forbiddenRole",
 	invalid_nonce: "errors.api.invalidNonce",
 	timeout: "errors.api.timeout",
+	request_timeout: "errors.api.requestTimeout",
+	gateway_timeout: "errors.api.gatewayTimeout",
+	server_unavailable: "errors.api.serverUnavailable",
+	ajax_unhandled: "errors.api.invalidResponse",
+	empty_response: "errors.api.invalidResponse",
 	empty_reply: "errors.api.emptyReply",
 	transport: "errors.api.transport",
 	network_offline: "errors.api.networkOffline",
@@ -2529,7 +2534,7 @@ function Hn(e, t) {
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return zn(n) ? e("errors.api.timeout") : Bn(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return zn(n) ? e("errors.api.requestTimeout") : Bn(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
@@ -2537,8 +2542,54 @@ function Z(e, t) {
 	v.error(Hn(e, t));
 }
 //#endregion
+//#region src/lib/queryClient.ts
+var Un = null;
+function Wn() {
+	return Un;
+}
+//#endregion
+//#region src/lib/authLost.ts
+var Gn = ["auth", "session"], Kn = new Set([
+	"rest_cookie_invalid_nonce",
+	"rest_not_logged_in",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function qn(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !0;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (Kn.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
+}
+function Jn(e) {
+	let t = e ?? Wn();
+	t && t.setQueryData(Gn, { logged_in: !1 });
+}
+var Yn = new Set([
+	"rest_cookie_invalid_nonce",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function Xn(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !1;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (Yn.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || r === "invalid nonce";
+}
+function Zn(e) {
+	Xn(e) || qn(e) && Jn();
+}
+//#endregion
 //#region src/lib/safeUrl.ts
-function Un(e) {
+function Qn(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -2550,38 +2601,38 @@ function Un(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function Wn() {
+function $n() {
 	return window.webinoDashboard;
 }
-var Gn = 3e4;
-function Kn(e) {
+var er = 3e4;
+function tr(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function qn(e) {
-	let t = Wn();
+function nr(e) {
+	let t = $n();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (Kn(e) || Un(e)) return e;
+	if (tr(e) || Qn(e)) return e;
 	throw new X("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function Jn(e, t) {
+function rr(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function Yn(e) {
+function ir(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
-	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : null;
+	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "license/remote-check" ? "webino_dashboard_license_remote_check" : t === "license/diagnostics" ? "webino_dashboard_license_diagnostics" : t === "license/remote-activate" ? "webino_dashboard_license_remote_activate" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function Xn(e, t) {
+function ar(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -2597,12 +2648,27 @@ function Xn(e, t) {
 		code: "invalid_json"
 	};
 }
-function Zn(e, t) {
+function or(e, t) {
 	let n = e.toLowerCase();
-	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
+	return t === 504 || t === 524 || n.includes("gateway timeout") || n.includes("gateway time-out") || n.includes("timed out") || n.includes("timeout") ? {
+		message: `Gateway timeout (HTTP ${t || 0})`,
+		code: "gateway_timeout"
+	} : t === 502 || t === 503 || t === 520 || t === 521 || t === 522 ? {
+		message: `Server temporarily unavailable (HTTP ${t})`,
+		code: "server_unavailable"
+	} : e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? {
+		message: "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry",
+		code: "rest_cdn_blocked"
+	} : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? {
+		message: `Invalid AJAX response (HTML, HTTP ${t || 0})`,
+		code: "invalid_json"
+	} : {
+		message: `Invalid AJAX response (HTTP ${t || 0})`,
+		code: "invalid_json"
+	};
 }
-async function Qn(e, t, n = {}) {
-	let r = Yn(e), i = Wn();
+async function sr(e, t, n = {}) {
+	let r = ir(e), i = $n();
 	if (!r || !i.ajaxUrl) throw new X("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
@@ -2616,7 +2682,7 @@ async function Qn(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = Jn({}, t);
+	let { signal: l, clear: u } = rr({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -2628,19 +2694,23 @@ async function Qn(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new X(Zn(t, e.status), {
-				code: "invalid_json",
+			let n = or(t, e.status);
+			throw new X(n.message, {
+				code: n.code,
 				status: e.status
 			});
 		}
-		if (!n.success) throw new X(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
-			code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
-			status: e.status
-		});
+		if (!n.success) {
+			let t = new X(typeof n.data?.message == "string" && n.data.message || n.message || "Request failed", {
+				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
+				status: e.status
+			});
+			throw Zn(t), t;
+		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof X ? e : e instanceof DOMException && e.name === "AbortError" ? new X("Request timed out", {
-			code: "timeout",
+		throw e instanceof X ? (Zn(e), e) : e instanceof DOMException && e.name === "AbortError" ? new X("Request timed out", {
+			code: "request_timeout",
 			status: 0
 		}) : e instanceof TypeError ? new X("Network unavailable", {
 			code: "network_offline",
@@ -2650,11 +2720,49 @@ async function Qn(e, t, n = {}) {
 		u();
 	}
 }
-async function Q(e, t = {}, n = Gn) {
-	if (Yn(e) && Wn().ajaxUrl) return Qn(e, n, t);
-	let r = qn(e), i = Wn(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+var cr = null;
+function lr(e) {
+	let t = $n();
+	t && typeof e == "string" && e.length > 0 && (t.nonce = e);
+}
+function ur() {
+	if (cr) return cr;
+	let e = $n();
+	if (!e?.ajaxUrl) return Promise.resolve(!1);
+	let t = new URLSearchParams();
+	return t.set("action", "webino_dashboard_auth_session"), cr = fetch(e.ajaxUrl, {
+		method: "POST",
+		credentials: "same-origin",
+		headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+		body: t
+	}).then((e) => e.json()).then((e) => {
+		let t = !!(e?.success && e.data?.logged_in);
+		return t && lr(e.data?.nonce), t && typeof e.data?.nonce == "string" && e.data.nonce.length > 0;
+	}).catch(() => !1).finally(() => {
+		window.setTimeout(() => {
+			cr = null;
+		}, 0);
+	}), cr;
+}
+async function Q(e, t = {}, n = er) {
+	try {
+		return await dr(e, t, n);
+	} catch (r) {
+		if (!Xn(r)) throw r;
+		if (!await ur()) throw Jn(), r;
+		let i = { ...t.headers };
+		for (let e of Object.keys(i)) e.toLowerCase() === "x-wp-nonce" && delete i[e];
+		return dr(e, {
+			...t,
+			headers: i
+		}, n);
+	}
+}
+async function dr(e, t = {}, n = er) {
+	if (ir(e) && $n().ajaxUrl) return sr(e, n, t);
+	let r = nr(e), i = $n(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
 	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
-	let { signal: s, clear: c } = Jn(t, n);
+	let { signal: s, clear: c } = rr(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -2665,23 +2773,23 @@ async function Q(e, t = {}, n = Gn) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = Xn(n, e.status);
+			let t = ar(n, e.status);
 			throw new X(t.message, {
 				code: t.code,
 				status: e.status
 			});
 		}
 		if (!e.ok) {
-			let t = i;
-			throw new X(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
+			let t = i, n = new X(typeof t.message == "string" ? t.message : typeof t.error == "string" ? t.error : t.code || e.statusText, {
 				code: t.code,
 				status: e.status
 			});
+			throw Zn(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof X ? e : e instanceof DOMException && e.name === "AbortError" ? new X("Request timed out", {
-			code: "timeout",
+		throw e instanceof X ? (Zn(e), e) : e instanceof DOMException && e.name === "AbortError" ? new X("Request timed out", {
+			code: "request_timeout",
 			status: 0
 		}) : e instanceof TypeError ? new X("Network unavailable", {
 			code: "network_offline",
@@ -2693,7 +2801,7 @@ async function Q(e, t = {}, n = Gn) {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamHomePage.tsx
-function $n() {
+function fr() {
 	let { t: r } = _(), i = n(), [a, o] = g(), [s, c] = f("90"), [u, d] = f(!1), [m, h] = f(""), [y, S] = f(""), [C, w] = f(""), [T, E] = f(""), D = t({
 		queryKey: ["basalam", "status"],
 		queryFn: () => Q("basalam/status"),
@@ -3043,7 +3151,7 @@ function $n() {
 }
 //#endregion
 //#region node_modules/dayjs/dayjs.min.js
-var er = /* @__PURE__ */ k(((e, t) => {
+var pr = /* @__PURE__ */ k(((e, t) => {
 	(function(n, r) {
 		typeof e == "object" && t !== void 0 ? t.exports = r() : typeof define == "function" && define.amd ? define(r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs = r();
 	})(e, (function() {
@@ -3337,9 +3445,9 @@ var er = /* @__PURE__ */ k(((e, t) => {
 			return w(1e3 * e);
 		}, w.en = b[y], w.Ls = b, w.p = {}, w;
 	}));
-})), tr = /* @__PURE__ */ k(((e, t) => {
+})), mr = /* @__PURE__ */ k(((e, t) => {
 	(function(n, r) {
-		typeof e == "object" && t !== void 0 ? t.exports = r(er()) : typeof define == "function" && define.amd ? define(["dayjs"], r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs_locale_fa = r(n.dayjs);
+		typeof e == "object" && t !== void 0 ? t.exports = r(pr()) : typeof define == "function" && define.amd ? define(["dayjs"], r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs_locale_fa = r(n.dayjs);
 	})(e, (function(e) {
 		function t(e) {
 			return e && typeof e == "object" && "default" in e ? e : { default: e };
@@ -3381,7 +3489,7 @@ var er = /* @__PURE__ */ k(((e, t) => {
 		};
 		return n.default.locale(r, null, !0), r;
 	}));
-})), nr = /* @__PURE__ */ k(((e, t) => {
+})), hr = /* @__PURE__ */ k(((e, t) => {
 	(function(n, r) {
 		typeof e == "object" && t !== void 0 ? t.exports = r() : typeof define == "function" && define.amd ? define(r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs_plugin_relativeTime = r();
 	})(e, (function() {
@@ -3485,12 +3593,12 @@ var er = /* @__PURE__ */ k(((e, t) => {
 			};
 		};
 	}));
-})), rr = /* @__PURE__ */ j(er(), 1), ir = /* @__PURE__ */ j(nr(), 1), ar = /* @__PURE__ */ j(tr(), 1);
-function or(e, t, n) {
-	let r = $((e + $(t - 8, 6) + 100100) * 1461, 4) + $(153 * lr(t + 9, 12) + 2, 5) + n - 34840408;
+})), gr = /* @__PURE__ */ j(pr(), 1), _r = /* @__PURE__ */ j(hr(), 1), vr = /* @__PURE__ */ j(mr(), 1);
+function yr(e, t, n) {
+	let r = $((e + $(t - 8, 6) + 100100) * 1461, 4) + $(153 * Sr(t + 9, 12) + 2, 5) + n - 34840408;
 	return r = r - $($(e + 100100 + $(t - 8, 6), 100) * 3, 4) + 752, r;
 }
-var sr = [
+var br = [
 	-61,
 	9,
 	38,
@@ -3511,46 +3619,46 @@ var sr = [
 	2394,
 	2456,
 	3178
-], cr = Math.floor;
-function lr(e, t) {
+], xr = Math.floor;
+function Sr(e, t) {
 	return e - ~~(e / t) * t;
 }
 function $(e, t) {
 	return ~~(e / t);
 }
-function ur(e, t) {
-	let n = sr.length, r = e + 621, i = -14, a = sr[0], o, s, c, l;
-	if (e < a || e >= sr[n - 1]) throw Error(`Invalid Jalaali year ${e}`);
-	for (let t = 1; t < n && (o = sr[t], s = o - a, !(e < o)); t += 1) i = i + $(s, 33) * 8 + $(lr(s, 33), 4), a = o;
-	l = e - a, i = i + $(l, 33) * 8 + $(lr(l, 33) + 3, 4), lr(s, 33) === 4 && s - l === 4 && (i += 1);
+function Cr(e, t) {
+	let n = br.length, r = e + 621, i = -14, a = br[0], o, s, c, l;
+	if (e < a || e >= br[n - 1]) throw Error(`Invalid Jalaali year ${e}`);
+	for (let t = 1; t < n && (o = br[t], s = o - a, !(e < o)); t += 1) i = i + $(s, 33) * 8 + $(Sr(s, 33), 4), a = o;
+	l = e - a, i = i + $(l, 33) * 8 + $(Sr(l, 33) + 3, 4), Sr(s, 33) === 4 && s - l === 4 && (i += 1);
 	let u = $(r, 4) - $(($(r, 100) + 1) * 3, 4) - 150, d = 20 + i - u;
 	return t ? {
 		gy: r,
 		march: d
-	} : (s - l < 6 && (l = l - s + $(s + 4, 33) * 33), c = lr(lr(l + 1, 33) - 1, 4), c === -1 && (c = 4), {
+	} : (s - l < 6 && (l = l - s + $(s + 4, 33) * 33), c = Sr(Sr(l + 1, 33) - 1, 4), c === -1 && (c = 4), {
 		leap: c,
 		gy: r,
 		march: d
 	});
 }
-function dr(e, t, n) {
-	let r = ur(e, !0);
-	return or(r.gy, 3, r.march) + (t - 1) * 31 - $(t, 7) * (t - 7) + n - 1;
+function wr(e, t, n) {
+	let r = Cr(e, !0);
+	return yr(r.gy, 3, r.march) + (t - 1) * 31 - $(t, 7) * (t - 7) + n - 1;
 }
-function fr(e) {
+function Tr(e) {
 	let t = 4 * e + 139361631;
 	t = t + $($(4 * e + 183187720, 146097) * 3, 4) * 4 - 3908;
-	let n = $(lr(t, 1461), 4) * 5 + 308, r = $(lr(n, 153), 5) + 1, i = lr($(n, 153), 12) + 1;
+	let n = $(Sr(t, 1461), 4) * 5 + 308, r = $(Sr(n, 153), 5) + 1, i = Sr($(n, 153), 12) + 1;
 	return [
 		$(t, 1461) - 100100 + $(8 - i, 6),
 		i,
 		r
 	];
 }
-function pr(e, t, n) {
-	return fr(dr(e, t, n));
+function Er(e, t, n) {
+	return Tr(wr(e, t, n));
 }
-function mr(e, t, n) {
+function Dr(e, t, n) {
 	let r = {
 		year: e,
 		month: t,
@@ -3571,16 +3679,16 @@ function mr(e, t, n) {
 	], a;
 	e <= 1600 ? (e -= 621, r.year = 0) : (e -= 1600, r.year = 979);
 	let o = e > 2 ? e + 1 : e;
-	return a = cr((o + 3) / 4) + 365 * e - cr((o + 99) / 100) - 80 + i[t - 1] + cr((o + 399) / 400) + n, r.year += 33 * cr(a / 12053), a %= 12053, r.year += 4 * cr(a / 1461), a %= 1461, a > 365 && (r.year += cr((a - 1) / 365), a = (a - 1) % 365), r.month = a < 186 ? 1 + cr(a / 31) : 7 + cr((a - 186) / 30), r.day = 1 + (a < 186 ? a % 31 : (a - 186) % 30), [
+	return a = xr((o + 3) / 4) + 365 * e - xr((o + 99) / 100) - 80 + i[t - 1] + xr((o + 399) / 400) + n, r.year += 33 * xr(a / 12053), a %= 12053, r.year += 4 * xr(a / 1461), a %= 1461, a > 365 && (r.year += xr((a - 1) / 365), a = (a - 1) % 365), r.month = a < 186 ? 1 + xr(a / 31) : 7 + xr((a - 186) / 30), r.day = 1 + (a < 186 ? a % 31 : (a - 186) % 30), [
 		r.year,
 		r.month,
 		r.day
 	];
 }
-var hr = {
-	J: (e, t, n) => mr(e, t, n),
-	G: (e, t, n) => pr(e, t, n)
-}, gr = /^(\d{4})[-/]?(\d{1,2})[-/]?(\d{0,2})(.*)$/, _r = /\[.*?\]|jY{2,4}|jM{1,4}|jD{1,2}|Y{2,4}|M{1,4}|D{1,2}|d{1,4}|H{1,2}|h{1,2}|a|A|m{1,2}|s{1,2}|Z{1,2}|SSS/g, vr = "date", yr = "day", br = "month", xr = "year", Sr = "week", Cr = "YYYY-MM-DDTHH:mm:ssZ", wr = { jmonths: "فروردین_اردیبهشت_خرداد_تیر_مرداد_شهریور_مهر_آبان_آذر_دی_بهمن_اسفند".split("_") }, Tr = (e, t, n) => {
+var Or = {
+	J: (e, t, n) => Dr(e, t, n),
+	G: (e, t, n) => Er(e, t, n)
+}, kr = /^(\d{4})[-/]?(\d{1,2})[-/]?(\d{0,2})(.*)$/, Ar = /\[.*?\]|jY{2,4}|jM{1,4}|jD{1,2}|Y{2,4}|M{1,4}|D{1,2}|d{1,4}|H{1,2}|h{1,2}|a|A|m{1,2}|s{1,2}|Z{1,2}|SSS/g, jr = "date", Mr = "day", Nr = "month", Pr = "year", Fr = "week", Ir = "YYYY-MM-DDTHH:mm:ssZ", Lr = { jmonths: "فروردین_اردیبهشت_خرداد_تیر_مرداد_شهریور_مهر_آبان_آذر_دی_بهمن_اسفند".split("_") }, Rr = (e, t, n) => {
 	let r = t.prototype, i = r.$utils(), a = (e) => e.$C === "jalali", o = i.prettyUnit || i.p, s = i.isUndefined || i.u, c = i.padStart || i.s, l = i.monthDiff || i.m, u = i.absFloor || i.a, d = (e) => function(...t) {
 		let n = e.bind(this)(...t);
 		return n.$C = this.$C, n.isJalali() && n.InitJalali(), n;
@@ -3595,8 +3703,8 @@ var hr = {
 	}, r.isJalali = function() {
 		return a(this);
 	}, n.en.jmonths = "Farvardin_Ordibehesht_Khordaad_Tir_Mordaad_Shahrivar_Mehr_Aabaan_Aazar_Dey_Bahman_Esfand".split("_"), n.locale("fa", {
-		...ar.default,
-		...wr
+		...vr.default,
+		...Lr
 	}, !0);
 	let w = function(e, t) {
 		return n(e, {
@@ -3609,43 +3717,43 @@ var hr = {
 		p.bind(this)(e), this.isJalali() && this.InitJalali();
 	}, r.parse = function(e) {
 		if (this.$C = e.calendar || this.$C || n.$C, e.jalali && typeof e.date == "string" && /.*[^Z]$/i.test(e.date)) {
-			let t = e.date.match(gr);
+			let t = e.date.match(kr);
 			if (t) {
-				let [n, r, i] = hr.G(Number.parseInt(t[1], 10), Number.parseInt(t[2], 10), Number.parseInt(t[3] || 1, 10));
+				let [n, r, i] = Or.G(Number.parseInt(t[1], 10), Number.parseInt(t[2], 10), Number.parseInt(t[3] || 1, 10));
 				e.date = `${n}-${r}-${i}${t[4] || ""}`;
 			}
 		}
 		return f.bind(this)(e);
 	}, r.InitJalali = function() {
-		let [e, t, n] = hr.J(this.$y, this.$M + 1, this.$D);
+		let [e, t, n] = Or.J(this.$y, this.$M + 1, this.$D);
 		this.$jy = e, this.$jM = t - 1, this.$jD = n;
 	}, r.startOf = function(e, t) {
 		if (!a(this)) return m.bind(this)(e, t);
 		let r = s(t) ? !0 : t, i = o(e), c = (e, t, n = this.$jy) => {
-			let [i, a, o] = hr.G(n, t + 1, e), s = w(new Date(i, a - 1, o), this);
-			return (r ? s : s.endOf(yr)).$set("hour", 1);
+			let [i, a, o] = Or.G(n, t + 1, e), s = w(new Date(i, a - 1, o), this);
+			return (r ? s : s.endOf(Mr)).$set("hour", 1);
 		}, l = (this.$W + (7 - n.$fdow)) % 7;
 		switch (i) {
-			case xr: return r ? c(1, 0) : c(0, 0, this.$jy + 1);
-			case br: return r ? c(1, this.$jM) : c(0, (this.$jM + 1) % 12, this.$jy + Math.floor((this.$jM + 1) / 12));
-			case Sr: return c(r ? this.$jD - l : this.$jD + (6 - l), this.$jM);
+			case Pr: return r ? c(1, 0) : c(0, 0, this.$jy + 1);
+			case Nr: return r ? c(1, this.$jM) : c(0, (this.$jM + 1) % 12, this.$jy + Math.floor((this.$jM + 1) / 12));
+			case Fr: return c(r ? this.$jD - l : this.$jD + (6 - l), this.$jM);
 			default: return m.bind(this)(e, t);
 		}
 	}, r.$set = function(e, t) {
 		if (!a(this)) return h.bind(this)(e, t);
 		let n = o(e), r = (e, t, n = this.$jy) => {
-			let [r, i, a] = hr.G(n, t + 1, e);
+			let [r, i, a] = Or.G(n, t + 1, e);
 			return this.$d.setFullYear(r), this.$d.setMonth(i - 1), this.$d.setDate(a), this;
 		};
 		switch (n) {
-			case vr:
-			case yr:
+			case jr:
+			case Mr:
 				r(t, this.$jM);
 				break;
-			case br:
+			case Nr:
 				r(this.$jD, t);
 				break;
-			case xr:
+			case Pr:
 				r(this.$jD, this.$jM, t);
 				break;
 			default: return h.bind(this)(e, t);
@@ -3655,27 +3763,27 @@ var hr = {
 		if (!a(this)) return g.bind(this)(e, t);
 		e = Number(e);
 		let n = t && (t.length === 1 || t === "ms") ? t : o(t), r = (t, n) => {
-			let r = this.set(vr, 1).set(t, n + e);
-			return r.set(vr, Math.min(this.$jD, r.daysInMonth()));
+			let r = this.set(jr, 1).set(t, n + e);
+			return r.set(jr, Math.min(this.$jD, r.daysInMonth()));
 		};
-		if (["M", br].includes(n)) {
-			let t = this.$jM + e, n = t < 0 ? -Math.ceil(-t / 12) : Math.floor(t / 12), r = this.$jD, i = this.set(yr, 1).add(n, xr).set(br, t - n * 12);
-			return i.set(yr, Math.min(i.daysInMonth(), r));
+		if (["M", Nr].includes(n)) {
+			let t = this.$jM + e, n = t < 0 ? -Math.ceil(-t / 12) : Math.floor(t / 12), r = this.$jD, i = this.set(Mr, 1).add(n, Pr).set(Nr, t - n * 12);
+			return i.set(Mr, Math.min(i.daysInMonth(), r));
 		}
-		if (["y", xr].includes(n)) return r(xr, this.$jy);
-		if (["d", yr].includes(n)) {
+		if (["y", Pr].includes(n)) return r(Pr, this.$jy);
+		if (["d", Mr].includes(n)) {
 			let t = new Date(this.$d);
 			return t.setDate(t.getDate() + e), w(t, this);
 		}
-		if (["w", Sr].includes(n)) {
+		if (["w", Fr].includes(n)) {
 			let t = new Date(this.$d);
 			return t.setDate(t.getDate() + e * 7), w(t, this);
 		}
 		return g.bind(this)(e, t);
 	}, r.format = function(e, t) {
 		if (!a(this)) return _.bind(this)(e, t);
-		let n = e || Cr, { jmonths: r } = t || this.$locale();
-		return n.replace(_r, (e) => {
+		let n = e || Ir, { jmonths: r } = t || this.$locale();
+		return n.replace(Ar, (e) => {
 			if (e.includes("[")) return e.replace(/\[|\]/g, "");
 			switch (e) {
 				case "YY": return String(this.$jy).slice(-2);
@@ -3693,23 +3801,23 @@ var hr = {
 		if (!a(this)) return v.bind(this)(e, t, r);
 		let i = o(t), s = n(e), c = l(this, s);
 		switch (i) {
-			case xr:
+			case Pr:
 				c /= 12;
 				break;
-			case br: break;
+			case Nr: break;
 			default: return v.bind(this)(e, t, r);
 		}
 		return r ? c : u(c);
 	}, r.$g = function(e, t, n) {
 		return s(e) ? this[t] : this.set(n, e);
 	}, r.year = function(e) {
-		return a(this) ? this.$g(e, "$jy", xr) : y.bind(this)(e);
+		return a(this) ? this.$g(e, "$jy", Pr) : y.bind(this)(e);
 	}, r.month = function(e) {
-		return a(this) ? this.$g(e, "$jM", br) : b.bind(this)(e);
+		return a(this) ? this.$g(e, "$jM", Nr) : b.bind(this)(e);
 	}, r.date = function(e) {
-		return a(this) ? this.$g(e, "$jD", yr) : x.bind(this)(e);
+		return a(this) ? this.$g(e, "$jD", Mr) : x.bind(this)(e);
 	}, r.daysInMonth = function() {
-		return a(this) ? this.endOf(br).$jD : S.bind(this)();
+		return a(this) ? this.endOf(Nr).$jD : S.bind(this)();
 	}, C && (r.toArray = function() {
 		return a(this) ? [
 			this.$jy,
@@ -3724,14 +3832,14 @@ var hr = {
 		return w(this.toDate(), this);
 	};
 };
-function Er(e) {
+function zr(e) {
 	return e.toLowerCase().startsWith("fa");
 }
-function Dr(e) {
+function Br(e) {
 	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
 }
-rr.default.extend(Tr), rr.default.extend(ir.default);
-function Or(e) {
+gr.default.extend(Rr), gr.default.extend(_r.default);
+function Vr(e) {
 	if (e == null || e === "") return !0;
 	if (typeof e == "number") return !Number.isFinite(e) || e <= 0;
 	if (typeof e == "string") {
@@ -3741,8 +3849,8 @@ function Or(e) {
 	}
 	return !1;
 }
-function kr(...e) {
-	for (let t of e) if (!Or(t)) {
+function Hr(...e) {
+	for (let t of e) if (!Vr(t)) {
 		if (typeof t == "number") return t;
 		if (typeof t == "string") {
 			let e = t.trim();
@@ -3750,27 +3858,27 @@ function kr(...e) {
 		}
 	}
 }
-function Ar(e) {
-	if (typeof e == "number") return rr.default.unix(e);
+function Ur(e) {
+	if (typeof e == "number") return gr.default.unix(e);
 	let t = String(e).trim();
-	return /^\d+$/.test(t) ? rr.default.unix(Number(t)) : (0, rr.default)(t);
+	return /^\d+$/.test(t) ? gr.default.unix(Number(t)) : (0, gr.default)(t);
 }
-function jr(e, t, n = "—") {
-	if (Or(e)) return n;
-	let r = Ar(e);
+function Wr(e, t, n = "—") {
+	if (Vr(e)) return n;
+	let r = Ur(e);
 	if (!r.isValid()) return n;
-	if (Er(t)) {
+	if (zr(t)) {
 		let e = S.t("date.timeSeparator");
-		return Dr(r.calendar("jalali").locale("fa").format(`D MMMM YYYY${e}HH:mm`));
+		return Br(r.calendar("jalali").locale("fa").format(`D MMMM YYYY${e}HH:mm`));
 	}
 	return r.locale("en").format("YYYY-MM-DD HH:mm");
 }
 //#endregion
 //#region ../Modules/basalam-module/client/lib/basalamJobs.ts
-function Mr(e) {
-	return kr(e.failed_at, e.completed_at, e.started_at, e.created_at, e.updated_at);
+function Gr(e) {
+	return Hr(e.failed_at, e.completed_at, e.started_at, e.created_at, e.updated_at);
 }
-function Nr(e, t) {
+function Kr(e, t) {
 	if (!e || e === "null" || e === "undefined") return "—";
 	let n = String(e).trim();
 	if (!n) return "—";
@@ -3788,7 +3896,7 @@ function Nr(e, t) {
 	} catch {}
 	return n;
 }
-var Pr = {
+var qr = {
 	sync_basalam_create_all_products: "basalam.job.createAllProducts",
 	sync_basalam_update_all_products: "basalam.job.updateAllProducts",
 	sync_basalam_bulk_update_products: "basalam.job.bulkUpdateProducts",
@@ -3798,29 +3906,29 @@ var Pr = {
 	sync_basalam_fetch_orders: "basalam.job.fetchOrders",
 	sync_basalam_quick_update: "basalam.job.quickUpdate",
 	webino_basalam_discount_tasks: "basalam.job.discounts"
-}, Fr = {
+}, Jr = {
 	pending: "basalam.jobStatus.pending",
 	processing: "basalam.jobStatus.processing",
 	completed: "basalam.jobStatus.completed",
 	failed: "basalam.jobStatus.failed",
 	success: "basalam.jobStatus.completed"
 };
-function Ir(e) {
+function Yr(e) {
 	return String(e.job_type || e.type || "");
 }
-function Lr(e, t) {
+function Xr(e, t) {
 	if (!e) return "—";
-	let n = Pr[e];
+	let n = qr[e];
 	return n ? t(n) : t(`basalam.job.${e}`, { defaultValue: e.replace(/^sync_basalam_/, "").replace(/_/g, " ") });
 }
-function Rr(e, t) {
+function Zr(e, t) {
 	if (!e) return "—";
-	let n = Fr[e];
+	let n = Jr[e];
 	return n ? t(n) : t(`basalam.jobStatus.${e}`, { defaultValue: e });
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamProductsPage.tsx
-function zr() {
+function Qr() {
 	let { t: r, i18n: i } = _(), a = n(), [o, s] = f("all"), [c, l] = f({}), u = t({
 		queryKey: [
 			"basalam",
@@ -4081,19 +4189,19 @@ function zr() {
 							}),
 							/* @__PURE__ */ b("td", {
 								className: "py-2 pe-2",
-								children: Lr(Ir(e), r)
+								children: Xr(Yr(e), r)
 							}),
 							/* @__PURE__ */ b("td", {
 								className: "py-2 pe-2",
-								children: Rr(e.status, r)
+								children: Zr(e.status, r)
 							}),
 							/* @__PURE__ */ b("td", {
 								className: "text-muted-foreground py-2 pe-2 text-xs",
-								children: jr(Mr(e), i.language)
+								children: Wr(Gr(e), i.language)
 							}),
 							/* @__PURE__ */ b("td", {
 								className: "text-muted-foreground max-w-md break-all py-2 text-xs",
-								children: Nr(e.error_message, r)
+								children: Kr(e.error_message, r)
 							})
 						]
 					}, String(e.id))) })]
@@ -4104,7 +4212,7 @@ function zr() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamOrdersPage.tsx
-function Br() {
+function $r() {
 	return /* @__PURE__ */ b(m, {
 		to: "/orders?marketplace=basalam",
 		replace: !0
@@ -4112,10 +4220,10 @@ function Br() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamCategoriesPage.tsx
-function Vr(e) {
+function ei(e) {
 	return String(e.title ?? e.name ?? e.id);
 }
-function Hr(e) {
+function ti(e) {
 	if (!e) return [];
 	if (Array.isArray(e)) return e;
 	if (typeof e == "object") {
@@ -4126,10 +4234,10 @@ function Hr(e) {
 	}
 	return [];
 }
-function Ur(e) {
+function ni(e) {
 	return e ? Array.isArray(e.children) && e.children.length ? e.children : Array.isArray(e.category) && e.category.length ? e.category : [] : [];
 }
-function Wr() {
+function ri() {
 	let { t: r } = _(), i = n(), [a, o] = f(""), [s, c] = f(""), [l, d] = f(""), [p, m] = f(""), [h, g] = f(""), [y, S] = f(""), C = t({
 		queryKey: ["basalam", "mappings"],
 		queryFn: () => Q("basalam/categories/mappings")
@@ -4142,11 +4250,11 @@ function Wr() {
 	}), E = t({
 		queryKey: ["basalam", "categories-tree"],
 		queryFn: () => Q("basalam/categories")
-	}), D = u(() => Hr(E.data?.categories), [E.data]), O = D, k = O.find((e) => String(e.id) === s), A = Ur(k), j = A.find((e) => String(e.id) === l), M = Ur(j), N = (T.data?.items ?? []).find((e) => String(e.id) === a), ee = [
+	}), D = u(() => ti(E.data?.categories), [E.data]), O = D, k = O.find((e) => String(e.id) === s), A = ni(k), j = A.find((e) => String(e.id) === l), M = ni(j), N = (T.data?.items ?? []).find((e) => String(e.id) === a), ee = [
 		k,
 		j,
 		M.find((e) => String(e.id) === p)
-	].filter(Boolean).map((e) => Vr(e)).join(" / "), P = e({
+	].filter(Boolean).map((e) => ei(e)).join(" / "), P = e({
 		mutationFn: () => Q("basalam/categories/mappings", {
 			method: "POST",
 			body: JSON.stringify({
@@ -4180,8 +4288,8 @@ function Wr() {
 			v.success(r("basalam.detectOk"));
 			let t = e.prediction;
 			if (t && (t.level1 && c(String(t.level1)), t.level2 && d(String(t.level2)), (t.level3 || t.category_id) && m(String(t.level3 || t.category_id)), !t.level1 && t.category_id)) for (let e of D) {
-				for (let n of Ur(e)) {
-					for (let r of Ur(n)) if (r.id === t.category_id) {
+				for (let n of ni(e)) {
+					for (let r of ni(n)) if (r.id === t.category_id) {
 						c(String(e.id)), d(String(n.id)), m(String(r.id));
 						return;
 					}
@@ -4245,7 +4353,7 @@ function Wr() {
 									children: r("basalam.selectCategory")
 								}), O.map((e) => /* @__PURE__ */ b("option", {
 									value: String(e.id),
-									children: Vr(e)
+									children: ei(e)
 								}, e.id))]
 							})]
 						}),
@@ -4263,7 +4371,7 @@ function Wr() {
 									children: r("basalam.selectCategory")
 								}), A.map((e) => /* @__PURE__ */ b("option", {
 									value: String(e.id),
-									children: Vr(e)
+									children: ei(e)
 								}, e.id))]
 							})]
 						}),
@@ -4279,7 +4387,7 @@ function Wr() {
 									children: r("basalam.selectCategory")
 								}), M.map((e) => /* @__PURE__ */ b("option", {
 									value: String(e.id),
-									children: Vr(e)
+									children: ei(e)
 								}, e.id))]
 							})]
 						}),
@@ -4361,7 +4469,7 @@ function Wr() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamSyncSettingsPage.tsx
-function Gr() {
+function ii() {
 	let { t: r } = _(), i = n(), [a, o] = f({}), [c, u] = f(!1), p = d(!1), m = t({
 		queryKey: ["basalam", "settings"],
 		queryFn: () => Q("basalam/settings")
@@ -4737,23 +4845,23 @@ function Gr() {
 }
 //#endregion
 //#region src/lib/formatNumber.ts
-function Kr(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = Er(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return Er(t) ? Dr(i) : i;
+function ai(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = zr(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return zr(t) ? Br(i) : i;
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamFinancePage.tsx
-function qr(e) {
+function oi(e) {
 	return typeof e != "number" || !Number.isFinite(e) ? null : Math.trunc(e / 10);
 }
-function Jr(e, t, n = "—") {
-	let r = qr(e);
-	return r === null ? n : Kr(r, t);
+function si(e, t, n = "—") {
+	let r = oi(e);
+	return r === null ? n : ai(r, t);
 }
-function Yr(e) {
+function ci(e) {
 	return typeof e.status_label == "string" && e.status_label ? e.status_label : typeof e.status?.description == "string" && e.status.description ? e.status.description : "—";
 }
-function Xr({ envelope: e, emptyLabel: t, locale: n }) {
+function li({ envelope: e, emptyLabel: t, locale: n }) {
 	let { t: r } = _();
 	if (!e) return /* @__PURE__ */ b("p", {
 		className: "text-muted-foreground text-sm",
@@ -4782,7 +4890,7 @@ function Xr({ envelope: e, emptyLabel: t, locale: n }) {
 						}), /* @__PURE__ */ x("span", {
 							className: "font-semibold",
 							children: [
-								Jr(e.amount, n),
+								si(e.amount, n),
 								" ",
 								r("basalam.toman")
 							]
@@ -4791,17 +4899,17 @@ function Xr({ envelope: e, emptyLabel: t, locale: n }) {
 					/* @__PURE__ */ x("div", {
 						className: "text-muted-foreground mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs",
 						children: [
-							/* @__PURE__ */ b("span", { children: Yr(e) }),
+							/* @__PURE__ */ b("span", { children: ci(e) }),
 							e.method?.description ? /* @__PURE__ */ b("span", { children: e.method.description }) : null,
 							/* @__PURE__ */ x("span", { children: [
 								r("basalam.settlementCreated"),
 								": ",
-								jr(e.created_at, n)
+								Wr(e.created_at, n)
 							] }),
 							e.payable_at ? /* @__PURE__ */ x("span", { children: [
 								r("basalam.settlementPayable"),
 								": ",
-								jr(e.payable_at, n)
+								Wr(e.payable_at, n)
 							] }) : null
 						]
 					}),
@@ -4814,7 +4922,7 @@ function Xr({ envelope: e, emptyLabel: t, locale: n }) {
 		})
 	});
 }
-function Zr() {
+function ui() {
 	let { t: r, i18n: i } = _(), a = i.language, o = n(), [s, c] = f(""), [l, u] = f("1"), [d, p] = f(""), m = t({
 		queryKey: ["basalam", "finance"],
 		queryFn: () => Q("basalam/finance/balance")
@@ -4860,14 +4968,14 @@ function Zr() {
 						children: [/* @__PURE__ */ b(q, {
 							className: "text-base",
 							children: r("basalam.boothBalance")
-						}), /* @__PURE__ */ b(On, { children: S?.calculated_at ? r("basalam.balanceAsOf", { time: jr(S.calculated_at, a) }) : r("basalam.balance") })]
+						}), /* @__PURE__ */ b(On, { children: S?.calculated_at ? r("basalam.balanceAsOf", { time: Wr(S.calculated_at, a) }) : r("basalam.balance") })]
 					}), /* @__PURE__ */ b(J, { children: y && !y.success ? /* @__PURE__ */ b("p", {
 						className: "text-destructive text-sm",
 						children: y.message || r("basalam.financeError")
 					}) : /* @__PURE__ */ x("p", {
 						className: "text-2xl font-semibold tracking-tight",
 						children: [
-							Jr(S?.balance, a),
+							si(S?.balance, a),
 							" ",
 							/* @__PURE__ */ b("span", {
 								className: "text-muted-foreground text-sm font-normal",
@@ -4884,7 +4992,7 @@ function Zr() {
 					}), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ x("p", {
 						className: "text-2xl font-semibold tracking-tight",
 						children: [
-							Jr(S?.settled?.cash, a),
+							si(S?.settled?.cash, a),
 							" ",
 							/* @__PURE__ */ b("span", {
 								className: "text-muted-foreground text-sm font-normal",
@@ -4901,7 +5009,7 @@ function Zr() {
 					}), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ x("p", {
 						className: "text-2xl font-semibold tracking-tight",
 						children: [
-							Jr(S?.settled?.credit, a),
+							si(S?.settled?.credit, a),
 							" ",
 							/* @__PURE__ */ b("span", {
 								className: "text-muted-foreground text-sm font-normal",
@@ -4920,7 +5028,7 @@ function Zr() {
 						}), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ x("p", {
 							className: "text-xl font-semibold tracking-tight",
 							children: [
-								Jr(S?.future_balance, a),
+								si(S?.future_balance, a),
 								" ",
 								/* @__PURE__ */ b("span", {
 									className: "text-muted-foreground text-sm font-normal",
@@ -4976,11 +5084,11 @@ function Zr() {
 			}),
 			/* @__PURE__ */ x("div", {
 				className: "grid gap-4 md:grid-cols-2",
-				children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.activeSettlements") }), /* @__PURE__ */ b(On, { children: r("basalam.activeSettlementsHint") })] }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b(Xr, {
+				children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.activeSettlements") }), /* @__PURE__ */ b(On, { children: r("basalam.activeSettlementsHint") })] }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b(li, {
 					envelope: m.data?.settlements,
 					emptyLabel: r("basalam.noActiveSettlements"),
 					locale: a
-				}) })] }), /* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.settlementHistory") }), /* @__PURE__ */ b(On, { children: r("basalam.settlementHistoryHint") })] }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b(Xr, {
+				}) })] }), /* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.settlementHistory") }), /* @__PURE__ */ b(On, { children: r("basalam.settlementHistoryHint") })] }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b(li, {
 					envelope: m.data?.history,
 					emptyLabel: r("basalam.noSettlementHistory"),
 					locale: a
@@ -4991,7 +5099,7 @@ function Zr() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamLogsPage.tsx
-function Qr() {
+function di() {
 	let { t: e, i18n: n } = _(), r = t({
 		queryKey: [
 			"basalam",
@@ -5080,19 +5188,19 @@ function Qr() {
 								}),
 								/* @__PURE__ */ b("td", {
 									className: "py-2 pe-2",
-									children: Lr(Ir(t), e)
+									children: Xr(Yr(t), e)
 								}),
 								/* @__PURE__ */ b("td", {
 									className: "py-2 pe-2",
-									children: Rr(t.status, e)
+									children: Zr(t.status, e)
 								}),
 								/* @__PURE__ */ b("td", {
 									className: "text-muted-foreground py-2 pe-2 text-xs",
-									children: jr(Mr(t), n.language)
+									children: Wr(Gr(t), n.language)
 								}),
 								/* @__PURE__ */ b("td", {
 									className: "text-muted-foreground max-w-md break-all py-2 text-xs",
-									children: Nr(t.error_message, e)
+									children: Kr(t.error_message, e)
 								})
 							]
 						}, String(t.id))) })]
@@ -5107,7 +5215,7 @@ function Qr() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamBoothPage.tsx
-function $r(e) {
+function fi(e) {
 	if (Array.isArray(e)) return e;
 	if (e && typeof e == "object") {
 		let t = e.data;
@@ -5115,10 +5223,10 @@ function $r(e) {
 	}
 	return [];
 }
-function ei(e) {
+function pi(e) {
 	return String(e.title ?? e.name ?? e.label ?? e.id ?? "—");
 }
-function ti() {
+function mi() {
 	let { t: r } = _(), i = n(), [a, o] = f(""), [s, c] = f(""), [d, p] = f(""), [m, h] = f(""), [g, y] = f("10"), [S, C] = f(!1), [w, T] = f(!1), [E, D] = f(!0), O = t({
 		queryKey: ["basalam", "status"],
 		queryFn: () => Q("basalam/status")
@@ -5234,7 +5342,7 @@ function ti() {
 			D(t), v.success(r("basalam.settingsSaved")), await i.invalidateQueries({ queryKey: ["basalam", "settings"] });
 		},
 		onError: (e) => Z(r, e)
-	}), ae = !!O.data?.connected, z = k.data?.vendor?.title || a || r("basalam.boothUntitled"), oe = k.data?.vendor?.id || O.data?.vendor_id, se = (Array.isArray(j.data?.webhooks) ? j.data.webhooks : []).length > 0 || !!j.data?.webhook_url, ce = u(() => $r(A.data?.profiles ?? A.data?.shipping), [A.data]), le = u(() => $r(A.data?.carriers), [A.data]), ue = u(() => $r(A.data?.vendor_carriers), [A.data]), de = u(() => $r(M.data?.discounts), [M.data]), fe = (N.data?.products ?? []).filter((e) => e.basalam_product_id);
+	}), ae = !!O.data?.connected, z = k.data?.vendor?.title || a || r("basalam.boothUntitled"), oe = k.data?.vendor?.id || O.data?.vendor_id, se = (Array.isArray(j.data?.webhooks) ? j.data.webhooks : []).length > 0 || !!j.data?.webhook_url, ce = u(() => fi(A.data?.profiles ?? A.data?.shipping), [A.data]), le = u(() => fi(A.data?.carriers), [A.data]), ue = u(() => fi(A.data?.vendor_carriers), [A.data]), de = u(() => fi(M.data?.discounts), [M.data]), fe = (N.data?.products ?? []).filter((e) => e.basalam_product_id);
 	return /* @__PURE__ */ x(En, {
 		title: r("basalam.boothTitle"),
 		description: r("basalam.boothSubtitle"),
@@ -5346,7 +5454,7 @@ function ti() {
 										className: "space-y-2 text-sm",
 										children: [ce.map((e) => /* @__PURE__ */ x("li", {
 											className: "flex items-center justify-between gap-2 border-b py-2",
-											children: [/* @__PURE__ */ b("span", { children: ei(e) }), /* @__PURE__ */ b(W, {
+											children: [/* @__PURE__ */ b("span", { children: pi(e) }), /* @__PURE__ */ b(W, {
 												size: "sm",
 												variant: "destructive",
 												onClick: () => te.mutate(Number(e.id)),
@@ -5366,7 +5474,7 @@ function ti() {
 									children: r("basalam.shippingCarriers")
 								}), /* @__PURE__ */ x("ul", {
 									className: "text-muted-foreground space-y-1 text-sm",
-									children: [(ue.length ? ue : le).slice(0, 12).map((e, t) => /* @__PURE__ */ b("li", { children: ei(e) }, String(e.id ?? t))), !ue.length && !le.length ? /* @__PURE__ */ b("li", { children: r("basalam.noCarriers") }) : null]
+									children: [(ue.length ? ue : le).slice(0, 12).map((e, t) => /* @__PURE__ */ b("li", { children: pi(e) }, String(e.id ?? t))), !ue.length && !le.length ? /* @__PURE__ */ b("li", { children: r("basalam.noCarriers") }) : null]
 								})] })
 							})]
 						})]
@@ -5446,21 +5554,21 @@ function ti() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/module-entry.tsx
-var ni = {
-	"settings/shop/basalam": $n,
-	"settings/shop/basalam/products": zr,
-	"settings/shop/basalam/orders": Br,
-	"settings/shop/basalam/categories": Wr,
-	"settings/shop/basalam/settings": Gr,
-	"settings/shop/basalam/finance": Zr,
-	"settings/shop/basalam/booth": ti,
-	"settings/shop/basalam/tickets": $n,
-	"settings/shop/basalam/logs": Qr,
-	"settings/shop/basalam/payments": $n,
-	"settings/shop/basalam/wallet": Zr,
-	"settings/shop/basalam/subscriptions": $n,
-	"settings/shop/basalam/webhooks": ti,
-	"settings/shop/basalam/operations": zr
-}, ri = { routes: ni };
+var hi = {
+	"settings/shop/basalam": fr,
+	"settings/shop/basalam/products": Qr,
+	"settings/shop/basalam/orders": $r,
+	"settings/shop/basalam/categories": ri,
+	"settings/shop/basalam/settings": ii,
+	"settings/shop/basalam/finance": ui,
+	"settings/shop/basalam/booth": mi,
+	"settings/shop/basalam/tickets": fr,
+	"settings/shop/basalam/logs": di,
+	"settings/shop/basalam/payments": fr,
+	"settings/shop/basalam/wallet": ui,
+	"settings/shop/basalam/subscriptions": fr,
+	"settings/shop/basalam/webhooks": mi,
+	"settings/shop/basalam/operations": Qr
+}, gi = { routes: hi };
 //#endregion
-export { ri as default, ni as routes };
+export { gi as default, hi as routes };

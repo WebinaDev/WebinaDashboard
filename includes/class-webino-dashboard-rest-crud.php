@@ -795,6 +795,18 @@ class Webino_Dashboard_REST_Crud {
 
 		register_rest_route(
 			self::NS,
+			'/shop/products/bulk-sale/job',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'Webino_Dashboard_Bulk_Sale', 'rest_job_state' ),
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can( 'edit_products' );
+				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shop/brands',
 			array(
 				array(
@@ -3335,8 +3347,16 @@ class Webino_Dashboard_REST_Crud {
 	 * @param WC_Product $parent Variable parent.
 	 * @return WC_Product Refreshed parent (same instance if unchanged).
 	 */
-	private static function migrate_parent_variation_attributes_to_global( $parent ) {
+	private static function migrate_parent_variation_attributes_to_global( $parent, $allow_write = false ) {
 		if ( ! $parent || ! $parent->is_type( 'variable' ) || ! class_exists( 'WC_Product_Attribute' ) ) {
+			return $parent;
+		}
+		if ( ! $allow_write ) {
+			// READ-ONLY mode: never create attribute taxonomies/terms and never rewrite the parent or
+			// its children unless the caller explicitly asked for the storage migration. Listing,
+			// reading and saving a variation used to run the migration as a side effect, which changed
+			// variation data behind the merchant's back and broke the storefront attribute lookup.
+			self::register_readonly_parent_attributes( $parent );
 			return $parent;
 		}
 		$changed   = false;
@@ -3502,6 +3522,38 @@ class Webino_Dashboard_REST_Crud {
 				)
 			)
 		);
+	}
+
+	/**
+	 * Make sure the parent's taxonomy attributes exist in this request WITHOUT writing anything.
+	 *
+	 * WooCommerce registers pa_* taxonomies on demand; a read-only call (variation list, storefront
+	 * lookup) must not create attribute taxonomies, terms or rewrite variation meta. This only
+	 * registers a taxonomy that WooCommerce already knows about but whose registration has not been
+	 * triggered yet in the current request.
+	 *
+	 * @param WC_Product $parent Variable product.
+	 * @return void
+	 */
+	private static function register_readonly_parent_attributes( $parent ) {
+		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
+			return;
+		}
+		$attributes = $parent->get_attributes();
+		if ( ! is_array( $attributes ) || array() === $attributes ) {
+			return;
+		}
+		foreach ( $attributes as $attr ) {
+			if ( ! is_a( $attr, 'WC_Product_Attribute' ) || ! $attr->is_taxonomy() ) {
+				continue;
+			}
+			$name = (string) $attr->get_name();
+			if ( '' === $name || taxonomy_exists( $name ) || ! self::attribute_key_is_sanitize_stable( $name ) ) {
+				continue;
+			}
+			$label = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $name, $parent ) : $name;
+			self::register_global_attribute_taxonomy_if_needed( $name, is_string( $label ) ? $label : $name );
+		}
 	}
 
 	/**
@@ -5507,16 +5559,33 @@ class Webino_Dashboard_REST_Crud {
 	}
 
 	/**
-	 * Best-effort repair when WC reports empty attributes but attribute_* meta still exists.
+	 * Read-only fallback when WC reports empty attributes but attribute_* meta still exists.
+	 *
+	 * Never writes; see readable_variation_attributes().
 	 *
 	 * @param WC_Product           $parent Variable parent.
 	 * @param WC_Product_Variation $v      Variation.
-	 * @return array<string,string>|null Repaired storage map, or null if unchanged/failed.
+	 * @return array<string,string>|null Readable attribute map, or null if unchanged/failed.
 	 */
 	private static function maybe_repair_orphan_variation_attributes( $parent, $v ) {
 		if ( ! $parent || ! $v || ! $parent->is_type( 'variable' ) || ! $v->is_type( 'variation' ) ) {
 			return null;
 		}
+		return self::readable_variation_attributes( $parent, $v );
+	}
+
+	/**
+	 * Read-only view of a variation's attributes for the editor.
+	 *
+	 * When WooCommerce has blank attribute meta, the editor still needs to show which combination the
+	 * variation stands for. This NEVER writes: list/read requests must not change variation data (an
+	 * earlier version re-saved every variation on every list call).
+	 *
+	 * @param WC_Product           $parent Variable parent.
+	 * @param WC_Product_Variation $v      Variation.
+	 * @return array<string,string>|null Attribute map, or null when nothing needs repair.
+	 */
+	private static function readable_variation_attributes( $parent, $v ) {
 		$axes = $parent->get_variation_attributes();
 		if ( ! is_array( $axes ) || array() === $axes ) {
 			return null;
@@ -5525,13 +5594,16 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! is_array( $attrs ) ) {
 			$attrs = array();
 		}
-		$non_empty = 0;
-		foreach ( $attrs as $val ) {
-			if ( '' !== trim( (string) $val ) ) {
-				++$non_empty;
+		// "Complete" is judged on the variation's OWN attribute map (not on meta fallbacks): when an
+		// axis is stored blank, the editor must still see the real combination — resolved here,
+		// read-only, without touching the stored row.
+		$complete = 0;
+		foreach ( array_keys( $axes ) as $axis_name ) {
+			if ( '' !== self::variation_axis_value( $attrs, (string) $axis_name ) ) {
+				++$complete;
 			}
 		}
-		if ( $non_empty === count( $axes ) ) {
+		if ( $complete === count( $axes ) ) {
 			return null;
 		}
 
@@ -5544,13 +5616,10 @@ class Webino_Dashboard_REST_Crud {
 			$combo[ (string) $axis_name ] = $raw;
 		}
 		$storage = self::build_variation_storage_attributes( $parent, $combo );
-		if ( count( $storage ) !== count( $axes ) ) {
-			// Still expose readable combo for UI even if storage build failed.
+		if ( array() === $storage ) {
 			return $combo;
 		}
-		self::persist_variation_storage_attributes( $v, $storage );
-		$v->save();
-		return $storage;
+		return array_merge( $combo, $storage );
 	}
 
 	/**
@@ -5714,8 +5783,10 @@ class Webino_Dashboard_REST_Crud {
 		$attrs = $request->get_param( 'attributes' );
 		if ( is_array( $attrs ) ) {
 			$parent = wc_get_product( (int) $v->get_parent_id() );
+			// The parent storage migration may create taxonomies/terms and remap children, so it only
+			// runs when this request actually sets attribute values — never on price/stock-only saves.
 			if ( $parent && $parent->is_type( 'variable' ) ) {
-				$parent = self::migrate_parent_variation_attributes_to_global( $parent );
+				$parent = self::migrate_parent_variation_attributes_to_global( $parent, true );
 			}
 			$axes  = ( $parent && $parent->is_type( 'variable' ) ) ? $parent->get_variation_attributes() : array();
 			$combo = array();
@@ -5742,7 +5813,7 @@ class Webino_Dashboard_REST_Crud {
 					}
 				}
 				if ( $complete && $parent && $parent->is_type( 'variable' ) ) {
-					$storage = self::build_variation_storage_attributes( $parent, $combo );
+					$storage = self::build_variation_storage_attributes( $parent, $combo, true );
 					if ( count( $storage ) === count( $axes ) ) {
 						self::persist_variation_storage_attributes( $v, $storage );
 					} else {
@@ -5754,7 +5825,7 @@ class Webino_Dashboard_REST_Crud {
 					}
 				}
 			} elseif ( array() !== $combo && $parent && $parent->is_type( 'variable' ) ) {
-				$storage = self::build_variation_storage_attributes( $parent, $combo );
+				$storage = self::build_variation_storage_attributes( $parent, $combo, true );
 				if ( array() !== $storage ) {
 					self::persist_variation_storage_attributes( $v, $storage );
 				} else {
@@ -5870,9 +5941,22 @@ class Webino_Dashboard_REST_Crud {
 			if ( ! $v || ! $v->is_type( 'variation' ) || ! $v->get_manage_stock() ) {
 				continue;
 			}
-			$qty  = $v->get_stock_quantity();
-			$want = ( null !== $qty && (int) $qty > 0 ) ? 'instock' : 'outofstock';
-			if ( $v->get_stock_status() === $want ) {
+			$qty = $v->get_stock_quantity();
+			if ( null === $qty ) {
+				// Quantity unknown (stock never counted): the merchant's status is authoritative.
+				continue;
+			}
+			$qty = (int) $qty;
+			if ( $qty > 0 ) {
+				$want = 'instock';
+			} elseif ( 'yes' === $v->get_backorders() || 'notify' === $v->get_backorders() ) {
+				// Backorders allowed → sellable, never silently force "out of stock".
+				$want = 'onbackorder';
+			} else {
+				$want = 'outofstock';
+			}
+			$current = (string) $v->get_stock_status();
+			if ( $current === $want ) {
 				continue;
 			}
 			$v->set_stock_status( $want );
@@ -5929,7 +6013,7 @@ class Webino_Dashboard_REST_Crud {
 		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
 			return new WP_Error( 'invalid_parent', __( 'Not a variable product.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
-		$parent = self::migrate_parent_variation_attributes_to_global( $parent );
+		$parent = self::migrate_parent_variation_attributes_to_global( $parent, true );
 		$axes   = $parent->get_variation_attributes();
 		if ( is_array( $axes ) && array() !== $axes ) {
 			$req_attrs = $request->get_param( 'attributes' );
@@ -6149,7 +6233,7 @@ class Webino_Dashboard_REST_Crud {
 			return new WP_Error( 'invalid_parent', __( 'Not a variable product.', 'webino-dashboard' ), array( 'status' => 400 ) );
 		}
 
-		$parent = self::migrate_parent_variation_attributes_to_global( $parent );
+		$parent = self::migrate_parent_variation_attributes_to_global( $parent, true );
 		$slug_map = self::prime_variation_attribute_slug_map( $parent );
 		if ( function_exists( 'wc_delete_product_transients' ) ) {
 			wc_delete_product_transients( $parent_id );
@@ -6307,7 +6391,7 @@ class Webino_Dashboard_REST_Crud {
 	 * @param string     $axis_key Axis from get_variation_attributes().
 	 * @return string
 	 */
-	private static function resolve_variation_storage_taxonomy( $parent, $axis_key ) {
+	private static function resolve_variation_storage_taxonomy( $parent, $axis_key, $allow_write = false ) {
 		$axis_key = (string) $axis_key;
 		if ( ! $parent || ! $parent->is_type( 'variable' ) ) {
 			return '';
@@ -6330,12 +6414,15 @@ class Webino_Dashboard_REST_Crud {
 					return $name;
 				}
 			}
+			if ( ! $allow_write ) {
+				return '';
+			}
 			return self::ensure_global_attribute_taxonomy( $label ? $label : $axis_key, $name );
 		}
 		if ( taxonomy_exists( $axis_key ) ) {
 			return $axis_key;
 		}
-		return self::ensure_global_attribute_taxonomy( $axis_key, $axis_key );
+		return $allow_write ? self::ensure_global_attribute_taxonomy( $axis_key, $axis_key ) : '';
 	}
 
 	/**
@@ -6345,7 +6432,7 @@ class Webino_Dashboard_REST_Crud {
 	 * @param string $raw_value Option label or slug.
 	 * @return string
 	 */
-	private static function ensure_term_slug( $taxonomy, $raw_value ) {
+	private static function ensure_term_slug( $taxonomy, $raw_value, $allow_create = true ) {
 		$raw_value = (string) $raw_value;
 		if ( '' === $raw_value || ! taxonomy_exists( (string) $taxonomy ) ) {
 			return '';
@@ -6372,6 +6459,11 @@ class Webino_Dashboard_REST_Crud {
 				}
 			}
 		}
+		if ( ! $allow_create ) {
+			// Read-only resolution: return the slug the option WOULD get, never write a new term.
+			$slug_only = sanitize_title( $raw_value );
+			return '' === $slug_only ? '' : $slug_only;
+		}
 		$new_slug = sanitize_title( $raw_value );
 		if ( '' === $new_slug ) {
 			$new_slug = 't' . substr( md5( $raw_value ), 0, 8 );
@@ -6397,7 +6489,7 @@ class Webino_Dashboard_REST_Crud {
 	 * @param array<string,string> $combo  Axis label => option value.
 	 * @return array<string,string>
 	 */
-	public static function build_variation_storage_attributes( $parent, $combo ) {
+	public static function build_variation_storage_attributes( $parent, $combo, $allow_write = false ) {
 		if ( ! $parent || ! $parent->is_type( 'variable' ) || ! is_array( $combo ) ) {
 			return array();
 		}
@@ -6409,21 +6501,20 @@ class Webino_Dashboard_REST_Crud {
 		foreach ( $combo as $name => $value ) {
 			$axis_key = self::resolve_variation_axis_key( $axes, (string) $name );
 			if ( '' === $axis_key || '' === (string) $value ) {
-				return array();
+				continue;
 			}
-			$taxonomy = self::resolve_variation_storage_taxonomy( $parent, $axis_key );
+			$taxonomy = self::resolve_variation_storage_taxonomy( $parent, $axis_key, $allow_write );
 			if ( '' === $taxonomy || ! taxonomy_exists( $taxonomy ) || ! self::is_sanitize_stable_taxonomy_name( $taxonomy ) ) {
-				return array();
+				continue;
 			}
-			$term_slug = self::ensure_term_slug( $taxonomy, (string) $value );
+			$term_slug = self::ensure_term_slug( $taxonomy, (string) $value, $allow_write );
 			if ( '' === $term_slug ) {
-				return array();
+				continue;
 			}
 			$out[ $taxonomy ] = $term_slug;
 		}
-		if ( count( $out ) !== count( $axes ) ) {
-			return array();
-		}
+		// Partial maps are returned as-is: a variation whose other axis still resolves must keep the
+		// attributes it has (the old all-or-nothing `array()` emptied them and broke the storefront).
 		return $out;
 	}
 
