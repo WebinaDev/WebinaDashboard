@@ -6683,5 +6683,11 @@
   "wfcp.bpcRowFailures": "{{count}} محصول ناموفق",
   "wfcp.bpcEntity.product": "محصول",
   "wfcp.bpcEntity.variation": "تنوع",
-  "wfcp.bpcStatus.completed_with_errors": "پایان یافته با خطا"
+  "wfcp.bpcStatus.completed_with_errors": "پایان یافته با خطا",
+  "wfcp.bpcReason.priceLocked": "قیمت این محصول در WFCP قفل شده است و تغییر نکرد.",
+  "wfcp.bpcReason.notFound": "محصول/تنوع پیدا نشد (احتمالاً حذف شده است).",
+  "wfcp.bpcReason.exception": "خطای غیرمنتظره هنگام ذخیرهٔ قیمت.",
+  "wfcp.bpcReason.emptyPrice": "قیمت پایه خالی بود؛ چیزی برای تغییر وجود ندارد.",
+  "wfcp.bpcReason.unsupportedType": "نوع محصول ({{type}}) برای تغییر قیمت پشتیبانی نمی‌شود.",
+  "wfcp.bpcFailuresCount": "{{count}} محصول ناموفق"
 }

@@ -85,17 +85,37 @@ function statusTone(status: string): 'default' | 'secondary' | 'destructive' | '
   return 'outline'
 }
 
-function formatWhen(ts?: number): string {
+function formatWhen(ts?: number, locale = 'fa-IR'): string {
   if (!ts || ts < 1) return '—'
   try {
-    return new Date(ts * 1000).toLocaleString('fa-IR')
+    return new Date(ts * 1000).toLocaleString(locale)
   } catch {
     return String(ts)
   }
 }
 
+const FAILURE_REASON_KEYS: Record<string, string> = {
+  wfcp_price_locked: 'wfcp.bpcReason.priceLocked',
+  product_not_found: 'wfcp.bpcReason.notFound',
+  variation_not_found: 'wfcp.bpcReason.notFound',
+  exception: 'wfcp.bpcReason.exception',
+  empty_price: 'wfcp.bpcReason.emptyPrice',
+  unsupported_type: 'wfcp.bpcReason.unsupportedType',
+}
+
+/** Translate a machine reason code; unknown codes are shown verbatim (detail, not a label). */
+function failureLabel(t: (key: string, opts?: Record<string, unknown>) => string, reason?: string): string {
+  const raw = String(reason || '')
+  if (raw === '') return '—'
+  if (raw.startsWith('unsupported_type:')) {
+    return t('wfcp.bpcReason.unsupportedType', { type: raw.split(':').slice(1).join(':') , defaultValue: raw })
+  }
+  const key = FAILURE_REASON_KEYS[raw]
+  return key ? t(key, { defaultValue: raw }) : raw
+}
+
 export default function WfcpPriceChangerPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const [type, setType] = useState<'fixed' | 'percent'>('fixed')
   const [value, setValue] = useState('0')
@@ -291,7 +311,7 @@ export default function WfcpPriceChangerPage() {
                 <dt className="text-muted-foreground">{t('wfcp.bpcErrors', { defaultValue: 'خطا' })}</dt>
                 <dd dir="ltr">{active.errors ?? 0}</dd>
                 <dt className="text-muted-foreground">{t('wfcp.bpcStarted', { defaultValue: 'شروع' })}</dt>
-                <dd>{formatWhen(active.started_at)}</dd>
+                <dd>{formatWhen(active.started_at, i18n.language)}</dd>
               </dl>
               <p className="text-muted-foreground text-xs">
                 {t('wfcp.bpcProgressHint', {
@@ -365,14 +385,14 @@ export default function WfcpPriceChangerPage() {
                       </div>
                     </td>
                     <td className="px-3 py-2 align-top text-xs">
-                      <div>{row.reason || '—'}</div>
+                      <div>{failureLabel(t, row.reason)}</div>
                       {row.message ? (
                         <div className="text-muted-foreground mt-0.5 break-words" dir="ltr">
                           {row.message}
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-3 py-2 align-top text-xs">{formatWhen(row.at)}</td>
+                    <td className="px-3 py-2 align-top text-xs">{formatWhen(row.at, i18n.language)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -439,7 +459,7 @@ export default function WfcpPriceChangerPage() {
                             <ul className="mt-1 space-y-0.5">
                               {row.failures.slice(0, 25).map((f, i) => (
                                 <li key={`${f.id}-${i}`} className="text-[11px]">
-                                  <span className="font-mono">#{f.id}</span> — {f.reason}
+                                  <span className="font-mono">#{f.id}</span> — {failureLabel(t, f.reason)}
                                 </li>
                               ))}
                             </ul>
@@ -448,8 +468,8 @@ export default function WfcpPriceChangerPage() {
                       </td>
                       <td className="px-3 py-2 align-top text-xs whitespace-pre-wrap">{row.reason || '—'}</td>
                       <td className="px-3 py-2 align-top text-xs">
-                        <div>{formatWhen(row.started_at)}</div>
-                        <div className="text-muted-foreground">{formatWhen(row.finished_at)}</div>
+                        <div>{formatWhen(row.started_at, i18n.language)}</div>
+                        <div className="text-muted-foreground">{formatWhen(row.finished_at, i18n.language)}</div>
                       </td>
                       <td className="px-3 py-2 align-top text-xs">
                         {row.log_url ? (

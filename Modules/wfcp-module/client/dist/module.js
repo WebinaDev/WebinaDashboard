@@ -8634,16 +8634,34 @@ function Mh(e, t, n) {
 function Nh(e) {
 	return e === "completed" ? "default" : e === "running" || e === "queued" ? "secondary" : e === "canceled" || e === "stalled" || e === "failed" ? "destructive" : "outline";
 }
-function Ph(e) {
+function Ph(e, t = "fa-IR") {
 	if (!e || e < 1) return "—";
 	try {
-		return (/* @__PURE__ */ new Date(e * 1e3)).toLocaleString("fa-IR");
+		return (/* @__PURE__ */ new Date(e * 1e3)).toLocaleString(t);
 	} catch {
 		return String(e);
 	}
 }
-function Fh() {
-	let { t: r } = g(), i = n(), [a, o] = m("fixed"), [s, c] = m("0"), [l, u] = m(!1), [d, f] = m(""), [p, h] = m(""), [_, v] = m(!1), [y, b] = m(!1), [T, E] = m("50000"), [D, O] = m("1000"), k = t({
+var Fh = {
+	wfcp_price_locked: "wfcp.bpcReason.priceLocked",
+	product_not_found: "wfcp.bpcReason.notFound",
+	variation_not_found: "wfcp.bpcReason.notFound",
+	exception: "wfcp.bpcReason.exception",
+	empty_price: "wfcp.bpcReason.emptyPrice",
+	unsupported_type: "wfcp.bpcReason.unsupportedType"
+};
+function Ih(e, t) {
+	let n = String(t || "");
+	if (n === "") return "—";
+	if (n.startsWith("unsupported_type:")) return e("wfcp.bpcReason.unsupportedType", {
+		type: n.split(":").slice(1).join(":"),
+		defaultValue: n
+	});
+	let r = Fh[n];
+	return r ? e(r, { defaultValue: n }) : n;
+}
+function Lh() {
+	let { t: r, i18n: i } = g(), a = n(), [o, s] = m("fixed"), [c, l] = m("0"), [u, d] = m(!1), [f, p] = m(""), [h, _] = m(""), [v, y] = m(!1), [b, T] = m(!1), [E, D] = m("50000"), [O, k] = m("1000"), A = t({
 		queryKey: [
 			"wfcp",
 			"bpc",
@@ -8651,38 +8669,38 @@ function Fh() {
 		],
 		queryFn: () => V("wfcp/bulk-price-change/state"),
 		refetchInterval: (e) => e.state.data?.locked || e.state.data?.active ? 2500 : 5e3
-	}), A = !!k.data?.locked, j = !!(k.data?.params && k.data.params.run_id), M = k.data?.active, N = k.data?.history ?? [], P = k.data?.failures ?? [], F = Math.min(100, Math.max(0, Number(M?.progress_pct ?? 0))), I = e({
+	}), j = !!A.data?.locked, M = !!(A.data?.params && A.data.params.run_id), N = A.data?.active, P = A.data?.history ?? [], F = A.data?.failures ?? [], I = Math.min(100, Math.max(0, Number(N?.progress_pct ?? 0))), L = e({
 		mutationFn: () => V("wfcp/bulk-price-change/cancel", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({})
 		}),
 		onSuccess: (e) => {
-			i.invalidateQueries({ queryKey: [
+			a.invalidateQueries({ queryKey: [
 				"wfcp",
 				"bpc",
 				"state"
 			] }), x.success(e.reason || r("wfcp.bpcCanceled", { defaultValue: "کار تغییر قیمت لغو شد و در تاریخچه ثبت شد." }));
 		},
 		onError: (e) => Ve(r, e)
-	}), L = e({
+	}), ee = e({
 		mutationFn: () => V("wfcp/bulk-price-change/start", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
-				type: a,
-				value: parseFloat(s) || 0,
-				apply_sale: l,
-				category_slugs: d,
-				range_rules: p,
-				rules_combine: _,
-				enable_rounding: y,
-				rounding_threshold: parseFloat(T) || 5e4,
-				rounding_value: parseInt(D, 10) || 1e3
+				type: o,
+				value: parseFloat(c) || 0,
+				apply_sale: u,
+				category_slugs: f,
+				range_rules: h,
+				rules_combine: v,
+				enable_rounding: b,
+				rounding_threshold: parseFloat(E) || 5e4,
+				rounding_value: parseInt(O, 10) || 1e3
 			})
 		}),
 		onSuccess: () => {
-			i.invalidateQueries({ queryKey: [
+			a.invalidateQueries({ queryKey: [
 				"wfcp",
 				"bpc",
 				"state"
@@ -8702,9 +8720,9 @@ function Fh() {
 						/* @__PURE__ */ w("div", {
 							className: "space-y-2",
 							children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcType") }), /* @__PURE__ */ w($m, {
-								value: a,
-								onValueChange: (e) => o(e),
-								disabled: A || j,
+								value: o,
+								onValueChange: (e) => s(e),
+								disabled: j || M,
 								children: [/* @__PURE__ */ C(th, {
 									className: "w-full",
 									children: /* @__PURE__ */ C(eh, {})
@@ -8720,18 +8738,18 @@ function Fh() {
 						/* @__PURE__ */ w("div", {
 							className: "space-y-2",
 							children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcValue") }), /* @__PURE__ */ C(Z, {
-								value: s,
-								onChange: (e) => c(e.target.value),
-								disabled: A || j
+								value: c,
+								onChange: (e) => l(e.target.value),
+								disabled: j || M
 							})]
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "flex items-center gap-2",
 							children: [/* @__PURE__ */ C(Vm, {
 								id: "bpc-apply-sale",
-								checked: l,
-								disabled: A || j,
-								onCheckedChange: (e) => u(e === !0)
+								checked: u,
+								disabled: j || M,
+								onCheckedChange: (e) => d(e === !0)
 							}), /* @__PURE__ */ C(Q, {
 								htmlFor: "bpc-apply-sale",
 								className: "cursor-pointer font-normal",
@@ -8743,9 +8761,9 @@ function Fh() {
 							children: [
 								/* @__PURE__ */ C(Q, { children: r("wfcp.bpcCategories") }),
 								/* @__PURE__ */ C(Z, {
-									value: d,
-									onChange: (e) => f(e.target.value),
-									disabled: A || j
+									value: f,
+									onChange: (e) => p(e.target.value),
+									disabled: j || M
 								}),
 								/* @__PURE__ */ C("p", {
 									className: "text-xs text-muted-foreground",
@@ -8757,18 +8775,18 @@ function Fh() {
 							className: "space-y-2",
 							children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRangeRules") }), /* @__PURE__ */ C(jh, {
 								className: "min-h-20",
-								value: p,
-								onChange: (e) => h(e.target.value),
-								disabled: A || j
+								value: h,
+								onChange: (e) => _(e.target.value),
+								disabled: j || M
 							})]
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "flex items-center gap-2",
 							children: [/* @__PURE__ */ C(Vm, {
 								id: "bpc-rules-combine",
-								checked: _,
-								disabled: A || j,
-								onCheckedChange: (e) => v(e === !0)
+								checked: v,
+								disabled: j || M,
+								onCheckedChange: (e) => y(e === !0)
 							}), /* @__PURE__ */ C(Q, {
 								htmlFor: "bpc-rules-combine",
 								className: "cursor-pointer font-normal",
@@ -8779,9 +8797,9 @@ function Fh() {
 							className: "flex items-center gap-2",
 							children: [/* @__PURE__ */ C(Vm, {
 								id: "bpc-rounding",
-								checked: y,
-								disabled: A || j,
-								onCheckedChange: (e) => b(e === !0)
+								checked: b,
+								disabled: j || M,
+								onCheckedChange: (e) => T(e === !0)
 							}), /* @__PURE__ */ C(Q, {
 								htmlFor: "bpc-rounding",
 								className: "cursor-pointer font-normal",
@@ -8793,16 +8811,16 @@ function Fh() {
 							children: [/* @__PURE__ */ w("div", {
 								className: "space-y-2",
 								children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRoundTh") }), /* @__PURE__ */ C(Z, {
-									value: T,
-									onChange: (e) => E(e.target.value),
-									disabled: A || j
+									value: E,
+									onChange: (e) => D(e.target.value),
+									disabled: j || M
 								})]
 							}), /* @__PURE__ */ w("div", {
 								className: "space-y-2",
 								children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRoundVal") }), /* @__PURE__ */ C(Z, {
-									value: D,
-									onChange: (e) => O(e.target.value),
-									disabled: A || j
+									value: O,
+									onChange: (e) => k(e.target.value),
+									disabled: j || M
 								})]
 							})]
 						}),
@@ -8810,14 +8828,14 @@ function Fh() {
 							className: "flex flex-wrap gap-2",
 							children: [/* @__PURE__ */ C(X, {
 								type: "button",
-								disabled: L.isPending || A || j,
-								onClick: () => void L.mutateAsync(),
+								disabled: ee.isPending || j || M,
+								onClick: () => void ee.mutateAsync(),
 								children: r("wfcp.bpcStart")
-							}), j ? /* @__PURE__ */ C(X, {
+							}), M ? /* @__PURE__ */ C(X, {
 								type: "button",
 								variant: "outline",
-								disabled: I.isPending,
-								onClick: () => void I.mutateAsync(),
+								disabled: L.isPending,
+								onClick: () => void L.mutateAsync(),
 								children: r("wfcp.bpcCancel", { defaultValue: "لغو کار" })
 							}) : null]
 						})
@@ -8829,18 +8847,18 @@ function Fh() {
 							className: "text-sm font-medium",
 							children: r("wfcp.bpcStateTitle")
 						}),
-						M ? /* @__PURE__ */ w("div", {
+						N ? /* @__PURE__ */ w("div", {
 							className: "space-y-3",
 							children: [
 								/* @__PURE__ */ w("div", {
 									className: "flex flex-wrap items-center gap-2",
 									children: [/* @__PURE__ */ C(Cm, {
-										variant: Nh(M.status || "running"),
-										children: r(`wfcp.bpcStatus.${M.status || "running"}`, { defaultValue: M.status || "running" })
+										variant: Nh(N.status || "running"),
+										children: r(`wfcp.bpcStatus.${N.status || "running"}`, { defaultValue: N.status || "running" })
 									}), /* @__PURE__ */ C("span", {
 										className: "text-muted-foreground font-mono text-xs",
 										dir: "ltr",
-										children: M.run_id
+										children: N.run_id
 									})]
 								}),
 								/* @__PURE__ */ w("div", {
@@ -8850,11 +8868,11 @@ function Fh() {
 										children: [/* @__PURE__ */ C("span", { children: r("wfcp.bpcProgress", { defaultValue: "پیشرفت صف" }) }), /* @__PURE__ */ w("span", {
 											dir: "ltr",
 											children: [
-												M.processed ?? 0,
+												N.processed ?? 0,
 												"/",
-												M.total ?? 0,
+												N.total ?? 0,
 												" (",
-												F,
+												I,
 												"%)"
 											]
 										})]
@@ -8862,7 +8880,7 @@ function Fh() {
 										className: "bg-muted h-2 overflow-hidden rounded-full",
 										children: /* @__PURE__ */ C("div", {
 											className: "bg-primary h-full transition-all",
-											style: { width: `${F}%` }
+											style: { width: `${I}%` }
 										})
 									})]
 								}),
@@ -8876,9 +8894,9 @@ function Fh() {
 										/* @__PURE__ */ w("dd", {
 											dir: "ltr",
 											children: [
-												M.current_page ?? 0,
+												N.current_page ?? 0,
 												"/",
-												M.pages ?? 0
+												N.pages ?? 0
 											]
 										}),
 										/* @__PURE__ */ C("dt", {
@@ -8887,7 +8905,7 @@ function Fh() {
 										}),
 										/* @__PURE__ */ C("dd", {
 											dir: "ltr",
-											children: M.updated ?? 0
+											children: N.updated ?? 0
 										}),
 										/* @__PURE__ */ C("dt", {
 											className: "text-muted-foreground",
@@ -8895,7 +8913,7 @@ function Fh() {
 										}),
 										/* @__PURE__ */ C("dd", {
 											dir: "ltr",
-											children: M.skipped ?? 0
+											children: N.skipped ?? 0
 										}),
 										/* @__PURE__ */ C("dt", {
 											className: "text-muted-foreground",
@@ -8903,13 +8921,13 @@ function Fh() {
 										}),
 										/* @__PURE__ */ C("dd", {
 											dir: "ltr",
-											children: M.errors ?? 0
+											children: N.errors ?? 0
 										}),
 										/* @__PURE__ */ C("dt", {
 											className: "text-muted-foreground",
 											children: r("wfcp.bpcStarted", { defaultValue: "شروع" })
 										}),
-										/* @__PURE__ */ C("dd", { children: Ph(M.started_at) })
+										/* @__PURE__ */ C("dd", { children: Ph(N.started_at, i.language) })
 									]
 								}),
 								/* @__PURE__ */ C("p", {
@@ -8921,17 +8939,17 @@ function Fh() {
 							className: "text-muted-foreground text-sm",
 							children: r("wfcp.bpcIdle", { defaultValue: "الان کار فعالی در صف نیست." })
 						}),
-						k.data?.last?.reason ? /* @__PURE__ */ w("p", {
+						A.data?.last?.reason ? /* @__PURE__ */ w("p", {
 							className: "border-border bg-muted/40 rounded-md border p-2 text-xs",
 							children: [
 								/* @__PURE__ */ w("span", {
 									className: "font-medium",
 									children: [r("wfcp.bpcLastReason", { defaultValue: "آخرین نتیجه:" }), " "]
 								}),
-								k.data.last.reason,
-								k.data.last.url ? /* @__PURE__ */ w(S, { children: [" ", /* @__PURE__ */ C("a", {
+								A.data.last.reason,
+								A.data.last.url ? /* @__PURE__ */ w(S, { children: [" ", /* @__PURE__ */ C("a", {
 									className: "text-primary underline",
-									href: k.data.last.url,
+									href: A.data.last.url,
 									target: "_blank",
 									rel: "noopener noreferrer",
 									children: r("wfcp.bpcLog", { defaultValue: "لاگ CSV" })
@@ -8941,7 +8959,7 @@ function Fh() {
 					]
 				})]
 			}),
-			P.length > 0 ? /* @__PURE__ */ w("div", {
+			F.length > 0 ? /* @__PURE__ */ w("div", {
 				className: "mt-8 space-y-3",
 				"data-testid": "wfcp-bpc-failures",
 				children: [/* @__PURE__ */ w("div", { children: [/* @__PURE__ */ C("h3", {
@@ -8970,7 +8988,7 @@ function Fh() {
 									children: r("wfcp.bpcColWhen", { defaultValue: "زمان" })
 								})
 							] })
-						}), /* @__PURE__ */ C("tbody", { children: P.map((e, t) => /* @__PURE__ */ w("tr", {
+						}), /* @__PURE__ */ C("tbody", { children: F.map((e, t) => /* @__PURE__ */ w("tr", {
 							className: "border-t border-border",
 							children: [
 								/* @__PURE__ */ w("td", {
@@ -8990,7 +9008,7 @@ function Fh() {
 								}),
 								/* @__PURE__ */ w("td", {
 									className: "px-3 py-2 align-top text-xs",
-									children: [/* @__PURE__ */ C("div", { children: e.reason || "—" }), e.message ? /* @__PURE__ */ C("div", {
+									children: [/* @__PURE__ */ C("div", { children: Ih(r, e.reason) }), e.message ? /* @__PURE__ */ C("div", {
 										className: "text-muted-foreground mt-0.5 break-words",
 										dir: "ltr",
 										children: e.message
@@ -8998,7 +9016,7 @@ function Fh() {
 								}),
 								/* @__PURE__ */ C("td", {
 									className: "px-3 py-2 align-top text-xs",
-									children: Ph(e.at)
+									children: Ph(e.at, i.language)
 								})
 							]
 						}, `${e.id}-${t}`)) })]
@@ -9013,7 +9031,7 @@ function Fh() {
 				}), /* @__PURE__ */ C("p", {
 					className: "text-muted-foreground text-sm",
 					children: r("wfcp.bpcHistoryHint", { defaultValue: "همه درخواست‌های تغییر قیمت گروهی، وضعیت، دلیل لغو/توقف و میزان پیشرفت صف." })
-				})] }), N.length === 0 ? /* @__PURE__ */ C("p", {
+				})] }), P.length === 0 ? /* @__PURE__ */ C("p", {
 					className: "text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm",
 					children: r("wfcp.bpcHistoryEmpty", { defaultValue: "هنوز درخواستی ثبت نشده است." })
 				}) : /* @__PURE__ */ C("div", {
@@ -9044,7 +9062,7 @@ function Fh() {
 									children: r("wfcp.bpcColLog", { defaultValue: "لاگ" })
 								})
 							] })
-						}), /* @__PURE__ */ C("tbody", { children: N.map((e) => {
+						}), /* @__PURE__ */ C("tbody", { children: P.map((e) => {
 							let t = e.status || "unknown";
 							return /* @__PURE__ */ w("tr", {
 								className: "border-t border-border",
@@ -9103,7 +9121,7 @@ function Fh() {
 																children: ["#", e.id]
 															}),
 															" — ",
-															e.reason
+															Ih(r, e.reason)
 														]
 													}, `${e.id}-${t}`))
 												})]
@@ -9116,9 +9134,9 @@ function Fh() {
 									}),
 									/* @__PURE__ */ w("td", {
 										className: "px-3 py-2 align-top text-xs",
-										children: [/* @__PURE__ */ C("div", { children: Ph(e.started_at) }), /* @__PURE__ */ C("div", {
+										children: [/* @__PURE__ */ C("div", { children: Ph(e.started_at, i.language) }), /* @__PURE__ */ C("div", {
 											className: "text-muted-foreground",
-											children: Ph(e.finished_at)
+											children: Ph(e.finished_at, i.language)
 										})]
 									}),
 									/* @__PURE__ */ C("td", {
@@ -9142,8 +9160,8 @@ function Fh() {
 }
 //#endregion
 //#region src/i18n/locales/fa.json
-var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
-	Lh = {
+var Rh = /* @__PURE__ */ A({ default: () => zh }), zh, Bh = k((() => {
+	zh = {
 		"app.title": "داشبورد",
 		"chart.totalVisitors": "کل بازدیدها",
 		"chart.descriptionLong": "جمع سه ماه اخیر",
@@ -15828,10 +15846,16 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"wfcp.bpcRowFailures": "{{count}} محصول ناموفق",
 		"wfcp.bpcEntity.product": "محصول",
 		"wfcp.bpcEntity.variation": "تنوع",
-		"wfcp.bpcStatus.completed_with_errors": "پایان یافته با خطا"
+		"wfcp.bpcStatus.completed_with_errors": "پایان یافته با خطا",
+		"wfcp.bpcReason.priceLocked": "قیمت این محصول در WFCP قفل شده است و تغییر نکرد.",
+		"wfcp.bpcReason.notFound": "محصول/تنوع پیدا نشد (احتمالاً حذف شده است).",
+		"wfcp.bpcReason.exception": "خطای غیرمنتظره هنگام ذخیرهٔ قیمت.",
+		"wfcp.bpcReason.emptyPrice": "قیمت پایه خالی بود؛ چیزی برای تغییر وجود ندارد.",
+		"wfcp.bpcReason.unsupportedType": "نوع محصول ({{type}}) برای تغییر قیمت پشتیبانی نمی‌شود.",
+		"wfcp.bpcFailuresCount": "{{count}} محصول ناموفق"
 	};
-})), zh = /* @__PURE__ */ A({ default: () => Bh }), Bh, Vh = k((() => {
-	Bh = {
+})), Vh = /* @__PURE__ */ A({ default: () => Hh }), Hh, Uh = k((() => {
+	Hh = {
 		"app.title": "Dashboard",
 		"chart.totalVisitors": "Total visitors",
 		"chart.descriptionLong": "Total for the last 3 months",
@@ -22516,21 +22540,27 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"wfcp.bpcRowFailures": "{{count}} failed products",
 		"wfcp.bpcEntity.product": "Product",
 		"wfcp.bpcEntity.variation": "Variation",
-		"wfcp.bpcStatus.completed_with_errors": "Completed with errors"
+		"wfcp.bpcStatus.completed_with_errors": "Completed with errors",
+		"wfcp.bpcReason.priceLocked": "The price is locked in WFCP, so it was left untouched.",
+		"wfcp.bpcReason.notFound": "The product/variation no longer exists.",
+		"wfcp.bpcReason.exception": "Unexpected error while saving the price.",
+		"wfcp.bpcReason.emptyPrice": "The base price was empty, so there was nothing to change.",
+		"wfcp.bpcReason.unsupportedType": "This product type ({{type}}) is not supported for price changes.",
+		"wfcp.bpcFailuresCount": "{{count}} failed products"
 	};
-})), Hh = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", Uh = /* @__PURE__ */ new Set();
-async function Wh(e) {
-	return e === "fa" ? (await Promise.resolve().then(() => (Rh(), Ih))).default : (await Promise.resolve().then(() => (Vh(), zh))).default;
+})), Wh = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", Gh = /* @__PURE__ */ new Set();
+async function Kh(e) {
+	return e === "fa" ? (await Promise.resolve().then(() => (Bh(), Rh))).default : (await Promise.resolve().then(() => (Uh(), Vh))).default;
 }
-async function Gh(e) {
-	if (Uh.has(e)) return;
-	let t = await Wh(e);
-	D.addResourceBundle(e, "translation", t, !0, !0), Uh.add(e);
+async function qh(e) {
+	if (Gh.has(e)) return;
+	let t = await Kh(e);
+	D.addResourceBundle(e, "translation", t, !0, !0), Gh.add(e);
 }
-function Kh(e) {
+function Jh(e) {
 	return e === "fa" ? "rtl" : "ltr";
 }
-var qh = {
+var Yh = {
 	type: "postProcessor",
 	name: "faDigits",
 	process(e, t, n) {
@@ -22538,10 +22568,10 @@ var qh = {
 	}
 };
 (async () => {
-	let e = await Wh(Hh);
-	Uh.add(Hh), await D.use(qh).use(h).init({
-		resources: { [Hh]: { translation: e } },
-		lng: Hh,
+	let e = await Kh(Wh);
+	Gh.add(Wh), await D.use(Yh).use(h).init({
+		resources: { [Wh]: { translation: e } },
+		lng: Wh,
 		fallbackLng: "en",
 		keySeparator: !1,
 		nsSeparator: !1,
@@ -22551,37 +22581,37 @@ var qh = {
 			bindI18n: "languageChanged loaded added",
 			useSuspense: !1
 		}
-	}), document.documentElement.lang = Hh, document.documentElement.dir = Kh(Hh), Gh(Hh === "fa" ? "en" : "fa").catch((e) => {
+	}), document.documentElement.lang = Wh, document.documentElement.dir = Jh(Wh), qh(Wh === "fa" ? "en" : "fa").catch((e) => {
 		console.warn("[Webino Dashboard] Secondary locale preload failed", e);
 	});
 })();
 //#endregion
 //#region src/components/ui/dialog.tsx
-function Jh({ ...e }) {
+function Xh({ ...e }) {
 	return /* @__PURE__ */ C(_o, {
 		"data-slot": "dialog",
 		...e
 	});
 }
-function Yh({ ...e }) {
+function Zh({ ...e }) {
 	return /* @__PURE__ */ C(vo, {
 		"data-slot": "dialog-portal",
 		...e
 	});
 }
-function Xh({ className: e, ...t }) {
+function Qh({ className: e, ...t }) {
 	return /* @__PURE__ */ C(yo, {
 		"data-slot": "dialog-overlay",
 		className: K("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", e),
 		...t
 	});
 }
-function Zh({ className: e, children: t, showCloseButton: n = !0, ...r }) {
+function $h({ className: e, children: t, showCloseButton: n = !0, ...r }) {
 	return /* @__PURE__ */ C(va, {
 		allowBodyScroll: !0,
-		children: /* @__PURE__ */ w(Yh, {
+		children: /* @__PURE__ */ w(Zh, {
 			"data-slot": "dialog-portal",
-			children: [/* @__PURE__ */ C(Xh, {}), /* @__PURE__ */ w(bo, {
+			children: [/* @__PURE__ */ C(Qh, {}), /* @__PURE__ */ w(bo, {
 				"data-slot": "dialog-content",
 				className: K("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg", e),
 				...r,
@@ -22597,14 +22627,14 @@ function Zh({ className: e, children: t, showCloseButton: n = !0, ...r }) {
 		})
 	});
 }
-function Qh({ className: e, ...t }) {
+function eg({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "dialog-header",
 		className: K("flex flex-col gap-2 text-center sm:text-start", e),
 		...t
 	});
 }
-function $h({ className: e, showCloseButton: t = !1, children: n, ...r }) {
+function tg({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 	return /* @__PURE__ */ w("div", {
 		"data-slot": "dialog-footer",
 		className: K("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", e),
@@ -22618,7 +22648,7 @@ function $h({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 		})]
 	});
 }
-function eg({ className: e, ...t }) {
+function ng({ className: e, ...t }) {
 	return /* @__PURE__ */ C(xo, {
 		"data-slot": "dialog-title",
 		className: K("text-lg leading-none font-semibold", e),
@@ -22627,7 +22657,7 @@ function eg({ className: e, ...t }) {
 }
 //#endregion
 //#region src/lib/categoryTree.ts
-function tg(e) {
+function rg(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) {
 		let e = n.parent || 0, r = t.get(e) ?? [];
@@ -22645,20 +22675,20 @@ function tg(e) {
 }
 //#endregion
 //#region src/components/magazine/MediaPickerDialog.tsx
-function ng(e, t, n) {
+function ig(e, t, n) {
 	let r = new URLSearchParams({
 		page: "1",
 		per_page: "60"
 	});
 	return e > 0 && r.set("folder", String(e)), t > 0 && r.set("category", String(t)), n.trim() && r.set("search", n.trim()), `content/media?${r.toString()}`;
 }
-function rg(e) {
+function ag(e) {
 	return {
 		...e,
 		url: ""
 	};
 }
-function ig({ open: e, onOpenChange: n, onSelect: r }) {
+function og({ open: e, onOpenChange: n, onSelect: r }) {
 	let { t: i } = g(), [a, o] = m(0), [s, c] = m(0), [l, d] = m(""), [p, h] = m("");
 	u(() => {
 		if (!e) return;
@@ -22677,16 +22707,16 @@ function ig({ open: e, onOpenChange: n, onSelect: r }) {
 			s,
 			p
 		],
-		queryFn: () => V(ng(a, s, p)),
+		queryFn: () => V(ig(a, s, p)),
 		enabled: e
-	}), y = f(() => tg((_.data?.folders ?? []).map(rg)), [_.data?.folders]), b = f(() => tg((_.data?.categories ?? []).map(rg)), [_.data?.categories]), x = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
-	return /* @__PURE__ */ C(Jh, {
+	}), y = f(() => rg((_.data?.folders ?? []).map(ag)), [_.data?.folders]), b = f(() => rg((_.data?.categories ?? []).map(ag)), [_.data?.categories]), x = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
+	return /* @__PURE__ */ C(Xh, {
 		open: e,
 		onOpenChange: n,
-		children: /* @__PURE__ */ w(Zh, {
+		children: /* @__PURE__ */ w($h, {
 			className: "max-h-[85vh] overflow-hidden sm:max-w-3xl",
 			children: [
-				/* @__PURE__ */ C(Qh, { children: /* @__PURE__ */ C(eg, { children: i("posts.selectFeaturedImage") }) }),
+				/* @__PURE__ */ C(eg, { children: /* @__PURE__ */ C(ng, { children: i("posts.selectFeaturedImage") }) }),
 				/* @__PURE__ */ w("div", {
 					className: "grid gap-3 sm:grid-cols-3",
 					children: [
@@ -22768,7 +22798,7 @@ function ig({ open: e, onOpenChange: n, onSelect: r }) {
 						}, e.id))
 					})
 				}),
-				/* @__PURE__ */ C($h, { children: /* @__PURE__ */ C(X, {
+				/* @__PURE__ */ C(tg, { children: /* @__PURE__ */ C(X, {
 					type: "button",
 					variant: "outline",
 					onClick: () => n(!1),
@@ -22780,7 +22810,7 @@ function ig({ open: e, onOpenChange: n, onSelect: r }) {
 }
 //#endregion
 //#region src/components/wfcp/QuickAddImagePanel.tsx
-function ag({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
+function sg({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 	let { t: o } = g(), s = n(), c = p(null), [l, u] = m(!1), d = e({
 		mutationFn: (e) => ke("content/media", e),
 		onSuccess: (e) => {
@@ -22841,7 +22871,7 @@ function ag({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 				}
 			})
 		]
-	}), /* @__PURE__ */ C(ig, {
+	}), /* @__PURE__ */ C(og, {
 		open: l,
 		onOpenChange: u,
 		onSelect: (e) => i(e)
@@ -22849,7 +22879,7 @@ function ag({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/pages/WfcpQuickAddPage.tsx
-function og() {
+function cg() {
 	let { t } = g(), [n, r] = m(""), [i, a] = m(""), [o, s] = m(0), [c, l] = m(""), u = e({
 		mutationFn: () => V("wfcp/quick-add", {
 			method: "POST",
@@ -22888,7 +22918,7 @@ function og() {
 							onChange: (e) => a(e.target.value)
 						})]
 					}),
-					/* @__PURE__ */ C(ag, {
+					/* @__PURE__ */ C(sg, {
 						imageId: o,
 						imageUrl: c,
 						onChange: (e) => {
@@ -22911,7 +22941,7 @@ function og() {
 }
 //#endregion
 //#region src/components/skeletons/FormSettingsSkeleton.tsx
-function sg({ cards: e = 2, fieldsPerCard: t = 5 }) {
+function lg({ cards: e = 2, fieldsPerCard: t = 5 }) {
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4 max-w-2xl",
 		"aria-busy": "true",
@@ -22929,28 +22959,28 @@ function sg({ cards: e = 2, fieldsPerCard: t = 5 }) {
 }
 //#endregion
 //#region src/components/data/DumpUi.tsx
-var cg = {
+var ug = {
 	default: "",
 	success: "border-transparent bg-emerald-600 text-white dark:bg-emerald-500",
 	warning: "border-transparent bg-amber-500 text-white",
 	destructive: "",
 	secondary: ""
 };
-function lg(e) {
+function dg(e) {
 	let t = String(e ?? "").toLowerCase();
 	return t === "done" || t === "completed" || t === "success" || t === "ok" ? "success" : t === "failed" || t === "error" || t === "cancelled" || t === "canceled" ? "destructive" : t === "running" || t === "processing" ? "warning" : t === "pending" || t === "queued" ? "secondary" : "default";
 }
-function ug({ status: e, tone: t, className: n }) {
-	let r = t ?? lg(e), i = e == null || e === "" ? "—" : String(e);
+function fg({ status: e, tone: t, className: n }) {
+	let r = t ?? dg(e), i = e == null || e === "" ? "—" : String(e);
 	return /* @__PURE__ */ C(Cm, {
 		variant: r === "destructive" ? "destructive" : r === "secondary" ? "secondary" : "outline",
-		className: K(cg[r], n),
+		className: K(ug[r], n),
 		children: i
 	});
 }
 //#endregion
 //#region src/components/ui/switch.tsx
-function dg({ className: e, size: t = "default", ...n }) {
+function pg({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ C(bm, {
 		"data-slot": "switch",
 		"data-size": t,
@@ -22965,18 +22995,18 @@ function dg({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region src/pages/settings/shop/wfcpPricingTabs.ts
-var fg = [
+var mg = [
 	"digikala",
 	"basalam",
 	"technolife",
 	"snappshop",
 	"tapsishop"
-], pg = [
+], hg = [
 	"zarehbin",
 	"emalls",
 	"snapppay-search",
 	"torob"
-], mg = [
+], gg = [
 	"dashboard",
 	"exchange",
 	"retail",
@@ -22988,17 +23018,17 @@ var fg = [
 	"notifications",
 	"style",
 	"advanced"
-], hg = new Set(fg), gg = new Set(pg), _g = new Set(mg);
-function vg(e) {
+], _g = new Set(mg), vg = new Set(hg), yg = new Set(gg);
+function bg(e) {
 	let t = e && /^[a-z0-9-]+$/.test(e) ? e : "dashboard";
-	return hg.has(t) || t === "platform" ? "marketplaces" : gg.has(t) ? "search-engines" : t === "currency" ? "exchange" : _g.has(t) ? t : "dashboard";
+	return _g.has(t) || t === "platform" ? "marketplaces" : vg.has(t) ? "search-engines" : t === "currency" ? "exchange" : yg.has(t) ? t : "dashboard";
 }
-function yg(e) {
-	return gg.has(e);
+function xg(e) {
+	return vg.has(e);
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/pages/WfcpSettingsPage.tsx
-function bg({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled: a }) {
+function Sg({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled: a }) {
 	return /* @__PURE__ */ w("div", {
 		className: "flex max-w-sm items-center justify-between gap-3",
 		children: [/* @__PURE__ */ w("div", {
@@ -23011,7 +23041,7 @@ function bg({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled
 				className: "text-muted-foreground text-xs",
 				children: n
 			}) : null]
-		}), /* @__PURE__ */ C(dg, {
+		}), /* @__PURE__ */ C(pg, {
 			id: e,
 			checked: r,
 			onCheckedChange: i,
@@ -23019,8 +23049,8 @@ function bg({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled
 		})]
 	});
 }
-function xg() {
-	let { tab: r } = b(), i = vg(r), a = i, { t: o } = g(), s = n(), c = y().pathname.includes("/settings/shop/pricing"), l = "/settings/shop/pricing", d = !!(r && r !== i), p = t({
+function Cg() {
+	let { tab: r } = b(), i = bg(r), a = i, { t: o } = g(), s = n(), c = y().pathname.includes("/settings/shop/pricing"), l = "/settings/shop/pricing", d = !!(r && r !== i), p = t({
 		queryKey: ["wfcp", "settings"],
 		queryFn: () => V("wfcp/settings"),
 		enabled: !d
@@ -23050,7 +23080,7 @@ function xg() {
 	}, {
 		months: 6,
 		interest: 10
-	}], F = f(() => mg.map((e) => /* @__PURE__ */ C(_, {
+	}], F = f(() => gg.map((e) => /* @__PURE__ */ C(_, {
 		to: `${l}/${e}`,
 		className: `rounded-md px-2 py-1 text-sm ${a === e ? "bg-muted font-medium" : "hover:bg-muted/60"}`,
 		children: o(`wfcp.tab.${e}`)
@@ -23071,7 +23101,7 @@ function xg() {
 		}), /* @__PURE__ */ w("div", {
 			className: "min-w-0 flex-1 space-y-4",
 			children: [
-				p.isLoading ? /* @__PURE__ */ C(sg, {
+				p.isLoading ? /* @__PURE__ */ C(lg, {
 					cards: 2,
 					fieldsPerCard: 4
 				}) : null,
@@ -23079,7 +23109,7 @@ function xg() {
 					className: "text-sm text-destructive",
 					children: p.error.message
 				}),
-				a === "dashboard" && /* @__PURE__ */ C(Sg, {
+				a === "dashboard" && /* @__PURE__ */ C(wg, {
 					general: D,
 					creditEnabled: !!k.enabled,
 					installmentEnabled: !!A.enabled,
@@ -23098,7 +23128,7 @@ function xg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "exchange" && /* @__PURE__ */ C(Mg, {
+				a === "exchange" && /* @__PURE__ */ C(Pg, {
 					general: D,
 					setGeneral: (e) => T((t) => ({
 						...t,
@@ -23137,7 +23167,7 @@ function xg() {
 								}))
 							})]
 						}),
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-retail-round",
 							label: o("wfcp.roundEnabled"),
 							checked: !!(O.round_enabled ?? !0),
@@ -23164,7 +23194,7 @@ function xg() {
 								}))
 							})]
 						}),
-						/* @__PURE__ */ C(kg, {
+						/* @__PURE__ */ C(jg, {
 							selected: Array.isArray(O.gateways) ? O.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -23194,7 +23224,7 @@ function xg() {
 				}), /* @__PURE__ */ w(km, {
 					className: "space-y-4",
 					children: [
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-credit-en",
 							label: o("wfcp.creditEnabled"),
 							checked: !!k.enabled,
@@ -23221,7 +23251,7 @@ function xg() {
 								}))
 							})]
 						}),
-						/* @__PURE__ */ C(kg, {
+						/* @__PURE__ */ C(jg, {
 							selected: Array.isArray(k.gateways) ? k.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -23251,7 +23281,7 @@ function xg() {
 				}), /* @__PURE__ */ w(km, {
 					className: "space-y-4",
 					children: [
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-inst-en",
 							label: o("wfcp.installmentEnabled"),
 							checked: !!A.enabled,
@@ -23263,7 +23293,7 @@ function xg() {
 								}
 							}))
 						}),
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-inst-round",
 							label: o("wfcp.roundEnabled"),
 							checked: !!(A.round_enabled ?? !0),
@@ -23317,7 +23347,7 @@ function xg() {
 								})
 							]
 						}),
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-inst-logos",
 							label: o("wfcp.gatewayLogosOnly"),
 							hint: o("wfcp.gatewayLogosOnlyHint"),
@@ -23419,7 +23449,7 @@ function xg() {
 								})
 							]
 						}),
-						/* @__PURE__ */ C(kg, {
+						/* @__PURE__ */ C(jg, {
 							selected: Array.isArray(A.gateways) ? A.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -23445,7 +23475,7 @@ function xg() {
 						})
 					]
 				})] }),
-				a === "wholesale" && /* @__PURE__ */ C(Eg, {
+				a === "wholesale" && /* @__PURE__ */ C(Og, {
 					wholesale: j,
 					setWholesale: (e) => T((t) => ({
 						...t,
@@ -23457,21 +23487,21 @@ function xg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "marketplaces" && /* @__PURE__ */ C(wg, {
-					channels: [...fg],
+				a === "marketplaces" && /* @__PURE__ */ C(Eg, {
+					channels: [...mg],
 					draft: S,
 					setDraft: T,
 					save: E,
 					compare: !1
 				}),
-				a === "search-engines" && /* @__PURE__ */ C(wg, {
-					channels: [...pg],
+				a === "search-engines" && /* @__PURE__ */ C(Eg, {
+					channels: [...hg],
 					draft: S,
 					setDraft: T,
 					save: E,
 					compare: !0
 				}),
-				a === "notifications" && /* @__PURE__ */ C(Dg, {
+				a === "notifications" && /* @__PURE__ */ C(kg, {
 					notifications: M,
 					setNotifications: (e) => T((t) => ({
 						...t,
@@ -23483,7 +23513,7 @@ function xg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "style" && /* @__PURE__ */ C(Og, {
+				a === "style" && /* @__PURE__ */ C(Ag, {
 					style: N,
 					notifications: M,
 					setStyle: (e) => T((t) => ({
@@ -23499,7 +23529,7 @@ function xg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "advanced" && /* @__PURE__ */ C(Ng, {})
+				a === "advanced" && /* @__PURE__ */ C(Fg, {})
 			]
 		})]
 	});
@@ -23509,7 +23539,7 @@ function xg() {
 		children: I
 	});
 }
-function Sg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, statsLoading: i, setGeneral: a, onSave: o, saving: s }) {
+function wg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, statsLoading: i, setGeneral: a, onSave: o, saving: s }) {
 	let { t: c } = g();
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4",
@@ -23521,22 +23551,22 @@ function Sg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 			/* @__PURE__ */ w("div", {
 				className: "grid gap-3 sm:grid-cols-2 lg:grid-cols-4",
 				children: [
-					/* @__PURE__ */ C(Cg, {
+					/* @__PURE__ */ C(Tg, {
 						title: c("wfcp.stats.total"),
 						value: r?.total_products,
 						loading: i
 					}),
-					/* @__PURE__ */ C(Cg, {
+					/* @__PURE__ */ C(Tg, {
 						title: c("wfcp.stats.withPurchase"),
 						value: r?.products_with_price,
 						loading: i
 					}),
-					/* @__PURE__ */ C(Cg, {
+					/* @__PURE__ */ C(Tg, {
 						title: c("wfcp.stats.locked"),
 						value: r?.products_locked,
 						loading: i
 					}),
-					/* @__PURE__ */ C(Cg, {
+					/* @__PURE__ */ C(Tg, {
 						title: c("wfcp.stats.exchange"),
 						value: r ? `${r.exchange_rate || "—"} ${r.currency || ""}`.trim() : void 0,
 						loading: i
@@ -23552,7 +23582,7 @@ function Sg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 			}), /* @__PURE__ */ w(km, {
 				className: "space-y-4",
 				children: [
-					/* @__PURE__ */ C(bg, {
+					/* @__PURE__ */ C(Sg, {
 						id: "wfcp-dash-enabled",
 						label: c("wfcp.generalEnabled"),
 						checked: !!(e.enabled ?? !0),
@@ -23597,7 +23627,7 @@ function Sg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 		]
 	});
 }
-function Cg({ title: e, value: t, loading: n }) {
+function Tg({ title: e, value: t, loading: n }) {
 	return /* @__PURE__ */ C(Tm, { children: /* @__PURE__ */ w(Em, {
 		className: "pb-1",
 		children: [/* @__PURE__ */ C(Om, { children: e }), /* @__PURE__ */ C(Dm, {
@@ -23606,7 +23636,7 @@ function Cg({ title: e, value: t, loading: n }) {
 		})]
 	}) });
 }
-function wg({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
+function Eg({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 	let { t: a } = g();
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-3",
@@ -23615,7 +23645,7 @@ function wg({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 			children: a(i ? "wfcp.formula.compare" : "wfcp.formula.marketplace")
 		}), /* @__PURE__ */ C("div", {
 			className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3",
-			children: e.map((e) => /* @__PURE__ */ C(Tg, {
+			children: e.map((e) => /* @__PURE__ */ C(Dg, {
 				slug: e,
 				settings: t[e] ?? {},
 				onChange: (t) => n((n) => ({
@@ -23631,8 +23661,8 @@ function wg({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 		})]
 	});
 }
-function Tg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
-	let { t: a } = g(), o = e === "digikala" ? "rial" : "toman", s = yg(e), c = String(t.price_mode ?? (s ? "retail" : "markup")), l = !s || c === "markup";
+function Dg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
+	let { t: a } = g(), o = e === "digikala" ? "rial" : "toman", s = xg(e), c = String(t.price_mode ?? (s ? "retail" : "markup")), l = !s || c === "markup";
 	return /* @__PURE__ */ w(Tm, { children: [/* @__PURE__ */ w(Em, {
 		className: "pb-2",
 		children: [/* @__PURE__ */ C(Dm, {
@@ -23642,7 +23672,7 @@ function Tg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 	}), /* @__PURE__ */ w(km, {
 		className: "space-y-4",
 		children: [
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: `wfcp-mkt-${e}-en`,
 				label: a("wfcp.marketplaceEnabled"),
 				checked: !!t.enabled,
@@ -23698,7 +23728,7 @@ function Tg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 					})
 				})]
 			})] }) : null,
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: `wfcp-mkt-${e}-round`,
 				label: a("wfcp.roundEnabled"),
 				checked: !!(t.round_enabled ?? !0),
@@ -23748,7 +23778,7 @@ function Tg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 		]
 	})] });
 }
-function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
+function Og({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 	let { t: a } = g(), o = e.category_rules ?? {}, s = e.category_variety_rules ?? {}, c = e.defaults && typeof e.defaults == "object" ? e.defaults : {}, l = t({
 		queryKey: ["product-categories", "wfcp-wholesale"],
 		queryFn: () => V("shop/product-categories?sort=name_asc&per_page=200")
@@ -23765,7 +23795,7 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4",
 		children: [
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: "wfcp-wholesale-en",
 				label: a("wfcp.wholesaleEnabled"),
 				checked: !!e.enabled,
@@ -23787,7 +23817,7 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 			}), /* @__PURE__ */ w(km, {
 				className: "space-y-4",
 				children: [
-					/* @__PURE__ */ C(bg, {
+					/* @__PURE__ */ C(Sg, {
 						id: "wfcp-wholesale-threshold",
 						label: a("wfcp.wholesaleThresholdEnabled"),
 						checked: !!e.threshold_enabled,
@@ -23847,7 +23877,7 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 			}), /* @__PURE__ */ w(km, {
 				className: "space-y-4",
 				children: [
-					/* @__PURE__ */ C(bg, {
+					/* @__PURE__ */ C(Sg, {
 						id: "wfcp-wholesale-partner",
 						label: a("wfcp.wholesalePartnerEnabled"),
 						checked: !!e.partner_enabled,
@@ -23964,14 +23994,14 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 							})
 						]
 					}),
-					/* @__PURE__ */ C(kg, {
+					/* @__PURE__ */ C(jg, {
 						selected: Array.isArray(e.gateways) ? e.gateways : [],
 						onChange: (t) => n({
 							...e,
 							gateways: t
 						})
 					}),
-					/* @__PURE__ */ C(Ag, {
+					/* @__PURE__ */ C(Mg, {
 						selected: Array.isArray(e.shipping_methods) ? e.shipping_methods : [],
 						onChange: (t) => n({
 							...e,
@@ -23989,7 +24019,7 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 		]
 	});
 }
-function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
+function kg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 	let { t: i } = g(), a = (n, r) => t({
 		...e,
 		[n]: r
@@ -24032,7 +24062,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 					children: [
 						/* @__PURE__ */ w("div", {
 							className: "space-y-3 rounded-md border border-border p-3",
-							children: [/* @__PURE__ */ C(bg, {
+							children: [/* @__PURE__ */ C(Sg, {
 								id: "show_cash_badge",
 								label: i("wfcp.field.show_cash_badge"),
 								checked: !!(e.show_cash_badge ?? !0),
@@ -24046,7 +24076,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-3 rounded-md border border-border p-3",
-							children: [/* @__PURE__ */ C(bg, {
+							children: [/* @__PURE__ */ C(Sg, {
 								id: "show_install_badge",
 								label: i("wfcp.field.show_install_badge"),
 								checked: !!(e.show_install_badge ?? !0),
@@ -24060,7 +24090,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 						}),
 						/* @__PURE__ */ C("div", {
 							className: "space-y-3 rounded-md border border-border p-3",
-							children: /* @__PURE__ */ C(bg, {
+							children: /* @__PURE__ */ C(Sg, {
 								id: "show_credit_badge",
 								label: i("wfcp.field.show_credit_badge"),
 								checked: !!(e.show_credit_badge ?? !0),
@@ -24069,7 +24099,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-3 rounded-md border border-border p-3",
-							children: [/* @__PURE__ */ C(bg, {
+							children: [/* @__PURE__ */ C(Sg, {
 								id: "show_guaranty_label",
 								label: i("wfcp.field.show_guaranty_label"),
 								checked: !!(e.show_guaranty_label ?? !1),
@@ -24106,7 +24136,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 					]
 				].map(([t, n, r]) => /* @__PURE__ */ w("div", {
 					className: "space-y-3 rounded-md border border-border p-3",
-					children: [/* @__PURE__ */ C(bg, {
+					children: [/* @__PURE__ */ C(Sg, {
 						id: n,
 						label: i(`wfcp.field.${r}`),
 						checked: !!(e[n] ?? !0),
@@ -24127,7 +24157,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 		]
 	}) });
 }
-function Og({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
+function Ag({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
 	let { t: a } = g(), o = (t, n) => String(e[t] ?? n), s = Number(e.border_radius ?? 8), c = String(e.placement ?? "before_cart"), l = (t, r) => n({
 		...e,
 		[t]: r
@@ -24246,7 +24276,7 @@ function Og({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
 		})]
 	});
 }
-function kg({ selected: e, onChange: n }) {
+function jg({ selected: e, onChange: n }) {
 	let { t: r } = g(), i = t({
 		queryKey: ["payment-gateways"],
 		queryFn: () => V("shop/payment-gateways")
@@ -24286,7 +24316,7 @@ function kg({ selected: e, onChange: n }) {
 		]
 	});
 }
-function Ag({ selected: e, onChange: n }) {
+function Mg({ selected: e, onChange: n }) {
 	let { t: r } = g(), i = t({
 		queryKey: ["wfcp", "shipping-methods"],
 		queryFn: () => V("wfcp/shipping-methods")
@@ -24330,7 +24360,7 @@ function Ag({ selected: e, onChange: n }) {
 		]
 	});
 }
-function jg({ pollKey: e }) {
+function Ng({ pollKey: e }) {
 	let { t: n } = g(), r = t({
 		queryKey: e,
 		queryFn: () => V("wfcp/advanced/recalculate-state"),
@@ -24340,7 +24370,7 @@ function jg({ pollKey: e }) {
 		className: "space-y-2 rounded-lg border border-border p-3",
 		children: /* @__PURE__ */ w("div", {
 			className: "flex flex-wrap items-center gap-2",
-			children: [/* @__PURE__ */ C(ug, {
+			children: [/* @__PURE__ */ C(fg, {
 				status: a ? "running" : u ? "done" : "idle",
 				tone: a ? "warning" : u ? "success" : "secondary"
 			}), /* @__PURE__ */ C("span", {
@@ -24356,7 +24386,7 @@ function jg({ pollKey: e }) {
 		})
 	});
 }
-function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
+function Pg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 	let { t: o } = g(), s = n(), [c, l] = m(""), u = e({
 		mutationFn: () => V("wfcp/advanced/recalculate-all", {
 			method: "POST",
@@ -24400,7 +24430,7 @@ function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 					onChange: (e) => r({ exchange_rate: parseFloat(e.target.value) })
 				})]
 			}),
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: "wfcp-ex-rate-en",
 				label: o("wfcp.exchangeRateEnabled"),
 				checked: !!(t.exchange_rate_enabled ?? !0),
@@ -24439,7 +24469,7 @@ function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 					onChange: (e) => r({ api_symbol: e.target.value })
 				})]
 			}),
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: "wfcp-api-en",
 				label: o("wfcp.apiEnabled"),
 				checked: !!t.api_enabled,
@@ -24502,7 +24532,7 @@ function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 				className: "text-muted-foreground text-xs",
 				children: o("wfcp.applyAllPricesHint")
 			}),
-			/* @__PURE__ */ C(jg, { pollKey: [
+			/* @__PURE__ */ C(Ng, { pollKey: [
 				"wfcp",
 				"recalc",
 				"state"
@@ -24514,7 +24544,7 @@ function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 		]
 	}) });
 }
-function Ng() {
+function Fg() {
 	let { t } = g(), r = n(), [i, a] = m(""), [o, s] = m(!1), c = e({
 		mutationFn: () => V("wfcp/advanced/recalculate-all", {
 			method: "POST",
@@ -24557,7 +24587,7 @@ function Ng() {
 		className: "space-y-4 pt-6",
 		children: [
 			/* @__PURE__ */ w("div", { children: [
-				/* @__PURE__ */ C(bg, {
+				/* @__PURE__ */ C(Sg, {
 					id: "wfcp-dry",
 					label: t("wfcp.dryRun"),
 					checked: o,
@@ -24571,7 +24601,7 @@ function Ng() {
 					onClick: () => void c.mutateAsync(),
 					children: t("wfcp.recalculateAll")
 				}),
-				/* @__PURE__ */ C(jg, { pollKey: [
+				/* @__PURE__ */ C(Ng, { pollKey: [
 					"wfcp",
 					"recalc",
 					"state"
@@ -24614,11 +24644,11 @@ function Ng() {
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/module-entry.tsx
-var Pg = {
-	"shop/wfcp/quick-add": og,
+var Ig = {
+	"shop/wfcp/quick-add": cg,
 	"shop/wfcp/bulk-editor": Ah,
-	"shop/wfcp/price-changer": Fh,
-	"settings/shop/pricing/:tab": xg
-}, Fg = { routes: Pg };
+	"shop/wfcp/price-changer": Lh,
+	"settings/shop/pricing/:tab": Cg
+}, Lg = { routes: Ig };
 //#endregion
-export { Fg as default, Pg as routes };
+export { Lg as default, Ig as routes };

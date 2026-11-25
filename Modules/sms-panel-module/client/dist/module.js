@@ -19707,7 +19707,13 @@ var m_ = /* @__PURE__ */ ee({ default: () => h_ }), h_, g_ = F((() => {
 		"wfcp.bpcRowFailures": "{{count}} محصول ناموفق",
 		"wfcp.bpcEntity.product": "محصول",
 		"wfcp.bpcEntity.variation": "تنوع",
-		"wfcp.bpcStatus.completed_with_errors": "پایان یافته با خطا"
+		"wfcp.bpcStatus.completed_with_errors": "پایان یافته با خطا",
+		"wfcp.bpcReason.priceLocked": "قیمت این محصول در WFCP قفل شده است و تغییر نکرد.",
+		"wfcp.bpcReason.notFound": "محصول/تنوع پیدا نشد (احتمالاً حذف شده است).",
+		"wfcp.bpcReason.exception": "خطای غیرمنتظره هنگام ذخیرهٔ قیمت.",
+		"wfcp.bpcReason.emptyPrice": "قیمت پایه خالی بود؛ چیزی برای تغییر وجود ندارد.",
+		"wfcp.bpcReason.unsupportedType": "نوع محصول ({{type}}) برای تغییر قیمت پشتیبانی نمی‌شود.",
+		"wfcp.bpcFailuresCount": "{{count}} محصول ناموفق"
 	};
 })), __ = /* @__PURE__ */ ee({ default: () => v_ }), v_, y_ = F((() => {
 	v_ = {
@@ -26395,7 +26401,13 @@ var m_ = /* @__PURE__ */ ee({ default: () => h_ }), h_, g_ = F((() => {
 		"wfcp.bpcRowFailures": "{{count}} failed products",
 		"wfcp.bpcEntity.product": "Product",
 		"wfcp.bpcEntity.variation": "Variation",
-		"wfcp.bpcStatus.completed_with_errors": "Completed with errors"
+		"wfcp.bpcStatus.completed_with_errors": "Completed with errors",
+		"wfcp.bpcReason.priceLocked": "The price is locked in WFCP, so it was left untouched.",
+		"wfcp.bpcReason.notFound": "The product/variation no longer exists.",
+		"wfcp.bpcReason.exception": "Unexpected error while saving the price.",
+		"wfcp.bpcReason.emptyPrice": "The base price was empty, so there was nothing to change.",
+		"wfcp.bpcReason.unsupportedType": "This product type ({{type}}) is not supported for price changes.",
+		"wfcp.bpcFailuresCount": "{{count}} failed products"
 	};
 })), b_ = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", x_ = /* @__PURE__ */ new Set();
 async function S_(e) {
