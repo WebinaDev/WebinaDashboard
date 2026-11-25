@@ -1,8 +1,11 @@
 # Vendor bundle (TorobPay)
 
-Place the licensed upstream TorobPay WooCommerce gateway in this directory before publishing the module ZIP.
+The module ships first-party REST/config/refund code and needs the upstream
+`torobpay-woocommerce-gateway` plugin for the gateway class. `manifest.json`
+declares `vendor.required_paths`, so a release ZIP missing the file is rejected
+before install.
 
-## Required
+## Required (declared in manifest.json)
 
 ```
 vendor/torobpay-woocommerce-gateway/index.php
@@ -10,6 +13,9 @@ vendor/torobpay-woocommerce-gateway/index.php
 
 ## Standalone install
 
-Customers may instead install `torobpay-woocommerce-gateway/index.php` under `wp-content/plugins/`.
+Customers may instead install `torobpay-woocommerce-gateway/index.php` under
+`wp-content/plugins/`.
 
-The module bootstrap prefers an active standalone plugin; otherwise it loads from `vendor/`.
+`Webino_TorobPay_Vendor_Loader` prefers an active standalone plugin; otherwise it
+loads the bundled copy from `vendor/`. `status()` reports which source won, and a
+missing vendor file degrades to "standalone install required" instead of a fatal.

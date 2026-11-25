@@ -66,6 +66,7 @@ final class Webino_Dashboard_Plugin {
 		Webino_Dashboard_Roles::init();
 		add_filter( 'query_vars', array( $this->rewrite, 'register_query_vars' ) );
 		add_filter( 'template_include', array( $this->rewrite, 'template_include' ), 99 );
+		add_filter( 'pre_handle_404', array( $this->rewrite, 'clear_dashboard_404' ), 1, 1 );
 		add_action( 'template_redirect', array( 'Webino_Dashboard_PWA', 'maybe_serve' ), -5 );
 		add_action( 'template_redirect', array( $this, 'maybe_force_dashboard_trailing_slash' ), -1 );
 		add_action( 'template_redirect', array( $this, 'maybe_prevent_dashboard_html_cache' ), 0 );

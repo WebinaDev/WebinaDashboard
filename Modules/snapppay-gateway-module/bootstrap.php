@@ -25,6 +25,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 		$dir,
 		array(
 			'class-snapppay-config.php',
+			'class-snapppay-vendor-loader.php',
 			'api/class-snapppay-api-client.php',
 			'class-webino-dashboard-rest-snapppay.php',
 		),
@@ -33,6 +34,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 	return;
 }
 
+Webino_SnappPay_Vendor_Loader::init();
 Webino_Dashboard_REST_SnappPay::init();
 
 if ( class_exists( 'WC_Payment_Gateway', false ) ) {

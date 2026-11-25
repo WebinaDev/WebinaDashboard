@@ -3,7 +3,7 @@
  * Plugin Name:       Webino Dashboard
  * Plugin URI:        https://webinaagency.ir
  * Description:       Standalone customer dashboard at /dashboard (SPA), separate from wp-admin.
- * Version:           0.9.93
+ * Version:           0.9.94
  * Author:            Webina
  * Author URI:        https://webinaagency.ir
  * Text Domain:       webino-dashboard
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WEBINO_DASHBOARD_VERSION', '0.9.93' );
+define( 'WEBINO_DASHBOARD_VERSION', '0.9.94' );
 define( 'WEBINO_DASHBOARD_FILE', __FILE__ );
 define( 'WEBINO_DASHBOARD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WEBINO_DASHBOARD_URL', plugin_dir_url( __FILE__ ) );
@@ -57,6 +57,10 @@ if ( is_readable( WEBINO_DASHBOARD_DIR . 'includes/class-webino-dashboard-ajax-g
 }
 
 require_once WEBINO_DASHBOARD_DIR . 'includes/class-webino-dashboard-bootstrap.php';
+
+// Register health/bootstrap fallbacks before the heavy load so a partial deploy
+// still answers JSON (the SPA must never receive a fatal HTML page).
+Webino_Dashboard_Bootstrap::register_minimal_routes();
 
 if ( ! Webino_Dashboard_Bootstrap::load() ) {
 	return;

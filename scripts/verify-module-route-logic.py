@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import sys
 
-SAFE_MODULE_ROUTE = re.compile(r"^[a-z0-9][a-z0-9/_:-]*$")
+SAFE_MODULE_ROUTE = re.compile(r"^[a-z0-9][a-zA-Z0-9/_:-]*$")
 
 
 def normalize_module_route_path(path: str) -> str:

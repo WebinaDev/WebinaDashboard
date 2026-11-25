@@ -1,8 +1,11 @@
 # Vendor bundle (SnappPay)
 
-Place licensed upstream WooCommerce plugins in this directory before publishing the module ZIP.
+The module ships first-party REST/config code and needs the upstream
+`snapppay-woocommerce-gateway` plugin for the actual gateway class. `manifest.json`
+declares `vendor.required_paths`, so a release ZIP missing the file is rejected
+before install.
 
-## Required
+## Required (declared in manifest.json)
 
 ```
 vendor/snapppay-woocommerce-gateway/index.php
@@ -16,9 +19,10 @@ vendor/searchwise-woocommerce-plugin/searchwise-api-data-feed.php
 
 ## Standalone install
 
-Customers may instead install the same plugins under `wp-content/plugins/`:
+Customers may instead install the plugin under `wp-content/plugins/`:
 
 - `snapppay-woocommerce-gateway/index.php`
-- `searchwise-woocommerce-plugin-main/searchwise-api-data-feed.php`
 
-The module bootstrap prefers an active standalone plugin; otherwise it loads from `vendor/`.
+`Webino_SnappPay_Vendor_Loader` prefers an active standalone plugin; otherwise it
+loads the bundled copy from `vendor/`. `status()` reports which source won, and a
+missing vendor file degrades to "standalone install required" instead of a fatal.

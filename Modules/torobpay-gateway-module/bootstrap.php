@@ -24,6 +24,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 		$dir,
 		array(
 			'class-torobpay-config.php',
+			'class-torobpay-vendor-loader.php',
 			'api/class-torobpay-api-client.php',
 			'class-torobpay-refund.php',
 			'class-webino-dashboard-rest-torobpay.php',
@@ -33,6 +34,7 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 	return;
 }
 
+Webino_TorobPay_Vendor_Loader::init();
 Webino_Dashboard_REST_TorobPay::init();
 
 if ( class_exists( 'WC_Payment_Gateway', false ) ) {
