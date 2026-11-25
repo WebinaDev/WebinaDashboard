@@ -112,6 +112,35 @@ class Webino_Dashboard_Rewrite {
 	}
 
 	/**
+	 * Clear a cached 404 on virtual dashboard routes.
+	 *
+	 * Hosts and SEO plugins cache the first 404 for a pretty URL (e.g. /dashboard/
+	 * shop/products/) before the plugin's rewrite rules exist, and then keep
+	 * serving the cached 404 forever — the dashboard looks "broken after deploy".
+	 * Dashboard requests are SPA routes, so they must never be flagged as 404.
+	 *
+	 * @param bool $is_404 Whether WordPress currently considers the request a 404.
+	 * @return bool
+	 */
+	public function clear_dashboard_404( $is_404 ) {
+		if ( ! $is_404 || is_admin() || ! $this->is_dashboard_request() ) {
+			return $is_404;
+		}
+
+		global $wp_query;
+		if ( $wp_query instanceof WP_Query ) {
+			$wp_query->is_404 = false;
+		}
+		// Reset any status the 404 handler queued before headers are sent.
+		if ( ! headers_sent() ) {
+			status_header( 200 );
+		}
+		nocache_headers();
+
+		return false;
+	}
+
+	/**
 	 * True when the main query is serving the dashboard app.
 	 *
 	 * @return bool

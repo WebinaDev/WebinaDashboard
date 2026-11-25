@@ -2,7 +2,7 @@
 /**
  * Unit-style checks for module route validation (mirrors client/src/lib/moduleRoute.ts).
  */
-const SAFE_MODULE_ROUTE = /^[a-z0-9][a-z0-9/_:-]*$/
+const SAFE_MODULE_ROUTE = /^[a-z0-9][a-zA-Z0-9/_:-]*$/
 
 function normalizeModuleRoutePath(path) {
   return path.trim().replace(/^\/+/, '')
@@ -68,6 +68,10 @@ function assert(name, cond) {
 
 assert('accepts wfcp path', isSafeModuleRoutePath('shop/wfcp-module/quick-add'))
 assert('accepts param segment', isSafeModuleRoutePath('analytics-module/:section'))
+assert('accepts camelCase param', isSafeModuleRoutePath('shop/coffee-origins/:originId'))
+assert('accepts camelCase ad param', isSafeModuleRoutePath('marketing/sms/ads/:adId'))
+assert('accepts uppercase inside segment', isSafeModuleRoutePath('shop/CoffeeOrigins'))
+assert('rejects leading uppercase', !isSafeModuleRoutePath('Shop/coffee-origins'))
 assert('accepts settings param', isSafeModuleRoutePath('settings/wfcp-module/:tab'))
 assert('strips leading slash', isSafeModuleRoutePath('/shop/wfcp-module/quick-add'))
 assert('rejects traversal', !isSafeModuleRoutePath('../evil'))

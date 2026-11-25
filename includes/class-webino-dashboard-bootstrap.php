@@ -17,6 +17,13 @@ final class Webino_Dashboard_Bootstrap {
 	const BROKEN_OPTION = 'webino_dashboard_core_broken';
 
 	/**
+	 * True when load() found missing critical files during this request.
+	 *
+	 * @var bool
+	 */
+	private static $core_broken = false;
+
+	/**
 	 * @return bool True when critical core loaded and plugin may boot.
 	 */
 	public static function load() {
@@ -117,7 +124,9 @@ final class Webino_Dashboard_Bootstrap {
 		}
 
 		if ( $missing_critical ) {
+			self::$core_broken = true;
 			self::mark_broken( $missing_critical );
+			self::register_broken_fallback_hooks();
 			return false;
 		}
 
@@ -167,6 +176,83 @@ final class Webino_Dashboard_Bootstrap {
 		);
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( '[Webino Dashboard] Critical core files missing: ' . implode( ', ', $missing ) );
+	}
+
+	/**
+	 * Minimal REST answers while the full core is unusable (partial deploy).
+	 *
+	 * Without these, a missing core file leaves the dashboard SPA with unparsable
+	 * HTML fatal pages; here it at least receives JSON it can render as an error.
+	 * Registered on rest_api_init only, so a broken site still boots.
+	 *
+	 * @return void
+	 */
+	public static function register_minimal_routes() {
+		add_action( 'rest_api_init', array( __CLASS__, 'register_minimal_rest_routes' ), 100 );
+	}
+
+	/**
+	 * @return void
+	 */
+	public static function register_minimal_rest_routes() {
+		register_rest_route(
+			'webino-dashboard/v1',
+			'/health',
+			array(
+				'methods'             => 'GET',
+				'permission_callback' => '__return_true',
+				'callback'            => static function () {
+					$broken = get_option( self::BROKEN_OPTION, array() );
+					return new WP_REST_Response(
+						array(
+							'ok'      => ! self::$core_broken,
+							'version' => defined( 'WEBINO_DASHBOARD_VERSION' ) ? WEBINO_DASHBOARD_VERSION : '',
+							'missing' => is_array( $broken ) ? array_values( $broken ) : array(),
+						),
+						self::$core_broken ? 503 : 200
+					);
+				},
+			)
+		);
+
+		register_rest_route(
+			'webino-dashboard/v1',
+			'/bootstrap',
+			array(
+				'methods'             => 'GET',
+				'permission_callback' => '__return_true',
+				'callback'            => static function () {
+					return new WP_Error(
+						'webino_core_broken',
+						'Webino Dashboard core files are missing or incomplete. Re-upload the full plugin package.',
+						array( 'status' => 503 )
+					);
+				},
+			)
+		);
+	}
+
+	/**
+	 * Emergency hooks so a half-deployed admin can see what is wrong.
+	 *
+	 * @return void
+	 */
+	public static function register_broken_fallback_hooks() {
+		add_action(
+			'admin_notices',
+			static function () {
+				if ( ! current_user_can( 'manage_options' ) ) {
+					return;
+				}
+				$broken = get_option( self::BROKEN_OPTION, array() );
+				if ( ! is_array( $broken ) || ! $broken ) {
+					return;
+				}
+				echo '<div class="notice notice-error"><p>';
+				echo esc_html__( 'Webino Dashboard did not load its core files. The dashboard is disabled until the plugin is re-uploaded.', 'webino-dashboard' );
+				echo ' <code>' . esc_html( implode( ', ', $broken ) ) . '</code></p></div>';
+			}
+		);
 	}
 
 	/**

@@ -79,11 +79,15 @@ for slug in "${GATEWAYS[@]}"; do
   fi
 done
 
-if ! grep -q "required_paths" "$ROOT/../webinocrm/includes/class-marketplace-release-service.php" 2>/dev/null; then
-  echo "FAIL: CRM release service missing vendor required_paths support"
-  FAIL=1
+# The CRM release service lives in a separate repository — validate the contract it
+# consumes (manifest vendor.required_paths vs. loader/README/bootstrap wiring) here.
+if command -v node >/dev/null 2>&1; then
+  node "$ROOT/scripts/verify-vendor-manifests.mjs" || FAIL=1
+elif command -v python3 >/dev/null 2>&1; then
+  python3 "$ROOT/scripts/verify-vendor-manifests.py" || FAIL=1
 else
-  echo "OK: CRM validates manifest vendor.required_paths"
+  echo "FAIL: need node or python3 to verify vendor manifests" >&2
+  FAIL=1
 fi
 
 if [[ "$FAIL" -ne 0 ]]; then

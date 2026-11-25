@@ -8634,16 +8634,34 @@ function Mh(e, t, n) {
 function Nh(e) {
 	return e === "completed" ? "default" : e === "running" || e === "queued" ? "secondary" : e === "canceled" || e === "stalled" || e === "failed" ? "destructive" : "outline";
 }
-function Ph(e) {
+function Ph(e, t = "fa-IR") {
 	if (!e || e < 1) return "—";
 	try {
-		return (/* @__PURE__ */ new Date(e * 1e3)).toLocaleString("fa-IR");
+		return (/* @__PURE__ */ new Date(e * 1e3)).toLocaleString(t);
 	} catch {
 		return String(e);
 	}
 }
-function Fh() {
-	let { t: r } = g(), i = n(), [a, o] = m("fixed"), [s, c] = m("0"), [l, u] = m(!1), [d, f] = m(""), [p, h] = m(""), [_, v] = m(!1), [y, b] = m(!1), [T, E] = m("50000"), [D, O] = m("1000"), k = t({
+var Fh = {
+	wfcp_price_locked: "wfcp.bpcReason.priceLocked",
+	product_not_found: "wfcp.bpcReason.notFound",
+	variation_not_found: "wfcp.bpcReason.notFound",
+	exception: "wfcp.bpcReason.exception",
+	empty_price: "wfcp.bpcReason.emptyPrice",
+	unsupported_type: "wfcp.bpcReason.unsupportedType"
+};
+function Ih(e, t) {
+	let n = String(t || "");
+	if (n === "") return "—";
+	if (n.startsWith("unsupported_type:")) return e("wfcp.bpcReason.unsupportedType", {
+		type: n.split(":").slice(1).join(":"),
+		defaultValue: n
+	});
+	let r = Fh[n];
+	return r ? e(r, { defaultValue: n }) : n;
+}
+function Lh() {
+	let { t: r, i18n: i } = g(), a = n(), [o, s] = m("fixed"), [c, l] = m("0"), [u, d] = m(!1), [f, p] = m(""), [h, _] = m(""), [v, y] = m(!1), [b, T] = m(!1), [E, D] = m("50000"), [O, k] = m("1000"), A = t({
 		queryKey: [
 			"wfcp",
 			"bpc",
@@ -8651,38 +8669,38 @@ function Fh() {
 		],
 		queryFn: () => V("wfcp/bulk-price-change/state"),
 		refetchInterval: (e) => e.state.data?.locked || e.state.data?.active ? 2500 : 5e3
-	}), A = !!k.data?.locked, j = !!(k.data?.params && k.data.params.run_id), M = k.data?.active, N = k.data?.history ?? [], P = Math.min(100, Math.max(0, Number(M?.progress_pct ?? 0))), F = e({
+	}), j = !!A.data?.locked, M = !!(A.data?.params && A.data.params.run_id), N = A.data?.active, P = A.data?.history ?? [], F = A.data?.failures ?? [], I = Math.min(100, Math.max(0, Number(N?.progress_pct ?? 0))), L = e({
 		mutationFn: () => V("wfcp/bulk-price-change/cancel", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({})
 		}),
 		onSuccess: (e) => {
-			i.invalidateQueries({ queryKey: [
+			a.invalidateQueries({ queryKey: [
 				"wfcp",
 				"bpc",
 				"state"
 			] }), x.success(e.reason || r("wfcp.bpcCanceled", { defaultValue: "کار تغییر قیمت لغو شد و در تاریخچه ثبت شد." }));
 		},
 		onError: (e) => Ve(r, e)
-	}), I = e({
+	}), ee = e({
 		mutationFn: () => V("wfcp/bulk-price-change/start", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
-				type: a,
-				value: parseFloat(s) || 0,
-				apply_sale: l,
-				category_slugs: d,
-				range_rules: p,
-				rules_combine: _,
-				enable_rounding: y,
-				rounding_threshold: parseFloat(T) || 5e4,
-				rounding_value: parseInt(D, 10) || 1e3
+				type: o,
+				value: parseFloat(c) || 0,
+				apply_sale: u,
+				category_slugs: f,
+				range_rules: h,
+				rules_combine: v,
+				enable_rounding: b,
+				rounding_threshold: parseFloat(E) || 5e4,
+				rounding_value: parseInt(O, 10) || 1e3
 			})
 		}),
 		onSuccess: () => {
-			i.invalidateQueries({ queryKey: [
+			a.invalidateQueries({ queryKey: [
 				"wfcp",
 				"bpc",
 				"state"
@@ -8693,364 +8711,457 @@ function Fh() {
 	return /* @__PURE__ */ w(Lm, {
 		title: r("wfcp.bpcTitle"),
 		description: r("wfcp.bpcDescription"),
-		children: [/* @__PURE__ */ w("div", {
-			className: "grid gap-6 lg:grid-cols-2",
-			children: [/* @__PURE__ */ w("div", {
-				className: "space-y-3 rounded-lg border border-border p-4",
-				children: [
-					/* @__PURE__ */ w("div", {
-						className: "space-y-2",
-						children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcType") }), /* @__PURE__ */ w($m, {
-							value: a,
-							onValueChange: (e) => o(e),
-							disabled: A || j,
-							children: [/* @__PURE__ */ C(th, {
-								className: "w-full",
-								children: /* @__PURE__ */ C(eh, {})
-							}), /* @__PURE__ */ w(nh, { children: [/* @__PURE__ */ C($, {
-								value: "fixed",
-								children: Mh(r, "wfcp.priceMode", "fixed")
-							}), /* @__PURE__ */ C($, {
-								value: "percent",
-								children: Mh(r, "wfcp.priceMode", "percent")
-							})] })]
-						})]
-					}),
-					/* @__PURE__ */ w("div", {
-						className: "space-y-2",
-						children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcValue") }), /* @__PURE__ */ C(Z, {
-							value: s,
-							onChange: (e) => c(e.target.value),
-							disabled: A || j
-						})]
-					}),
-					/* @__PURE__ */ w("div", {
-						className: "flex items-center gap-2",
-						children: [/* @__PURE__ */ C(Vm, {
-							id: "bpc-apply-sale",
-							checked: l,
-							disabled: A || j,
-							onCheckedChange: (e) => u(e === !0)
-						}), /* @__PURE__ */ C(Q, {
-							htmlFor: "bpc-apply-sale",
-							className: "cursor-pointer font-normal",
-							children: r("wfcp.bpcApplySale")
-						})]
-					}),
-					/* @__PURE__ */ w("div", {
-						className: "space-y-2",
-						children: [
-							/* @__PURE__ */ C(Q, { children: r("wfcp.bpcCategories") }),
-							/* @__PURE__ */ C(Z, {
-								value: d,
-								onChange: (e) => f(e.target.value),
-								disabled: A || j
-							}),
-							/* @__PURE__ */ C("p", {
-								className: "text-xs text-muted-foreground",
-								children: r("wfcp.bpcCategoriesHint")
-							})
-						]
-					}),
-					/* @__PURE__ */ w("div", {
-						className: "space-y-2",
-						children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRangeRules") }), /* @__PURE__ */ C(jh, {
-							className: "min-h-20",
-							value: p,
-							onChange: (e) => h(e.target.value),
-							disabled: A || j
-						})]
-					}),
-					/* @__PURE__ */ w("div", {
-						className: "flex items-center gap-2",
-						children: [/* @__PURE__ */ C(Vm, {
-							id: "bpc-rules-combine",
-							checked: _,
-							disabled: A || j,
-							onCheckedChange: (e) => v(e === !0)
-						}), /* @__PURE__ */ C(Q, {
-							htmlFor: "bpc-rules-combine",
-							className: "cursor-pointer font-normal",
-							children: r("wfcp.bpcRulesCombine")
-						})]
-					}),
-					/* @__PURE__ */ w("div", {
-						className: "flex items-center gap-2",
-						children: [/* @__PURE__ */ C(Vm, {
-							id: "bpc-rounding",
-							checked: y,
-							disabled: A || j,
-							onCheckedChange: (e) => b(e === !0)
-						}), /* @__PURE__ */ C(Q, {
-							htmlFor: "bpc-rounding",
-							className: "cursor-pointer font-normal",
-							children: r("wfcp.bpcRounding")
-						})]
-					}),
-					/* @__PURE__ */ w("div", {
-						className: "grid grid-cols-2 gap-2",
-						children: [/* @__PURE__ */ w("div", {
+		children: [
+			/* @__PURE__ */ w("div", {
+				className: "grid gap-6 lg:grid-cols-2",
+				children: [/* @__PURE__ */ w("div", {
+					className: "space-y-3 rounded-lg border border-border p-4",
+					children: [
+						/* @__PURE__ */ w("div", {
 							className: "space-y-2",
-							children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRoundTh") }), /* @__PURE__ */ C(Z, {
-								value: T,
-								onChange: (e) => E(e.target.value),
-								disabled: A || j
+							children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcType") }), /* @__PURE__ */ w($m, {
+								value: o,
+								onValueChange: (e) => s(e),
+								disabled: j || M,
+								children: [/* @__PURE__ */ C(th, {
+									className: "w-full",
+									children: /* @__PURE__ */ C(eh, {})
+								}), /* @__PURE__ */ w(nh, { children: [/* @__PURE__ */ C($, {
+									value: "fixed",
+									children: Mh(r, "wfcp.priceMode", "fixed")
+								}), /* @__PURE__ */ C($, {
+									value: "percent",
+									children: Mh(r, "wfcp.priceMode", "percent")
+								})] })]
 							})]
-						}), /* @__PURE__ */ w("div", {
+						}),
+						/* @__PURE__ */ w("div", {
 							className: "space-y-2",
-							children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRoundVal") }), /* @__PURE__ */ C(Z, {
-								value: D,
-								onChange: (e) => O(e.target.value),
-								disabled: A || j
+							children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcValue") }), /* @__PURE__ */ C(Z, {
+								value: c,
+								onChange: (e) => l(e.target.value),
+								disabled: j || M
 							})]
-						})]
-					}),
-					/* @__PURE__ */ w("div", {
-						className: "flex flex-wrap gap-2",
-						children: [/* @__PURE__ */ C(X, {
-							type: "button",
-							disabled: I.isPending || A || j,
-							onClick: () => void I.mutateAsync(),
-							children: r("wfcp.bpcStart")
-						}), j ? /* @__PURE__ */ C(X, {
-							type: "button",
-							variant: "outline",
-							disabled: F.isPending,
-							onClick: () => void F.mutateAsync(),
-							children: r("wfcp.bpcCancel", { defaultValue: "لغو کار" })
-						}) : null]
-					})
-				]
-			}), /* @__PURE__ */ w("div", {
-				className: "space-y-4 rounded-lg border border-border p-4",
-				children: [
-					/* @__PURE__ */ C("h3", {
-						className: "text-sm font-medium",
-						children: r("wfcp.bpcStateTitle")
-					}),
-					M ? /* @__PURE__ */ w("div", {
-						className: "space-y-3",
-						children: [
-							/* @__PURE__ */ w("div", {
-								className: "flex flex-wrap items-center gap-2",
-								children: [/* @__PURE__ */ C(Cm, {
-									variant: Nh(M.status || "running"),
-									children: r(`wfcp.bpcStatus.${M.status || "running"}`, { defaultValue: M.status || "running" })
-								}), /* @__PURE__ */ C("span", {
-									className: "text-muted-foreground font-mono text-xs",
-									dir: "ltr",
-									children: M.run_id
+						}),
+						/* @__PURE__ */ w("div", {
+							className: "flex items-center gap-2",
+							children: [/* @__PURE__ */ C(Vm, {
+								id: "bpc-apply-sale",
+								checked: u,
+								disabled: j || M,
+								onCheckedChange: (e) => d(e === !0)
+							}), /* @__PURE__ */ C(Q, {
+								htmlFor: "bpc-apply-sale",
+								className: "cursor-pointer font-normal",
+								children: r("wfcp.bpcApplySale")
+							})]
+						}),
+						/* @__PURE__ */ w("div", {
+							className: "space-y-2",
+							children: [
+								/* @__PURE__ */ C(Q, { children: r("wfcp.bpcCategories") }),
+								/* @__PURE__ */ C(Z, {
+									value: f,
+									onChange: (e) => p(e.target.value),
+									disabled: j || M
+								}),
+								/* @__PURE__ */ C("p", {
+									className: "text-xs text-muted-foreground",
+									children: r("wfcp.bpcCategoriesHint")
+								})
+							]
+						}),
+						/* @__PURE__ */ w("div", {
+							className: "space-y-2",
+							children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRangeRules") }), /* @__PURE__ */ C(jh, {
+								className: "min-h-20",
+								value: h,
+								onChange: (e) => _(e.target.value),
+								disabled: j || M
+							})]
+						}),
+						/* @__PURE__ */ w("div", {
+							className: "flex items-center gap-2",
+							children: [/* @__PURE__ */ C(Vm, {
+								id: "bpc-rules-combine",
+								checked: v,
+								disabled: j || M,
+								onCheckedChange: (e) => y(e === !0)
+							}), /* @__PURE__ */ C(Q, {
+								htmlFor: "bpc-rules-combine",
+								className: "cursor-pointer font-normal",
+								children: r("wfcp.bpcRulesCombine")
+							})]
+						}),
+						/* @__PURE__ */ w("div", {
+							className: "flex items-center gap-2",
+							children: [/* @__PURE__ */ C(Vm, {
+								id: "bpc-rounding",
+								checked: b,
+								disabled: j || M,
+								onCheckedChange: (e) => T(e === !0)
+							}), /* @__PURE__ */ C(Q, {
+								htmlFor: "bpc-rounding",
+								className: "cursor-pointer font-normal",
+								children: r("wfcp.bpcRounding")
+							})]
+						}),
+						/* @__PURE__ */ w("div", {
+							className: "grid grid-cols-2 gap-2",
+							children: [/* @__PURE__ */ w("div", {
+								className: "space-y-2",
+								children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRoundTh") }), /* @__PURE__ */ C(Z, {
+									value: E,
+									onChange: (e) => D(e.target.value),
+									disabled: j || M
 								})]
-							}),
-							/* @__PURE__ */ w("div", {
-								className: "space-y-1",
-								children: [/* @__PURE__ */ w("div", {
-									className: "flex justify-between text-xs",
-									children: [/* @__PURE__ */ C("span", { children: r("wfcp.bpcProgress", { defaultValue: "پیشرفت صف" }) }), /* @__PURE__ */ w("span", {
+							}), /* @__PURE__ */ w("div", {
+								className: "space-y-2",
+								children: [/* @__PURE__ */ C(Q, { children: r("wfcp.bpcRoundVal") }), /* @__PURE__ */ C(Z, {
+									value: O,
+									onChange: (e) => k(e.target.value),
+									disabled: j || M
+								})]
+							})]
+						}),
+						/* @__PURE__ */ w("div", {
+							className: "flex flex-wrap gap-2",
+							children: [/* @__PURE__ */ C(X, {
+								type: "button",
+								disabled: ee.isPending || j || M,
+								onClick: () => void ee.mutateAsync(),
+								children: r("wfcp.bpcStart")
+							}), M ? /* @__PURE__ */ C(X, {
+								type: "button",
+								variant: "outline",
+								disabled: L.isPending,
+								onClick: () => void L.mutateAsync(),
+								children: r("wfcp.bpcCancel", { defaultValue: "لغو کار" })
+							}) : null]
+						})
+					]
+				}), /* @__PURE__ */ w("div", {
+					className: "space-y-4 rounded-lg border border-border p-4",
+					children: [
+						/* @__PURE__ */ C("h3", {
+							className: "text-sm font-medium",
+							children: r("wfcp.bpcStateTitle")
+						}),
+						N ? /* @__PURE__ */ w("div", {
+							className: "space-y-3",
+							children: [
+								/* @__PURE__ */ w("div", {
+									className: "flex flex-wrap items-center gap-2",
+									children: [/* @__PURE__ */ C(Cm, {
+										variant: Nh(N.status || "running"),
+										children: r(`wfcp.bpcStatus.${N.status || "running"}`, { defaultValue: N.status || "running" })
+									}), /* @__PURE__ */ C("span", {
+										className: "text-muted-foreground font-mono text-xs",
 										dir: "ltr",
-										children: [
-											M.processed ?? 0,
-											"/",
-											M.total ?? 0,
-											" (",
-											P,
-											"%)"
-										]
+										children: N.run_id
 									})]
-								}), /* @__PURE__ */ C("div", {
-									className: "bg-muted h-2 overflow-hidden rounded-full",
-									children: /* @__PURE__ */ C("div", {
-										className: "bg-primary h-full transition-all",
-										style: { width: `${P}%` }
-									})
-								})]
-							}),
-							/* @__PURE__ */ w("dl", {
-								className: "grid grid-cols-2 gap-x-3 gap-y-1 text-xs",
-								children: [
-									/* @__PURE__ */ C("dt", {
-										className: "text-muted-foreground",
-										children: r("wfcp.bpcPage", { defaultValue: "صفحه" })
-									}),
-									/* @__PURE__ */ w("dd", {
-										dir: "ltr",
-										children: [
-											M.current_page ?? 0,
-											"/",
-											M.pages ?? 0
-										]
-									}),
-									/* @__PURE__ */ C("dt", {
-										className: "text-muted-foreground",
-										children: r("wfcp.bpcUpdated", { defaultValue: "به‌روز شده" })
-									}),
-									/* @__PURE__ */ C("dd", {
-										dir: "ltr",
-										children: M.updated ?? 0
-									}),
-									/* @__PURE__ */ C("dt", {
-										className: "text-muted-foreground",
-										children: r("wfcp.bpcSkipped", { defaultValue: "رد شده" })
-									}),
-									/* @__PURE__ */ C("dd", {
-										dir: "ltr",
-										children: M.skipped ?? 0
-									}),
-									/* @__PURE__ */ C("dt", {
-										className: "text-muted-foreground",
-										children: r("wfcp.bpcErrors", { defaultValue: "خطا" })
-									}),
-									/* @__PURE__ */ C("dd", {
-										dir: "ltr",
-										children: M.errors ?? 0
-									}),
-									/* @__PURE__ */ C("dt", {
-										className: "text-muted-foreground",
-										children: r("wfcp.bpcStarted", { defaultValue: "شروع" })
-									}),
-									/* @__PURE__ */ C("dd", { children: Ph(M.started_at) })
-								]
-							}),
-							/* @__PURE__ */ C("p", {
-								className: "text-muted-foreground text-xs",
-								children: r("wfcp.bpcProgressHint", { defaultValue: "اگر صف وسط کار بایستد، در تاریخچه پایین با دلیل توقف ثبت می‌شود تا ببینید تا کجا رفته." })
-							})
-						]
-					}) : /* @__PURE__ */ C("p", {
-						className: "text-muted-foreground text-sm",
-						children: r("wfcp.bpcIdle", { defaultValue: "الان کار فعالی در صف نیست." })
-					}),
-					k.data?.last?.reason ? /* @__PURE__ */ w("p", {
-						className: "border-border bg-muted/40 rounded-md border p-2 text-xs",
-						children: [
-							/* @__PURE__ */ w("span", {
-								className: "font-medium",
-								children: [r("wfcp.bpcLastReason", { defaultValue: "آخرین نتیجه:" }), " "]
-							}),
-							k.data.last.reason,
-							k.data.last.url ? /* @__PURE__ */ w(S, { children: [" ", /* @__PURE__ */ C("a", {
-								className: "text-primary underline",
-								href: k.data.last.url,
-								target: "_blank",
-								rel: "noreferrer",
-								children: r("wfcp.bpcLog", { defaultValue: "لاگ CSV" })
-							})] }) : null
-						]
-					}) : null
-				]
-			})]
-		}), /* @__PURE__ */ w("div", {
-			className: "mt-8 space-y-3",
-			children: [/* @__PURE__ */ w("div", { children: [/* @__PURE__ */ C("h3", {
-				className: "text-base font-medium",
-				children: r("wfcp.bpcHistoryTitle", { defaultValue: "تاریخچه درخواست‌ها" })
-			}), /* @__PURE__ */ C("p", {
-				className: "text-muted-foreground text-sm",
-				children: r("wfcp.bpcHistoryHint", { defaultValue: "همه درخواست‌های تغییر قیمت گروهی، وضعیت، دلیل لغو/توقف و میزان پیشرفت صف." })
-			})] }), N.length === 0 ? /* @__PURE__ */ C("p", {
-				className: "text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm",
-				children: r("wfcp.bpcHistoryEmpty", { defaultValue: "هنوز درخواستی ثبت نشده است." })
-			}) : /* @__PURE__ */ C("div", {
-				className: "overflow-x-auto rounded-lg border border-border",
-				children: /* @__PURE__ */ w("table", {
-					className: "w-full min-w-[52rem] text-sm",
-					children: [/* @__PURE__ */ C("thead", {
-						className: "bg-muted/50 text-muted-foreground text-xs",
-						children: /* @__PURE__ */ w("tr", { children: [
-							/* @__PURE__ */ C("th", {
-								className: "px-3 py-2 text-start font-medium",
-								children: r("wfcp.bpcColStatus", { defaultValue: "وضعیت" })
-							}),
-							/* @__PURE__ */ C("th", {
-								className: "px-3 py-2 text-start font-medium",
-								children: r("wfcp.bpcColProgress", { defaultValue: "پیشرفت" })
-							}),
-							/* @__PURE__ */ C("th", {
-								className: "px-3 py-2 text-start font-medium",
-								children: r("wfcp.bpcColReason", { defaultValue: "دلیل / نتیجه" })
-							}),
-							/* @__PURE__ */ C("th", {
-								className: "px-3 py-2 text-start font-medium",
-								children: r("wfcp.bpcColWhen", { defaultValue: "زمان" })
-							}),
-							/* @__PURE__ */ C("th", {
-								className: "px-3 py-2 text-start font-medium",
-								children: r("wfcp.bpcColLog", { defaultValue: "لاگ" })
-							})
-						] })
-					}), /* @__PURE__ */ C("tbody", { children: N.map((e) => {
-						let t = e.status || "unknown";
-						return /* @__PURE__ */ w("tr", {
+								}),
+								/* @__PURE__ */ w("div", {
+									className: "space-y-1",
+									children: [/* @__PURE__ */ w("div", {
+										className: "flex justify-between text-xs",
+										children: [/* @__PURE__ */ C("span", { children: r("wfcp.bpcProgress", { defaultValue: "پیشرفت صف" }) }), /* @__PURE__ */ w("span", {
+											dir: "ltr",
+											children: [
+												N.processed ?? 0,
+												"/",
+												N.total ?? 0,
+												" (",
+												I,
+												"%)"
+											]
+										})]
+									}), /* @__PURE__ */ C("div", {
+										className: "bg-muted h-2 overflow-hidden rounded-full",
+										children: /* @__PURE__ */ C("div", {
+											className: "bg-primary h-full transition-all",
+											style: { width: `${I}%` }
+										})
+									})]
+								}),
+								/* @__PURE__ */ w("dl", {
+									className: "grid grid-cols-2 gap-x-3 gap-y-1 text-xs",
+									children: [
+										/* @__PURE__ */ C("dt", {
+											className: "text-muted-foreground",
+											children: r("wfcp.bpcPage", { defaultValue: "صفحه" })
+										}),
+										/* @__PURE__ */ w("dd", {
+											dir: "ltr",
+											children: [
+												N.current_page ?? 0,
+												"/",
+												N.pages ?? 0
+											]
+										}),
+										/* @__PURE__ */ C("dt", {
+											className: "text-muted-foreground",
+											children: r("wfcp.bpcUpdated", { defaultValue: "به‌روز شده" })
+										}),
+										/* @__PURE__ */ C("dd", {
+											dir: "ltr",
+											children: N.updated ?? 0
+										}),
+										/* @__PURE__ */ C("dt", {
+											className: "text-muted-foreground",
+											children: r("wfcp.bpcSkipped", { defaultValue: "رد شده" })
+										}),
+										/* @__PURE__ */ C("dd", {
+											dir: "ltr",
+											children: N.skipped ?? 0
+										}),
+										/* @__PURE__ */ C("dt", {
+											className: "text-muted-foreground",
+											children: r("wfcp.bpcErrors", { defaultValue: "خطا" })
+										}),
+										/* @__PURE__ */ C("dd", {
+											dir: "ltr",
+											children: N.errors ?? 0
+										}),
+										/* @__PURE__ */ C("dt", {
+											className: "text-muted-foreground",
+											children: r("wfcp.bpcStarted", { defaultValue: "شروع" })
+										}),
+										/* @__PURE__ */ C("dd", { children: Ph(N.started_at, i.language) })
+									]
+								}),
+								/* @__PURE__ */ C("p", {
+									className: "text-muted-foreground text-xs",
+									children: r("wfcp.bpcProgressHint", { defaultValue: "اگر صف وسط کار بایستد، در تاریخچه پایین با دلیل توقف ثبت می‌شود تا ببینید تا کجا رفته." })
+								})
+							]
+						}) : /* @__PURE__ */ C("p", {
+							className: "text-muted-foreground text-sm",
+							children: r("wfcp.bpcIdle", { defaultValue: "الان کار فعالی در صف نیست." })
+						}),
+						A.data?.last?.reason ? /* @__PURE__ */ w("p", {
+							className: "border-border bg-muted/40 rounded-md border p-2 text-xs",
+							children: [
+								/* @__PURE__ */ w("span", {
+									className: "font-medium",
+									children: [r("wfcp.bpcLastReason", { defaultValue: "آخرین نتیجه:" }), " "]
+								}),
+								A.data.last.reason,
+								A.data.last.url ? /* @__PURE__ */ w(S, { children: [" ", /* @__PURE__ */ C("a", {
+									className: "text-primary underline",
+									href: A.data.last.url,
+									target: "_blank",
+									rel: "noopener noreferrer",
+									children: r("wfcp.bpcLog", { defaultValue: "لاگ CSV" })
+								})] }) : null
+							]
+						}) : null
+					]
+				})]
+			}),
+			F.length > 0 ? /* @__PURE__ */ w("div", {
+				className: "mt-8 space-y-3",
+				"data-testid": "wfcp-bpc-failures",
+				children: [/* @__PURE__ */ w("div", { children: [/* @__PURE__ */ C("h3", {
+					className: "text-base font-medium",
+					children: r("wfcp.bpcFailuresTitle", { defaultValue: "محصولات ناموفق و دلیل آن‌ها" })
+				}), /* @__PURE__ */ C("p", {
+					className: "text-muted-foreground text-sm",
+					children: r("wfcp.bpcFailuresHint", { defaultValue: "این محصولات به‌روزرسانی نشدند و دلیل هر کدام ثبت شده است. بعد از رفع مشکل، می‌توانید همان محصولات را انتخاب و دوباره اجرا کنید." })
+				})] }), /* @__PURE__ */ C("div", {
+					className: "overflow-x-auto rounded-lg border border-border",
+					children: /* @__PURE__ */ w("table", {
+						className: "w-full min-w-[40rem] text-sm",
+						children: [/* @__PURE__ */ C("thead", {
+							className: "bg-muted/50 text-muted-foreground text-xs",
+							children: /* @__PURE__ */ w("tr", { children: [
+								/* @__PURE__ */ C("th", {
+									className: "px-3 py-2 text-start font-medium",
+									children: r("wfcp.bpcColProduct", { defaultValue: "محصول" })
+								}),
+								/* @__PURE__ */ C("th", {
+									className: "px-3 py-2 text-start font-medium",
+									children: r("wfcp.bpcColFailureReason", { defaultValue: "دلیل ناموفق بودن" })
+								}),
+								/* @__PURE__ */ C("th", {
+									className: "px-3 py-2 text-start font-medium",
+									children: r("wfcp.bpcColWhen", { defaultValue: "زمان" })
+								})
+							] })
+						}), /* @__PURE__ */ C("tbody", { children: F.map((e, t) => /* @__PURE__ */ w("tr", {
 							className: "border-t border-border",
 							children: [
 								/* @__PURE__ */ w("td", {
 									className: "px-3 py-2 align-top",
-									children: [/* @__PURE__ */ C(Cm, {
-										variant: Nh(t),
-										children: r(`wfcp.bpcStatus.${t}`, { defaultValue: t })
-									}), /* @__PURE__ */ w("div", {
-										className: "text-muted-foreground mt-1 font-mono text-[11px]",
+									children: [/* @__PURE__ */ w("div", {
+										className: "font-mono text-xs",
 										dir: "ltr",
-										children: [(e.run_id || "").slice(0, 8), e.type ? ` · ${e.type} ${e.value ?? ""}` : ""]
-									})]
-								}),
-								/* @__PURE__ */ w("td", {
-									className: "px-3 py-2 align-top text-xs",
-									dir: "ltr",
-									children: [/* @__PURE__ */ w("div", { children: [
-										e.processed ?? 0,
-										"/",
-										e.total ?? 0
-									] }), /* @__PURE__ */ w("div", {
-										className: "text-muted-foreground",
 										children: [
-											"page ",
-											e.current_page ?? 0,
-											"/",
-											e.pages ?? 0,
-											" · ok ",
-											e.updated ?? 0,
-											" · skip",
-											" ",
-											e.skipped ?? 0,
-											" · err ",
-											e.errors ?? 0
+											"#",
+											e.id ?? "—",
+											e.parent ? ` ← ${e.parent}` : ""
 										]
+									}), /* @__PURE__ */ C("div", {
+										className: "text-muted-foreground text-start text-[11px]",
+										children: r(`wfcp.bpcEntity.${e.entity || "product"}`, { defaultValue: e.entity || "product" })
 									})]
-								}),
-								/* @__PURE__ */ C("td", {
-									className: "px-3 py-2 align-top text-xs whitespace-pre-wrap",
-									children: e.reason || "—"
 								}),
 								/* @__PURE__ */ w("td", {
 									className: "px-3 py-2 align-top text-xs",
-									children: [/* @__PURE__ */ C("div", { children: Ph(e.started_at) }), /* @__PURE__ */ C("div", {
-										className: "text-muted-foreground",
-										children: Ph(e.finished_at)
-									})]
+									children: [/* @__PURE__ */ C("div", { children: Ih(r, e.reason) }), e.message ? /* @__PURE__ */ C("div", {
+										className: "text-muted-foreground mt-0.5 break-words",
+										dir: "ltr",
+										children: e.message
+									}) : null]
 								}),
 								/* @__PURE__ */ C("td", {
 									className: "px-3 py-2 align-top text-xs",
-									children: e.log_url ? /* @__PURE__ */ C("a", {
-										className: "text-primary underline",
-										href: e.log_url,
-										target: "_blank",
-										rel: "noreferrer",
-										children: "CSV"
-									}) : "—"
+									children: Ph(e.at, i.language)
 								})
 							]
-						}, e.run_id || `${e.finished_at}-${e.started_at}`);
-					}) })]
-				})
-			})]
-		})]
+						}, `${e.id}-${t}`)) })]
+					})
+				})]
+			}) : null,
+			/* @__PURE__ */ w("div", {
+				className: "mt-8 space-y-3",
+				children: [/* @__PURE__ */ w("div", { children: [/* @__PURE__ */ C("h3", {
+					className: "text-base font-medium",
+					children: r("wfcp.bpcHistoryTitle", { defaultValue: "تاریخچه درخواست‌ها" })
+				}), /* @__PURE__ */ C("p", {
+					className: "text-muted-foreground text-sm",
+					children: r("wfcp.bpcHistoryHint", { defaultValue: "همه درخواست‌های تغییر قیمت گروهی، وضعیت، دلیل لغو/توقف و میزان پیشرفت صف." })
+				})] }), P.length === 0 ? /* @__PURE__ */ C("p", {
+					className: "text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm",
+					children: r("wfcp.bpcHistoryEmpty", { defaultValue: "هنوز درخواستی ثبت نشده است." })
+				}) : /* @__PURE__ */ C("div", {
+					className: "overflow-x-auto rounded-lg border border-border",
+					children: /* @__PURE__ */ w("table", {
+						className: "w-full min-w-[52rem] text-sm",
+						children: [/* @__PURE__ */ C("thead", {
+							className: "bg-muted/50 text-muted-foreground text-xs",
+							children: /* @__PURE__ */ w("tr", { children: [
+								/* @__PURE__ */ C("th", {
+									className: "px-3 py-2 text-start font-medium",
+									children: r("wfcp.bpcColStatus", { defaultValue: "وضعیت" })
+								}),
+								/* @__PURE__ */ C("th", {
+									className: "px-3 py-2 text-start font-medium",
+									children: r("wfcp.bpcColProgress", { defaultValue: "پیشرفت" })
+								}),
+								/* @__PURE__ */ C("th", {
+									className: "px-3 py-2 text-start font-medium",
+									children: r("wfcp.bpcColReason", { defaultValue: "دلیل / نتیجه" })
+								}),
+								/* @__PURE__ */ C("th", {
+									className: "px-3 py-2 text-start font-medium",
+									children: r("wfcp.bpcColWhen", { defaultValue: "زمان" })
+								}),
+								/* @__PURE__ */ C("th", {
+									className: "px-3 py-2 text-start font-medium",
+									children: r("wfcp.bpcColLog", { defaultValue: "لاگ" })
+								})
+							] })
+						}), /* @__PURE__ */ C("tbody", { children: P.map((e) => {
+							let t = e.status || "unknown";
+							return /* @__PURE__ */ w("tr", {
+								className: "border-t border-border",
+								children: [
+									/* @__PURE__ */ w("td", {
+										className: "px-3 py-2 align-top",
+										children: [/* @__PURE__ */ C(Cm, {
+											variant: Nh(t),
+											children: r(`wfcp.bpcStatus.${t}`, { defaultValue: t })
+										}), /* @__PURE__ */ w("div", {
+											className: "text-muted-foreground mt-1 font-mono text-[11px]",
+											dir: "ltr",
+											children: [(e.run_id || "").slice(0, 8), e.type ? ` · ${e.type} ${e.value ?? ""}` : ""]
+										})]
+									}),
+									/* @__PURE__ */ w("td", {
+										className: "px-3 py-2 align-top text-xs",
+										dir: "ltr",
+										children: [
+											/* @__PURE__ */ w("div", { children: [
+												e.processed ?? 0,
+												"/",
+												e.total ?? 0
+											] }),
+											/* @__PURE__ */ w("div", {
+												className: "text-muted-foreground",
+												children: [
+													"page ",
+													e.current_page ?? 0,
+													"/",
+													e.pages ?? 0,
+													" · ok ",
+													e.updated ?? 0,
+													" · skip",
+													" ",
+													e.skipped ?? 0,
+													" · err ",
+													e.errors ?? 0
+												]
+											}),
+											e.failures?.length ? /* @__PURE__ */ w("details", {
+												className: "mt-1",
+												children: [/* @__PURE__ */ C("summary", {
+													className: "text-destructive cursor-pointer text-[11px]",
+													children: r("wfcp.bpcRowFailures", {
+														count: e.failures.length,
+														defaultValue: "{{count}} محصول ناموفق"
+													})
+												}), /* @__PURE__ */ C("ul", {
+													className: "mt-1 space-y-0.5",
+													children: e.failures.slice(0, 25).map((e, t) => /* @__PURE__ */ w("li", {
+														className: "text-[11px]",
+														children: [
+															/* @__PURE__ */ w("span", {
+																className: "font-mono",
+																children: ["#", e.id]
+															}),
+															" — ",
+															Ih(r, e.reason)
+														]
+													}, `${e.id}-${t}`))
+												})]
+											}) : null
+										]
+									}),
+									/* @__PURE__ */ C("td", {
+										className: "px-3 py-2 align-top text-xs whitespace-pre-wrap",
+										children: e.reason || "—"
+									}),
+									/* @__PURE__ */ w("td", {
+										className: "px-3 py-2 align-top text-xs",
+										children: [/* @__PURE__ */ C("div", { children: Ph(e.started_at, i.language) }), /* @__PURE__ */ C("div", {
+											className: "text-muted-foreground",
+											children: Ph(e.finished_at, i.language)
+										})]
+									}),
+									/* @__PURE__ */ C("td", {
+										className: "px-3 py-2 align-top text-xs",
+										children: e.log_url ? /* @__PURE__ */ C("a", {
+											className: "text-primary underline",
+											href: e.log_url,
+											target: "_blank",
+											rel: "noopener noreferrer",
+											children: "CSV"
+										}) : "—"
+									})
+								]
+							}, e.run_id || `${e.finished_at}-${e.started_at}`);
+						}) })]
+					})
+				})]
+			})
+		]
 	});
 }
 //#endregion
 //#region src/i18n/locales/fa.json
-var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
-	Lh = {
+var Rh = /* @__PURE__ */ A({ default: () => zh }), zh, Bh = k((() => {
+	zh = {
 		"app.title": "داشبورد",
 		"chart.totalVisitors": "کل بازدیدها",
 		"chart.descriptionLong": "جمع سه ماه اخیر",
@@ -10456,7 +10567,7 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"coupons.type.webino_gift": "هدیه",
 		"coupons.giftProduct": "محصول هدیه",
 		"coupons.giftMinAmount": "حداقل مبلغ سبد برای هدیه",
-		"coupons.giftHint": "مشتری با رسیدن سبد به حداقل مبلغ، محصول هدیه را رایگان می‌گیرد. در سبد این پیام نشان داده می‌شود: سبد خریدتون رو به مبلغ n برسونید فلان محصول رو هدیه بگیرید.",
+		"coupons.giftHint": "مشتری با رسیدن سبد به حداقل مبلغ، محصول هدیه را رایگان می‌گیرد. در سبد این پیام نشان داده می‌شود: سبد خریدتون رو به مبلغ n برسونید فلان محصول رو هدیه بگیرید. کوپن هدیه با یک کوپن تخفیف دیگر همزمان اعمال می‌شود و جلوی هیچ کوپنی را نمی‌گیرد.",
 		"license.status.active": "فعال",
 		"license.status.inactive": "غیرفعال",
 		"license.status.demo": "دمو",
@@ -11625,7 +11736,7 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"reports.wfcpDisabledHint": "WFCP غیرفعال",
 		"reports.cogsApproxHint": "قیمت خرید از متای فعلی محصول است، نه snapshot زمان سفارش.",
 		"salePrices.title": "قیمت خط‌خورده",
-		"salePrices.banner": "تخفیف فقط روی محصولات این لیست اعمال می‌شود. محصولات بایگانی‌شده یا در انتظار تأیید در این لیست نیستند.",
+		"salePrices.banner": "تخفیف را روی محصولات انتخاب‌شده، همهٔ نتایج فیلترشده یا همهٔ محصولات سایت اعمال کنید. تخفیف‌ها همیشه روی قیمت مصرف‌کنندهٔ WFCP محاسبه و به مضرب ۱٬۰۰۰ تومان گرد می‌شوند.",
 		"salePrices.selectHint": "محصولات را انتخاب کنید",
 		"salePrices.selectedCount": "{{count}} محصول انتخاب شده",
 		"salePrices.selectAllPage": "انتخاب همهٔ این صفحه",
@@ -14106,8 +14217,9 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"coffeeProfile.blendWeights": "وزن‌های قابل خرید (گرم، با ویرگول)",
 		"coffeeProfile.blendHolder": "شناسه محصول نگهدارنده سبد",
 		"coffeeProfile.blendHolderHint": "اگر خالی بماند هنگام ذخیره یک محصول مخفی ساخته می‌شود.",
-		"coffeeProfile.blendRobustaProduct": "محصول نماینده روبوستا",
-		"coffeeProfile.blendArabicaProduct": "محصول نماینده عربیکا",
+		"coffeeProfile.blendRobustaProduct": "محصول نماینده روبوستا (جایگزین اختیاری)",
+		"coffeeProfile.blendArabicaProduct": "محصول نماینده عربیکا (جایگزین اختیاری)",
+		"coffeeProfile.blendSimpleAutoHint": "اگر خالی بماند، گزینه‌های کلاسیک، لاکچری و اقتصادی به‌صورت خودکار از دان‌های اصلی ساخته می‌شوند.",
 		"coffeeProfile.blendRoasts": "میزان‌های رست",
 		"coffeeProfile.blendDevices": "دستگاه‌ها / درجه آسیاب",
 		"coffeeProfile.blendSuggestions": "پیشنهادهای نسبت",
@@ -14177,6 +14289,28 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"coffeeProfile.priceShopHint": "نسبت از ترکیب روبوستا/عربیکا همین پروفایل گرفته می‌شود.",
 		"coffeeProfile.priceEconomyHint": "ویتنام/ریو (یا دان‌های تنظیم‌شده) با همان نسبت ترکیب پروفایل.",
 		"coffeeProfile.priceCustomParts": "اجزای سفارشی",
+		"coffeeProfile.pricingSaveAndApply": "ذخیره و اعمال خودکار قیمت‌ها",
+		"coffeeProfile.pricingAddBean": "افزودن دان جدید",
+		"coffeeProfile.pricingBeanNamePlaceholder": "نام دان…",
+		"coffeeProfile.pricingColFormula": "فرمول ترکیب",
+		"coffeeProfile.pricingShopMixes": "میکس مغازه (کلاسیک و لاکچری)",
+		"coffeeProfile.pricingShopClassicRobusta": "روبوستا کلاسیک",
+		"coffeeProfile.pricingShopClassicArabica": "عربیکا کلاسیک",
+		"coffeeProfile.pricingShopLuxuryRobusta": "روبوستا لاکچری",
+		"coffeeProfile.pricingShopLuxuryArabica": "عربیکا لاکچری",
+		"coffeeProfile.pricingColRatio": "روبوستا / عربیکا",
+		"coffeeProfile.pricingClassicAfter": "کلاسیک (بعد رست)",
+		"coffeeProfile.pricingClassicRetail": "کلاسیک (خرده)",
+		"coffeeProfile.pricingLuxuryAfter": "لاکچری (بعد رست)",
+		"coffeeProfile.pricingLuxuryRetail": "لاکچری (خرده)",
+		"coffeeProfile.pricingEconomyMixes": "میکس اقتصادی",
+		"coffeeProfile.priceShopClassic": "کلاسیک",
+		"coffeeProfile.priceShopLuxury": "لاکچری",
+		"coffeeProfile.priceRatioNote": "بر اساس نسبت روبوستا ({{robusta}}٪) / عربیکا ({{arabica}}٪) در پروفایل همین محصول محاسبه می‌شود.",
+		"coffeeProfile.priceBaseMixPresets": "پیش‌فرض میکس پایه",
+		"coffeeProfile.pricePreviewRetailKg": "پیش‌نمایش خرده‌فروشی WFCP / کیلو",
+		"coffeeProfile.pricePreviewPack": "قیمت خرید بسته ({{grams}} گرم)",
+		"coffeeProfile.pricePreviewRetailPack": "خرده‌فروشی WFCP بسته ({{grams}} گرم)",
 		"balePay.title": "پرداخت بله",
 		"balePay.subtitle": "فاکتور یک‌بارمصرف کیف‌پول بله از طریق بازوی فروشگاه.",
 		"balePay.enabled": "فعال در چک‌اوت",
@@ -15499,10 +15633,229 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"coupons.builder.errReward": "مقدار جایزه را بیشتر از صفر وارد کنید.",
 		"coupons.builder.errPercent": "درصد نمی‌تواند بیشتر از ۱۰۰ باشد.",
 		"products.fieldPrice": "قیمت",
-		"products.editor.singlePriceHint": "ماژول قیمت‌گذاری خاموش است؛ همین قیمت مستقیماً قیمت ووکامرس، سبد خرید، کوپن‌ها و بازارگاه‌ها می‌شود."
+		"products.editor.singlePriceHint": "ماژول قیمت‌گذاری خاموش است؛ همین قیمت مستقیماً قیمت ووکامرس، سبد خرید، کوپن‌ها و بازارگاه‌ها می‌شود.",
+		"nav.module.gateway-discounts": "تخفیف‌های درگاه",
+		"gatewayDiscounts.title": "تخفیف‌های درگاه پرداخت",
+		"gatewayDiscounts.description": "کدهای تخفیفی که خودِ درگاه (مثلاً ترب‌پی) به مشتری می‌دهد. این کدها در سبد خرید و تسویه‌حساب نمایش داده می‌شوند و مشتری آن‌ها را داخل درگاه وارد می‌کند؛ تخفیف در درگاه کم می‌شود، نه روی سایت.",
+		"gatewayDiscounts.add": "افزودن کد تخفیف درگاه",
+		"gatewayDiscounts.editTitle": "ویرایش کد تخفیف درگاه",
+		"gatewayDiscounts.createTitle": "افزودن کد تخفیف درگاه",
+		"gatewayDiscounts.dialogHint": "مشخصات کمپین را از پنل یا پیام کمپین ترب‌پی (یا هر درگاه) وارد کنید.",
+		"gatewayDiscounts.emptyTitle": "هنوز هیچ کد تخفیف درگاهی ثبت نشده",
+		"gatewayDiscounts.emptyHint": "اگر درگاه (مثلاً ترب‌پی) کد تخفیفی برای فروشگاهتان صادر کرده، اینجا ثبت کنید تا مشتری در سبد خرید و تسویه‌حساب آن را ببیند.",
+		"gatewayDiscounts.stats": "{{total}} کد ثبت شده · {{active}} فعال",
+		"gatewayDiscounts.saved": "کد تخفیف ذخیره شد",
+		"gatewayDiscounts.deleted": "کد تخفیف حذف شد",
+		"gatewayDiscounts.copied": "کد کپی شد",
+		"gatewayDiscounts.copy": "کپی کد",
+		"gatewayDiscounts.gatewayLabel": "تخفیف درگاه {{gateway}}",
+		"gatewayDiscounts.gatewayLabelShort": "درگاه",
+		"gatewayDiscounts.discountLabel": "{{amount}} تومان تخفیف",
+		"gatewayDiscounts.minLabel": "حداقل سبد خرید: {{amount}} تومان",
+		"gatewayDiscounts.deadlineLabel": "مهلت استفاده تا {{date}}",
+		"gatewayDiscounts.badgeStack": "همزمان با تخفیف سایت",
+		"gatewayDiscounts.badgeExclusive": "فقط تخفیف درگاه",
+		"gatewayDiscounts.toggleActive": "فعال / غیرفعال کردن",
+		"gatewayDiscounts.shareStore": "سهم شما: {{amount}} ت ({{percent}}٪)",
+		"gatewayDiscounts.shareGateway": "سهم {{gateway}}: {{amount}} ت",
+		"gatewayDiscounts.footerNote": "مبلغ سبد خرید = جمع کالای سبد پس از تخفیف‌های سایت (بدون هزینه ارسال؛ محصولات هدیه شمرده نمی‌شوند). وقتی سبد به حداقل رسید، مشتری کد را در درگاه وارد می‌کند؛ سایت تخفیفی بابت کد درگاه کم نمی‌کند. با گزینه «به‌جای تخفیف سایت»، وقتی سبد به حداقل می‌رسد تخفیف سایت (به‌جز کوپن هدیه) حذف می‌شود.",
+		"gatewayDiscounts.field.gateway": "درگاه پرداخت",
+		"gatewayDiscounts.field.gatewayPlaceholder": "ترب‌پی",
+		"gatewayDiscounts.field.campaignTitle": "عنوان کمپین (اختیاری)",
+		"gatewayDiscounts.field.campaignTitlePlaceholder": "کمپین ۶ روزه بلک فرایدی",
+		"gatewayDiscounts.field.code": "کد تخفیف",
+		"gatewayDiscounts.field.codeHint": "کد را دقیقاً همان‌طور که درگاه صادر کرده وارد کنید؛ مشتری همین کد را داخل درگاه می‌زند.",
+		"gatewayDiscounts.field.discount": "مبلغ تخفیف (تومان)",
+		"gatewayDiscounts.field.min": "کف سبد خرید (تومان)",
+		"gatewayDiscounts.field.share": "سهم فروشگاه از هر تخفیف (٪)",
+		"gatewayDiscounts.field.shareHint": "بقیه سهم درگاه است؛ مثلاً در کمپین ۶ روزه بلک فرایدی سهم فروشگاه ۵۰٪ (و در کمپین ۳ روزه ۲۵٪) است.",
+		"gatewayDiscounts.field.start": "تاریخ شروع (اختیاری)",
+		"gatewayDiscounts.field.end": "تاریخ پایان (اختیاری)",
+		"gatewayDiscounts.field.combine": "همراهی با تخفیف سایت",
+		"gatewayDiscounts.combine.stack": "همزمان با تخفیف سایت اعمال شود",
+		"gatewayDiscounts.combine.stackHint": "اگر سایت کوپن فعالی داشته باشد، مشتری می‌تواند از هر دو استفاده کند.",
+		"gatewayDiscounts.combine.exclusive": "به‌جای تخفیف سایت اعمال شود",
+		"gatewayDiscounts.combine.exclusiveHint": "وقتی سبد به حداقل می‌رسد، تخفیف سایت (به‌جز کوپن هدیه) حذف می‌شود و مشتری فقط تخفیف درگاه را می‌گیرد.",
+		"gatewayDiscounts.field.description": "توضیح برای مشتری (اختیاری)",
+		"gatewayDiscounts.field.descriptionPlaceholder": "مثلاً اعتبار تا پایان آذرماه یا فقط برای خرید نقدی.",
+		"gatewayDiscounts.field.active": "فعال",
+		"gatewayDiscounts.deleteTitle": "حذف کد تخفیف درگاه",
+		"gatewayDiscounts.deleteHint": "این کد از سبد خرید و تسویه‌حساب مشتریان حذف می‌شود. این عمل قابل بازگردانی نیست.",
+		"coupons.builder.reward.gift": "🎁 هدیه",
+		"coupons.builder.giftProduct": "محصول هدیه",
+		"coupons.builder.giftProductHint": "با رسیدن سبد به حداقل مبلغ، این محصول به‌صورت رایگان به سفارش اضافه می‌شود. کوپن هدیه با یک کوپن تخفیف دیگر همزمان اعمال می‌شود و جلوی هیچ کوپنی را نمی‌گیرد.",
+		"coupons.builder.giftCondForced": "هدیه فقط با شرط «حداقل مبلغ سفارش» ساخته می‌شود؛ یعنی شرط همین فیلد بالاست.",
+		"coupons.builder.errGiftProduct": "برای کوپن هدیه یک محصول هدیه انتخاب کنید.",
+		"gatewayDiscounts.gatewayCustom": "سایر (نام دلخواه)…",
+		"gatewayDiscounts.gatewayBackToList": "بازگشت به لیست درگاه‌ها",
+		"gatewayDiscounts.gatewayRequired": "یک درگاه را انتخاب یا نامش را وارد کنید.",
+		"gatewayDiscounts.gatewayDisabledSuffix": "غیرفعال",
+		"shipping.itemCost.menu": "هزینهٔ ارسال آیتم‌ها",
+		"shipping.itemCost.title": "هزینهٔ حمل و نقل آیتم‌ها",
+		"shipping.itemCost.description": "برای هر محصول، ست محصولات، دسته‌بندی، برند یا درگاه پرداخت هزینهٔ ارسال تعیین کنید؛ مبلغ روش‌های ارسال در سبد و پرداخت به همین مقدار افزایش می‌یابد.",
+		"shipping.itemCost.cardHint": "هزینهٔ ارسال جدا برای محصول، دسته، برند و درگاه؛ جمع، یک‌بار یا بیشترین هزینه.",
+		"shipping.itemCost.open": "تنظیم هزینه‌ها",
+		"shipping.itemCost.enable": "فعال‌سازی هزینهٔ ارسال آیتم‌ها",
+		"shipping.itemCost.enableHint": "به‌صورت پیش‌فرض خاموش است و وقتی خاموش باشد هیچ تغییری در فروشگاه ایجاد نمی‌کند. بعد از روشن کردن، مبلغ روش ارسال انتخابی (و هر روش ارسال دیگر) طبق قواعد شما بالا می‌رود.",
+		"shipping.itemCost.modeTitle": "نوع محاسبه",
+		"shipping.itemCost.modeHint": "نحوهٔ جمع‌زدن هزینهٔ آیتم‌های سبد را انتخاب کنید. «ضرب در تعداد» و ستون «محاسبهٔ تعداد» در همهٔ روش‌ها اثر دارند؛ برای هزینه به‌ازای هر عدد، روش «بیشترین» یا «جمع» را انتخاب کنید.",
+		"shipping.itemCost.modeLabel": "روش محاسبهٔ مجموع",
+		"shipping.itemCost.modeEach": "جمع هزینهٔ هر آیتم (جداگانه)",
+		"shipping.itemCost.modeOnce": "فقط یک‌بار (کل سبد)",
+		"shipping.itemCost.modeMax": "بیشترین هزینهٔ آیتم‌ها (به‌ازای هر عدد)",
+		"shipping.itemCost.modeEachDesc": "هزینهٔ هر آیتم جداگانه محاسبه و جمع می‌شود و به مبلغ روش ارسال اضافه می‌شود. اگر چند آیتم از یک دسته باشند، هزینهٔ همهٔ آن‌ها جمع می‌شود.",
+		"shipping.itemCost.modeOnceDesc": "یک مبلغ ثابت به مبلغ روش ارسال اضافه می‌شود: «هزینهٔ پیش‌فرض»؛ اگر خالی باشد، بیشترین هزینهٔ آیتم‌های سبد اعمال می‌شود. برای هزینهٔ به‌ازای هر عدد از روش «بیشترین» استفاده کنید.",
+		"shipping.itemCost.modeMaxDesc": "هزینهٔ هر آیتم در تعداد آن ضرب می‌شود (اگر «ضرب در تعداد» روشن باشد) و بیشترین نتیجه به مبلغ روش ارسال اضافه می‌شود؛ مثلاً ۳ عدد از کالایی با هزینهٔ ۵٬۰۰۰ تومان = ۱۵٬۰۰۰ تومان. اگر «ضرب در تعداد» خاموش باشد فقط یک‌بار به‌ازای هر خط سبد گرفته می‌شود.",
+		"shipping.itemCost.multiplyQty": "ضرب در تعداد",
+		"shipping.itemCost.multiplyQtyHint": "روشن: هزینهٔ هر آیتم × تعداد آن. خاموش: برای هر خط سبد فقط یک‌بار. این تنظیم در روش‌های «بیشترین» و «جمع» اثر دارد و ستون «محاسبهٔ تعداد» هر قانون می‌تواند آن را برای همان قانون تغییر دهد.",
+		"shipping.itemCost.defaultCostOnce": "هزینهٔ پیش‌فرض برای اقلام عادی فقط یک‌بار حساب شود",
+		"shipping.itemCost.defaultCostOnceHint": "وقتی روشن باشد، تمام محصولاتی که قانون جداگانه‌ای ندارند (اقلام عادی) روی‌هم‌رفته فقط یک‌بار مبلغ «هزینهٔ پیش‌فرض» را می‌گیرند (مثلاً ۵ محصول عادی = یک‌بار ۴۰۰ تومان)؛ ولی اقلام دارای قانون خاص همچنان جداگانه جمع یا در تعداد ضرب می‌شوند.",
+		"shipping.itemCost.qtyModeLabel": "محاسبهٔ تعداد",
+		"shipping.itemCost.qtyModeInherit": "طبق تنظیم کلی (ضرب در تعداد)",
+		"shipping.itemCost.qtyModePerQty": "به‌ازای هر عدد (× تعداد)",
+		"shipping.itemCost.qtyModeOnce": "یک‌بار در کل سبد",
+		"shipping.itemCost.defaultCost": "هزینهٔ پیش‌فرض",
+		"shipping.itemCost.defaultCostHint": "اگر محصولی هیچ قانونی نداشته باشد از این مبلغ استفاده می‌شود؛ خالی = بدون هزینه. در روش «فقط یک‌بار» همین مبلغ به کل سبد اعمال می‌شود (اگر خالی باشد، بیشترین هزینه گرفته می‌شود).",
+		"shipping.itemCost.minFree": "آستانهٔ ارسال رایگان (مبلغ پرداختی سبد)",
+		"shipping.itemCost.minFreeHint": "اگر مبلغ اقلام پرداختی سبد به این مبلغ برسد، هزینهٔ ارسال آیتم‌ها صفر می‌شود؛ خالی = غیرفعال.",
+		"shipping.itemCost.virtualSkip": "نادیده گرفتن محصولات مجازی/دانلودی",
+		"shipping.itemCost.virtualSkipHint": "برای محصولاتی که ارسال ندارند (دیجیتال) هزینه گرفته نمی‌شود.",
+		"shipping.itemCost.categoryChildren": "شامل زیر‌مجموعه‌های دسته‌بندی",
+		"shipping.itemCost.categoryChildrenHint": "اگر دسته‌ای هزینه داشته باشد، زیردسته‌های آن هم همان هزینه را می‌گیرند (مگر اینکه زیردسته جداگانه تنظیم شده باشد).",
+		"shipping.itemCost.skipFreeCoupon": "با کوپن ارسال رایگان، هزینه نگیرد",
+		"shipping.itemCost.skipFreeCouponHint": "اگر در سبد کوپن ارسال رایگان اعمال شده باشد، هیچ هزینهٔ اضافه‌ای به روش ارسال اضافه نمی‌شود.",
+		"shipping.itemCost.priorityHint": "اولویت اعمال قانون برای هر آیتم: محصول ← ست محصولات ← دسته‌بندی ← برند ← هزینهٔ پیش‌فرض. اگر چند دسته‌بندی یا برند هم‌خوان بود، بیشترین هزینه در نظر گرفته می‌شود. مبلغ‌ها به تومان هستند؛ صفر یعنی ارسال رایگان برای آن آیتم. نتیجه به‌صورت «افزایش مبلغ روش ارسال» اعمال می‌شود و روش رایگان/حضوری (با تنظیمات بالا) دست‌نخورده می‌ماند.",
+		"shipping.itemCost.productTitle": "هزینهٔ ارسال هر محصول",
+		"shipping.itemCost.productHint": "برای محصول یا واریانت خاص هزینهٔ جدا تعیین کنید (بالاترین اولویت).",
+		"shipping.itemCost.productSearchPlaceholder": "جستجوی محصول برای افزودن…",
+		"shipping.itemCost.categoryTitle": "هزینهٔ ارسال بر اساس دسته‌بندی",
+		"shipping.itemCost.categoryHint": "برای یک یا چند دسته‌بندی هزینه تعیین کنید (شامل زیردسته‌ها، طبق تنظیمات بالا).",
+		"shipping.itemCost.categorySearchPlaceholder": "جستجوی دسته‌بندی…",
+		"shipping.itemCost.brandTitle": "هزینهٔ ارسال بر اساس برند",
+		"shipping.itemCost.brandHint": "برای یک یا چند برند هزینه تعیین کنید.",
+		"shipping.itemCost.brandSearchPlaceholder": "جستجوی برند…",
+		"shipping.itemCost.setsTitle": "ست‌ها (چند محصول با یک هزینه)",
+		"shipping.itemCost.setsHint": "برای یک گروه از محصولات که همیشه با هم ارسال می‌شوند، یک هزینهٔ یکسان تعریف کنید.",
+		"shipping.itemCost.addSet": "افزودن ست",
+		"shipping.itemCost.emptySets": "هنوز ستی تعریف نشده است.",
+		"shipping.itemCost.setName": "نام ست",
+		"shipping.itemCost.setNamePlaceholder": "مثلاً «ست کودک»",
+		"shipping.itemCost.setProducts": "محصولات این ست",
+		"shipping.itemCost.setCost": "هزینهٔ ارسال ست",
+		"shipping.itemCost.setNoProducts": "محصولی برای این ست انتخاب نشده؛ این ست در سبد تأثیری ندارد.",
+		"shipping.itemCost.gatewayTitle": "هزینهٔ ارسال بر اساس درگاه پرداخت",
+		"shipping.itemCost.gatewayHint": "برای درگاه انتخابیِ مشتری، هزینهٔ ارسال را جایگزین یا به آن اضافه کنید. «جایگزین» یعنی همین مبلغ به‌عنوان هزینهٔ حمل و نقل آیتم‌ها حساب می‌شود (به‌جای مبلغ محاسبه‌شده)؛ «افزوده» یعنی به هزینهٔ محاسبه‌شده اضافه می‌شود. اعمال آنی روی درگاه انتخابی هم انجام می‌شود.",
+		"shipping.itemCost.gatewayEmpty": "درگاهی برای نمایش نیست.",
+		"shipping.itemCost.gatewayDisabledSuffix": "غیرفعال",
+		"shipping.itemCost.gatewayType": "نحوهٔ اعمال",
+		"shipping.itemCost.gatewayOverride": "جایگزین هزینه",
+		"shipping.itemCost.gatewayAdd": "افزوده به هزینه",
+		"shipping.itemCost.costField": "هزینه (تومان)",
+		"shipping.itemCost.emptyList": "هنوز قانونی اضافه نشده است.",
+		"shipping.itemCost.rulesCount": "{{count}} قانون فعال پیکربندی شده است.",
+		"shipping.itemCost.skipFreeMethods": "روی روش‌های ارسال رایگان اعمال نشود",
+		"shipping.itemCost.skipFreeMethodsHint": "اگر مشتری روش «ارسال رایگان» را انتخاب کند، مبلغ آن تغییر نمی‌کند و همچنان صفر می‌ماند. اگر فروشگاه شما فقط روش رایگان دارد، این گزینه را روشن نگه دارید.",
+		"shipping.itemCost.skipLocalPickup": "تحویل حضوری (local pickup) نادیده گرفته شود",
+		"shipping.itemCost.skipLocalPickupHint": "روش‌های «تحویل حضوری» بدون هزینهٔ اضافه می‌مانند؛ مناسب وقتی که تحویل حضوری اصلاً نیاز به ارسال ندارد.",
+		"shipping.statusOn": "روشن",
+		"shipping.statusOff": "خاموش",
+		"shipping.packagingMasterTitle": "وضعیت سیستم بسته‌بندی و کارتن پستی",
+		"shipping.packagingMasterHint": "به‌صورت پیش‌فرض خاموش است؛ تا زمانی که روشن نشود، هزینه جعبه و پلن بسته‌بندی روی سبد خرید و سفارش اعمال نمی‌شود.",
+		"shipping.packagingMasterEnable": "فعال‌سازی سیستم بسته‌بندی پستی",
+		"shipping.toolsMasterTitle": "وضعیت ابزارهای حمل‌ونقل",
+		"shipping.toolsMasterEnable": "فعال‌سازی ابزارهای حمل‌ونقل (فیلدهای تسویه، فیلتر نرخ‌ها و وضعیت‌های سفارش)",
+		"shipping.citiesMasterEnable": "فعال‌سازی انتخابگر شهر و قوانین نرخ شهری در فروشگاه",
+		"shipping.citiesMasterHint": "به‌صورت پیش‌فرض خاموش است تا تداخلی در صفحه پرداخت ایجاد نشود؛ لیست استان‌ها و شهرها در داشبورد همیشه در دسترس است.",
+		"shipping.rulesMasterEnable": "فعال‌سازی موتور قوانین شرطی حمل‌ونقل",
+		"shipping.rulesMasterHint": "به‌صورت پیش‌فرض خاموش است؛ تا زمانی که روشن نشود، هیچ تغییری روی نرخ‌های ارسال اعمال نمی‌شود.",
+		"orders.installmentMonths_one": "{{count}} ماه",
+		"orders.installmentMonths_other": "{{count}} ماه",
+		"wallet.balanceLabel": "برچسب موجودی",
+		"wallet.loginPrompt": "پیام ورود",
+		"nav.module.accounting-tax": "کابین مالیات",
+		"nav.module.accounting-tax-setup": "راه‌اندازی مالیات",
+		"marketplace.module.accounting-module-hesabfa": "حسابفا",
+		"marketplace.module.accounting-module-payroll": "حقوق / تامین اجتماعی",
+		"marketplace.module.bale-pay-gateway-module-gateway": "پرداخت بله",
+		"marketplace.module.basalam-module-home": "اتصال باسلام",
+		"marketplace.module.basalam-module-booth": "غرفه",
+		"marketplace.module.basalam-module-products": "محصولات",
+		"marketplace.module.basalam-module-orders": "سفارش‌ها",
+		"marketplace.module.basalam-module-categories": "دسته‌بندی",
+		"marketplace.module.basalam-module-settings": "تنظیمات",
+		"marketplace.module.basalam-module-finance": "مالی",
+		"marketplace.module.basalam-module-logs": "وضعیت همگام‌سازی",
+		"marketplace.module.card-to-card-gateway-module-gateway": "کارت به کارت",
+		"marketplace.module.coffee-profile-module-settings": "پروفایل قهوه",
+		"marketplace.module.digikala-sellers-module-products": "محصولات دیجی‌کالا",
+		"marketplace.module.digikala-sellers-module-orders": "سفارش‌های دیجی‌کالا",
+		"marketplace.module.digikala-sellers-module-settings": "تنظیمات دیجی‌کالا",
+		"marketplace.module.digikala-sellers-module-logs": "لاگ‌ها",
+		"marketplace.module.product-catalog-module-settings": "تنظیمات دیتابیس محصولات",
+		"marketplace.module.security-module-overview": "امنیت",
+		"marketplace.module.security-module-settings": "تنظیمات امنیتی",
+		"marketplace.module.shipping-module-hub": "حمل‌ونقل",
+		"marketplace.module.shipping-module-packaging": "بسته‌بندی پستی",
+		"marketplace.module.shipping-module-tools": "ابزارهای حمل",
+		"marketplace.module.shipping-module-cities": "شهرها و محله‌ها",
+		"marketplace.module.shipping-module-map": "نقشه ارسال",
+		"marketplace.module.shipping-module-rules": "قوانین حمل",
+		"marketplace.module.shipping-module-item-cost": "هزینهٔ ارسال آیتم‌ها",
+		"marketplace.module.snapppay-gateway-module-logs": "گزارش رویدادها",
+		"marketplace.module.tapin-module-tapin": "ارسال تاپین",
+		"marketplace.module.tapin-module-tapin-ops": "عملیات تاپین",
+		"marketplace.module.tapin-module-tapin-finance": "مالی تاپین",
+		"marketplace.module.tapin-module-tapin-catalog": "کاتالوگ تاپین",
+		"marketplace.module.torobpay-gateway-module-display": "نمایش",
+		"marketplace.module.torobpay-gateway-module-orders": "سفارش‌ها",
+		"marketplace.module.torobpay-gateway-module-campaign": "کمپین",
+		"marketplace.module.torobpay-gateway-module-logs": "لاگ‌ها",
+		"marketplace.module.wallet-gateway-module-gateway": "کیف پول",
+		"marketplace.module.wfcp-module-exchange": "ارز و نرخ",
+		"marketplace.module.wfcp-module-retail": "خرده‌فروشی",
+		"marketplace.module.wfcp-module-credit": "اعتباری",
+		"marketplace.module.wfcp-module-installment": "اقساطی",
+		"marketplace.module.wfcp-module-wholesale": "عمده",
+		"marketplace.module.wfcp-module-marketplaces": "بازارگاه",
+		"marketplace.module.wfcp-module-search-engines": "موتورهای جستجو",
+		"marketplace.module.wfcp-module-notifications": "اعلان‌ها و بج",
+		"marketplace.module.wfcp-module-style": "ظاهر باکس محصول",
+		"marketplace.module.wfcp-module-advanced": "پیشرفته",
+		"location.pickState": "انتخاب استان",
+		"location.pickCity": "انتخاب شهر",
+		"location.enterManually": "ورود دستی",
+		"location.useDropdown": "انتخاب از لیست",
+		"salePrices.foundCount": "({{count}} محصول در این فیلتر)",
+		"salePrices.selectPage": "انتخاب همهٔ این صفحه",
+		"salePrices.siteWideLabel": "کل فروشگاه:",
+		"salePrices.applyAllProducts": "اعمال روی همهٔ محصولات سایت",
+		"salePrices.removeAllProducts": "حذف از همهٔ محصولات سایت",
+		"salePrices.scopeSelected": "روی {{count}} محصول انتخاب‌شده",
+		"salePrices.scopeFilters": "روی همهٔ نتایج فیلترشده",
+		"salePrices.scopeAll": "روی همهٔ محصولات سایت ({{count}} محصول در این فیلتر، بقیه هم پردازش می‌شوند)",
+		"salePrices.allProductsWarning": "این عملیات روی همهٔ محصولات منتشرشدهٔ سایت اجرا می‌شود، نه فقط محصولات این صفحه. مطمئن شوید درصد و مدت را درست وارد کرده‌اید.",
+		"salePrices.roundHint": "مبلغ تخفیف روی قیمت مصرف‌کنندهٔ WFCP محاسبه و به نزدیک‌ترین ۱٬۰۰۰ تومان گرد می‌شود.",
+		"salePrices.jobQueued": "تخفیف برای {{count}} محصول در صف اجرا قرار گرفت؛ پیشرفت را همین‌جا می‌بینید.",
+		"salePrices.jobProgressTitle": "در حال اعمال تخفیف",
+		"salePrices.jobProgressDetail": "{{done}} از {{total}} محصول پردازش شد — موفق: {{ok}}، ناموفق: {{failed}}",
+		"salePrices.removeConfirmAll": "قیمت فروش و تاریخ‌های تخفیف از همهٔ محصولات سایت پاک می‌شود. این کار قابل بازگشت نیست.",
+		"wfcp.bpcFailuresTitle": "محصولات ناموفق و دلیل آن‌ها",
+		"wfcp.bpcFailuresHint": "این محصولات به‌روزرسانی نشدند و دلیل هر کدام ثبت شده است. بعد از رفع مشکل می‌توانید همان محصولات را انتخاب و دوباره اجرا کنید.",
+		"wfcp.bpcColProduct": "محصول",
+		"wfcp.bpcColFailureReason": "دلیل ناموفق بودن",
+		"wfcp.bpcRowFailures": "{{count}} محصول ناموفق",
+		"wfcp.bpcEntity.product": "محصول",
+		"wfcp.bpcEntity.variation": "تنوع",
+		"wfcp.bpcStatus.completed_with_errors": "پایان یافته با خطا",
+		"wfcp.bpcReason.priceLocked": "قیمت این محصول در WFCP قفل شده است و تغییر نکرد.",
+		"wfcp.bpcReason.notFound": "محصول/تنوع پیدا نشد (احتمالاً حذف شده است).",
+		"wfcp.bpcReason.exception": "خطای غیرمنتظره هنگام ذخیرهٔ قیمت.",
+		"wfcp.bpcReason.emptyPrice": "قیمت پایه خالی بود؛ چیزی برای تغییر وجود ندارد.",
+		"wfcp.bpcReason.unsupportedType": "نوع محصول ({{type}}) برای تغییر قیمت پشتیبانی نمی‌شود.",
+		"wfcp.bpcFailuresCount": "{{count}} محصول ناموفق"
 	};
-})), zh = /* @__PURE__ */ A({ default: () => Bh }), Bh, Vh = k((() => {
-	Bh = {
+})), Vh = /* @__PURE__ */ A({ default: () => Hh }), Hh, Uh = k((() => {
+	Hh = {
 		"app.title": "Dashboard",
 		"chart.totalVisitors": "Total visitors",
 		"chart.descriptionLong": "Total for the last 3 months",
@@ -16908,7 +17261,7 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"coupons.type.webino_gift": "Gift",
 		"coupons.giftProduct": "Gift product",
 		"coupons.giftMinAmount": "Minimum cart amount for gift",
-		"coupons.giftHint": "When the cart reaches the minimum amount, the customer gets the gift product free. Cart message: reach amount N to get product X as a gift.",
+		"coupons.giftHint": "When the cart reaches the minimum amount, the customer gets the gift product free. Cart message: reach amount N to get product X as a gift. The gift coupon stacks with one other coupon — it never blocks or removes any coupon.",
 		"license.status.active": "Active",
 		"license.status.inactive": "Inactive",
 		"license.status.demo": "Demo",
@@ -18078,7 +18431,7 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"reports.wfcpDisabledHint": "WFCP inactive",
 		"reports.cogsApproxHint": "Purchase prices use current product meta, not historical snapshots.",
 		"salePrices.title": "Strikethrough prices",
-		"salePrices.banner": "Discounts apply only to products in this list. Archived or pending products are not included.",
+		"salePrices.banner": "Apply a discount to the selected products, every filtered result, or the whole catalog. Discounts are computed on the WFCP retail price and rounded to 1,000 toman.",
 		"salePrices.selectHint": "Select products",
 		"salePrices.selectedCount": "{{count}} products selected",
 		"salePrices.selectAllPage": "Select all on this page",
@@ -20559,8 +20912,9 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"coffeeProfile.blendWeights": "Buyable weights (grams, comma-separated)",
 		"coffeeProfile.blendHolder": "Cart holder product ID",
 		"coffeeProfile.blendHolderHint": "If empty, a hidden product is created on save.",
-		"coffeeProfile.blendRobustaProduct": "Robusta representative product",
-		"coffeeProfile.blendArabicaProduct": "Arabica representative product",
+		"coffeeProfile.blendRobustaProduct": "Robusta representative product (optional override)",
+		"coffeeProfile.blendArabicaProduct": "Arabica representative product (optional override)",
+		"coffeeProfile.blendSimpleAutoHint": "Leave empty to automatically build Classic, Luxury, and Economy options from your main beans.",
 		"coffeeProfile.blendRoasts": "Roast levels",
 		"coffeeProfile.blendDevices": "Grind devices / sizes",
 		"coffeeProfile.blendSuggestions": "Ratio presets",
@@ -20630,6 +20984,28 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"coffeeProfile.priceShopHint": "Ratio comes from this profile’s robusta/arabica blend.",
 		"coffeeProfile.priceEconomyHint": "Vietnam/Rio (or configured beans) using the profile blend ratio.",
 		"coffeeProfile.priceCustomParts": "Custom parts",
+		"coffeeProfile.pricingSaveAndApply": "Save & update all prices",
+		"coffeeProfile.pricingAddBean": "Add bean",
+		"coffeeProfile.pricingBeanNamePlaceholder": "Bean name…",
+		"coffeeProfile.pricingColFormula": "Composition",
+		"coffeeProfile.pricingShopMixes": "Shop mixes (Classic & Luxury)",
+		"coffeeProfile.pricingShopClassicRobusta": "Classic Robusta mix",
+		"coffeeProfile.pricingShopClassicArabica": "Classic Arabica mix",
+		"coffeeProfile.pricingShopLuxuryRobusta": "Luxury Robusta mix",
+		"coffeeProfile.pricingShopLuxuryArabica": "Luxury Arabica mix",
+		"coffeeProfile.pricingColRatio": "Robusta / Arabica",
+		"coffeeProfile.pricingClassicAfter": "Classic (roast)",
+		"coffeeProfile.pricingClassicRetail": "Classic (retail)",
+		"coffeeProfile.pricingLuxuryAfter": "Luxury (roast)",
+		"coffeeProfile.pricingLuxuryRetail": "Luxury (retail)",
+		"coffeeProfile.pricingEconomyMixes": "Economy mixes",
+		"coffeeProfile.priceShopClassic": "Classic",
+		"coffeeProfile.priceShopLuxury": "Luxury",
+		"coffeeProfile.priceRatioNote": "Calculated from this profile's Robusta ({{robusta}}%) / Arabica ({{arabica}}%) ratio.",
+		"coffeeProfile.priceBaseMixPresets": "Base mix presets",
+		"coffeeProfile.pricePreviewRetailKg": "WFCP retail preview / kg",
+		"coffeeProfile.pricePreviewPack": "Pack purchase ({{grams}}g)",
+		"coffeeProfile.pricePreviewRetailPack": "Pack WFCP retail ({{grams}}g)",
 		"balePay.title": "Bale Pay",
 		"balePay.subtitle": "One-time Bale wallet invoice via the shop bot.",
 		"balePay.enabled": "Enable at checkout",
@@ -21948,21 +22324,243 @@ var Ih = /* @__PURE__ */ A({ default: () => Lh }), Lh, Rh = k((() => {
 		"coupons.builder.errReward": "Enter a reward amount greater than zero.",
 		"coupons.builder.errPercent": "A percentage cannot be more than 100.",
 		"products.fieldPrice": "Price",
-		"products.editor.singlePriceHint": "Pricing module is off: this price is used directly as the WooCommerce price, in the cart, coupons and marketplaces."
+		"products.editor.singlePriceHint": "Pricing module is off: this price is used directly as the WooCommerce price, in the cart, coupons and marketplaces.",
+		"nav.module.gateway-discounts": "Gateway discounts",
+		"gatewayDiscounts.title": "Gateway payment discounts",
+		"gatewayDiscounts.description": "Discount codes issued by the payment gateway itself (e.g. Torob Pay). They are shown on the cart and checkout and the customer enters them inside the gateway; the discount is taken there, not on your site.",
+		"gatewayDiscounts.add": "Add gateway discount code",
+		"gatewayDiscounts.editTitle": "Edit gateway discount",
+		"gatewayDiscounts.createTitle": "Add gateway discount",
+		"gatewayDiscounts.dialogHint": "Copy the campaign details from the Discount Codes panel of the gateway (or the campaign email).",
+		"gatewayDiscounts.emptyTitle": "No gateway discount codes yet",
+		"gatewayDiscounts.emptyHint": "If your gateway (e.g. Torob Pay) issued discount codes for your store, register them here so customers see them on cart and checkout.",
+		"gatewayDiscounts.stats": "{{total}} registered · {{active}} active",
+		"gatewayDiscounts.saved": "Gateway discount saved",
+		"gatewayDiscounts.deleted": "Gateway discount deleted",
+		"gatewayDiscounts.copied": "Code copied",
+		"gatewayDiscounts.copy": "Copy code",
+		"gatewayDiscounts.gatewayLabel": "{{gateway}} discount",
+		"gatewayDiscounts.gatewayLabelShort": "gateway",
+		"gatewayDiscounts.discountLabel": "{{amount}} off",
+		"gatewayDiscounts.minLabel": "Minimum cart: {{amount}}",
+		"gatewayDiscounts.deadlineLabel": "Valid until {{date}}",
+		"gatewayDiscounts.badgeStack": "Stacks with site coupon",
+		"gatewayDiscounts.badgeExclusive": "Gateway only",
+		"gatewayDiscounts.toggleActive": "Toggle active",
+		"gatewayDiscounts.shareStore": "Your share: {{amount}} ({{percent}}%)",
+		"gatewayDiscounts.shareGateway": "{{gateway}} share: {{amount}}",
+		"gatewayDiscounts.footerNote": "Cart amount = goods subtotal after site discounts (excluding shipping and gift items). When it reaches the minimum, the customer enters the code in the gateway; the site never discounts for the gateway code. With “instead of site coupon”, site coupons (except gift coupons) are removed once the minimum is reached.",
+		"gatewayDiscounts.field.gateway": "Payment gateway",
+		"gatewayDiscounts.field.gatewayPlaceholder": "Torob Pay",
+		"gatewayDiscounts.field.campaignTitle": "Campaign title (optional)",
+		"gatewayDiscounts.field.campaignTitlePlaceholder": "Black Friday 6-day campaign",
+		"gatewayDiscounts.field.code": "Discount code",
+		"gatewayDiscounts.field.codeHint": "Enter the code exactly as issued by the gateway; the customer types the same code inside the gateway.",
+		"gatewayDiscounts.field.discount": "Discount amount",
+		"gatewayDiscounts.field.min": "Minimum cart amount",
+		"gatewayDiscounts.field.share": "Store share of each discount (%)",
+		"gatewayDiscounts.field.shareHint": "The remainder is the gateway’s share; e.g. 50% in the 6-day Black Friday campaign (25% in the 3-day one).",
+		"gatewayDiscounts.field.start": "Start date (optional)",
+		"gatewayDiscounts.field.end": "End date (optional)",
+		"gatewayDiscounts.field.combine": "Combining with site coupon",
+		"gatewayDiscounts.combine.stack": "Stack with the site coupon",
+		"gatewayDiscounts.combine.stackHint": "If the store has an active coupon, the customer can use both.",
+		"gatewayDiscounts.combine.exclusive": "Instead of the site coupon",
+		"gatewayDiscounts.combine.exclusiveHint": "Once the cart reaches the minimum, the site coupon (except gift coupons) is removed and the customer gets only the gateway discount.",
+		"gatewayDiscounts.field.description": "Note for customers (optional)",
+		"gatewayDiscounts.field.descriptionPlaceholder": "e.g. Valid until end of December or cash orders only.",
+		"gatewayDiscounts.field.active": "Active",
+		"gatewayDiscounts.deleteTitle": "Delete gateway discount",
+		"gatewayDiscounts.deleteHint": "The code will be removed from cart and checkout. This cannot be undone.",
+		"coupons.builder.reward.gift": "🎁 Gift",
+		"coupons.builder.giftProduct": "Gift product",
+		"coupons.builder.giftProductHint": "When the cart reaches the minimum amount, this product is added to the order for free. The gift coupon stacks with one other coupon and never blocks any coupon.",
+		"coupons.builder.giftCondForced": "A gift can only be built on the “minimum cart amount” condition — that is the field above.",
+		"coupons.builder.errGiftProduct": "Pick a gift product for the gift coupon.",
+		"gatewayDiscounts.gatewayCustom": "Other (custom name)…",
+		"gatewayDiscounts.gatewayBackToList": "Back to gateway list",
+		"gatewayDiscounts.gatewayRequired": "Pick a gateway or type its name.",
+		"gatewayDiscounts.gatewayDisabledSuffix": "disabled",
+		"shipping.itemCost.menu": "Item shipping cost",
+		"shipping.itemCost.title": "Item shipping costs",
+		"shipping.itemCost.description": "Set a shipping cost per product, product set, category, brand or payment gateway; it is added on top of the shipping-method rates shown in the cart and checkout.",
+		"shipping.itemCost.cardHint": "Per-item, set, category, brand and gateway shipping costs — sum, flat-once or max.",
+		"shipping.itemCost.open": "Configure costs",
+		"shipping.itemCost.enable": "Enable item shipping costs",
+		"shipping.itemCost.enableHint": "Off by default; while off, nothing in the store changes. When enabled, the cost of the applicable shipping methods goes up by your rules' amount.",
+		"shipping.itemCost.modeTitle": "Calculation mode",
+		"shipping.itemCost.modeHint": "Choose how the cart item costs are summed. «Multiply by quantity» and the per-rule «Quantity handling» apply in every mode; to charge per unit use «Highest» or «Sum».",
+		"shipping.itemCost.modeLabel": "Total calculation method",
+		"shipping.itemCost.modeEach": "Sum of item costs (per line)",
+		"shipping.itemCost.modeOnce": "Flat once (whole cart)",
+		"shipping.itemCost.modeMax": "Highest item cost (per unit)",
+		"shipping.itemCost.modeEachDesc": "Every item's shipping cost is added up separately and added to the shipping method cost. Items from the same category are all counted.",
+		"shipping.itemCost.modeOnceDesc": "A single flat amount is added to the shipping method: «Default cost»; when empty, the highest item cost in the cart is used. To charge per unit, use «Highest».",
+		"shipping.itemCost.modeMaxDesc": "Each item cost is multiplied by its quantity (when «Multiply by quantity» is on) and the highest result is added to the shipping method. Example: 3 units of a product charged 5,000 = 15,000. With the switch off, each cart line is charged once.",
+		"shipping.itemCost.multiplyQty": "Multiply by quantity",
+		"shipping.itemCost.multiplyQtyHint": "On: item cost × quantity. Off: once per cart line. It affects «Highest» and «Sum»; each rule can override it with its own «Quantity handling» column.",
+		"shipping.itemCost.defaultCostOnce": "Charge default cost only once per order",
+		"shipping.itemCost.defaultCostOnceHint": "When enabled, all regular items without a specific rule share one flat default fee across the cart (e.g. 5 regular items = one 400 fee), while items with explicit rules still sum or multiply normally.",
+		"shipping.itemCost.qtyModeLabel": "Quantity rule",
+		"shipping.itemCost.qtyModeInherit": "Use the global setting (multiply by quantity)",
+		"shipping.itemCost.qtyModePerQty": "Per unit (× qty)",
+		"shipping.itemCost.qtyModeOnce": "Once per cart",
+		"shipping.itemCost.defaultCost": "Default cost",
+		"shipping.itemCost.defaultCostHint": "Used for products that match no rule; empty = no fee. In «Flat once» mode this amount is applied to the whole cart (if empty, the highest cost is used).",
+		"shipping.itemCost.minFree": "Free-shipping threshold (paid cart total)",
+		"shipping.itemCost.minFreeHint": "When the cart's paid items reach this amount, the item shipping cost is waived; empty = disabled.",
+		"shipping.itemCost.virtualSkip": "Skip virtual/downloadable products",
+		"shipping.itemCost.virtualSkipHint": "No shipping cost is charged for digital products that do not need delivery.",
+		"shipping.itemCost.categoryChildren": "Include child categories",
+		"shipping.itemCost.categoryChildrenHint": "A category with a cost also applies to its sub-categories (unless the sub-category has its own rule).",
+		"shipping.itemCost.skipFreeCoupon": "No cost when a free-shipping coupon is applied",
+		"shipping.itemCost.skipFreeCouponHint": "When the cart has a free-shipping coupon applied, no extra amount is added to the shipping methods.",
+		"shipping.itemCost.priorityHint": "Rule priority per item: product ← product set ← category ← brand ← default cost. If several categories or brands match, the highest amount wins. Amounts are in Toman; zero means free shipping for that item. The result is applied as a surcharge on the shipping method cost — free/pickup methods stay untouched (see toggles above).",
+		"shipping.itemCost.productTitle": "Per-product cost",
+		"shipping.itemCost.productHint": "Set a dedicated cost for a specific product or variation (highest priority).",
+		"shipping.itemCost.productSearchPlaceholder": "Search a product to add…",
+		"shipping.itemCost.categoryTitle": "Cost by category",
+		"shipping.itemCost.categoryHint": "Set a cost for one or more categories (including children, per the setting above).",
+		"shipping.itemCost.categorySearchPlaceholder": "Search categories…",
+		"shipping.itemCost.brandTitle": "Cost by brand",
+		"shipping.itemCost.brandHint": "Set a cost for one or more brands.",
+		"shipping.itemCost.brandSearchPlaceholder": "Search brands…",
+		"shipping.itemCost.setsTitle": "Sets (several products, one cost)",
+		"shipping.itemCost.setsHint": "Define a shared shipping cost for a group of products that always ship together.",
+		"shipping.itemCost.addSet": "Add set",
+		"shipping.itemCost.emptySets": "No sets defined yet.",
+		"shipping.itemCost.setName": "Set name",
+		"shipping.itemCost.setNamePlaceholder": "e.g. «Kids set»",
+		"shipping.itemCost.setProducts": "Products in this set",
+		"shipping.itemCost.setCost": "Set shipping cost",
+		"shipping.itemCost.setNoProducts": "No product selected for this set; it has no effect in the cart.",
+		"shipping.itemCost.gatewayTitle": "Cost by payment gateway",
+		"shipping.itemCost.gatewayHint": "Replace or add to the item shipping cost when the customer picks a specific payment gateway. «Replace» uses this amount instead of the computed cost; «Add» charges it on top. Gateway switches at checkout are applied immediately.",
+		"shipping.itemCost.gatewayEmpty": "No gateways to show.",
+		"shipping.itemCost.gatewayDisabledSuffix": "disabled",
+		"shipping.itemCost.gatewayType": "How it applies",
+		"shipping.itemCost.gatewayOverride": "Replace cost",
+		"shipping.itemCost.gatewayAdd": "Add on top",
+		"shipping.itemCost.costField": "Cost (Toman)",
+		"shipping.itemCost.emptyList": "No rules added yet.",
+		"shipping.itemCost.rulesCount": "{{count}} rule(s) configured.",
+		"shipping.itemCost.skipFreeMethods": "Don't apply to free shipping methods",
+		"shipping.itemCost.skipFreeMethodsHint": "If the customer picks a free-shipping method, its price stays zero. Keep this on if your store only offers free shipping.",
+		"shipping.itemCost.skipLocalPickup": "Skip local pickup",
+		"shipping.itemCost.skipLocalPickupHint": "Local pickup rates are never surcharged — useful when pickup needs no delivery at all.",
+		"shipping.statusOn": "On",
+		"shipping.statusOff": "Off",
+		"shipping.packagingMasterTitle": "Postal packaging system",
+		"shipping.packagingMasterHint": "Off by default; while off, postal cartons do not calculate checkout shipping rates or attach plans to orders.",
+		"shipping.packagingMasterEnable": "Enable postal box packaging system",
+		"shipping.toolsMasterTitle": "Shipping tools system",
+		"shipping.toolsMasterEnable": "Enable shipping tools overrides (checkout fields, rate filters & custom statuses)",
+		"shipping.citiesMasterEnable": "Enable city selector & city shipping rules on storefront",
+		"shipping.citiesMasterHint": "Off by default so checkout/My Account stay untouched; dashboard city management and coupon province/city lists always remain available.",
+		"shipping.rulesMasterEnable": "Enable conditional shipping rules engine",
+		"shipping.rulesMasterHint": "Off by default; while off, conditional shipping rules do not modify WooCommerce shipping rates.",
+		"basalam.boothSummaryField": "Short description",
+		"basalam.boothTitleField": "Booth title",
+		"basalam.ordersAutoOk": "Auto-sync enabled.",
+		"basalam.ordersAutoReset": "Auto-sync restarted.",
+		"basalam.productsSyncQueued": "Product sync started.",
+		"basalam.wooCategory": "Store category",
+		"orders.installmentMonths": "{{count}} months",
+		"nav.module.accounting-tax": "Tax cockpit",
+		"nav.module.accounting-tax-setup": "Tax setup",
+		"marketplace.module.accounting-module-hesabfa": "Hesabfa",
+		"marketplace.module.accounting-module-payroll": "Payroll / Social Security",
+		"marketplace.module.bale-pay-gateway-module-gateway": "Bale Pay",
+		"marketplace.module.basalam-module-home": "Connection",
+		"marketplace.module.basalam-module-booth": "Booth",
+		"marketplace.module.basalam-module-products": "Products",
+		"marketplace.module.basalam-module-orders": "Orders",
+		"marketplace.module.basalam-module-categories": "Categories",
+		"marketplace.module.basalam-module-settings": "Settings",
+		"marketplace.module.basalam-module-finance": "Finance",
+		"marketplace.module.basalam-module-logs": "Sync status",
+		"marketplace.module.card-to-card-gateway-module-gateway": "Card to card",
+		"marketplace.module.coffee-profile-module-settings": "Coffee profile",
+		"marketplace.module.digikala-sellers-module-products": "Products",
+		"marketplace.module.digikala-sellers-module-orders": "Orders",
+		"marketplace.module.digikala-sellers-module-settings": "Settings",
+		"marketplace.module.digikala-sellers-module-logs": "Logs",
+		"marketplace.module.product-catalog-module-settings": "Product catalog settings",
+		"marketplace.module.security-module-overview": "Security",
+		"marketplace.module.security-module-settings": "Security settings",
+		"marketplace.module.shipping-module-hub": "Transport",
+		"marketplace.module.shipping-module-packaging": "Postal packaging",
+		"marketplace.module.shipping-module-tools": "Shipping tools",
+		"marketplace.module.shipping-module-cities": "Cities & districts",
+		"marketplace.module.shipping-module-map": "Shipping map",
+		"marketplace.module.shipping-module-rules": "Shipping rules",
+		"marketplace.module.shipping-module-item-cost": "Item shipping cost",
+		"marketplace.module.snapppay-gateway-module-logs": "Logs",
+		"marketplace.module.tapin-module-tapin": "Tapin shipping",
+		"marketplace.module.tapin-module-tapin-ops": "Tapin operations",
+		"marketplace.module.tapin-module-tapin-finance": "Tapin finance",
+		"marketplace.module.tapin-module-tapin-catalog": "Tapin catalog",
+		"marketplace.module.torobpay-gateway-module-display": "Display",
+		"marketplace.module.torobpay-gateway-module-orders": "Orders",
+		"marketplace.module.torobpay-gateway-module-campaign": "Campaign",
+		"marketplace.module.torobpay-gateway-module-logs": "Logs",
+		"marketplace.module.wallet-gateway-module-gateway": "Wallet",
+		"marketplace.module.wfcp-module-exchange": "Currency & rates",
+		"marketplace.module.wfcp-module-retail": "Retail",
+		"marketplace.module.wfcp-module-credit": "Credit",
+		"marketplace.module.wfcp-module-installment": "Installments",
+		"marketplace.module.wfcp-module-wholesale": "Wholesale",
+		"marketplace.module.wfcp-module-marketplaces": "Marketplaces",
+		"marketplace.module.wfcp-module-search-engines": "Search engines",
+		"marketplace.module.wfcp-module-notifications": "Notifications & badges",
+		"marketplace.module.wfcp-module-style": "Product box style",
+		"marketplace.module.wfcp-module-advanced": "Advanced",
+		"location.pickState": "Select province",
+		"location.pickCity": "Select city",
+		"location.enterManually": "Enter manually",
+		"location.useDropdown": "Pick from list",
+		"salePrices.foundCount": "({{count}} products match these filters)",
+		"salePrices.selectPage": "Select this page",
+		"salePrices.siteWideLabel": "Whole store:",
+		"salePrices.applyAllProducts": "Apply to all products",
+		"salePrices.removeAllProducts": "Remove from all products",
+		"salePrices.scopeSelected": "For {{count}} selected products",
+		"salePrices.scopeFilters": "For every filtered result",
+		"salePrices.scopeAll": "For all published products on the site ({{count}} match the current filters, the rest are processed too)",
+		"salePrices.allProductsWarning": "This runs on every published product in the store, not just this page. Double-check the percentage and duration.",
+		"salePrices.roundHint": "The discount is computed on the WFCP retail price and rounded to the nearest 1,000 toman.",
+		"salePrices.jobQueued": "Discount queued for {{count}} products — progress is shown here.",
+		"salePrices.jobProgressTitle": "Applying discount",
+		"salePrices.jobProgressDetail": "{{done}} of {{total}} processed — succeeded: {{ok}}, failed: {{failed}}",
+		"salePrices.removeConfirmAll": "Sale prices and sale dates will be cleared from every product in the store. This cannot be undone.",
+		"wfcp.bpcFailuresTitle": "Failed products and why",
+		"wfcp.bpcFailuresHint": "These products were not updated; the reason for each one is recorded. Fix the cause, then select those products and run again.",
+		"wfcp.bpcColProduct": "Product",
+		"wfcp.bpcColFailureReason": "Failure reason",
+		"wfcp.bpcRowFailures": "{{count}} failed products",
+		"wfcp.bpcEntity.product": "Product",
+		"wfcp.bpcEntity.variation": "Variation",
+		"wfcp.bpcStatus.completed_with_errors": "Completed with errors",
+		"wfcp.bpcReason.priceLocked": "The price is locked in WFCP, so it was left untouched.",
+		"wfcp.bpcReason.notFound": "The product/variation no longer exists.",
+		"wfcp.bpcReason.exception": "Unexpected error while saving the price.",
+		"wfcp.bpcReason.emptyPrice": "The base price was empty, so there was nothing to change.",
+		"wfcp.bpcReason.unsupportedType": "This product type ({{type}}) is not supported for price changes.",
+		"wfcp.bpcFailuresCount": "{{count}} failed products"
 	};
-})), Hh = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", Uh = /* @__PURE__ */ new Set();
-async function Wh(e) {
-	return e === "fa" ? (await Promise.resolve().then(() => (Rh(), Ih))).default : (await Promise.resolve().then(() => (Vh(), zh))).default;
+})), Wh = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", Gh = /* @__PURE__ */ new Set();
+async function Kh(e) {
+	return e === "fa" ? (await Promise.resolve().then(() => (Bh(), Rh))).default : (await Promise.resolve().then(() => (Uh(), Vh))).default;
 }
-async function Gh(e) {
-	if (Uh.has(e)) return;
-	let t = await Wh(e);
-	D.addResourceBundle(e, "translation", t, !0, !0), Uh.add(e);
+async function qh(e) {
+	if (Gh.has(e)) return;
+	let t = await Kh(e);
+	D.addResourceBundle(e, "translation", t, !0, !0), Gh.add(e);
 }
-function Kh(e) {
+function Jh(e) {
 	return e === "fa" ? "rtl" : "ltr";
 }
-var qh = {
+var Yh = {
 	type: "postProcessor",
 	name: "faDigits",
 	process(e, t, n) {
@@ -21970,10 +22568,10 @@ var qh = {
 	}
 };
 (async () => {
-	let e = await Wh(Hh);
-	Uh.add(Hh), await D.use(qh).use(h).init({
-		resources: { [Hh]: { translation: e } },
-		lng: Hh,
+	let e = await Kh(Wh);
+	Gh.add(Wh), await D.use(Yh).use(h).init({
+		resources: { [Wh]: { translation: e } },
+		lng: Wh,
 		fallbackLng: "en",
 		keySeparator: !1,
 		nsSeparator: !1,
@@ -21983,37 +22581,37 @@ var qh = {
 			bindI18n: "languageChanged loaded added",
 			useSuspense: !1
 		}
-	}), document.documentElement.lang = Hh, document.documentElement.dir = Kh(Hh), Gh(Hh === "fa" ? "en" : "fa").catch((e) => {
+	}), document.documentElement.lang = Wh, document.documentElement.dir = Jh(Wh), qh(Wh === "fa" ? "en" : "fa").catch((e) => {
 		console.warn("[Webino Dashboard] Secondary locale preload failed", e);
 	});
 })();
 //#endregion
 //#region src/components/ui/dialog.tsx
-function Jh({ ...e }) {
+function Xh({ ...e }) {
 	return /* @__PURE__ */ C(_o, {
 		"data-slot": "dialog",
 		...e
 	});
 }
-function Yh({ ...e }) {
+function Zh({ ...e }) {
 	return /* @__PURE__ */ C(vo, {
 		"data-slot": "dialog-portal",
 		...e
 	});
 }
-function Xh({ className: e, ...t }) {
+function Qh({ className: e, ...t }) {
 	return /* @__PURE__ */ C(yo, {
 		"data-slot": "dialog-overlay",
 		className: K("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", e),
 		...t
 	});
 }
-function Zh({ className: e, children: t, showCloseButton: n = !0, ...r }) {
+function $h({ className: e, children: t, showCloseButton: n = !0, ...r }) {
 	return /* @__PURE__ */ C(va, {
 		allowBodyScroll: !0,
-		children: /* @__PURE__ */ w(Yh, {
+		children: /* @__PURE__ */ w(Zh, {
 			"data-slot": "dialog-portal",
-			children: [/* @__PURE__ */ C(Xh, {}), /* @__PURE__ */ w(bo, {
+			children: [/* @__PURE__ */ C(Qh, {}), /* @__PURE__ */ w(bo, {
 				"data-slot": "dialog-content",
 				className: K("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg", e),
 				...r,
@@ -22029,14 +22627,14 @@ function Zh({ className: e, children: t, showCloseButton: n = !0, ...r }) {
 		})
 	});
 }
-function Qh({ className: e, ...t }) {
+function eg({ className: e, ...t }) {
 	return /* @__PURE__ */ C("div", {
 		"data-slot": "dialog-header",
 		className: K("flex flex-col gap-2 text-center sm:text-start", e),
 		...t
 	});
 }
-function $h({ className: e, showCloseButton: t = !1, children: n, ...r }) {
+function tg({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 	return /* @__PURE__ */ w("div", {
 		"data-slot": "dialog-footer",
 		className: K("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", e),
@@ -22050,7 +22648,7 @@ function $h({ className: e, showCloseButton: t = !1, children: n, ...r }) {
 		})]
 	});
 }
-function eg({ className: e, ...t }) {
+function ng({ className: e, ...t }) {
 	return /* @__PURE__ */ C(xo, {
 		"data-slot": "dialog-title",
 		className: K("text-lg leading-none font-semibold", e),
@@ -22059,7 +22657,7 @@ function eg({ className: e, ...t }) {
 }
 //#endregion
 //#region src/lib/categoryTree.ts
-function tg(e) {
+function rg(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) {
 		let e = n.parent || 0, r = t.get(e) ?? [];
@@ -22077,20 +22675,20 @@ function tg(e) {
 }
 //#endregion
 //#region src/components/magazine/MediaPickerDialog.tsx
-function ng(e, t, n) {
+function ig(e, t, n) {
 	let r = new URLSearchParams({
 		page: "1",
 		per_page: "60"
 	});
 	return e > 0 && r.set("folder", String(e)), t > 0 && r.set("category", String(t)), n.trim() && r.set("search", n.trim()), `content/media?${r.toString()}`;
 }
-function rg(e) {
+function ag(e) {
 	return {
 		...e,
 		url: ""
 	};
 }
-function ig({ open: e, onOpenChange: n, onSelect: r }) {
+function og({ open: e, onOpenChange: n, onSelect: r }) {
 	let { t: i } = g(), [a, o] = m(0), [s, c] = m(0), [l, d] = m(""), [p, h] = m("");
 	u(() => {
 		if (!e) return;
@@ -22109,16 +22707,16 @@ function ig({ open: e, onOpenChange: n, onSelect: r }) {
 			s,
 			p
 		],
-		queryFn: () => V(ng(a, s, p)),
+		queryFn: () => V(ig(a, s, p)),
 		enabled: e
-	}), y = f(() => tg((_.data?.folders ?? []).map(rg)), [_.data?.folders]), b = f(() => tg((_.data?.categories ?? []).map(rg)), [_.data?.categories]), x = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
-	return /* @__PURE__ */ C(Jh, {
+	}), y = f(() => rg((_.data?.folders ?? []).map(ag)), [_.data?.folders]), b = f(() => rg((_.data?.categories ?? []).map(ag)), [_.data?.categories]), x = (v.data?.items ?? []).filter((e) => e.mime.startsWith("image/"));
+	return /* @__PURE__ */ C(Xh, {
 		open: e,
 		onOpenChange: n,
-		children: /* @__PURE__ */ w(Zh, {
+		children: /* @__PURE__ */ w($h, {
 			className: "max-h-[85vh] overflow-hidden sm:max-w-3xl",
 			children: [
-				/* @__PURE__ */ C(Qh, { children: /* @__PURE__ */ C(eg, { children: i("posts.selectFeaturedImage") }) }),
+				/* @__PURE__ */ C(eg, { children: /* @__PURE__ */ C(ng, { children: i("posts.selectFeaturedImage") }) }),
 				/* @__PURE__ */ w("div", {
 					className: "grid gap-3 sm:grid-cols-3",
 					children: [
@@ -22200,7 +22798,7 @@ function ig({ open: e, onOpenChange: n, onSelect: r }) {
 						}, e.id))
 					})
 				}),
-				/* @__PURE__ */ C($h, { children: /* @__PURE__ */ C(X, {
+				/* @__PURE__ */ C(tg, { children: /* @__PURE__ */ C(X, {
 					type: "button",
 					variant: "outline",
 					onClick: () => n(!1),
@@ -22212,7 +22810,7 @@ function ig({ open: e, onOpenChange: n, onSelect: r }) {
 }
 //#endregion
 //#region src/components/wfcp/QuickAddImagePanel.tsx
-function ag({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
+function sg({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 	let { t: o } = g(), s = n(), c = p(null), [l, u] = m(!1), d = e({
 		mutationFn: (e) => ke("content/media", e),
 		onSuccess: (e) => {
@@ -22273,7 +22871,7 @@ function ag({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 				}
 			})
 		]
-	}), /* @__PURE__ */ C(ig, {
+	}), /* @__PURE__ */ C(og, {
 		open: l,
 		onOpenChange: u,
 		onSelect: (e) => i(e)
@@ -22281,7 +22879,7 @@ function ag({ imageId: t, imageUrl: r, onChange: i, onRemove: a }) {
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/pages/WfcpQuickAddPage.tsx
-function og() {
+function cg() {
 	let { t } = g(), [n, r] = m(""), [i, a] = m(""), [o, s] = m(0), [c, l] = m(""), u = e({
 		mutationFn: () => V("wfcp/quick-add", {
 			method: "POST",
@@ -22320,7 +22918,7 @@ function og() {
 							onChange: (e) => a(e.target.value)
 						})]
 					}),
-					/* @__PURE__ */ C(ag, {
+					/* @__PURE__ */ C(sg, {
 						imageId: o,
 						imageUrl: c,
 						onChange: (e) => {
@@ -22343,7 +22941,7 @@ function og() {
 }
 //#endregion
 //#region src/components/skeletons/FormSettingsSkeleton.tsx
-function sg({ cards: e = 2, fieldsPerCard: t = 5 }) {
+function lg({ cards: e = 2, fieldsPerCard: t = 5 }) {
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4 max-w-2xl",
 		"aria-busy": "true",
@@ -22361,28 +22959,28 @@ function sg({ cards: e = 2, fieldsPerCard: t = 5 }) {
 }
 //#endregion
 //#region src/components/data/DumpUi.tsx
-var cg = {
+var ug = {
 	default: "",
 	success: "border-transparent bg-emerald-600 text-white dark:bg-emerald-500",
 	warning: "border-transparent bg-amber-500 text-white",
 	destructive: "",
 	secondary: ""
 };
-function lg(e) {
+function dg(e) {
 	let t = String(e ?? "").toLowerCase();
 	return t === "done" || t === "completed" || t === "success" || t === "ok" ? "success" : t === "failed" || t === "error" || t === "cancelled" || t === "canceled" ? "destructive" : t === "running" || t === "processing" ? "warning" : t === "pending" || t === "queued" ? "secondary" : "default";
 }
-function ug({ status: e, tone: t, className: n }) {
-	let r = t ?? lg(e), i = e == null || e === "" ? "—" : String(e);
+function fg({ status: e, tone: t, className: n }) {
+	let r = t ?? dg(e), i = e == null || e === "" ? "—" : String(e);
 	return /* @__PURE__ */ C(Cm, {
 		variant: r === "destructive" ? "destructive" : r === "secondary" ? "secondary" : "outline",
-		className: K(cg[r], n),
+		className: K(ug[r], n),
 		children: i
 	});
 }
 //#endregion
 //#region src/components/ui/switch.tsx
-function dg({ className: e, size: t = "default", ...n }) {
+function pg({ className: e, size: t = "default", ...n }) {
 	return /* @__PURE__ */ C(bm, {
 		"data-slot": "switch",
 		"data-size": t,
@@ -22397,18 +22995,18 @@ function dg({ className: e, size: t = "default", ...n }) {
 }
 //#endregion
 //#region src/pages/settings/shop/wfcpPricingTabs.ts
-var fg = [
+var mg = [
 	"digikala",
 	"basalam",
 	"technolife",
 	"snappshop",
 	"tapsishop"
-], pg = [
+], hg = [
 	"zarehbin",
 	"emalls",
 	"snapppay-search",
 	"torob"
-], mg = [
+], gg = [
 	"dashboard",
 	"exchange",
 	"retail",
@@ -22420,17 +23018,17 @@ var fg = [
 	"notifications",
 	"style",
 	"advanced"
-], hg = new Set(fg), gg = new Set(pg), _g = new Set(mg);
-function vg(e) {
+], _g = new Set(mg), vg = new Set(hg), yg = new Set(gg);
+function bg(e) {
 	let t = e && /^[a-z0-9-]+$/.test(e) ? e : "dashboard";
-	return hg.has(t) || t === "platform" ? "marketplaces" : gg.has(t) ? "search-engines" : t === "currency" ? "exchange" : _g.has(t) ? t : "dashboard";
+	return _g.has(t) || t === "platform" ? "marketplaces" : vg.has(t) ? "search-engines" : t === "currency" ? "exchange" : yg.has(t) ? t : "dashboard";
 }
-function yg(e) {
-	return gg.has(e);
+function xg(e) {
+	return vg.has(e);
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/pages/WfcpSettingsPage.tsx
-function bg({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled: a }) {
+function Sg({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled: a }) {
 	return /* @__PURE__ */ w("div", {
 		className: "flex max-w-sm items-center justify-between gap-3",
 		children: [/* @__PURE__ */ w("div", {
@@ -22443,7 +23041,7 @@ function bg({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled
 				className: "text-muted-foreground text-xs",
 				children: n
 			}) : null]
-		}), /* @__PURE__ */ C(dg, {
+		}), /* @__PURE__ */ C(pg, {
 			id: e,
 			checked: r,
 			onCheckedChange: i,
@@ -22451,8 +23049,8 @@ function bg({ id: e, label: t, hint: n, checked: r, onCheckedChange: i, disabled
 		})]
 	});
 }
-function xg() {
-	let { tab: r } = b(), i = vg(r), a = i, { t: o } = g(), s = n(), c = y().pathname.includes("/settings/shop/pricing"), l = "/settings/shop/pricing", d = !!(r && r !== i), p = t({
+function Cg() {
+	let { tab: r } = b(), i = bg(r), a = i, { t: o } = g(), s = n(), c = y().pathname.includes("/settings/shop/pricing"), l = "/settings/shop/pricing", d = !!(r && r !== i), p = t({
 		queryKey: ["wfcp", "settings"],
 		queryFn: () => V("wfcp/settings"),
 		enabled: !d
@@ -22482,7 +23080,7 @@ function xg() {
 	}, {
 		months: 6,
 		interest: 10
-	}], F = f(() => mg.map((e) => /* @__PURE__ */ C(_, {
+	}], F = f(() => gg.map((e) => /* @__PURE__ */ C(_, {
 		to: `${l}/${e}`,
 		className: `rounded-md px-2 py-1 text-sm ${a === e ? "bg-muted font-medium" : "hover:bg-muted/60"}`,
 		children: o(`wfcp.tab.${e}`)
@@ -22503,7 +23101,7 @@ function xg() {
 		}), /* @__PURE__ */ w("div", {
 			className: "min-w-0 flex-1 space-y-4",
 			children: [
-				p.isLoading ? /* @__PURE__ */ C(sg, {
+				p.isLoading ? /* @__PURE__ */ C(lg, {
 					cards: 2,
 					fieldsPerCard: 4
 				}) : null,
@@ -22511,7 +23109,7 @@ function xg() {
 					className: "text-sm text-destructive",
 					children: p.error.message
 				}),
-				a === "dashboard" && /* @__PURE__ */ C(Sg, {
+				a === "dashboard" && /* @__PURE__ */ C(wg, {
 					general: D,
 					creditEnabled: !!k.enabled,
 					installmentEnabled: !!A.enabled,
@@ -22530,7 +23128,7 @@ function xg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "exchange" && /* @__PURE__ */ C(Mg, {
+				a === "exchange" && /* @__PURE__ */ C(Pg, {
 					general: D,
 					setGeneral: (e) => T((t) => ({
 						...t,
@@ -22569,7 +23167,7 @@ function xg() {
 								}))
 							})]
 						}),
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-retail-round",
 							label: o("wfcp.roundEnabled"),
 							checked: !!(O.round_enabled ?? !0),
@@ -22596,7 +23194,7 @@ function xg() {
 								}))
 							})]
 						}),
-						/* @__PURE__ */ C(kg, {
+						/* @__PURE__ */ C(jg, {
 							selected: Array.isArray(O.gateways) ? O.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -22626,7 +23224,7 @@ function xg() {
 				}), /* @__PURE__ */ w(km, {
 					className: "space-y-4",
 					children: [
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-credit-en",
 							label: o("wfcp.creditEnabled"),
 							checked: !!k.enabled,
@@ -22653,7 +23251,7 @@ function xg() {
 								}))
 							})]
 						}),
-						/* @__PURE__ */ C(kg, {
+						/* @__PURE__ */ C(jg, {
 							selected: Array.isArray(k.gateways) ? k.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -22683,7 +23281,7 @@ function xg() {
 				}), /* @__PURE__ */ w(km, {
 					className: "space-y-4",
 					children: [
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-inst-en",
 							label: o("wfcp.installmentEnabled"),
 							checked: !!A.enabled,
@@ -22695,7 +23293,7 @@ function xg() {
 								}
 							}))
 						}),
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-inst-round",
 							label: o("wfcp.roundEnabled"),
 							checked: !!(A.round_enabled ?? !0),
@@ -22749,7 +23347,7 @@ function xg() {
 								})
 							]
 						}),
-						/* @__PURE__ */ C(bg, {
+						/* @__PURE__ */ C(Sg, {
 							id: "wfcp-inst-logos",
 							label: o("wfcp.gatewayLogosOnly"),
 							hint: o("wfcp.gatewayLogosOnlyHint"),
@@ -22851,7 +23449,7 @@ function xg() {
 								})
 							]
 						}),
-						/* @__PURE__ */ C(kg, {
+						/* @__PURE__ */ C(jg, {
 							selected: Array.isArray(A.gateways) ? A.gateways : [],
 							onChange: (e) => T((t) => ({
 								...t,
@@ -22877,7 +23475,7 @@ function xg() {
 						})
 					]
 				})] }),
-				a === "wholesale" && /* @__PURE__ */ C(Eg, {
+				a === "wholesale" && /* @__PURE__ */ C(Og, {
 					wholesale: j,
 					setWholesale: (e) => T((t) => ({
 						...t,
@@ -22889,21 +23487,21 @@ function xg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "marketplaces" && /* @__PURE__ */ C(wg, {
-					channels: [...fg],
+				a === "marketplaces" && /* @__PURE__ */ C(Eg, {
+					channels: [...mg],
 					draft: S,
 					setDraft: T,
 					save: E,
 					compare: !1
 				}),
-				a === "search-engines" && /* @__PURE__ */ C(wg, {
-					channels: [...pg],
+				a === "search-engines" && /* @__PURE__ */ C(Eg, {
+					channels: [...hg],
 					draft: S,
 					setDraft: T,
 					save: E,
 					compare: !0
 				}),
-				a === "notifications" && /* @__PURE__ */ C(Dg, {
+				a === "notifications" && /* @__PURE__ */ C(kg, {
 					notifications: M,
 					setNotifications: (e) => T((t) => ({
 						...t,
@@ -22915,7 +23513,7 @@ function xg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "style" && /* @__PURE__ */ C(Og, {
+				a === "style" && /* @__PURE__ */ C(Ag, {
 					style: N,
 					notifications: M,
 					setStyle: (e) => T((t) => ({
@@ -22931,7 +23529,7 @@ function xg() {
 					}),
 					saving: E.isPending
 				}),
-				a === "advanced" && /* @__PURE__ */ C(Ng, {})
+				a === "advanced" && /* @__PURE__ */ C(Fg, {})
 			]
 		})]
 	});
@@ -22941,7 +23539,7 @@ function xg() {
 		children: I
 	});
 }
-function Sg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, statsLoading: i, setGeneral: a, onSave: o, saving: s }) {
+function wg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, statsLoading: i, setGeneral: a, onSave: o, saving: s }) {
 	let { t: c } = g();
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4",
@@ -22953,22 +23551,22 @@ function Sg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 			/* @__PURE__ */ w("div", {
 				className: "grid gap-3 sm:grid-cols-2 lg:grid-cols-4",
 				children: [
-					/* @__PURE__ */ C(Cg, {
+					/* @__PURE__ */ C(Tg, {
 						title: c("wfcp.stats.total"),
 						value: r?.total_products,
 						loading: i
 					}),
-					/* @__PURE__ */ C(Cg, {
+					/* @__PURE__ */ C(Tg, {
 						title: c("wfcp.stats.withPurchase"),
 						value: r?.products_with_price,
 						loading: i
 					}),
-					/* @__PURE__ */ C(Cg, {
+					/* @__PURE__ */ C(Tg, {
 						title: c("wfcp.stats.locked"),
 						value: r?.products_locked,
 						loading: i
 					}),
-					/* @__PURE__ */ C(Cg, {
+					/* @__PURE__ */ C(Tg, {
 						title: c("wfcp.stats.exchange"),
 						value: r ? `${r.exchange_rate || "—"} ${r.currency || ""}`.trim() : void 0,
 						loading: i
@@ -22984,7 +23582,7 @@ function Sg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 			}), /* @__PURE__ */ w(km, {
 				className: "space-y-4",
 				children: [
-					/* @__PURE__ */ C(bg, {
+					/* @__PURE__ */ C(Sg, {
 						id: "wfcp-dash-enabled",
 						label: c("wfcp.generalEnabled"),
 						checked: !!(e.enabled ?? !0),
@@ -23029,7 +23627,7 @@ function Sg({ general: e, creditEnabled: t, installmentEnabled: n, stats: r, sta
 		]
 	});
 }
-function Cg({ title: e, value: t, loading: n }) {
+function Tg({ title: e, value: t, loading: n }) {
 	return /* @__PURE__ */ C(Tm, { children: /* @__PURE__ */ w(Em, {
 		className: "pb-1",
 		children: [/* @__PURE__ */ C(Om, { children: e }), /* @__PURE__ */ C(Dm, {
@@ -23038,7 +23636,7 @@ function Cg({ title: e, value: t, loading: n }) {
 		})]
 	}) });
 }
-function wg({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
+function Eg({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 	let { t: a } = g();
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-3",
@@ -23047,7 +23645,7 @@ function wg({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 			children: a(i ? "wfcp.formula.compare" : "wfcp.formula.marketplace")
 		}), /* @__PURE__ */ C("div", {
 			className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3",
-			children: e.map((e) => /* @__PURE__ */ C(Tg, {
+			children: e.map((e) => /* @__PURE__ */ C(Dg, {
 				slug: e,
 				settings: t[e] ?? {},
 				onChange: (t) => n((n) => ({
@@ -23063,8 +23661,8 @@ function wg({ channels: e, draft: t, setDraft: n, save: r, compare: i }) {
 		})]
 	});
 }
-function Tg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
-	let { t: a } = g(), o = e === "digikala" ? "rial" : "toman", s = yg(e), c = String(t.price_mode ?? (s ? "retail" : "markup")), l = !s || c === "markup";
+function Dg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
+	let { t: a } = g(), o = e === "digikala" ? "rial" : "toman", s = xg(e), c = String(t.price_mode ?? (s ? "retail" : "markup")), l = !s || c === "markup";
 	return /* @__PURE__ */ w(Tm, { children: [/* @__PURE__ */ w(Em, {
 		className: "pb-2",
 		children: [/* @__PURE__ */ C(Dm, {
@@ -23074,7 +23672,7 @@ function Tg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 	}), /* @__PURE__ */ w(km, {
 		className: "space-y-4",
 		children: [
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: `wfcp-mkt-${e}-en`,
 				label: a("wfcp.marketplaceEnabled"),
 				checked: !!t.enabled,
@@ -23130,7 +23728,7 @@ function Tg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 					})
 				})]
 			})] }) : null,
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: `wfcp-mkt-${e}-round`,
 				label: a("wfcp.roundEnabled"),
 				checked: !!(t.round_enabled ?? !0),
@@ -23180,7 +23778,7 @@ function Tg({ slug: e, settings: t, onChange: n, onSave: r, saving: i }) {
 		]
 	})] });
 }
-function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
+function Og({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 	let { t: a } = g(), o = e.category_rules ?? {}, s = e.category_variety_rules ?? {}, c = e.defaults && typeof e.defaults == "object" ? e.defaults : {}, l = t({
 		queryKey: ["product-categories", "wfcp-wholesale"],
 		queryFn: () => V("shop/product-categories?sort=name_asc&per_page=200")
@@ -23197,7 +23795,7 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 	return /* @__PURE__ */ w("div", {
 		className: "space-y-4",
 		children: [
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: "wfcp-wholesale-en",
 				label: a("wfcp.wholesaleEnabled"),
 				checked: !!e.enabled,
@@ -23219,7 +23817,7 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 			}), /* @__PURE__ */ w(km, {
 				className: "space-y-4",
 				children: [
-					/* @__PURE__ */ C(bg, {
+					/* @__PURE__ */ C(Sg, {
 						id: "wfcp-wholesale-threshold",
 						label: a("wfcp.wholesaleThresholdEnabled"),
 						checked: !!e.threshold_enabled,
@@ -23279,7 +23877,7 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 			}), /* @__PURE__ */ w(km, {
 				className: "space-y-4",
 				children: [
-					/* @__PURE__ */ C(bg, {
+					/* @__PURE__ */ C(Sg, {
 						id: "wfcp-wholesale-partner",
 						label: a("wfcp.wholesalePartnerEnabled"),
 						checked: !!e.partner_enabled,
@@ -23396,14 +23994,14 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 							})
 						]
 					}),
-					/* @__PURE__ */ C(kg, {
+					/* @__PURE__ */ C(jg, {
 						selected: Array.isArray(e.gateways) ? e.gateways : [],
 						onChange: (t) => n({
 							...e,
 							gateways: t
 						})
 					}),
-					/* @__PURE__ */ C(Ag, {
+					/* @__PURE__ */ C(Mg, {
 						selected: Array.isArray(e.shipping_methods) ? e.shipping_methods : [],
 						onChange: (t) => n({
 							...e,
@@ -23421,7 +24019,7 @@ function Eg({ wholesale: e, setWholesale: n, onSave: r, saving: i }) {
 		]
 	});
 }
-function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
+function kg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 	let { t: i } = g(), a = (n, r) => t({
 		...e,
 		[n]: r
@@ -23464,7 +24062,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 					children: [
 						/* @__PURE__ */ w("div", {
 							className: "space-y-3 rounded-md border border-border p-3",
-							children: [/* @__PURE__ */ C(bg, {
+							children: [/* @__PURE__ */ C(Sg, {
 								id: "show_cash_badge",
 								label: i("wfcp.field.show_cash_badge"),
 								checked: !!(e.show_cash_badge ?? !0),
@@ -23478,7 +24076,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-3 rounded-md border border-border p-3",
-							children: [/* @__PURE__ */ C(bg, {
+							children: [/* @__PURE__ */ C(Sg, {
 								id: "show_install_badge",
 								label: i("wfcp.field.show_install_badge"),
 								checked: !!(e.show_install_badge ?? !0),
@@ -23492,7 +24090,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 						}),
 						/* @__PURE__ */ C("div", {
 							className: "space-y-3 rounded-md border border-border p-3",
-							children: /* @__PURE__ */ C(bg, {
+							children: /* @__PURE__ */ C(Sg, {
 								id: "show_credit_badge",
 								label: i("wfcp.field.show_credit_badge"),
 								checked: !!(e.show_credit_badge ?? !0),
@@ -23501,7 +24099,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 						}),
 						/* @__PURE__ */ w("div", {
 							className: "space-y-3 rounded-md border border-border p-3",
-							children: [/* @__PURE__ */ C(bg, {
+							children: [/* @__PURE__ */ C(Sg, {
 								id: "show_guaranty_label",
 								label: i("wfcp.field.show_guaranty_label"),
 								checked: !!(e.show_guaranty_label ?? !1),
@@ -23538,7 +24136,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 					]
 				].map(([t, n, r]) => /* @__PURE__ */ w("div", {
 					className: "space-y-3 rounded-md border border-border p-3",
-					children: [/* @__PURE__ */ C(bg, {
+					children: [/* @__PURE__ */ C(Sg, {
 						id: n,
 						label: i(`wfcp.field.${r}`),
 						checked: !!(e[n] ?? !0),
@@ -23559,7 +24157,7 @@ function Dg({ notifications: e, setNotifications: t, onSave: n, saving: r }) {
 		]
 	}) });
 }
-function Og({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
+function Ag({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
 	let { t: a } = g(), o = (t, n) => String(e[t] ?? n), s = Number(e.border_radius ?? 8), c = String(e.placement ?? "before_cart"), l = (t, r) => n({
 		...e,
 		[t]: r
@@ -23678,7 +24276,7 @@ function Og({ style: e, notifications: t, setStyle: n, onSave: r, saving: i }) {
 		})]
 	});
 }
-function kg({ selected: e, onChange: n }) {
+function jg({ selected: e, onChange: n }) {
 	let { t: r } = g(), i = t({
 		queryKey: ["payment-gateways"],
 		queryFn: () => V("shop/payment-gateways")
@@ -23718,7 +24316,7 @@ function kg({ selected: e, onChange: n }) {
 		]
 	});
 }
-function Ag({ selected: e, onChange: n }) {
+function Mg({ selected: e, onChange: n }) {
 	let { t: r } = g(), i = t({
 		queryKey: ["wfcp", "shipping-methods"],
 		queryFn: () => V("wfcp/shipping-methods")
@@ -23762,7 +24360,7 @@ function Ag({ selected: e, onChange: n }) {
 		]
 	});
 }
-function jg({ pollKey: e }) {
+function Ng({ pollKey: e }) {
 	let { t: n } = g(), r = t({
 		queryKey: e,
 		queryFn: () => V("wfcp/advanced/recalculate-state"),
@@ -23772,7 +24370,7 @@ function jg({ pollKey: e }) {
 		className: "space-y-2 rounded-lg border border-border p-3",
 		children: /* @__PURE__ */ w("div", {
 			className: "flex flex-wrap items-center gap-2",
-			children: [/* @__PURE__ */ C(ug, {
+			children: [/* @__PURE__ */ C(fg, {
 				status: a ? "running" : u ? "done" : "idle",
 				tone: a ? "warning" : u ? "success" : "secondary"
 			}), /* @__PURE__ */ C("span", {
@@ -23788,7 +24386,7 @@ function jg({ pollKey: e }) {
 		})
 	});
 }
-function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
+function Pg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 	let { t: o } = g(), s = n(), [c, l] = m(""), u = e({
 		mutationFn: () => V("wfcp/advanced/recalculate-all", {
 			method: "POST",
@@ -23832,7 +24430,7 @@ function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 					onChange: (e) => r({ exchange_rate: parseFloat(e.target.value) })
 				})]
 			}),
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: "wfcp-ex-rate-en",
 				label: o("wfcp.exchangeRateEnabled"),
 				checked: !!(t.exchange_rate_enabled ?? !0),
@@ -23871,7 +24469,7 @@ function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 					onChange: (e) => r({ api_symbol: e.target.value })
 				})]
 			}),
-			/* @__PURE__ */ C(bg, {
+			/* @__PURE__ */ C(Sg, {
 				id: "wfcp-api-en",
 				label: o("wfcp.apiEnabled"),
 				checked: !!t.api_enabled,
@@ -23934,7 +24532,7 @@ function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 				className: "text-muted-foreground text-xs",
 				children: o("wfcp.applyAllPricesHint")
 			}),
-			/* @__PURE__ */ C(jg, { pollKey: [
+			/* @__PURE__ */ C(Ng, { pollKey: [
 				"wfcp",
 				"recalc",
 				"state"
@@ -23946,7 +24544,7 @@ function Mg({ general: t, setGeneral: r, onSave: i, saving: a }) {
 		]
 	}) });
 }
-function Ng() {
+function Fg() {
 	let { t } = g(), r = n(), [i, a] = m(""), [o, s] = m(!1), c = e({
 		mutationFn: () => V("wfcp/advanced/recalculate-all", {
 			method: "POST",
@@ -23989,7 +24587,7 @@ function Ng() {
 		className: "space-y-4 pt-6",
 		children: [
 			/* @__PURE__ */ w("div", { children: [
-				/* @__PURE__ */ C(bg, {
+				/* @__PURE__ */ C(Sg, {
 					id: "wfcp-dry",
 					label: t("wfcp.dryRun"),
 					checked: o,
@@ -24003,7 +24601,7 @@ function Ng() {
 					onClick: () => void c.mutateAsync(),
 					children: t("wfcp.recalculateAll")
 				}),
-				/* @__PURE__ */ C(jg, { pollKey: [
+				/* @__PURE__ */ C(Ng, { pollKey: [
 					"wfcp",
 					"recalc",
 					"state"
@@ -24046,11 +24644,11 @@ function Ng() {
 }
 //#endregion
 //#region ../Modules/wfcp-module/client/module-entry.tsx
-var Pg = {
-	"shop/wfcp/quick-add": og,
+var Ig = {
+	"shop/wfcp/quick-add": cg,
 	"shop/wfcp/bulk-editor": Ah,
-	"shop/wfcp/price-changer": Fh,
-	"settings/shop/pricing/:tab": xg
-}, Fg = { routes: Pg };
+	"shop/wfcp/price-changer": Lh,
+	"settings/shop/pricing/:tab": Cg
+}, Lg = { routes: Ig };
 //#endregion
-export { Fg as default, Pg as routes };
+export { Lg as default, Ig as routes };

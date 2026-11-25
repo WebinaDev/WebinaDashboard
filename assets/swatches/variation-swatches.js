@@ -9,6 +9,9 @@
 		}
 	}
 
+	// Swatch value ⇄ <option> value matching.
+	// WooCommerce may submit the term slug while the swatch holds a label, so compare the raw value,
+	// the decoded value AND the other values we stored on the button (data-swatch-slug / -value).
 	function valuesMatch(a, b) {
 		a = String(a || '');
 		b = String(b || '');
@@ -16,6 +19,71 @@
 			return true;
 		}
 		return decodeValue(a) === decodeValue(b);
+	}
+
+	function swatchCandidates($swatch) {
+		return [
+			$swatch.attr('data-value'),
+			$swatch.attr('data-swatch-value'),
+			$swatch.attr('data-swatch-slug'),
+		];
+	}
+
+	function swatchMatchesOption($swatch, optionValue) {
+		var option = String(optionValue || '');
+		var candidates = swatchCandidates($swatch);
+		for (var i = 0; i < candidates.length; i++) {
+			var candidate = String(candidates[i] || '');
+			if (candidate !== '' && valuesMatch(candidate, option)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Same, but also accepts the visible <option> label (legacy markup stored the label in data-value).
+	function swatchMatchesOptionElement($swatch, optionEl) {
+		if (!optionEl) {
+			return false;
+		}
+		if (swatchMatchesOption($swatch, optionEl.value)) {
+			return true;
+		}
+		var text = String(optionEl.textContent || '').trim();
+		if (text === '') {
+			return false;
+		}
+		var candidates = swatchCandidates($swatch);
+		for (var i = 0; i < candidates.length; i++) {
+			var candidate = String(candidates[i] || '');
+			if (candidate !== '' && valuesMatch(candidate, text)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// The value the attribute <select> actually accepts for this swatch (never a label WooCommerce
+	// does not know about, which would make the select fall back to "" and the UI "jump").
+	function resolveOptionValue($select, $swatch) {
+		var preferred = String($swatch.attr('data-value') || '');
+		if (preferred !== '') {
+			var direct = $select.find('option').filter(function () {
+				return String(this.value) === preferred;
+			});
+			if (direct.length) {
+				return preferred;
+			}
+		}
+		var resolved = '';
+		$select.find('option').each(function () {
+			if (resolved === '') {
+				if (swatchMatchesOptionElement($swatch, this)) {
+					resolved = String(this.value);
+				}
+			}
+		});
+		return resolved;
 	}
 
 	function isOrderConfigSwatch(el) {
@@ -46,11 +114,11 @@
 				return;
 			}
 			$wrap.find('.wd-swatch').each(function () {
-				var value = this.getAttribute('data-value') || '';
+				var $swatch = $(this);
 				var $opt = $select.find('option').filter(function () {
-					return valuesMatch(this.value, value);
+					return swatchMatchesOptionElement($swatch, this);
 				});
-				var enabled = $opt.length > 0 && !$opt.prop('disabled') && value !== '';
+				var enabled = $opt.length > 0 && !$opt.prop('disabled') && resolveOptionValue($select, $swatch) !== '';
 				this.classList.toggle('is-disabled', !enabled);
 				this.setAttribute('aria-disabled', enabled ? 'false' : 'true');
 			});
@@ -64,9 +132,15 @@
 				return;
 			}
 			var $wrap = $(this);
-			var selected = String($wrap.find('select').val() || '');
+			var $select = $wrap.find('select');
+			var selected = String($select.val() || '');
+			var $selectedOpt = $select.find('option').filter(function () {
+				return String(this.value) === selected;
+			}).first();
 			$wrap.find('.wd-swatch').each(function () {
-				var isSelected = valuesMatch(this.getAttribute('data-value') || '', selected) && selected !== '';
+				var isSelected = selected !== ''
+					&& (swatchMatchesOption($(this), selected)
+						|| ($selectedOpt.length > 0 && swatchMatchesOptionElement($(this), $selectedOpt.get(0))));
 				this.classList.toggle('is-selected', isSelected);
 				this.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
 			});
@@ -89,12 +163,39 @@
 			}
 			var $wrap = $(this).closest('.wd-swatches');
 			var $select = $wrap.find('select');
-			var value = this.getAttribute('data-value') || '';
+			var $swatch = $(this);
 			if (!$select.length) {
 				return;
 			}
-			$select.val(value).trigger('change');
+			var option = resolveOptionValue($select, $swatch);
+			if (option === '') {
+				return;
+			}
+			var nativeSelect = $select.get(0);
+			$select.val(option);
+			// Let WooCommerce (and its `change` listeners) see a real <select> change event so the
+			// variation lookup runs with the same value the native select would submit.
+			if (typeof window.Event === 'function') {
+				nativeSelect.dispatchEvent(new window.Event('change', { bubbles: true }));
+			} else {
+				$select.trigger('change');
+			}
 			syncSelected($form);
+
+			// Some WooCommerce builds reset an attribute to "" when the picked combination has no
+			// match (e.g. a variation with missing attribute meta). Re-assert once so the choice the
+			// shopper clicked is never silently dropped; the storefront then shows "unavailable".
+			window.setTimeout(function () {
+				if (!$select.val()) {
+					$select.val(option);
+					if (typeof window.Event === 'function') {
+						nativeSelect.dispatchEvent(new window.Event('change', { bubbles: true }));
+					} else {
+						$select.trigger('change');
+					}
+				}
+				syncSelected($form);
+			}, 0);
 		});
 
 		$form.on('woocommerce_update_variation_values.wdSwatch check_variations.wdSwatch', function () {

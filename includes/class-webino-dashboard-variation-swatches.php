@@ -786,13 +786,24 @@ class Webino_Dashboard_Variation_Swatches {
 		$selected = isset( $args['selected'] ) ? (string) $args['selected'] : '';
 		$show     = ! empty( $ctx['show_label'] ) || 'button' === $ctx['type'];
 		$items    = self::option_items( $attribute, $options, $product );
+		$selected_values = array( $selected );
+		foreach ( $items as $item ) {
+			if ( (string) $item['value'] === $selected || (string) $item['slug'] === $selected ) {
+				$selected_values[] = (string) $item['option'];
+				$selected_values[] = (string) $item['slug'];
+				$selected_values[] = (string) $item['value'];
+			}
+		}
+		$selected_values = array_values( array_unique( array_filter( $selected_values, 'strlen' ) ) );
 
 		ob_start();
 		?>
-		<div class="wd-swatches wd-swatches--<?php echo esc_attr( $ctx['type'] ); ?><?php echo $show ? ' wd-swatches--labels' : ''; ?>" data-attribute="<?php echo esc_attr( $attribute ); ?>">
+		<div class="wd-swatches wd-swatches--<?php echo esc_attr( $ctx['type'] ); ?><?php echo $show ? ' wd-swatches--labels' : ''; ?>" data-attribute="<?php echo esc_attr( $attribute ); ?>" data-selected="<?php echo esc_attr( $selected ); ?>">
 			<?php foreach ( $items as $item ) : ?>
 				<?php
-				$is_selected = (string) $item['value'] === $selected || (string) $item['slug'] === $selected;
+				$is_selected = in_array( (string) $item['option'], $selected_values, true )
+					|| in_array( (string) $item['value'], $selected_values, true )
+					|| in_array( (string) $item['slug'], $selected_values, true );
 				$classes     = array( 'wd-swatch', 'wd-swatch--' . $ctx['type'] );
 				if ( $is_selected ) {
 					$classes[] = 'is-selected';
@@ -804,7 +815,9 @@ class Webino_Dashboard_Variation_Swatches {
 				<button
 					type="button"
 					class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>"
-					data-value="<?php echo esc_attr( $item['value'] ); ?>"
+					data-value="<?php echo esc_attr( ! empty( $item['option'] ) ? $item['option'] : $item['value'] ); ?>"
+					data-swatch-value="<?php echo esc_attr( $item['value'] ); ?>"
+					data-swatch-slug="<?php echo esc_attr( $item['slug'] ); ?>"
 					aria-label="<?php echo esc_attr( $item['name'] ); ?>"
 					aria-pressed="<?php echo $is_selected ? 'true' : 'false'; ?>"
 					title="<?php echo esc_attr( $item['name'] ); ?>"
@@ -869,9 +882,33 @@ class Webino_Dashboard_Variation_Swatches {
 				'name'  => $name,
 				'color' => $color,
 				'image' => $image,
+				// <option value="…"> WooCommerce renders for this choice. Swatch clicks must select THAT
+				// value, otherwise WooCommerce cannot resolve the variation and the choice jumps back.
+				'option' => self::option_value_for_term( $term, $option ),
 			);
 		}
 		return $items;
+	}
+
+	/**
+	 * The exact value WooCommerce put in the <option> for this choice.
+	 *
+	 * Global (taxonomy) attributes use the term slug; local attributes keep the raw option text.
+	 * Rendering that value on the swatch (instead of a translated/decoded label) is what keeps the
+	 * native variation script in sync — a mismatched value resets the selection ("jumping" variants).
+	 *
+	 * @param WP_Term|null $term   Resolved term for the option, if any.
+	 * @param string       $option Raw option value from WooCommerce.
+	 * @return string
+	 */
+	private static function option_value_for_term( $term, $option ) {
+		if ( $term instanceof WP_Term ) {
+			$slug = (string) $term->slug;
+			if ( '' !== $slug ) {
+				return $slug;
+			}
+		}
+		return (string) $option;
 	}
 
 	/**

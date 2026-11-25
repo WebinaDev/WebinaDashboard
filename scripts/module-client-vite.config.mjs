@@ -42,6 +42,11 @@ const MODULE_SLUGS = [
   'security-module',
   'shipping-module',
   'tapin-module',
+  'emalls-module',
+  'snappshop-module',
+  'tapsishop-module',
+  'technolife-module',
+  'zarehbin-module',
 ]
 
 /** @type {Record<string, string>} */
@@ -70,6 +75,11 @@ const MODULE_ALIAS_PREFIX = {
   'security-module': '@module-security',
   'shipping-module': '@module-shipping',
   'tapin-module': '@module-tapin',
+  'emalls-module': '@module-emalls',
+  'snappshop-module': '@module-snappshop',
+  'tapsishop-module': '@module-tapsishop',
+  'technolife-module': '@module-technolife',
+  'zarehbin-module': '@module-zarehbin',
 }
 
 /** Force ESM for packages that still get inlined (not on the shared runtime list). */

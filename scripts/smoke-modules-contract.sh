@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MODULES="$(cd "$ROOT/.." && pwd)/Modules"
+MODULES="$ROOT/Modules"
 FAIL=0
 
 SLUGS=(
@@ -74,6 +74,12 @@ PY
     echo "OK: $slug declares requires_modules: $deps"
   fi
 done
+
+# Build-list drift: a module with a client entry missing from the build matrix keeps a
+# hand-written stub bundle and renders nothing in production.
+if command -v node >/dev/null 2>&1; then
+  node "$ROOT/scripts/verify-module-build-matrix.mjs" || FAIL=1
+fi
 
 if [[ "$FAIL" -ne 0 ]]; then
   echo "== smoke-modules-contract FAILED =="

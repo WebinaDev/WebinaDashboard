@@ -5546,6 +5546,11 @@ var yl = class extends Error {
 	forbidden_role: "errors.api.forbiddenRole",
 	invalid_nonce: "errors.api.invalidNonce",
 	timeout: "errors.api.timeout",
+	request_timeout: "errors.api.requestTimeout",
+	gateway_timeout: "errors.api.gatewayTimeout",
+	server_unavailable: "errors.api.serverUnavailable",
+	ajax_unhandled: "errors.api.invalidResponse",
+	empty_response: "errors.api.invalidResponse",
 	empty_reply: "errors.api.emptyReply",
 	transport: "errors.api.transport",
 	network_offline: "errors.api.networkOffline",
@@ -5591,7 +5596,7 @@ function wl(e, t) {
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return xl(n) ? e("errors.api.timeout") : Sl(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return xl(n) ? e("errors.api.requestTimeout") : Sl(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
@@ -5626,12 +5631,27 @@ function Al(e) {
 	let t = e ?? El();
 	t && t.setQueryData(Dl, { logged_in: !1 });
 }
-function jl(e) {
-	kl(e) && Al();
+var jl = new Set([
+	"rest_cookie_invalid_nonce",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function Ml(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !1;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (jl.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || r === "invalid nonce";
+}
+function Nl(e) {
+	Ml(e) || kl(e) && Al();
 }
 //#endregion
 //#region src/lib/safeUrl.ts
-function Ml(e) {
+function Pl(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -5643,38 +5663,38 @@ function Ml(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function Nl() {
+function Fl() {
 	return window.webinoDashboard;
 }
-var Pl = 3e4;
-function Fl(e) {
+var Il = 3e4;
+function Ll(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function Il(e) {
-	let t = Nl();
+function Rl(e) {
+	let t = Fl();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (Fl(e) || Ml(e)) return e;
+	if (Ll(e) || Pl(e)) return e;
 	throw new yl("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function Ll(e, t) {
+function zl(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function Rl(e) {
+function Bl(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
-	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
+	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "license/remote-check" ? "webino_dashboard_license_remote_check" : t === "license/diagnostics" ? "webino_dashboard_license_diagnostics" : t === "license/remote-activate" ? "webino_dashboard_license_remote_activate" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function zl(e, t) {
+function Vl(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -5690,12 +5710,27 @@ function zl(e, t) {
 		code: "invalid_json"
 	};
 }
-function Bl(e, t) {
+function Hl(e, t) {
 	let n = e.toLowerCase();
-	return e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry" : n.includes("timed out") || n.includes("timeout") || t === 504 || t === 524 ? "Request timed out — RSA-4096 generation can take over a minute on weak hosts" : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? `Invalid AJAX response (HTML, HTTP ${t || 0})` : `Invalid AJAX response (HTTP ${t || 0})`;
+	return t === 504 || t === 524 || n.includes("gateway timeout") || n.includes("gateway time-out") || n.includes("timed out") || n.includes("timeout") ? {
+		message: `Gateway timeout (HTTP ${t || 0})`,
+		code: "gateway_timeout"
+	} : t === 502 || t === 503 || t === 520 || t === 521 || t === 522 ? {
+		message: `Server temporarily unavailable (HTTP ${t})`,
+		code: "server_unavailable"
+	} : e.includes("Upstream Error") || e.includes("Forbidden") || t === 403 ? {
+		message: "admin-ajax blocked by CDN/WAF (Upstream Forbidden) — whitelist admin-ajax.php or retry",
+		code: "rest_cdn_blocked"
+	} : e.trim().startsWith("<") || e.includes("<!DOCTYPE") || e.includes("<html") ? {
+		message: `Invalid AJAX response (HTML, HTTP ${t || 0})`,
+		code: "invalid_json"
+	} : {
+		message: `Invalid AJAX response (HTTP ${t || 0})`,
+		code: "invalid_json"
+	};
 }
-async function Vl(e, t, n = {}) {
-	let r = Rl(e), i = Nl();
+async function Ul(e, t, n = {}) {
+	let r = Bl(e), i = Fl();
 	if (!r || !i.ajaxUrl) throw new yl("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
@@ -5709,7 +5744,7 @@ async function Vl(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = Ll({}, t);
+	let { signal: l, clear: u } = zl({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -5721,8 +5756,9 @@ async function Vl(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			throw new yl(Bl(t, e.status), {
-				code: "invalid_json",
+			let n = Hl(t, e.status);
+			throw new yl(n.message, {
+				code: n.code,
 				status: e.status
 			});
 		}
@@ -5731,12 +5767,12 @@ async function Vl(e, t, n = {}) {
 				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
 				status: e.status
 			});
-			throw jl(t), t;
+			throw Nl(t), t;
 		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof yl ? (jl(e), e) : e instanceof DOMException && e.name === "AbortError" ? new yl("Request timed out", {
-			code: "timeout",
+		throw e instanceof yl ? (Nl(e), e) : e instanceof DOMException && e.name === "AbortError" ? new yl("Request timed out", {
+			code: "request_timeout",
 			status: 0
 		}) : e instanceof TypeError ? new yl("Network unavailable", {
 			code: "network_offline",
@@ -5746,11 +5782,49 @@ async function Vl(e, t, n = {}) {
 		u();
 	}
 }
-async function X(e, t = {}, n = Pl) {
-	if (Rl(e) && Nl().ajaxUrl) return Vl(e, n, t);
-	let r = Il(e), i = Nl(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+var Wl = null;
+function Gl(e) {
+	let t = Fl();
+	t && typeof e == "string" && e.length > 0 && (t.nonce = e);
+}
+function Kl() {
+	if (Wl) return Wl;
+	let e = Fl();
+	if (!e?.ajaxUrl) return Promise.resolve(!1);
+	let t = new URLSearchParams();
+	return t.set("action", "webino_dashboard_auth_session"), Wl = fetch(e.ajaxUrl, {
+		method: "POST",
+		credentials: "same-origin",
+		headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+		body: t
+	}).then((e) => e.json()).then((e) => {
+		let t = !!(e?.success && e.data?.logged_in);
+		return t && Gl(e.data?.nonce), t && typeof e.data?.nonce == "string" && e.data.nonce.length > 0;
+	}).catch(() => !1).finally(() => {
+		window.setTimeout(() => {
+			Wl = null;
+		}, 0);
+	}), Wl;
+}
+async function X(e, t = {}, n = Il) {
+	try {
+		return await ql(e, t, n);
+	} catch (r) {
+		if (!Ml(r)) throw r;
+		if (!await Kl()) throw Al(), r;
+		let i = { ...t.headers };
+		for (let e of Object.keys(i)) e.toLowerCase() === "x-wp-nonce" && delete i[e];
+		return ql(e, {
+			...t,
+			headers: i
+		}, n);
+	}
+}
+async function ql(e, t = {}, n = Il) {
+	if (Bl(e) && Fl().ajaxUrl) return Ul(e, n, t);
+	let r = Rl(e), i = Fl(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
 	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
-	let { signal: s, clear: c } = Ll(t, n);
+	let { signal: s, clear: c } = zl(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -5761,7 +5835,7 @@ async function X(e, t = {}, n = Pl) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = zl(n, e.status);
+			let t = Vl(n, e.status);
 			throw new yl(t.message, {
 				code: t.code,
 				status: e.status
@@ -5772,12 +5846,12 @@ async function X(e, t = {}, n = Pl) {
 				code: t.code,
 				status: e.status
 			});
-			throw jl(n), n;
+			throw Nl(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof yl ? (jl(e), e) : e instanceof DOMException && e.name === "AbortError" ? new yl("Request timed out", {
-			code: "timeout",
+		throw e instanceof yl ? (Nl(e), e) : e instanceof DOMException && e.name === "AbortError" ? new yl("Request timed out", {
+			code: "request_timeout",
 			status: 0
 		}) : e instanceof TypeError ? new yl("Network unavailable", {
 			code: "network_offline",
@@ -5789,7 +5863,7 @@ async function X(e, t = {}, n = Pl) {
 }
 //#endregion
 //#region ../Modules/accounting-module/client/pages/accounting/AccountingSettingsPage.tsx
-var Hl = [
+var Jl = [
 	"contacts",
 	"items",
 	"invoices",
@@ -5813,7 +5887,7 @@ function Z({ label: e, value: t, onChange: n, type: r = "text", placeholder: i }
 		})]
 	});
 }
-function Ul() {
+function Yl() {
 	let { t: r } = _(), i = n(), a = m().pathname, o = a.endsWith("/company") ? "company" : a.endsWith("/sync") ? "sync" : a.endsWith("/tax") ? "tax" : a.endsWith("/hesabfa") ? "hesabfa" : a.endsWith("/payroll") ? "payroll" : "moadian", s = t({
 		queryKey: ["accounting", "settings"],
 		queryFn: async () => X("accounting/settings")
@@ -6281,7 +6355,7 @@ function Ul() {
 							children: r("accounting.hesabfa.entities")
 						}), /* @__PURE__ */ b("div", {
 							className: "grid gap-2 sm:grid-cols-2 md:grid-cols-3",
-							children: Hl.map((e) => /* @__PURE__ */ x("label", {
+							children: Jl.map((e) => /* @__PURE__ */ x("label", {
 								className: "flex items-center gap-2 text-sm",
 								children: [/* @__PURE__ */ b(al, {
 									checked: O[e] !== !1,
@@ -6580,66 +6654,66 @@ function Ul() {
 }
 //#endregion
 //#region src/components/ui/card.tsx
-var Wl = {
+var Xl = {
 	default: "",
 	stat: "wd-card-stat",
 	hero: "wd-card-hero",
 	glass: "wd-card-glass"
 };
-function Gl({ className: e, variant: t = "default", ...n }) {
+function Zl({ className: e, variant: t = "default", ...n }) {
 	return /* @__PURE__ */ b("div", {
 		"data-slot": "card",
 		"data-variant": t,
-		className: Wc("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", Wl[t], e),
+		className: Wc("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", Xl[t], e),
 		...n
 	});
 }
-function Kl({ className: e, ...t }) {
+function Ql({ className: e, ...t }) {
 	return /* @__PURE__ */ b("div", {
 		"data-slot": "card-header",
 		className: Wc("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 text-start has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", e),
 		...t
 	});
 }
-function ql({ className: e, ...t }) {
+function $l({ className: e, ...t }) {
 	return /* @__PURE__ */ b("div", {
 		"data-slot": "card-title",
 		className: Wc("leading-none font-semibold", e),
 		...t
 	});
 }
-function Jl({ className: e, ...t }) {
+function eu({ className: e, ...t }) {
 	return /* @__PURE__ */ b("div", {
 		"data-slot": "card-description",
 		className: Wc("text-sm text-muted-foreground", e),
 		...t
 	});
 }
-function Yl({ className: e, ...t }) {
+function tu({ className: e, ...t }) {
 	return /* @__PURE__ */ b("div", {
 		"data-slot": "card-content",
 		className: Wc("px-6 text-start", e),
 		...t
 	});
 }
-function Xl(e) {
+function nu(e) {
 	return e.toLowerCase().startsWith("fa");
 }
-function Zl(e) {
+function ru(e) {
 	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
 }
 //#endregion
 //#region src/lib/formatNumber.ts
-function Ql(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = Xl(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return Xl(t) ? Zl(i) : i;
+function iu(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = nu(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return nu(t) ? ru(i) : i;
 }
 //#endregion
 //#region src/components/reports/BasalamBalanceCard.tsx
-function $l(e) {
+function au(e) {
 	return typeof e != "number" || !Number.isFinite(e) ? null : Math.trunc(e / 10);
 }
-function eu() {
+function ou() {
 	let { t: e, i18n: n } = _(), r = t({
 		queryKey: [
 			"basalam",
@@ -6649,19 +6723,19 @@ function eu() {
 		queryFn: () => X("basalam/finance/balance"),
 		retry: !1,
 		staleTime: 6e4
-	}), i = $l(r.data?.balance?.data?.balance);
-	return r.isError || r.isSuccess && !r.data?.balance?.success && i === null ? null : /* @__PURE__ */ x(Gl, { children: [/* @__PURE__ */ x(Kl, {
+	}), i = au(r.data?.balance?.data?.balance);
+	return r.isError || r.isSuccess && !r.data?.balance?.success && i === null ? null : /* @__PURE__ */ x(Zl, { children: [/* @__PURE__ */ x(Ql, {
 		className: "pb-2",
-		children: [/* @__PURE__ */ b(ql, {
+		children: [/* @__PURE__ */ b($l, {
 			className: "text-base",
 			children: e("basalam.boothBalance")
-		}), /* @__PURE__ */ b(Jl, { children: e("basalam.balanceInReports") })]
-	}), /* @__PURE__ */ x(Yl, {
+		}), /* @__PURE__ */ b(eu, { children: e("basalam.balanceInReports") })]
+	}), /* @__PURE__ */ x(tu, {
 		className: "flex flex-wrap items-center justify-between gap-3",
 		children: [/* @__PURE__ */ x("p", {
 			className: "text-2xl font-semibold tracking-tight",
 			children: [
-				r.isLoading ? "…" : i === null ? "—" : Ql(i, n.language),
+				r.isLoading ? "…" : i === null ? "—" : iu(i, n.language),
 				" ",
 				/* @__PURE__ */ b("span", {
 					className: "text-muted-foreground text-sm font-normal",
@@ -6681,7 +6755,7 @@ function eu() {
 }
 //#endregion
 //#region ../Modules/accounting-module/client/pages/accounting/AccountingShell.tsx
-var tu = [
+var su = [
 	"overview",
 	"tax",
 	"chart",
@@ -6703,10 +6777,10 @@ var tu = [
 	"reports",
 	"tools"
 ];
-function nu(e) {
-	return !!e && tu.includes(e);
+function cu(e) {
+	return !!e && su.includes(e);
 }
-function ru({ value: e }) {
+function lu({ value: e }) {
 	return /* @__PURE__ */ b("span", {
 		className: "tabular-nums",
 		children: Number(e ?? 0).toLocaleString()
@@ -6743,9 +6817,9 @@ function $(e, n = !0) {
 		enabled: n
 	});
 }
-function iu() {
+function uu() {
 	let { t: r } = _(), { section: i } = g(), a = n();
-	if (!nu(i)) return /* @__PURE__ */ b(p, {
+	if (!cu(i)) return /* @__PURE__ */ b(p, {
 		to: "/accounting/overview",
 		replace: !0
 	});
@@ -7030,7 +7104,7 @@ function iu() {
 			v.success(r("accounting.backfillDone", { count: e.synced })), await a.invalidateQueries({ queryKey: ["accounting"] });
 		},
 		onError: (e) => Y(r, e)
-	}), Rt = u(() => tu.map((e) => ({
+	}), Rt = u(() => su.map((e) => ({
 		id: e,
 		label: r(`accounting.nav.${e}`),
 		to: `/accounting/${e}`
@@ -7050,21 +7124,21 @@ function iu() {
 			i === "overview" ? /* @__PURE__ */ x("div", {
 				className: "grid gap-4 md:grid-cols-3",
 				children: [
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.kpi.profit"),
-						value: /* @__PURE__ */ b(ru, { value: o.data?.profit?.profit })
+						value: /* @__PURE__ */ b(lu, { value: o.data?.profit?.profit })
 					}),
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.kpi.margin"),
-						value: /* @__PURE__ */ b(ru, { value: o.data?.margin?.margin })
+						value: /* @__PURE__ */ b(lu, { value: o.data?.margin?.margin })
 					}),
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.kpi.moadianPending"),
 						value: String(o.data?.moadian_pending ?? 0)
 					}),
 					/* @__PURE__ */ b("div", {
 						className: "md:col-span-3",
-						children: /* @__PURE__ */ b(eu, {})
+						children: /* @__PURE__ */ b(ou, {})
 					}),
 					/* @__PURE__ */ x("div", {
 						className: "md:col-span-3 flex flex-wrap gap-2",
@@ -7153,27 +7227,27 @@ function iu() {
 					/* @__PURE__ */ x("div", {
 						className: "grid gap-3 sm:grid-cols-2 lg:grid-cols-3",
 						children: [
-							/* @__PURE__ */ b(au, {
+							/* @__PURE__ */ b(du, {
 								title: r("accounting.tax.revenue"),
-								value: /* @__PURE__ */ b(ru, { value: S.data?.revenue })
+								value: /* @__PURE__ */ b(lu, { value: S.data?.revenue })
 							}),
-							/* @__PURE__ */ b(au, {
+							/* @__PURE__ */ b(du, {
 								title: r("accounting.tax.profit"),
-								value: /* @__PURE__ */ b(ru, { value: S.data?.profit })
+								value: /* @__PURE__ */ b(lu, { value: S.data?.profit })
 							}),
-							/* @__PURE__ */ b(au, {
+							/* @__PURE__ */ b(du, {
 								title: r("accounting.tax.loss"),
-								value: /* @__PURE__ */ b(ru, { value: S.data?.loss })
+								value: /* @__PURE__ */ b(lu, { value: S.data?.loss })
 							}),
-							/* @__PURE__ */ b(au, {
+							/* @__PURE__ */ b(du, {
 								title: r("accounting.tax.vatNet"),
-								value: /* @__PURE__ */ b(ru, { value: S.data?.vat_net })
+								value: /* @__PURE__ */ b(lu, { value: S.data?.vat_net })
 							}),
-							/* @__PURE__ */ b(au, {
+							/* @__PURE__ */ b(du, {
 								title: r("accounting.tax.incomeTax"),
-								value: /* @__PURE__ */ b(ru, { value: S.data?.income_tax_estimate })
+								value: /* @__PURE__ */ b(lu, { value: S.data?.income_tax_estimate })
 							}),
-							/* @__PURE__ */ b(au, {
+							/* @__PURE__ */ b(du, {
 								title: r("accounting.kpi.moadianPending"),
 								value: String(S.data?.moadian_pending ?? 0)
 							})
@@ -8150,7 +8224,7 @@ function iu() {
 											String(e.status),
 											e.list_status ? ` / ${String(e.list_status)}` : "",
 											" — ",
-											/* @__PURE__ */ b(ru, { value: e.total_net })
+											/* @__PURE__ */ b(lu, { value: e.total_net })
 										]
 									}), /* @__PURE__ */ x("div", {
 										className: "flex flex-wrap gap-1",
@@ -8198,7 +8272,7 @@ function iu() {
 										String(e.days_worked),
 										" —",
 										" ",
-										/* @__PURE__ */ b(ru, { value: e.net })
+										/* @__PURE__ */ b(lu, { value: e.net })
 									] }), /* @__PURE__ */ b(K, {
 										size: "sm",
 										variant: "outline",
@@ -8332,33 +8406,33 @@ function iu() {
 			i === "reports" ? /* @__PURE__ */ x("div", {
 				className: "grid gap-4 md:grid-cols-2",
 				children: [
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.report.pnl"),
-						value: /* @__PURE__ */ b(ru, { value: B.data?.pnl?.profit })
+						value: /* @__PURE__ */ b(lu, { value: B.data?.pnl?.profit })
 					}),
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.report.vat"),
-						value: /* @__PURE__ */ b(ru, { value: B.data?.vat?.net_vat })
+						value: /* @__PURE__ */ b(lu, { value: B.data?.vat?.net_vat })
 					}),
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.report.margin"),
-						value: /* @__PURE__ */ b(ru, { value: B.data?.margin?.margin })
+						value: /* @__PURE__ */ b(lu, { value: B.data?.margin?.margin })
 					}),
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.report.balanceSheet"),
-						value: /* @__PURE__ */ b(ru, { value: B.data?.bs?.assets })
+						value: /* @__PURE__ */ b(lu, { value: B.data?.bs?.assets })
 					}),
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.report.taxable"),
-						value: /* @__PURE__ */ b(ru, { value: B.data?.taxSplit?.taxable })
+						value: /* @__PURE__ */ b(lu, { value: B.data?.taxSplit?.taxable })
 					}),
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.report.exempt"),
-						value: /* @__PURE__ */ b(ru, { value: B.data?.taxSplit?.exempt })
+						value: /* @__PURE__ */ b(lu, { value: B.data?.taxSplit?.exempt })
 					}),
-					/* @__PURE__ */ b(au, {
+					/* @__PURE__ */ b(du, {
 						title: r("accounting.report.cashFlow"),
-						value: /* @__PURE__ */ b(ru, { value: B.data?.cashFlow?.net })
+						value: /* @__PURE__ */ b(lu, { value: B.data?.cashFlow?.net })
 					}),
 					/* @__PURE__ */ x("div", {
 						className: "md:col-span-2",
@@ -8431,7 +8505,7 @@ function iu() {
 		]
 	});
 }
-function au({ title: e, value: t }) {
+function du({ title: e, value: t }) {
 	return /* @__PURE__ */ x("div", {
 		className: "rounded-lg border border-border p-4",
 		children: [/* @__PURE__ */ b("div", {
@@ -8445,11 +8519,11 @@ function au({ title: e, value: t }) {
 }
 //#endregion
 //#region ../Modules/accounting-module/client/pages/accounting/MyPayrollPage.tsx
-function ou(e) {
+function fu(e) {
 	let t = window.open("", "_blank");
 	t && (t.document.write(e), t.document.close());
 }
-function su() {
+function pu() {
 	let { t: e } = _(), n = t({
 		queryKey: ["accounting", "my-payslips"],
 		queryFn: async () => X("accounting/my/payslips")
@@ -8458,13 +8532,13 @@ function su() {
 		queryFn: async () => X("accounting/my/decrees")
 	}), i = async (t) => {
 		try {
-			ou((await X(`accounting/payslips/${t}/print`)).html);
+			fu((await X(`accounting/payslips/${t}/print`)).html);
 		} catch (t) {
 			Y(e, t);
 		}
 	}, a = async (t) => {
 		try {
-			ou((await X(`accounting/decrees/${t}/print`)).html);
+			fu((await X(`accounting/decrees/${t}/print`)).html);
 		} catch (t) {
 			Y(e, t);
 		}
@@ -8530,8 +8604,8 @@ function su() {
 }
 //#endregion
 //#region ../Modules/accounting-module/client/pages/accounting/TaxSetupWizardPage.tsx
-var cu = 6;
-function lu() {
+var mu = 6;
+function hu() {
 	let { t: r } = _(), i = h(), a = n(), [o, s] = d(1), [c, l] = d(""), [p, m] = d({}), [g, S] = d(""), [C, T] = d(""), E = t({
 		queryKey: ["accounting", "settings"],
 		queryFn: () => X("accounting/settings")
@@ -8601,11 +8675,11 @@ function lu() {
 	}
 	async function P() {
 		try {
-			if (o === cu) {
+			if (o === mu) {
 				await N({
 					wizard_done: !0,
 					default_vat_rate: D.data?.rate?.vat_general ?? Number(k.default_vat_rate ?? 10),
-					setup_wizard_step: cu
+					setup_wizard_step: mu
 				}), v.success(r("accounting.taxWizard.done")), i("/accounting/tax");
 				return;
 			}
@@ -8623,7 +8697,7 @@ function lu() {
 				className: "mb-4 text-xs text-muted-foreground",
 				children: r("accounting.taxWizard.stepOf", {
 					step: o,
-					total: cu
+					total: mu
 				})
 			}),
 			o === 1 ? /* @__PURE__ */ x("div", {
@@ -8843,7 +8917,7 @@ function lu() {
 					type: "button",
 					disabled: A.isPending,
 					onClick: () => void P(),
-					children: r(o === cu ? "accounting.taxWizard.finish" : "common.next")
+					children: r(o === mu ? "accounting.taxWizard.finish" : "common.next")
 				})]
 			})
 		]
@@ -8851,16 +8925,16 @@ function lu() {
 }
 //#endregion
 //#region ../Modules/accounting-module/client/module-entry.tsx
-var uu = {
-	"accounting/my-payroll": su,
-	"accounting/tax-setup": lu,
-	"accounting/:section": iu,
-	"settings/shop/accounting": Ul,
-	"settings/shop/accounting/company": Ul,
-	"settings/shop/accounting/sync": Ul,
-	"settings/shop/accounting/tax": Ul,
-	"settings/shop/accounting/hesabfa": Ul,
-	"settings/shop/accounting/payroll": Ul
-}, du = { routes: uu };
+var gu = {
+	"accounting/my-payroll": pu,
+	"accounting/tax-setup": hu,
+	"accounting/:section": uu,
+	"settings/shop/accounting": Yl,
+	"settings/shop/accounting/company": Yl,
+	"settings/shop/accounting/sync": Yl,
+	"settings/shop/accounting/tax": Yl,
+	"settings/shop/accounting/hesabfa": Yl,
+	"settings/shop/accounting/payroll": Yl
+}, _u = { routes: gu };
 //#endregion
-export { du as default, uu as routes };
+export { _u as default, gu as routes };

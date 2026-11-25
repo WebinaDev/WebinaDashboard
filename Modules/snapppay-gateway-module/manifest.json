@@ -6,6 +6,11 @@
   "parent_slug": "payment-module",
   "requires_woocommerce": true,
   "bootstrap": "bootstrap.php",
+  "vendor": {
+    "required_paths": [
+      "vendor/snapppay-woocommerce-gateway/index.php"
+    ]
+  },
   "settings": {
     "area": "shop",
     "title": "SnappPay",

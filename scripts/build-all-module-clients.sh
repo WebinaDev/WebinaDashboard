@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 SLUGS=(
+  # Keep in sync with scripts/module-client-vite.config.mjs MODULE_SLUGS.
+  # scripts/verify-module-build-matrix.mjs fails the build when this drifts.
   ai-content-module
   analytics-module
   bale-bot-module
@@ -24,6 +26,16 @@ SLUGS=(
   bale-pay-gateway-module
   card-to-card-gateway-module
   wallet-gateway-module
+  emalls-module
+  snappshop-module
+  tapsishop-module
+  technolife-module
+  zarehbin-module
+  accounting-module
+  product-catalog-module
+  security-module
+  shipping-module
+  tapin-module
 )
 
 for slug in "${SLUGS[@]}"; do

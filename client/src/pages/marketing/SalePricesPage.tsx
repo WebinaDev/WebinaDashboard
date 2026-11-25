@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { ApplySaleDiscountDialog } from '@/components/marketing/ApplySaleDiscountDialog'
+import { ApplySaleDiscountDialog, type SaleScope } from '@/components/marketing/ApplySaleDiscountDialog'
 import { ListFiltersCollapsible } from '@/components/ListFiltersCollapsible'
 import { ProductFiltersBar } from '@/components/products/ProductFiltersBar'
 import type { ProductFilters, ProductListRow, ProductLookup } from '@/components/products/types'
@@ -84,7 +84,7 @@ export default function SalePricesPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [applyOpen, setApplyOpen] = useState(false)
   const [removeOpen, setRemoveOpen] = useState(false)
-  const [scopeMode, setScopeMode] = useState<'selected' | 'filters'>('selected')
+  const [scopeMode, setScopeMode] = useState<SaleScope>('selected')
 
   const lookupQ = useQuery({
     queryKey: ['products', 'lookup'],
@@ -101,17 +101,25 @@ export default function SalePricesPage() {
   })
   useQueryErrorToast(q)
 
-  const items = q.data?.items ?? []
+  const items = useMemo(() => q.data?.items ?? [], [q.data])
   const found = q.data?.found ?? 0
+
+  // The selection must survive pagination: a merchant often selects several pages or the whole
+  // catalog. Only ids of products that were actually *seen* and are now gone (deleted product) are
+  // dropped. `seenIds` grows as pages load and never shrinks.
+  const seenIds = useRef<Set<number>>(new Set())
+  useEffect(() => {
+    for (const row of items) seenIds.current.add(row.id)
+  }, [items])
 
   useEffect(() => {
     setSelectedIds((prev) => {
       if (!prev.length) return prev
-      const ids = new Set(items.map((r) => r.id))
-      const next = prev.filter((id) => ids.has(id))
+      const next = prev.filter((id) => !seenIds.current.has(id) || items.some((r) => r.id === id))
       return next.length === prev.length ? prev : next
     })
-  }, [items])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-check only when the visible page changes
+  }, [page, perPage])
 
   const allPageSelected = items.length > 0 && items.every((r) => selectedIds.includes(r.id))
 
@@ -130,13 +138,15 @@ export default function SalePricesPage() {
 
   const removeMut = useMutation({
     mutationFn: () => {
-      const body: Record<string, unknown> = { action: 'remove' }
+      const body: Record<string, unknown> = { action: 'remove', scope: scopeMode }
       if (scopeMode === 'selected') {
         body.product_ids = selectedIds
+      } else if (scopeMode === 'all') {
+        body.all_products = true
       } else {
         body.filters = filtersPayload(appliedFilters)
       }
-      return apiFetch<{ ok: number; skipped: number }>('shop/products/bulk-sale', {
+      return apiFetch<{ ok: number; skipped: number; run_id?: string; total?: number }>('shop/products/bulk-sale', {
         method: 'POST',
         body: JSON.stringify(body),
       })
@@ -155,7 +165,7 @@ export default function SalePricesPage() {
     return t('salePrices.selectedCount', { count: formatNumber(selectedIds.length, locale) })
   }, [selectedIds.length, locale, t])
 
-  function openApply(mode: 'selected' | 'filters') {
+  function openApply(mode: SaleScope) {
     if (mode === 'selected' && selectedIds.length === 0) {
       toast.error(t('salePrices.needSelection'))
       return
@@ -164,7 +174,7 @@ export default function SalePricesPage() {
     setApplyOpen(true)
   }
 
-  function openRemove(mode: 'selected' | 'filters') {
+  function openRemove(mode: SaleScope) {
     if (mode === 'selected' && selectedIds.length === 0) {
       toast.error(t('salePrices.needSelection'))
       return
@@ -202,24 +212,64 @@ export default function SalePricesPage() {
         />
       </ListFiltersCollapsible>
 
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={allPageSelected}
-            onCheckedChange={(v) => toggleAllPage(!!v)}
-            aria-label={t('salePrices.selectAllPage')}
-          />
-          <span className="text-muted-foreground">{selectionLabel}</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={() => openApply('filters')}>
-            {t('salePrices.applyAllFiltered')}
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => openRemove('filters')}>
-            {t('salePrices.removeAllFiltered')}
-          </Button>
-        </div>
-      </div>
+      <Card className="mb-3">
+        <CardContent className="space-y-3 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={allPageSelected}
+                onCheckedChange={(v) => toggleAllPage(!!v)}
+                aria-label={t('salePrices.selectAllPage')}
+              />
+              <span className="text-muted-foreground">{selectionLabel}</span>
+              {found > 0 ? (
+                <span className="text-muted-foreground/70 text-xs">
+                  {t('salePrices.foundCount', { count: formatNumber(found, locale) })}
+                </span>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedIds(items.map((r) => r.id))}
+                disabled={items.length === 0 || allPageSelected}
+              >
+                {t('salePrices.selectPage')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => openApply('filters')}
+                disabled={found === 0}
+              >
+                {t('salePrices.applyAllFiltered')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => openRemove('filters')}
+                disabled={found === 0}
+              >
+                {t('salePrices.removeAllFiltered')}
+              </Button>
+            </div>
+          </div>
+
+          <div className="border-border/60 flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-2">
+            <span className="text-muted-foreground text-xs">{t('salePrices.siteWideLabel')}</span>
+            <Button type="button" size="sm" variant="secondary" onClick={() => openApply('all')}>
+              {t('salePrices.applyAllProducts')}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => openRemove('all')}>
+              {t('salePrices.removeAllProducts')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="mb-20">
         <CardContent className="p-0">
@@ -288,6 +338,7 @@ export default function SalePricesPage() {
         productIds={selectedIds}
         filters={filtersPayload(appliedFilters)}
         scopeMode={scopeMode}
+        catalogTotal={scopeMode === 'all' ? found : undefined}
         onApplied={() => {
           void qc.invalidateQueries({ queryKey: ['sale-prices'] })
           void qc.invalidateQueries({ queryKey: ['products'] })
@@ -298,7 +349,9 @@ export default function SalePricesPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('salePrices.removeConfirmTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('salePrices.removeConfirmBody')}</AlertDialogDescription>
+            <AlertDialogDescription>
+                {scopeMode === 'all' ? t('salePrices.removeConfirmAll') : t('salePrices.removeConfirmBody')}
+              </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>

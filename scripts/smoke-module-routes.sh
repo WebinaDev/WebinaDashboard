@@ -6,7 +6,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODULES="$ROOT/Modules"
 FAIL=0
 
-SAFE_MODULE_ROUTE='^[a-z0-9][a-z0-9/_:-]*$'
+# Uppercase after the first char is required for camelCase params (:originId, :adId).
+SAFE_MODULE_ROUTE='^[a-z0-9][a-zA-Z0-9/_:-]*$'
 
 echo "== Module route contract smoke =="
 

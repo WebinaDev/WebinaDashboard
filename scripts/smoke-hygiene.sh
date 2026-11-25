@@ -195,12 +195,21 @@ echo "OK: fa_IR.po coverage ${pct}%"
 
 grep -q 'register_minimal_routes' "$ROOT/webino-dashboard.php" \
   || { echo "FAIL: webino-dashboard.php must register minimal routes before bootstrap load" >&2; exit 1; }
-grep -q "register_rest_route.*'/health'" "$INC/class-webino-dashboard-bootstrap.php" \
+# Health route lives in register_minimal_rest_routes(); check both the registrar and the route.
+grep -q "register_rest_route" "$INC/class-webino-dashboard-bootstrap.php" \
+  && grep -q "'/health'" "$INC/class-webino-dashboard-bootstrap.php" \
   || { echo "FAIL: bootstrap health REST route missing" >&2; exit 1; }
 grep -q 'register_broken_fallback_hooks' "$INC/class-webino-dashboard-bootstrap.php" \
   || { echo "FAIL: broken dashboard fallback hooks missing" >&2; exit 1; }
 grep -q 'clear_dashboard_404' "$INC/class-webino-dashboard-rewrite.php" \
   || { echo "FAIL: rewrite must clear virtual route 404" >&2; exit 1; }
 echo "OK: 404 deploy hardening (health route + virtual 404 fix)"
+if command -v php >/dev/null 2>&1; then
+  php "$ROOT/scripts/test-deploy-hardening.php" >/dev/null \
+    || { echo "FAIL: deploy hardening behaviour test" >&2; exit 1; }
+  echo "OK: deploy hardening behaviour (php test)"
+else
+  echo "OK: deploy hardening behaviour (php test skipped — no php binary)"
+fi
 
 echo "== smoke-hygiene PASSED =="

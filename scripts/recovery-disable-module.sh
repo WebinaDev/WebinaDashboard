@@ -10,7 +10,17 @@ if [[ -z "$SLUG" ]]; then
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MODULES="$(cd "$ROOT/.." && pwd)/Modules"
+
+# Modules ship inside the plugin (Modules/). The old sibling layout
+# (wp-content/plugins/Modules) is only honoured when it still exists, so this
+# script never reports "disabled" for a directory the plugin does not load.
+MODULES="$ROOT/Modules"
+if [[ ! -d "$MODULES" ]]; then
+  LEGACY_MODULES="$(cd "$ROOT/.." && pwd)/Modules"
+  if [[ -d "$LEGACY_MODULES" ]]; then
+    MODULES="$LEGACY_MODULES"
+  fi
+fi
 SRC="${MODULES}/${SLUG}"
 DEST="${MODULES}/${SLUG}.off"
 
@@ -21,4 +31,5 @@ fi
 
 mv "$SRC" "$DEST"
 echo "Disabled: $SRC -> $DEST"
+echo "Note: the module registry only scans Modules/*/manifest.json — a renamed directory is ignored."
 echo "Re-enable: mv \"$DEST\" \"$SRC\""

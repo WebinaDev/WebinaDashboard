@@ -30,10 +30,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   4. brand_costs (product_brand / pa_brand; highest match wins)
  *   5. default_cost (fallback for unmatched lines)
  *
+ * Per-unit billing: a line is charged once per unit when «multiply_by_qty» is on (or when its own
+ * rule_qty_modes entry says per_qty); with it off a line with qty 5 still pays one unit price.
+ *
  * Aggregation over contributing lines (mode setting):
- *   each — sum of line costs, multiplied by quantity when multiply_by_qty
+ *   each — sum of line costs
  *   once — a single flat amount (default_cost, falling back to the max line cost)
- *   max  — the highest line cost in the cart
+ *   max  — the highest line cost in the cart (a per-unit line counts its whole quantity, so adding
+ *          another unit of the most expensive product raises the surcharge instead of being ignored)
  *
  * The selected payment gateway (session: chosen_payment_method) can override
  * the computed amount or add on top of it. WooCommerce caches shipping rates
@@ -631,6 +635,27 @@ final class Webino_Shipping_Item_Cost {
 			return $zero;
 		}
 
+		// Per-unit pricing: a line is "per unit" when the resolved rule says so (per_qty) or, when the
+		// rule inherits the global mode, when the store's «multiply by quantity» switch is on. Modes
+		// «once» and «max» group lines, so they MUST bill the whole quantity of the winning group
+		// instead of a single flat amount — otherwise one extra unit of a product never adds anything.
+		$per_unit = array();
+		foreach ( $lines as $idx => $line ) {
+			if ( 'once' === $line['qty_mode'] ) {
+				$per_unit[ $idx ] = false;
+			} elseif ( 'per_qty' === $line['qty_mode'] ) {
+				$per_unit[ $idx ] = true;
+			} else {
+				$per_unit[ $idx ] = ! empty( $s['multiply_by_qty'] );
+			}
+			$lines[ $idx ]['per_unit'] = $per_unit[ $idx ];
+			$lines[ $idx ]['total']    = $line['cost'] * max( 1, (int) $line['qty'] );
+		}
+		$total_units = 0;
+		foreach ( $lines as $line ) {
+			$total_units += max( 1, (int) $line['qty'] );
+		}
+
 		// Free above a paid-subtotal threshold.
 		if ( '' !== $s['min_free_amount'] && (float) $s['min_free_amount'] > 0 && $paid_subtotal >= (float) $s['min_free_amount'] ) {
 			return $zero;
@@ -646,37 +671,42 @@ final class Webino_Shipping_Item_Cost {
 				case 'each':
 					$once_groups = array();
 					foreach ( $lines as $line ) {
-						$qmode = $line['qty_mode'];
-						if ( 'once' === $qmode ) {
-							$gk                 = $line['group_key'];
-							$once_groups[ $gk ] = isset( $once_groups[ $gk ] )
-								? max( (float) $once_groups[ $gk ], $line['cost'] )
-								: $line['cost'];
-						} elseif ( 'per_qty' === $qmode ) {
-							$base += $line['cost'] * $line['qty'];
-						} else {
-							$base += $line['cost'] * ( ! empty( $s['multiply_by_qty'] ) ? $line['qty'] : 1 );
+						if ( ! empty( $line['per_unit'] ) ) {
+							$base += (float) $line['total'];
+							continue;
 						}
+						// "Once per cart" rule: the group pays a single unit price.
+						$gk                 = (string) $line['group_key'];
+						$once_groups[ $gk ] = isset( $once_groups[ $gk ] )
+							? max( (float) $once_groups[ $gk ], $line['cost'] )
+							: $line['cost'];
 					}
 					foreach ( $once_groups as $group_cost ) {
 						$base += (float) $group_cost;
 					}
 					break;
 				case 'once':
+					// One flat amount for the whole cart (the mode's own contract) — per-unit pricing is
+					// handled by «max» / «each», so a store that charges per unit is never billed twice.
 					if ( null !== $default ) {
 						$base = $default;
 					} else {
+						// Highest line wins; unit-priced lines use their full quantity total.
 						$base = 0.0;
 						foreach ( $lines as $line ) {
-							$base = max( $base, $line['cost'] );
+							$value = ! empty( $line['per_unit'] ) ? (float) $line['total'] : (float) $line['cost'];
+							$base  = max( $base, $value );
 						}
 					}
 					break;
 				case 'max':
 				default:
+					// Highest line wins. A unit-priced line counts its whole quantity here, so adding
+					// another unit of the most expensive product raises the surcharge by one unit cost.
 					$base = 0.0;
 					foreach ( $lines as $line ) {
-						$base = max( $base, $line['cost'] );
+						$value = ! empty( $line['per_unit'] ) ? (float) $line['total'] : (float) $line['cost'];
+						$base  = max( $base, $value );
 					}
 					break;
 			}

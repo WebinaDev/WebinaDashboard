@@ -7107,7 +7107,7 @@ function ku() {
 				[t]: a
 			}
 		};
-	}), D = a.mode === "each", O = (e, t) => s[e][t] ?? x.find((e) => String(e.id) === t)?.name ?? S.find((e) => String(e.id) === t)?.name ?? `#${t}`, k = Object.keys(a.product_costs).length + Object.keys(a.category_costs).length + Object.keys(a.brand_costs).length + a.set_costs.length + a.gateway_costs.filter((e) => e.enabled).length;
+	}), D = (e, t) => s[e][t] ?? x.find((e) => String(e.id) === t)?.name ?? S.find((e) => String(e.id) === t)?.name ?? `#${t}`, O = Object.keys(a.product_costs).length + Object.keys(a.category_costs).length + Object.keys(a.brand_costs).length + a.set_costs.length + a.gateway_costs.filter((e) => e.enabled).length;
 	return /* @__PURE__ */ b(Bl, {
 		title: r("shipping.itemCost.title"),
 		description: r("shipping.itemCost.description"),
@@ -7182,7 +7182,7 @@ function ku() {
 							})
 						]
 					}),
-					D ? /* @__PURE__ */ b(v, { children: [/* @__PURE__ */ b("div", {
+					/* @__PURE__ */ b(v, { children: [/* @__PURE__ */ b("div", {
 						className: "flex items-center justify-between gap-4 rounded-xl border p-3",
 						children: [/* @__PURE__ */ b("div", { children: [/* @__PURE__ */ y(X, {
 							htmlFor: "ic-mul-qty",
@@ -7210,7 +7210,7 @@ function ku() {
 							checked: a.default_cost_once,
 							onCheckedChange: (e) => w({ default_cost_once: e })
 						})]
-					})] }) : null,
+					})] }),
 					/* @__PURE__ */ b("div", {
 						className: "grid gap-4 sm:grid-cols-2",
 						children: [/* @__PURE__ */ b("div", {
@@ -7365,9 +7365,9 @@ function ku() {
 					className: "grid gap-2",
 					children: Object.entries(a.product_costs).map(([e, t]) => /* @__PURE__ */ y(Ou, {
 						id: `ic-product-cost-${e}`,
-						label: O("products", e),
+						label: D("products", e),
 						value: t,
-						showQtyMode: D,
+						showQtyMode: !0,
 						qtyMode: a.rule_qty_modes.products[e] ?? "inherit",
 						onQtyModeChange: (t) => E("products", e, t),
 						onChange: (t) => T("product_costs", {
@@ -7417,10 +7417,10 @@ function ku() {
 									className: "min-w-40 flex-1",
 									"aria-label": r("shipping.itemCost.setName")
 								}),
-								D ? /* @__PURE__ */ y(Du, {
+								/* @__PURE__ */ y(Du, {
 									value: a.rule_qty_modes.sets[e.id] ?? "inherit",
 									onChange: (t) => E("sets", e.id, t)
-								}) : null,
+								}),
 								/* @__PURE__ */ y(vu, {
 									inputMode: "numeric",
 									value: e.cost,
@@ -7508,9 +7508,9 @@ function ku() {
 					className: "grid gap-2",
 					children: Object.entries(a.category_costs).map(([e, t]) => /* @__PURE__ */ y(Ou, {
 						id: `ic-cat-cost-${e}`,
-						label: O("categories", e),
+						label: D("categories", e),
 						value: t,
-						showQtyMode: D,
+						showQtyMode: !0,
 						qtyMode: a.rule_qty_modes.categories[e] ?? "inherit",
 						onQtyModeChange: (t) => E("categories", e, t),
 						onChange: (t) => T("category_costs", {
@@ -7553,9 +7553,9 @@ function ku() {
 					className: "grid gap-2",
 					children: Object.entries(a.brand_costs).map(([e, t]) => /* @__PURE__ */ y(Ou, {
 						id: `ic-brand-cost-${e}`,
-						label: O("brands", e),
+						label: D("brands", e),
 						value: t,
-						showQtyMode: D,
+						showQtyMode: !0,
 						qtyMode: a.rule_qty_modes.brands[e] ?? "inherit",
 						onQtyModeChange: (t) => E("brands", e, t),
 						onChange: (t) => T("brand_costs", {
@@ -7651,7 +7651,7 @@ function ku() {
 				className: "flex flex-wrap items-center justify-between gap-3",
 				children: [/* @__PURE__ */ y("p", {
 					className: "text-muted-foreground text-xs",
-					children: r("shipping.itemCost.rulesCount", { count: k })
+					children: r("shipping.itemCost.rulesCount", { count: O })
 				}), /* @__PURE__ */ y(W, {
 					type: "button",
 					disabled: _.isPending,

@@ -11,6 +11,18 @@ describe('moduleRoute', () => {
     expect(isSafeModuleRoutePath('settings/shop/basalam')).toBe(true)
   })
 
+  it('accepts camelCase route params (previously dropped silently)', () => {
+    // Regression: a lowercase-only whitelist rejected these, so coffee origins
+    // and SMS ad detail pages never rendered.
+    expect(isSafeModuleRoutePath('shop/coffee-origins/:originId')).toBe(true)
+    expect(isSafeModuleRoutePath('marketing/sms/ads/:adId')).toBe(true)
+    expect(isSafeModuleRoutePath('security/scan/:jobId')).toBe(true)
+  })
+
+  it('still rejects uppercase-leading public paths', () => {
+    expect(isSafeModuleRoutePath('Shop/coffee-origins')).toBe(false)
+  })
+
   it('normalizes leading slashes', () => {
     expect(normalizeModuleRoutePath('/shop/wfcp/quick-add')).toBe('shop/wfcp/quick-add')
     expect(isSafeModuleRoutePath('/shop/wfcp/quick-add')).toBe(true)
