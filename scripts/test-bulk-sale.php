@@ -106,6 +106,8 @@ class WC_Product {
 	public function set_sale_price( $v ) { $this->sale = $v; }
 	public function get_price( $context = '' ) { return $this->sale !== '' ? $this->sale : $this->regular; }
 	public function get_children() { return $this->children; }
+	public function get_parent_id() { return (int) $this->parent_id; }
+	public $parent_id = 0;
 	public function set_date_on_sale_from( $d ) { $this->dates['from'] = $d; }
 	public function set_date_on_sale_to( $d ) { $this->dates['to'] = $d; }
 	public function save() { ++$this->saves; }
@@ -272,6 +274,41 @@ wd_seed_catalog( 120 );
 Webino_Dashboard_Bulk_Sale::rest( new WD_Test_Request( array( 'action' => 'apply', 'scope' => 'all', 'percent' => 5, 'days' => 1 ) ) );
 $second = Webino_Dashboard_Bulk_Sale::rest( new WD_Test_Request( array( 'action' => 'apply', 'scope' => 'all', 'percent' => 7, 'days' => 1 ) ) );
 wd_assert( is_wp_error( $second ) && 'job_running' === $second->get_error_code(), 'a concurrent job is rejected with 409' );
+
+// 8) the discount % must be measured against the price the shopper actually sees.
+//    A variation without its own purchase price inherits the parent's WFCP retail — that was the
+//    base for the "regular" display, so a 10% campaign used to read as 14%/21%.
+$GLOBALS['wd_products'] = array();
+$parent                 = new WC_Product( 200, 'variable' );
+$vA                     = new WC_Product( 201, 'variation', '400000' );
+$vB                     = new WC_Product( 202, 'variation', '600000' );
+$vA->parent_id          = 200;
+$vB->parent_id          = 200;
+$parent->children       = array( 201, 202 );
+$GLOBALS['wd_products'] = array( 200 => $parent, 201 => $vA, 202 => $vB );
+
+// Only the parent knows the purchase price -> both children inherit the same retail.
+$GLOBALS['wd_meta'][200]['_wfcp_purchase_price'] = 100;
+WFCP_Calculator::$retail[200]                     = 500000;
+WFCP_Calculator::$retail[201]                     = 500000;
+WFCP_Calculator::$retail[202]                     = 500000;
+unset( $GLOBALS['wd_meta'][201], $GLOBALS['wd_meta'][202], $GLOBALS['wd_meta'][202] );
+// The previous scenario left a job/lock behind; clear it so this run can start.
+delete_option( Webino_Dashboard_Bulk_Sale::JOB_OPTION );
+delete_transient( Webino_Dashboard_Bulk_Sale::JOB_LOCK );
+$res = Webino_Dashboard_Bulk_Sale::rest( new WD_Test_Request( array( 'action' => 'apply', 'percent' => 10, 'days' => 2, 'product_ids' => array( 200 ) ) ) );
+if ( is_wp_error( $res ) ) {
+	wd_assert( false, 'the variation-base scenario could start a job: ' . $res->get_error_code() );
+} else {
+	wd_drain_job( (string) $res->data['run_id'] );
+}
+$discA = 100 - ( (float) $vA->sale / 500000 ) * 100;
+$discB = 100 - ( (float) $vB->sale / 500000 ) * 100;
+wd_assert( '450000' === $vA->sale, 'variation sale uses the inherited parent retail, not its own regular' );
+wd_assert( '450000' === $vB->sale, 'every variation of a parent-priced product lands on the same sale' );
+wd_assert( abs( $discA - 10 ) < 0.2 && abs( $discB - 10 ) < 0.2, 'the shown discount is the requested 10%, not 14%/21%' );
+// The stored regular must equal the base, or WooCommerce drops a sale that sits above it.
+wd_assert( '500000' === (string) $vA->regular && '500000' === (string) $vB->regular, 'the stored regular is aligned with the discount base' );
 
 if ( $GLOBALS['wd_fail'] > 0 ) {
 	exit( 1 );

@@ -1418,7 +1418,8 @@ final class Webino_Dashboard_REST_WFCP {
 		$active  = null;
 		if ( is_array( $params ) && ! empty( $params['run_id'] ) && is_array( $state ) ) {
 			$total     = max( 1, (int) ( $state['total'] ?? 1 ) );
-			$processed = (int) ( $state['processed'] ?? 0 );
+			// Clamp: a stale state option could otherwise report 165% progress ("413/252").
+			$processed = max( 0, min( (int) ( $state['processed'] ?? 0 ), $total ) );
 			$active    = array(
 				'run_id'       => (string) $params['run_id'],
 				'status'       => $locked ? 'running' : 'queued',

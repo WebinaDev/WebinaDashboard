@@ -102,6 +102,9 @@ export type Product = {
   price?: string
   regular?: string
   sale?: string
+  /** ISO8601 sale schedule; null/absent means no schedule. */
+  date_on_sale_from?: string | null
+  date_on_sale_to?: string | null
   description?: string
   short_description?: string
   manage_stock?: boolean
@@ -148,6 +151,9 @@ export type ProductVariation = {
   sku: string
   regular_price: string
   sale_price: string
+  /** ISO8601 sale schedule; null/absent means no schedule. */
+  date_on_sale_from?: string | null
+  date_on_sale_to?: string | null
   price: string
   manage_stock: boolean
   stock_quantity: number | null

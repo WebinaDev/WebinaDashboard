@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { MoneyDisplay } from '@/components/currency/MoneyDisplay'
+import { JalaliDateTimeInput } from '@/components/JalaliDateTimeInput'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -38,6 +39,8 @@ type ProductPricingPanelProps = {
   wfcpPrices?: WfcpPrices
   regular: string
   sale: string
+  saleFrom?: string
+  saleTo?: string
   savingWfcp?: boolean
   platformLocks?: Record<string, boolean>
   platformPrices?: Record<string, string>
@@ -52,6 +55,8 @@ type ProductPricingPanelProps = {
   onLockPriceChange: (v: boolean) => void
   onRegularChange: (v: string) => void
   onSaleChange: (v: string) => void
+  onSaleFromChange?: (v: string) => void
+  onSaleToChange?: (v: string) => void
   onPurchaseBlur?: () => void
   onPlatformLockChange?: (slug: string, locked: boolean) => void
   onPlatformPriceChange?: (slug: string, price: string) => void
@@ -69,6 +74,8 @@ export function ProductPricingPanel({
   wfcpPrices,
   regular,
   sale,
+  saleFrom = '',
+  saleTo = '',
   savingWfcp,
   platformLocks = {},
   platformPrices = {},
@@ -83,6 +90,8 @@ export function ProductPricingPanel({
   onLockPriceChange,
   onRegularChange,
   onSaleChange,
+  onSaleFromChange,
+  onSaleToChange,
   onPurchaseBlur,
   onPlatformLockChange,
   onPlatformPriceChange,
@@ -131,6 +140,14 @@ export function ProductPricingPanel({
               />
             </div>
           </div>
+          {onSaleFromChange && onSaleToChange ? (
+            <SaleScheduleFields
+              saleFrom={saleFrom}
+              saleTo={saleTo}
+              onSaleFromChange={onSaleFromChange}
+              onSaleToChange={onSaleToChange}
+            />
+          ) : null}
           <p className="text-muted-foreground text-xs">{t('products.editor.singlePriceHint')}</p>
         </CardContent>
       </Card>
@@ -292,8 +309,64 @@ export function ProductPricingPanel({
             />
           </div>
         </div>
+        {onSaleFromChange && onSaleToChange ? (
+          <SaleScheduleFields
+            saleFrom={saleFrom}
+            saleTo={saleTo}
+            onSaleFromChange={onSaleFromChange}
+            onSaleToChange={onSaleToChange}
+            disabled={lockPrice}
+          />
+        ) : null}
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Jalali sale range for the product (and, from the variations panel, each variation).
+ * Values are the project's internal 'YYYY-MM-DDTHH:mm' local format.
+ */
+export function SaleScheduleFields({
+  saleFrom,
+  saleTo,
+  onSaleFromChange,
+  onSaleToChange,
+  disabled = false,
+  idPrefix = 'product',
+}: {
+  saleFrom: string
+  saleTo: string
+  onSaleFromChange: (v: string) => void
+  onSaleToChange: (v: string) => void
+  disabled?: boolean
+  idPrefix?: string
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="space-y-1.5 border-t border-border pt-3">
+      <p className="text-sm font-medium">{t('products.editor.saleSchedule')}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor={`${idPrefix}-sale-from`}>{t('products.editor.saleFrom')}</Label>
+          <JalaliDateTimeInput
+            id={`${idPrefix}-sale-from`}
+            value={saleFrom}
+            onChange={(next) => !disabled && onSaleFromChange(next)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`${idPrefix}-sale-to`}>{t('products.editor.saleTo')}</Label>
+          <JalaliDateTimeInput
+            id={`${idPrefix}-sale-to`}
+            value={saleTo}
+            onChange={(next) => !disabled && onSaleToChange(next)}
+          />
+        </div>
+      </div>
+      <p className="text-muted-foreground text-xs">{t('products.editor.saleScheduleHint')}</p>
+    </div>
   )
 }
 

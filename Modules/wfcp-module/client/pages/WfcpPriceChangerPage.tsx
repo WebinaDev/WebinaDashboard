@@ -101,6 +101,9 @@ const FAILURE_REASON_KEYS: Record<string, string> = {
   exception: 'wfcp.bpcReason.exception',
   empty_price: 'wfcp.bpcReason.emptyPrice',
   unsupported_type: 'wfcp.bpcReason.unsupportedType',
+  sale_price_not_included: 'wfcp.bpcReason.saleNotIncluded',
+  all_variations_skipped: 'wfcp.bpcReason.allVariationsSkipped',
+  no_variations: 'wfcp.bpcReason.noVariations',
 }
 
 /** Translate a machine reason code; unknown codes are shown verbatim (detail, not a label). */
@@ -119,7 +122,9 @@ export default function WfcpPriceChangerPage() {
   const qc = useQueryClient()
   const [type, setType] = useState<'fixed' | 'percent'>('fixed')
   const [value, setValue] = useState('0')
-  const [applySale, setApplySale] = useState(false)
+  // On by default: bumping only the regular price of an on-sale product leaves the payable price
+  // untouched, which looked like "the bulk bump did nothing".
+  const [applySale, setApplySale] = useState(true)
   const [cats, setCats] = useState('')
   const [rules, setRules] = useState('')
   const [rulesCombine, setRulesCombine] = useState(false)
@@ -212,6 +217,7 @@ export default function WfcpPriceChangerPage() {
               {t('wfcp.bpcApplySale')}
             </Label>
           </div>
+          <p className="-mt-1 text-xs text-muted-foreground">{t('wfcp.bpcApplySaleHint')}</p>
           <div className="space-y-2">
             <Label>{t('wfcp.bpcCategories')}</Label>
             <Input value={cats} onChange={(e) => setCats(e.target.value)} disabled={locked || hasJob} />

@@ -672,14 +672,16 @@ final class Webino_Dashboard_Bulk_Sale {
 		if ( ! $product instanceof WC_Product ) {
 			return 0.0;
 		}
-		$regular = (float) $product->get_regular_price( 'edit' );
+		// The struck-out price the shopper sees. When WFCP drives the price it is the computed
+		// retail (with the parent's purchase price as fallback for variations) — discounting from
+		// anything else made a 10% campaign read as 14% or 21%.
 		if ( self::wfcp_manages_price( $product ) ) {
 			$retail = self::wfcp_retail_price( $product );
 			if ( $retail > 0 ) {
 				return $retail;
 			}
 		}
-		return $regular;
+		return (float) $product->get_regular_price( 'edit' );
 	}
 
 	/**
@@ -700,7 +702,17 @@ final class Webino_Dashboard_Bulk_Sale {
 			return false;
 		}
 		$purchase = get_post_meta( $pid, '_wfcp_purchase_price', true );
-		return is_numeric( $purchase ) && (float) $purchase > 0;
+		if ( is_numeric( $purchase ) && (float) $purchase > 0 ) {
+			return true;
+		}
+		if ( method_exists( $product, 'get_parent_id' ) ) {
+			$parent_id = (int) $product->get_parent_id();
+			if ( $parent_id > 0 ) {
+				$parent_purchase = get_post_meta( $parent_id, '_wfcp_purchase_price', true );
+				return is_numeric( $parent_purchase ) && (float) $parent_purchase > 0;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -717,7 +729,16 @@ final class Webino_Dashboard_Bulk_Sale {
 	 * @return float
 	 */
 	private static function wfcp_retail_price( $product ) {
-		$purchase = (float) get_post_meta( (int) $product->get_id(), '_wfcp_purchase_price', true );
+		$id       = (int) $product->get_id();
+		$purchase = (float) get_post_meta( $id, '_wfcp_purchase_price', true );
+		if ( $purchase <= 0 && method_exists( $product, 'get_parent_id' ) ) {
+			// A variation without its own purchase price inherits the parent's, which is exactly what
+			// the storefront price filter does — so it is also the price shown as "regular".
+			$parent_id = (int) $product->get_parent_id();
+			if ( $parent_id > 0 ) {
+				$purchase = (float) get_post_meta( $parent_id, '_wfcp_purchase_price', true );
+			}
+		}
 		if ( $purchase <= 0 || ! class_exists( 'WFCP_Calculator' ) ) {
 			return 0.0;
 		}
@@ -725,7 +746,7 @@ final class Webino_Dashboard_Bulk_Sale {
 			return 0.0;
 		}
 		try {
-			$retail = (float) WFCP_Calculator::calculate_price( $purchase, 'retail', (int) $product->get_id() );
+			$retail = (float) WFCP_Calculator::calculate_price( $purchase, 'retail', $id );
 		} catch ( Throwable $e ) {
 			return 0.0;
 		}
@@ -838,6 +859,13 @@ final class Webino_Dashboard_Bulk_Sale {
 		$sale = self::calc_sale( $base, $percent );
 		if ( '' === $sale || (float) $sale <= 0 ) {
 			return 'skipped';
+		}
+		// The regular price must be the same number the discount was measured against, otherwise
+		// WooCommerce discards a sale that is above the stored regular and the shopper keeps seeing
+		// the bare price (this is how a 10% campaign ended up rendering as 14%/21%).
+		$stored_regular = (float) $product->get_regular_price( 'edit' );
+		if ( self::wfcp_manages_price( $product ) && 0.0 !== $base && $base !== $stored_regular ) {
+			$product->set_regular_price( function_exists( 'wc_format_decimal' ) ? wc_format_decimal( $base ) : (string) $base );
 		}
 		$product->set_sale_price( $sale );
 		if ( $from && $to && method_exists( $product, 'set_date_on_sale_from' ) ) {

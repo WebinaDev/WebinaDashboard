@@ -240,6 +240,28 @@ wd_assert( null === $readable->invoke( null, $parent, $complete ), 'complete var
 $stock_ref = $ref->getMethod( 'repair_variable_children_stock_status' );
 wd_assert( $stock_ref->isPublic(), 'stock repair stays callable from module code' );
 
+// 8) WRITE PATH: a custom axis of the parent must be stored under its own key, never as pa_*.
+//    Writing pa_* for a parent that lists a custom axis is what made every variation of a product
+//    vanish from the storefront (the child no longer matched any parent axis).
+$write_ref = $ref->getMethod( 'variation_write_storage_key' );
+
+$custom_key = $write_ref->invoke( null, $parent, 'اندازه', 'M' );
+wd_assert( 'اندازه' === $custom_key, 'a custom parent axis is written under its own key' );
+wd_assert( 0 !== strpos( (string) $custom_key, 'pa_' ), 'a custom parent axis is never written as pa_*' );
+
+$taxonomy_key = $write_ref->invoke( null, $parent, 'pa_color', 'red' );
+wd_assert( 'pa_color' === $taxonomy_key, 'a taxonomy parent axis is written as pa_*' );
+
+$storage_ref = $ref->getMethod( 'build_variation_storage_attributes' );
+
+$writable = $storage_ref->invoke( null, $parent, array( 'pa_color' => 'red', 'اندازه' => 'M' ), true );
+wd_assert( 'red' === ( $writable['pa_color'] ?? null ), 'the taxonomy axis keeps its slug on write' );
+wd_assert( 'M' === ( $writable['اندازه'] ?? null ), 'the custom axis keeps its raw value on write' );
+wd_assert( ! isset( $writable['pa_اندازه'] ), 'no phantom pa_ key is produced for a custom axis' );
+
+// A repair pass must be able to re-link a variation that was stored under the wrong key.
+wd_assert( method_exists( 'Webino_Dashboard_Rest_Crud', 'repair_variable_variation_links' ), 'variation link repair is available' );
+
 if ( $GLOBALS['wd_fail'] > 0 ) {
 	exit( 1 );
 }

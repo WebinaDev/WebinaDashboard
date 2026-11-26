@@ -3443,6 +3443,7 @@
   "wfcp.bpcType": "نوع تغییر",
   "wfcp.bpcValue": "مقدار",
   "wfcp.bpcApplySale": "اعمال روی قیمت فروش ویژه",
+  "wfcp.bpcApplySaleHint": "اعمال روی قیمت فروش ویژه (اگر محصولی قیمت فروش ویژه دارد، بدون این گزینه قیمت نهایی تغییر نمی‌کند)",
   "wfcp.bpcCategories": "اسلاگ دسته‌ها (با ویرگول)",
   "wfcp.bpcCategoriesHint": "خالی = همهٔ محصولات.",
   "wfcp.bpcRangeRules": "قوانین بازه (اختیاری)",
@@ -6471,6 +6472,10 @@
   "coupons.builder.errPercent": "درصد نمی‌تواند بیشتر از ۱۰۰ باشد.",
   "products.fieldPrice": "قیمت",
   "products.editor.singlePriceHint": "ماژول قیمت‌گذاری خاموش است؛ همین قیمت مستقیماً قیمت ووکامرس، سبد خرید، کوپن‌ها و بازارگاه‌ها می‌شود.",
+  "products.editor.saleSchedule": "زمان‌بندی فروش ویژه",
+  "products.editor.saleFrom": "شروع فروش ویژه",
+  "products.editor.saleTo": "پایان فروش ویژه",
+  "products.editor.saleScheduleHint": "اگر تاریخ‌ها خالی باشند، قیمت فروش ویژه همیشه فعال است. تاریخ‌ها به وقت محلی ذخیره می‌شوند.",
   "nav.module.gateway-discounts": "تخفیف‌های درگاه",
   "gatewayDiscounts.title": "تخفیف‌های درگاه پرداخت",
   "gatewayDiscounts.description": "کدهای تخفیفی که خودِ درگاه (مثلاً ترب‌پی) به مشتری می‌دهد. این کدها در سبد خرید و تسویه‌حساب نمایش داده می‌شوند و مشتری آن‌ها را داخل درگاه وارد می‌کند؛ تخفیف در درگاه کم می‌شود، نه روی سایت.",
@@ -6689,5 +6694,8 @@
   "wfcp.bpcReason.exception": "خطای غیرمنتظره هنگام ذخیرهٔ قیمت.",
   "wfcp.bpcReason.emptyPrice": "قیمت پایه خالی بود؛ چیزی برای تغییر وجود ندارد.",
   "wfcp.bpcReason.unsupportedType": "نوع محصول ({{type}}) برای تغییر قیمت پشتیبانی نمی‌شود.",
+  "wfcp.bpcReason.saleNotIncluded": "این محصول قیمت فروش ویژه دارد و گزینهٔ «اعمال روی قیمت فروش ویژه» خاموش بود؛ قیمت نهایی تغییر نکرد.",
+  "wfcp.bpcReason.allVariationsSkipped": "همهٔ متغیرهای این محصول رد شدند (قیمت قفل‌شده یا بدون قیمت) و قیمتی تغییر نکرد.",
+  "wfcp.bpcReason.noVariations": "این محصول متغیر هیچ متغیری ندارد؛ چیزی برای تغییر نبود.",
   "wfcp.bpcFailuresCount": "{{count}} محصول ناموفق"
 }
