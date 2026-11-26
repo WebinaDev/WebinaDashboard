@@ -6047,7 +6047,7 @@ class Webino_Dashboard_REST_Crud {
 				if ( '' === $raw ) {
 					break;
 				}
-				$combo[ $axis_name ] = $raw;
+				$combo[ $axis_name ] = self::snap_value_to_parent_option( $parent, $axis_name, $raw, true );
 			}
 			if ( count( $combo ) !== count( $axis_names ) ) {
 				++$report['skipped'];
@@ -6725,6 +6725,77 @@ class Webino_Dashboard_REST_Crud {
 		}
 		// Custom axis: the parent stores it as `attribute_<sanitized name>` with a raw value.
 		return self::variation_storage_meta_key( $name ) !== '' ? $name : '';
+	}
+
+	/**
+	 * Snap a value to one of the options the parent declares for that axis.
+	 *
+	 * A child saved by the old write path holds a *term slug* (`blue`) while a custom axis holds the
+	 * declared *option* (`آبی`); storing the slug back on a custom axis leaves the variation
+	 * unmatchable, so the repair pass resolves it through the term when possible.
+	 *
+	 * @param WC_Product $parent   Variable parent.
+	 * @param string     $axis_key Resolved parent axis key.
+	 * @param string     $value    Stored value.
+	 * @param bool       $allow_write May create/lookup taxonomy terms.
+	 * @return string Declared option, or the input when nothing matches.
+	 */
+	private static function snap_value_to_parent_option( $parent, $axis_key, $value, $allow_write = false ) {
+		$value = (string) $value;
+		if ( '' === $value || ! is_object( $parent ) || ! method_exists( $parent, 'get_attributes' ) ) {
+			return $value;
+		}
+		$options  = array();
+		$taxonomy = '';
+		foreach ( $parent->get_attributes() as $attr ) {
+			if ( ! is_a( $attr, 'WC_Product_Attribute' ) || ! $attr->get_variation() ) {
+				continue;
+			}
+			$name  = (string) $attr->get_name();
+			$label = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $name, $parent ) : $name;
+			$label = is_string( $label ) ? $label : $name;
+			if ( $name !== $axis_key && $label !== $axis_key && rawurldecode( $name ) !== $axis_key && rawurldecode( $label ) !== $axis_key ) {
+				continue;
+			}
+			$options = $attr->get_options();
+			if ( $attr->is_taxonomy() ) {
+				$taxonomy = $name;
+			}
+			break;
+		}
+		if ( array() === $options ) {
+			return $value;
+		}
+
+		foreach ( $options as $option ) {
+			$option = (string) $option;
+			if ( 0 === strcasecmp( $option, $value ) ) {
+				return $option;
+			}
+		}
+		// The stored value may be a slug/term id rather than the option name. For a custom axis the
+		// slug can come from the phantom `pa_*` taxonomy the old write path created for it.
+		if ( '' === $taxonomy ) {
+			$phantom = 'pa_' . sanitize_title( $axis_key );
+			if ( taxonomy_exists( $phantom ) ) {
+				$taxonomy = $phantom;
+			}
+		}
+		if ( '' !== $taxonomy && taxonomy_exists( $taxonomy ) ) {
+			$term = get_term_by( 'slug', sanitize_title( $value ), $taxonomy );
+			if ( ! $term && ctype_digit( $value ) ) {
+				$term = get_term_by( 'id', (int) $value, $taxonomy );
+			}
+			if ( $term && ! is_wp_error( $term ) ) {
+				foreach ( $options as $option ) {
+					$option = (string) $option;
+					if ( $option === $term->slug || $option === $term->name || 0 === strcasecmp( $option, $term->name ) ) {
+						return $option;
+					}
+				}
+			}
+		}
+		return $value;
 	}
 
 	/**

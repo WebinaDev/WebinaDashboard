@@ -183,6 +183,9 @@ echo "== variation attribute safety ==\n";
 
 $GLOBALS['wd_terms']['pa_color']['red']  = array( 'term_id' => 1, 'name' => 'قرمز', 'slug' => 'red' );
 $GLOBALS['wd_terms']['pa_color']['blue'] = array( 'term_id' => 2, 'name' => 'آبی', 'slug' => 'blue' );
+// The phantom taxonomy the old write path created for the custom axis 'اندازه'.
+$GLOBALS['wd_taxonomies']['pa_اندازه']  = true;
+$GLOBALS['wd_terms']['pa_اندازه']['blue'] = array( 'term_id' => 9, 'name' => 'آبی', 'slug' => 'blue' );
 
 $color = new WC_Product_Attribute();
 $color->set_id( 3 );
@@ -192,7 +195,7 @@ $color->set_variation( true );
 
 $size = new WC_Product_Attribute();
 $size->set_name( 'اندازه' );
-$size->set_options( array( 'S', 'M' ) );
+$size->set_options( array( 'S', 'M', 'آبی' ) );
 $size->set_variation( true );
 
 $parent                  = new WD_Test_Parent( array( 'pa_color' => $color, 'اندازه' => $size ) );
@@ -261,6 +264,14 @@ wd_assert( ! isset( $writable['pa_اندازه'] ), 'no phantom pa_ key is produ
 
 // A repair pass must be able to re-link a variation that was stored under the wrong key.
 wd_assert( method_exists( 'Webino_Dashboard_Rest_Crud', 'repair_variable_variation_links' ), 'variation link repair is available' );
+
+// 9) repairing a child that was stored under pa_* must snap the term slug back to the option the
+//    custom parent axis actually declares ('blue' -> 'آبی'), or the child stays unmatchable.
+$snap = $ref->getMethod( 'snap_value_to_parent_option' );
+wd_assert( 'red' === $snap->invoke( null, $parent, 'pa_color', 'red' ), 'a taxonomy axis keeps its own slug' );
+wd_assert( 'آبی' === $snap->invoke( null, $parent, 'اندازه', 'blue' ), 'a slug from the old write path snaps back to the declared option' );
+wd_assert( 'M' === $snap->invoke( null, $parent, 'اندازه', 'M' ), 'a valid custom option is returned unchanged' );
+wd_assert( 'نامعلوم' === $snap->invoke( null, $parent, 'اندازه', 'نامعلوم' ), 'an unknown value is left untouched rather than guessed' );
 
 if ( $GLOBALS['wd_fail'] > 0 ) {
 	exit( 1 );
