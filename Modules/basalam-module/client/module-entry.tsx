@@ -8,6 +8,11 @@ import BasalamSyncSettingsPage from './pages/basalam/BasalamSyncSettingsPage'
 import BasalamFinancePage from './pages/basalam/BasalamFinancePage'
 import BasalamLogsPage from './pages/basalam/BasalamLogsPage'
 import BasalamBoothPage from './pages/basalam/BasalamBoothPage'
+import BasalamHelpPage from './pages/basalam/BasalamHelpPage'
+import BasalamOnboardingPage from './pages/basalam/BasalamOnboardingPage'
+import BasalamInfoPage from './pages/basalam/BasalamInfoPage'
+import BasalamTicketsPage from './pages/basalam/BasalamTicketsPage'
+import { BasalamChatDock } from './components/BasalamChatDock'
 
 export const routes: Record<string, ComponentType> = {
   'settings/shop/basalam': BasalamHomePage,
@@ -17,7 +22,10 @@ export const routes: Record<string, ComponentType> = {
   'settings/shop/basalam/settings': BasalamSyncSettingsPage,
   'settings/shop/basalam/finance': BasalamFinancePage,
   'settings/shop/basalam/booth': BasalamBoothPage,
-  'settings/shop/basalam/tickets': BasalamHomePage,
+  'settings/shop/basalam/tickets': BasalamTicketsPage,
+  'settings/shop/basalam/help': BasalamHelpPage,
+  'settings/shop/basalam/info': BasalamInfoPage,
+  'settings/shop/basalam/onboarding': BasalamOnboardingPage,
   'settings/shop/basalam/logs': BasalamLogsPage,
   // Legacy aliases
   'settings/shop/basalam/payments': BasalamHomePage,
@@ -27,4 +35,12 @@ export const routes: Record<string, ComponentType> = {
   'settings/shop/basalam/operations': BasalamProductsPage,
 }
 
-export default { routes }
+/**
+ * Components the dashboard shell can mount outside a route.
+ * `BasalamChatDock` is the floating buyer-chat launcher (it replaced the wp-admin chat widget).
+ */
+export const components = {
+  BasalamChatDock,
+}
+
+export default { routes, components }

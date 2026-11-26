@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { BasalamNav } from '../../components/BasalamNav'
+import { openBasalamChat } from '../../components/basalamChatBus'
 import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,7 +45,6 @@ export default function BasalamBoothPage() {
   const [profileTitle, setProfileTitle] = useState('')
   const [discountProductId, setDiscountProductId] = useState('')
   const [discountPercent, setDiscountPercent] = useState('10')
-  const [chatEnabled, setChatEnabled] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [chatNotify, setChatNotify] = useState(true)
 
@@ -91,15 +91,6 @@ export default function BasalamBoothPage() {
     queryFn: () => apiFetch<{ settings: Record<string, unknown> }>('basalam/settings'),
   })
 
-  const chatQ = useQuery({
-    queryKey: ['basalam', 'chat'],
-    queryFn: () =>
-      apiFetch<{ enabled?: boolean; token?: string | null; script_url?: string }>(
-        'basalam/chat/token',
-      ),
-    enabled: chatEnabled,
-  })
-
   useEffect(() => {
     const v = vendorQ.data?.vendor
     if (v) {
@@ -117,27 +108,6 @@ export default function BasalamBoothPage() {
     }
   }, [settingsQ.data])
 
-  useEffect(() => {
-    if (!chatEnabled) return
-    const token = chatQ.data?.token
-    const src = chatQ.data?.script_url
-    if (!token || !src) return
-    const existing = document.getElementById('basalam-chat-widget-script')
-    if (existing) return
-    const el = document.createElement('script')
-    el.id = 'basalam-chat-widget-script'
-    el.src = src
-    el.setAttribute('token', token)
-    el.async = true
-    document.body.appendChild(el)
-    void apiFetch('basalam/chat/notify', {
-      method: 'POST',
-      body: JSON.stringify({ event: 'widget_opened' }),
-    }).catch(() => undefined)
-    return () => {
-      el.remove()
-    }
-  }, [chatEnabled, chatQ.data])
 
   const saveVendor = useMutation({
     mutationFn: () =>
@@ -272,11 +242,11 @@ export default function BasalamBoothPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
-              variant={chatEnabled ? 'default' : 'secondary'}
-              onClick={() => setChatEnabled((v) => !v)}
+              variant="secondary"
+              onClick={() => openBasalamChat()}
               disabled={!connected}
             >
-              {chatEnabled ? t('basalam.chatHide') : t('basalam.chatWithBuyer')}
+              {t('basalam.chatWithBuyer')}
             </Button>
             <Button
               variant={chatNotify ? 'default' : 'outline'}

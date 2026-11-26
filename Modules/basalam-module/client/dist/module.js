@@ -8,19 +8,19 @@ import "react-dom";
 import { Fragment as y, jsx as b, jsxs as x } from "react/jsx-runtime";
 import S from "i18next";
 //#region \0rolldown/runtime.js
-var C = Object.create, w = Object.defineProperty, T = Object.getOwnPropertyDescriptor, E = Object.getOwnPropertyNames, D = Object.getPrototypeOf, O = Object.prototype.hasOwnProperty, k = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t.exports), A = (e, t, n, r) => {
+var C = Object.create, w = Object.defineProperty, T = Object.getOwnPropertyDescriptor, E = Object.getOwnPropertyNames, D = Object.getPrototypeOf, O = Object.prototype.hasOwnProperty, k = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t.exports), ee = (e, t, n, r) => {
 	if (t && typeof t == "object" || typeof t == "function") for (var i = E(t), a = 0, o = i.length, s; a < o; a++) s = i[a], !O.call(e, s) && s !== n && w(e, s, {
 		get: ((e) => t[e]).bind(null, s),
 		enumerable: !(r = T(t, s)) || r.enumerable
 	});
 	return e;
-}, j = (e, t, n) => (n = e == null ? {} : C(D(e)), A(t || !e || !e.__esModule ? w(n, "default", {
+}, A = (e, t, n) => (n = e == null ? {} : C(D(e)), ee(t || !e || !e.__esModule ? w(n, "default", {
 	value: e,
 	enumerable: !0
-}) : n, e)), M = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), N = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), ee = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), P = (e) => {
-	let t = ee(e);
+}) : n, e)), j = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), M = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), te = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), N = (e) => {
+	let t = te(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, F = {
+}, P = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -30,33 +30,42 @@ var C = Object.create, w = Object.defineProperty, T = Object.getOwnPropertyDescr
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, I = (e) => {
+}, F = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, te = i({}), ne = () => c(te), re = o(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: o, iconNode: s, ...c }, l) => {
-	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = ne() ?? {}, h = r ?? f ? Number(n ?? d) * 24 / Number(t ?? u) : n ?? d;
+}, ne = i({}), re = () => c(ne), ie = o(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: o, iconNode: s, ...c }, l) => {
+	let { size: u = 24, strokeWidth: d = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = re() ?? {}, h = r ?? f ? Number(n ?? d) * 24 / Number(t ?? u) : n ?? d;
 	return a("svg", {
 		ref: l,
-		...F,
-		width: t ?? u ?? F.width,
-		height: t ?? u ?? F.height,
+		...P,
+		width: t ?? u ?? P.width,
+		height: t ?? u ?? P.height,
 		stroke: e ?? p,
 		strokeWidth: h,
-		className: M("lucide", m, i),
-		...!o && !I(c) && { "aria-hidden": "true" },
+		className: j("lucide", m, i),
+		...!o && !F(c) && { "aria-hidden": "true" },
 		...c
 	}, [...s.map(([e, t]) => a(e, t)), ...Array.isArray(o) ? o : [o]]);
-}), L = ((e, t) => {
-	let n = o(({ className: n, ...r }, i) => a(re, {
+}), I = (e, t) => {
+	let n = o(({ className: n, ...r }, i) => a(ie, {
 		ref: i,
 		iconNode: t,
-		className: M(`lucide-${N(P(e))}`, `lucide-${e}`, n),
+		className: j(`lucide-${M(N(e))}`, `lucide-${e}`, n),
 		...r
 	}));
-	return n.displayName = P(e), n;
-})("chevron-down", [["path", {
+	return n.displayName = N(e), n;
+}, L = I("chevron-down", [["path", {
 	d: "m6 9 6 6 6-6",
 	key: "qrunsl"
+}]]), ae = I("message-circle", [["path", {
+	d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719",
+	key: "1sd12s"
+}]]), oe = I("x", [["path", {
+	d: "M18 6 6 18",
+	key: "1bl5f8"
+}], ["path", {
+	d: "m6 6 12 12",
+	key: "d8bk6v"
 }]]);
 //#endregion
 //#region node_modules/clsx/dist/clsx.mjs
@@ -69,24 +78,24 @@ function R(e) {
 	} else for (n in e) e[n] && (r && (r += " "), r += n);
 	return r;
 }
-function ie() {
+function se() {
 	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = R(e)) && (r && (r += " "), r += t);
 	return r;
 }
 //#endregion
 //#region node_modules/class-variance-authority/dist/index.mjs
-var ae = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, z = ie, oe = (e, t) => (n) => {
-	if (t?.variants == null) return z(e, n?.class, n?.className);
+var ce = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, le = se, ue = (e, t) => (n) => {
+	if (t?.variants == null) return le(e, n?.class, n?.className);
 	let { variants: r, defaultVariants: i } = t, a = Object.keys(r).map((e) => {
 		let t = n?.[e], a = i?.[e];
 		if (t === null) return null;
-		let o = ae(t) || ae(a);
+		let o = ce(t) || ce(a);
 		return r[e][o];
 	}), o = n && Object.entries(n).reduce((e, t) => {
 		let [n, r] = t;
 		return r === void 0 || (e[n] = r), e;
 	}, {});
-	return z(e, a, t?.compoundVariants?.reduce((e, t) => {
+	return le(e, a, t?.compoundVariants?.reduce((e, t) => {
 		let { class: n, className: r, ...a } = t;
 		return Object.entries(a).every((e) => {
 			let [t, n] = e;
@@ -106,33 +115,33 @@ var ae = (e) => typeof e == "boolean" ? `${e}` : e === 0 ? "0" : e, z = ie, oe =
 };
 //#endregion
 //#region node_modules/@radix-ui/react-compose-refs/dist/index.mjs
-function se(e, t) {
+function de(e, t) {
 	if (typeof e == "function") return e(t);
 	e != null && (e.current = t);
 }
-function ce(...e) {
+function fe(...e) {
 	return (t) => {
 		let n = !1, r = e.map((e) => {
-			let r = se(e, t);
+			let r = de(e, t);
 			return !n && typeof r == "function" && (n = !0), r;
 		});
 		if (n) return () => {
 			for (let t = 0; t < r.length; t++) {
 				let n = r[t];
-				typeof n == "function" ? n() : se(e[t], null);
+				typeof n == "function" ? n() : de(e[t], null);
 			}
 		};
 	};
 }
-function le(...e) {
-	return r.useCallback(ce(...e), e);
+function pe(...e) {
+	return r.useCallback(fe(...e), e);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function ue(e) {
-	let t = /* @__PURE__ */ de(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(pe);
+function me(e) {
+	let t = /* @__PURE__ */ he(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(_e);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ b(t, {
@@ -150,22 +159,22 @@ function ue(e) {
 	return n.displayName = `${e}.Slot`, n;
 }
 /* @__NO_SIDE_EFFECTS__ */
-function de(e) {
+function he(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
-			let e = he(n), a = me(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? ce(t, e) : e), r.cloneElement(n, a);
+			let e = ye(n), a = ve(i, n.props);
+			return n.type !== r.Fragment && (a.ref = t ? fe(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var fe = Symbol("radix.slottable");
-function pe(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === fe;
+var ge = Symbol("radix.slottable");
+function _e(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === ge;
 }
-function me(e, t) {
+function ve(e, t) {
 	let n = { ...t };
 	for (let r in t) {
 		let i = e[r], a = t[r];
@@ -182,13 +191,13 @@ function me(e, t) {
 		...n
 	};
 }
-function he(e) {
+function ye(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-primitive/dist/index.mjs
-var ge = [
+var be = [
 	"a",
 	"button",
 	"div",
@@ -207,7 +216,7 @@ var ge = [
 	"svg",
 	"ul"
 ].reduce((e, t) => {
-	let n = /* @__PURE__ */ ue(`Primitive.${t}`), i = r.forwardRef((e, r) => {
+	let n = /* @__PURE__ */ me(`Primitive.${t}`), i = r.forwardRef((e, r) => {
 		let { asChild: i, ...a } = e, o = i ? n : t;
 		return typeof window < "u" && (window[Symbol.for("radix-ui")] = !0), /* @__PURE__ */ b(o, {
 			...a,
@@ -221,7 +230,7 @@ var ge = [
 }, {});
 //#endregion
 //#region node_modules/@radix-ui/react-context/dist/index.mjs
-function _e(e, t = []) {
+function xe(e, t = []) {
 	let n = [];
 	function i(t, i) {
 		let a = r.createContext(i), o = n.length;
@@ -252,9 +261,9 @@ function _e(e, t = []) {
 			} }), [n, i]);
 		};
 	};
-	return a.scopeName = e, [i, ve(a, ...t)];
+	return a.scopeName = e, [i, Se(a, ...t)];
 }
-function ve(...e) {
+function Se(...e) {
 	let t = e[0];
 	if (e.length === 1) return t;
 	let n = () => {
@@ -276,16 +285,16 @@ function ve(...e) {
 	return n.scopeName = t.scopeName, n;
 }
 typeof window < "u" && window.document && window.document.createElement;
-function ye(e, t, { checkForDefaultPrevented: n = !0 } = {}) {
+function Ce(e, t, { checkForDefaultPrevented: n = !0 } = {}) {
 	return function(r) {
 		if (e?.(r), n === !1 || !r.defaultPrevented) return t?.(r);
 	};
 }
 //#endregion
 //#region node_modules/@radix-ui/react-use-layout-effect/dist/index.mjs
-var be = globalThis?.document ? r.useLayoutEffect : () => {}, xe = r.useInsertionEffect || be;
-function Se({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
-	let [a, o, s] = Ce({
+var we = globalThis?.document ? r.useLayoutEffect : () => {}, Te = r.useInsertionEffect || we;
+function Ee({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
+	let [a, o, s] = De({
 		defaultProp: t,
 		onChange: n
 	}), c = e !== void 0, l = c ? e : a;
@@ -298,7 +307,7 @@ function Se({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
 	}
 	return [l, r.useCallback((t) => {
 		if (c) {
-			let n = we(t) ? t(e) : t;
+			let n = Oe(t) ? t(e) : t;
 			n !== e && s.current?.(n);
 		} else o(t);
 	}, [
@@ -308,9 +317,9 @@ function Se({ prop: e, defaultProp: t, onChange: n = () => {}, caller: i }) {
 		s
 	])];
 }
-function Ce({ defaultProp: e, onChange: t }) {
+function De({ defaultProp: e, onChange: t }) {
 	let [n, i] = r.useState(e), a = r.useRef(n), o = r.useRef(t);
-	return xe(() => {
+	return Te(() => {
 		o.current = t;
 	}, [t]), r.useEffect(() => {
 		a.current !== n && (o.current?.(n), a.current = n);
@@ -320,21 +329,21 @@ function Ce({ defaultProp: e, onChange: t }) {
 		o
 	];
 }
-function we(e) {
+function Oe(e) {
 	return typeof e == "function";
 }
 //#endregion
 //#region node_modules/@radix-ui/react-presence/dist/index.mjs
-function Te(e, t) {
+function ke(e, t) {
 	return r.useReducer((e, n) => t[e][n] ?? e, e);
 }
-var Ee = (e) => {
-	let { present: t, children: n } = e, i = De(t), a = typeof n == "function" ? n({ present: i.isPresent }) : r.Children.only(n), o = le(i.ref, ke(a));
+var Ae = (e) => {
+	let { present: t, children: n } = e, i = je(t), a = typeof n == "function" ? n({ present: i.isPresent }) : r.Children.only(n), o = pe(i.ref, Ne(a));
 	return typeof n == "function" || i.isPresent ? r.cloneElement(a, { ref: o }) : null;
 };
-Ee.displayName = "Presence";
-function De(e) {
-	let [t, n] = r.useState(), i = r.useRef(null), a = r.useRef(e), o = r.useRef("none"), [s, c] = Te(e ? "mounted" : "unmounted", {
+Ae.displayName = "Presence";
+function je(e) {
+	let [t, n] = r.useState(), i = r.useRef(null), a = r.useRef(e), o = r.useRef("none"), [s, c] = ke(e ? "mounted" : "unmounted", {
 		mounted: {
 			UNMOUNT: "unmounted",
 			ANIMATION_OUT: "unmountSuspended"
@@ -346,18 +355,18 @@ function De(e) {
 		unmounted: { MOUNT: "mounted" }
 	});
 	return r.useEffect(() => {
-		let e = Oe(i.current);
+		let e = Me(i.current);
 		o.current = s === "mounted" ? e : "none";
-	}, [s]), be(() => {
+	}, [s]), we(() => {
 		let t = i.current, n = a.current;
 		if (n !== e) {
-			let r = o.current, i = Oe(t);
+			let r = o.current, i = Me(t);
 			e ? c("MOUNT") : i === "none" || t?.display === "none" ? c("UNMOUNT") : c(n && r !== i ? "ANIMATION_OUT" : "UNMOUNT"), a.current = e;
 		}
-	}, [e, c]), be(() => {
+	}, [e, c]), we(() => {
 		if (t) {
 			let e, n = t.ownerDocument.defaultView ?? window, r = (r) => {
-				let o = Oe(i.current).includes(CSS.escape(r.animationName));
+				let o = Me(i.current).includes(CSS.escape(r.animationName));
 				if (r.target === t && o && (c("ANIMATION_END"), !a.current)) {
 					let r = t.style.animationFillMode;
 					t.style.animationFillMode = "forwards", e = n.setTimeout(() => {
@@ -365,7 +374,7 @@ function De(e) {
 					});
 				}
 			}, s = (e) => {
-				e.target === t && (o.current = Oe(i.current));
+				e.target === t && (o.current = Me(i.current));
 			};
 			return t.addEventListener("animationstart", s), t.addEventListener("animationcancel", r), t.addEventListener("animationend", r), () => {
 				n.clearTimeout(e), t.removeEventListener("animationstart", s), t.removeEventListener("animationcancel", r), t.removeEventListener("animationend", r);
@@ -378,79 +387,79 @@ function De(e) {
 		}, [])
 	};
 }
-function Oe(e) {
+function Me(e) {
 	return e?.animationName || "none";
 }
-function ke(e) {
+function Ne(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
 //#region node_modules/@radix-ui/react-id/dist/index.mjs
-var Ae = r.useId || (() => void 0), je = 0;
-function Me(e) {
-	let [t, n] = r.useState(Ae());
-	return be(() => {
-		e || n((e) => e ?? String(je++));
+var Pe = r.useId || (() => void 0), Fe = 0;
+function Ie(e) {
+	let [t, n] = r.useState(Pe());
+	return we(() => {
+		e || n((e) => e ?? String(Fe++));
 	}, [e]), e || (t ? `radix-${t}` : "");
 }
 //#endregion
 //#region node_modules/@radix-ui/react-collapsible/dist/index.mjs
-var Ne = "Collapsible", [Pe, Fe] = _e(Ne), [Ie, Le] = Pe(Ne), Re = r.forwardRef((e, t) => {
-	let { __scopeCollapsible: n, open: i, defaultOpen: a, disabled: o, onOpenChange: s, ...c } = e, [l, u] = Se({
+var Le = "Collapsible", [Re, ze] = xe(Le), [Be, Ve] = Re(Le), He = r.forwardRef((e, t) => {
+	let { __scopeCollapsible: n, open: i, defaultOpen: a, disabled: o, onOpenChange: s, ...c } = e, [l, u] = Ee({
 		prop: i,
 		defaultProp: a ?? !1,
 		onChange: s,
-		caller: Ne
+		caller: Le
 	});
-	return /* @__PURE__ */ b(Ie, {
+	return /* @__PURE__ */ b(Be, {
 		scope: n,
 		disabled: o,
-		contentId: Me(),
+		contentId: Ie(),
 		open: l,
 		onOpenToggle: r.useCallback(() => u((e) => !e), [u]),
-		children: /* @__PURE__ */ b(ge.div, {
-			"data-state": We(l),
+		children: /* @__PURE__ */ b(be.div, {
+			"data-state": Je(l),
 			"data-disabled": o ? "" : void 0,
 			...c,
 			ref: t
 		})
 	});
 });
-Re.displayName = Ne;
-var ze = "CollapsibleTrigger", Be = r.forwardRef((e, t) => {
-	let { __scopeCollapsible: n, ...r } = e, i = Le(ze, n);
-	return /* @__PURE__ */ b(ge.button, {
+He.displayName = Le;
+var Ue = "CollapsibleTrigger", We = r.forwardRef((e, t) => {
+	let { __scopeCollapsible: n, ...r } = e, i = Ve(Ue, n);
+	return /* @__PURE__ */ b(be.button, {
 		type: "button",
 		"aria-controls": i.contentId,
 		"aria-expanded": i.open || !1,
-		"data-state": We(i.open),
+		"data-state": Je(i.open),
 		"data-disabled": i.disabled ? "" : void 0,
 		disabled: i.disabled,
 		...r,
 		ref: t,
-		onClick: ye(e.onClick, i.onOpenToggle)
+		onClick: Ce(e.onClick, i.onOpenToggle)
 	});
 });
-Be.displayName = ze;
-var Ve = "CollapsibleContent", He = r.forwardRef((e, t) => {
-	let { forceMount: n, ...r } = e, i = Le(Ve, e.__scopeCollapsible);
-	return /* @__PURE__ */ b(Ee, {
+We.displayName = Ue;
+var Ge = "CollapsibleContent", Ke = r.forwardRef((e, t) => {
+	let { forceMount: n, ...r } = e, i = Ve(Ge, e.__scopeCollapsible);
+	return /* @__PURE__ */ b(Ae, {
 		present: n || i.open,
-		children: ({ present: e }) => /* @__PURE__ */ b(Ue, {
+		children: ({ present: e }) => /* @__PURE__ */ b(qe, {
 			...r,
 			ref: t,
 			present: e
 		})
 	});
 });
-He.displayName = Ve;
-var Ue = r.forwardRef((e, t) => {
-	let { __scopeCollapsible: n, present: i, children: a, ...o } = e, s = Le(Ve, n), [c, l] = r.useState(i), u = r.useRef(null), d = le(t, u), f = r.useRef(0), p = f.current, m = r.useRef(0), h = m.current, g = s.open || c, _ = r.useRef(g), v = r.useRef(void 0);
+Ke.displayName = Ge;
+var qe = r.forwardRef((e, t) => {
+	let { __scopeCollapsible: n, present: i, children: a, ...o } = e, s = Ve(Ge, n), [c, l] = r.useState(i), u = r.useRef(null), d = pe(t, u), f = r.useRef(0), p = f.current, m = r.useRef(0), h = m.current, g = s.open || c, _ = r.useRef(g), v = r.useRef(void 0);
 	return r.useEffect(() => {
 		let e = requestAnimationFrame(() => _.current = !1);
 		return () => cancelAnimationFrame(e);
-	}, []), be(() => {
+	}, []), we(() => {
 		let e = u.current;
 		if (e) {
 			v.current = v.current || {
@@ -460,8 +469,8 @@ var Ue = r.forwardRef((e, t) => {
 			let t = e.getBoundingClientRect();
 			f.current = t.height, m.current = t.width, _.current || (e.style.transitionDuration = v.current.transitionDuration, e.style.animationName = v.current.animationName), l(i);
 		}
-	}, [s.open, i]), /* @__PURE__ */ b(ge.div, {
-		"data-state": We(s.open),
+	}, [s.open, i]), /* @__PURE__ */ b(be.div, {
+		"data-state": Je(s.open),
 		"data-disabled": s.disabled ? "" : void 0,
 		id: s.contentId,
 		hidden: !g,
@@ -475,16 +484,16 @@ var Ue = r.forwardRef((e, t) => {
 		children: g && a
 	});
 });
-function We(e) {
+function Je(e) {
 	return e ? "open" : "closed";
 }
-var Ge = Re;
+var Ye = He;
 //#endregion
 //#region node_modules/radix-ui/node_modules/@radix-ui/react-slot/dist/index.mjs
 /* @__NO_SIDE_EFFECTS__ */
-function Ke(e) {
-	let t = /* @__PURE__ */ Je(e), n = r.forwardRef((e, n) => {
-		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(Xe);
+function Xe(e) {
+	let t = /* @__PURE__ */ Qe(e), n = r.forwardRef((e, n) => {
+		let { children: i, ...a } = e, o = r.Children.toArray(i), s = o.find(et);
 		if (s) {
 			let e = s.props.children, i = o.map((t) => t === s ? r.Children.count(e) > 1 ? r.Children.only(null) : r.isValidElement(e) ? e.props.children : null : t);
 			return /* @__PURE__ */ b(t, {
@@ -501,24 +510,24 @@ function Ke(e) {
 	});
 	return n.displayName = `${e}.Slot`, n;
 }
-var qe = /* @__PURE__ */ Ke("Slot");
+var Ze = /* @__PURE__ */ Xe("Slot");
 /* @__NO_SIDE_EFFECTS__ */
-function Je(e) {
+function Qe(e) {
 	let t = r.forwardRef((e, t) => {
 		let { children: n, ...i } = e;
 		if (r.isValidElement(n)) {
-			let e = Qe(n), a = Ze(i, n.props);
-			return n.type !== r.Fragment && (a.ref = t ? ce(t, e) : e), r.cloneElement(n, a);
+			let e = nt(n), a = tt(i, n.props);
+			return n.type !== r.Fragment && (a.ref = t ? fe(t, e) : e), r.cloneElement(n, a);
 		}
 		return r.Children.count(n) > 1 ? r.Children.only(null) : null;
 	});
 	return t.displayName = `${e}.SlotClone`, t;
 }
-var Ye = Symbol("radix.slottable");
-function Xe(e) {
-	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === Ye;
+var $e = Symbol("radix.slottable");
+function et(e) {
+	return r.isValidElement(e) && typeof e.type == "function" && "__radixId" in e.type && e.type.__radixId === $e;
 }
-function Ze(e, t) {
+function tt(e, t) {
 	let n = { ...t };
 	for (let r in t) {
 		let i = e[r], a = t[r];
@@ -535,106 +544,106 @@ function Ze(e, t) {
 		...n
 	};
 }
-function Qe(e) {
+function nt(e) {
 	let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning;
 	return n ? e.ref : (t = Object.getOwnPropertyDescriptor(e, "ref")?.get, n = t && "isReactWarning" in t && t.isReactWarning, n ? e.props.ref : e.props.ref || e.ref);
 }
 //#endregion
 //#region node_modules/tailwind-merge/dist/bundle-mjs.mjs
-var $e = (e, t) => {
+var rt = (e, t) => {
 	let n = Array(e.length + t.length);
 	for (let t = 0; t < e.length; t++) n[t] = e[t];
 	for (let r = 0; r < t.length; r++) n[e.length + r] = t[r];
 	return n;
-}, et = (e, t) => ({
+}, it = (e, t) => ({
 	classGroupId: e,
 	validator: t
-}), tt = (e = /* @__PURE__ */ new Map(), t = null, n) => ({
+}), at = (e = /* @__PURE__ */ new Map(), t = null, n) => ({
 	nextPart: e,
 	validators: t,
 	classGroupId: n
-}), nt = "-", rt = [], it = "arbitrary..", at = (e) => {
-	let t = ct(e), { conflictingClassGroups: n, conflictingClassGroupModifiers: r } = e;
+}), ot = "-", st = [], ct = "arbitrary..", lt = (e) => {
+	let t = ft(e), { conflictingClassGroups: n, conflictingClassGroupModifiers: r } = e;
 	return {
 		getClassGroupId: (e) => {
-			if (e.startsWith("[") && e.endsWith("]")) return st(e);
-			let n = e.split(nt);
-			return ot(n, +(n[0] === "" && n.length > 1), t);
+			if (e.startsWith("[") && e.endsWith("]")) return dt(e);
+			let n = e.split(ot);
+			return ut(n, +(n[0] === "" && n.length > 1), t);
 		},
 		getConflictingClassGroupIds: (e, t) => {
 			if (t) {
 				let t = r[e], i = n[e];
-				return t ? i ? $e(i, t) : t : i || rt;
+				return t ? i ? rt(i, t) : t : i || st;
 			}
-			return n[e] || rt;
+			return n[e] || st;
 		}
 	};
-}, ot = (e, t, n) => {
+}, ut = (e, t, n) => {
 	if (e.length - t === 0) return n.classGroupId;
 	let r = e[t], i = n.nextPart.get(r);
 	if (i) {
-		let n = ot(e, t + 1, i);
+		let n = ut(e, t + 1, i);
 		if (n) return n;
 	}
 	let a = n.validators;
 	if (a === null) return;
-	let o = t === 0 ? e.join(nt) : e.slice(t).join(nt), s = a.length;
+	let o = t === 0 ? e.join(ot) : e.slice(t).join(ot), s = a.length;
 	for (let e = 0; e < s; e++) {
 		let t = a[e];
 		if (t.validator(o)) return t.classGroupId;
 	}
-}, st = (e) => e.slice(1, -1).indexOf(":") === -1 ? void 0 : (() => {
+}, dt = (e) => e.slice(1, -1).indexOf(":") === -1 ? void 0 : (() => {
 	let t = e.slice(1, -1), n = t.indexOf(":"), r = t.slice(0, n);
-	return r ? it + r : void 0;
-})(), ct = (e) => {
+	return r ? ct + r : void 0;
+})(), ft = (e) => {
 	let { theme: t, classGroups: n } = e;
-	return lt(n, t);
-}, lt = (e, t) => {
-	let n = tt();
+	return pt(n, t);
+}, pt = (e, t) => {
+	let n = at();
 	for (let r in e) {
 		let i = e[r];
-		ut(i, n, r, t);
+		mt(i, n, r, t);
 	}
 	return n;
-}, ut = (e, t, n, r) => {
+}, mt = (e, t, n, r) => {
 	let i = e.length;
 	for (let a = 0; a < i; a++) {
 		let i = e[a];
-		dt(i, t, n, r);
+		ht(i, t, n, r);
 	}
-}, dt = (e, t, n, r) => {
+}, ht = (e, t, n, r) => {
 	if (typeof e == "string") {
-		ft(e, t, n);
+		gt(e, t, n);
 		return;
 	}
 	if (typeof e == "function") {
-		pt(e, t, n, r);
+		_t(e, t, n, r);
 		return;
 	}
-	mt(e, t, n, r);
-}, ft = (e, t, n) => {
-	let r = e === "" ? t : ht(t, e);
+	vt(e, t, n, r);
+}, gt = (e, t, n) => {
+	let r = e === "" ? t : yt(t, e);
 	r.classGroupId = n;
-}, pt = (e, t, n, r) => {
-	if (gt(e)) {
-		ut(e(r), t, n, r);
+}, _t = (e, t, n, r) => {
+	if (bt(e)) {
+		mt(e(r), t, n, r);
 		return;
 	}
-	t.validators === null && (t.validators = []), t.validators.push(et(n, e));
-}, mt = (e, t, n, r) => {
+	t.validators === null && (t.validators = []), t.validators.push(it(n, e));
+}, vt = (e, t, n, r) => {
 	let i = Object.entries(e), a = i.length;
 	for (let e = 0; e < a; e++) {
 		let [a, o] = i[e];
-		ut(o, ht(t, a), n, r);
+		mt(o, yt(t, a), n, r);
 	}
-}, ht = (e, t) => {
-	let n = e, r = t.split(nt), i = r.length;
+}, yt = (e, t) => {
+	let n = e, r = t.split(ot), i = r.length;
 	for (let e = 0; e < i; e++) {
 		let t = r[e], i = n.nextPart.get(t);
-		i || (i = tt(), n.nextPart.set(t, i)), n = i;
+		i || (i = at(), n.nextPart.set(t, i)), n = i;
 	}
 	return n;
-}, gt = (e) => "isThemeGetter" in e && e.isThemeGetter === !0, _t = (e) => {
+}, bt = (e) => "isThemeGetter" in e && e.isThemeGetter === !0, xt = (e) => {
 	if (e < 1) return {
 		get: () => void 0,
 		set: () => {}
@@ -652,19 +661,19 @@ var $e = (e, t) => {
 			e in n ? n[e] = t : i(e, t);
 		}
 	};
-}, vt = "!", yt = ":", bt = [], xt = (e, t, n, r, i) => ({
+}, St = "!", Ct = ":", wt = [], Tt = (e, t, n, r, i) => ({
 	modifiers: e,
 	hasImportantModifier: t,
 	baseClassName: n,
 	maybePostfixModifierPosition: r,
 	isExternal: i
-}), St = (e) => {
+}), Et = (e) => {
 	let { prefix: t, experimentalParseClassName: n } = e, r = (e) => {
 		let t = [], n = 0, r = 0, i = 0, a, o = e.length;
 		for (let s = 0; s < o; s++) {
 			let o = e[s];
 			if (n === 0 && r === 0) {
-				if (o === yt) {
+				if (o === Ct) {
 					t.push(e.slice(i, s)), i = s + 1;
 					continue;
 				}
@@ -676,13 +685,13 @@ var $e = (e, t) => {
 			o === "[" ? n++ : o === "]" ? n-- : o === "(" ? r++ : o === ")" && r--;
 		}
 		let s = t.length === 0 ? e : e.slice(i), c = s, l = !1;
-		s.endsWith(vt) ? (c = s.slice(0, -1), l = !0) : s.startsWith(vt) && (c = s.slice(1), l = !0);
+		s.endsWith(St) ? (c = s.slice(0, -1), l = !0) : s.startsWith(St) && (c = s.slice(1), l = !0);
 		let u = a && a > i ? a - i : void 0;
-		return xt(t, l, c, u);
+		return Tt(t, l, c, u);
 	};
 	if (t) {
-		let e = t + yt, n = r;
-		r = (t) => t.startsWith(e) ? n(t.slice(e.length)) : xt(bt, !1, t, void 0, !0);
+		let e = t + Ct, n = r;
+		r = (t) => t.startsWith(e) ? n(t.slice(e.length)) : Tt(wt, !1, t, void 0, !0);
 	}
 	if (n) {
 		let e = r;
@@ -692,7 +701,7 @@ var $e = (e, t) => {
 		});
 	}
 	return r;
-}, Ct = (e) => {
+}, Dt = (e) => {
 	let t = /* @__PURE__ */ new Map();
 	return e.orderSensitiveModifiers.forEach((e, n) => {
 		t.set(e, 1e6 + n);
@@ -704,13 +713,13 @@ var $e = (e, t) => {
 		}
 		return r.length > 0 && (r.sort(), n.push(...r)), n;
 	};
-}, wt = (e) => ({
-	cache: _t(e.cacheSize),
-	parseClassName: St(e),
-	sortModifiers: Ct(e),
-	...at(e)
-}), Tt = /\s+/, Et = (e, t) => {
-	let { parseClassName: n, getClassGroupId: r, getConflictingClassGroupIds: i, sortModifiers: a } = t, o = [], s = e.trim().split(Tt), c = "";
+}, Ot = (e) => ({
+	cache: xt(e.cacheSize),
+	parseClassName: Et(e),
+	sortModifiers: Dt(e),
+	...lt(e)
+}), kt = /\s+/, At = (e, t) => {
+	let { parseClassName: n, getClassGroupId: r, getConflictingClassGroupIds: i, sortModifiers: a } = t, o = [], s = e.trim().split(kt), c = "";
 	for (let e = s.length - 1; e >= 0; --e) {
 		let t = s[e], { isExternal: l, modifiers: u, hasImportantModifier: d, baseClassName: f, maybePostfixModifierPosition: p } = n(t);
 		if (l) {
@@ -729,7 +738,7 @@ var $e = (e, t) => {
 			}
 			m = !1;
 		}
-		let g = u.length === 0 ? "" : u.length === 1 ? u[0] : a(u).join(":"), _ = d ? g + vt : g, v = _ + h;
+		let g = u.length === 0 ? "" : u.length === 1 ? u[0] : a(u).join(":"), _ = d ? g + St : g, v = _ + h;
 		if (o.indexOf(v) > -1) continue;
 		o.push(v);
 		let y = i(h, m);
@@ -740,34 +749,34 @@ var $e = (e, t) => {
 		c = t + (c.length > 0 ? " " + c : c);
 	}
 	return c;
-}, Dt = (...e) => {
+}, jt = (...e) => {
 	let t = 0, n, r, i = "";
-	for (; t < e.length;) (n = e[t++]) && (r = Ot(n)) && (i && (i += " "), i += r);
+	for (; t < e.length;) (n = e[t++]) && (r = Mt(n)) && (i && (i += " "), i += r);
 	return i;
-}, Ot = (e) => {
+}, Mt = (e) => {
 	if (typeof e == "string") return e;
 	let t, n = "";
-	for (let r = 0; r < e.length; r++) e[r] && (t = Ot(e[r])) && (n && (n += " "), n += t);
+	for (let r = 0; r < e.length; r++) e[r] && (t = Mt(e[r])) && (n && (n += " "), n += t);
 	return n;
-}, kt = (e, ...t) => {
-	let n, r, i, a, o = (o) => (n = wt(t.reduce((e, t) => t(e), e())), r = n.cache.get, i = n.cache.set, a = s, s(o)), s = (e) => {
+}, Nt = (e, ...t) => {
+	let n, r, i, a, o = (o) => (n = Ot(t.reduce((e, t) => t(e), e())), r = n.cache.get, i = n.cache.set, a = s, s(o)), s = (e) => {
 		let t = r(e);
 		if (t) return t;
-		let a = Et(e, n);
+		let a = At(e, n);
 		return i(e, a), a;
 	};
-	return a = o, (...e) => a(Dt(...e));
-}, At = [], B = (e) => {
-	let t = (t) => t[e] || At;
+	return a = o, (...e) => a(jt(...e));
+}, Pt = [], z = (e) => {
+	let t = (t) => t[e] || Pt;
 	return t.isThemeGetter = !0, t;
-}, jt = /^\[(?:(\w[\w-]*):)?(.+)\]$/i, Mt = /^\((?:(\w[\w-]*):)?(.+)\)$/i, Nt = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/, Pt = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/, Ft = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/, It = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/, Lt = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/, Rt = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/, zt = (e) => Nt.test(e), V = (e) => !!e && !Number.isNaN(Number(e)), Bt = (e) => !!e && Number.isInteger(Number(e)), Vt = (e) => e.endsWith("%") && V(e.slice(0, -1)), Ht = (e) => Pt.test(e), Ut = () => !0, Wt = (e) => Ft.test(e) && !It.test(e), Gt = () => !1, Kt = (e) => Lt.test(e), qt = (e) => Rt.test(e), Jt = (e) => !H(e) && !U(e), Yt = (e) => dn(e, hn, Gt), H = (e) => jt.test(e), Xt = (e) => dn(e, gn, Wt), Zt = (e) => dn(e, _n, V), Qt = (e) => dn(e, yn, Ut), $t = (e) => dn(e, vn, Gt), en = (e) => dn(e, pn, Gt), tn = (e) => dn(e, mn, qt), nn = (e) => dn(e, bn, Kt), U = (e) => Mt.test(e), rn = (e) => fn(e, gn), an = (e) => fn(e, vn), on = (e) => fn(e, pn), sn = (e) => fn(e, hn), cn = (e) => fn(e, mn), ln = (e) => fn(e, bn, !0), un = (e) => fn(e, yn, !0), dn = (e, t, n) => {
-	let r = jt.exec(e);
+}, Ft = /^\[(?:(\w[\w-]*):)?(.+)\]$/i, It = /^\((?:(\w[\w-]*):)?(.+)\)$/i, Lt = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/, Rt = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/, zt = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/, Bt = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/, Vt = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/, Ht = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/, Ut = (e) => Lt.test(e), B = (e) => !!e && !Number.isNaN(Number(e)), Wt = (e) => !!e && Number.isInteger(Number(e)), Gt = (e) => e.endsWith("%") && B(e.slice(0, -1)), Kt = (e) => Rt.test(e), qt = () => !0, Jt = (e) => zt.test(e) && !Bt.test(e), Yt = () => !1, Xt = (e) => Vt.test(e), Zt = (e) => Ht.test(e), Qt = (e) => !V(e) && !H(e), $t = (e) => hn(e, yn, Yt), V = (e) => Ft.test(e), en = (e) => hn(e, bn, Jt), tn = (e) => hn(e, xn, B), nn = (e) => hn(e, Cn, qt), rn = (e) => hn(e, Sn, Yt), an = (e) => hn(e, _n, Yt), on = (e) => hn(e, vn, Zt), sn = (e) => hn(e, wn, Xt), H = (e) => It.test(e), cn = (e) => gn(e, bn), ln = (e) => gn(e, Sn), un = (e) => gn(e, _n), dn = (e) => gn(e, yn), fn = (e) => gn(e, vn), pn = (e) => gn(e, wn, !0), mn = (e) => gn(e, Cn, !0), hn = (e, t, n) => {
+	let r = Ft.exec(e);
 	return r ? r[1] ? t(r[1]) : n(r[2]) : !1;
-}, fn = (e, t, n = !1) => {
-	let r = Mt.exec(e);
+}, gn = (e, t, n = !1) => {
+	let r = It.exec(e);
 	return r ? r[1] ? t(r[1]) : n : !1;
-}, pn = (e) => e === "position" || e === "percentage", mn = (e) => e === "image" || e === "url", hn = (e) => e === "length" || e === "size" || e === "bg-size", gn = (e) => e === "length", _n = (e) => e === "number", vn = (e) => e === "family-name", yn = (e) => e === "number" || e === "weight", bn = (e) => e === "shadow", xn = /* @__PURE__ */ kt(() => {
-	let e = B("color"), t = B("font"), n = B("text"), r = B("font-weight"), i = B("tracking"), a = B("leading"), o = B("breakpoint"), s = B("container"), c = B("spacing"), l = B("radius"), u = B("shadow"), d = B("inset-shadow"), f = B("text-shadow"), p = B("drop-shadow"), m = B("blur"), h = B("perspective"), g = B("aspect"), _ = B("ease"), v = B("animate"), y = () => [
+}, _n = (e) => e === "position" || e === "percentage", vn = (e) => e === "image" || e === "url", yn = (e) => e === "length" || e === "size" || e === "bg-size", bn = (e) => e === "length", xn = (e) => e === "number", Sn = (e) => e === "family-name", Cn = (e) => e === "number" || e === "weight", wn = (e) => e === "shadow", Tn = /* @__PURE__ */ Nt(() => {
+	let e = z("color"), t = z("font"), n = z("text"), r = z("font-weight"), i = z("tracking"), a = z("leading"), o = z("breakpoint"), s = z("container"), c = z("spacing"), l = z("radius"), u = z("shadow"), d = z("inset-shadow"), f = z("text-shadow"), p = z("drop-shadow"), m = z("blur"), h = z("perspective"), g = z("aspect"), _ = z("ease"), v = z("animate"), y = () => [
 		"auto",
 		"avoid",
 		"all",
@@ -792,8 +801,8 @@ var $e = (e, t) => {
 		"left-bottom"
 	], x = () => [
 		...b(),
-		U,
-		H
+		H,
+		V
 	], S = () => [
 		"auto",
 		"hidden",
@@ -805,44 +814,44 @@ var $e = (e, t) => {
 		"contain",
 		"none"
 	], w = () => [
-		U,
 		H,
+		V,
 		c
 	], T = () => [
-		zt,
+		Ut,
 		"full",
 		"auto",
 		...w()
 	], E = () => [
-		Bt,
+		Wt,
 		"none",
 		"subgrid",
-		U,
-		H
+		H,
+		V
 	], D = () => [
 		"auto",
 		{ span: [
 			"full",
-			Bt,
-			U,
-			H
+			Wt,
+			H,
+			V
 		] },
-		Bt,
-		U,
-		H
+		Wt,
+		H,
+		V
 	], O = () => [
-		Bt,
+		Wt,
 		"auto",
-		U,
-		H
+		H,
+		V
 	], k = () => [
 		"auto",
 		"min",
 		"max",
 		"fr",
-		U,
-		H
-	], A = () => [
+		H,
+		V
+	], ee = () => [
 		"start",
 		"end",
 		"center",
@@ -853,15 +862,15 @@ var $e = (e, t) => {
 		"baseline",
 		"center-safe",
 		"end-safe"
-	], j = () => [
+	], A = () => [
 		"start",
 		"end",
 		"center",
 		"stretch",
 		"center-safe",
 		"end-safe"
-	], M = () => ["auto", ...w()], N = () => [
-		zt,
+	], j = () => ["auto", ...w()], M = () => [
+		Ut,
 		"auto",
 		"full",
 		"dvw",
@@ -874,8 +883,8 @@ var $e = (e, t) => {
 		"max",
 		"fit",
 		...w()
-	], ee = () => [
-		zt,
+	], te = () => [
+		Ut,
 		"screen",
 		"full",
 		"dvw",
@@ -885,8 +894,8 @@ var $e = (e, t) => {
 		"max",
 		"fit",
 		...w()
-	], P = () => [
-		zt,
+	], N = () => [
+		Ut,
 		"screen",
 		"full",
 		"lh",
@@ -897,50 +906,50 @@ var $e = (e, t) => {
 		"max",
 		"fit",
 		...w()
-	], F = () => [
+	], P = () => [
 		e,
-		U,
-		H
-	], I = () => [
+		H,
+		V
+	], F = () => [
 		...b(),
-		on,
-		en,
-		{ position: [U, H] }
-	], te = () => ["no-repeat", { repeat: [
+		un,
+		an,
+		{ position: [H, V] }
+	], ne = () => ["no-repeat", { repeat: [
 		"",
 		"x",
 		"y",
 		"space",
 		"round"
-	] }], ne = () => [
+	] }], re = () => [
 		"auto",
 		"cover",
 		"contain",
-		sn,
-		Yt,
-		{ size: [U, H] }
-	], re = () => [
-		Vt,
-		rn,
-		Xt
-	], L = () => [
+		dn,
+		$t,
+		{ size: [H, V] }
+	], ie = () => [
+		Gt,
+		cn,
+		en
+	], I = () => [
 		"",
 		"none",
 		"full",
 		l,
-		U,
-		H
-	], R = () => [
+		H,
+		V
+	], L = () => [
 		"",
-		V,
-		rn,
-		Xt
-	], ie = () => [
+		B,
+		cn,
+		en
+	], ae = () => [
 		"solid",
 		"dashed",
 		"dotted",
 		"double"
-	], ae = () => [
+	], oe = () => [
 		"normal",
 		"multiply",
 		"screen",
@@ -957,33 +966,33 @@ var $e = (e, t) => {
 		"saturation",
 		"color",
 		"luminosity"
-	], z = () => [
-		V,
-		Vt,
-		on,
-		en
-	], oe = () => [
+	], R = () => [
+		B,
+		Gt,
+		un,
+		an
+	], se = () => [
 		"",
 		"none",
 		m,
-		U,
-		H
-	], se = () => [
-		"none",
-		V,
-		U,
-		H
+		H,
+		V
 	], ce = () => [
 		"none",
-		V,
-		U,
-		H
+		B,
+		H,
+		V
 	], le = () => [
-		V,
-		U,
-		H
+		"none",
+		B,
+		H,
+		V
 	], ue = () => [
-		zt,
+		B,
+		H,
+		V
+	], de = () => [
+		Ut,
 		"full",
 		...w()
 	];
@@ -997,17 +1006,17 @@ var $e = (e, t) => {
 				"bounce"
 			],
 			aspect: ["video"],
-			blur: [Ht],
-			breakpoint: [Ht],
-			color: [Ut],
-			container: [Ht],
-			"drop-shadow": [Ht],
+			blur: [Kt],
+			breakpoint: [Kt],
+			color: [qt],
+			container: [Kt],
+			"drop-shadow": [Kt],
 			ease: [
 				"in",
 				"out",
 				"in-out"
 			],
-			font: [Jt],
+			font: [Qt],
 			"font-weight": [
 				"thin",
 				"extralight",
@@ -1019,7 +1028,7 @@ var $e = (e, t) => {
 				"extrabold",
 				"black"
 			],
-			"inset-shadow": [Ht],
+			"inset-shadow": [Kt],
 			leading: [
 				"none",
 				"tight",
@@ -1036,11 +1045,11 @@ var $e = (e, t) => {
 				"distant",
 				"none"
 			],
-			radius: [Ht],
-			shadow: [Ht],
-			spacing: ["px", V],
-			text: [Ht],
-			"text-shadow": [Ht],
+			radius: [Kt],
+			shadow: [Kt],
+			spacing: ["px", B],
+			text: [Kt],
+			"text-shadow": [Kt],
 			tracking: [
 				"tighter",
 				"tight",
@@ -1054,16 +1063,16 @@ var $e = (e, t) => {
 			aspect: [{ aspect: [
 				"auto",
 				"square",
-				zt,
+				Ut,
+				V,
 				H,
-				U,
 				g
 			] }],
 			container: ["container"],
 			columns: [{ columns: [
+				B,
 				V,
 				H,
-				U,
 				s
 			] }],
 			"break-after": [{ "break-after": y() }],
@@ -1160,13 +1169,13 @@ var $e = (e, t) => {
 				"collapse"
 			],
 			z: [{ z: [
-				Bt,
+				Wt,
 				"auto",
-				U,
-				H
+				H,
+				V
 			] }],
 			basis: [{ basis: [
-				zt,
+				Ut,
 				"full",
 				"auto",
 				s,
@@ -1184,32 +1193,32 @@ var $e = (e, t) => {
 				"wrap-reverse"
 			] }],
 			flex: [{ flex: [
-				V,
-				zt,
+				B,
+				Ut,
 				"auto",
 				"initial",
 				"none",
-				H
+				V
 			] }],
 			grow: [{ grow: [
 				"",
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			shrink: [{ shrink: [
 				"",
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			order: [{ order: [
-				Bt,
+				Wt,
 				"first",
 				"last",
 				"none",
-				U,
-				H
+				H,
+				V
 			] }],
 			"grid-cols": [{ "grid-cols": E() }],
 			"col-start-end": [{ col: D() }],
@@ -1231,19 +1240,19 @@ var $e = (e, t) => {
 			gap: [{ gap: w() }],
 			"gap-x": [{ "gap-x": w() }],
 			"gap-y": [{ "gap-y": w() }],
-			"justify-content": [{ justify: [...A(), "normal"] }],
-			"justify-items": [{ "justify-items": [...j(), "normal"] }],
-			"justify-self": [{ "justify-self": ["auto", ...j()] }],
-			"align-content": [{ content: ["normal", ...A()] }],
-			"align-items": [{ items: [...j(), { baseline: ["", "last"] }] }],
+			"justify-content": [{ justify: [...ee(), "normal"] }],
+			"justify-items": [{ "justify-items": [...A(), "normal"] }],
+			"justify-self": [{ "justify-self": ["auto", ...A()] }],
+			"align-content": [{ content: ["normal", ...ee()] }],
+			"align-items": [{ items: [...A(), { baseline: ["", "last"] }] }],
 			"align-self": [{ self: [
 				"auto",
-				...j(),
+				...A(),
 				{ baseline: ["", "last"] }
 			] }],
-			"place-content": [{ "place-content": A() }],
-			"place-items": [{ "place-items": [...j(), "baseline"] }],
-			"place-self": [{ "place-self": ["auto", ...j()] }],
+			"place-content": [{ "place-content": ee() }],
+			"place-items": [{ "place-items": [...A(), "baseline"] }],
+			"place-self": [{ "place-self": ["auto", ...A()] }],
 			p: [{ p: w() }],
 			px: [{ px: w() }],
 			py: [{ py: w() }],
@@ -1255,38 +1264,38 @@ var $e = (e, t) => {
 			pr: [{ pr: w() }],
 			pb: [{ pb: w() }],
 			pl: [{ pl: w() }],
-			m: [{ m: M() }],
-			mx: [{ mx: M() }],
-			my: [{ my: M() }],
-			ms: [{ ms: M() }],
-			me: [{ me: M() }],
-			mbs: [{ mbs: M() }],
-			mbe: [{ mbe: M() }],
-			mt: [{ mt: M() }],
-			mr: [{ mr: M() }],
-			mb: [{ mb: M() }],
-			ml: [{ ml: M() }],
+			m: [{ m: j() }],
+			mx: [{ mx: j() }],
+			my: [{ my: j() }],
+			ms: [{ ms: j() }],
+			me: [{ me: j() }],
+			mbs: [{ mbs: j() }],
+			mbe: [{ mbe: j() }],
+			mt: [{ mt: j() }],
+			mr: [{ mr: j() }],
+			mb: [{ mb: j() }],
+			ml: [{ ml: j() }],
 			"space-x": [{ "space-x": w() }],
 			"space-x-reverse": ["space-x-reverse"],
 			"space-y": [{ "space-y": w() }],
 			"space-y-reverse": ["space-y-reverse"],
-			size: [{ size: N() }],
-			"inline-size": [{ inline: ["auto", ...ee()] }],
-			"min-inline-size": [{ "min-inline": ["auto", ...ee()] }],
-			"max-inline-size": [{ "max-inline": ["none", ...ee()] }],
-			"block-size": [{ block: ["auto", ...P()] }],
-			"min-block-size": [{ "min-block": ["auto", ...P()] }],
-			"max-block-size": [{ "max-block": ["none", ...P()] }],
+			size: [{ size: M() }],
+			"inline-size": [{ inline: ["auto", ...te()] }],
+			"min-inline-size": [{ "min-inline": ["auto", ...te()] }],
+			"max-inline-size": [{ "max-inline": ["none", ...te()] }],
+			"block-size": [{ block: ["auto", ...N()] }],
+			"min-block-size": [{ "min-block": ["auto", ...N()] }],
+			"max-block-size": [{ "max-block": ["none", ...N()] }],
 			w: [{ w: [
 				s,
 				"screen",
-				...N()
+				...M()
 			] }],
 			"min-w": [{ "min-w": [
 				s,
 				"screen",
 				"none",
-				...N()
+				...M()
 			] }],
 			"max-w": [{ "max-w": [
 				s,
@@ -1294,36 +1303,36 @@ var $e = (e, t) => {
 				"none",
 				"prose",
 				{ screen: [o] },
-				...N()
+				...M()
 			] }],
 			h: [{ h: [
 				"screen",
 				"lh",
-				...N()
+				...M()
 			] }],
 			"min-h": [{ "min-h": [
 				"screen",
 				"lh",
 				"none",
-				...N()
+				...M()
 			] }],
 			"max-h": [{ "max-h": [
 				"screen",
 				"lh",
-				...N()
+				...M()
 			] }],
 			"font-size": [{ text: [
 				"base",
 				n,
-				rn,
-				Xt
+				cn,
+				en
 			] }],
 			"font-smoothing": ["antialiased", "subpixel-antialiased"],
 			"font-style": ["italic", "not-italic"],
 			"font-weight": [{ font: [
 				r,
-				un,
-				Qt
+				mn,
+				nn
 			] }],
 			"font-stretch": [{ "font-stretch": [
 				"ultra-condensed",
@@ -1335,15 +1344,15 @@ var $e = (e, t) => {
 				"expanded",
 				"extra-expanded",
 				"ultra-expanded",
-				Vt,
-				H
+				Gt,
+				V
 			] }],
 			"font-family": [{ font: [
-				an,
-				$t,
+				ln,
+				rn,
 				t
 			] }],
-			"font-features": [{ "font-features": [H] }],
+			"font-features": [{ "font-features": [V] }],
 			"fvn-normal": ["normal-nums"],
 			"fvn-ordinal": ["ordinal"],
 			"fvn-slashed-zero": ["slashed-zero"],
@@ -1352,28 +1361,28 @@ var $e = (e, t) => {
 			"fvn-fraction": ["diagonal-fractions", "stacked-fractions"],
 			tracking: [{ tracking: [
 				i,
-				U,
-				H
+				H,
+				V
 			] }],
 			"line-clamp": [{ "line-clamp": [
-				V,
+				B,
 				"none",
-				U,
-				Zt
+				H,
+				tn
 			] }],
 			leading: [{ leading: [a, ...w()] }],
 			"list-image": [{ "list-image": [
 				"none",
-				U,
-				H
+				H,
+				V
 			] }],
 			"list-style-position": [{ list: ["inside", "outside"] }],
 			"list-style-type": [{ list: [
 				"disc",
 				"decimal",
 				"none",
-				U,
-				H
+				H,
+				V
 			] }],
 			"text-alignment": [{ text: [
 				"left",
@@ -1383,28 +1392,28 @@ var $e = (e, t) => {
 				"start",
 				"end"
 			] }],
-			"placeholder-color": [{ placeholder: F() }],
-			"text-color": [{ text: F() }],
+			"placeholder-color": [{ placeholder: P() }],
+			"text-color": [{ text: P() }],
 			"text-decoration": [
 				"underline",
 				"overline",
 				"line-through",
 				"no-underline"
 			],
-			"text-decoration-style": [{ decoration: [...ie(), "wavy"] }],
+			"text-decoration-style": [{ decoration: [...ae(), "wavy"] }],
 			"text-decoration-thickness": [{ decoration: [
-				V,
+				B,
 				"from-font",
 				"auto",
-				U,
-				Xt
+				H,
+				en
 			] }],
-			"text-decoration-color": [{ decoration: F() }],
+			"text-decoration-color": [{ decoration: P() }],
 			"underline-offset": [{ "underline-offset": [
-				V,
+				B,
 				"auto",
-				U,
-				H
+				H,
+				V
 			] }],
 			"text-transform": [
 				"uppercase",
@@ -1433,8 +1442,8 @@ var $e = (e, t) => {
 				"text-bottom",
 				"sub",
 				"super",
-				U,
-				H
+				H,
+				V
 			] }],
 			whitespace: [{ whitespace: [
 				"normal",
@@ -1462,8 +1471,8 @@ var $e = (e, t) => {
 			] }],
 			content: [{ content: [
 				"none",
-				U,
-				H
+				H,
+				V
 			] }],
 			"bg-attachment": [{ bg: [
 				"fixed",
@@ -1481,9 +1490,9 @@ var $e = (e, t) => {
 				"padding",
 				"content"
 			] }],
-			"bg-position": [{ bg: I() }],
-			"bg-repeat": [{ bg: te() }],
-			"bg-size": [{ bg: ne() }],
+			"bg-position": [{ bg: F() }],
+			"bg-repeat": [{ bg: ne() }],
+			"bg-size": [{ bg: re() }],
 			"bg-image": [{ bg: [
 				"none",
 				{
@@ -1498,140 +1507,140 @@ var $e = (e, t) => {
 							"l",
 							"tl"
 						] },
-						Bt,
-						U,
-						H
+						Wt,
+						H,
+						V
 					],
 					radial: [
 						"",
-						U,
-						H
+						H,
+						V
 					],
 					conic: [
-						Bt,
-						U,
-						H
+						Wt,
+						H,
+						V
 					]
 				},
-				cn,
-				tn
+				fn,
+				on
 			] }],
-			"bg-color": [{ bg: F() }],
-			"gradient-from-pos": [{ from: re() }],
-			"gradient-via-pos": [{ via: re() }],
-			"gradient-to-pos": [{ to: re() }],
-			"gradient-from": [{ from: F() }],
-			"gradient-via": [{ via: F() }],
-			"gradient-to": [{ to: F() }],
-			rounded: [{ rounded: L() }],
-			"rounded-s": [{ "rounded-s": L() }],
-			"rounded-e": [{ "rounded-e": L() }],
-			"rounded-t": [{ "rounded-t": L() }],
-			"rounded-r": [{ "rounded-r": L() }],
-			"rounded-b": [{ "rounded-b": L() }],
-			"rounded-l": [{ "rounded-l": L() }],
-			"rounded-ss": [{ "rounded-ss": L() }],
-			"rounded-se": [{ "rounded-se": L() }],
-			"rounded-ee": [{ "rounded-ee": L() }],
-			"rounded-es": [{ "rounded-es": L() }],
-			"rounded-tl": [{ "rounded-tl": L() }],
-			"rounded-tr": [{ "rounded-tr": L() }],
-			"rounded-br": [{ "rounded-br": L() }],
-			"rounded-bl": [{ "rounded-bl": L() }],
-			"border-w": [{ border: R() }],
-			"border-w-x": [{ "border-x": R() }],
-			"border-w-y": [{ "border-y": R() }],
-			"border-w-s": [{ "border-s": R() }],
-			"border-w-e": [{ "border-e": R() }],
-			"border-w-bs": [{ "border-bs": R() }],
-			"border-w-be": [{ "border-be": R() }],
-			"border-w-t": [{ "border-t": R() }],
-			"border-w-r": [{ "border-r": R() }],
-			"border-w-b": [{ "border-b": R() }],
-			"border-w-l": [{ "border-l": R() }],
-			"divide-x": [{ "divide-x": R() }],
+			"bg-color": [{ bg: P() }],
+			"gradient-from-pos": [{ from: ie() }],
+			"gradient-via-pos": [{ via: ie() }],
+			"gradient-to-pos": [{ to: ie() }],
+			"gradient-from": [{ from: P() }],
+			"gradient-via": [{ via: P() }],
+			"gradient-to": [{ to: P() }],
+			rounded: [{ rounded: I() }],
+			"rounded-s": [{ "rounded-s": I() }],
+			"rounded-e": [{ "rounded-e": I() }],
+			"rounded-t": [{ "rounded-t": I() }],
+			"rounded-r": [{ "rounded-r": I() }],
+			"rounded-b": [{ "rounded-b": I() }],
+			"rounded-l": [{ "rounded-l": I() }],
+			"rounded-ss": [{ "rounded-ss": I() }],
+			"rounded-se": [{ "rounded-se": I() }],
+			"rounded-ee": [{ "rounded-ee": I() }],
+			"rounded-es": [{ "rounded-es": I() }],
+			"rounded-tl": [{ "rounded-tl": I() }],
+			"rounded-tr": [{ "rounded-tr": I() }],
+			"rounded-br": [{ "rounded-br": I() }],
+			"rounded-bl": [{ "rounded-bl": I() }],
+			"border-w": [{ border: L() }],
+			"border-w-x": [{ "border-x": L() }],
+			"border-w-y": [{ "border-y": L() }],
+			"border-w-s": [{ "border-s": L() }],
+			"border-w-e": [{ "border-e": L() }],
+			"border-w-bs": [{ "border-bs": L() }],
+			"border-w-be": [{ "border-be": L() }],
+			"border-w-t": [{ "border-t": L() }],
+			"border-w-r": [{ "border-r": L() }],
+			"border-w-b": [{ "border-b": L() }],
+			"border-w-l": [{ "border-l": L() }],
+			"divide-x": [{ "divide-x": L() }],
 			"divide-x-reverse": ["divide-x-reverse"],
-			"divide-y": [{ "divide-y": R() }],
+			"divide-y": [{ "divide-y": L() }],
 			"divide-y-reverse": ["divide-y-reverse"],
 			"border-style": [{ border: [
-				...ie(),
+				...ae(),
 				"hidden",
 				"none"
 			] }],
 			"divide-style": [{ divide: [
-				...ie(),
+				...ae(),
 				"hidden",
 				"none"
 			] }],
-			"border-color": [{ border: F() }],
-			"border-color-x": [{ "border-x": F() }],
-			"border-color-y": [{ "border-y": F() }],
-			"border-color-s": [{ "border-s": F() }],
-			"border-color-e": [{ "border-e": F() }],
-			"border-color-bs": [{ "border-bs": F() }],
-			"border-color-be": [{ "border-be": F() }],
-			"border-color-t": [{ "border-t": F() }],
-			"border-color-r": [{ "border-r": F() }],
-			"border-color-b": [{ "border-b": F() }],
-			"border-color-l": [{ "border-l": F() }],
-			"divide-color": [{ divide: F() }],
+			"border-color": [{ border: P() }],
+			"border-color-x": [{ "border-x": P() }],
+			"border-color-y": [{ "border-y": P() }],
+			"border-color-s": [{ "border-s": P() }],
+			"border-color-e": [{ "border-e": P() }],
+			"border-color-bs": [{ "border-bs": P() }],
+			"border-color-be": [{ "border-be": P() }],
+			"border-color-t": [{ "border-t": P() }],
+			"border-color-r": [{ "border-r": P() }],
+			"border-color-b": [{ "border-b": P() }],
+			"border-color-l": [{ "border-l": P() }],
+			"divide-color": [{ divide: P() }],
 			"outline-style": [{ outline: [
-				...ie(),
+				...ae(),
 				"none",
 				"hidden"
 			] }],
 			"outline-offset": [{ "outline-offset": [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"outline-w": [{ outline: [
 				"",
-				V,
-				rn,
-				Xt
+				B,
+				cn,
+				en
 			] }],
-			"outline-color": [{ outline: F() }],
+			"outline-color": [{ outline: P() }],
 			shadow: [{ shadow: [
 				"",
 				"none",
 				u,
-				ln,
-				nn
+				pn,
+				sn
 			] }],
-			"shadow-color": [{ shadow: F() }],
+			"shadow-color": [{ shadow: P() }],
 			"inset-shadow": [{ "inset-shadow": [
 				"none",
 				d,
-				ln,
-				nn
+				pn,
+				sn
 			] }],
-			"inset-shadow-color": [{ "inset-shadow": F() }],
-			"ring-w": [{ ring: R() }],
+			"inset-shadow-color": [{ "inset-shadow": P() }],
+			"ring-w": [{ ring: L() }],
 			"ring-w-inset": ["ring-inset"],
-			"ring-color": [{ ring: F() }],
-			"ring-offset-w": [{ "ring-offset": [V, Xt] }],
-			"ring-offset-color": [{ "ring-offset": F() }],
-			"inset-ring-w": [{ "inset-ring": R() }],
-			"inset-ring-color": [{ "inset-ring": F() }],
+			"ring-color": [{ ring: P() }],
+			"ring-offset-w": [{ "ring-offset": [B, en] }],
+			"ring-offset-color": [{ "ring-offset": P() }],
+			"inset-ring-w": [{ "inset-ring": L() }],
+			"inset-ring-color": [{ "inset-ring": P() }],
 			"text-shadow": [{ "text-shadow": [
 				"none",
 				f,
-				ln,
-				nn
+				pn,
+				sn
 			] }],
-			"text-shadow-color": [{ "text-shadow": F() }],
+			"text-shadow-color": [{ "text-shadow": P() }],
 			opacity: [{ opacity: [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"mix-blend": [{ "mix-blend": [
-				...ae(),
+				...oe(),
 				"plus-darker",
 				"plus-lighter"
 			] }],
-			"bg-blend": [{ "bg-blend": ae() }],
+			"bg-blend": [{ "bg-blend": oe() }],
 			"mask-clip": [{ "mask-clip": [
 				"border",
 				"padding",
@@ -1646,51 +1655,51 @@ var $e = (e, t) => {
 				"intersect",
 				"exclude"
 			] }],
-			"mask-image-linear-pos": [{ "mask-linear": [V] }],
-			"mask-image-linear-from-pos": [{ "mask-linear-from": z() }],
-			"mask-image-linear-to-pos": [{ "mask-linear-to": z() }],
-			"mask-image-linear-from-color": [{ "mask-linear-from": F() }],
-			"mask-image-linear-to-color": [{ "mask-linear-to": F() }],
-			"mask-image-t-from-pos": [{ "mask-t-from": z() }],
-			"mask-image-t-to-pos": [{ "mask-t-to": z() }],
-			"mask-image-t-from-color": [{ "mask-t-from": F() }],
-			"mask-image-t-to-color": [{ "mask-t-to": F() }],
-			"mask-image-r-from-pos": [{ "mask-r-from": z() }],
-			"mask-image-r-to-pos": [{ "mask-r-to": z() }],
-			"mask-image-r-from-color": [{ "mask-r-from": F() }],
-			"mask-image-r-to-color": [{ "mask-r-to": F() }],
-			"mask-image-b-from-pos": [{ "mask-b-from": z() }],
-			"mask-image-b-to-pos": [{ "mask-b-to": z() }],
-			"mask-image-b-from-color": [{ "mask-b-from": F() }],
-			"mask-image-b-to-color": [{ "mask-b-to": F() }],
-			"mask-image-l-from-pos": [{ "mask-l-from": z() }],
-			"mask-image-l-to-pos": [{ "mask-l-to": z() }],
-			"mask-image-l-from-color": [{ "mask-l-from": F() }],
-			"mask-image-l-to-color": [{ "mask-l-to": F() }],
-			"mask-image-x-from-pos": [{ "mask-x-from": z() }],
-			"mask-image-x-to-pos": [{ "mask-x-to": z() }],
-			"mask-image-x-from-color": [{ "mask-x-from": F() }],
-			"mask-image-x-to-color": [{ "mask-x-to": F() }],
-			"mask-image-y-from-pos": [{ "mask-y-from": z() }],
-			"mask-image-y-to-pos": [{ "mask-y-to": z() }],
-			"mask-image-y-from-color": [{ "mask-y-from": F() }],
-			"mask-image-y-to-color": [{ "mask-y-to": F() }],
-			"mask-image-radial": [{ "mask-radial": [U, H] }],
-			"mask-image-radial-from-pos": [{ "mask-radial-from": z() }],
-			"mask-image-radial-to-pos": [{ "mask-radial-to": z() }],
-			"mask-image-radial-from-color": [{ "mask-radial-from": F() }],
-			"mask-image-radial-to-color": [{ "mask-radial-to": F() }],
+			"mask-image-linear-pos": [{ "mask-linear": [B] }],
+			"mask-image-linear-from-pos": [{ "mask-linear-from": R() }],
+			"mask-image-linear-to-pos": [{ "mask-linear-to": R() }],
+			"mask-image-linear-from-color": [{ "mask-linear-from": P() }],
+			"mask-image-linear-to-color": [{ "mask-linear-to": P() }],
+			"mask-image-t-from-pos": [{ "mask-t-from": R() }],
+			"mask-image-t-to-pos": [{ "mask-t-to": R() }],
+			"mask-image-t-from-color": [{ "mask-t-from": P() }],
+			"mask-image-t-to-color": [{ "mask-t-to": P() }],
+			"mask-image-r-from-pos": [{ "mask-r-from": R() }],
+			"mask-image-r-to-pos": [{ "mask-r-to": R() }],
+			"mask-image-r-from-color": [{ "mask-r-from": P() }],
+			"mask-image-r-to-color": [{ "mask-r-to": P() }],
+			"mask-image-b-from-pos": [{ "mask-b-from": R() }],
+			"mask-image-b-to-pos": [{ "mask-b-to": R() }],
+			"mask-image-b-from-color": [{ "mask-b-from": P() }],
+			"mask-image-b-to-color": [{ "mask-b-to": P() }],
+			"mask-image-l-from-pos": [{ "mask-l-from": R() }],
+			"mask-image-l-to-pos": [{ "mask-l-to": R() }],
+			"mask-image-l-from-color": [{ "mask-l-from": P() }],
+			"mask-image-l-to-color": [{ "mask-l-to": P() }],
+			"mask-image-x-from-pos": [{ "mask-x-from": R() }],
+			"mask-image-x-to-pos": [{ "mask-x-to": R() }],
+			"mask-image-x-from-color": [{ "mask-x-from": P() }],
+			"mask-image-x-to-color": [{ "mask-x-to": P() }],
+			"mask-image-y-from-pos": [{ "mask-y-from": R() }],
+			"mask-image-y-to-pos": [{ "mask-y-to": R() }],
+			"mask-image-y-from-color": [{ "mask-y-from": P() }],
+			"mask-image-y-to-color": [{ "mask-y-to": P() }],
+			"mask-image-radial": [{ "mask-radial": [H, V] }],
+			"mask-image-radial-from-pos": [{ "mask-radial-from": R() }],
+			"mask-image-radial-to-pos": [{ "mask-radial-to": R() }],
+			"mask-image-radial-from-color": [{ "mask-radial-from": P() }],
+			"mask-image-radial-to-color": [{ "mask-radial-to": P() }],
 			"mask-image-radial-shape": [{ "mask-radial": ["circle", "ellipse"] }],
 			"mask-image-radial-size": [{ "mask-radial": [{
 				closest: ["side", "corner"],
 				farthest: ["side", "corner"]
 			}] }],
 			"mask-image-radial-pos": [{ "mask-radial-at": b() }],
-			"mask-image-conic-pos": [{ "mask-conic": [V] }],
-			"mask-image-conic-from-pos": [{ "mask-conic-from": z() }],
-			"mask-image-conic-to-pos": [{ "mask-conic-to": z() }],
-			"mask-image-conic-from-color": [{ "mask-conic-from": F() }],
-			"mask-image-conic-to-color": [{ "mask-conic-to": F() }],
+			"mask-image-conic-pos": [{ "mask-conic": [B] }],
+			"mask-image-conic-from-pos": [{ "mask-conic-from": R() }],
+			"mask-image-conic-to-pos": [{ "mask-conic-to": R() }],
+			"mask-image-conic-from-color": [{ "mask-conic-from": P() }],
+			"mask-image-conic-to-color": [{ "mask-conic-to": P() }],
 			"mask-mode": [{ mask: [
 				"alpha",
 				"luminance",
@@ -1704,117 +1713,117 @@ var $e = (e, t) => {
 				"stroke",
 				"view"
 			] }],
-			"mask-position": [{ mask: I() }],
-			"mask-repeat": [{ mask: te() }],
-			"mask-size": [{ mask: ne() }],
+			"mask-position": [{ mask: F() }],
+			"mask-repeat": [{ mask: ne() }],
+			"mask-size": [{ mask: re() }],
 			"mask-type": [{ "mask-type": ["alpha", "luminance"] }],
 			"mask-image": [{ mask: [
 				"none",
-				U,
-				H
+				H,
+				V
 			] }],
 			filter: [{ filter: [
 				"",
 				"none",
-				U,
-				H
+				H,
+				V
 			] }],
-			blur: [{ blur: oe() }],
+			blur: [{ blur: se() }],
 			brightness: [{ brightness: [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			contrast: [{ contrast: [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"drop-shadow": [{ "drop-shadow": [
 				"",
 				"none",
 				p,
-				ln,
-				nn
+				pn,
+				sn
 			] }],
-			"drop-shadow-color": [{ "drop-shadow": F() }],
+			"drop-shadow-color": [{ "drop-shadow": P() }],
 			grayscale: [{ grayscale: [
 				"",
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"hue-rotate": [{ "hue-rotate": [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			invert: [{ invert: [
 				"",
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			saturate: [{ saturate: [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			sepia: [{ sepia: [
 				"",
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"backdrop-filter": [{ "backdrop-filter": [
 				"",
 				"none",
-				U,
-				H
+				H,
+				V
 			] }],
-			"backdrop-blur": [{ "backdrop-blur": oe() }],
+			"backdrop-blur": [{ "backdrop-blur": se() }],
 			"backdrop-brightness": [{ "backdrop-brightness": [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"backdrop-contrast": [{ "backdrop-contrast": [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"backdrop-grayscale": [{ "backdrop-grayscale": [
 				"",
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"backdrop-hue-rotate": [{ "backdrop-hue-rotate": [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"backdrop-invert": [{ "backdrop-invert": [
 				"",
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"backdrop-opacity": [{ "backdrop-opacity": [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"backdrop-saturate": [{ "backdrop-saturate": [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"backdrop-sepia": [{ "backdrop-sepia": [
 				"",
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			"border-collapse": [{ border: ["collapse", "separate"] }],
 			"border-spacing": [{ "border-spacing": w() }],
@@ -1830,56 +1839,56 @@ var $e = (e, t) => {
 				"shadow",
 				"transform",
 				"none",
-				U,
-				H
+				H,
+				V
 			] }],
 			"transition-behavior": [{ transition: ["normal", "discrete"] }],
 			duration: [{ duration: [
-				V,
+				B,
 				"initial",
-				U,
-				H
+				H,
+				V
 			] }],
 			ease: [{ ease: [
 				"linear",
 				"initial",
 				_,
-				U,
-				H
+				H,
+				V
 			] }],
 			delay: [{ delay: [
-				V,
-				U,
-				H
+				B,
+				H,
+				V
 			] }],
 			animate: [{ animate: [
 				"none",
 				v,
-				U,
-				H
+				H,
+				V
 			] }],
 			backface: [{ backface: ["hidden", "visible"] }],
 			perspective: [{ perspective: [
 				h,
-				U,
-				H
+				H,
+				V
 			] }],
 			"perspective-origin": [{ "perspective-origin": x() }],
-			rotate: [{ rotate: se() }],
-			"rotate-x": [{ "rotate-x": se() }],
-			"rotate-y": [{ "rotate-y": se() }],
-			"rotate-z": [{ "rotate-z": se() }],
-			scale: [{ scale: ce() }],
-			"scale-x": [{ "scale-x": ce() }],
-			"scale-y": [{ "scale-y": ce() }],
-			"scale-z": [{ "scale-z": ce() }],
+			rotate: [{ rotate: ce() }],
+			"rotate-x": [{ "rotate-x": ce() }],
+			"rotate-y": [{ "rotate-y": ce() }],
+			"rotate-z": [{ "rotate-z": ce() }],
+			scale: [{ scale: le() }],
+			"scale-x": [{ "scale-x": le() }],
+			"scale-y": [{ "scale-y": le() }],
+			"scale-z": [{ "scale-z": le() }],
 			"scale-3d": ["scale-3d"],
-			skew: [{ skew: le() }],
-			"skew-x": [{ "skew-x": le() }],
-			"skew-y": [{ "skew-y": le() }],
+			skew: [{ skew: ue() }],
+			"skew-x": [{ "skew-x": ue() }],
+			"skew-y": [{ "skew-y": ue() }],
 			transform: [{ transform: [
-				U,
 				H,
+				V,
 				"",
 				"none",
 				"gpu",
@@ -1887,14 +1896,14 @@ var $e = (e, t) => {
 			] }],
 			"transform-origin": [{ origin: x() }],
 			"transform-style": [{ transform: ["3d", "flat"] }],
-			translate: [{ translate: ue() }],
-			"translate-x": [{ "translate-x": ue() }],
-			"translate-y": [{ "translate-y": ue() }],
-			"translate-z": [{ "translate-z": ue() }],
+			translate: [{ translate: de() }],
+			"translate-x": [{ "translate-x": de() }],
+			"translate-y": [{ "translate-y": de() }],
+			"translate-z": [{ "translate-z": de() }],
 			"translate-none": ["translate-none"],
-			accent: [{ accent: F() }],
+			accent: [{ accent: P() }],
 			appearance: [{ appearance: ["none", "auto"] }],
-			"caret-color": [{ caret: F() }],
+			"caret-color": [{ caret: P() }],
 			"color-scheme": [{ scheme: [
 				"normal",
 				"dark",
@@ -1940,8 +1949,8 @@ var $e = (e, t) => {
 				"nwse-resize",
 				"zoom-in",
 				"zoom-out",
-				U,
-				H
+				H,
+				V
 			] }],
 			"field-sizing": [{ "field-sizing": ["fixed", "content"] }],
 			"pointer-events": [{ "pointer-events": ["auto", "none"] }],
@@ -2015,17 +2024,17 @@ var $e = (e, t) => {
 				"scroll",
 				"contents",
 				"transform",
-				U,
-				H
+				H,
+				V
 			] }],
-			fill: [{ fill: ["none", ...F()] }],
+			fill: [{ fill: ["none", ...P()] }],
 			"stroke-w": [{ stroke: [
-				V,
-				rn,
-				Xt,
-				Zt
+				B,
+				cn,
+				en,
+				tn
 			] }],
-			stroke: [{ stroke: ["none", ...F()] }],
+			stroke: [{ stroke: ["none", ...P()] }],
 			"forced-color-adjust": [{ "forced-color-adjust": ["auto", "none"] }]
 		},
 		conflictingClassGroups: {
@@ -2212,12 +2221,12 @@ var $e = (e, t) => {
 });
 //#endregion
 //#region src/lib/utils.ts
-function Sn(...e) {
-	return xn(ie(e));
+function En(...e) {
+	return Tn(se(e));
 }
 //#endregion
 //#region src/components/ui/button.tsx
-var Cn = oe("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
+var Dn = ue("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
 	variants: {
 		variant: {
 			default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
@@ -2243,12 +2252,12 @@ var Cn = oe("inline-flex shrink-0 items-center justify-center gap-2 rounded-md t
 		size: "default"
 	}
 });
-function W({ className: e, variant: t = "default", size: n = "default", asChild: r = !1, ...i }) {
-	return /* @__PURE__ */ b(r ? qe : "button", {
+function U({ className: e, variant: t = "default", size: n = "default", asChild: r = !1, ...i }) {
+	return /* @__PURE__ */ b(r ? Ze : "button", {
 		"data-slot": "button",
 		"data-variant": t,
 		"data-size": n,
-		className: Sn(Cn({
+		className: En(Dn({
 			variant: t,
 			size: n,
 			className: e
@@ -2258,7 +2267,7 @@ function W({ className: e, variant: t = "default", size: n = "default", asChild:
 }
 //#endregion
 //#region ../Modules/basalam-module/client/components/BasalamNav.tsx
-var wn = [
+var On = [
 	{
 		to: "/settings/shop/basalam",
 		end: !0,
@@ -2290,22 +2299,34 @@ var wn = [
 		key: "basalam.nav.finance"
 	},
 	{
+		to: "/settings/shop/basalam/info",
+		key: "basalam.nav.info"
+	},
+	{
+		to: "/settings/shop/basalam/help",
+		key: "basalam.nav.help"
+	},
+	{
+		to: "/settings/shop/basalam/onboarding",
+		key: "basalam.nav.onboarding"
+	},
+	{
 		to: "/settings/shop/basalam/logs",
 		key: "basalam.nav.logs"
 	}
 ];
-function Tn() {
+function kn() {
 	let { t: e } = _(), t = h(), n = t.pathname.replace(/\/$/, "") || "/";
 	return /* @__PURE__ */ b("nav", {
 		className: "mb-4 flex flex-wrap gap-2",
 		"aria-label": e("basalam.title"),
-		children: wn.map((r) => {
+		children: On.map((r) => {
 			let i = r.end ? n === "/settings/shop/basalam" : r.to.startsWith("/orders") ? n.startsWith("/orders") && t.search.includes("marketplace=basalam") : n === r.to || n.startsWith(r.to + "/");
-			return /* @__PURE__ */ b(W, {
+			return /* @__PURE__ */ b(U, {
 				asChild: !0,
 				size: "sm",
 				variant: i ? "default" : "outline",
-				className: Sn(i && "pointer-events-none"),
+				className: En(i && "pointer-events-none"),
 				children: /* @__PURE__ */ b(p, {
 					to: r.to,
 					children: e(r.key)
@@ -2316,7 +2337,7 @@ function Tn() {
 }
 //#endregion
 //#region src/components/PageShell.tsx
-function En({ title: e, description: t, eyebrow: n, children: r }) {
+function An({ title: e, description: t, eyebrow: n, children: r }) {
 	return /* @__PURE__ */ x("div", {
 		className: "space-y-5",
 		children: [/* @__PURE__ */ x("header", {
@@ -2340,66 +2361,66 @@ function En({ title: e, description: t, eyebrow: n, children: r }) {
 }
 //#endregion
 //#region src/components/ui/card.tsx
-var Dn = {
+var jn = {
 	default: "",
 	stat: "wd-card-stat",
 	hero: "wd-card-hero",
 	glass: "wd-card-glass"
 };
-function G({ className: e, variant: t = "default", ...n }) {
+function W({ className: e, variant: t = "default", ...n }) {
 	return /* @__PURE__ */ b("div", {
 		"data-slot": "card",
 		"data-variant": t,
-		className: Sn("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", Dn[t], e),
+		className: En("flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm", jn[t], e),
 		...n
+	});
+}
+function G({ className: e, ...t }) {
+	return /* @__PURE__ */ b("div", {
+		"data-slot": "card-header",
+		className: En("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 text-start has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", e),
+		...t
 	});
 }
 function K({ className: e, ...t }) {
 	return /* @__PURE__ */ b("div", {
-		"data-slot": "card-header",
-		className: Sn("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 text-start has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", e),
+		"data-slot": "card-title",
+		className: En("leading-none font-semibold", e),
 		...t
 	});
 }
 function q({ className: e, ...t }) {
 	return /* @__PURE__ */ b("div", {
-		"data-slot": "card-title",
-		className: Sn("leading-none font-semibold", e),
-		...t
-	});
-}
-function On({ className: e, ...t }) {
-	return /* @__PURE__ */ b("div", {
 		"data-slot": "card-description",
-		className: Sn("text-sm text-muted-foreground", e),
+		className: En("text-sm text-muted-foreground", e),
 		...t
 	});
 }
 function J({ className: e, ...t }) {
 	return /* @__PURE__ */ b("div", {
 		"data-slot": "card-content",
-		className: Sn("px-6 text-start", e),
+		className: En("px-6 text-start", e),
 		...t
 	});
 }
 //#endregion
 //#region src/components/ui/collapsible.tsx
-function kn({ ...e }) {
-	return /* @__PURE__ */ b(Ge, {
+function Mn({ ...e }) {
+	return /* @__PURE__ */ b(Ye, {
 		"data-slot": "collapsible",
 		...e
 	});
 }
-function An({ ...e }) {
-	return /* @__PURE__ */ b(Be, {
+function Nn({ ...e }) {
+	return /* @__PURE__ */ b(We, {
 		"data-slot": "collapsible-trigger",
 		...e
 	});
 }
-function jn({ className: e, ...t }) {
-	return /* @__PURE__ */ b(He, {
+function Pn({ className: e, ...t }) {
+	return /* @__PURE__ */ b(Ke, {
 		"data-slot": "collapsible-content",
-		className: Sn("overflow-hidden text-start", e),
+		className: En("overflow-hidden text-start", e),
 		...t
 	});
 }
@@ -2409,56 +2430,56 @@ function Y({ className: e, type: t, ...n }) {
 	return /* @__PURE__ */ b("input", {
 		type: t,
 		"data-slot": "input",
-		className: Sn("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base text-start shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", e),
+		className: En("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base text-start shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", e),
 		...n
 	});
 }
 //#endregion
 //#region src/components/ui/textarea.tsx
-function Mn({ className: e, ...t }) {
+function Fn({ className: e, ...t }) {
 	return /* @__PURE__ */ b("textarea", {
 		"data-slot": "textarea",
-		className: Sn("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
+		className: En("flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-start shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40", e),
 		...t
 	});
 }
 //#endregion
 //#region src/lib/marketplace-api.ts
-function Nn(e) {
+function In(e) {
 	return `marketplace.installStep.${e}`;
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/typeof.js
-function Pn(e) {
+function Ln(e) {
 	"@babel/helpers - typeof";
-	return Pn = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
+	return Ln = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
 		return typeof e;
 	} : function(e) {
 		return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
-	}, Pn(e);
+	}, Ln(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPrimitive.js
-function Fn(e, t) {
-	if (Pn(e) != "object" || !e) return e;
+function Rn(e, t) {
+	if (Ln(e) != "object" || !e) return e;
 	var n = e[Symbol.toPrimitive];
 	if (n !== void 0) {
 		var r = n.call(e, t || "default");
-		if (Pn(r) != "object") return r;
+		if (Ln(r) != "object") return r;
 		throw TypeError("@@toPrimitive must return a primitive value.");
 	}
 	return (t === "string" ? String : Number)(e);
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/toPropertyKey.js
-function In(e) {
-	var t = Fn(e, "string");
-	return Pn(t) == "symbol" ? t : t + "";
+function zn(e) {
+	var t = Rn(e, "string");
+	return Ln(t) == "symbol" ? t : t + "";
 }
 //#endregion
 //#region \0@oxc-project+runtime@0.127.0/helpers/defineProperty.js
-function Ln(e, t, n) {
-	return (t = In(t)) in e ? Object.defineProperty(e, t, {
+function Bn(e, t, n) {
+	return (t = zn(t)) in e ? Object.defineProperty(e, t, {
 		value: n,
 		enumerable: !0,
 		configurable: !0,
@@ -2469,9 +2490,9 @@ function Ln(e, t, n) {
 //#region src/lib/apiError.ts
 var X = class extends Error {
 	constructor(e, t) {
-		super(e), Ln(this, "code", void 0), Ln(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
+		super(e), Bn(this, "code", void 0), Bn(this, "status", void 0), this.name = "ApiError", this.code = t.code, this.status = t.status;
 	}
-}, Rn = {
+}, Vn = {
 	invalid: "errors.api.invalid",
 	ai_disabled: "aiContent.errDisabled",
 	ai_entity_off: "aiContent.errEntityOff",
@@ -2506,22 +2527,22 @@ var X = class extends Error {
 	install_job_start_failed: "marketplace.installJobStartFailed",
 	build_dev_only: "buildPipeline.devOnly"
 };
-function zn(e) {
+function Hn(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 28") || t.includes("timed out") || t.includes("did not respond in time") || t.includes("زمان") && t.includes("پاسخ");
 }
-function Bn(e) {
+function Un(e) {
 	let t = e.toLowerCase();
 	return t.includes("curl error 52") || t.includes("empty reply") || t.includes("closed the connection without a response") || t.includes("پاسخ") && t.includes("خالی");
 }
-function Vn(e, t) {
-	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(Nn(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
+function Wn(e, t) {
+	return t.stuckWorker ? e("marketplace.installWorkerStuck") : t.step && t.code === "install_timeout" ? e("marketplace.installTimedOut", { step: e(In(t.step), { defaultValue: t.step }) }) : e("marketplace.installTimedOutGeneric");
 }
-function Hn(e, t) {
+function Gn(e, t) {
 	let n = t;
-	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return Vn(e, n);
+	if (n?.code === "install_timeout" || n?.step && n?.message?.includes("timed out")) return Wn(e, n);
 	if (t instanceof X && t.code) {
-		let n = Rn[t.code];
+		let n = Vn[t.code];
 		if (n === "marketplace.installFailedGeneric") {
 			let n = t.message?.trim();
 			return n ? e("marketplace.installFailed", { message: n }) : e("marketplace.installFailedGeneric");
@@ -2529,48 +2550,29 @@ function Hn(e, t) {
 		if (n) return e(n);
 	}
 	if (t && typeof t == "object" && "code" in t) {
-		let n = Rn[String(t.code)];
+		let n = Vn[String(t.code)];
 		if (n) return e(n);
 	}
 	if (t instanceof Error && t.message) {
 		let n = t.message.trim();
-		return zn(n) ? e("errors.api.requestTimeout") : Bn(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
+		return Hn(n) ? e("errors.api.requestTimeout") : Un(n) ? e("errors.api.emptyReply") : /^(invalid|forbidden|not found)$/i.test(n) ? e("errors.api.generic") : n && !/^(ok|error|internal server error|bad gateway|service unavailable)$/i.test(n) ? n : e("errors.api.unknown");
 	}
 	return e("errors.api.generic");
 }
 function Z(e, t) {
-	v.error(Hn(e, t));
+	v.error(Gn(e, t));
 }
 //#endregion
 //#region src/lib/queryClient.ts
-var Un = null;
-function Wn() {
-	return Un;
+var Kn = null;
+function qn() {
+	return Kn;
 }
 //#endregion
 //#region src/lib/authLost.ts
-var Gn = ["auth", "session"], Kn = new Set([
+var Jn = ["auth", "session"], Yn = new Set([
 	"rest_cookie_invalid_nonce",
 	"rest_not_logged_in",
-	"invalid_nonce",
-	"ajax_referer_failed",
-	"-1"
-]);
-function qn(e) {
-	if (!e || typeof e != "object") return !1;
-	let t = e;
-	if (t.status === 401) return !0;
-	let n = typeof t.code == "string" ? t.code : "";
-	if (Kn.has(n)) return !0;
-	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
-	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
-}
-function Jn(e) {
-	let t = e ?? Wn();
-	t && t.setQueryData(Gn, { logged_in: !1 });
-}
-var Yn = new Set([
-	"rest_cookie_invalid_nonce",
 	"invalid_nonce",
 	"ajax_referer_failed",
 	"-1"
@@ -2578,18 +2580,37 @@ var Yn = new Set([
 function Xn(e) {
 	if (!e || typeof e != "object") return !1;
 	let t = e;
-	if (t.status === 401) return !1;
+	if (t.status === 401) return !0;
 	let n = typeof t.code == "string" ? t.code : "";
 	if (Yn.has(n)) return !0;
 	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
-	return r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || r === "invalid nonce";
+	return !!(r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || t.status === 403 && (n === "-1" || r === "-1" || r.includes("are you sure you want to do this")));
 }
 function Zn(e) {
-	Xn(e) || qn(e) && Jn();
+	let t = e ?? qn();
+	t && t.setQueryData(Jn, { logged_in: !1 });
+}
+var Qn = new Set([
+	"rest_cookie_invalid_nonce",
+	"invalid_nonce",
+	"ajax_referer_failed",
+	"-1"
+]);
+function $n(e) {
+	if (!e || typeof e != "object") return !1;
+	let t = e;
+	if (t.status === 401) return !1;
+	let n = typeof t.code == "string" ? t.code : "";
+	if (Qn.has(n)) return !0;
+	let r = typeof t.message == "string" ? t.message.toLowerCase() : "";
+	return r.includes("cookie nonce is invalid") || r.includes("rest_cookie_invalid_nonce") || r === "invalid nonce";
+}
+function er(e) {
+	$n(e) || Xn(e) && Zn();
 }
 //#endregion
 //#region src/lib/safeUrl.ts
-function Qn(e) {
+function tr(e) {
 	try {
 		let t = new URL(e, window.location.origin);
 		if (t.protocol !== "https:" && t.protocol !== "http:") return !1;
@@ -2601,38 +2622,38 @@ function Qn(e) {
 }
 //#endregion
 //#region src/lib/api.ts
-function $n() {
+function nr() {
 	return window.webinoDashboard;
 }
-var er = 3e4;
-function tr(e) {
+var rr = 3e4;
+function ir(e) {
 	try {
 		return new URL(e, window.location.origin).origin === window.location.origin;
 	} catch {
 		return !1;
 	}
 }
-function nr(e) {
-	let t = $n();
+function ar(e) {
+	let t = nr();
 	if (!e.startsWith("http")) return t.restUrl + e.replace(/^\//, "");
-	if (tr(e) || Qn(e)) return e;
+	if (ir(e) || tr(e)) return e;
 	throw new X("Request blocked: URL not allowed", {
 		code: "forbidden_url",
 		status: 0
 	});
 }
-function rr(e, t) {
+function or(e, t) {
 	let n = new AbortController(), r = window.setTimeout(() => n.abort(), t), i = e.signal;
 	return i && (i.aborted ? n.abort(i.reason) : i.addEventListener("abort", () => n.abort(i.reason), { once: !0 })), {
 		signal: n.signal,
 		clear: () => window.clearTimeout(r)
 	};
 }
-function ir(e) {
+function sr(e) {
 	let t = e.replace(/^\//, "").split("?")[0];
 	return t === "bootstrap" ? "webino_dashboard_bootstrap" : t === "auth/session" ? "webino_dashboard_auth_session" : t === "dashboard/overview" ? "webino_dashboard_overview" : t === "dashboard/sms-panel" ? "webino_dashboard_sms_panel" : t === "license/remote-check" ? "webino_dashboard_license_remote_check" : t === "license/diagnostics" ? "webino_dashboard_license_diagnostics" : t === "license/remote-activate" ? "webino_dashboard_license_remote_activate" : t === "digikala/keys/generate" ? "webino_dashboard_digikala_keys_generate" : t === "digikala/keys" ? "webino_dashboard_digikala_keys" : t === "digikala/token/issue" ? "webino_dashboard_digikala_token_issue" : t === "digikala/auth/status" ? "webino_dashboard_digikala_auth_status" : t === "digikala/settings" ? "webino_dashboard_digikala_settings" : t === "digikala/products/mapped" ? "webino_dashboard_digikala_products_mapped" : t === "digikala/webhook/subscribe" ? "webino_dashboard_digikala_webhook_subscribe" : /^digikala\/products\/\d+\/map$/.test(t) ? "webino_dashboard_digikala_product_map" : /^digikala\/products\/\d+\/sync$/.test(t) ? "webino_dashboard_digikala_product_sync" : /^digikala\/products\/\d+\/maps$/.test(t) ? "webino_dashboard_digikala_product_maps" : /^digikala\/orders\/\d+\/cancel$/.test(t) ? "webino_dashboard_digikala_order_cancel" : /^digikala\/orders\/\d+\/sbs-status$/.test(t) ? "webino_dashboard_digikala_order_sbs" : t === "basalam/oauth/start" ? "webino_dashboard_basalam_oauth_start" : t === "basalam/oauth/complete" ? "webino_dashboard_basalam_oauth_complete" : t === "shop/products/lookup" || t.startsWith("shop/products") || t.startsWith("shop/reports") || t.startsWith("shop/product-categories") || t === "comments" || t.startsWith("comments/") ? "webino_dashboard_shop_rest" : (t.startsWith("bots/bale/") || t.startsWith("bots/telegram/") || t.startsWith("bots/parity/")) && !/^bots\/(bale|telegram)\/(webhook|health)(\/|$)/.test(t) ? "webino_dashboard_bots_rest" : /^(payments|torobpay|snapppay|digipay|zarinpal|bale-pay|wallet|c2c)(\/|$)/.test(t) ? "webino_dashboard_payments_rest" : t.startsWith("analytics/") && t !== "analytics/hit" ? "webino_dashboard_analytics_rest" : null;
 }
-function ar(e, t) {
+function cr(e, t) {
 	let n = e.toLowerCase();
 	return n.includes("briefly unavailable for scheduled maintenance") || n.includes("site is undergoing maintenance") || n.includes("در حال به‌روزرسانی") || n.includes("maintenance") ? {
 		message: "Site is updating",
@@ -2648,7 +2669,7 @@ function ar(e, t) {
 		code: "invalid_json"
 	};
 }
-function or(e, t) {
+function lr(e, t) {
 	let n = e.toLowerCase();
 	return t === 504 || t === 524 || n.includes("gateway timeout") || n.includes("gateway time-out") || n.includes("timed out") || n.includes("timeout") ? {
 		message: `Gateway timeout (HTTP ${t || 0})`,
@@ -2667,8 +2688,8 @@ function or(e, t) {
 		code: "invalid_json"
 	};
 }
-async function sr(e, t, n = {}) {
-	let r = ir(e), i = $n();
+async function ur(e, t, n = {}) {
+	let r = sr(e), i = nr();
 	if (!r || !i.ajaxUrl) throw new X("AJAX fallback unavailable", {
 		code: "no_ajax_fallback",
 		status: 0
@@ -2682,7 +2703,7 @@ async function sr(e, t, n = {}) {
 		let e = typeof n.body == "string" ? n.body : "";
 		e && a.set("payload", e);
 	}
-	let { signal: l, clear: u } = rr({}, t);
+	let { signal: l, clear: u } = or({}, t);
 	try {
 		let e = await fetch(i.ajaxUrl, {
 			method: "POST",
@@ -2694,7 +2715,7 @@ async function sr(e, t, n = {}) {
 		try {
 			n = JSON.parse(t);
 		} catch {
-			let n = or(t, e.status);
+			let n = lr(t, e.status);
 			throw new X(n.message, {
 				code: n.code,
 				status: e.status
@@ -2705,11 +2726,11 @@ async function sr(e, t, n = {}) {
 				code: typeof n.data?.code == "string" && n.data.code || "ajax_fallback_failed",
 				status: e.status
 			});
-			throw Zn(t), t;
+			throw er(t), t;
 		}
 		return n.data;
 	} catch (e) {
-		throw e instanceof X ? (Zn(e), e) : e instanceof DOMException && e.name === "AbortError" ? new X("Request timed out", {
+		throw e instanceof X ? (er(e), e) : e instanceof DOMException && e.name === "AbortError" ? new X("Request timed out", {
 			code: "request_timeout",
 			status: 0
 		}) : e instanceof TypeError ? new X("Network unavailable", {
@@ -2720,49 +2741,49 @@ async function sr(e, t, n = {}) {
 		u();
 	}
 }
-var cr = null;
-function lr(e) {
-	let t = $n();
+var dr = null;
+function fr(e) {
+	let t = nr();
 	t && typeof e == "string" && e.length > 0 && (t.nonce = e);
 }
-function ur() {
-	if (cr) return cr;
-	let e = $n();
+function pr() {
+	if (dr) return dr;
+	let e = nr();
 	if (!e?.ajaxUrl) return Promise.resolve(!1);
 	let t = new URLSearchParams();
-	return t.set("action", "webino_dashboard_auth_session"), cr = fetch(e.ajaxUrl, {
+	return t.set("action", "webino_dashboard_auth_session"), dr = fetch(e.ajaxUrl, {
 		method: "POST",
 		credentials: "same-origin",
 		headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
 		body: t
 	}).then((e) => e.json()).then((e) => {
 		let t = !!(e?.success && e.data?.logged_in);
-		return t && lr(e.data?.nonce), t && typeof e.data?.nonce == "string" && e.data.nonce.length > 0;
+		return t && fr(e.data?.nonce), t && typeof e.data?.nonce == "string" && e.data.nonce.length > 0;
 	}).catch(() => !1).finally(() => {
 		window.setTimeout(() => {
-			cr = null;
+			dr = null;
 		}, 0);
-	}), cr;
+	}), dr;
 }
-async function Q(e, t = {}, n = er) {
+async function Q(e, t = {}, n = rr) {
 	try {
-		return await dr(e, t, n);
+		return await mr(e, t, n);
 	} catch (r) {
-		if (!Xn(r)) throw r;
-		if (!await ur()) throw Jn(), r;
+		if (!$n(r)) throw r;
+		if (!await pr()) throw Zn(), r;
 		let i = { ...t.headers };
 		for (let e of Object.keys(i)) e.toLowerCase() === "x-wp-nonce" && delete i[e];
-		return dr(e, {
+		return mr(e, {
 			...t,
 			headers: i
 		}, n);
 	}
 }
-async function dr(e, t = {}, n = er) {
-	if (ir(e) && $n().ajaxUrl) return sr(e, n, t);
-	let r = nr(e), i = $n(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
+async function mr(e, t = {}, n = rr) {
+	if (sr(e) && nr().ajaxUrl) return ur(e, n, t);
+	let r = ar(e), i = nr(), a = { ...t.headers }, o = Object.keys(a).some((e) => e.toLowerCase() === "x-wp-nonce");
 	i.nonce && !o && (a["X-WP-Nonce"] = i.nonce), !Object.keys(a).some((e) => e.toLowerCase() === "content-type") && typeof t.body == "string" && t.body.length > 0 && (a["Content-Type"] = "application/json");
-	let { signal: s, clear: c } = rr(t, n);
+	let { signal: s, clear: c } = or(t, n);
 	try {
 		let e = await fetch(r, {
 			...t,
@@ -2773,7 +2794,7 @@ async function dr(e, t = {}, n = er) {
 		try {
 			i = JSON.parse(n);
 		} catch {
-			let t = ar(n, e.status);
+			let t = cr(n, e.status);
 			throw new X(t.message, {
 				code: t.code,
 				status: e.status
@@ -2784,11 +2805,11 @@ async function dr(e, t = {}, n = er) {
 				code: t.code,
 				status: e.status
 			});
-			throw Zn(n), n;
+			throw er(n), n;
 		}
 		return i;
 	} catch (e) {
-		throw e instanceof X ? (Zn(e), e) : e instanceof DOMException && e.name === "AbortError" ? new X("Request timed out", {
+		throw e instanceof X ? (er(e), e) : e instanceof DOMException && e.name === "AbortError" ? new X("Request timed out", {
 			code: "request_timeout",
 			status: 0
 		}) : e instanceof TypeError ? new X("Network unavailable", {
@@ -2801,7 +2822,7 @@ async function dr(e, t = {}, n = er) {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamHomePage.tsx
-function fr() {
+function hr() {
 	let { t: r } = _(), i = n(), [a, o] = g(), [s, c] = f("90"), [u, d] = f(!1), [m, h] = f(""), [y, S] = f(""), [C, w] = f(""), [T, E] = f(""), D = t({
 		queryKey: ["basalam", "status"],
 		queryFn: () => Q("basalam/status"),
@@ -2890,7 +2911,7 @@ function fr() {
 			v.error(r("basalam.oauthMissingUrl"));
 		},
 		onError: (e) => Z(r, e)
-	}), A = e({
+	}), ee = e({
 		mutationFn: (e) => Q("basalam/oauth/complete", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -2900,7 +2921,7 @@ function fr() {
 			v.success(r("basalam.oauthConnected")), h(""), await i.invalidateQueries({ queryKey: ["basalam"] });
 		},
 		onError: (e) => Z(r, e)
-	}), j = e({
+	}), A = e({
 		mutationFn: () => Q("basalam/oauth/manual", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -2914,19 +2935,19 @@ function fr() {
 			v.success(r("basalam.oauthConnected")), S(""), w(""), E(""), await i.invalidateQueries({ queryKey: ["basalam"] });
 		},
 		onError: (e) => Z(r, e)
-	}), M = e({
+	}), j = e({
 		mutationFn: () => Q("basalam/oauth/disconnect", { method: "POST" }),
 		onSuccess: async () => {
 			v.success(r("basalam.disconnected")), await i.invalidateQueries({ queryKey: ["basalam"] });
 		},
 		onError: (e) => Z(r, e)
-	}), N = e({
+	}), M = e({
 		mutationFn: () => Q("basalam/webhook/setup", { method: "POST" }),
 		onSuccess: async () => {
 			v.success(r("basalam.webhookConfigured")), await i.invalidateQueries({ queryKey: ["basalam"] });
 		},
 		onError: (e) => Z(r, e)
-	}), ee = e({
+	}), te = e({
 		mutationFn: () => Q("basalam/sync/orders/pull", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -2936,43 +2957,43 @@ function fr() {
 			v.success(r("basalam.ordersPullQueued", { days: s })), await i.invalidateQueries({ queryKey: ["basalam"] });
 		},
 		onError: (e) => Z(r, e)
-	}), P = e({
+	}), N = e({
 		mutationFn: () => Q("basalam/sync/products/sync-now", { method: "POST" }),
 		onSuccess: () => v.success(r("basalam.productsSyncQueued")),
 		onError: (e) => Z(r, e)
-	}), F = D.data, I = !!F?.connected, te = O.data?.vendor?.title || (F?.vendor_title ? String(F.vendor_title) : "") || (F?.vendor_id ? r("basalam.boothNamed", { id: String(F.vendor_id) }) : "");
-	return /* @__PURE__ */ x(En, {
+	}), P = D.data, F = !!P?.connected, ne = O.data?.vendor?.title || (P?.vendor_title ? String(P.vendor_title) : "") || (P?.vendor_id ? r("basalam.boothNamed", { id: String(P.vendor_id) }) : "");
+	return /* @__PURE__ */ x(An, {
 		title: r("basalam.title"),
 		description: r("basalam.subtitle"),
-		children: [/* @__PURE__ */ b(Tn, {}), /* @__PURE__ */ x("div", {
+		children: [/* @__PURE__ */ b(kn, {}), /* @__PURE__ */ x("div", {
 			className: "grid max-w-3xl gap-4",
 			children: [
-				/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.connection") }) }), /* @__PURE__ */ x(J, {
+				/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.connection") }) }), /* @__PURE__ */ x(J, {
 					className: "space-y-4",
 					children: [/* @__PURE__ */ x("p", {
 						className: "text-sm",
-						children: [I ? /* @__PURE__ */ b("span", {
+						children: [F ? /* @__PURE__ */ b("span", {
 							className: "text-emerald-700 dark:text-emerald-400",
 							children: r("basalam.connected")
-						}) : /* @__PURE__ */ b("span", { children: r("basalam.notConnected") }), I && te ? /* @__PURE__ */ x("span", {
+						}) : /* @__PURE__ */ b("span", { children: r("basalam.notConnected") }), F && ne ? /* @__PURE__ */ x("span", {
 							className: "text-muted-foreground",
-							children: [" — ", te]
+							children: [" — ", ne]
 						}) : null]
 					}), /* @__PURE__ */ b("div", {
 						className: "flex flex-wrap gap-2",
-						children: I ? /* @__PURE__ */ b(W, {
+						children: F ? /* @__PURE__ */ b(U, {
 							variant: "outline",
-							onClick: () => M.mutate(),
-							disabled: M.isPending,
+							onClick: () => j.mutate(),
+							disabled: j.isPending,
 							children: r("basalam.disconnect")
-						}) : /* @__PURE__ */ b(W, {
+						}) : /* @__PURE__ */ b(U, {
 							onClick: () => k.mutate(),
 							disabled: k.isPending,
 							children: r("basalam.connectOAuth")
 						})
 					})]
 				})] }),
-				I ? /* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.operations") }) }), /* @__PURE__ */ x(J, {
+				F ? /* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.operations") }) }), /* @__PURE__ */ x(J, {
 					className: "flex flex-wrap items-end gap-2",
 					children: [
 						/* @__PURE__ */ x("div", {
@@ -3010,24 +3031,24 @@ function fr() {
 								]
 							})]
 						}),
-						/* @__PURE__ */ b(W, {
-							onClick: () => ee.mutate(),
-							disabled: ee.isPending,
+						/* @__PURE__ */ b(U, {
+							onClick: () => te.mutate(),
+							disabled: te.isPending,
 							children: r("basalam.pullOrders")
 						}),
-						/* @__PURE__ */ b(W, {
-							variant: "secondary",
-							onClick: () => P.mutate(),
-							disabled: P.isPending,
-							children: r("basalam.syncProductsNow")
-						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: "secondary",
 							onClick: () => N.mutate(),
 							disabled: N.isPending,
+							children: r("basalam.syncProductsNow")
+						}),
+						/* @__PURE__ */ b(U, {
+							variant: "secondary",
+							onClick: () => M.mutate(),
+							disabled: M.isPending,
 							children: r("basalam.setupWebhook")
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							asChild: !0,
 							variant: "outline",
 							children: /* @__PURE__ */ b(p, {
@@ -3035,7 +3056,7 @@ function fr() {
 								children: r("basalam.nav.products")
 							})
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							asChild: !0,
 							variant: "outline",
 							children: /* @__PURE__ */ b(p, {
@@ -3043,7 +3064,7 @@ function fr() {
 								children: r("basalam.openPricing")
 							})
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							asChild: !0,
 							variant: "outline",
 							children: /* @__PURE__ */ b(p, {
@@ -3053,23 +3074,23 @@ function fr() {
 						})
 					]
 				})] }) : null,
-				/* @__PURE__ */ b(kn, {
+				/* @__PURE__ */ b(Mn, {
 					open: u,
 					onOpenChange: d,
-					children: /* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, {
+					children: /* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, {
 						className: "pb-3",
-						children: /* @__PURE__ */ b(An, {
+						children: /* @__PURE__ */ b(Nn, {
 							asChild: !0,
 							children: /* @__PURE__ */ x("button", {
 								type: "button",
 								className: "flex w-full items-center justify-between text-start",
-								children: [/* @__PURE__ */ b(q, {
+								children: [/* @__PURE__ */ b(K, {
 									className: "text-base",
 									children: r("basalam.advanced")
 								}), /* @__PURE__ */ b(L, { className: `size-4 transition-transform ${u ? "rotate-180" : ""}` })]
 							})
 						})
-					}), /* @__PURE__ */ b(jn, { children: /* @__PURE__ */ x(J, {
+					}), /* @__PURE__ */ b(Pn, { children: /* @__PURE__ */ x(J, {
 						className: "space-y-5 border-t pt-4",
 						children: [
 							/* @__PURE__ */ x("div", {
@@ -3079,17 +3100,17 @@ function fr() {
 										className: "text-sm font-medium",
 										children: r("basalam.oauthPasteTitle")
 									}),
-									/* @__PURE__ */ b(Mn, {
+									/* @__PURE__ */ b(Fn, {
 										value: m,
 										onChange: (e) => h(e.target.value),
 										placeholder: r("basalam.oauthPastePlaceholder"),
 										rows: 2
 									}),
-									/* @__PURE__ */ b(W, {
+									/* @__PURE__ */ b(U, {
 										size: "sm",
 										variant: "secondary",
-										disabled: A.isPending || !m.trim(),
-										onClick: () => A.mutate(m.trim()),
+										disabled: ee.isPending || !m.trim(),
+										onClick: () => ee.mutate(m.trim()),
 										children: r("basalam.oauthPasteSave")
 									})
 								]
@@ -3116,16 +3137,16 @@ function fr() {
 										onChange: (e) => E(e.target.value),
 										placeholder: r("basalam.fieldVendorOptional")
 									}),
-									/* @__PURE__ */ b(W, {
+									/* @__PURE__ */ b(U, {
 										size: "sm",
 										variant: "secondary",
-										disabled: j.isPending || !y.trim(),
-										onClick: () => j.mutate(),
+										disabled: A.isPending || !y.trim(),
+										onClick: () => A.mutate(),
 										children: r("basalam.manualTokenSave")
 									})
 								]
 							}),
-							F?.webhook_url ? /* @__PURE__ */ x("div", {
+							P?.webhook_url ? /* @__PURE__ */ x("div", {
 								className: "space-y-1",
 								children: [
 									/* @__PURE__ */ b("p", {
@@ -3134,11 +3155,11 @@ function fr() {
 									}),
 									/* @__PURE__ */ b("code", {
 										className: "bg-muted block overflow-x-auto rounded-md p-2 text-xs",
-										children: F.webhook_url
+										children: P.webhook_url
 									}),
 									/* @__PURE__ */ b("p", {
 										className: "text-muted-foreground text-xs",
-										children: F.webhook_id ? r("basalam.webhookConfigured") : r("basalam.webhookPending")
+										children: P.webhook_id ? r("basalam.webhookConfigured") : r("basalam.webhookPending")
 									})
 								]
 							}) : null
@@ -3151,7 +3172,7 @@ function fr() {
 }
 //#endregion
 //#region node_modules/dayjs/dayjs.min.js
-var pr = /* @__PURE__ */ k(((e, t) => {
+var gr = /* @__PURE__ */ k(((e, t) => {
 	(function(n, r) {
 		typeof e == "object" && t !== void 0 ? t.exports = r() : typeof define == "function" && define.amd ? define(r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs = r();
 	})(e, (function() {
@@ -3445,9 +3466,9 @@ var pr = /* @__PURE__ */ k(((e, t) => {
 			return w(1e3 * e);
 		}, w.en = b[y], w.Ls = b, w.p = {}, w;
 	}));
-})), mr = /* @__PURE__ */ k(((e, t) => {
+})), _r = /* @__PURE__ */ k(((e, t) => {
 	(function(n, r) {
-		typeof e == "object" && t !== void 0 ? t.exports = r(pr()) : typeof define == "function" && define.amd ? define(["dayjs"], r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs_locale_fa = r(n.dayjs);
+		typeof e == "object" && t !== void 0 ? t.exports = r(gr()) : typeof define == "function" && define.amd ? define(["dayjs"], r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs_locale_fa = r(n.dayjs);
 	})(e, (function(e) {
 		function t(e) {
 			return e && typeof e == "object" && "default" in e ? e : { default: e };
@@ -3489,7 +3510,7 @@ var pr = /* @__PURE__ */ k(((e, t) => {
 		};
 		return n.default.locale(r, null, !0), r;
 	}));
-})), hr = /* @__PURE__ */ k(((e, t) => {
+})), vr = /* @__PURE__ */ k(((e, t) => {
 	(function(n, r) {
 		typeof e == "object" && t !== void 0 ? t.exports = r() : typeof define == "function" && define.amd ? define(r) : (n = typeof globalThis < "u" ? globalThis : n || self).dayjs_plugin_relativeTime = r();
 	})(e, (function() {
@@ -3593,12 +3614,12 @@ var pr = /* @__PURE__ */ k(((e, t) => {
 			};
 		};
 	}));
-})), gr = /* @__PURE__ */ j(pr(), 1), _r = /* @__PURE__ */ j(hr(), 1), vr = /* @__PURE__ */ j(mr(), 1);
-function yr(e, t, n) {
-	let r = $((e + $(t - 8, 6) + 100100) * 1461, 4) + $(153 * Sr(t + 9, 12) + 2, 5) + n - 34840408;
+})), yr = /* @__PURE__ */ A(gr(), 1), br = /* @__PURE__ */ A(vr(), 1), xr = /* @__PURE__ */ A(_r(), 1);
+function Sr(e, t, n) {
+	let r = $((e + $(t - 8, 6) + 100100) * 1461, 4) + $(153 * Tr(t + 9, 12) + 2, 5) + n - 34840408;
 	return r = r - $($(e + 100100 + $(t - 8, 6), 100) * 3, 4) + 752, r;
 }
-var br = [
+var Cr = [
 	-61,
 	9,
 	38,
@@ -3619,46 +3640,46 @@ var br = [
 	2394,
 	2456,
 	3178
-], xr = Math.floor;
-function Sr(e, t) {
+], wr = Math.floor;
+function Tr(e, t) {
 	return e - ~~(e / t) * t;
 }
 function $(e, t) {
 	return ~~(e / t);
 }
-function Cr(e, t) {
-	let n = br.length, r = e + 621, i = -14, a = br[0], o, s, c, l;
-	if (e < a || e >= br[n - 1]) throw Error(`Invalid Jalaali year ${e}`);
-	for (let t = 1; t < n && (o = br[t], s = o - a, !(e < o)); t += 1) i = i + $(s, 33) * 8 + $(Sr(s, 33), 4), a = o;
-	l = e - a, i = i + $(l, 33) * 8 + $(Sr(l, 33) + 3, 4), Sr(s, 33) === 4 && s - l === 4 && (i += 1);
+function Er(e, t) {
+	let n = Cr.length, r = e + 621, i = -14, a = Cr[0], o, s, c, l;
+	if (e < a || e >= Cr[n - 1]) throw Error(`Invalid Jalaali year ${e}`);
+	for (let t = 1; t < n && (o = Cr[t], s = o - a, !(e < o)); t += 1) i = i + $(s, 33) * 8 + $(Tr(s, 33), 4), a = o;
+	l = e - a, i = i + $(l, 33) * 8 + $(Tr(l, 33) + 3, 4), Tr(s, 33) === 4 && s - l === 4 && (i += 1);
 	let u = $(r, 4) - $(($(r, 100) + 1) * 3, 4) - 150, d = 20 + i - u;
 	return t ? {
 		gy: r,
 		march: d
-	} : (s - l < 6 && (l = l - s + $(s + 4, 33) * 33), c = Sr(Sr(l + 1, 33) - 1, 4), c === -1 && (c = 4), {
+	} : (s - l < 6 && (l = l - s + $(s + 4, 33) * 33), c = Tr(Tr(l + 1, 33) - 1, 4), c === -1 && (c = 4), {
 		leap: c,
 		gy: r,
 		march: d
 	});
 }
-function wr(e, t, n) {
-	let r = Cr(e, !0);
-	return yr(r.gy, 3, r.march) + (t - 1) * 31 - $(t, 7) * (t - 7) + n - 1;
+function Dr(e, t, n) {
+	let r = Er(e, !0);
+	return Sr(r.gy, 3, r.march) + (t - 1) * 31 - $(t, 7) * (t - 7) + n - 1;
 }
-function Tr(e) {
+function Or(e) {
 	let t = 4 * e + 139361631;
 	t = t + $($(4 * e + 183187720, 146097) * 3, 4) * 4 - 3908;
-	let n = $(Sr(t, 1461), 4) * 5 + 308, r = $(Sr(n, 153), 5) + 1, i = Sr($(n, 153), 12) + 1;
+	let n = $(Tr(t, 1461), 4) * 5 + 308, r = $(Tr(n, 153), 5) + 1, i = Tr($(n, 153), 12) + 1;
 	return [
 		$(t, 1461) - 100100 + $(8 - i, 6),
 		i,
 		r
 	];
 }
-function Er(e, t, n) {
-	return Tr(wr(e, t, n));
+function kr(e, t, n) {
+	return Or(Dr(e, t, n));
 }
-function Dr(e, t, n) {
+function Ar(e, t, n) {
 	let r = {
 		year: e,
 		month: t,
@@ -3679,16 +3700,16 @@ function Dr(e, t, n) {
 	], a;
 	e <= 1600 ? (e -= 621, r.year = 0) : (e -= 1600, r.year = 979);
 	let o = e > 2 ? e + 1 : e;
-	return a = xr((o + 3) / 4) + 365 * e - xr((o + 99) / 100) - 80 + i[t - 1] + xr((o + 399) / 400) + n, r.year += 33 * xr(a / 12053), a %= 12053, r.year += 4 * xr(a / 1461), a %= 1461, a > 365 && (r.year += xr((a - 1) / 365), a = (a - 1) % 365), r.month = a < 186 ? 1 + xr(a / 31) : 7 + xr((a - 186) / 30), r.day = 1 + (a < 186 ? a % 31 : (a - 186) % 30), [
+	return a = wr((o + 3) / 4) + 365 * e - wr((o + 99) / 100) - 80 + i[t - 1] + wr((o + 399) / 400) + n, r.year += 33 * wr(a / 12053), a %= 12053, r.year += 4 * wr(a / 1461), a %= 1461, a > 365 && (r.year += wr((a - 1) / 365), a = (a - 1) % 365), r.month = a < 186 ? 1 + wr(a / 31) : 7 + wr((a - 186) / 30), r.day = 1 + (a < 186 ? a % 31 : (a - 186) % 30), [
 		r.year,
 		r.month,
 		r.day
 	];
 }
-var Or = {
-	J: (e, t, n) => Dr(e, t, n),
-	G: (e, t, n) => Er(e, t, n)
-}, kr = /^(\d{4})[-/]?(\d{1,2})[-/]?(\d{0,2})(.*)$/, Ar = /\[.*?\]|jY{2,4}|jM{1,4}|jD{1,2}|Y{2,4}|M{1,4}|D{1,2}|d{1,4}|H{1,2}|h{1,2}|a|A|m{1,2}|s{1,2}|Z{1,2}|SSS/g, jr = "date", Mr = "day", Nr = "month", Pr = "year", Fr = "week", Ir = "YYYY-MM-DDTHH:mm:ssZ", Lr = { jmonths: "فروردین_اردیبهشت_خرداد_تیر_مرداد_شهریور_مهر_آبان_آذر_دی_بهمن_اسفند".split("_") }, Rr = (e, t, n) => {
+var jr = {
+	J: (e, t, n) => Ar(e, t, n),
+	G: (e, t, n) => kr(e, t, n)
+}, Mr = /^(\d{4})[-/]?(\d{1,2})[-/]?(\d{0,2})(.*)$/, Nr = /\[.*?\]|jY{2,4}|jM{1,4}|jD{1,2}|Y{2,4}|M{1,4}|D{1,2}|d{1,4}|H{1,2}|h{1,2}|a|A|m{1,2}|s{1,2}|Z{1,2}|SSS/g, Pr = "date", Fr = "day", Ir = "month", Lr = "year", Rr = "week", zr = "YYYY-MM-DDTHH:mm:ssZ", Br = { jmonths: "فروردین_اردیبهشت_خرداد_تیر_مرداد_شهریور_مهر_آبان_آذر_دی_بهمن_اسفند".split("_") }, Vr = (e, t, n) => {
 	let r = t.prototype, i = r.$utils(), a = (e) => e.$C === "jalali", o = i.prettyUnit || i.p, s = i.isUndefined || i.u, c = i.padStart || i.s, l = i.monthDiff || i.m, u = i.absFloor || i.a, d = (e) => function(...t) {
 		let n = e.bind(this)(...t);
 		return n.$C = this.$C, n.isJalali() && n.InitJalali(), n;
@@ -3703,8 +3724,8 @@ var Or = {
 	}, r.isJalali = function() {
 		return a(this);
 	}, n.en.jmonths = "Farvardin_Ordibehesht_Khordaad_Tir_Mordaad_Shahrivar_Mehr_Aabaan_Aazar_Dey_Bahman_Esfand".split("_"), n.locale("fa", {
-		...vr.default,
-		...Lr
+		...xr.default,
+		...Br
 	}, !0);
 	let w = function(e, t) {
 		return n(e, {
@@ -3717,43 +3738,43 @@ var Or = {
 		p.bind(this)(e), this.isJalali() && this.InitJalali();
 	}, r.parse = function(e) {
 		if (this.$C = e.calendar || this.$C || n.$C, e.jalali && typeof e.date == "string" && /.*[^Z]$/i.test(e.date)) {
-			let t = e.date.match(kr);
+			let t = e.date.match(Mr);
 			if (t) {
-				let [n, r, i] = Or.G(Number.parseInt(t[1], 10), Number.parseInt(t[2], 10), Number.parseInt(t[3] || 1, 10));
+				let [n, r, i] = jr.G(Number.parseInt(t[1], 10), Number.parseInt(t[2], 10), Number.parseInt(t[3] || 1, 10));
 				e.date = `${n}-${r}-${i}${t[4] || ""}`;
 			}
 		}
 		return f.bind(this)(e);
 	}, r.InitJalali = function() {
-		let [e, t, n] = Or.J(this.$y, this.$M + 1, this.$D);
+		let [e, t, n] = jr.J(this.$y, this.$M + 1, this.$D);
 		this.$jy = e, this.$jM = t - 1, this.$jD = n;
 	}, r.startOf = function(e, t) {
 		if (!a(this)) return m.bind(this)(e, t);
 		let r = s(t) ? !0 : t, i = o(e), c = (e, t, n = this.$jy) => {
-			let [i, a, o] = Or.G(n, t + 1, e), s = w(new Date(i, a - 1, o), this);
-			return (r ? s : s.endOf(Mr)).$set("hour", 1);
+			let [i, a, o] = jr.G(n, t + 1, e), s = w(new Date(i, a - 1, o), this);
+			return (r ? s : s.endOf(Fr)).$set("hour", 1);
 		}, l = (this.$W + (7 - n.$fdow)) % 7;
 		switch (i) {
-			case Pr: return r ? c(1, 0) : c(0, 0, this.$jy + 1);
-			case Nr: return r ? c(1, this.$jM) : c(0, (this.$jM + 1) % 12, this.$jy + Math.floor((this.$jM + 1) / 12));
-			case Fr: return c(r ? this.$jD - l : this.$jD + (6 - l), this.$jM);
+			case Lr: return r ? c(1, 0) : c(0, 0, this.$jy + 1);
+			case Ir: return r ? c(1, this.$jM) : c(0, (this.$jM + 1) % 12, this.$jy + Math.floor((this.$jM + 1) / 12));
+			case Rr: return c(r ? this.$jD - l : this.$jD + (6 - l), this.$jM);
 			default: return m.bind(this)(e, t);
 		}
 	}, r.$set = function(e, t) {
 		if (!a(this)) return h.bind(this)(e, t);
 		let n = o(e), r = (e, t, n = this.$jy) => {
-			let [r, i, a] = Or.G(n, t + 1, e);
+			let [r, i, a] = jr.G(n, t + 1, e);
 			return this.$d.setFullYear(r), this.$d.setMonth(i - 1), this.$d.setDate(a), this;
 		};
 		switch (n) {
-			case jr:
-			case Mr:
+			case Pr:
+			case Fr:
 				r(t, this.$jM);
 				break;
-			case Nr:
+			case Ir:
 				r(this.$jD, t);
 				break;
-			case Pr:
+			case Lr:
 				r(this.$jD, this.$jM, t);
 				break;
 			default: return h.bind(this)(e, t);
@@ -3763,27 +3784,27 @@ var Or = {
 		if (!a(this)) return g.bind(this)(e, t);
 		e = Number(e);
 		let n = t && (t.length === 1 || t === "ms") ? t : o(t), r = (t, n) => {
-			let r = this.set(jr, 1).set(t, n + e);
-			return r.set(jr, Math.min(this.$jD, r.daysInMonth()));
+			let r = this.set(Pr, 1).set(t, n + e);
+			return r.set(Pr, Math.min(this.$jD, r.daysInMonth()));
 		};
-		if (["M", Nr].includes(n)) {
-			let t = this.$jM + e, n = t < 0 ? -Math.ceil(-t / 12) : Math.floor(t / 12), r = this.$jD, i = this.set(Mr, 1).add(n, Pr).set(Nr, t - n * 12);
-			return i.set(Mr, Math.min(i.daysInMonth(), r));
+		if (["M", Ir].includes(n)) {
+			let t = this.$jM + e, n = t < 0 ? -Math.ceil(-t / 12) : Math.floor(t / 12), r = this.$jD, i = this.set(Fr, 1).add(n, Lr).set(Ir, t - n * 12);
+			return i.set(Fr, Math.min(i.daysInMonth(), r));
 		}
-		if (["y", Pr].includes(n)) return r(Pr, this.$jy);
-		if (["d", Mr].includes(n)) {
+		if (["y", Lr].includes(n)) return r(Lr, this.$jy);
+		if (["d", Fr].includes(n)) {
 			let t = new Date(this.$d);
 			return t.setDate(t.getDate() + e), w(t, this);
 		}
-		if (["w", Fr].includes(n)) {
+		if (["w", Rr].includes(n)) {
 			let t = new Date(this.$d);
 			return t.setDate(t.getDate() + e * 7), w(t, this);
 		}
 		return g.bind(this)(e, t);
 	}, r.format = function(e, t) {
 		if (!a(this)) return _.bind(this)(e, t);
-		let n = e || Ir, { jmonths: r } = t || this.$locale();
-		return n.replace(Ar, (e) => {
+		let n = e || zr, { jmonths: r } = t || this.$locale();
+		return n.replace(Nr, (e) => {
 			if (e.includes("[")) return e.replace(/\[|\]/g, "");
 			switch (e) {
 				case "YY": return String(this.$jy).slice(-2);
@@ -3801,23 +3822,23 @@ var Or = {
 		if (!a(this)) return v.bind(this)(e, t, r);
 		let i = o(t), s = n(e), c = l(this, s);
 		switch (i) {
-			case Pr:
+			case Lr:
 				c /= 12;
 				break;
-			case Nr: break;
+			case Ir: break;
 			default: return v.bind(this)(e, t, r);
 		}
 		return r ? c : u(c);
 	}, r.$g = function(e, t, n) {
 		return s(e) ? this[t] : this.set(n, e);
 	}, r.year = function(e) {
-		return a(this) ? this.$g(e, "$jy", Pr) : y.bind(this)(e);
+		return a(this) ? this.$g(e, "$jy", Lr) : y.bind(this)(e);
 	}, r.month = function(e) {
-		return a(this) ? this.$g(e, "$jM", Nr) : b.bind(this)(e);
+		return a(this) ? this.$g(e, "$jM", Ir) : b.bind(this)(e);
 	}, r.date = function(e) {
-		return a(this) ? this.$g(e, "$jD", Mr) : x.bind(this)(e);
+		return a(this) ? this.$g(e, "$jD", Fr) : x.bind(this)(e);
 	}, r.daysInMonth = function() {
-		return a(this) ? this.endOf(Nr).$jD : S.bind(this)();
+		return a(this) ? this.endOf(Ir).$jD : S.bind(this)();
 	}, C && (r.toArray = function() {
 		return a(this) ? [
 			this.$jy,
@@ -3832,14 +3853,14 @@ var Or = {
 		return w(this.toDate(), this);
 	};
 };
-function zr(e) {
+function Hr(e) {
 	return e.toLowerCase().startsWith("fa");
 }
-function Br(e) {
+function Ur(e) {
 	return e.replace(/\d/g, (e) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(e, 10)] ?? e);
 }
-gr.default.extend(Rr), gr.default.extend(_r.default);
-function Vr(e) {
+yr.default.extend(Vr), yr.default.extend(br.default);
+function Wr(e) {
 	if (e == null || e === "") return !0;
 	if (typeof e == "number") return !Number.isFinite(e) || e <= 0;
 	if (typeof e == "string") {
@@ -3849,8 +3870,8 @@ function Vr(e) {
 	}
 	return !1;
 }
-function Hr(...e) {
-	for (let t of e) if (!Vr(t)) {
+function Gr(...e) {
+	for (let t of e) if (!Wr(t)) {
 		if (typeof t == "number") return t;
 		if (typeof t == "string") {
 			let e = t.trim();
@@ -3858,27 +3879,27 @@ function Hr(...e) {
 		}
 	}
 }
-function Ur(e) {
-	if (typeof e == "number") return gr.default.unix(e);
+function Kr(e) {
+	if (typeof e == "number") return yr.default.unix(e);
 	let t = String(e).trim();
-	return /^\d+$/.test(t) ? gr.default.unix(Number(t)) : (0, gr.default)(t);
+	return /^\d+$/.test(t) ? yr.default.unix(Number(t)) : (0, yr.default)(t);
 }
-function Wr(e, t, n = "—") {
-	if (Vr(e)) return n;
-	let r = Ur(e);
+function qr(e, t, n = "—") {
+	if (Wr(e)) return n;
+	let r = Kr(e);
 	if (!r.isValid()) return n;
-	if (zr(t)) {
+	if (Hr(t)) {
 		let e = S.t("date.timeSeparator");
-		return Br(r.calendar("jalali").locale("fa").format(`D MMMM YYYY${e}HH:mm`));
+		return Ur(r.calendar("jalali").locale("fa").format(`D MMMM YYYY${e}HH:mm`));
 	}
 	return r.locale("en").format("YYYY-MM-DD HH:mm");
 }
 //#endregion
 //#region ../Modules/basalam-module/client/lib/basalamJobs.ts
-function Gr(e) {
-	return Hr(e.failed_at, e.completed_at, e.started_at, e.created_at, e.updated_at);
+function Jr(e) {
+	return Gr(e.failed_at, e.completed_at, e.started_at, e.created_at, e.updated_at);
 }
-function Kr(e, t) {
+function Yr(e, t) {
 	if (!e || e === "null" || e === "undefined") return "—";
 	let n = String(e).trim();
 	if (!n) return "—";
@@ -3896,7 +3917,7 @@ function Kr(e, t) {
 	} catch {}
 	return n;
 }
-var qr = {
+var Xr = {
 	sync_basalam_create_all_products: "basalam.job.createAllProducts",
 	sync_basalam_update_all_products: "basalam.job.updateAllProducts",
 	sync_basalam_bulk_update_products: "basalam.job.bulkUpdateProducts",
@@ -3906,29 +3927,29 @@ var qr = {
 	sync_basalam_fetch_orders: "basalam.job.fetchOrders",
 	sync_basalam_quick_update: "basalam.job.quickUpdate",
 	webino_basalam_discount_tasks: "basalam.job.discounts"
-}, Jr = {
+}, Zr = {
 	pending: "basalam.jobStatus.pending",
 	processing: "basalam.jobStatus.processing",
 	completed: "basalam.jobStatus.completed",
 	failed: "basalam.jobStatus.failed",
 	success: "basalam.jobStatus.completed"
 };
-function Yr(e) {
+function Qr(e) {
 	return String(e.job_type || e.type || "");
 }
-function Xr(e, t) {
+function $r(e, t) {
 	if (!e) return "—";
-	let n = qr[e];
+	let n = Xr[e];
 	return n ? t(n) : t(`basalam.job.${e}`, { defaultValue: e.replace(/^sync_basalam_/, "").replace(/_/g, " ") });
 }
-function Zr(e, t) {
+function ei(e, t) {
 	if (!e) return "—";
-	let n = Jr[e];
+	let n = Zr[e];
 	return n ? t(n) : t(`basalam.jobStatus.${e}`, { defaultValue: e });
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamProductsPage.tsx
-function Qr() {
+function ti() {
 	let { t: r, i18n: i } = _(), a = n(), [o, s] = f("all"), [c, l] = f({}), u = t({
 		queryKey: [
 			"basalam",
@@ -3962,26 +3983,26 @@ function Qr() {
 		},
 		onError: (e) => Z(r, e)
 	});
-	return /* @__PURE__ */ x(En, {
+	return /* @__PURE__ */ x(An, {
 		title: r("basalam.productsTitle"),
 		description: r("basalam.productsSubtitle"),
 		children: [
-			/* @__PURE__ */ b(Tn, {}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ b(kn, {}),
+			/* @__PURE__ */ x(W, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.productActions") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.productActions") }) }), /* @__PURE__ */ x(J, {
 					className: "flex flex-wrap gap-2",
 					children: [
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							onClick: () => p.mutate("basalam/sync/products/create-all"),
 							children: r("basalam.createAll")
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: "secondary",
 							onClick: () => p.mutate("basalam/sync/products/update-all"),
 							children: r("basalam.updateAll")
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: "secondary",
 							onClick: () => Q("basalam/sync/products/update-all", {
 								method: "POST",
@@ -3991,12 +4012,12 @@ function Qr() {
 							}).catch((e) => Z(r, e)),
 							children: r("basalam.quickUpdate")
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: "outline",
 							onClick: () => p.mutate("basalam/sync/products/connect-all"),
 							children: r("basalam.autoConnect")
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: "destructive",
 							onClick: () => {
 								window.confirm(r("basalam.cancelJobsConfirm")) && p.mutate("basalam/jobs/cancel");
@@ -4006,9 +4027,9 @@ function Qr() {
 					]
 				})]
 			}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ x(W, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.productList") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.productList") }) }), /* @__PURE__ */ x(J, {
 					className: "space-y-3",
 					children: [/* @__PURE__ */ x("div", {
 						className: "flex flex-wrap gap-2",
@@ -4016,7 +4037,7 @@ function Qr() {
 							"all",
 							"connected",
 							"unconnected"
-						].map((e) => /* @__PURE__ */ b(W, {
+						].map((e) => /* @__PURE__ */ b(U, {
 							size: "sm",
 							variant: o === e ? "default" : "outline",
 							onClick: () => s(e),
@@ -4078,7 +4099,7 @@ function Qr() {
 									}),
 									/* @__PURE__ */ x("td", {
 										className: "flex flex-wrap gap-1 py-2",
-										children: [e.connected ? /* @__PURE__ */ b(W, {
+										children: [e.connected ? /* @__PURE__ */ b(U, {
 											size: "sm",
 											variant: "secondary",
 											onClick: () => m.mutate({
@@ -4086,7 +4107,7 @@ function Qr() {
 												payload: { product_id: e.id }
 											}),
 											children: r("basalam.updateOne")
-										}) : /* @__PURE__ */ b(W, {
+										}) : /* @__PURE__ */ b(U, {
 											size: "sm",
 											onClick: () => m.mutate({
 												path: "basalam/sync/products/create",
@@ -4094,7 +4115,7 @@ function Qr() {
 											}),
 											children: r("basalam.createOne")
 										}), e.connected ? /* @__PURE__ */ x(y, { children: [
-											/* @__PURE__ */ b(W, {
+											/* @__PURE__ */ b(U, {
 												size: "sm",
 												variant: "outline",
 												onClick: () => m.mutate({
@@ -4103,7 +4124,7 @@ function Qr() {
 												}),
 												children: r("basalam.disconnect")
 											}),
-											/* @__PURE__ */ b(W, {
+											/* @__PURE__ */ b(U, {
 												size: "sm",
 												variant: "outline",
 												onClick: () => m.mutate({
@@ -4112,7 +4133,7 @@ function Qr() {
 												}),
 												children: r("basalam.archiveOne")
 											}),
-											/* @__PURE__ */ b(W, {
+											/* @__PURE__ */ b(U, {
 												size: "sm",
 												variant: "outline",
 												onClick: () => m.mutate({
@@ -4131,7 +4152,7 @@ function Qr() {
 													...n,
 													[e.id]: t.target.value
 												}))
-											}), /* @__PURE__ */ b(W, {
+											}), /* @__PURE__ */ b(U, {
 												size: "sm",
 												variant: "outline",
 												disabled: !c[e.id],
@@ -4152,7 +4173,7 @@ function Qr() {
 					})]
 				})]
 			}),
-			/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.recentJobs") }) }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b("div", {
+			/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.recentJobs") }) }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b("div", {
 				className: "overflow-x-auto",
 				children: /* @__PURE__ */ x("table", {
 					className: "w-full text-sm",
@@ -4189,19 +4210,19 @@ function Qr() {
 							}),
 							/* @__PURE__ */ b("td", {
 								className: "py-2 pe-2",
-								children: Xr(Yr(e), r)
+								children: $r(Qr(e), r)
 							}),
 							/* @__PURE__ */ b("td", {
 								className: "py-2 pe-2",
-								children: Zr(e.status, r)
+								children: ei(e.status, r)
 							}),
 							/* @__PURE__ */ b("td", {
 								className: "text-muted-foreground py-2 pe-2 text-xs",
-								children: Wr(Gr(e), i.language)
+								children: qr(Jr(e), i.language)
 							}),
 							/* @__PURE__ */ b("td", {
 								className: "text-muted-foreground max-w-md break-all py-2 text-xs",
-								children: Kr(e.error_message, r)
+								children: Yr(e.error_message, r)
 							})
 						]
 					}, String(e.id))) })]
@@ -4212,7 +4233,7 @@ function Qr() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamOrdersPage.tsx
-function $r() {
+function ni() {
 	return /* @__PURE__ */ b(m, {
 		to: "/orders?marketplace=basalam",
 		replace: !0
@@ -4220,10 +4241,10 @@ function $r() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamCategoriesPage.tsx
-function ei(e) {
+function ri(e) {
 	return String(e.title ?? e.name ?? e.id);
 }
-function ti(e) {
+function ii(e) {
 	if (!e) return [];
 	if (Array.isArray(e)) return e;
 	if (typeof e == "object") {
@@ -4234,10 +4255,10 @@ function ti(e) {
 	}
 	return [];
 }
-function ni(e) {
+function ai(e) {
 	return e ? Array.isArray(e.children) && e.children.length ? e.children : Array.isArray(e.category) && e.category.length ? e.category : [] : [];
 }
-function ri() {
+function oi() {
 	let { t: r } = _(), i = n(), [a, o] = f(""), [s, c] = f(""), [l, d] = f(""), [p, m] = f(""), [h, g] = f(""), [y, S] = f(""), C = t({
 		queryKey: ["basalam", "mappings"],
 		queryFn: () => Q("basalam/categories/mappings")
@@ -4250,27 +4271,27 @@ function ri() {
 	}), E = t({
 		queryKey: ["basalam", "categories-tree"],
 		queryFn: () => Q("basalam/categories")
-	}), D = u(() => ti(E.data?.categories), [E.data]), O = D, k = O.find((e) => String(e.id) === s), A = ni(k), j = A.find((e) => String(e.id) === l), M = ni(j), N = (T.data?.items ?? []).find((e) => String(e.id) === a), ee = [
+	}), D = u(() => ii(E.data?.categories), [E.data]), O = D, k = O.find((e) => String(e.id) === s), ee = ai(k), A = ee.find((e) => String(e.id) === l), j = ai(A), M = (T.data?.items ?? []).find((e) => String(e.id) === a), te = [
 		k,
-		j,
-		M.find((e) => String(e.id) === p)
-	].filter(Boolean).map((e) => ei(e)).join(" / "), P = e({
+		A,
+		j.find((e) => String(e.id) === p)
+	].filter(Boolean).map((e) => ri(e)).join(" / "), N = e({
 		mutationFn: () => Q("basalam/categories/mappings", {
 			method: "POST",
 			body: JSON.stringify({
 				woo_category_id: Number(a) || 0,
-				woo_category_name: N?.name || "",
+				woo_category_name: M?.name || "",
 				basalam_category_level1: Number(s) || null,
 				basalam_category_level2: Number(l) || null,
 				basalam_category_level3: Number(p) || null,
-				basalam_category_name: ee
+				basalam_category_name: te
 			})
 		}),
 		onSuccess: async () => {
 			v.success(r("basalam.mappingSaved")), await i.invalidateQueries({ queryKey: ["basalam", "mappings"] });
 		},
 		onError: (e) => Z(r, e)
-	}), F = e({
+	}), P = e({
 		mutationFn: (e) => Q("basalam/categories/mappings/delete", {
 			method: "POST",
 			body: JSON.stringify({ id: e })
@@ -4279,17 +4300,17 @@ function ri() {
 			v.success(r("basalam.mappingDeleted")), await i.invalidateQueries({ queryKey: ["basalam", "mappings"] });
 		},
 		onError: (e) => Z(r, e)
-	}), I = e({
+	}), F = e({
 		mutationFn: () => Q("basalam/categories/detect", {
 			method: "POST",
-			body: JSON.stringify({ title: N?.name || "" })
+			body: JSON.stringify({ title: M?.name || "" })
 		}),
 		onSuccess: (e) => {
 			v.success(r("basalam.detectOk"));
 			let t = e.prediction;
 			if (t && (t.level1 && c(String(t.level1)), t.level2 && d(String(t.level2)), (t.level3 || t.category_id) && m(String(t.level3 || t.category_id)), !t.level1 && t.category_id)) for (let e of D) {
-				for (let n of ni(e)) {
-					for (let r of ni(n)) if (r.id === t.category_id) {
+				for (let n of ai(e)) {
+					for (let r of ai(n)) if (r.id === t.category_id) {
 						c(String(e.id)), d(String(n.id)), m(String(r.id));
 						return;
 					}
@@ -4302,7 +4323,7 @@ function ri() {
 			}
 		},
 		onError: (e) => Z(r, e)
-	}), te = e({
+	}), ne = e({
 		mutationFn: () => Q("basalam/categories/option-maps", {
 			method: "POST",
 			body: JSON.stringify({
@@ -4315,14 +4336,14 @@ function ri() {
 		},
 		onError: (e) => Z(r, e)
 	});
-	return /* @__PURE__ */ x(En, {
+	return /* @__PURE__ */ x(An, {
 		title: r("basalam.categoriesTitle"),
 		description: r("basalam.categoriesSubtitle"),
 		children: [
-			/* @__PURE__ */ b(Tn, {}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ b(kn, {}),
+			/* @__PURE__ */ x(W, {
 				className: "mb-4 max-w-3xl",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.addMapping") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.addMapping") }) }), /* @__PURE__ */ x(J, {
 					className: "grid gap-3 md:grid-cols-2",
 					children: [
 						/* @__PURE__ */ x("label", {
@@ -4353,7 +4374,7 @@ function ri() {
 									children: r("basalam.selectCategory")
 								}), O.map((e) => /* @__PURE__ */ b("option", {
 									value: String(e.id),
-									children: ei(e)
+									children: ri(e)
 								}, e.id))]
 							})]
 						}),
@@ -4369,9 +4390,9 @@ function ri() {
 								children: [/* @__PURE__ */ b("option", {
 									value: "",
 									children: r("basalam.selectCategory")
-								}), A.map((e) => /* @__PURE__ */ b("option", {
+								}), ee.map((e) => /* @__PURE__ */ b("option", {
 									value: String(e.id),
-									children: ei(e)
+									children: ri(e)
 								}, e.id))]
 							})]
 						}),
@@ -4385,31 +4406,31 @@ function ri() {
 								children: [/* @__PURE__ */ b("option", {
 									value: "",
 									children: r("basalam.selectCategory")
-								}), M.map((e) => /* @__PURE__ */ b("option", {
+								}), j.map((e) => /* @__PURE__ */ b("option", {
 									value: String(e.id),
-									children: ei(e)
+									children: ri(e)
 								}, e.id))]
 							})]
 						}),
 						/* @__PURE__ */ x("div", {
 							className: "flex flex-wrap gap-2 md:col-span-2",
-							children: [/* @__PURE__ */ b(W, {
-								onClick: () => P.mutate(),
-								disabled: P.isPending || !a || !s,
+							children: [/* @__PURE__ */ b(U, {
+								onClick: () => N.mutate(),
+								disabled: N.isPending || !a || !s,
 								children: r("basalam.saveMapping")
-							}), /* @__PURE__ */ b(W, {
+							}), /* @__PURE__ */ b(U, {
 								variant: "secondary",
-								onClick: () => I.mutate(),
-								disabled: I.isPending || !a,
+								onClick: () => F.mutate(),
+								disabled: F.isPending || !a,
 								children: r("basalam.autoSuggest")
 							})]
 						})
 					]
 				})]
 			}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ x(W, {
 				className: "mb-4 max-w-3xl",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.mappings") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.mappings") }) }), /* @__PURE__ */ x(J, {
 					className: "space-y-2",
 					children: [(C.data?.mappings ?? []).map((e) => /* @__PURE__ */ x("div", {
 						className: "flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm",
@@ -4418,10 +4439,10 @@ function ri() {
 							" →",
 							" ",
 							String(e.basalam_category_name || "—")
-						] }), /* @__PURE__ */ b(W, {
+						] }), /* @__PURE__ */ b(U, {
 							size: "sm",
 							variant: "destructive",
-							onClick: () => F.mutate(Number(e.id)),
+							onClick: () => P.mutate(Number(e.id)),
 							children: r("basalam.delete")
 						})]
 					}, String(e.id))), C.data?.mappings?.length ? null : /* @__PURE__ */ b("p", {
@@ -4430,9 +4451,9 @@ function ri() {
 					})]
 				})]
 			}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ x(W, {
 				className: "max-w-3xl",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.optionMaps") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.optionMaps") }) }), /* @__PURE__ */ x(J, {
 					className: "grid gap-3 md:grid-cols-3",
 					children: [
 						/* @__PURE__ */ b(Y, {
@@ -4445,9 +4466,9 @@ function ri() {
 							onChange: (e) => S(e.target.value),
 							placeholder: r("basalam.basalamAttrName")
 						}),
-						/* @__PURE__ */ b(W, {
-							onClick: () => te.mutate(),
-							disabled: te.isPending || !h || !y,
+						/* @__PURE__ */ b(U, {
+							onClick: () => ne.mutate(),
+							disabled: ne.isPending || !h || !y,
 							children: r("basalam.saveOptionMap")
 						}),
 						/* @__PURE__ */ b("div", {
@@ -4469,7 +4490,7 @@ function ri() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamSyncSettingsPage.tsx
-function ii() {
+function si() {
 	let { t: r } = _(), i = n(), [a, o] = f({}), [c, u] = f(!1), p = d(!1), m = t({
 		queryKey: ["basalam", "settings"],
 		queryFn: () => Q("basalam/settings")
@@ -4540,7 +4561,7 @@ function ii() {
 			...n,
 			[e]: t
 		}));
-	}, D = (e) => e === !0 || e === "yes" || e === 1 || e === "1" || e === "true" || e === "all", O = String(T.price_change_value ?? "") === "commission", k = !O && T.price_change_value !== void 0 && T.price_change_value !== null && T.price_change_value !== "" && T.price_change_value !== "0" && T.price_change_value !== 0 ? String(T.price_change_value) : "", A = (e) => {
+	}, D = (e) => e === !0 || e === "yes" || e === 1 || e === "1" || e === "true" || e === "all", O = String(T.price_change_value ?? "") === "commission", k = !O && T.price_change_value !== void 0 && T.price_change_value !== null && T.price_change_value !== "" && T.price_change_value !== "0" && T.price_change_value !== 0 ? String(T.price_change_value) : "", ee = (e) => {
 		let t = new Set([
 			"add_attr_to_desc_product",
 			"add_short_desc_to_desc_product",
@@ -4551,12 +4572,12 @@ function ii() {
 			...t,
 			[e]: n
 		})), y({ [e]: n });
-	}, j = (e, t) => {
+	}, A = (e, t) => {
 		p.current = !0, o((n) => ({
 			...n,
 			[e]: t
 		})), y({ [e]: t });
-	}, M = (e) => e === "round_price" || e === "all_products_wholesale" ? !!(T[e] && T[e] !== "none") : (e === "add_full_desc_to_desc_product" || e === "chat_notify_admins") && (T[e] === void 0 || T[e] === null || T[e] === "") || D(T[e]), N = h.data, ee = N?.imported_at ? new Date(N.imported_at).toLocaleString() : r("basalam.commission.neverImported"), P = [
+	}, j = (e) => e === "round_price" || e === "all_products_wholesale" ? !!(T[e] && T[e] !== "none") : (e === "add_full_desc_to_desc_product" || e === "chat_notify_admins") && (T[e] === void 0 || T[e] === null || T[e] === "") || D(T[e]), M = h.data, te = M?.imported_at ? new Date(M.imported_at).toLocaleString() : r("basalam.commission.neverImported"), N = [
 		{
 			key: "sync_status_product",
 			label: r("basalam.syncProducts")
@@ -4597,7 +4618,7 @@ function ii() {
 			key: "chat_notify_admins",
 			label: r("basalam.chatNotify")
 		}
-	], F = [
+	], P = [
 		"sync_product_field_name",
 		"sync_product_field_photos",
 		"sync_product_field_price",
@@ -4608,15 +4629,15 @@ function ii() {
 		"sync_product_field_video",
 		"sync_product_field_variant_price",
 		"sync_product_field_variant_stock"
-	], I = (e) => r(`basalam.syncField.${e.replace("sync_product_field_", "")}`, { defaultValue: e.replace("sync_product_field_", "") });
-	return /* @__PURE__ */ x(En, {
+	], F = (e) => r(`basalam.syncField.${e.replace("sync_product_field_", "")}`, { defaultValue: e.replace("sync_product_field_", "") });
+	return /* @__PURE__ */ x(An, {
 		title: r("basalam.settingsTitle"),
 		description: r("basalam.settingsSubtitle"),
 		children: [
-			/* @__PURE__ */ b(Tn, {}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ b(kn, {}),
+			/* @__PURE__ */ x(W, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.commission.title") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.commission.title") }) }), /* @__PURE__ */ x(J, {
 					className: "space-y-4",
 					children: [
 						/* @__PURE__ */ b("p", {
@@ -4626,15 +4647,15 @@ function ii() {
 						/* @__PURE__ */ b("p", {
 							className: "text-sm",
 							children: r("basalam.commission.status", {
-								count: N?.row_count ?? 0,
-								unmatched: N?.unmatched ?? 0,
-								at: ee
+								count: M?.row_count ?? 0,
+								unmatched: M?.unmatched ?? 0,
+								at: te
 							})
 						}),
 						/* @__PURE__ */ x("div", {
 							className: "flex flex-wrap gap-2",
 							children: [
-								/* @__PURE__ */ b(W, {
+								/* @__PURE__ */ b(U, {
 									variant: O ? "default" : "outline",
 									onClick: () => {
 										let e = O ? "0" : "commission";
@@ -4642,19 +4663,19 @@ function ii() {
 									},
 									children: r("basalam.commission.enable")
 								}),
-								/* @__PURE__ */ b(W, {
+								/* @__PURE__ */ b(U, {
 									variant: "secondary",
 									disabled: S.isPending,
 									onClick: () => S.mutate(),
 									children: r("basalam.commission.seedTariff")
 								}),
-								/* @__PURE__ */ b(W, {
+								/* @__PURE__ */ b(U, {
 									variant: "outline",
-									disabled: C.isPending || !(N?.row_count || O || k),
+									disabled: C.isPending || !(M?.row_count || O || k),
 									onClick: () => C.mutate(),
 									children: r("basalam.commission.applyUpdate")
 								}),
-								/* @__PURE__ */ b(W, {
+								/* @__PURE__ */ b(U, {
 									onClick: () => g.mutate(a),
 									disabled: g.isPending,
 									children: r("basalam.saveSettings")
@@ -4699,51 +4720,51 @@ function ii() {
 					]
 				})]
 			}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ x(W, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.syncToggles") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.syncToggles") }) }), /* @__PURE__ */ x(J, {
 					className: "space-y-3",
 					children: [/* @__PURE__ */ b("div", {
 						className: "flex flex-wrap gap-2",
-						children: P.map((e) => /* @__PURE__ */ b(W, {
-							variant: M(e.key) ? "default" : "outline",
-							onClick: () => A(e.key),
+						children: N.map((e) => /* @__PURE__ */ b(U, {
+							variant: j(e.key) ? "default" : "outline",
+							onClick: () => ee(e.key),
 							children: e.label
 						}, e.key))
-					}), /* @__PURE__ */ b(W, {
+					}), /* @__PURE__ */ b(U, {
 						onClick: () => g.mutate(a),
 						disabled: g.isPending,
 						children: r("basalam.saveSettings")
 					})]
 				})]
 			}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ x(W, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.selectiveSync") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.selectiveSync") }) }), /* @__PURE__ */ x(J, {
 					className: "flex flex-wrap gap-2",
 					children: [
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: T.sync_product_fields === "all" ? "default" : "outline",
-							onClick: () => j("sync_product_fields", "all"),
+							onClick: () => A("sync_product_fields", "all"),
 							children: r("basalam.syncAllFields")
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: T.sync_product_fields === "custom" ? "default" : "outline",
-							onClick: () => j("sync_product_fields", "custom"),
+							onClick: () => A("sync_product_fields", "custom"),
 							children: r("basalam.syncCustomFields")
 						}),
-						T.sync_product_fields === "custom" ? F.map((e) => /* @__PURE__ */ b(W, {
+						T.sync_product_fields === "custom" ? P.map((e) => /* @__PURE__ */ b(U, {
 							size: "sm",
 							variant: T[e] ? "default" : "outline",
-							onClick: () => j(e, !T[e]),
-							children: I(e)
+							onClick: () => A(e, !T[e]),
+							children: F(e)
 						}, e)) : null
 					]
 				})]
 			}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ x(W, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: r("basalam.defaultProductValues") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: r("basalam.defaultProductValues") }) }), /* @__PURE__ */ x(J, {
 					className: "grid gap-3 md:grid-cols-2",
 					children: [
 						/* @__PURE__ */ b("p", {
@@ -4769,12 +4790,12 @@ function ii() {
 						}, e)),
 						/* @__PURE__ */ x("div", {
 							className: "flex flex-wrap gap-2 md:col-span-2",
-							children: [/* @__PURE__ */ b(W, {
+							children: [/* @__PURE__ */ b(U, {
 								variant: "secondary",
 								onClick: () => w.mutate(),
 								disabled: w.isPending,
 								children: r("basalam.fillFromCatalog")
-							}), /* @__PURE__ */ b(W, {
+							}), /* @__PURE__ */ b(U, {
 								onClick: () => g.mutate(a),
 								disabled: g.isPending,
 								children: r("basalam.saveSettings")
@@ -4783,31 +4804,31 @@ function ii() {
 					]
 				})]
 			}),
-			/* @__PURE__ */ b(kn, {
+			/* @__PURE__ */ b(Mn, {
 				open: c,
 				onOpenChange: u,
-				children: /* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, {
+				children: /* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, {
 					className: "pb-3",
-					children: /* @__PURE__ */ b(An, {
+					children: /* @__PURE__ */ b(Nn, {
 						asChild: !0,
 						children: /* @__PURE__ */ x("button", {
 							type: "button",
 							className: "flex w-full items-center justify-between text-start",
-							children: [/* @__PURE__ */ b(q, {
+							children: [/* @__PURE__ */ b(K, {
 								className: "text-base",
 								children: r("basalam.advanced")
 							}), /* @__PURE__ */ b(L, { className: `size-4 transition-transform ${c ? "rotate-180" : ""}` })]
 						})
 					})
-				}), /* @__PURE__ */ b(jn, { children: /* @__PURE__ */ x(J, {
+				}), /* @__PURE__ */ b(Pn, { children: /* @__PURE__ */ x(J, {
 					className: "grid gap-3 border-t pt-4 md:grid-cols-2",
 					children: [
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: T.developer_mode ? "default" : "outline",
 							onClick: () => E("developer_mode", !T.developer_mode),
 							children: r("basalam.developerMode")
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							variant: T.tasks_per_minute_auto ? "default" : "outline",
 							onClick: () => E("tasks_per_minute_auto", !T.tasks_per_minute_auto),
 							children: r("basalam.tasksAuto")
@@ -4831,7 +4852,7 @@ function ii() {
 						}, e)),
 						/* @__PURE__ */ b("div", {
 							className: "md:col-span-2",
-							children: /* @__PURE__ */ b(W, {
+							children: /* @__PURE__ */ b(U, {
 								onClick: () => g.mutate(a),
 								disabled: g.isPending,
 								children: r("basalam.saveSettings")
@@ -4845,23 +4866,23 @@ function ii() {
 }
 //#endregion
 //#region src/lib/formatNumber.ts
-function ai(e, t) {
-	let n = Number.isFinite(e) ? e : 0, r = zr(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
-	return zr(t) ? Br(i) : i;
+function ci(e, t) {
+	let n = Number.isFinite(e) ? e : 0, r = Hr(t) ? "fa-IR" : "en-US", i = new Intl.NumberFormat(r, { maximumFractionDigits: 2 }).format(n);
+	return Hr(t) ? Ur(i) : i;
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamFinancePage.tsx
-function oi(e) {
+function li(e) {
 	return typeof e != "number" || !Number.isFinite(e) ? null : Math.trunc(e / 10);
 }
-function si(e, t, n = "—") {
-	let r = oi(e);
-	return r === null ? n : ai(r, t);
+function ui(e, t, n = "—") {
+	let r = li(e);
+	return r === null ? n : ci(r, t);
 }
-function ci(e) {
+function di(e) {
 	return typeof e.status_label == "string" && e.status_label ? e.status_label : typeof e.status?.description == "string" && e.status.description ? e.status.description : "—";
 }
-function li({ envelope: e, emptyLabel: t, locale: n }) {
+function fi({ envelope: e, emptyLabel: t, locale: n }) {
 	let { t: r } = _();
 	if (!e) return /* @__PURE__ */ b("p", {
 		className: "text-muted-foreground text-sm",
@@ -4890,7 +4911,7 @@ function li({ envelope: e, emptyLabel: t, locale: n }) {
 						}), /* @__PURE__ */ x("span", {
 							className: "font-semibold",
 							children: [
-								si(e.amount, n),
+								ui(e.amount, n),
 								" ",
 								r("basalam.toman")
 							]
@@ -4899,17 +4920,17 @@ function li({ envelope: e, emptyLabel: t, locale: n }) {
 					/* @__PURE__ */ x("div", {
 						className: "text-muted-foreground mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs",
 						children: [
-							/* @__PURE__ */ b("span", { children: ci(e) }),
+							/* @__PURE__ */ b("span", { children: di(e) }),
 							e.method?.description ? /* @__PURE__ */ b("span", { children: e.method.description }) : null,
 							/* @__PURE__ */ x("span", { children: [
 								r("basalam.settlementCreated"),
 								": ",
-								Wr(e.created_at, n)
+								qr(e.created_at, n)
 							] }),
 							e.payable_at ? /* @__PURE__ */ x("span", { children: [
 								r("basalam.settlementPayable"),
 								": ",
-								Wr(e.payable_at, n)
+								qr(e.payable_at, n)
 							] }) : null
 						]
 					}),
@@ -4922,7 +4943,7 @@ function li({ envelope: e, emptyLabel: t, locale: n }) {
 		})
 	});
 }
-function ui() {
+function pi() {
 	let { t: r, i18n: i } = _(), a = i.language, o = n(), [s, c] = f(""), [l, u] = f("1"), [d, p] = f(""), m = t({
 		queryKey: ["basalam", "finance"],
 		queryFn: () => Q("basalam/finance/balance")
@@ -4947,11 +4968,11 @@ function ui() {
 		},
 		onError: (e) => Z(r, e)
 	}), y = m.data?.balance, S = y?.success && y.data && typeof y.data == "object" ? y.data : void 0, C = typeof S?.future_balance == "number" && S.future_balance !== 0, w = Array.isArray(h.data?.banks?.data) || Array.isArray(h.data?.banks?.data) ? h.data.banks.data : [];
-	return /* @__PURE__ */ x(En, {
+	return /* @__PURE__ */ x(An, {
 		title: r("basalam.financeTitle"),
 		description: r("basalam.financeSubtitle"),
 		children: [
-			/* @__PURE__ */ b(Tn, {}),
+			/* @__PURE__ */ b(kn, {}),
 			m.isLoading ? /* @__PURE__ */ b("p", {
 				className: "text-muted-foreground text-sm",
 				children: r("basalam.financeLoading")
@@ -4963,19 +4984,19 @@ function ui() {
 			/* @__PURE__ */ x("div", {
 				className: "mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
 				children: [
-					/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, {
+					/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ x(G, {
 						className: "pb-2",
-						children: [/* @__PURE__ */ b(q, {
+						children: [/* @__PURE__ */ b(K, {
 							className: "text-base",
 							children: r("basalam.boothBalance")
-						}), /* @__PURE__ */ b(On, { children: S?.calculated_at ? r("basalam.balanceAsOf", { time: Wr(S.calculated_at, a) }) : r("basalam.balance") })]
+						}), /* @__PURE__ */ b(q, { children: S?.calculated_at ? r("basalam.balanceAsOf", { time: qr(S.calculated_at, a) }) : r("basalam.balance") })]
 					}), /* @__PURE__ */ b(J, { children: y && !y.success ? /* @__PURE__ */ b("p", {
 						className: "text-destructive text-sm",
 						children: y.message || r("basalam.financeError")
 					}) : /* @__PURE__ */ x("p", {
 						className: "text-2xl font-semibold tracking-tight",
 						children: [
-							si(S?.balance, a),
+							ui(S?.balance, a),
 							" ",
 							/* @__PURE__ */ b("span", {
 								className: "text-muted-foreground text-sm font-normal",
@@ -4983,16 +5004,16 @@ function ui() {
 							})
 						]
 					}) })] }),
-					/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, {
+					/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, {
 						className: "pb-2",
-						children: /* @__PURE__ */ b(q, {
+						children: /* @__PURE__ */ b(K, {
 							className: "text-base",
 							children: r("basalam.settledBankYtd")
 						})
 					}), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ x("p", {
 						className: "text-2xl font-semibold tracking-tight",
 						children: [
-							si(S?.settled?.cash, a),
+							ui(S?.settled?.cash, a),
 							" ",
 							/* @__PURE__ */ b("span", {
 								className: "text-muted-foreground text-sm font-normal",
@@ -5000,16 +5021,16 @@ function ui() {
 							})
 						]
 					}) })] }),
-					/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, {
+					/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, {
 						className: "pb-2",
-						children: /* @__PURE__ */ b(q, {
+						children: /* @__PURE__ */ b(K, {
 							className: "text-base",
 							children: r("basalam.settledWalletYtd")
 						})
 					}), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ x("p", {
 						className: "text-2xl font-semibold tracking-tight",
 						children: [
-							si(S?.settled?.credit, a),
+							ui(S?.settled?.credit, a),
 							" ",
 							/* @__PURE__ */ b("span", {
 								className: "text-muted-foreground text-sm font-normal",
@@ -5017,18 +5038,18 @@ function ui() {
 							})
 						]
 					}) })] }),
-					C ? /* @__PURE__ */ x(G, {
+					C ? /* @__PURE__ */ x(W, {
 						className: "sm:col-span-2 lg:col-span-3",
-						children: [/* @__PURE__ */ b(K, {
+						children: [/* @__PURE__ */ b(G, {
 							className: "pb-2",
-							children: /* @__PURE__ */ b(q, {
+							children: /* @__PURE__ */ b(K, {
 								className: "text-base",
 								children: r("basalam.futureBalance")
 							})
 						}), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ x("p", {
 							className: "text-xl font-semibold tracking-tight",
 							children: [
-								si(S?.future_balance, a),
+								ui(S?.future_balance, a),
 								" ",
 								/* @__PURE__ */ b("span", {
 									className: "text-muted-foreground text-sm font-normal",
@@ -5039,9 +5060,9 @@ function ui() {
 					}) : null
 				]
 			}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ x(W, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.createSettlement") }), /* @__PURE__ */ b(On, { children: r("basalam.createSettlementHint") })] }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: r("basalam.createSettlement") }), /* @__PURE__ */ b(q, { children: r("basalam.createSettlementHint") })] }), /* @__PURE__ */ x(J, {
 					className: "grid gap-3 md:grid-cols-4",
 					children: [
 						/* @__PURE__ */ b(Y, {
@@ -5074,7 +5095,7 @@ function ui() {
 								children: e.card_number || e.sheba || r("basalam.bankAccount")
 							}, String(e.id)))]
 						}),
-						/* @__PURE__ */ b(W, {
+						/* @__PURE__ */ b(U, {
 							onClick: () => g.mutate(),
 							disabled: g.isPending || !s,
 							children: r("basalam.submitSettlement")
@@ -5084,11 +5105,11 @@ function ui() {
 			}),
 			/* @__PURE__ */ x("div", {
 				className: "grid gap-4 md:grid-cols-2",
-				children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.activeSettlements") }), /* @__PURE__ */ b(On, { children: r("basalam.activeSettlementsHint") })] }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b(li, {
+				children: [/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: r("basalam.activeSettlements") }), /* @__PURE__ */ b(q, { children: r("basalam.activeSettlementsHint") })] }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b(fi, {
 					envelope: m.data?.settlements,
 					emptyLabel: r("basalam.noActiveSettlements"),
 					locale: a
-				}) })] }), /* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.settlementHistory") }), /* @__PURE__ */ b(On, { children: r("basalam.settlementHistoryHint") })] }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b(li, {
+				}) })] }), /* @__PURE__ */ x(W, { children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: r("basalam.settlementHistory") }), /* @__PURE__ */ b(q, { children: r("basalam.settlementHistoryHint") })] }), /* @__PURE__ */ b(J, { children: /* @__PURE__ */ b(fi, {
 					envelope: m.data?.history,
 					emptyLabel: r("basalam.noSettlementHistory"),
 					locale: a
@@ -5099,7 +5120,7 @@ function ui() {
 }
 //#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamLogsPage.tsx
-function di() {
+function mi() {
 	let { t: e, i18n: n } = _(), r = t({
 		queryKey: [
 			"basalam",
@@ -5109,17 +5130,17 @@ function di() {
 		queryFn: () => Q("basalam/jobs"),
 		refetchInterval: 8e3
 	}).data?.jobs ?? [], i = r.filter((e) => e.status === "pending" || e.status === "processing").length, a = r.filter((e) => e.status === "failed").length, o = r.filter((e) => e.status === "completed" || e.status === "success").length;
-	return /* @__PURE__ */ x(En, {
+	return /* @__PURE__ */ x(An, {
 		title: e("basalam.logsTitle"),
 		description: e("basalam.logsSubtitle"),
 		children: [
-			/* @__PURE__ */ b(Tn, {}),
+			/* @__PURE__ */ b(kn, {}),
 			/* @__PURE__ */ x("div", {
 				className: "mb-4 grid max-w-3xl gap-3 sm:grid-cols-3",
 				children: [
-					/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, {
+					/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, {
 						className: "pb-2",
-						children: /* @__PURE__ */ b(q, {
+						children: /* @__PURE__ */ b(K, {
 							className: "text-base",
 							children: e("basalam.syncStatus.pending")
 						})
@@ -5127,9 +5148,9 @@ function di() {
 						className: "text-2xl font-semibold",
 						children: i
 					})] }),
-					/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, {
+					/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, {
 						className: "pb-2",
-						children: /* @__PURE__ */ b(q, {
+						children: /* @__PURE__ */ b(K, {
 							className: "text-base",
 							children: e("basalam.syncStatus.done")
 						})
@@ -5137,9 +5158,9 @@ function di() {
 						className: "text-2xl font-semibold",
 						children: o
 					})] }),
-					/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, {
+					/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, {
 						className: "pb-2",
-						children: /* @__PURE__ */ b(q, {
+						children: /* @__PURE__ */ b(K, {
 							className: "text-base",
 							children: e("basalam.syncStatus.failed")
 						})
@@ -5149,9 +5170,9 @@ function di() {
 					})] })
 				]
 			}),
-			/* @__PURE__ */ x(G, {
+			/* @__PURE__ */ x(W, {
 				className: "max-w-4xl",
-				children: [/* @__PURE__ */ b(K, { children: /* @__PURE__ */ b(q, { children: e("basalam.recentJobs") }) }), /* @__PURE__ */ x(J, {
+				children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: e("basalam.recentJobs") }) }), /* @__PURE__ */ x(J, {
 					className: "overflow-x-auto",
 					children: [/* @__PURE__ */ x("table", {
 						className: "w-full text-sm",
@@ -5188,19 +5209,19 @@ function di() {
 								}),
 								/* @__PURE__ */ b("td", {
 									className: "py-2 pe-2",
-									children: Xr(Yr(t), e)
+									children: $r(Qr(t), e)
 								}),
 								/* @__PURE__ */ b("td", {
 									className: "py-2 pe-2",
-									children: Zr(t.status, e)
+									children: ei(t.status, e)
 								}),
 								/* @__PURE__ */ b("td", {
 									className: "text-muted-foreground py-2 pe-2 text-xs",
-									children: Wr(Gr(t), n.language)
+									children: qr(Jr(t), n.language)
 								}),
 								/* @__PURE__ */ b("td", {
 									className: "text-muted-foreground max-w-md break-all py-2 text-xs",
-									children: Kr(t.error_message, e)
+									children: Yr(t.error_message, e)
 								})
 							]
 						}, String(t.id))) })]
@@ -5214,8 +5235,14 @@ function di() {
 	});
 }
 //#endregion
+//#region ../Modules/basalam-module/client/components/basalamChatBus.ts
+var hi = "webino:basalam-chat-open";
+function gi() {
+	window.dispatchEvent(new CustomEvent(hi));
+}
+//#endregion
 //#region ../Modules/basalam-module/client/pages/basalam/BasalamBoothPage.tsx
-function fi(e) {
+function _i(e) {
 	if (Array.isArray(e)) return e;
 	if (e && typeof e == "object") {
 		let t = e.data;
@@ -5223,59 +5250,44 @@ function fi(e) {
 	}
 	return [];
 }
-function pi(e) {
+function vi(e) {
 	return String(e.title ?? e.name ?? e.label ?? e.id ?? "—");
 }
-function mi() {
-	let { t: r } = _(), i = n(), [a, o] = f(""), [s, c] = f(""), [d, p] = f(""), [m, h] = f(""), [g, y] = f("10"), [S, C] = f(!1), [w, T] = f(!1), [E, D] = f(!0), O = t({
+function yi() {
+	let { t: r } = _(), i = n(), [a, o] = f(""), [s, c] = f(""), [d, p] = f(""), [m, h] = f(""), [g, y] = f("10"), [S, C] = f(!1), [w, T] = f(!0), E = t({
 		queryKey: ["basalam", "status"],
 		queryFn: () => Q("basalam/status")
-	}), k = t({
+	}), D = t({
 		queryKey: ["basalam", "vendor"],
 		queryFn: () => Q("basalam/vendor")
-	}), A = t({
+	}), O = t({
 		queryKey: ["basalam", "shipping"],
 		queryFn: () => Q("basalam/shipping")
-	}), j = t({
+	}), k = t({
 		queryKey: ["basalam", "webhooks"],
 		queryFn: () => Q("basalam/webhooks")
-	}), M = t({
+	}), ee = t({
 		queryKey: ["basalam", "discounts"],
 		queryFn: () => Q("basalam/discounts")
-	}), N = t({
+	}), A = t({
 		queryKey: [
 			"basalam",
 			"products",
 			"connected-lite"
 		],
 		queryFn: () => Q("basalam/products?filter=connected&per_page=100")
-	}), ee = t({
+	}), j = t({
 		queryKey: ["basalam", "settings"],
 		queryFn: () => Q("basalam/settings")
-	}), P = t({
-		queryKey: ["basalam", "chat"],
-		queryFn: () => Q("basalam/chat/token"),
-		enabled: S
 	});
 	l(() => {
-		let e = k.data?.vendor;
+		let e = D.data?.vendor;
 		e && (o(String(e.title ?? "")), c(String(e.summary ?? "")));
-	}, [k.data]), l(() => {
-		let e = ee.data?.settings;
-		e && (typeof e.chat_notify_admins == "boolean" ? D(e.chat_notify_admins) : (e.chat_notify_admins === 0 || e.chat_notify_admins === "0" || e.chat_notify_admins === "no") && D(!1));
-	}, [ee.data]), l(() => {
-		if (!S) return;
-		let e = P.data?.token, t = P.data?.script_url;
-		if (!e || !t || document.getElementById("basalam-chat-widget-script")) return;
-		let n = document.createElement("script");
-		return n.id = "basalam-chat-widget-script", n.src = t, n.setAttribute("token", e), n.async = !0, document.body.appendChild(n), Q("basalam/chat/notify", {
-			method: "POST",
-			body: JSON.stringify({ event: "widget_opened" })
-		}).catch(() => void 0), () => {
-			n.remove();
-		};
-	}, [S, P.data]);
-	let F = e({
+	}, [D.data]), l(() => {
+		let e = j.data?.settings;
+		e && (typeof e.chat_notify_admins == "boolean" ? T(e.chat_notify_admins) : (e.chat_notify_admins === 0 || e.chat_notify_admins === "0" || e.chat_notify_admins === "no") && T(!1));
+	}, [j.data]);
+	let M = e({
 		mutationFn: () => Q("basalam/vendor", {
 			method: "POST",
 			body: JSON.stringify({
@@ -5287,7 +5299,7 @@ function mi() {
 			v.success(r("basalam.boothSaved")), await i.invalidateQueries({ queryKey: ["basalam", "vendor"] });
 		},
 		onError: (e) => Z(r, e)
-	}), I = e({
+	}), te = e({
 		mutationFn: () => Q("basalam/shipping", {
 			method: "POST",
 			body: JSON.stringify({ title: d.trim() })
@@ -5296,7 +5308,7 @@ function mi() {
 			v.success(r("basalam.shippingSaved")), p(""), await i.invalidateQueries({ queryKey: ["basalam", "shipping"] });
 		},
 		onError: (e) => Z(r, e)
-	}), te = e({
+	}), N = e({
 		mutationFn: (e) => Q("basalam/shipping", {
 			method: "POST",
 			body: JSON.stringify({
@@ -5308,19 +5320,19 @@ function mi() {
 			v.success(r("basalam.shippingProfileDeleted")), await i.invalidateQueries({ queryKey: ["basalam", "shipping"] });
 		},
 		onError: (e) => Z(r, e)
-	}), ne = e({
+	}), P = e({
 		mutationFn: () => Q("basalam/webhook/setup", { method: "POST" }),
 		onSuccess: async () => {
 			v.success(r("basalam.ordersAutoOk")), await i.invalidateQueries({ queryKey: ["basalam", "webhooks"] });
 		},
 		onError: (e) => Z(r, e)
-	}), re = e({
+	}), F = e({
 		mutationFn: () => Q("basalam/webhooks/rotate", { method: "POST" }),
 		onSuccess: async () => {
 			v.success(r("basalam.ordersAutoReset")), await i.invalidateQueries({ queryKey: ["basalam", "webhooks"] });
 		},
 		onError: (e) => Z(r, e)
-	}), R = e({
+	}), ne = e({
 		mutationFn: () => Q("basalam/discounts", {
 			method: "POST",
 			body: JSON.stringify({
@@ -5332,23 +5344,23 @@ function mi() {
 			v.success(r("basalam.discountCreated")), h(""), await i.invalidateQueries({ queryKey: ["basalam", "discounts"] });
 		},
 		onError: (e) => Z(r, e)
-	}), ie = e({
+	}), re = e({
 		mutationFn: (e) => Q("basalam/settings", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ chat_notify_admins: e })
 		}),
 		onSuccess: async (e, t) => {
-			D(t), v.success(r("basalam.settingsSaved")), await i.invalidateQueries({ queryKey: ["basalam", "settings"] });
+			T(t), v.success(r("basalam.settingsSaved")), await i.invalidateQueries({ queryKey: ["basalam", "settings"] });
 		},
 		onError: (e) => Z(r, e)
-	}), ae = !!O.data?.connected, z = k.data?.vendor?.title || a || r("basalam.boothUntitled"), oe = k.data?.vendor?.id || O.data?.vendor_id, se = (Array.isArray(j.data?.webhooks) ? j.data.webhooks : []).length > 0 || !!j.data?.webhook_url, ce = u(() => fi(A.data?.profiles ?? A.data?.shipping), [A.data]), le = u(() => fi(A.data?.carriers), [A.data]), ue = u(() => fi(A.data?.vendor_carriers), [A.data]), de = u(() => fi(M.data?.discounts), [M.data]), fe = (N.data?.products ?? []).filter((e) => e.basalam_product_id);
-	return /* @__PURE__ */ x(En, {
+	}), ie = !!E.data?.connected, I = D.data?.vendor?.title || a || r("basalam.boothUntitled"), ae = D.data?.vendor?.id || E.data?.vendor_id, oe = (Array.isArray(k.data?.webhooks) ? k.data.webhooks : []).length > 0 || !!k.data?.webhook_url, R = u(() => _i(O.data?.profiles ?? O.data?.shipping), [O.data]), se = u(() => _i(O.data?.carriers), [O.data]), ce = u(() => _i(O.data?.vendor_carriers), [O.data]), le = u(() => _i(ee.data?.discounts), [ee.data]), ue = (A.data?.products ?? []).filter((e) => e.basalam_product_id);
+	return /* @__PURE__ */ x(An, {
 		title: r("basalam.boothTitle"),
 		description: r("basalam.boothSubtitle"),
 		children: [
-			/* @__PURE__ */ b(Tn, {}),
-			/* @__PURE__ */ b(G, {
+			/* @__PURE__ */ b(kn, {}),
+			/* @__PURE__ */ b(W, {
 				className: "mb-4 max-w-4xl overflow-hidden border-border/70 bg-gradient-to-l from-muted/40 to-background",
 				children: /* @__PURE__ */ x(J, {
 					className: "flex flex-wrap items-start justify-between gap-4 py-5",
@@ -5361,30 +5373,30 @@ function mi() {
 							}),
 							/* @__PURE__ */ b("h2", {
 								className: "text-xl font-semibold tracking-tight",
-								children: z || "—"
+								children: I || "—"
 							}),
 							/* @__PURE__ */ x("p", {
 								className: "text-sm",
-								children: [ae ? /* @__PURE__ */ b("span", {
+								children: [ie ? /* @__PURE__ */ b("span", {
 									className: "text-emerald-700 dark:text-emerald-400",
 									children: r("basalam.connected")
-								}) : /* @__PURE__ */ b("span", { children: r("basalam.notConnected") }), oe ? /* @__PURE__ */ x("span", {
+								}) : /* @__PURE__ */ b("span", { children: r("basalam.notConnected") }), ae ? /* @__PURE__ */ x("span", {
 									className: "text-muted-foreground",
-									children: [" · ", r("basalam.boothIdLabel", { id: String(oe) })]
+									children: [" · ", r("basalam.boothIdLabel", { id: String(ae) })]
 								}) : null]
 							})
 						]
 					}), /* @__PURE__ */ x("div", {
 						className: "flex flex-wrap gap-2",
-						children: [/* @__PURE__ */ b(W, {
-							variant: S ? "default" : "secondary",
-							onClick: () => C((e) => !e),
-							disabled: !ae,
-							children: r(S ? "basalam.chatHide" : "basalam.chatWithBuyer")
-						}), /* @__PURE__ */ b(W, {
-							variant: E ? "default" : "outline",
-							onClick: () => ie.mutate(!E),
-							disabled: ie.isPending || !ae,
+						children: [/* @__PURE__ */ b(U, {
+							variant: "secondary",
+							onClick: () => gi(),
+							disabled: !ie,
+							children: r("basalam.chatWithBuyer")
+						}), /* @__PURE__ */ b(U, {
+							variant: w ? "default" : "outline",
+							onClick: () => re.mutate(!w),
+							disabled: re.isPending || !ie,
 							children: r("basalam.chatNotify")
 						})]
 					})]
@@ -5393,7 +5405,7 @@ function mi() {
 			/* @__PURE__ */ x("div", {
 				className: "grid max-w-4xl gap-4 lg:grid-cols-2",
 				children: [
-					/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.boothProfile") }), /* @__PURE__ */ b(On, { children: r("basalam.boothProfileHint") })] }), /* @__PURE__ */ x(J, {
+					/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: r("basalam.boothProfile") }), /* @__PURE__ */ b(q, { children: r("basalam.boothProfileHint") })] }), /* @__PURE__ */ x(J, {
 						className: "space-y-3",
 						children: [
 							/* @__PURE__ */ x("label", {
@@ -5405,30 +5417,30 @@ function mi() {
 							}),
 							/* @__PURE__ */ x("label", {
 								className: "space-y-1 text-sm",
-								children: [/* @__PURE__ */ b("span", { children: r("basalam.boothSummaryField") }), /* @__PURE__ */ b(Mn, {
+								children: [/* @__PURE__ */ b("span", { children: r("basalam.boothSummaryField") }), /* @__PURE__ */ b(Fn, {
 									value: s,
 									onChange: (e) => c(e.target.value),
 									rows: 4
 								})]
 							}),
-							/* @__PURE__ */ b(W, {
-								onClick: () => F.mutate(),
-								disabled: F.isPending || !ae,
+							/* @__PURE__ */ b(U, {
+								onClick: () => M.mutate(),
+								disabled: M.isPending || !ie,
 								children: r("basalam.saveBooth")
 							})
 						]
 					})] }),
-					/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.ordersAutoTitle") }), /* @__PURE__ */ b(On, { children: r(se ? "basalam.ordersAutoOn" : "basalam.ordersAutoOff") })] }), /* @__PURE__ */ b(J, {
+					/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: r("basalam.ordersAutoTitle") }), /* @__PURE__ */ b(q, { children: r(oe ? "basalam.ordersAutoOn" : "basalam.ordersAutoOff") })] }), /* @__PURE__ */ b(J, {
 						className: "flex flex-wrap gap-2",
-						children: /* @__PURE__ */ b(W, {
-							onClick: () => ne.mutate(),
-							disabled: ne.isPending || !ae,
-							children: r(se ? "basalam.ordersAutoResetBtn" : "basalam.ordersAutoEnable")
+						children: /* @__PURE__ */ b(U, {
+							onClick: () => P.mutate(),
+							disabled: P.isPending || !ie,
+							children: r(oe ? "basalam.ordersAutoResetBtn" : "basalam.ordersAutoEnable")
 						})
 					})] }),
-					/* @__PURE__ */ x(G, {
+					/* @__PURE__ */ x(W, {
 						className: "lg:col-span-2",
-						children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.shippingTitle") }), /* @__PURE__ */ b(On, { children: r("basalam.shippingHint") })] }), /* @__PURE__ */ x(J, {
+						children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: r("basalam.shippingTitle") }), /* @__PURE__ */ b(q, { children: r("basalam.shippingHint") })] }), /* @__PURE__ */ x(J, {
 							className: "grid gap-6 md:grid-cols-2",
 							children: [/* @__PURE__ */ x("div", {
 								className: "space-y-3",
@@ -5444,24 +5456,24 @@ function mi() {
 											value: d,
 											onChange: (e) => p(e.target.value),
 											placeholder: r("basalam.shippingProfileTitle")
-										}), /* @__PURE__ */ b(W, {
-											onClick: () => I.mutate(),
-											disabled: I.isPending || !d.trim() || !ae,
+										}), /* @__PURE__ */ b(U, {
+											onClick: () => te.mutate(),
+											disabled: te.isPending || !d.trim() || !ie,
 											children: r("basalam.createShippingProfile")
 										})]
 									}),
 									/* @__PURE__ */ x("ul", {
 										className: "space-y-2 text-sm",
-										children: [ce.map((e) => /* @__PURE__ */ x("li", {
+										children: [R.map((e) => /* @__PURE__ */ x("li", {
 											className: "flex items-center justify-between gap-2 border-b py-2",
-											children: [/* @__PURE__ */ b("span", { children: pi(e) }), /* @__PURE__ */ b(W, {
+											children: [/* @__PURE__ */ b("span", { children: vi(e) }), /* @__PURE__ */ b(U, {
 												size: "sm",
 												variant: "destructive",
-												onClick: () => te.mutate(Number(e.id)),
-												disabled: te.isPending,
+												onClick: () => N.mutate(Number(e.id)),
+												disabled: N.isPending,
 												children: r("basalam.delete")
 											})]
-										}, String(e.id))), ce.length ? null : /* @__PURE__ */ b("li", {
+										}, String(e.id))), R.length ? null : /* @__PURE__ */ b("li", {
 											className: "text-muted-foreground text-sm",
 											children: r("basalam.noShippingProfiles")
 										})]
@@ -5474,14 +5486,14 @@ function mi() {
 									children: r("basalam.shippingCarriers")
 								}), /* @__PURE__ */ x("ul", {
 									className: "text-muted-foreground space-y-1 text-sm",
-									children: [(ue.length ? ue : le).slice(0, 12).map((e, t) => /* @__PURE__ */ b("li", { children: pi(e) }, String(e.id ?? t))), !ue.length && !le.length ? /* @__PURE__ */ b("li", { children: r("basalam.noCarriers") }) : null]
+									children: [(ce.length ? ce : se).slice(0, 12).map((e, t) => /* @__PURE__ */ b("li", { children: vi(e) }, String(e.id ?? t))), !ce.length && !se.length ? /* @__PURE__ */ b("li", { children: r("basalam.noCarriers") }) : null]
 								})] })
 							})]
 						})]
 					}),
-					/* @__PURE__ */ x(G, {
+					/* @__PURE__ */ x(W, {
 						className: "lg:col-span-2",
-						children: [/* @__PURE__ */ x(K, { children: [/* @__PURE__ */ b(q, { children: r("basalam.discountsTitle") }), /* @__PURE__ */ b(On, { children: r("basalam.discountsHint") })] }), /* @__PURE__ */ x(J, {
+						children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: r("basalam.discountsTitle") }), /* @__PURE__ */ b(q, { children: r("basalam.discountsHint") })] }), /* @__PURE__ */ x(J, {
 							className: "grid gap-4 md:grid-cols-[1fr_8rem_auto]",
 							children: [
 								/* @__PURE__ */ x("select", {
@@ -5491,7 +5503,7 @@ function mi() {
 									children: [/* @__PURE__ */ b("option", {
 										value: "",
 										children: r("basalam.selectProduct")
-									}), fe.map((e) => /* @__PURE__ */ b("option", {
+									}), ue.map((e) => /* @__PURE__ */ b("option", {
 										value: String(e.basalam_product_id),
 										children: e.name || `#${e.id}`
 									}, e.id))]
@@ -5504,45 +5516,45 @@ function mi() {
 									onChange: (e) => y(e.target.value),
 									placeholder: r("basalam.discountPercent")
 								}),
-								/* @__PURE__ */ b(W, {
-									onClick: () => R.mutate(),
-									disabled: R.isPending || !m || !ae,
+								/* @__PURE__ */ b(U, {
+									onClick: () => ne.mutate(),
+									disabled: ne.isPending || !m || !ie,
 									children: r("basalam.createDiscount")
 								}),
-								de.length ? /* @__PURE__ */ b("ul", {
+								le.length ? /* @__PURE__ */ b("ul", {
 									className: "text-muted-foreground space-y-1 text-sm md:col-span-3",
-									children: de.slice(0, 8).map((e, t) => /* @__PURE__ */ x("li", { children: [String(e.title ?? e.product_id ?? e.id ?? "—"), e.discount == null ? "" : ` — ${String(e.discount)}%`] }, String(e.id ?? t)))
+									children: le.slice(0, 8).map((e, t) => /* @__PURE__ */ x("li", { children: [String(e.title ?? e.product_id ?? e.id ?? "—"), e.discount == null ? "" : ` — ${String(e.discount)}%`] }, String(e.id ?? t)))
 								}) : null
 							]
 						})]
 					}),
-					/* @__PURE__ */ b(kn, {
-						open: w,
-						onOpenChange: T,
+					/* @__PURE__ */ b(Mn, {
+						open: S,
+						onOpenChange: C,
 						className: "lg:col-span-2",
-						children: /* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, {
+						children: /* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, {
 							className: "pb-3",
-							children: /* @__PURE__ */ b(An, {
+							children: /* @__PURE__ */ b(Nn, {
 								asChild: !0,
 								children: /* @__PURE__ */ x("button", {
 									type: "button",
 									className: "flex w-full items-center justify-between text-start",
-									children: [/* @__PURE__ */ b(q, {
+									children: [/* @__PURE__ */ b(K, {
 										className: "text-base",
 										children: r("basalam.advanced")
-									}), /* @__PURE__ */ b(L, { className: `size-4 transition-transform ${w ? "rotate-180" : ""}` })]
+									}), /* @__PURE__ */ b(L, { className: `size-4 transition-transform ${S ? "rotate-180" : ""}` })]
 								})
 							})
-						}), /* @__PURE__ */ b(jn, { children: /* @__PURE__ */ x(J, {
+						}), /* @__PURE__ */ b(Pn, { children: /* @__PURE__ */ x(J, {
 							className: "space-y-3 border-t pt-4",
-							children: [j.data?.webhook_url ? /* @__PURE__ */ b("code", {
+							children: [k.data?.webhook_url ? /* @__PURE__ */ b("code", {
 								className: "bg-muted block overflow-x-auto rounded-md p-2 text-xs",
-								children: j.data.webhook_url
-							}) : null, /* @__PURE__ */ b(W, {
+								children: k.data.webhook_url
+							}) : null, /* @__PURE__ */ b(U, {
 								size: "sm",
 								variant: "secondary",
-								onClick: () => re.mutate(),
-								disabled: re.isPending || !ae,
+								onClick: () => F.mutate(),
+								disabled: F.isPending || !ie,
 								children: r("basalam.rotateWebhook")
 							})]
 						}) })] })
@@ -5553,22 +5565,650 @@ function mi() {
 	});
 }
 //#endregion
-//#region ../Modules/basalam-module/client/module-entry.tsx
-var hi = {
-	"settings/shop/basalam": fr,
-	"settings/shop/basalam/products": Qr,
-	"settings/shop/basalam/orders": $r,
-	"settings/shop/basalam/categories": ri,
-	"settings/shop/basalam/settings": ii,
-	"settings/shop/basalam/finance": ui,
-	"settings/shop/basalam/booth": mi,
-	"settings/shop/basalam/tickets": fr,
-	"settings/shop/basalam/logs": di,
-	"settings/shop/basalam/payments": fr,
-	"settings/shop/basalam/wallet": ui,
-	"settings/shop/basalam/subscriptions": fr,
-	"settings/shop/basalam/webhooks": mi,
-	"settings/shop/basalam/operations": Qr
-}, gi = { routes: hi };
+//#region ../Modules/basalam-module/client/pages/basalam/basalamFaq.ts
+var bi = [
+	{
+		question: "افزونه ووکامرس باسلام چیست؟",
+		answer: "افزونه ووکامرس باسلام یک پل ارتباطی میان سایت شما و غرفه باسلامتان است که به شما امکان می‌دهد محصولات فروشگاه ووکامرس خود را به صورت خودکار در باسلام مدیریت کنید. با استفاده از این افزونه، تمام تغییرات محصولات شما (قیمت، موجودی، تصاویر و...) به صورت خودکار در باسلام نیز اعمال می‌شود.",
+		category: "عمومی"
+	},
+	{
+		question: "چه امکاناتی در افزونه وجود دارد؟",
+		answer: "افزونه باسلام امکانات متنوعی را ارائه می‌دهد از جمله: اضافه کردن محصولات ووکامرس به غرفه باسلام، همگام‌سازی خودکار بین دو سایت، مدیریت سفارش‌های باسلام داخل پنل ووکامرس.",
+		category: "عمومی"
+	},
+	{
+		question: "چگونه با پشتیبانی فنی ارتباط برقرار کنم؟",
+		answer: "شما می‌توانید از طریق [گروه پشتیبانی تلگرام](https://webina.dev) با تیم توسعه پلاگین در ارتباط باشید. تیم پشتیبانی در ساعات کاری آماده پاسخگویی به سؤالات شما است.",
+		category: "عمومی"
+	},
+	{
+		question: "آیا افزونه نیاز به بروزرسانی دارد؟",
+		answer: "بله، افزونه به صورت مداوم در حال بهبود است و توصیه می‌شود همیشه از آخرین نسخه استفاده کنید. بروزرسانی‌ها شامل بهبود عملکرد، رفع باگ‌ها و افزودن امکانات جدید است.",
+		category: "عمومی"
+	},
+	{
+		question: "چگونه افزونه را نصب و راه‌اندازی کنم؟",
+		answer: "بعد از نصب پلاگین و فعال کردن پلاگین وارد تب باسلام بشید و روی دریافت دسترسی کلیک کنید به همین سادگی!",
+		category: "تنظیمات"
+	},
+	{
+		question: "تنظیمات پیش فرض چیه و چجوری باید تغییر بدیم؟",
+		answer: "اگر محصول وزن و... نداشته باشد مقدارش از تنظیمات پیشفرض دریافت می‌شود تا توی باسلام ثبت شود. می‌توانید از منوی باسلام، تنظیمات بیشتر این تغییر را انجام دهید.",
+		category: "تنظیمات"
+	},
+	{
+		question: "حالت توسعه‌دهنده چیست و چه کاربردی دارد؟",
+		answer: "این قابلیت برای بررسی اتصال به basalam.com است.",
+		category: "تنظیمات"
+	},
+	{
+		question: "افزونه باسلام را از کجا می‌توانم دانلود کنم؟",
+		answer: "افزونه باسلام از سه مسیر قابل دریافت است: مخزن رسمی افزونه‌های وردپرس (نسخه پایه رایگان)، وب‌سایت wp.hamsalam.ir (نسخه پایه رایگان)، و فروشگاه راست‌چین (نسخه پرو).",
+		category: "نصب و راه‌اندازی"
+	},
+	{
+		question: "مراحل نصب افزونه چگونه است؟",
+		answer: "مراحل نصب: دانلود فایل افزونه، ورود به پنل مدیریت وردپرس، رفتن به بخش افزونه‌ها → افزودن افزونه جدید، بارگذاری و نصب افزونه، و فعال‌سازی افزونه. این فرآیند حدود ۵ دقیقه زمان می‌برد.",
+		category: "نصب و راه‌اندازی"
+	},
+	{
+		question: "پیش‌نیازهای نصب افزونه چیست؟",
+		answer: "پیش‌نیاز اصلی داشتن یک فروشگاه وردپرس با ووکامرس نصب‌شده است. دانش فنی مورد نیاز بسیار کم است و نیازی به دانش برنامه‌نویسی نیست.",
+		category: "نصب و راه‌اندازی"
+	},
+	{
+		question: "چگونه به باسلام متصل شوم؟",
+		answer: "پس از فعال‌سازی افزونه، وارد تنظیمات باسلام شوید و روی دکمه «دریافت دسترسی از باسلام» کلیک کنید. اتصال API و تمام تنظیمات اولیه به‌طور خودکار انجام می‌شود و نیازی به وارد کردن دستی کلید API نیست.",
+		category: "نصب و راه‌اندازی"
+	},
+	{
+		question: "راه‌اندازی افزونه چقدر زمان می‌برد؟",
+		answer: "فرآیند کامل نصب و راه‌اندازی تنها با یک کلیک تکمیل می‌شود و حدود ۵ دقیقه زمان می‌برد. دیگر نیازی به تنظیمات پیچیده نیست.",
+		category: "نصب و راه‌اندازی"
+	},
+	{
+		question: "همگام‌سازی خودکار چگونه کار می‌کند؟",
+		answer: "با فعال کردن همگام‌سازی خودکار، هر تغییری که در محصولات ووکامرس ایجاد کنید به صورت خودکار در باسلام نیز اعمال می‌شود.",
+		category: "همگام‌سازی"
+	},
+	{
+		question: "چگونه همه محصولات را یکجا به باسلام ارسال کنم؟",
+		answer: " روی دکمه اضافه کردن محصولات به باسلام کلیک کنید ، باقی فرایند به صورت اتوماتیک انجام میشود",
+		category: "همگام‌سازی"
+	},
+	{
+		question: "چرا بعضی محصولات همگام‌سازی نمی‌شوند؟",
+		answer: "دلایل احتمالی: محصول قیمت یا موجودی ندارد، تصویر شاخص ندارد، در وضعیت پیش‌نویس است، مشکل در اتصال به API باسلام وجود دارد، یا شاید با این نام برای محصول محصول دیگری باشد در باسلام و دو محصول با نام تکراری به باسلام اضافه نمی‌شود.",
+		category: "همگام‌سازی"
+	},
+	{
+		question: "آیا می‌توانم همگام‌سازی را موقتاً غیرفعال کنم؟",
+		answer: "بله، می‌توانید از طریق دکمه وضعیت همگام‌سازی در داشبورد افزونه، همگام‌سازی خودکار را غیرفعال کنید و هر زمان که خواستید مجدداً آن را فعال کنید.",
+		category: "همگام‌سازی"
+	},
+	{
+		question: "چه اطلاعاتی از محصول در باسلام قرار میگیرند؟",
+		answer: "اطلاعات همگام‌سازی شده شامل: نام محصول، قیمت، موجودی، تصاویر، توضیحات، دسته‌بندی، وزن و زمان اماده سازی محصول است.",
+		category: "همگام‌سازی"
+	},
+	{
+		question: "چه روش‌هایی برای همگام‌سازی محصولات وجود دارد؟",
+		answer: "سه روش اصلی برای همگام‌سازی محصولات وجود دارد: همگام‌سازی تکی (انتخاب یک محصول و کلیک بر روی «اضافه کردن به باسلام»)، همگام‌سازی گروهی (انتخاب چند محصول با چک‌باکس و استفاده از منوی عملیات گروهی)، و همگام‌سازی همگانی (استفاده از گزینه «اضافه کردن همهproducts» که هر دقیقه یک محصول را به صورت خودکار اضافه می‌کند).",
+		category: "همگام‌سازی"
+	},
+	{
+		question: "همگام‌سازی دوطرفه موجودی چگونه کار می‌کند؟",
+		answer: "همگام‌سازی دوطرفه موجودی به این صورت عمل می‌کند: خرید در ووکامرس باعث کاهش موجودی در باسلام می‌شود و خرید در باسلام باعث کاهش موجودی در ووکامرس می‌شود. این فرآیند به صورت خودکار و در زمان واقعی انجام می‌شود.",
+		category: "همگام‌سازی"
+	},
+	{
+		question: "چگونه محصولات را به باسلام اضافه کنم؟",
+		answer: "سه روش وجود دارد: اضافه کردن محصول جدید به صورت تکی،گروهی و کلی، اتصال محصول از صفحه ویرایش محصول به محصولات موجود غرفه باسلام. اگر همگام‌سازی محصولات فعال باشد، با انتشار محصولات جدید آن محصول به باسلام هم اضافه می‌شود.",
+		category: "محصولات"
+	},
+	{
+		question: "چگونه قیمت و موجودی محصولات را به‌روز کنم؟",
+		answer: "به‌روزرسانی به دو روش انجام می‌شود: خودکار با فعال بودن همگام‌سازی خودکار که بعد از هر سفارش جدید موجودی و... همگام‌سازی می‌شود، یا دستی به صورت تکی یا همگانی. به‌روزرسانی همگانی به دو صورت فوری و کامل انجام می‌شود که در حالت فوری فقط قیمت و موجودی آپدیت می‌شود.",
+		category: "محصولات"
+	},
+	{
+		question: "آیا میتوانم محصولات متغیر هم به باسلام اضافه و آن را مدیریت کنم؟",
+		answer: "بله، افزونه از محصولات متغیر پشتیبانی می‌کند. ",
+		category: "محصولات"
+	},
+	{
+		question: "چگونه می‌توانم محصولات را از باسلام حذف کنم؟",
+		answer: "برای حذف محصول از باسلام می‌توانید در صفحه ویرایش محصول، گزینه آرشیو محصول را انتخاب کنید تا در غرفه باسلامی تان نمایش داده نشود ، برای نمایش مجدد می‌توانید از گزینه بازگردانی محصول استفاده کنید.                    ",
+		category: "محصولات"
+	},
+	{
+		question: "چگونه سفارشات باسلام را در ووکامرس مشاهده کنم؟",
+		answer: "در صورت فعال سازی گزینه همگام سازی سفارشات ، سفارشات باسلام به صورت خودکار در بخش سفارشات ووکامرس نمایش داده می‌شوند. شما می‌توانید با کلیک روی دکمه \"بررسی سفارشات باسلام\" در صفحه سفارشات، سفارشات جدید را همگام‌سازی کنید.",
+		category: "سفارشات"
+	},
+	{
+		question: "آیا سفارشات باسلام به صورت خودکار در ووکامرس ثبت می‌شوند؟",
+		answer: "بله، با فعال‌سازی همگام سازی سفارشات باسلام، سفارشات جدید به صورت خودکار در ووکامرس ثبت می‌شوند. در غیر این صورت، می‌توانید به صورت دستی با استفاده از دکمه \"بررسی سفارشات باسلام\" این کار را انجام دهید.",
+		category: "سفارشات"
+	},
+	{
+		question: "چگونه وضعیت سفارش را در باسلام به‌روز کنم؟",
+		answer: "در صورتی که وضعیت سفارشات ووکامرس ، باسلامی باشند ، از طریق باکس تنظیمات باسلام در صفحه سفارش با توجه به وضعیت سفارش آن را بروزرسانی کنید.",
+		category: "سفارشات"
+	},
+	{
+		question: "آیا می‌توانم سفارشات را به صورت دستی تأیید کنم؟",
+		answer: "بله، در بخش سفارشات ووکامرس می‌توانید سفارشات باسلام را به صورت دستی تأیید کنید. این کار از طریق دکمه \"تأیید سفارش\" در صفحه سفارش انجام می‌شود.",
+		category: "سفارشات"
+	},
+	{
+		question: "محصولاتم به باسلام ارسال نمی‌شوند، چه کنم؟",
+		answer: "علل احتمالی: گزینه اضافه کردن محصول به باسلام زده نشده، محصول فاقد تصویر است، محصول غیرفعال است، یا مشکل در اتصال API. راه‌حل: از گزینه «اضافه کردن محصولات» استفاده کنید، مطمئن شوید محصول دارای تصویر و فعال است، وضعیت اتصال افزونه را بررسی کنید.",
+		category: "مشکلات رایج"
+	},
+	{
+		question: "موجودی یا قیمت محصولات همگام نمی‌شود، دلیل چیست؟",
+		answer: "علل احتمالی: خطای Timeout در سرور، گزینه همگام‌سازی محصولات غیرفعال است، مشکل در Webhook، یا مشکل در API باسلام. راه‌حل: صفحه لاگ‌ها را بررسی کنید، مطمئن شوید گزینه همگام‌سازی خودکار فعال است، افزونه را به آخرین نسخه بروزرسانی کنید.",
+		category: "مشکلات رایج"
+	},
+	{
+		question: "سفارشات باسلام در ووکامرس نمایش داده نمی‌شوند، چرا؟",
+		answer: "علل احتمالی: تنظیمات Webhook درست نیست، گزینه همگام‌سازی سفارشات غیرفعال است، یا تأخیر در API باسلام. راه‌حل: تنظیمات سفارش در افزونه را بررسی کنید، مطمئن شوید گزینه همگام‌سازی سفارشات فعال باشد، لاگ‌ها را برای یافتن خطای احتمالی چک کنید.",
+		category: "مشکلات رایج"
+	},
+	{
+		question: "دسته‌بندی محصولات اشتباه تشخیص داده می‌شود،怎么办؟",
+		answer: "API باسلام گاهی دسته‌بندی محصولات را به‌درستی تشخیص نمی‌دهد. راه‌حل: وارد بخش «دسته‌بندی‌ها» در افزونه شوید، دسته‌بندی‌های ووکامرس را به‌صورت دستی به دسته‌بندی‌های باسلام متصل کنید، سپس محصولات را مجدداً به باسلام ارسال کنید.",
+		category: "مشکلات رایج"
+	},
+	{
+		question: "خطای API یا Timeout دریافت می‌کنم، چرا؟",
+		answer: "علل احتمالی: محدودیت سرور هاستینگ، ترافیک بالای API، یا تنظیمات نادرست سرور. راه‌حل: با پشتیبانی هاستینگ تماس بگیرید و محدودیت Timeout را افزایش دهید، در ساعات کم‌ترافیک امتحان کنید، به جای همگام‌سازی یکجای همه محصولات از روش تکی یا گروهی استفاده کنید.",
+		category: "مشکلات رایج"
+	},
+	{
+		question: "محصول در باسلام نمایش داده نمی‌شود، چه کاری باید انجام دهم؟",
+		answer: "علل: فرآیند تأیید محصول توسط باسلام زمان‌بر است، یا محصول توسط باسلام رد شده. راه‌حل: صبر کنید تا فرآیند تأیید باسلام تکمیل شود (ممکن است چند ساعت طول بکشد)، لاگ‌ها را چک کنید تا ببینید آیا محصول رد شده یا خیر، در صورت رد شدن قوانین باسلام را بررسی کنید.",
+		category: "مشکلات رایج"
+	},
+	{
+		question: "تفاوت نسخه پایه و پرو چیست؟",
+		answer: "نسخه پایه (رایگان) شامل همگام‌سازی خودکار محصولات، انتقال سفارشات، همگام‌سازی قیمت و موجودی است. نسخه پرو (پولی) تمام قابلیت‌های نسخه پایه را به علاوه ایجاد رایگان حساب فروشنده در باسلام و پشتیبانی پیشرفته‌تر را ارائه می‌دهد.",
+		category: "محدودیت‌ها و نسخه‌ها"
+	},
+	{
+		question: "محدودیت‌های فنی افزونه چیست؟",
+		answer: "محدودیت‌ها شامل وابستگی به API باسلام، محدودیت سرور و هاستینگ، دسته‌بندی خودکار نامعتبر، تأخیر در همگام‌سازی، و محدودیت همگام‌سازی همگانی (هر دقیقه فقط یک محصول).",
+		category: "محدودیت‌ها و نسخه‌ها"
+	},
+	{
+		question: "آیا برای همه سایت‌ها قابل استفاده است؟",
+		answer: "خیر، افزونه فقط برای فروشگاه‌های وردپرس با ووکامرس کار می‌کند. برای سایت‌های سفارشی یا پلتفرم‌های دیگر قابل استفاده نیست.",
+		category: "محدودیت‌ها و نسخه‌ها"
+	},
+	{
+		question: "محصولات باید چه شرایطی داشته باشند تا به باسلام ارسال شوند؟",
+		answer: "محصولات باید حتماً فعال و دارای تصویر باشند تا قابل ارسال به باسلام باشند. محصولات غیرفعال یا بدون تصویر ارسال نخواهند شد.",
+		category: "محدودیت‌ها و نسخه‌ها"
+	},
+	{
+		question: "همگام‌سازی کاملاً لحظه‌ای است؟",
+		answer: "خیر، همگام‌سازی کاملاً لحظه‌ای نیست و ممکن است کمی تأخیر داشته باشد. در مواقع ترافیک بالا، تأخیر بیشتر می‌شود و ممکن است چند دقیقه طول بکشد.",
+		category: "محدودیت‌ها و نسخه‌ها"
+	},
+	{
+		question: "اگر محصولات بسیار زیاد باشم چه مشکلی پیش می‌آید؟",
+		answer: "هنگام استفاده از گزینه «اضافه کردن همه محصولات»، هر دقیقه فقط یک محصول اضافه می‌شود. برای فروشگاه‌های بسیار بزرگ، این فرآیند ممکن است زمان‌بر باشد و بهتر است از روش تکی یا گروهی استفاده کنید.",
+		category: "محدودیت‌ها و نسخه‌ها"
+	},
+	{
+		question: "چگونه با پشتیبانی ارتباط برقرار کنم؟",
+		answer: "شما می‌توانید از طریق گروه تلگرام پشتیبانی (https://webina.dev) یا ایمیل info.hamsalam.ir@gmail.com با تیم پشتیبانی در ارتباط باشید.",
+		category: "پشتیبانی"
+	},
+	{
+		question: "چه اطلاعاتی را برای پشتیبانی باید آماده کنم؟",
+		answer: "هنگام ارتباط با پشتیبانی موارد زیر را آماده داشته باشید: دسترسی به پیشخوان وردپرس (در صورت نیاز)، شماره تماس غرفه باسلام، دسترسی به کنترل پنل هاست (در موارد خاص)، تصویر از صفحه لاگ‌ها و خطاهای موجود، توضیح دقیق مشکل و مراحل انجام‌شده، نسخه وردپرس و ووکامرس و افزونه.",
+		category: "پشتیبانی"
+	},
+	{
+		question: "چه مشکلاتی توسط پشتیبانی قابل حل است؟",
+		answer: "پشتیبانی همسلام می‌تواند در موارد زیر کمک کند: مشکلات اتصال و تنظیمات، مشکلات دسته‌بندی، مشکلات همگام‌سازی، مشکلات سفارشات، و راهنمایی و آموزش استفاده از افزونه.",
+		category: "پشتیبانی"
+	},
+	{
+		question: "آیا امکان سفارشی‌سازی افزونه وجود دارد؟",
+		answer: "بله، برای سفارشی‌سازی با تیم پشتیبانی همسلام در تماس باشید.",
+		category: "پشتیبانی"
+	},
+	{
+		question: "از کجا می‌توانم راهنماهای کامل را پیدا کنم؟",
+		answer: "راهنماهای کامل در وب‌سایت‌های رسمی موجود است: صفحه اصلی باسلام (https://webina.dev)، پایگاه دانش وردپرس باسلام (https://wp.hamsalam.ir/)، و راهنمای نصب و آموزش‌های مرحله به مرحله (https://wp.hamsalam.ir/help).",
+		category: "پشتیبانی"
+	},
+	{
+		question: "وضعیت‌های مختلف اتصال محصول به باسلام چه معنایی دارند؟",
+		answer: "سه حالت اتصال داریم: همگام شده، در حال اجرای عملیات، همگام نشده. همگام نشده یعنی یا متصل نیست یا آخرین بروزرسانی موفق نبوده.",
+		category: "محصولات"
+	},
+	{
+		question: "چه نکاتی را قبل از افزودن یا بروزرسانی گروهی و همگانی در نظر بگیریم؟",
+		answer: "برای اضافه کردن محصولات، فقط محصولات منتشر شده در ووکامرس اضافه می‌شود و باید محصول قیمت داشته باشد، عکس داشته باشد و عنوان داشته باشد. برای اپدیت هم می‌توانید از تنظیمات بیشتر، فیلدهای ارسالی هنگام اپدیت را مشخص کنید.",
+		category: "عمومی"
+	},
+	{
+		question: "جریان کلی همگام‌سازی از ووکامرس به باسلام چگونه است؟",
+		answer: "جریان همگام‌سازی: ۱) فروشنده محصول را در ووکامرس ایجاد یا ویرایش می‌کند، ۲) افزونه تغییرات را شناسایی می‌کند، ۳) اطلاعات محصول به فرمت JSON از طریق API باسلام ارسال می‌شود، ۴) محصول در غرفه باسلام به‌روزرسانی می‌شود، ۵) وضعیت عملیات در لاگ‌های افزونه ثبت می‌شود.",
+		category: "همگام‌سازی"
+	},
+	{
+		question: "جریان همگام‌سازی از باسلام به ووکامرس چگونه کار می‌کند؟",
+		answer: "جریان سفارشات: ۱) مشتری در باسلام سفارش ثبت می‌کند، ۲) از طریق Webhook اطلاعات سفارش به ووکامرس ارسال می‌شود، ۳) سفارش به‌صورت خودکار در پنل ووکامرس ثبت می‌شود، ۴) موجودی محصول در هر دو پلتفرم کاهش می‌یابد.",
+		category: "سفارشات"
+	}
+];
 //#endregion
-export { gi as default, hi as routes };
+//#region ../Modules/basalam-module/client/pages/basalam/BasalamHelpPage.tsx
+function xi() {
+	let { t: e } = _(), [t, n] = f(""), [r, i] = f(""), a = u(() => Array.from(new Set(bi.map((e) => e.category))), []), o = u(() => {
+		let e = t.trim().toLowerCase();
+		return bi.filter((t) => r && t.category !== r ? !1 : e ? t.question.toLowerCase().includes(e) || t.answer.toLowerCase().includes(e) : !0);
+	}, [t, r]);
+	return /* @__PURE__ */ x(An, {
+		title: e("basalam.helpTitle"),
+		description: e("basalam.helpSubtitle"),
+		children: [/* @__PURE__ */ b(kn, {}), /* @__PURE__ */ x("div", {
+			className: "max-w-4xl space-y-3",
+			children: [
+				/* @__PURE__ */ b(Y, {
+					value: t,
+					onChange: (e) => n(e.target.value),
+					placeholder: e("basalam.helpSearch"),
+					"aria-label": e("basalam.helpSearch")
+				}),
+				/* @__PURE__ */ x("div", {
+					className: "flex flex-wrap gap-2",
+					children: [/* @__PURE__ */ b(U, {
+						size: "sm",
+						variant: r === "" ? "default" : "outline",
+						onClick: () => i(""),
+						children: e("basalam.helpAll")
+					}), a.map((e) => /* @__PURE__ */ b(U, {
+						size: "sm",
+						variant: r === e ? "default" : "outline",
+						onClick: () => i(e),
+						children: e
+					}, e))]
+				}),
+				o.length === 0 ? /* @__PURE__ */ b(W, { children: /* @__PURE__ */ b(J, {
+					className: "text-muted-foreground py-8 text-center text-sm",
+					children: e("basalam.helpEmpty")
+				}) }) : /* @__PURE__ */ b("div", {
+					className: "space-y-2",
+					children: o.map((e) => /* @__PURE__ */ x("details", {
+						className: "bg-card rounded-lg border px-4 py-3",
+						children: [
+							/* @__PURE__ */ b("summary", {
+								className: "cursor-pointer text-sm font-medium",
+								children: e.question
+							}),
+							/* @__PURE__ */ b("p", {
+								className: "text-muted-foreground mt-2 text-sm leading-relaxed whitespace-pre-line",
+								children: e.answer
+							}),
+							/* @__PURE__ */ b("p", {
+								className: "text-muted-foreground mt-2 text-xs",
+								children: e.category
+							})
+						]
+					}, e.question))
+				}),
+				/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ b(G, { children: /* @__PURE__ */ b(K, { children: e("basalam.helpSupportTitle") }) }), /* @__PURE__ */ x(J, {
+					className: "space-y-2 text-sm",
+					children: [/* @__PURE__ */ b("p", {
+						className: "text-muted-foreground",
+						children: e("basalam.helpSupportHint")
+					}), /* @__PURE__ */ x("div", {
+						className: "flex flex-wrap gap-2",
+						children: [/* @__PURE__ */ b(U, {
+							asChild: !0,
+							size: "sm",
+							variant: "secondary",
+							children: /* @__PURE__ */ b("a", {
+								href: "https://webina.dev",
+								target: "_blank",
+								rel: "noreferrer",
+								children: e("basalam.helpSupportLink")
+							})
+						}), /* @__PURE__ */ b(U, {
+							asChild: !0,
+							size: "sm",
+							variant: "outline",
+							children: /* @__PURE__ */ b("a", {
+								href: "https://wp.hamsalam.ir/help",
+								target: "_blank",
+								rel: "noreferrer",
+								children: e("basalam.helpVideos")
+							})
+						})]
+					})]
+				})] })
+			]
+		})]
+	});
+}
+//#endregion
+//#region ../Modules/basalam-module/client/pages/basalam/BasalamOnboardingPage.tsx
+function Si() {
+	let { t: e } = _(), [t, n] = f(1), r = [
+		{
+			title: e("basalam.onboardingStep1Title"),
+			body: e("basalam.onboardingStep1Body"),
+			to: "/settings/shop/basalam",
+			cta: e("basalam.onboardingStep1Cta")
+		},
+		{
+			title: e("basalam.onboardingStep2Title"),
+			body: e("basalam.onboardingStep2Body"),
+			to: "/settings/shop/basalam",
+			cta: e("basalam.onboardingStep2Cta")
+		},
+		{
+			title: e("basalam.onboardingStep3Title"),
+			body: e("basalam.onboardingStep3Body"),
+			to: "/settings/shop/basalam/products",
+			cta: e("basalam.onboardingStep3Cta")
+		}
+	], i = r[t - 1];
+	return /* @__PURE__ */ x(An, {
+		title: e("basalam.onboardingTitle"),
+		description: e("basalam.onboardingSubtitle"),
+		children: [/* @__PURE__ */ b(kn, {}), /* @__PURE__ */ x(W, {
+			className: "max-w-3xl",
+			children: [/* @__PURE__ */ x(G, { children: [
+				/* @__PURE__ */ b("div", {
+					className: "flex flex-wrap gap-2",
+					children: r.map((e, r) => {
+						let i = r + 1;
+						return /* @__PURE__ */ x("button", {
+							type: "button",
+							onClick: () => n(i),
+							className: En("flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition-colors", i === t ? "bg-primary text-primary-foreground border-primary" : i < t ? "border-primary/40 text-primary" : "text-muted-foreground"),
+							children: [/* @__PURE__ */ b("span", {
+								className: "font-semibold",
+								children: i
+							}), /* @__PURE__ */ b("span", { children: e.title })]
+						}, e.title);
+					})
+				}),
+				/* @__PURE__ */ b(K, {
+					className: "pt-2",
+					children: i.title
+				}),
+				/* @__PURE__ */ b(q, { children: i.body })
+			] }), /* @__PURE__ */ x(J, {
+				className: "flex flex-wrap gap-2",
+				children: [
+					/* @__PURE__ */ b(U, {
+						asChild: !0,
+						children: /* @__PURE__ */ b(p, {
+							to: i.to,
+							children: i.cta
+						})
+					}),
+					/* @__PURE__ */ b(U, {
+						variant: "outline",
+						disabled: t === 1,
+						onClick: () => n((e) => Math.max(1, e - 1)),
+						children: e("common.back")
+					}),
+					/* @__PURE__ */ b(U, {
+						variant: "outline",
+						disabled: t === r.length,
+						onClick: () => n((e) => Math.min(r.length, e + 1)),
+						children: e("common.next")
+					})
+				]
+			})]
+		})]
+	});
+}
+//#endregion
+//#region ../Modules/basalam-module/client/pages/basalam/BasalamInfoPage.tsx
+function Ci(e) {
+	if (e == null) return "—";
+	if (typeof e == "string" || typeof e == "number") return String(e);
+	if (typeof e == "object") {
+		let t = e.name ?? e.title;
+		if (t != null) return String(t);
+	}
+	return "—";
+}
+function wi() {
+	let { t: n } = _(), r = t({
+		queryKey: [
+			"basalam",
+			"vendor",
+			"info"
+		],
+		queryFn: () => Q("basalam/vendor")
+	}), i = t({
+		queryKey: ["basalam", "status"],
+		queryFn: () => Q("basalam/status")
+	}), a = e({
+		mutationFn: () => Q("basalam/oauth/disconnect", {
+			method: "POST",
+			body: JSON.stringify({})
+		}),
+		onSuccess: () => v.success(n("basalam.disconnected")),
+		onError: (e) => Z(n, e)
+	}), o = r.data?.vendor ?? null, s = !!i.data?.connected, c = [
+		{
+			label: n("basalam.infoBoothName"),
+			value: Ci(o?.title)
+		},
+		{
+			label: n("basalam.infoBoothId"),
+			value: Ci(o?.id)
+		},
+		{
+			label: n("basalam.infoOwner"),
+			value: Ci(o?.user)
+		},
+		{
+			label: n("basalam.infoCity"),
+			value: Ci(o?.city)
+		},
+		{
+			label: n("basalam.infoStatus"),
+			value: Ci(o?.status)
+		},
+		{
+			label: n("basalam.infoProducts"),
+			value: Ci(o?.product_count)
+		}
+	];
+	return /* @__PURE__ */ x(An, {
+		title: n("basalam.infoTitle"),
+		description: n("basalam.infoSubtitle"),
+		children: [/* @__PURE__ */ b(kn, {}), /* @__PURE__ */ x("div", {
+			className: "max-w-4xl space-y-3",
+			children: [/* @__PURE__ */ x(W, { children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: n("basalam.infoBoothCard") }), /* @__PURE__ */ b(q, { children: n(s ? "basalam.connected" : "basalam.notConnected") })] }), /* @__PURE__ */ x(J, { children: [/* @__PURE__ */ b("dl", {
+				className: "grid gap-3 sm:grid-cols-2",
+				children: c.map((e) => /* @__PURE__ */ x("div", {
+					className: "space-y-0.5",
+					children: [/* @__PURE__ */ b("dt", {
+						className: "text-muted-foreground text-xs",
+						children: e.label
+					}), /* @__PURE__ */ b("dd", {
+						className: "text-sm font-medium break-words",
+						children: e.value
+					})]
+				}, e.label))
+			}), o?.summary ? /* @__PURE__ */ b("p", {
+				className: "text-muted-foreground mt-4 text-sm leading-relaxed",
+				children: o.summary
+			}) : null] })] }), /* @__PURE__ */ x(W, {
+				className: "border-destructive/40",
+				children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: n("basalam.infoDangerTitle") }), /* @__PURE__ */ b(q, { children: n("basalam.infoDangerHint") })] }), /* @__PURE__ */ x(J, {
+					className: "flex flex-wrap gap-2",
+					children: [/* @__PURE__ */ b(U, {
+						variant: "destructive",
+						disabled: !s || a.isPending,
+						onClick: () => {
+							window.confirm(n("basalam.infoDangerConfirm")) && a.mutate();
+						},
+						children: n("basalam.infoDangerButton")
+					}), /* @__PURE__ */ b(U, {
+						asChild: !0,
+						variant: "secondary",
+						children: /* @__PURE__ */ b("a", {
+							href: "https://webina.dev",
+							target: "_blank",
+							rel: "noreferrer",
+							children: n("basalam.helpSupportLink")
+						})
+					})]
+				})]
+			})]
+		})]
+	});
+}
+//#endregion
+//#region ../Modules/basalam-module/client/pages/basalam/BasalamTicketsPage.tsx
+function Ti() {
+	let { t: e } = _();
+	return /* @__PURE__ */ b(An, {
+		title: e("basalam.ticketsTitle"),
+		description: e("basalam.ticketsSubtitle"),
+		children: /* @__PURE__ */ x(W, { children: [/* @__PURE__ */ x(G, { children: [/* @__PURE__ */ b(K, { children: e("basalam.ticketsDisabledTitle") }), /* @__PURE__ */ b(q, { children: e("basalam.ticketsDisabledHint") })] }), /* @__PURE__ */ x(J, {
+			className: "flex flex-wrap gap-2",
+			children: [/* @__PURE__ */ b(U, {
+				asChild: !0,
+				variant: "secondary",
+				children: /* @__PURE__ */ b(p, {
+					to: "/settings/shop/basalam",
+					children: e("basalam.nav.home")
+				})
+			}), /* @__PURE__ */ b(U, {
+				asChild: !0,
+				variant: "outline",
+				children: /* @__PURE__ */ b(p, {
+					to: "/settings/shop/basalam/logs",
+					children: e("basalam.nav.logs")
+				})
+			})]
+		})] })
+	});
+}
+//#endregion
+//#region ../Modules/basalam-module/client/components/BasalamChatDock.tsx
+var Ei = "basalam-chat-widget-script", Di = "webino.basalam.chat.dismissed";
+function Oi() {
+	let { t: e } = _(), n = h(), [r, i] = f(!1), [a, o] = f(!1);
+	l(() => {
+		try {
+			o(window.sessionStorage.getItem(Di) === "1");
+		} catch {}
+	}, []), l(() => {
+		let e = () => {
+			o(!1), i(!0);
+			try {
+				window.sessionStorage.removeItem(Di);
+			} catch {}
+		};
+		return window.addEventListener(hi, e), () => window.removeEventListener(hi, e);
+	}, []);
+	let c = t({
+		queryKey: [
+			"basalam",
+			"chat",
+			"dock"
+		],
+		queryFn: () => Q("basalam/chat/token"),
+		staleTime: 300 * 1e3,
+		retry: !1
+	}), u = !!(c.data?.enabled && c.data.token && c.data.script_url), d = r && !a;
+	l(() => {
+		if (!d || !u || document.getElementById(Ei)) return;
+		let e = document.createElement("script");
+		return e.id = Ei, e.src = String(c.data?.script_url), e.async = !0, e.setAttribute("token", String(c.data?.token)), e.dataset.basalamDock = "1", document.body.appendChild(e), Q("basalam/chat/notify", {
+			method: "POST",
+			body: JSON.stringify({
+				event: "widget_opened",
+				route: n.pathname
+			})
+		}).catch(() => void 0), () => {
+			e.remove();
+		};
+	}, [
+		d,
+		u,
+		c.data?.script_url,
+		c.data?.token,
+		n.pathname
+	]);
+	let p = s(() => {
+		i(!1), o(!0);
+		try {
+			window.sessionStorage.setItem(Di, "1");
+		} catch {}
+	}, []);
+	return !u || a ? null : /* @__PURE__ */ b(y, { children: d ? /* @__PURE__ */ b("div", {
+		className: "fixed inset-x-3 bottom-3 z-40 flex justify-start sm:inset-x-auto sm:left-5 sm:bottom-5",
+		children: /* @__PURE__ */ x("div", {
+			className: "bg-card flex w-full max-w-sm flex-col overflow-hidden rounded-xl border shadow-lg",
+			children: [/* @__PURE__ */ x("div", {
+				className: "flex items-center justify-between gap-2 border-b px-3 py-2",
+				children: [/* @__PURE__ */ b("span", {
+					className: "text-sm font-medium",
+					children: e("basalam.chatDockTitle")
+				}), /* @__PURE__ */ b(U, {
+					type: "button",
+					size: "icon",
+					variant: "ghost",
+					className: "size-7",
+					"aria-label": e("common.close"),
+					onClick: p,
+					children: /* @__PURE__ */ b(oe, { className: "size-4" })
+				})]
+			}), /* @__PURE__ */ b("p", {
+				className: "text-muted-foreground px-3 py-3 text-xs leading-relaxed",
+				children: e("basalam.chatDockHint")
+			})]
+		})
+	}) : /* @__PURE__ */ x("button", {
+		type: "button",
+		onClick: () => i(!0),
+		className: En("fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-full px-4 py-2.5", "bg-[#ff5c35] text-sm font-medium text-white shadow-lg transition-transform", "hover:scale-105 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none"),
+		"aria-label": e("basalam.chatDockOpen"),
+		children: [/* @__PURE__ */ b(ae, { className: "size-4" }), /* @__PURE__ */ b("span", { children: e("basalam.chatDockOpen") })]
+	}) });
+}
+//#endregion
+//#region ../Modules/basalam-module/client/module-entry.tsx
+var ki = {
+	"settings/shop/basalam": hr,
+	"settings/shop/basalam/products": ti,
+	"settings/shop/basalam/orders": ni,
+	"settings/shop/basalam/categories": oi,
+	"settings/shop/basalam/settings": si,
+	"settings/shop/basalam/finance": pi,
+	"settings/shop/basalam/booth": yi,
+	"settings/shop/basalam/tickets": Ti,
+	"settings/shop/basalam/help": xi,
+	"settings/shop/basalam/info": wi,
+	"settings/shop/basalam/onboarding": Si,
+	"settings/shop/basalam/logs": mi,
+	"settings/shop/basalam/payments": hr,
+	"settings/shop/basalam/wallet": pi,
+	"settings/shop/basalam/subscriptions": hr,
+	"settings/shop/basalam/webhooks": yi,
+	"settings/shop/basalam/operations": ti
+}, Ai = { BasalamChatDock: Oi }, ji = {
+	routes: ki,
+	components: Ai
+};
+//#endregion
+export { Ai as components, ji as default, ki as routes };

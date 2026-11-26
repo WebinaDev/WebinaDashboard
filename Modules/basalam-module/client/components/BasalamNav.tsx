@@ -12,6 +12,9 @@ const LINKS = [
   { to: '/settings/shop/basalam/categories', key: 'basalam.nav.categories' },
   { to: '/settings/shop/basalam/settings', key: 'basalam.nav.settings' },
   { to: '/settings/shop/basalam/finance', key: 'basalam.nav.finance' },
+  { to: '/settings/shop/basalam/info', key: 'basalam.nav.info' },
+  { to: '/settings/shop/basalam/help', key: 'basalam.nav.help' },
+  { to: '/settings/shop/basalam/onboarding', key: 'basalam.nav.onboarding' },
   { to: '/settings/shop/basalam/logs', key: 'basalam.nav.logs' },
 ] as const
 
