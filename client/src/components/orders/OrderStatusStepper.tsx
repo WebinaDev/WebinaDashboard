@@ -29,10 +29,12 @@ const SHIP_ALIASES = new Set([
   'courier',
   'tipax',
   'chapar',
+  'dekapost',
   'webino-post',
   'webino-courier',
   'webino-tipax',
   'webino-chapar',
+  'webino-dekapost',
   'webino-shipping',
   'bslm-shipping',
   'bslm-preparation',
@@ -91,6 +93,7 @@ export function statusForTrackingProvider(kind: string, availableStatuses: Statu
     courier: ['webino-courier', 'courier'],
     tipax: ['webino-tipax', 'tipax'],
     chapar: ['webino-chapar', 'chapar'],
+    dekapost: ['webino-dekapost', 'dekapost', 'webino-post', 'post'],
     other: ['webino-shipping', 'webino-ready-to-ship', 'processing'],
   }
   const preferred = map[kind] || map.other

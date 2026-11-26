@@ -60,6 +60,7 @@ function guessProviderFromShipping(
   const tryKind = (kind: string) => (activeIds.has(kind) ? kind : '')
   if (/tipax|تیپاکس/.test(hay)) return tryKind('tipax')
   if (/chapar|چاپار/.test(hay)) return tryKind('chapar')
+  if (/dekapost|deka\s*post|دکاپست|دکا\s*پست/.test(hay)) return tryKind('dekapost')
   if (/courier|peyk|pik|پیک/.test(hay)) return tryKind('courier')
   if (/post|postal|پست/.test(hay)) return tryKind('post')
   return tryKind('other') || [...activeIds][0] || ''

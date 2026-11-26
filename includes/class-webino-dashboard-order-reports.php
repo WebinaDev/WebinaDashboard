@@ -233,6 +233,7 @@ class Webino_Dashboard_Order_Reports {
 			'webino-ready-to-ship',
 			'webino-shipping',
 			'webino-chapar',
+			'webino-dekapost',
 			// Legacy / PWS / SMS-map aliases used as live WC status slugs.
 			'sent-to-warehouse',
 			'packaged',
@@ -240,6 +241,7 @@ class Webino_Dashboard_Order_Reports {
 			'post',
 			'tipax',
 			'chapar',
+			'dekapost',
 			'ready-to-ship',
 			'pws-sent-to-warehouse',
 			'pws-packaged',

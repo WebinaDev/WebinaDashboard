@@ -23,6 +23,8 @@ if ( ! class_exists( 'Webino_Dashboard_Module_Registry', false )
 			'class-webino-shipping-packer.php',
 			'class-webino-shipping-method-packaging.php',
 			'class-webino-shipping-method-flat-city.php',
+			'class-webino-shipping-dekapost.php',
+			'class-webino-shipping-method-dekapost.php',
 			'class-webino-shipping-order-statuses.php',
 			'class-webino-shipping-cities.php',
 			'class-webino-shipping-checkout-district.php',
@@ -113,4 +115,6 @@ Webino_Shipping_Dokan::init();
 Webino_Shipping_Packer::init();
 Webino_Shipping_Method_Packaging::register();
 Webino_Shipping_Method_Flat_City::register();
+Webino_Shipping_Dekapost::init();
+Webino_Shipping_Method_Dekapost::register();
 Webino_Dashboard_REST_Shipping::init();

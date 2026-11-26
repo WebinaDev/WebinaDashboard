@@ -97,3 +97,29 @@ Event catalog comes from `wc_get_order_statuses()` on the customer site (plus ex
 - `webinocrm_modirpayamak_message_templates`
 - `webinocrm_modirpayamak_pattern_registry`
 - `webinocrm_modirpayamak_newsletter_subscribers`
+
+## Carrier events (post / courier / tipax / chapar / dekapost / other)
+
+Each carrier has its own `event_key`, used both as the SMS pattern event and as the order-tracking provider id. Bind a customer-scope pattern per carrier in `/marketing/sms/patterns`; the order screen then offers exactly the carriers that have a bound pattern.
+
+| Carrier | `event_key` | Order status | Tracking URL default | SMS body |
+|---|---|---|---|---|
+| پست | `post` | `webino-post` | `https://tracking.post.ir/?id={code}` | تحویل پست (کد رهگیری) |
+| پیک | `courier` | `webino-courier` | — (order page) | تحویل پیک |
+| تیپاکس | `tipax` | `webino-tipax` | `https://tipaxco.com/tracking?code={code}` | تحویل تیپاکس |
+| چاپار | `chapar` | `webino-chapar` | `https://chapar.ir/tracking?code={code}` | تحویل چاپار |
+| دکاپست | `dekapost` | `webino-dekapost` | `https://tracking.dekapost.ir/?code={code}` | تحویل دکاپست (کد رهگیری) |
+
+### Dekapost (دکاپست)
+
+Dekapost is a private postal carrier; parcels are tracked on <https://tracking.dekapost.ir/> with the **barcode (شماره بارکد)** printed on the delivery SMS. The portal's deep-link parameter is not documented, so it lives in a **setting**, not in code:
+
+- Dashboard screen: `/settings/shop/transport/dekapost` (Transport hub → دکاپست).
+- Store option: `webino_shipping_dekapost` → `enabled`, `use_city_table`, `fallback_flat`, `free_shipping_min`, `rate_extra_percent`, `rate_extra_fixed`, `cod_extra`, `tracking_url_template`, `tariffs[]`.
+- WC shipping method id: `webino_dekapost`, so add it to a **shipping zone** after enabling (the screen lists the zones the method is already in).
+- Rate precedence: **city table** (per-city price when "شهرها" is enabled) → **weight tariff** band (province-specific beats generic) → **flat fallback**. No match = method hidden, never a silent 0.
+- `tracking_url_template` must be `http(s)` and contain `{code}`; it feeds `Webino_Dashboard_Orders::get_tracking_url_template( 'dekapost' )` through the `webino_dashboard_tracking_url_template` filter, so `{tracking_url}` in patterns and the order page use it automatically.
+
+REST: `GET/POST shipping/dekapost/settings`, `POST shipping/dekapost/quote` (rate preview), plus `shipping/hub/toggle` with `section=dekapost`.
+
+Adding another carrier later means touching all of: `tracking_provider_kinds()`, `get_tracking_providers()`, `get_tracking_url_template()`, `get_shipping_kind()` sniffing, `Webino_Shipping_Order_Statuses::{definitions,sms_map}`, `Webino_Dashboard_Sms_Order_Map` (preferred order, aliases, labels, reverse labels), the reports allowlist and the client alias sets. `scripts/test-dekapost-carrier.php` asserts that whole chain for Dekapost and is the template for the next one.

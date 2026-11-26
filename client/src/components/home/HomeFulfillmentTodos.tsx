@@ -37,6 +37,8 @@ function shippingMethodLabel(
   if (kind === 'courier') return t('home.fulfillment.shipping.courier')
   if (kind === 'post') return t('home.fulfillment.shipping.post')
   if (kind === 'tipax') return t('home.fulfillment.shipping.tipax')
+  if (kind === 'chapar') return t('home.fulfillment.shipping.chapar')
+  if (kind === 'dekapost') return t('home.fulfillment.shipping.dekapost')
   const label = (item.shipping_label || '').trim()
   return label ? t('home.fulfillment.shipping.other', { label }) : t('home.fulfillment.shipping.post')
 }

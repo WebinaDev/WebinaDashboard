@@ -206,6 +206,7 @@ final class Webino_Dashboard_Notify_Copy {
 			'courier'             => 'سفارش شماره {order_number} تحویل پیک شد.',
 			'post'                => 'سفارش شماره {order_number} تحویل پست شد. کد رهگیری: {tracking_code}',
 			'tipax'               => 'سفارش شماره {order_number} تحویل تیپاکس شد.',
+			'dekapost'            => 'سفارش شماره {order_number} تحویل دکاپست شد. کد رهگیری: {tracking_code}',
 			'completed'           => 'سفارش شماره {order_number} تکمیل شد.',
 			'cancelled'           => 'سفارش شماره {order_number} لغو شد.',
 			'failed'              => 'پرداخت سفارش شماره {order_number} ناموفق بود.',

@@ -134,7 +134,7 @@ export type DashboardFulfillmentItem = {
   status_label?: string
   href: string
   action: DashboardFulfillmentAction
-  shipping_kind?: 'courier' | 'post' | 'tipax' | 'other' | ''
+  shipping_kind?: 'courier' | 'post' | 'tipax' | 'chapar' | 'dekapost' | 'other' | ''
   shipping_label?: string
   purchase_type?: string
   payment_method_title?: string

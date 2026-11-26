@@ -51,14 +51,14 @@ class Webino_Dashboard_Orders {
 	 * @return string[]
 	 */
 	public static function tracking_provider_kinds() {
-		return array( 'post', 'courier', 'tipax', 'chapar', 'other' );
+		return array( 'post', 'courier', 'tipax', 'chapar', 'dekapost', 'other' );
 	}
 
 	/**
 	 * Detect shipping carrier from stored provider, status, method title, or meta.
 	 *
 	 * @param WC_Order $o Order.
-	 * @return string courier|post|tipax|chapar|other
+	 * @return string courier|post|tipax|chapar|dekapost|other
 	 */
 	public static function get_shipping_kind( $o ) {
 		$stored = sanitize_key(
@@ -90,6 +90,9 @@ class Webino_Dashboard_Orders {
 		if ( preg_match( '/chapar|چاپار/u', $haystack ) ) {
 			return 'chapar';
 		}
+		if ( preg_match( '/dekapost|deka\s*post|دکاپست|دکا\s*پست/u', $haystack ) ) {
+			return 'dekapost';
+		}
 		if ( preg_match( '/courier|peyk|pik|پیک/u', $haystack ) ) {
 			return 'courier';
 		}
@@ -102,16 +105,17 @@ class Webino_Dashboard_Orders {
 	/**
 	 * URL template for a shipping kind (shop SMS settings override defaults).
 	 *
-	 * @param string $kind courier|post|tipax|chapar|other.
+	 * @param string $kind courier|post|tipax|chapar|dekapost|other.
 	 * @return string
 	 */
 	public static function get_tracking_url_template( $kind ) {
 		$defaults = array(
-			'post'    => 'https://tracking.post.ir/?id={code}',
-			'tipax'   => 'https://tipaxco.com/tracking?code={code}',
-			'chapar'  => 'https://chapar.ir/tracking?code={code}',
-			'courier' => '',
-			'other'   => '',
+			'post'     => 'https://tracking.post.ir/?id={code}',
+			'tipax'    => 'https://tipaxco.com/tracking?code={code}',
+			'chapar'   => 'https://chapar.ir/tracking?code={code}',
+			'dekapost' => 'https://tracking.dekapost.ir/?code={code}',
+			'courier'  => '',
+			'other'    => '',
 		);
 		$kind = sanitize_key( (string) $kind );
 		if ( ! isset( $defaults[ $kind ] ) ) {
@@ -150,11 +154,12 @@ class Webino_Dashboard_Orders {
 	 */
 	public static function get_tracking_providers() {
 		$titles = array(
-			'post'    => 'پست',
-			'courier' => 'پیک',
-			'tipax'   => 'تیپاکس',
-			'chapar'  => 'چاپار',
-			'other'   => 'سایر',
+			'post'     => 'پست',
+			'courier'  => 'پیک',
+			'tipax'    => 'تیپاکس',
+			'chapar'   => 'چاپار',
+			'dekapost' => 'دکاپست',
+			'other'    => 'سایر',
 		);
 
 		$bound = self::get_customer_pattern_binds_for_kinds( array_keys( $titles ) );
