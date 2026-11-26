@@ -5,6 +5,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { LanguageMenu } from '@/components/LanguageMenu'
+import { ModulePanel } from '@/components/ModulePanel'
 import { NotificationBell } from '@/components/NotificationBell'
 import { PwaInstallBanner } from '@/components/PwaInstallBanner'
 import { ThemeMenu } from '@/components/ThemeMenu'
@@ -366,6 +367,8 @@ export function DashboardLayout() {
         </footer>
       </SidebarInset>
       <PwaInstallBanner variant="shell" />
+      {/* Basalam's floating buyer chat used to be injected into wp-admin; /dashboard owns it now. */}
+      <ModulePanel slug="basalam-module" component="BasalamChatDock" />
     </SidebarProvider>
   )
 }

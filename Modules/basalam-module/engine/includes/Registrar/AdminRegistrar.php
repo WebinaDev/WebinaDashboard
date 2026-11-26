@@ -49,10 +49,15 @@ class AdminRegistrar implements RegistrarInterface
         // Initialize Admin Actions
         $container->get(RegisterActions::class);
 
-        // Admin Menu
-        \add_action("admin_menu", [$pages, "registerMenus"]);
+        // Admin Menu — removed on purpose: every Basalam screen lives in /dashboard (our SPA).
+        // The menus would also duplicate (and visually double) the dashboard surfaces, so the
+        // wp-admin pages are gone. OAuth callbacks keep working through OAuthCallbackHandler,
+        // and the legacy slugs are answered by AdminPageRedirects::REDIRECTS (redirected to
+        // the matching /dashboard/settings/shop/basalam/* route, so old links never 404).
+        \add_action("admin_menu", [\WebinoBasalam\Admin\AdminPageRedirects::class, "registerMenus"]);
         OAuthCallbackHandler::register();
-        \add_filter("script_loader_tag", [ChatWidget::class, "addTokenToWidgetScript"], 10, 3);
+        // The widget token is attached by the dashboard dock itself; the wp-admin tag filter only
+        // matters if some other surface still enqueues the handle, so it is kept but harmless.
 
         // Admin Scripts & Styles
         \add_action("admin_enqueue_scripts", [self::class, "adminEnqueueStyles"]);
@@ -390,15 +395,9 @@ class AdminRegistrar implements RegistrarInterface
             true
         );
 
-        if (ChatWidget::shouldLoadWidget()) {
-            wp_enqueue_script(
-                "basalam-chat-widget-script",
-                self::assetsUrl("chat/widget-loader.js"),
-                [],
-                $version,
-                true
-            );
-        }
+        // The floating Basalam chat widget is rendered by the dashboard shell
+        // (BasalamChatDock), never inside wp-admin: /dashboard is the only product surface.
+        // ChatWidget::shouldLoadWidget() keeps its own dashboard-side check.
 
         if ($shouldLoadPointerTour) {
             wp_localize_script('basalam-admin-script', 'basalamPointerTour', PointerTour::getPointerTourConfig());
