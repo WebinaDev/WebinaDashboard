@@ -31,7 +31,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { WholesaleRuleFields } from '@/components/products/editor/ProductPricingPanel'
+import { SaleScheduleFields, WholesaleRuleFields } from '@/components/products/editor/ProductPricingPanel'
+import { isoToLocalInput } from '@/lib/date'
 import { useQueryErrorToast } from '@/hooks/useQueryErrorToast'
 import { apiFetch } from '@/lib/api'
 import type { ProductVariation, WholesaleRule, WholesaleRuleForm } from '@/types/product'
@@ -190,6 +191,9 @@ function hydrateVarWholesale(raw: unknown): WholesaleRuleForm {
 type VariationDraft = {
   sku: string
   price: string
+  sale: string
+  saleFrom: string
+  saleTo: string
   purchase: string
   lockPrice: boolean
   manageStock: boolean
@@ -215,6 +219,9 @@ function buildVariationPatchBodyFull(draft: VariationDraft, stockQty: number | n
   return {
     sku: draft.sku,
     regular_price: draft.price,
+    sale_price: draft.sale,
+    date_on_sale_from: draft.saleFrom,
+    date_on_sale_to: draft.saleTo,
     manage_stock: draft.manageStock,
     stock_quantity: draft.manageStock ? stockQty : null,
     weight: draft.weight.trim(),
@@ -838,6 +845,9 @@ function VariationCard({
   const locale = i18n.language?.startsWith('fa') ? 'fa-IR' : 'en-US'
   const [sku, setSku] = useState(variation.sku ?? '')
   const [price, setPrice] = useState(variation.regular_price ?? '')
+  const [sale, setSale] = useState(variation.sale_price ?? '')
+  const [saleFrom, setSaleFrom] = useState(isoToLocalInput(variation.date_on_sale_from))
+  const [saleTo, setSaleTo] = useState(isoToLocalInput(variation.date_on_sale_to))
   const [purchase, setPurchase] = useState(
     variation.wfcp?.purchase_price != null ? String(variation.wfcp.purchase_price) : '',
   )
@@ -865,41 +875,55 @@ function VariationCard({
   const [findingDk, setFindingDk] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
-  const draftRef = useRef<VariationDraft>({
-    sku: variation.sku ?? '',
-    price: variation.regular_price ?? '',
-    purchase: variation.wfcp?.purchase_price != null ? String(variation.wfcp.purchase_price) : '',
-    lockPrice: Boolean(variation.wfcp?.lock_price),
-    manageStock: Boolean(variation.manage_stock),
-    stock: variation.stock_quantity != null ? String(variation.stock_quantity) : '',
-    weight: variation.weight ?? '',
-    length: variation.length ?? '',
-    width: variation.width ?? '',
-    height: variation.height ?? '',
-    attrValues: hydrateAttrValues(axes, variation),
-    referenceUrl: variation.wfcp?.reference_url ?? '',
-    wholesaleRule: hydrateVarWholesale(variation.wfcp?.wholesale_rule),
-  })
-  const lastSavedRef = useRef(snapshotVariationDraft(draftRef.current))
+  // The initial draft doubles as the "nothing changed yet" baseline, so it is computed once
+  // (lazy state) and never read back out of a ref during render.
+  const [initialDraft] = useState<VariationDraft>(
+    () => ({
+      sku: variation.sku ?? '',
+      price: variation.regular_price ?? '',
+      sale: variation.sale_price ?? '',
+      saleFrom: isoToLocalInput(variation.date_on_sale_from),
+      saleTo: isoToLocalInput(variation.date_on_sale_to),
+      purchase: variation.wfcp?.purchase_price != null ? String(variation.wfcp.purchase_price) : '',
+      lockPrice: Boolean(variation.wfcp?.lock_price),
+      manageStock: Boolean(variation.manage_stock),
+      stock: variation.stock_quantity != null ? String(variation.stock_quantity) : '',
+      weight: variation.weight ?? '',
+      length: variation.length ?? '',
+      width: variation.width ?? '',
+      height: variation.height ?? '',
+      attrValues: hydrateAttrValues(axes, variation),
+      referenceUrl: variation.wfcp?.reference_url ?? '',
+      wholesaleRule: hydrateVarWholesale(variation.wfcp?.wholesale_rule),
+    }),
+  )
+  const draftRef = useRef<VariationDraft>(initialDraft)
+  const lastSavedRef = useRef(snapshotVariationDraft(initialDraft))
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedFadeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saveGenRef = useRef(0)
 
-  draftRef.current = {
-    sku,
-    price,
-    purchase,
-    lockPrice,
-    manageStock,
-    stock,
-    weight,
-    length,
-    width,
-    height,
-    attrValues,
-    referenceUrl,
-    wholesaleRule,
-  }
+  // Refs must not be written during render (React 19): publish the latest draft from an effect.
+  useEffect(() => {
+    draftRef.current = {
+      sku,
+      price,
+      sale,
+      saleFrom,
+      saleTo,
+      purchase,
+      lockPrice,
+      manageStock,
+      stock,
+      weight,
+      length,
+      width,
+      height,
+      attrValues,
+      referenceUrl,
+      wholesaleRule,
+    }
+  })
 
   const persistIfDirty = useCallback(async () => {
     const snap = snapshotVariationDraft(draftRef.current)
@@ -928,7 +952,12 @@ function VariationCard({
   }, [onSave])
 
   const scheduleAutosave = useCallback(
-    (immediate = false) => {
+    (immediate = false, pending?: Partial<VariationDraft>) => {
+      // The draft ref is synced in an effect, so an immediate save issued in the same tick as a
+      // state update would otherwise send the previous value. Merge the pending change first.
+      if (pending) {
+        draftRef.current = { ...draftRef.current, ...pending }
+      }
       if (debounceRef.current) {
         clearTimeout(debounceRef.current)
         debounceRef.current = null
@@ -961,6 +990,9 @@ function VariationCard({
     const nextDraft: VariationDraft = {
       sku: variation.sku ?? '',
       price: variation.regular_price ?? '',
+      sale: variation.sale_price ?? '',
+      saleFrom: isoToLocalInput(variation.date_on_sale_from),
+      saleTo: isoToLocalInput(variation.date_on_sale_to),
       purchase: variation.wfcp?.purchase_price != null ? String(variation.wfcp.purchase_price) : '',
       lockPrice: Boolean(variation.wfcp?.lock_price),
       manageStock: Boolean(variation.manage_stock),
@@ -1126,7 +1158,7 @@ function VariationCard({
           values={attrValues}
           onChange={(next) => {
             setAttrValues(next)
-            scheduleAutosave(true)
+            scheduleAutosave(true, { attrValues: next })
           }}
         />
       ) : null}
@@ -1148,7 +1180,7 @@ function VariationCard({
               checked={lockPrice}
               onCheckedChange={(v) => {
                 setLockPrice(v)
-                scheduleAutosave(true)
+                scheduleAutosave(true, { lockPrice: v })
               }}
             />
             <span>{t('products.lockPrice')}</span>
@@ -1161,6 +1193,34 @@ function VariationCard({
             value={price}
             onChange={(v) => {
               setPrice(v)
+              scheduleAutosave()
+            }}
+            disabled={pricingOn && lockPrice}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t('products.fieldSale')}</Label>
+          <FormattedNumberInput
+            value={sale}
+            onChange={(v) => {
+              setSale(v)
+              scheduleAutosave()
+            }}
+            placeholder={t('products.salePlaceholder')}
+            disabled={pricingOn && lockPrice}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <SaleScheduleFields
+            idPrefix={`variation-${variation.id}`}
+            saleFrom={saleFrom}
+            saleTo={saleTo}
+            onSaleFromChange={(v) => {
+              setSaleFrom(v)
+              scheduleAutosave()
+            }}
+            onSaleToChange={(v) => {
+              setSaleTo(v)
               scheduleAutosave()
             }}
             disabled={pricingOn && lockPrice}
@@ -1203,7 +1263,10 @@ function VariationCard({
                     const bits = [res.source, res.last_sync?.time ?? res.last_sync?.message].filter(Boolean)
                     setReferenceMeta(bits.join(' · '))
                     toast.success(t('common.saved'))
-                    scheduleAutosave(true)
+                    scheduleAutosave(true, {
+                      ...(res.url ? { referenceUrl: res.url } : {}),
+                      ...(res.purchase_price != null ? { purchase: String(res.purchase_price) } : {}),
+                    })
                     onMapped()
                   })
                   .catch((e: Error) => toastApiError(t, e))
@@ -1243,7 +1306,7 @@ function VariationCard({
               checked={manageStock}
               onCheckedChange={(v) => {
                 setManageStock(v)
-                scheduleAutosave(true)
+                scheduleAutosave(true, { manageStock: v })
               }}
             />
             <span className="text-sm">{t('products.fieldManageStock')}</span>

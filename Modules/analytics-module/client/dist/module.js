@@ -30116,6 +30116,7 @@ var UK = zK({
 		"wfcp.bpcType": "نوع تغییر",
 		"wfcp.bpcValue": "مقدار",
 		"wfcp.bpcApplySale": "اعمال روی قیمت فروش ویژه",
+		"wfcp.bpcApplySaleHint": "اعمال روی قیمت فروش ویژه (اگر محصولی قیمت فروش ویژه دارد، بدون این گزینه قیمت نهایی تغییر نمی‌کند)",
 		"wfcp.bpcCategories": "اسلاگ دسته‌ها (با ویرگول)",
 		"wfcp.bpcCategoriesHint": "خالی = همهٔ محصولات.",
 		"wfcp.bpcRangeRules": "قوانین بازه (اختیاری)",
@@ -33144,6 +33145,10 @@ var UK = zK({
 		"coupons.builder.errPercent": "درصد نمی‌تواند بیشتر از ۱۰۰ باشد.",
 		"products.fieldPrice": "قیمت",
 		"products.editor.singlePriceHint": "ماژول قیمت‌گذاری خاموش است؛ همین قیمت مستقیماً قیمت ووکامرس، سبد خرید، کوپن‌ها و بازارگاه‌ها می‌شود.",
+		"products.editor.saleSchedule": "زمان‌بندی فروش ویژه",
+		"products.editor.saleFrom": "شروع فروش ویژه",
+		"products.editor.saleTo": "پایان فروش ویژه",
+		"products.editor.saleScheduleHint": "اگر تاریخ‌ها خالی باشند، قیمت فروش ویژه همیشه فعال است. تاریخ‌ها به وقت محلی ذخیره می‌شوند.",
 		"nav.module.gateway-discounts": "تخفیف‌های درگاه",
 		"gatewayDiscounts.title": "تخفیف‌های درگاه پرداخت",
 		"gatewayDiscounts.description": "کدهای تخفیفی که خودِ درگاه (مثلاً ترب‌پی) به مشتری می‌دهد. این کدها در سبد خرید و تسویه‌حساب نمایش داده می‌شوند و مشتری آن‌ها را داخل درگاه وارد می‌کند؛ تخفیف در درگاه کم می‌شود، نه روی سایت.",
@@ -33362,6 +33367,9 @@ var UK = zK({
 		"wfcp.bpcReason.exception": "خطای غیرمنتظره هنگام ذخیرهٔ قیمت.",
 		"wfcp.bpcReason.emptyPrice": "قیمت پایه خالی بود؛ چیزی برای تغییر وجود ندارد.",
 		"wfcp.bpcReason.unsupportedType": "نوع محصول ({{type}}) برای تغییر قیمت پشتیبانی نمی‌شود.",
+		"wfcp.bpcReason.saleNotIncluded": "این محصول قیمت فروش ویژه دارد و گزینهٔ «اعمال روی قیمت فروش ویژه» خاموش بود؛ قیمت نهایی تغییر نکرد.",
+		"wfcp.bpcReason.allVariationsSkipped": "همهٔ متغیرهای این محصول رد شدند (قیمت قفل‌شده یا بدون قیمت) و قیمتی تغییر نکرد.",
+		"wfcp.bpcReason.noVariations": "این محصول متغیر هیچ متغیری ندارد؛ چیزی برای تغییر نبود.",
 		"wfcp.bpcFailuresCount": "{{count}} محصول ناموفق"
 	};
 })), XK = /* @__PURE__ */ B({ default: () => ZK }), ZK, QK = R((() => {
@@ -36811,6 +36819,7 @@ var UK = zK({
 		"wfcp.bpcType": "Bump type",
 		"wfcp.bpcValue": "Bump value",
 		"wfcp.bpcApplySale": "Apply to sale prices",
+		"wfcp.bpcApplySaleHint": "Apply to sale prices (products on sale keep their payable price unless this is on)",
 		"wfcp.bpcCategories": "Category slugs (comma-separated)",
 		"wfcp.bpcCategoriesHint": "Leave empty for all products.",
 		"wfcp.bpcRangeRules": "Range rules (optional)",
@@ -39835,6 +39844,10 @@ var UK = zK({
 		"coupons.builder.errPercent": "A percentage cannot be more than 100.",
 		"products.fieldPrice": "Price",
 		"products.editor.singlePriceHint": "Pricing module is off: this price is used directly as the WooCommerce price, in the cart, coupons and marketplaces.",
+		"products.editor.saleSchedule": "Sale schedule",
+		"products.editor.saleFrom": "Sale starts",
+		"products.editor.saleTo": "Sale ends",
+		"products.editor.saleScheduleHint": "Leave the dates empty for an always-on sale price. Dates are saved in your local timezone.",
 		"nav.module.gateway-discounts": "Gateway discounts",
 		"gatewayDiscounts.title": "Gateway payment discounts",
 		"gatewayDiscounts.description": "Discount codes issued by the payment gateway itself (e.g. Torob Pay). They are shown on the cart and checkout and the customer enters them inside the gateway; the discount is taken there, not on your site.",
@@ -40056,6 +40069,9 @@ var UK = zK({
 		"wfcp.bpcReason.exception": "Unexpected error while saving the price.",
 		"wfcp.bpcReason.emptyPrice": "The base price was empty, so there was nothing to change.",
 		"wfcp.bpcReason.unsupportedType": "This product type ({{type}}) is not supported for price changes.",
+		"wfcp.bpcReason.saleNotIncluded": "This product is on sale and \"Apply to sale prices\" was off, so the payable price did not change.",
+		"wfcp.bpcReason.allVariationsSkipped": "Every variation of this product was skipped (locked or missing price), so nothing changed.",
+		"wfcp.bpcReason.noVariations": "This variable product has no variations, so there was nothing to change.",
 		"wfcp.bpcFailuresCount": "{{count}} failed products"
 	};
 })), $K = (typeof window < "u" ? window.webinoDashboard?.locale : "")?.toLowerCase().startsWith("fa") ? "fa" : "en", eq = /* @__PURE__ */ new Set();

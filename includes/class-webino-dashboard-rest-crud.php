@@ -720,6 +720,17 @@ class Webino_Dashboard_REST_Crud {
 
 		register_rest_route(
 			self::NS,
+			'/shop/products/(?P<id>\d+)/variations/repair-links',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'product_variations_repair_links' ),
+				'permission_callback' => function () {
+					return Webino_Dashboard_Rest_Base::can( 'edit_products' ); },
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shop/products/(?P<id>\d+)/variations/bulk',
 			array(
 				'methods'             => 'POST',
@@ -5534,6 +5545,8 @@ class Webino_Dashboard_REST_Crud {
 			'sku'            => $v->get_sku(),
 			'regular_price'  => $v->get_regular_price(),
 			'sale_price'     => $v->get_sale_price(),
+			'date_on_sale_from' => self::variation_sale_date_iso( $v, 'from' ),
+			'date_on_sale_to'   => self::variation_sale_date_iso( $v, 'to' ),
 			'price'          => $v->get_price(),
 			'manage_stock'   => $v->get_manage_stock(),
 			'stock_quantity' => $v->get_stock_quantity(),
@@ -5556,6 +5569,28 @@ class Webino_Dashboard_REST_Crud {
 			),
 			'wfcp_prices'    => $wfcp,
 		);
+	}
+
+	/**
+	 * ISO8601 sale date for a product/variation, or null.
+	 *
+	 * @param WC_Product $product Product or variation.
+	 * @param string     $which   'from' or 'to'.
+	 * @return string|null
+	 */
+	private static function variation_sale_date_iso( $product, $which ) {
+		if ( ! is_object( $product ) ) {
+			return null;
+		}
+		$getter = 'to' === $which ? 'get_date_on_sale_to' : 'get_date_on_sale_from';
+		if ( ! method_exists( $product, $getter ) ) {
+			return null;
+		}
+		$date = $product->$getter();
+		if ( ! is_object( $date ) || ! method_exists( $date, 'format' ) ) {
+			return null;
+		}
+		return $date->format( 'c' );
 	}
 
 	/**
@@ -5740,6 +5775,24 @@ class Webino_Dashboard_REST_Crud {
 				null !== $request->get_param( 'sale_price' ) ? (string) $request->get_param( 'sale_price' ) : null
 			);
 		}
+		// Sale schedule: '' or null clears, any strtotime-parsable value sets it (same contract as
+		// the parent product endpoint), so the editor's Jalali range works for variations too.
+		foreach ( array( 'date_on_sale_from' => 'set_date_on_sale_from', 'date_on_sale_to' => 'set_date_on_sale_to' ) as $param => $setter ) {
+			if ( null === $request->get_param( $param ) || ! method_exists( $v, $setter ) ) {
+				continue;
+			}
+			$raw = $request->get_param( $param );
+			if ( '' === $raw ) {
+				$v->$setter( null );
+				continue;
+			}
+			if ( class_exists( 'WC_DateTime' ) ) {
+				$ts = strtotime( (string) $raw );
+				if ( $ts ) {
+					$v->$setter( new WC_DateTime( '@' . $ts ) );
+				}
+			}
+		}
 		if ( null !== $request->get_param( 'manage_stock' ) ) {
 			$v->set_manage_stock( (bool) $request->get_param( 'manage_stock' ) );
 		}
@@ -5814,6 +5867,8 @@ class Webino_Dashboard_REST_Crud {
 				}
 				if ( $complete && $parent && $parent->is_type( 'variable' ) ) {
 					$storage = self::build_variation_storage_attributes( $parent, $combo, true );
+					// A partial result must never be written: it silently unlinks the variation from
+					// the parent ("this variation no longer exists"), so the merchant loses it.
 					if ( count( $storage ) === count( $axes ) ) {
 						self::persist_variation_storage_attributes( $v, $storage );
 					} else {
@@ -5825,7 +5880,15 @@ class Webino_Dashboard_REST_Crud {
 					}
 				}
 			} elseif ( array() !== $combo && $parent && $parent->is_type( 'variable' ) ) {
-				$storage = self::build_variation_storage_attributes( $parent, $combo, true );
+				// No axes on the parent: store exactly what was sent, sanitized, and never a pa_* key
+				// the parent does not declare.
+				$storage = array();
+				foreach ( $combo as $axis_key => $axis_value ) {
+					$combo_storage = self::variation_write_storage_key( $parent, (string) $axis_key, (string) $axis_value );
+					if ( '' !== $combo_storage ) {
+						$storage[ $combo_storage ] = (string) $axis_value;
+					}
+				}
 				if ( array() !== $storage ) {
 					self::persist_variation_storage_attributes( $v, $storage );
 				} else {
@@ -5926,6 +5989,115 @@ class Webino_Dashboard_REST_Crud {
 	}
 
 	/**
+	 * Re-link variations whose attribute storage no longer matches the parent's axes.
+	 *
+	 * Symptom this repairs: every variation of a product "disappeared" from the storefront and the
+	 * editor, because children were saved with `pa_*` keys while the parent still declared a custom
+	 * axis (or with term slugs that no longer exist). The stored combination is recovered from the
+	 * variation meta (read-only lookup), re-expressed with the parent's own storage model, and only
+	 * re-saved when the result is complete.
+	 *
+	 * @param int  $parent_id Parent product ID.
+	 * @param bool $dry_run   When true nothing is written; the report is returned either way.
+	 * @return array{parent:int,checked:int,fixed:int,skipped:int,items:array<int,array<string,mixed>>}
+	 */
+	public static function repair_variable_variation_links( $parent_id, $dry_run = false ) {
+		$report = array(
+			'parent'  => (int) $parent_id,
+			'checked' => 0,
+			'fixed'   => 0,
+			'skipped' => 0,
+			'items'   => array(),
+		);
+		$parent = function_exists( 'wc_get_product' ) ? wc_get_product( (int) $parent_id ) : null;
+		if ( ! $parent || ! is_object( $parent ) || ! $parent->is_type( 'variable' ) ) {
+			return $report;
+		}
+		$axes = $parent->get_variation_attributes();
+		if ( ! is_array( $axes ) || array() === $axes ) {
+			return $report;
+		}
+		$axes = array_values(
+			array_filter(
+				$axes,
+				static function ( $options ) {
+					// WC lists a "any value" axis as an empty array; nothing to match against.
+					return is_array( $options ) ? array() !== $options : '' !== (string) $options;
+				}
+			)
+		);
+		$axis_names = array();
+		foreach ( $axes as $key => $options ) {
+			$axis_names[] = (string) $key;
+		}
+		if ( array() === $axis_names ) {
+			return $report;
+		}
+
+		foreach ( (array) $parent->get_children() as $vid ) {
+			$v = function_exists( 'wc_get_product' ) ? wc_get_product( (int) $vid ) : null;
+			if ( ! $v || ! is_object( $v ) || ! method_exists( $v, 'is_type' ) || ! $v->is_type( 'variation' ) ) {
+				continue;
+			}
+			++$report['checked'];
+			$attrs = (array) $v->get_attributes();
+			$combo = array();
+			foreach ( $axis_names as $axis_name ) {
+				$raw = self::variation_axis_value( $attrs, $axis_name, $v );
+				if ( '' === $raw ) {
+					break;
+				}
+				$combo[ $axis_name ] = $raw;
+			}
+			if ( count( $combo ) !== count( $axis_names ) ) {
+				++$report['skipped'];
+				$report['items'][] = array(
+					'id'     => (int) $vid,
+					'status' => 'skipped',
+					'reason' => 'incomplete_attributes',
+					'before' => $attrs,
+				);
+				continue;
+			}
+			$storage = self::build_variation_storage_attributes( $parent, $combo, true );
+			if ( count( $storage ) !== count( $axis_names ) ) {
+				++$report['skipped'];
+				$report['items'][] = array(
+					'id'     => (int) $vid,
+					'status' => 'skipped',
+					'reason' => 'unresolvable_axis',
+					'before' => $attrs,
+				);
+				continue;
+			}
+			$changed = $storage !== $attrs;
+			if ( $changed && ! $dry_run ) {
+				self::persist_variation_storage_attributes( $v, $storage );
+				$v->save();
+				if ( function_exists( 'wc_delete_product_transients' ) ) {
+					wc_delete_product_transients( (int) $vid );
+				}
+			}
+			if ( $changed ) {
+				++$report['fixed'];
+			} else {
+				++$report['skipped'];
+			}
+			$report['items'][] = array(
+				'id'      => (int) $vid,
+				'status'  => $changed ? 'fixed' : 'ok',
+				'before'  => $attrs,
+				'after'   => $storage,
+			);
+		}
+
+		if ( $report['fixed'] > 0 && ! $dry_run ) {
+			self::sync_variable_parent( (int) $parent_id );
+		}
+		return $report;
+	}
+
+	/**
 	 * Align variation stock_status with qty when manage_stock is on (repair legacy saves).
 	 *
 	 * @param int $parent_id Parent product ID.
@@ -6000,6 +6172,29 @@ class Webino_Dashboard_REST_Crud {
 		);
 	}
 
+	public static function product_variations_repair_links( $request ) {
+		$parent_id = (int) $request['id'];
+		$parent    = function_exists( 'wc_get_product' ) ? wc_get_product( $parent_id ) : null;
+		if ( ! $parent || ! is_object( $parent ) || ! $parent->is_type( 'variable' ) ) {
+			return new WP_Error( 'invalid_parent', __( 'Not a variable product.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$dry_param = $request->get_param( 'dry_run' );
+		$dry_run   = null !== $dry_param && (bool) rest_sanitize_boolean( $dry_param );
+		$report    = self::repair_variable_variation_links( $parent_id, $dry_run );
+		if ( function_exists( 'wc_delete_product_transients' ) ) {
+			wc_delete_product_transients( $parent_id );
+		}
+		return new WP_REST_Response( array_merge( $report, array( 'dry_run' => $dry_run ) ) );
+	}
+
+	/**
+	 * Repair variations of a variable product whose stored attributes no longer match the parent.
+	 *
+	 * Body: { dry_run?: bool }. The merchant runs this when a product suddenly shows no variations.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	/**
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
@@ -6185,7 +6380,7 @@ class Webino_Dashboard_REST_Crud {
 
 		$sub = new WP_REST_Request( 'POST' );
 		$has = false;
-		foreach ( array( 'regular_price', 'sale_price', 'manage_stock', 'stock_quantity', 'stock_status', 'wfcp' ) as $key ) {
+		foreach ( array( 'regular_price', 'sale_price', 'date_on_sale_from', 'date_on_sale_to', 'manage_stock', 'stock_quantity', 'stock_status', 'wfcp' ) as $key ) {
 			if ( null !== $request->get_param( $key ) ) {
 				$sub->set_param( $key, $request->get_param( $key ) );
 				$has = true;
@@ -6483,6 +6678,56 @@ class Webino_Dashboard_REST_Crud {
 	}
 
 	/**
+	 * Storage key a WRITE may use for one axis, mirroring how the parent stores that axis.
+	 *
+	 * - taxonomy axis (pa_*)  -> pa_* key + term slug (creates the term when missing).
+	 * - custom axis           -> the axis key itself + the raw option value, exactly like the
+	 *                            WooCommerce admin and the parent's own attribute entry.
+	 *
+	 * Never returns a pa_* key for a custom axis; that mismatch silently unlinked variations.
+	 *
+	 * @param WC_Product $parent   Variable parent.
+	 * @param string     $axis_key Resolved parent axis key.
+	 * @param string     $value    Selected option value or slug.
+	 * @return string Storage key ('' when the axis cannot be stored without rewriting the parent).
+	 */
+	private static function variation_write_storage_key( $parent, $axis_key, $value ) {
+		$axis_key = (string) $axis_key;
+		$value    = (string) $value;
+		if ( '' === $axis_key || '' === $value ) {
+			return '';
+		}
+		$attribute = null;
+		foreach ( $parent->get_attributes() as $attr ) {
+			if ( ! is_a( $attr, 'WC_Product_Attribute' ) || ! $attr->get_variation() ) {
+				continue;
+			}
+			$name  = (string) $attr->get_name();
+			$label = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $name, $parent ) : $name;
+			$label = is_string( $label ) ? $label : $name;
+			if ( $name === $axis_key || rawurldecode( $name ) === $axis_key || $label === $axis_key || rawurldecode( $label ) === $axis_key ) {
+				$attribute = $attr;
+				break;
+			}
+		}
+		if ( ! $attribute ) {
+			// Unknown axis: keep the value only if it already looks like a taxonomy the parent uses.
+			return taxonomy_exists( $axis_key ) ? $axis_key : '';
+		}
+		$name = (string) $attribute->get_name();
+		if ( $attribute->is_taxonomy() && self::attribute_key_is_sanitize_stable( $name ) ) {
+			self::register_global_attribute_taxonomy_if_needed( $name, is_string( $label ) ? $label : $name );
+			if ( ! taxonomy_exists( $name ) || ! self::is_sanitize_stable_taxonomy_name( $name ) ) {
+				return '';
+			}
+			$term_slug = self::ensure_term_slug( $name, $value, true );
+			return '' === $term_slug ? '' : $name;
+		}
+		// Custom axis: the parent stores it as `attribute_<sanitized name>` with a raw value.
+		return self::variation_storage_meta_key( $name ) !== '' ? $name : '';
+	}
+
+	/**
 	 * Build WooCommerce-safe variation attribute map (pa_* keys + term slugs).
 	 *
 	 * @param WC_Product           $parent Variable parent.
@@ -6503,15 +6748,30 @@ class Webino_Dashboard_REST_Crud {
 			if ( '' === $axis_key || '' === (string) $value ) {
 				continue;
 			}
-			$taxonomy = self::resolve_variation_storage_taxonomy( $parent, $axis_key, $allow_write );
-			if ( '' === $taxonomy || ! taxonomy_exists( $taxonomy ) || ! self::is_sanitize_stable_taxonomy_name( $taxonomy ) ) {
+			if ( ! $allow_write ) {
+				// READ PATH: mirror the parent's own storage model (pa_* only when the parent axis is
+				// a taxonomy). Never invent a pa_* key for a custom axis.
+				$taxonomy = self::resolve_variation_storage_taxonomy( $parent, $axis_key, false );
+				if ( '' === $taxonomy || ! taxonomy_exists( $taxonomy ) || ! self::is_sanitize_stable_taxonomy_name( $taxonomy ) ) {
+					continue;
+				}
+				$term_slug = self::ensure_term_slug( $taxonomy, (string) $value, false );
+				if ( '' === $term_slug ) {
+					continue;
+				}
+				$out[ $taxonomy ] = $term_slug;
 				continue;
 			}
-			$term_slug = self::ensure_term_slug( $taxonomy, (string) $value, $allow_write );
-			if ( '' === $term_slug ) {
+
+			// WRITE PATH: a variation may only be stored under a pa_* key when the parent actually
+			// declares that attribute as a taxonomy. Storing pa_* for a parent that still lists a
+			// custom axis made every variation unmatchable ("all variations disappeared"), because
+			// WC_Product_Variation::get_attributes() returned keys the parent does not know.
+			$storage = self::variation_write_storage_key( $parent, $axis_key, $value );
+			if ( '' === $storage ) {
 				continue;
 			}
-			$out[ $taxonomy ] = $term_slug;
+			$out[ $storage ] = (string) $value;
 		}
 		// Partial maps are returned as-is: a variation whose other axis still resolves must keep the
 		// attributes it has (the old all-or-nothing `array()` emptied them and broke the storefront).

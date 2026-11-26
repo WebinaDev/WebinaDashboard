@@ -223,6 +223,8 @@ export default function ProductEditorPage() {
             wfcpPrices={form.wfcpPrices}
             regular={form.regular}
             sale={form.sale}
+            saleFrom={form.saleFrom}
+            saleTo={form.saleTo}
             savingWfcp={form.patchWfcp.isPending}
             platformLocks={form.platformLocks}
             platformPrices={form.platformPrices}
@@ -237,6 +239,8 @@ export default function ProductEditorPage() {
             onLockPriceChange={form.setLockPrice}
             onRegularChange={form.setRegular}
             onSaleChange={form.setSale}
+            onSaleFromChange={form.setSaleFrom}
+            onSaleToChange={form.setSaleTo}
             onPurchaseBlur={handlePurchaseBlur}
             onPlatformLockChange={(slug, locked) =>
               form.setPlatformLocks((prev) => ({ ...prev, [slug]: locked }))

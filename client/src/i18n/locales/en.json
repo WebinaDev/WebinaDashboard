@@ -3444,6 +3444,7 @@
   "wfcp.bpcType": "Bump type",
   "wfcp.bpcValue": "Bump value",
   "wfcp.bpcApplySale": "Apply to sale prices",
+  "wfcp.bpcApplySaleHint": "Apply to sale prices (products on sale keep their payable price unless this is on)",
   "wfcp.bpcCategories": "Category slugs (comma-separated)",
   "wfcp.bpcCategoriesHint": "Leave empty for all products.",
   "wfcp.bpcRangeRules": "Range rules (optional)",
@@ -6468,6 +6469,10 @@
   "coupons.builder.errPercent": "A percentage cannot be more than 100.",
   "products.fieldPrice": "Price",
   "products.editor.singlePriceHint": "Pricing module is off: this price is used directly as the WooCommerce price, in the cart, coupons and marketplaces.",
+  "products.editor.saleSchedule": "Sale schedule",
+  "products.editor.saleFrom": "Sale starts",
+  "products.editor.saleTo": "Sale ends",
+  "products.editor.saleScheduleHint": "Leave the dates empty for an always-on sale price. Dates are saved in your local timezone.",
   "nav.module.gateway-discounts": "Gateway discounts",
   "gatewayDiscounts.title": "Gateway payment discounts",
   "gatewayDiscounts.description": "Discount codes issued by the payment gateway itself (e.g. Torob Pay). They are shown on the cart and checkout and the customer enters them inside the gateway; the discount is taken there, not on your site.",
@@ -6689,5 +6694,8 @@
   "wfcp.bpcReason.exception": "Unexpected error while saving the price.",
   "wfcp.bpcReason.emptyPrice": "The base price was empty, so there was nothing to change.",
   "wfcp.bpcReason.unsupportedType": "This product type ({{type}}) is not supported for price changes.",
+  "wfcp.bpcReason.saleNotIncluded": "This product is on sale and \"Apply to sale prices\" was off, so the payable price did not change.",
+  "wfcp.bpcReason.allVariationsSkipped": "Every variation of this product was skipped (locked or missing price), so nothing changed.",
+  "wfcp.bpcReason.noVariations": "This variable product has no variations, so there was nothing to change.",
   "wfcp.bpcFailuresCount": "{{count}} failed products"
 }

@@ -136,7 +136,9 @@ class WFCP_Bulk_Price_Change {
 				'total'        => is_array( $state ) ? (int) ( $state['total'] ?? 0 ) : 0,
 				'pages'        => is_array( $state ) ? (int) ( $state['pages'] ?? 0 ) : 0,
 				'current_page' => is_array( $state ) ? (int) ( $state['current_page'] ?? 0 ) : 0,
-				'processed'    => is_array( $state ) ? (int) ( $state['processed'] ?? 0 ) : 0,
+				// Never archive a row that claims more work than the catalog holds ("413/252"):
+				// processed is clamped to the total, and both are clamped at 0.
+				'processed'    => is_array( $state ) ? max( 0, min( (int) ( $state['processed'] ?? 0 ), (int) ( $state['total'] ?? 0 ) ?: PHP_INT_MAX ) ) : 0,
 				'updated'      => is_array( $state ) ? (int) ( $state['updated'] ?? $state['processed'] ?? 0 ) : 0,
 				'skipped'      => is_array( $state ) ? (int) ( $state['skipped'] ?? 0 ) : 0,
 				'errors'       => is_array( $state ) ? (int) ( $state['errors'] ?? 0 ) : 0,
@@ -720,7 +722,9 @@ class WFCP_Bulk_Price_Change {
 			return;
 		}
 		$state['current_page'] = (int) $page;
-		$state['processed']    = (int) ( $state['processed'] ?? 0 ) + (int) $done['updated'] + (int) $done['skipped'];
+		// processed counts PRODUCTS read, not variation rows: summing updated+skipped made a
+		// 252-product run report "413/252" whenever variable products had several children.
+		$state['processed']    = (int) ( $state['processed'] ?? 0 ) + max( 0, (int) ( $done['read'] ?? 0 ) );
 		$state['updated']      = (int) ( $state['updated'] ?? 0 ) + (int) $done['updated'];
 		$state['skipped']      = (int) ( $state['skipped'] ?? 0 ) + (int) $done['skipped'];
 		$state['errors']       = (int) ( $state['errors'] ?? 0 ) + (int) ( $done['errors'] ?? 0 );
@@ -1344,22 +1348,34 @@ class WFCP_Bulk_Price_Change {
 			}
 			try {
 				if ( $product->is_type( 'variable' ) ) {
-					$children = $product->get_children();
+					$children    = $product->get_children();
+					$child_ok    = 0;
+					$child_skip  = 0;
 					foreach ( $children as $vid ) {
 						$v = wc_get_product( $vid );
 						if ( ! $v ) {
-							$skipped++;
+							++$child_skip;
 							$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $vid, 'variation_not_found', 'variation', $pid );
 							continue;
 						}
 						if ( $this->is_price_locked( $vid ) ) {
-							$skipped++;
+							++$child_skip;
 							$rows[] = $this->row( time(), $paged, 'variation', $vid, $pid, '', '', '', '', 'skipped', 'wfcp_price_locked' );
 							$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $vid, 'wfcp_price_locked', 'variation', $pid );
 							continue;
 						}
+						// WooCommerce treats a sale price as the payable price. Bumping the regular price of a
+					// product that is on sale changes nothing the customer sees, which used to be reported
+					// as "updated" — count it as skipped with an explicit reason instead.
 						$reg_old  = $v->get_regular_price( 'edit' );
 						$sale_old = $v->get_sale_price( 'edit' );
+						$on_sale_now = '' !== (string) $sale_old && is_numeric( $sale_old ) && (float) $sale_old > 0;
+						if ( $on_sale_now && empty( $params['apply_sale'] ) ) {
+							++$child_skip;
+							$rows[] = $this->row( time(), $paged, 'variation', $vid, $pid, $reg_old, $reg_old, $sale_old, $sale_old, 'skipped', 'sale_price_not_included' );
+							$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $vid, 'sale_price_not_included', 'variation', $pid );
+							continue;
+						}
 						list( $reg_new, $msg_r ) = $this->apply_adjustment( $reg_old, $params, $d );
 						if ( '' !== $reg_old ) {
 							$v->set_regular_price( $reg_new );
@@ -1379,8 +1395,28 @@ class WFCP_Bulk_Price_Change {
 						}
 						$v->save();
 						wc_delete_product_transients( $v->get_id() );
-						$updated++;
+						++$child_ok;
 						$rows[] = $this->row( time(), $paged, 'variation', $vid, $pid, $reg_old, $reg_new, $sale_old, $sale_new, 'ok', trim( $msg_r . ( $msg_s ? ' | ' . $msg_s : '' ) ) );
+					}
+					// Run counters are per product; the rows above are per variation. A product whose
+					// every variation was skipped is reported as skipped, with the reason on the row.
+					if ( $child_ok > 0 ) {
+						++$updated;
+					} else {
+						++$skipped;
+						$rows[] = $this->row(
+							time(),
+							$paged,
+							'product',
+							$pid,
+							'',
+							'',
+							'',
+							'',
+							'',
+							'skipped',
+							$child_skip > 0 ? 'all_variations_skipped' : 'no_variations'
+						);
 					}
 					if ( class_exists( 'WC_Product_Variable' ) ) {
 						WC_Product_Variable::sync( $product, false );
@@ -1390,6 +1426,15 @@ class WFCP_Bulk_Price_Change {
 				} elseif ( $product->is_type( 'simple' ) ) {
 					$reg_old  = $product->get_regular_price( 'edit' );
 					$sale_old = $product->get_sale_price( 'edit' );
+					$on_sale_now = '' !== (string) $sale_old && is_numeric( $sale_old ) && (float) $sale_old > 0;
+					if ( $on_sale_now && empty( $params['apply_sale'] ) ) {
+						// Bumping only the regular price of an on-sale product leaves the payable price
+						// untouched — say so instead of reporting a silent "updated".
+						++$skipped;
+						$rows[] = $this->row( time(), $paged, 'product', $pid, '', $reg_old, $reg_old, $sale_old, $sale_old, 'skipped', 'sale_price_not_included' );
+						$this->log_failure( isset( $params['run_id'] ) ? $params['run_id'] : '', $pid, 'sale_price_not_included', 'product' );
+						continue;
+					}
 					list( $reg_new, $msg_r ) = $this->apply_adjustment( $reg_old, $params, $d );
 					if ( '' !== $reg_old ) {
 						$product->set_regular_price( $reg_new );
@@ -1433,7 +1478,16 @@ class WFCP_Bulk_Price_Change {
 		$found    = isset( $q->found_posts ) ? (int) $q->found_posts : (int) $q->post_count;
 		$read     = is_array( $q->posts ) ? count( $q->posts ) : (int) $q->post_count;
 		$finished = $read < self::PER_PAGE || ( (int) $paged * self::PER_PAGE ) >= $found;
-		return compact( 'finished', 'updated', 'skipped', 'errors' );
+		if ( $finished ) {
+			// Final batch: clamp so a recount mismatch can never show "413/252".
+			$live_state    = get_option( self::STATE_KEY );
+			$state_total   = is_array( $live_state ) ? (int) ( $live_state['total'] ?? 0 ) : 0;
+			$processed_now = is_array( $live_state ) ? (int) ( $live_state['processed'] ?? 0 ) : 0;
+			if ( $state_total > 0 && $processed_now + $read > $state_total ) {
+				$read = max( 0, $state_total - $processed_now );
+			}
+		}
+		return compact( 'finished', 'updated', 'skipped', 'errors', 'read' );
 	}
 
 	/**

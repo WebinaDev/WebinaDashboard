@@ -16,6 +16,7 @@ import type {
   WholesaleRule,
   WholesaleRuleForm,
 } from '@/types/product'
+import { isoToLocalInput, localInputToIso } from '@/lib/date'
 import { isWfcpPricingOn } from '@/lib/pricingMode'
 import { emptyProductIshop, emptyProductSeo } from '@/types/product'
 
@@ -99,6 +100,9 @@ export function useProductEditorForm() {
   const [featured, setFeatured] = useState(false)
   const [regular, setRegular] = useState('')
   const [sale, setSale] = useState('')
+  // Sale schedule as the API exposes it (ISO8601) and the Jalali picker edits it ('YYYY-MM-DDTHH:mm').
+  const [saleFrom, setSaleFrom] = useState('')
+  const [saleTo, setSaleTo] = useState('')
   const [stock, setStock] = useState('')
   const [manageStock, setManageStock] = useState(true)
   const [backorders, setBackorders] = useState('no')
@@ -214,6 +218,8 @@ export function useProductEditorForm() {
       setFeatured(Boolean(p.featured))
       setRegular(p.regular ?? '')
       setSale(p.sale ?? '')
+      setSaleFrom(isoToLocalInput(p.date_on_sale_from))
+      setSaleTo(isoToLocalInput(p.date_on_sale_to))
       setStock(p.stock != null ? String(p.stock) : '')
       setManageStock(Boolean(p.manage_stock))
       setBackorders(p.backorders ?? 'no')
@@ -409,6 +415,10 @@ export function useProductEditorForm() {
 
     body.type = productType
 
+    // Sale schedule is available for every product type.
+    body.date_on_sale_from = localInputToIso(saleFrom)
+    body.date_on_sale_to = localInputToIso(saleTo)
+
     if (productType === 'simple') {
       body.regular_price = regular
       body.sale_price = sale
@@ -534,6 +544,8 @@ export function useProductEditorForm() {
     void qc.invalidateQueries({ queryKey: ['product-variations', id] })
     setRegular(p.regular ?? '')
     setSale(p.sale ?? '')
+    setSaleFrom(isoToLocalInput(p.date_on_sale_from))
+    setSaleTo(isoToLocalInput(p.date_on_sale_to))
     applyWfcpFromProduct(p)
   }, [id, qc, applyWfcpFromProduct])
 
@@ -568,6 +580,10 @@ export function useProductEditorForm() {
     setRegular,
     sale,
     setSale,
+    saleFrom,
+    setSaleFrom,
+    saleTo,
+    setSaleTo,
     stock,
     setStock,
     manageStock,

@@ -5,7 +5,7 @@ import jalali from 'jalaliday/dayjs'
 
 import i18n from 'i18next'
 
-import { FA_DIGITS, isFaLocale, localizeDigits, toPersianDigits } from '@/lib/digits'
+import { FA_DIGITS, isFaLocale, localizeDigits, toAsciiDigits, toPersianDigits } from '@/lib/digits'
 
 export { isFaLocale, localizeDigits, toPersianDigits }
 
@@ -121,4 +121,23 @@ export function parseDateInputToIso(value: string, locale: string): string {
   }
   const d = dayjs(v, 'YYYY-MM-DD')
   return d.isValid() ? d.format('YYYY-MM-DD') : v
+}
+
+/**
+ * ISO8601 (as the REST API returns sale schedules) -> the value a date/time picker edits,
+ * i.e. local 'YYYY-MM-DDTHH:mm'. Empty or invalid input yields ''.
+ */
+export function isoToLocalInput(value: string | null | undefined): string {
+  if (!value) return ''
+  const iso = toAsciiDigits(String(value))
+  const d = dayjs(iso)
+  if (!d.isValid()) return ''
+  return d.format('YYYY-MM-DDTHH:mm')
+}
+
+/** A picker's local 'YYYY-MM-DDTHH:mm' -> ISO8601. '' clears the schedule. */
+export function localInputToIso(value: string): string {
+  if (!value) return ''
+  const d = dayjs(toAsciiDigits(String(value)))
+  return d.isValid() ? d.toISOString() : ''
 }
