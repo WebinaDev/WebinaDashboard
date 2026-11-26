@@ -86,6 +86,7 @@ export default function ToolsSettingsPage() {
     'webino_tapin_tipax_api',
     'webino_tapin_alonomic',
     'webino_flat_city',
+    'webino_dekapost',
   ]
 
   return (

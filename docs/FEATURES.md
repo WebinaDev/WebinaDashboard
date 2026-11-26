@@ -60,7 +60,7 @@
 | 39 | ساخت سفارش دستی (Order composer) | | `-order-writer.php`; `orders/new` | — | — |
 | 40 | POS فروش حضوری | | `pos` | — | — |
 | 41 | لینک پرداخت POS + صفحه پرداخت عمومی + SMS لینک | | `-pay-order.php`, `-sms-pos-payment.php`; `pos/pay-link` | — | SMS |
-| 42 | وضعیت‌های سفارشی | `wc-webino-need-review`, `-in-stock`, `-packaged`, `-ready-to-ship`, `-shipping`, `-post`, `-tipax`, `-courier`, `-returned`, `-deleted` + وضعیت‌های باسلام `bslm-preparation/shipping/completed` | `Modules/shipping-module/includes/class-webino-shipping-order-statuses.php`; فیلتر `woocommerce_order_is_paid_statuses` | — | — |
+| 42 | وضعیت‌های سفارشی | `wc-webino-need-review`, `-in-stock`, `-packaged`, `-ready-to-ship`, `-shipping`, `-post`, `-tipax`, `-dekapost`, `-courier`, `-returned`, `-deleted` + وضعیت‌های باسلام `bslm-preparation/shipping/completed` | `Modules/shipping-module/includes/class-webino-shipping-order-statuses.php`; فیلتر `woocommerce_order_is_paid_statuses` | — | — |
 | 43 | یادداشت‌های سفارش (فرمت‌شده برای پنل و مشتری) | | `-order-notes.php` | — | — |
 | 44 | مرجوعی تک‌قلمی | درخواست، تأیید، دریافت، استرداد، تعویض | `-order-returns.php` | — | — |
 | 45 | اسناد چاپی (فاکتور، رسید، برچسب، سبک Parisma) | | `-order-documents.php`, `-order-document-settings.php`; `settings/shop/invoices` | `woocommerce_store_*` | — |

@@ -30,6 +30,7 @@ class Webino_Shipping_Order_Statuses {
 			'wc-webino-courier'        => __( 'پیک', 'webino-dashboard' ),
 			'wc-webino-post'           => __( 'پست', 'webino-dashboard' ),
 			'wc-webino-tipax'          => __( 'تیپاکس', 'webino-dashboard' ),
+			'wc-webino-dekapost'       => __( 'دکاپست', 'webino-dashboard' ),
 			'wc-webino-ready-to-ship'  => __( 'آماده ارسال', 'webino-dashboard' ),
 			'wc-webino-returned'       => __( 'برگشتی', 'webino-dashboard' ),
 			'wc-webino-deleted'        => __( 'حذف‌شده', 'webino-dashboard' ),
@@ -95,6 +96,7 @@ class Webino_Shipping_Order_Statuses {
 		$map['webino-post']          = 'post';
 		$map['webino-tipax']         = 'tipax';
 		$map['webino-chapar']        = 'chapar';
+		$map['webino-dekapost']      = 'dekapost';
 		$map['webino-ready-to-ship'] = 'post';
 		$map['webino-shipping']      = 'post';
 		$map['webino-returned']      = 'refunded';

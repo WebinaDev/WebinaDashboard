@@ -128,7 +128,7 @@ const RECOVERY_EVENT_KEYS = new Set([
   'user-welcome',
 ])
 
-const TRACKING_EVENT_KEYS = new Set(['post', 'courier', 'tipax', 'chapar', 'other'])
+const TRACKING_EVENT_KEYS = new Set(['post', 'courier', 'tipax', 'chapar', 'dekapost', 'other'])
 
 function normalizeEventKey(key: string): string {
   return key === 'post-barcode' ? 'post' : key

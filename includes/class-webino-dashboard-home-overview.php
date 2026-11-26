@@ -1258,12 +1258,12 @@ class Webino_Dashboard_Home_Overview {
 
 	/**
 	 * @param WC_Order $order Order.
-	 * @return string courier|post|tipax|other
+	 * @return string courier|post|tipax|dekapost|other
 	 */
 	private static function fulfillment_shipping_kind( $order ) {
 		if ( class_exists( 'Webino_Dashboard_Sms_Order_Map', false ) ) {
 			$from_status = Webino_Dashboard_Sms_Order_Map::event_for_status( $order->get_status() );
-			if ( in_array( $from_status, array( 'courier', 'post', 'tipax' ), true ) ) {
+			if ( in_array( $from_status, array( 'courier', 'post', 'tipax', 'dekapost' ), true ) ) {
 				return $from_status;
 			}
 		}
@@ -1282,6 +1282,9 @@ class Webino_Dashboard_Home_Overview {
 		$haystack = implode( ' ', $parts );
 		if ( preg_match( '/tipax|تیپاکس/u', $haystack ) ) {
 			return 'tipax';
+		}
+		if ( preg_match( '/dekapost|deka\s*post|دکاپست|دکا\s*پست/u', $haystack ) ) {
+			return 'dekapost';
 		}
 		if ( preg_match( '/courier|peyk|pik|پیک/u', $haystack ) ) {
 			return 'courier';

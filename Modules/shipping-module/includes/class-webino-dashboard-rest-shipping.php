@@ -306,6 +306,35 @@ class Webino_Dashboard_REST_Shipping {
 
 		register_rest_route(
 			self::NS,
+			'/shipping/dekapost/settings',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'dekapost_settings_get' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+				array(
+					'methods'             => array( 'POST', 'PUT' ),
+					'callback'            => array( __CLASS__, 'dekapost_settings_put' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/shipping/dekapost/quote',
+			array(
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'dekapost_quote' ),
+					'permission_callback' => array( __CLASS__, 'perm_manage' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/shipping/orders/(?P<id>\d+)/map',
 			array(
 				array(
@@ -319,6 +348,83 @@ class Webino_Dashboard_REST_Shipping {
 					'permission_callback' => array( __CLASS__, 'perm_manage_orders' ),
 				),
 			)
+		);
+	}
+
+	/**
+	 * Dekapost settings + live carrier state.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function dekapost_settings_get() {
+		return rest_ensure_response( self::dekapost_payload( Webino_Shipping_Dekapost::get() ) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function dekapost_settings_put( $request ) {
+		$body  = self::body( $request );
+		$input = isset( $body['settings'] ) && is_array( $body['settings'] ) ? $body['settings'] : $body;
+		return rest_ensure_response( self::dekapost_payload( Webino_Shipping_Dekapost::update( $input ) ) );
+	}
+
+	/**
+	 * Quote a sample package against the stored Dekapost rates.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function dekapost_quote( $request ) {
+		$body  = self::body( $request );
+		$grams = max( 1, (int) ( $body['weight_g'] ?? 0 ) );
+		$city  = sanitize_text_field( (string) ( $body['city'] ?? '' ) );
+		$state = sanitize_text_field( (string) ( $body['state'] ?? '' ) );
+		if ( $grams <= 0 ) {
+			return new WP_Error( 'invalid_weight', __( 'وزن مرسوله را وارد کنید.', 'webino-dashboard' ), array( 'status' => 400 ) );
+		}
+		$tariff = Webino_Shipping_Dekapost::tariff_price( $grams, $state );
+		$city_p = Webino_Shipping_Dekapost::city_price( $city, 0 );
+		$rate   = Webino_Shipping_Dekapost::resolve_rate(
+			array(
+				'contents'    => array(),
+				'destination' => array(
+					'city'  => $city,
+					'state' => $state,
+				),
+			),
+			(int) ( $body['instance_id'] ?? 0 ),
+			$grams
+		);
+		return rest_ensure_response(
+			array(
+				'weight_g'  => $grams,
+				'tariff'    => $tariff,
+				'city_rate' => $city_p,
+				'rate'      => $rate,
+			)
+		);
+	}
+
+	/**
+	 * @param array<string, mixed> $settings Stored settings.
+	 * @return array<string, mixed>
+	 */
+	private static function dekapost_payload( $settings ) {
+		$zone_instances = array();
+		if ( class_exists( 'WC_Shipping_Zones', false ) ) {
+			foreach ( self::zone_method_columns() as $col ) {
+				if ( 'webino_dekapost' === $col['method_id'] ) {
+					$zone_instances[] = $col;
+				}
+			}
+		}
+		return array(
+			'settings'       => $settings,
+			'tracking_url'   => Webino_Shipping_Dekapost::TRACKING_HOME,
+			'method_id'      => Webino_Shipping_Dekapost::METHOD_ID,
+			'zone_instances' => $zone_instances,
 		);
 	}
 
@@ -497,6 +603,7 @@ class Webino_Dashboard_REST_Shipping {
 					'map'       => Webino_Shipping_Map::is_enabled(),
 					'rules'     => Webino_Shipping_Rules::is_enabled(),
 					'item_cost' => ! empty( Webino_Shipping_Item_Cost::get()['enabled'] ),
+					'dekapost'  => Webino_Shipping_Dekapost::is_enabled(),
 					'tapin'     => $tapin_active && $tapin_enabled,
 				),
 			)
@@ -535,6 +642,9 @@ class Webino_Dashboard_REST_Shipping {
 				$cur            = Webino_Shipping_Item_Cost::get();
 				$cur['enabled'] = $enabled;
 				Webino_Shipping_Item_Cost::update( $cur );
+				break;
+			case 'dekapost':
+				Webino_Shipping_Dekapost::update( array( 'enabled' => $enabled ) );
 				break;
 			case 'tapin':
 				if ( class_exists( 'Webino_Tapin_Settings', false ) ) {

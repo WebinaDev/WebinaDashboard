@@ -76,7 +76,7 @@ export function HomeOrderWorkflow() {
           {t('home.fulfillment.workflow.shipBranch')}
         </p>
         <BranchLine />
-        <div className="grid grid-cols-3 gap-2 pt-1">
+        <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
           <FlowNode
             small
             label={t('home.fulfillment.workflow.courier')}
@@ -90,6 +90,11 @@ export function HomeOrderWorkflow() {
           <FlowNode
             small
             label={t('home.fulfillment.workflow.tipax')}
+            color="border-emerald-400/50 bg-emerald-100/80 text-emerald-900 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+          />
+          <FlowNode
+            small
+            label={t('home.fulfillment.workflow.dekapost')}
             color="border-emerald-400/50 bg-emerald-100/80 text-emerald-900 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
           />
         </div>

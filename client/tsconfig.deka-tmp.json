@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": { "noEmit": true, "tsBuildInfoFile": "./node_modules/.tmp/tsdeka.tsbuildinfo" },
+  "include": ["src", "../Modules/shipping-module/client"]
+}

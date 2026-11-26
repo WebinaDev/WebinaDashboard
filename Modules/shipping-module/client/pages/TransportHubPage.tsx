@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { apiFetch } from '@/lib/api'
 import { toastApiError } from '@/lib/apiError'
 
-type SectionKey = 'packaging' | 'tools' | 'cities' | 'map' | 'rules' | 'item_cost' | 'tapin'
+type SectionKey = 'packaging' | 'tools' | 'cities' | 'map' | 'rules' | 'item_cost' | 'dekapost' | 'tapin'
 type HubStatusResponse = { sections: Record<SectionKey, boolean> }
 
 const cards: ReadonlyArray<{
@@ -28,6 +28,7 @@ const cards: ReadonlyArray<{
   { to: '/settings/shop/transport/tapin/finance', title: 'tapin.financeTitle', hint: 'tapin.financeHint', cta: 'tapin.openFinance' },
   { to: '/settings/shop/transport/tapin/catalog', title: 'tapin.catalogTitle', hint: 'tapin.catalogHint', cta: 'tapin.openCatalog' },
   { to: '/settings/shop/transport/tools', sectionKey: 'tools', title: 'shipping.toolsTitle', hint: 'shipping.toolsCardHint', cta: 'shipping.openTools' },
+  { to: '/settings/shop/transport/dekapost', sectionKey: 'dekapost', title: 'shipping.dekapost.title', hint: 'shipping.dekapost.cardHint', cta: 'shipping.dekapost.open' },
   { to: '/settings/shop/transport/cities', sectionKey: 'cities', title: 'shipping.citiesTitle', hint: 'shipping.citiesCardHint', cta: 'shipping.openCities' },
   { to: '/settings/shop/transport/map', sectionKey: 'map', title: 'shipping.mapTitle', hint: 'shipping.mapCardHint', cta: 'shipping.openMap' },
   { to: '/settings/shop/transport/rules', sectionKey: 'rules', title: 'shipping.rulesTitle', hint: 'shipping.rulesCardHint', cta: 'shipping.openRules' },

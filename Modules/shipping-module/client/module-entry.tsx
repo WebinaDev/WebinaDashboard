@@ -3,6 +3,7 @@ import type { ComponentType } from 'react'
 import { OrderMapPanel } from './components/OrderMapPanel'
 import { OrderPackagingPanel } from './components/OrderPackagingPanel'
 import CitiesSettingsPage from './pages/CitiesSettingsPage'
+import DekapostSettingsPage from './pages/DekapostSettingsPage'
 import ItemCostSettingsPage from './pages/ItemCostSettingsPage'
 import MapSettingsPage from './pages/MapSettingsPage'
 import PackagingSettingsPage from './pages/PackagingSettingsPage'
@@ -15,6 +16,7 @@ export const routes: Record<string, ComponentType> = {
   'settings/shop/transport/packaging': PackagingSettingsPage,
   'settings/shop/transport/tools': ToolsSettingsPage,
   'settings/shop/transport/cities': CitiesSettingsPage,
+  'settings/shop/transport/dekapost': DekapostSettingsPage,
   'settings/shop/transport/map': MapSettingsPage,
   'settings/shop/transport/rules': RulesSettingsPage,
   'settings/shop/transport/item-cost': ItemCostSettingsPage,
